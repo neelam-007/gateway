@@ -1063,11 +1063,10 @@ public class PolicyProcessingTest extends TestCase {
                 // Test that the outbound response is confirmed
                 try {
                     Document outboundResponse = context.getResponse().getXmlKnob().getDocumentReadOnly();
-                    //System.out.println( XmlUtil.nodeToFormattedString( outboundResponse ) );
+                    System.out.println( XmlUtil.nodeToFormattedString( outboundResponse ) );
                     NodeList signatureConfirmationNodeList = outboundResponse.getElementsByTagNameNS(SoapConstants.SECURITY11_NAMESPACE, "SignatureConfirmation");
-// TODO : This should work
-//                    Assert.assertEquals("Response signature confirmation found", 1, signatureConfirmationNodeList.getLength());
-//                    Assert.assertEquals("Signature confirmation matches signature value", inboundSignatureValue, ((Element)signatureConfirmationNodeList.item(0)).getAttribute("Value"));
+                    Assert.assertEquals("Response signature confirmation found", 1, signatureConfirmationNodeList.getLength());
+                    Assert.assertEquals("Signature confirmation matches signature value", inboundSignatureValue, ((Element)signatureConfirmationNodeList.item(0)).getAttribute("Value"));
                 } catch (Exception e) {
                     throw ExceptionUtils.wrap(e);
                 }

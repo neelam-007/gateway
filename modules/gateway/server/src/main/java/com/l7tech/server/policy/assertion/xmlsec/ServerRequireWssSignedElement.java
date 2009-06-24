@@ -2,27 +2,17 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.security.token.*;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.util.CausedIOException;
 import com.l7tech.util.SyspropUtil;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -53,42 +43,12 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         final ProcessorResult wssResults = message.getSecurityKnob().getProcessorResult();
         if ( wssResults != null ) {
             setVariables( context, message,  wssResults );
-
-            if ( isRequest() ) {
-                if (context.isResponseWss11() && !wssResults.getValidatedSignatureValues().isEmpty()) {
-                    context.addDeferredAssertion(this, deferredSignatureConfirmation(assertion, auditor, wssResults.getValidatedSignatureValues()));
-                }
+            if ( isRequest() && context.isResponseWss11() ) {
+                    message.getSecurityKnob().setNeedsSignatureConfirmations(true);
             }
         }
 
         return AssertionStatus.NONE;
-    }
-
-    // A deferred job that tries to attach a SignatureConfirmation to the response, if the response is SOAP.
-    public static ServerAssertion deferredSignatureConfirmation( final Assertion owner,
-                                                                 final Auditor auditor,
-                                                                 final List<String> signatureConfirmations) {
-        return new AbstractServerAssertion<Assertion>(owner) {
-            @Override
-            public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException {
-                DecorationRequirements wssReq;
-
-                try {
-                    if (!context.getResponse().isSoap()) {
-                        auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_SIGNATURE_RESPONSE_NOT_SOAP);
-                        // FALLTHROUGH: We'll still send the response; it just won't contain a SignatureConfirmation
-                    } else if(context.getResponse().getSecurityKnob().getDecorationRequirements().length > 0){
-                        wssReq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
-
-                        for (String confirmation : signatureConfirmations)
-                            wssReq.addSignatureConfirmation(confirmation);
-                    }
-                } catch (SAXException e) {
-                    throw new CausedIOException(e);
-                }
-                return AssertionStatus.NONE;
-            }
-        };
     }
 
     @Override

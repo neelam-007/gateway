@@ -127,4 +127,14 @@ public interface SecurityKnob extends MessageKnob {
      * Should be called by assertions that process and validate signature confirmations.
      */
     void setSignatureConfirmationValidated(boolean validated);
+
+    /**
+     * @return true if the signatures present in a (request) message need to be confirmed in the related response message
+     */
+    public boolean isNeedsSignatureConfirmations();
+
+    /**
+     * Marks a (request) message as requiring signature confirmations in the related response.
+     */
+    public void setNeedsSignatureConfirmations(boolean needsConfirmations);
 }

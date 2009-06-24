@@ -28,6 +28,7 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     private WsSecurityVersion wsSecurityVersion;
     private WssDecorator.DecorationResult decorationResult;
     private boolean signatureConfirmationValidated = false;
+    private boolean needsSignatureConfirmations = false;
 
     /**
      * @param message  the Message that owns this aspect
@@ -166,6 +167,16 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     @Override
     public boolean isSignatureConfirmationValidated() {
         return signatureConfirmationValidated;
+    }
+
+    @Override
+    public boolean isNeedsSignatureConfirmations() {
+        return needsSignatureConfirmations;
+    }
+
+    @Override
+    public void setNeedsSignatureConfirmations(boolean needsConfirmations) {
+        needsSignatureConfirmations = needsConfirmations;
     }
 
     @Override

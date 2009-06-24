@@ -47,6 +47,7 @@ import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -67,10 +68,7 @@ import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Set;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -359,6 +357,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             context.setPolicyResult(status);
+
+            // add signature confirmations
+            WSSecurityProcessorUtils.addSignatureConfirmations(response, auditor);
 
             // Run response through WssDecorator if indicated
             if (status == AssertionStatus.NONE &&

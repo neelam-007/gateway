@@ -716,7 +716,8 @@ public class WssDecoratorImpl implements WssDecorator {
     private Element addSignatureConfirmation(Element securityHeader, String signatureConfirmation) {
         String wsse11Ns = SoapConstants.SECURITY11_NAMESPACE;
         Element sc = DomUtils.createAndAppendElementNS(securityHeader, "SignatureConfirmation", wsse11Ns, "wsse11");
-        sc.setAttribute("Value", signatureConfirmation);
+        if (signatureConfirmation != null)
+            sc.setAttribute("Value", signatureConfirmation);
         return sc;
     }
 

@@ -3,12 +3,15 @@ package com.l7tech.server.util;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.token.*;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
+import com.l7tech.message.MessageRole;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -479,6 +482,51 @@ public class WSSecurityProcessorUtils {
         }
 
         return elementsToCheck;
+    }
+
+    /**
+     * Adds signature confirmations to the decoration requirements associated with the message.
+     *
+     * Should be called just before the decorations are applied; no further modifications to the decorations should be done.
+     */
+    public static void addSignatureConfirmations(Message message, Auditor auditor) {
+
+        // get the request signatures
+        Message request = message.getRelated(MessageRole.REQUEST);
+        if (request == null)
+            return; // not a response
+        if (request.getSecurityKnob().getProcessorResult() == null) {
+            auditor.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_NO_WSS, "Request");
+            return;
+        }
+        if ( ! request.getSecurityKnob().isNeedsSignatureConfirmations() )
+            return;
+        List<String> signatureValues = request.getSecurityKnob().getProcessorResult().getValidatedSignatureValues();
+
+        // get the decoration where signature confirmation should go
+        Map<String, DecorationRequirements> decorations = new HashMap<String, DecorationRequirements>();
+        SecurityKnob securityKnob = message.getSecurityKnob();
+        for (DecorationRequirements decoration : securityKnob.getDecorationRequirements()) {
+            decorations.put(decoration.getSecurityHeaderActor(), decoration);
+        }
+        Set<String> actors = decorations.keySet();
+        DecorationRequirements decoration = actors.contains(SoapConstants.L7_SOAP_ACTOR) ? decorations.get(SoapConstants.L7_SOAP_ACTOR) :
+                                            actors.contains(null) ? decorations.get(null) :
+                                            actors.size() == 1 ? decorations.values().toArray(new DecorationRequirements[1])[0] :
+                                            null;
+        if (decoration == null) {
+            // todo: bug 7277 - add signature confirmations only if the response already has decoration requirements?
+            auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NO_SIG_CONFIRMATION);
+        } else {
+            // add signature confirmations
+            if (signatureValues.isEmpty()) {
+                // no signatures but confirmation needed -> value-less <SignatureConfirmation>
+                decoration.addSignatureConfirmation(null);
+            } else {
+                for (String sig : signatureValues)
+                    decoration.addSignatureConfirmation(sig);
+            }
+        }
     }
 
     public static boolean isValidSignatureConfirmations(SignatureConfirmation signatureConfirmation, Auditor auditor) {

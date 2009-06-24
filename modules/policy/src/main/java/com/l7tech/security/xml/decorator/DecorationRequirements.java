@@ -286,7 +286,7 @@ public class DecorationRequirements {
     }
 
     /**
-     * Add a wsse11:SignatureConfirmation value to use for this reply, if any.  This must be the still-base64-encoded
+     * Add a wsse11:SignatureConfirmation value to use for this reply, if required. This must be the still-base64-encoded
      * content of the dsig:SignatureValue whose value is being confirmed.  SignatureConfirmation values will
      * only be included in the decorated message if the rest of the decoration requirements are sufficient to
      * allow the SignatureConfirmation elements to be signed.  That is, a signature source of some kind must also be supplied
@@ -294,16 +294,23 @@ public class DecorationRequirements {
      * a sender cert with private key, a sender SAML holder-of-key token with subject private key,
      * a secure conversation session, or an EncryptedKeySHA1 reference plus associated EncryptedKey shared secret.
      *
-     * @param signatureConfirmation the base64 SignatureValue of the signature that is to be confirmed, or null.
+     * @param signatureConfirmation the base64 SignatureValue of the signature that is to be confirmed,
+     *                              or null if the request did not contain any signatures but confirmation is needed.
      */
     public void addSignatureConfirmation(String signatureConfirmation) {
+        if ( signatureConfirmations.contains(null) ||
+             ! signatureConfirmations.isEmpty() && signatureConfirmation == null)
+            throw new IllegalArgumentException("Cannot confirm both the lack and the presence of signatures in a request.");
         this.signatureConfirmations.add(signatureConfirmation);
     }
 
     /**
      * Get the wsse11:SignatureConfirmation values to include in this message.
+     * If the request did not have any signatures but required confirmation, a list containing exactly a null entry is returned.
      *
-     * @return a list of base64 SignatureValue strings of the signatures that are to be confirmed.  May be empty but never null.
+     * @return a list of base64 SignatureValue strings of the signatures that are to be confirmed,
+     *         or a list with a null value to confirm that no signatures from the request were processed.
+     *         May be empty but never null.
      * @see #addSignatureConfirmation
      */
     public Collection<String> getSignatureConfirmations() {

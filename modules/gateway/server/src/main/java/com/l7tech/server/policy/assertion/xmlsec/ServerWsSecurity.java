@@ -10,6 +10,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertCache;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
@@ -103,6 +104,8 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
 
                         // run decoration
                         try {
+                            // add signature confirmations
+                            WSSecurityProcessorUtils.addSignatureConfirmations(message, auditor);
                             decorator.decorateMessage(message, decoration);
                         } catch ( DecoratorException de ) {
                             auditor.logAndAudit(AssertionMessages.WSSECURITY_ERROR, assertion.getTargetName(), ExceptionUtils.getMessage(de));
