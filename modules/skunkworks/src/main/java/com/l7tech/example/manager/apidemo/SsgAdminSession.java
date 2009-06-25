@@ -10,6 +10,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.MainWindow;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import org.springframework.context.ApplicationContext;
@@ -85,6 +86,9 @@ public class SsgAdminSession {
         return Registry.getDefault().getServiceManager();
     }
 
+    public FolderAdmin getFolderAdmin(){
+        return Registry.getDefault().getFolderAdmin();
+    }
     public IdentityAdmin getIdentityAdmin() throws RemoteException {
         return Registry.getDefault().getIdentityAdmin();
 	}

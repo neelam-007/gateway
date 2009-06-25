@@ -6,6 +6,7 @@ package com.l7tech.example.manager.apidemo;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -77,7 +78,7 @@ public class ServicePublication {
      * published twice on the same cluster with exactly the same parameters.
      * @return the object id of the newly published service
      */
-    public long publishSampleService() throws SaveException, PolicyAssertionException, RemoteException, VersionException, UpdateException {
+    public long publishSampleService() throws SaveException, PolicyAssertionException, RemoteException, VersionException, UpdateException, FindException {
         return publishService("sendSms", SAMPLE_POLICY_XML, SAMPLE_SERVICE_WSDL);
     }
 
@@ -89,13 +90,18 @@ public class ServicePublication {
      * @param wsdlXML the wsdl for this web service
      * @return the object id of the newly published service
      */
-    public long publishService(final String name, final String policyXML, final String wsdlXML) throws SaveException, PolicyAssertionException, RemoteException, VersionException, UpdateException {
+    public long publishService(final String name, final String policyXML, final String wsdlXML) throws SaveException, PolicyAssertionException, RemoteException, VersionException, UpdateException, FindException {
         ServiceAdmin serviceAdmin = session.getServiceAdmin();
         PublishedService newService = new PublishedService();
         newService.setName(name);
         newService.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, policyXML, true));
         newService.setWsdlXml(wsdlXML);
+        newService.setFolder(getRootFolder());
         return serviceAdmin.savePublishedService(newService);
+    }    
+
+    private Folder getRootFolder() throws FindException {
+        return session.getFolderAdmin().findByPrimaryKey(-5002L);
     }
 
     /**
