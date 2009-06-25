@@ -68,6 +68,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
     private static final Logger logger = Logger.getLogger(ServerHttpRoutingAssertion.class.getName());
 
+    private final ServerConfig serverConfig;
     private final SignerInfo senderVouchesSignerInfo;
     private final GenericHttpClientFactory httpClientFactory;
     private final StashManagerFactory stashManagerFactory;
@@ -82,6 +83,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx, logger);
+
+        serverConfig = (ServerConfig) ctx.getBean( "serverConfig", ServerConfig.class );
 
         // remember if we need to resolve the url at runtime
         String tmp = assertion.getProtectedServiceUrl();
@@ -713,11 +716,25 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
             final String ctype = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_TYPE);
-            final ContentTypeHeader outerContentType = ctype != null ? ContentTypeHeader.parseValue(ctype) : null;
+            ContentTypeHeader outerContentType = ctype != null ? ContentTypeHeader.parseValue(ctype) : null;
             boolean passthroughSoapFault = false;
-            if (status == 500 && context.getService() != null && context.getService().isSoap() &&
+            if (status == HttpConstants.STATUS_SERVER_ERROR && context.getService() != null && context.getService().isSoap() &&
                 outerContentType != null && outerContentType.isXml()) {
                 passthroughSoapFault = true;
+            }
+
+            if (status == HttpConstants.STATUS_OK && outerContentType == null) {
+                String defaultContentType = serverConfig.getPropertyCached( "ioHttpDefaultContentType" );
+                if ( defaultContentType != null ) {
+                    try {
+                        outerContentType = ContentTypeHeader.parseValue(defaultContentType);
+                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_DEFCONTENTTYPE);
+                    } catch ( IOException ioe ) {
+                        logger.log( Level.WARNING,
+                                "Error processing default content type '"+ExceptionUtils.getMessage( ioe )+"'.", 
+                                ExceptionUtils.getDebugException(ioe));
+                    }
+                }
             }
 
             // Handle missing content type error
@@ -727,7 +744,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             } else if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
                 responseOk = false;
-            } else if (status >= 400 && assertion.isFailOnErrorStatus() && !passthroughSoapFault) {
+            } else if (status >= HttpConstants.STATUS_ERROR_RANGE_START && assertion.isFailOnErrorStatus() && !passthroughSoapFault) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
                 responseOk = false;
             } else if (outerContentType != null) { // response OK

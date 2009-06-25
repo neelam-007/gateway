@@ -64,6 +64,7 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_DEFAULT_METHOD_NON_HTTP = m(4046, Level.INFO, "Request was not HTTP; using POST");
     public static final M HTTPROUTE_DEFAULT_METHOD_VAR      = m(4047, Level.INFO, "Request is a context variable; using POST");
     public static final M BRIDGEROUTE_WSS_PROCESSING_RESP   = m(4048, Level.WARNING, "Error in WSS processing of response ''{0}''");
+    public static final M HTTPROUTE_RESPONSE_DEFCONTENTTYPE = m(4049, Level.INFO, "Downstream service response did not include a content type header, using default.");
 
     // ServerCredentialSourceAssertion messages
     public static final M HTTPCREDS_AUTH_REQUIRED    = m(4100, Level.INFO, "Authentication required");
