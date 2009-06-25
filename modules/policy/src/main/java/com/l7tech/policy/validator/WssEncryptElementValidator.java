@@ -4,8 +4,14 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.wsdl.Wsdl;
 import org.jaxen.dom.DOMXPath;
 
@@ -22,12 +28,14 @@ public class WssEncryptElementValidator implements AssertionValidator {
     private static final Logger logger = Logger.getLogger(WssEncryptElementValidator.class.getName());
     private final WssEncryptElement assertion;
     private final boolean requiresDecoration;
+    private final boolean defaultActor;
     private String errString;
     private Throwable errThrowable;
 
     public WssEncryptElementValidator(WssEncryptElement ra) {
         assertion = ra;
         requiresDecoration = !Assertion.isResponse( assertion );
+        defaultActor = assertion.getRecipientContext().localRecipient();
         String pattern = null;
         if (assertion.getXpathExpression() != null) {
             pattern = assertion.getXpathExpression().getExpression();
@@ -55,6 +63,7 @@ public class WssEncryptElementValidator implements AssertionValidator {
 
         boolean seenSelf = true;
         boolean seenDecoration = false;
+        boolean requiresTargetEncKey = defaultActor && Assertion.isResponse(assertion); // non response validation is handled by WsSecurity validator
         Assertion[] assertionPath = path.getPath();
         for (int i = assertionPath.length - 1; i >= 0; i--) {
             Assertion a = assertionPath[i];
@@ -73,13 +82,46 @@ public class WssEncryptElementValidator implements AssertionValidator {
             if ( a == assertion ) {
                 seenSelf = false; // loop is backwards
             }
-            if ( seenSelf && a instanceof WsSecurity && ((WsSecurity)a).isApplyWsSecurity() && AssertionUtils.isSameTargetMessage( assertion, a ) ) {
-                seenDecoration = true;
+            if ( requiresTargetEncKey &&
+                 (a instanceof RequestWssKerberos ||
+                  a instanceof EncryptedUsernameTokenAssertion ||
+                  a instanceof RequireWssSaml ||
+                  a instanceof SecureConversation ||
+                  a instanceof RequireWssX509Cert) &&
+                 isDefaultActor(a) &&
+                 Assertion.isRequest( a )  ) {
+                requiresTargetEncKey = false;                
             }
+            if ( seenSelf && a instanceof WsSecurity && AssertionUtils.isSameTargetMessage( assertion, a ) ) {
+                WsSecurity wsSecurity = (WsSecurity) a;
+                if ( wsSecurity.isApplyWsSecurity()  ) {
+                    seenDecoration = true;
+                    if ( wsSecurity.getRecipientTrustedCertificateName() != null ||
+                         wsSecurity.getRecipientTrustedCertificateOid() > 0 ) {
+                        requiresTargetEncKey = false;
+                    }
+                }
+            }
+
         }
 
         if ( requiresDecoration && !seenDecoration ) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "This assertion will be ignored. An \"Add or remove WS-Security\" assertion should be used to apply security.", null));
         }
+
+        if ( requiresTargetEncKey ) {
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "This assertion requires a (Request) WSS Signature assertion, a WS Secure Conversation assertion, a SAML assertion, an Encrypted UsernameToken assertion, or a WSS Kerberos assertion.", null));        
+        }
+    }
+
+    private boolean isDefaultActor( final Assertion assertion ) {
+        boolean defaultActor = true;
+
+        if ( assertion instanceof SecurityHeaderAddressable ) {
+            SecurityHeaderAddressable securityHeaderAddressable = (SecurityHeaderAddressable) assertion;
+            defaultActor = securityHeaderAddressable.getRecipientContext().localRecipient();
+        }
+
+        return defaultActor;
     }
 }

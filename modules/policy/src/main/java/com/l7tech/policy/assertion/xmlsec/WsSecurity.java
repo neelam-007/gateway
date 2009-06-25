@@ -155,9 +155,9 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
                 return AssertionUtils.decorateName( wsSecurity, nameBuilder );
             }
         });
-
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(
             Collections.<TypeMapping>singleton(new Java5EnumTypeMapping(WsSecurityVersion.class, "wsSecurityVersion"))));
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WsSecurityValidator");        
 
         return meta;
     }
