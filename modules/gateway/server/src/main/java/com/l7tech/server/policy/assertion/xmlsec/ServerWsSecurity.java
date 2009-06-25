@@ -202,9 +202,16 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                 decoration.setSecurityHeaderReusable(true);
                 if ( SoapVersion.SOAP_1_2.isPriorVersion( soapVersion ) ) {
                     // SOAP 1.1 or earlier
+                    boolean defaultNS = securityHeader.hasAttribute( SoapConstants.ACTOR_ATTR_NAME );
+                    securityHeader.removeAttribute( SoapConstants.ACTOR_ATTR_NAME );
                     securityHeader.removeAttributeNS( soapUri, SoapConstants.ACTOR_ATTR_NAME );
-                    if ( decoration.getSecurityHeaderActor() != null )
-                        SoapUtil.setSoapAttr( securityHeader, SoapConstants.ACTOR_ATTR_NAME, decoration.getSecurityHeaderActor() );
+                    if ( decoration.getSecurityHeaderActor() != null ) {
+                        if ( defaultNS ) {
+                            securityHeader.setAttribute( SoapConstants.ACTOR_ATTR_NAME, decoration.getSecurityHeaderActor() );
+                        } else {
+                            SoapUtil.setSoapAttr( securityHeader, SoapConstants.ACTOR_ATTR_NAME, decoration.getSecurityHeaderActor() );
+                        }
+                    }
                     if ( useSecurityHeaderMustUnderstand )
                         SoapUtil.setSoapAttr( securityHeader, SoapConstants.MUSTUNDERSTAND_ATTR_NAME, "1");
                     else
