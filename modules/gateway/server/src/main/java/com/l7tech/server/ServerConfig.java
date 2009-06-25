@@ -212,6 +212,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES = "wss.processor.allowMultipleTimestampSignatures";
     public static final String PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS = "wss.processor.allowUnknownBinarySecurityTokens";
     public static final String PARAM_WSS_DECORATOR_MUSTUNDERSTAND = "wss.decorator.mustUnderstand";
+    public static final String PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION = "wss.processor.strictSignatureConfirmationValidation";
 
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
     public static final String PROPS_RESOURCE_PROPERTY = "com.l7tech.server.serverConfigPropertiesResource";

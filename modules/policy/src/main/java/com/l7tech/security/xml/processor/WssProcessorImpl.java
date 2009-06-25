@@ -208,9 +208,19 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     /**
-     * todo: document this!
+     * Flag for controlling how signature confirmation validation is performed.
      *
-     * @return
+     * When set to true:
+     * all WSS 1.1 signature confirmation checks are performed 
+     * all checks are also performed on responses that are detected as using WSS 1.1 (not just on the ones that correspond to requests marked as requiring WSS 1.1)
+     *
+     * When set to false, the following conditions will not cause validation to fail:
+     * no SignatureConfirmation element in a WSS 1.1 response
+     * SignatureConfirmation element with no Value attribute is not the only SignatureConfirmation element
+     * signature confirmation values that are not found in the request
+     * unencrypted signature confirmations corresponding to encrypted signatures in the request
+     *
+     * @return true if the processor should perform strict signature confirmation validation, false otherwise
      */
     public boolean isStrictSignatureConfirmationValidation() {
         return strictSignatureConfirmationValidation;

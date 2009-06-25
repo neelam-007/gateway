@@ -162,7 +162,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             serverConfig.getLongPropertyCached(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1),
             serverConfig.getBooleanProperty(ServerConfig.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
             serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false),
-            serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false)
+            serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false),
+            serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
         ) );
     }
 
@@ -689,6 +690,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 trogdor.setRejectOnMustUnderstand(settings.rejectOnMustUnderstand);
                 trogdor.setPermitMultipleTimestampSignatures(settings.permitMultipleTimestampSignatures);
                 trogdor.setPermitUnknownBinarySecurityTokens(settings.permitUnknownBinarySecurityTokens);
+                trogdor.setStrictSignatureConfirmationValidation(settings.strictSignatureConfirmationValidation);
                 try {
                     final Message request = context.getRequest();
                     final SecurityKnob reqSec = request.getSecurityKnob();
@@ -827,15 +829,18 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         private final boolean rejectOnMustUnderstand;
         private final boolean permitMultipleTimestampSignatures;
         private final boolean permitUnknownBinarySecurityTokens;
+        private final boolean strictSignatureConfirmationValidation;
 
         private WssSettings( final long signedAttachmentMaxSize,
                              final boolean rejectOnMustUnderstand,
                              final boolean permitMultipleTimestampSignatures,
-                             final boolean permitUnknownBinarySecurityTokens ) {
+                             final boolean permitUnknownBinarySecurityTokens,
+                             final boolean strictSignatureConfirmationValidation) {
             this.signedAttachmentMaxSize = signedAttachmentMaxSize;
             this.rejectOnMustUnderstand = rejectOnMustUnderstand;
             this.permitMultipleTimestampSignatures = permitMultipleTimestampSignatures;
             this.permitUnknownBinarySecurityTokens = permitUnknownBinarySecurityTokens;
+            this.strictSignatureConfirmationValidation = strictSignatureConfirmationValidation;
         }
     }
 }
