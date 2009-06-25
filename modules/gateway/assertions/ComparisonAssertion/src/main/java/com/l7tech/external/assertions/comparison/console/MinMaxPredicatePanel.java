@@ -102,8 +102,6 @@ public abstract class MinMaxPredicatePanel<P extends MinMaxPredicate> extends Pr
 
 
     protected String getSyntaxError(P model) {
-        if (unlimitedCheckBox.isSelected()) return null;
-
         String smax = ((JSpinner.DefaultEditor)maxSpinner.getEditor()).getTextField().getText();
         String smin = ((JSpinner.DefaultEditor)minSpinner.getEditor()).getTextField().getText();
         int min;
@@ -116,6 +114,8 @@ public abstract class MinMaxPredicatePanel<P extends MinMaxPredicate> extends Pr
                 return MessageFormat.format(msg, smin);
             }
         }
+
+        if (unlimitedCheckBox.isSelected()) return null;
 
         int max;
         {

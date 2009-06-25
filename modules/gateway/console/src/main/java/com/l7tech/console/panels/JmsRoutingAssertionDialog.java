@@ -183,6 +183,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         authSamlRadio.addChangeListener(new ChangeListener(){
             public void stateChanged(ChangeEvent e) {
                 samlPanel.setVisible(authSamlRadio.isSelected());
+                samlExpiryInMinutesSpinner.setEnabled(authSamlRadio.isSelected());
             }
         });
 

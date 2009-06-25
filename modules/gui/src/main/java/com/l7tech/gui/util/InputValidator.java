@@ -129,6 +129,7 @@ public class InputValidator implements FocusListener {
         @Override
         public String getValidationError() {
             JSpinner spinner = (JSpinner)component;
+            if (! component.isEnabled()) return null;
             String valueText = ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().getText();
 
             try {
