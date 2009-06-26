@@ -1,6 +1,7 @@
 package com.l7tech.security.xml.processor;
 
 import java.security.GeneralSecurityException;
+import java.net.InetAddress;
 
 import com.l7tech.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.kerberos.KerberosClient;
@@ -25,7 +26,10 @@ public class KerberosSigningSecurityTokenImpl extends SigningSecurityTokenImpl i
         this.wsuId = wsuId;
     }
 
-    public KerberosSigningSecurityTokenImpl(KerberosGSSAPReqTicket ticket, String wsuId, Element element) throws GeneralSecurityException {
+    public KerberosSigningSecurityTokenImpl( final KerberosGSSAPReqTicket ticket,
+                                             final InetAddress clientAddress,
+                                             final String wsuId,
+                                             final Element element ) throws GeneralSecurityException {
         super(element);
         this.wsuId = wsuId;
 
@@ -38,25 +42,29 @@ public class KerberosSigningSecurityTokenImpl extends SigningSecurityTokenImpl i
             catch(KerberosException ke) { // fallback to system property name
                 spn = KerberosClient.getGSSServiceName();
             }
-            kerberosServiceTicket = client.getKerberosServiceTicket(spn, ticket);
+            kerberosServiceTicket = client.getKerberosServiceTicket(spn, clientAddress, ticket);
         }
         catch(KerberosException ke) {
             throw new GeneralSecurityException("Error processing Kerberos Binary Security Token.", ke);
         }
     }
 
+    @Override
     public KerberosServiceTicket getServiceTicket() {
         return kerberosServiceTicket;
     }
 
+    @Override
     public KerberosGSSAPReqTicket getTicket() {
         return kerberosServiceTicket.getGSSAPReqTicket();
     }
 
+    @Override
     public String getElementId() {
         return wsuId;
     }
 
+    @Override
     public SecurityTokenType getType() {
         return SecurityTokenType.WSS_KERBEROS_BST;
     }

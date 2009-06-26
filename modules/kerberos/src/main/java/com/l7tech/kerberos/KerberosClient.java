@@ -10,6 +10,7 @@ import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.URL;
+import java.net.InetAddress;
 import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -19,6 +20,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -41,6 +44,7 @@ import com.l7tech.util.ExceptionUtils;
  *
  * TODO investigate ways to avoid using sun.* classes
  */
+@SuppressWarnings({ "UseOfSunClasses" })
 public class KerberosClient {
 
     //- PUBLIC
@@ -249,7 +253,9 @@ public class KerberosClient {
      * @return the ticket
      * @throws KerberosException on error
      */
-    public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName, final KerberosGSSAPReqTicket gssAPReqTicket) throws KerberosException {
+    public KerberosServiceTicket getKerberosServiceTicket( final String servicePrincipalName,
+                                                           final InetAddress clientAddress,
+                                                           final KerberosGSSAPReqTicket gssAPReqTicket) throws KerberosException {
         KerberosServiceTicket ticket;
         try {
             if (!KerberosConfig.hasKeytab()) {
@@ -277,7 +283,7 @@ public class KerberosClient {
 
                         byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
                         KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
-                        KrbApReq apReq = new KrbApReq(apReqBytes, toEncryptionKey(keys));
+                        KrbApReq apReq = buildKrbApReq( apReqBytes, keys, clientAddress );
                         validateServerPrincipal(kerberosSubject.getPrincipals(), new KerberosPrincipal(apReq.getCreds().getServer().getName()) );
 
                         // Extract the delegated kerberos ticket if one exists
@@ -286,11 +292,11 @@ public class KerberosClient {
                         
                         // get the key bytes
  	 	                byte[] keyBytes;
- 	 	                if (apReq.getSubKey() != null)
+ 	 	                if (apReq.getSubKey() != null) {
  	 	                    keyBytes = apReq.getSubKey().getBytes();
- 	 	                else
+                        } else {
  	 	                    keyBytes = sessionKey.getBytes();
-
+                        }
 
                         // create the service ticket
                         return new KerberosServiceTicket(apReq.getCreds().getClient().getName(),
@@ -549,6 +555,9 @@ public class KerberosClient {
     private static final Integer KERBEROS_LIFETIME_DEFAULT = 60 * 60; // in seconds, default ==> 1 hour
     private static final Integer KERBEROS_LIFETIME = SyspropUtil.getInteger(KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT);
 
+    private static final String PASS_INETADDR_PROPERTY = "com.l7tech.common.security.kerberos.useaddr";
+    private static final boolean PASS_INETADDR = SyspropUtil.getBoolean(PASS_INETADDR_PROPERTY, true);
+
     private static Oid kerb5Oid;
     private static String acceptPrincipal;
 
@@ -715,6 +724,42 @@ public class KerberosClient {
         }
 
         return ekeys;
+    }
+
+    /**
+     * OpenJDK introduced the "InetAddress" argument, so we'll support either
+     * the old or the new constructor.
+     */
+    private KrbApReq buildKrbApReq( final byte[] apReqBytes,
+                                    final KerberosKey[] keys,
+                                    final InetAddress clientAddress ) throws KerberosException {
+        KrbApReq apReq;
+
+        try {
+            Constructor constructor;
+            Object[] args;
+            try {
+                // OpenJDK / new constructor
+                constructor = KrbApReq.class.getConstructor( byte[].class, EncryptionKey[].class, InetAddress.class );
+                args = new Object[]{ apReqBytes, toEncryptionKey(keys), PASS_INETADDR ? clientAddress : null };
+            } catch ( NoSuchMethodException nsme ) {
+                // original constructor
+                constructor = KrbApReq.class.getConstructor( byte[].class, EncryptionKey[].class );
+                args = new Object[]{ apReqBytes, toEncryptionKey(keys) };
+            }
+
+            apReq = (KrbApReq) constructor.newInstance( args );
+        } catch (NoSuchMethodException e) {
+            throw new KerberosException( e );
+        } catch (InvocationTargetException e) {
+            throw new KerberosException( e );
+        } catch (IllegalAccessException e) {
+            throw new KerberosException( e );
+        } catch (InstantiationException e) {
+            throw new KerberosException( e );
+        }
+
+        return apReq;
     }
 
     /**

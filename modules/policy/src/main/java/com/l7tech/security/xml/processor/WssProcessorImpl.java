@@ -41,6 +41,8 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * An implementation of the WssProcessor for use in both the SSG and the SSA.
@@ -1426,6 +1428,7 @@ public class WssProcessorImpl implements WssProcessor {
         else {
             try {
                 securityTokens.add(new KerberosSigningSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue),
+                                                                 getClientInetAddress(message),
                                                                  wsuId,
                                                                  binarySecurityTokenElement));
             }
@@ -2109,6 +2112,24 @@ public class WssProcessorImpl implements WssProcessor {
         DomUtils.setTextContent(bst, HexUtils.encodeBase64(certificate.getEncoded(), true));
         signingCertToken = new X509BinarySecurityTokenImpl(certificate, bst);
         return signingCertToken;
+    }
+    
+    private InetAddress getClientInetAddress( final Message message ) {
+        InetAddress clientAddress = null;
+
+        TcpKnob tcpKnob = message.getKnob(TcpKnob.class);
+        if ( tcpKnob != null ) {
+            try {
+                clientAddress = InetAddress.getByName( tcpKnob.getRemoteAddress() );
+            } catch (UnknownHostException e) {
+                // should not get here since we pass an IP address
+                logger.log( Level.INFO,
+                        "Could not create address for remote IP '"+tcpKnob.getRemoteAddress()+"'.",
+                        ExceptionUtils.getDebugException( e ));
+            }
+        }
+
+        return clientAddress;
     }
 
     private static class TimestampDate extends ParsedElementImpl implements WssTimestampDate {

@@ -8,6 +8,7 @@ import com.l7tech.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
+import com.l7tech.message.TcpKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
@@ -25,12 +26,12 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * Server implementation for Negotiate (Windows Integrated) Authentication
- *
- * @author $Author$
- * @version $Revision$
  */
 public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiate> {
 
@@ -73,7 +74,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
         HttpRequestKnob httpRequestKnob = request.getHttpRequestKnob();
         String wwwAuthorize = httpRequestKnob.getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
         Object connectionId = httpRequestKnob.getConnectionIdentifier();
-        return findCredentials( wwwAuthorize, connectionId );
+        return findCredentials( request, wwwAuthorize, connectionId );
     }
 
     @Override
@@ -94,7 +95,9 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
     private final Auditor auditor;
 
     @SuppressWarnings({ "RedundantArrayCreation", "ThrowableResultOfMethodCallIgnored" })
-    private LoginCredentials findCredentials( String wwwAuthorize, Object connectionId ) throws IOException {
+    private LoginCredentials findCredentials( final Message request,
+                                              final String wwwAuthorize,
+                                              final Object connectionId ) throws IOException {
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
             LoginCredentials loginCreds = getConnectionCredentials(connectionId);
             if (loginCreds != null) {
@@ -130,7 +133,8 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
             catch(KerberosException ke) { // fallback to system property name
                 spn = KerberosClient.getGSSServiceName();
             }
-            KerberosServiceTicket kerberosServiceTicket = client.getKerberosServiceTicket(spn, ticket);
+            KerberosServiceTicket kerberosServiceTicket =
+                    client.getKerberosServiceTicket(spn, getClientInetAddress(request), ticket);
 
             LoginCredentials loginCreds = LoginCredentials.makeLoginCredentials( new HttpNegotiateToken(kerberosServiceTicket), assertion.getClass() );
 
@@ -172,5 +176,22 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
         }
 
         return realm;
-    }    
+    }
+
+    private InetAddress getClientInetAddress( final Message message ) {
+        InetAddress clientAddress = null;
+
+        TcpKnob tcpKnob = message.getKnob(TcpKnob.class);
+        if ( tcpKnob != null ) {
+            try {
+                clientAddress = InetAddress.getByName( tcpKnob.getRemoteAddress() );
+            } catch (UnknownHostException e) {
+                logger.log( Level.INFO,
+                        "Could not create address for remote IP '"+tcpKnob.getRemoteAddress()+"'.",
+                        ExceptionUtils.getDebugException( e ));
+            }
+        }
+
+        return clientAddress;
+    }
 }
