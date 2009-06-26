@@ -906,7 +906,7 @@ public class EllipticCurveProviderTester {
     }
 
     static PrivateKey getTestEccPrivateKey() throws Exception {
-        KeySpec spec = new PKCS8EncodedKeySpec(decodeBase64(TEST_KEY));
+        KeySpec spec = new PKCS8EncodedKeySpec(decodeBase64(CERTICOM_KEY_COMPRESSED_FORMAT));
         KeyFactory kf = KeyFactory.getInstance("EC", getBouncyCastleProvider());
         PrivateKey privateKey = kf.generatePrivate(spec);
         assertTrue(privateKey.getAlgorithm().equals("EC") || privateKey.getAlgorithm().equals("ECDSA"), "private key type must be EC or ECDSA");
@@ -915,7 +915,7 @@ public class EllipticCurveProviderTester {
 
     static X509Certificate[] getTestEccCert() throws CertificateException {
         Collection<? extends Certificate> certs = CertificateFactory.getInstance("X.509").generateCertificates(
-                new ByteArrayInputStream(TEST_KEY_CERT_CHAIN.getBytes()));
+                new ByteArrayInputStream(CERTICOM_KEY_COMPRESSED_FORMAT_CERT_CHAIN.getBytes()));
         X509Certificate[] chain = certs.toArray(new X509Certificate[certs.size()]);
         assertTrue(chain != null, "certificate factory failed to produce a certificate chain");
         assertTrue(chain.length > 0, "certificate factory produced an empty certificate chain");
@@ -1134,12 +1134,12 @@ public class EllipticCurveProviderTester {
             "ebptgkG91o3NHiHntMsKMD0wITAJBgUrDgMCGgUABBRWjntPaly/wxOW7GVJkhBTTs/1vAQUnXLA\n" +
             "iRfKZ/+m3lf5L/vahSx7GokCAgQA");
 
-    static final String TEST_KEY =
+    static final String CERTICOM_KEY_COMPRESSED_FORMAT =
             "MGICAQAwEAYHKoZIzj0CAQYFK4EEAAEESzBJAgEBBBRQieICGuF1jSJ4tU3R9yCh\n" +
             "NV8g5qEuAywABAE814kv8euQhqkuB/zb93UYu4NS5AV1c/4SU86koMXBQL1pNymX\n" +
             "gAVp9w==";
 
-    static final String TEST_KEY_CERT_CHAIN =
+    static final String CERTICOM_KEY_COMPRESSED_FORMAT_CERT_CHAIN =
             "-----BEGIN CERTIFICATE-----\n" +
             "MIIB4TCCAZ6gAwIBAgIBAjALBgcqhkjOPQQBBQAwgY8xCzAJBgNVBAYTAkNBMRAw\n" +
             "DgYDVQQIEwdPbnRhcmlvMRAwDgYDVQQHEwdUb3JvbnRvMRcwFQYDVQQKEw5DZXJ0\n" +
