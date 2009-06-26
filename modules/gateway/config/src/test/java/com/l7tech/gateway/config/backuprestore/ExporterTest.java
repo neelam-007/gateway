@@ -42,6 +42,7 @@ public class ExporterTest {
     public void setUp() throws IOException {
         final String tmpSsgHomeStr =ImportExportUtilities.createTmpDirectory();
         tmpSsgHome = new File(tmpSsgHomeStr);
+        System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
     }
 
     @After
@@ -49,6 +50,7 @@ public class ExporterTest {
         if(tmpSsgHome == null) return;
         if(!tmpSsgHome.exists()) return;
         FileUtils.deleteDir(tmpSsgHome);
+        System.clearProperty("com.l7tech.util.buildVersion");
     }
 
     /**
@@ -636,22 +638,23 @@ public class ExporterTest {
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException
      */
     @Test
-    public void testGetFtpConfig() throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
-        final Exporter export = new Exporter(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+    public void testGetFtpConfig() throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException, CloneNotSupportedException {
         final Map<String, String> args = new HashMap<String, String>();
-        args.put(Exporter.FTP_HOST.name, "donal.l7tech.com:21");
-        args.put(Exporter.FTP_USER.name, "root");
-        args.put(Exporter.FTP_PASS.name, "7layer");
-        args.put(Exporter.IMAGE_PATH.name, "image.zip");
+        args.put(ImportExportUtilities.FTP_HOST.getName(), "donal.l7tech.com:21");
+        args.put(ImportExportUtilities.FTP_USER.getName(), "root");
+        args.put(ImportExportUtilities.FTP_PASS.getName(), "7layer");
+        args.put(Exporter.IMAGE_PATH.getName(), "image.zip");
 
-        final FtpClientConfig ftpConfig = export.getFtpConfig(args);
+        final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(args);
         Assert.assertNotNull(ftpConfig);
 
         Assert.assertEquals("Host name should equal donal.l7tech.com", "donal.l7tech.com", ftpConfig.getHost());
         Assert.assertEquals("Port number should be 21", 21, ftpConfig.getPort());
         Assert.assertEquals("User name should be root", "root", ftpConfig.getUser());
         Assert.assertEquals("User pass should be 7layer", "7layer", ftpConfig.getPass());
+
+        FtpClientConfig cloned = (FtpClientConfig)ftpConfig.clone();
+        System.out.println(cloned);
     }
 
     /**
@@ -664,12 +667,12 @@ public class ExporterTest {
                 ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
 
         final Map<String, String> args = new HashMap<String, String>();
-        args.put(Exporter.FTP_HOST.name, "donal.l7tech.com");
-        args.put(Exporter.FTP_USER.name, "root");
-        args.put(Exporter.FTP_PASS.name, "7layer");
-        args.put(Exporter.IMAGE_PATH.name, "image.zip");
+        args.put(ImportExportUtilities.FTP_HOST.getName(), "donal.l7tech.com");
+        args.put(ImportExportUtilities.FTP_USER.getName(), "root");
+        args.put(ImportExportUtilities.FTP_PASS.getName(), "7layer");
+        args.put(Exporter.IMAGE_PATH.getName(), "image.zip");
 
-        export.checkAndValidateFtpParams(args);
+        ImportExportUtilities.checkAndValidateFtpParams(args);
     }
 
     /**

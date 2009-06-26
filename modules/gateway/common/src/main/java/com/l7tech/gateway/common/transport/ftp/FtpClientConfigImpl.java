@@ -7,7 +7,7 @@ import java.io.ObjectInputStream;
 /**
  * @author jbufu
  */
-public class FtpClientConfigImpl implements FtpClientConfig {
+public class FtpClientConfigImpl implements FtpClientConfig, Cloneable {
 
     private static final long serialVersionUID = 8783020368179729829L;
 
@@ -19,13 +19,26 @@ public class FtpClientConfigImpl implements FtpClientConfig {
     private int timeout = DEFAULT_TIMEOUT; // milliseconds
     private String user = DEFAULT_ANON_USER;
     private String pass = "";
-    String directory;
+    private String directory;
+    // Ftps specific params
+    private boolean isVerifyServerCert = false;
 
     /**
-     * Not serializable; clients should set their own trust manager after deserialization.
+     * Not serializable
      */
     private transient PrintStream debugStream;
 
+    //status
+    private boolean enabled = true;
+
+    // authentication
+    private boolean useClientCert = false;
+    private FtpCredentialsSource credentialsSource = FtpCredentialsSource.SPECIFIED;
+    private long clientCertKeystoreId = -1;
+    private String clientCertKeyAlias;
+
+    private FtpFileNameSource fileNameSource;
+    private String pattern;
 
     private FtpClientConfigImpl() {
     }
@@ -87,22 +100,12 @@ public class FtpClientConfigImpl implements FtpClientConfig {
     @Override
     public FtpSecurity getSecurity() { return this.security; }
 
-    // Ftps specific params
-    private boolean isVerifyServerCert = false;
-
     // FTPS parameters
     @Override
     public FtpClientConfig setVerifyServerCert(boolean verify) { this.isVerifyServerCert = verify; return this; }
 
     @Override
     public boolean isVerifyServerCert() { return this.isVerifyServerCert; }
-
-
-    // authentication
-    private boolean useClientCert = false;
-    private FtpCredentialsSource credentialsSource = FtpCredentialsSource.SPECIFIED;
-    private long clientCertKeystoreId = -1;
-    private String clientCertKeyAlias;
 
     // authentication
     @Override
@@ -138,17 +141,11 @@ public class FtpClientConfigImpl implements FtpClientConfig {
     @Override
     public String getClientCertAlias() { return this.clientCertKeyAlias; }
 
-    private FtpFileNameSource fileNameSource;
-    private String pattern;
-
     public FtpClientConfig setFileNameSource(FtpFileNameSource filenameSource) { this.fileNameSource = filenameSource; return this; }
     public FtpFileNameSource getFilenameSource() { return this.fileNameSource; }
 
     public FtpClientConfig setFileNamePattern(String pattern) { this.pattern = pattern; return this; }
     public String getFileNamePattern() { return this.pattern; }
-
-    //status
-    private boolean enabled = true;
 
     @Override
     public FtpClientConfig setEnabled(boolean enabled) { this.enabled = enabled; return this; }
@@ -160,4 +157,14 @@ public class FtpClientConfigImpl implements FtpClientConfig {
         in.defaultReadObject();
     }
 
+    /**
+     * Everything apart from the printstream can be cloned using default super behaviour. All other primitive
+     * non primitive types are immutable classes
+     * @return
+     * @throws CloneNotSupportedException
+     */
+    @Override
+    public Object clone() throws CloneNotSupportedException{
+        return super.clone();
+    }
 }

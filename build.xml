@@ -3017,9 +3017,8 @@
             </copy>
 
             <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-            <copy file="${src.root}/etc/exclude_tables" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-            <!--<copy file="${src.root}/etc/backup_tables_excluded" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>-->
-            <!--<copy file="${src.root}/etc/backup_tables_mapping_excluded" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>-->
+            <copy file="${src.root}/etc/exclude_tables.conf" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+            <copy file="${src.root}/etc/exclude_files.conf" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
         </sequential>
     </macrodef>
 

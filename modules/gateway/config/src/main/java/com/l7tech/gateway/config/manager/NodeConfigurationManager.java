@@ -432,7 +432,11 @@ public class NodeConfigurationManager {
         return config;
     }
 
-    static NodeConfig loadNodeConfig( final String name, final Properties nodeProperties, final boolean loadSecrets ) throws IOException {
+    public static NodeConfig loadNodeConfig( final String name, final Properties nodeProperties, final boolean loadSecrets ) throws IOException {
+        if(name == null) throw new NullPointerException("name cannot be null");
+        if(name.isEmpty()) throw new IllegalArgumentException("name cannot be the emtpy string");
+        if(nodeProperties == null) throw new NullPointerException("nodeProperties cannot be null");
+        
         if (!nodeProperties.containsKey(NODEPROPERTIES_ID))
             throw new CausedIOException("Unable to load node configuration for '"+name+"' due to invalid properties.");
 
@@ -449,6 +453,13 @@ public class NodeConfigurationManager {
             loadNodeDatabaseConfig( nodeProperties, dbConfigName, loadSecrets, configs, true );
         }
         node.getDatabases().addAll( configs.values() );
+
+        if(loadSecrets){
+            //check for and load the cluster passphrase, which may or may not be encrypted
+            if(nodeProperties.containsKey(NODEPROPERTIES_CLUSTPROP)){
+                node.setClusterPassphrase(nodeProperties.getProperty(NODEPROPERTIES_CLUSTPROP));
+            }
+        }
 
         return node;
     }

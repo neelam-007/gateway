@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author jbufu
  * @since SecureSpan 4.6
  */
-public interface FtpClientConfig extends Serializable {
+public interface FtpClientConfig extends Serializable, Cloneable {
 
     // FTP constants
     static final int DEFAULT_TIMEOUT = 10000; // milliseconcds
@@ -65,4 +65,6 @@ public interface FtpClientConfig extends Serializable {
     // status
     FtpClientConfig setEnabled(boolean enabled);
     boolean isEnabled();
+
+    public Object clone() throws CloneNotSupportedException;
 }

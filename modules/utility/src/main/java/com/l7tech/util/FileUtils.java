@@ -322,8 +322,8 @@ public class FileUtils {
      * Copies one file into output file.  It will copy the file entirely in the
      * kernel space on operating systems with  appropriate support.
      *
-     * @param in  the input file
-     * @param out the output
+     * @param in  the input file, file must exist, cannot be null
+     * @param out the output, file must exist, cannot be null
      * @throws IOException in io error
      */
     public static void copyFile(File in, File out) throws IOException {

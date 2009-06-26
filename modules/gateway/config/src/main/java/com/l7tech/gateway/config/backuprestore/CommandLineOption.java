@@ -1,27 +1,45 @@
 package com.l7tech.gateway.config.backuprestore;
 
 /**
- * A command line option passed to the flash utility
- * <p/>
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Nov 8, 2006<br/>
+ * Copyright (C) 2009, Layer 7 Technologies Inc.
+ *  
+ * Represents a single command line argument. Defines whether it expects a value, and if that value represents a file
+ * which should exist
+ *
+ * This class is immutable
  */
-class CommandLineOption {
-    CommandLineOption(String name, String desc) {
+public final class CommandLineOption {
+    private final String name;
+    private final String description;
+    private final boolean isValuePath;
+    private final boolean hasNoValue;
+
+    CommandLineOption(final String name, final String desc) {
         this.name = name;
         this.description = desc;
+        isValuePath = false;
+        hasNoValue = false;
     }
-    CommandLineOption(String name, String desc, boolean isValuePath, boolean hasNoValue) {
+    CommandLineOption(final String name, final String desc, final boolean isValuePath, final boolean hasNoValue) {
         this.name = name;
         this.description = desc;
         this.isValuePath = isValuePath;
         this.hasNoValue = hasNoValue;
     }
-    String name;
-    String description;
-    boolean isValuePath = false;
-    boolean hasNoValue = false;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public boolean isHasNoValue() {
+        return hasNoValue;
+    }
+
+    public boolean isValuePath() {
+        return isValuePath;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

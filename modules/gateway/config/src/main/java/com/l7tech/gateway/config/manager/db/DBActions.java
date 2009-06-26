@@ -701,7 +701,7 @@ public class DBActions {
         }
     }
 
-    private DBActionsResult checkExistingDb(DatabaseConfig databaseConfig) {
+    public DBActionsResult checkExistingDb(DatabaseConfig databaseConfig) {
 
         Connection conn = null;
 
@@ -834,7 +834,7 @@ public class DBActions {
      * Create DB and do grants, DB will be empty 
      */
     private void createDatabaseWithGrants(Connection connection, DatabaseConfig databaseConfig, Set<String> hosts) throws SQLException, IOException {
-        if ( "".equals(databaseConfig.getNodePassword()) ) {
+        if ( databaseConfig.getNodePassword().isEmpty() ) {
             throw new CausedIOException("Cannot create database with empty password for user '"+databaseConfig.getNodeUsername()+"'.");            
         }
 

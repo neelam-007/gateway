@@ -17,26 +17,17 @@ import java.net.NetworkInterface;
 import java.net.InetAddress;
 
 /**
- * Methods for dumping
- * <p/>
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Nov 8, 2006<br/>
+ * Copyright (C) 2009, Layer 7 Technologies Inc.
  */
 class DBDumpUtil {
 
     private static final Logger logger = Logger.getLogger(DBDumpUtil.class.getName());
-    //public static final String DBDUMPFILENAME_CLONE = "dbdump_restore.sql";
-    public static final String MAIN_BACKUP_FILENAME = "main_backup.sql";
-    public static final String AUDIT_BACKUP_FILENAME = "audit_backup.sql";
-    public static final String LICENCEORIGINALID = "originallicenseobjectid.txt";
+    public static final String AUDIT_BACKUP_FILENAME = "audit_backup.sql";   //todo [donal] DBDumpUtil should not have this knowledge
+    public static final String LICENCEORIGINALID = "originallicenseobjectid.txt"; //todo [donal] DBDumpUtil should not have this knowledge
     //private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "message_id", "service_metrics", "service_metrics_details", "service_usage"};
 
     //configuration files
-    private static final String AUDIT_TABLES_CONFIG = "config/backup/cfg/backup_tables_audit";
-    private static final String AUDITS_GZ = "audits.gz";
+    private static final String AUDIT_TABLES_CONFIG = "config/backup/cfg/backup_tables_audit"; //this knowledge is ok as its ssg install specific
 
     /**
      * outputs database dump files. The outputted dump file will never contain audits.
@@ -54,7 +45,8 @@ class DBDumpUtil {
     public static void dump(final DatabaseConfig config,
                             final String outputDirectory,
                             final PrintStream stdout,
-                            final boolean verbose) throws SQLException, IOException {
+                            final boolean verbose,
+                            final String backupFileName) throws SQLException, IOException {
         final NetworkInterface networkInterface =
                 NetworkInterface.getByInetAddress( InetAddress.getByName(config.getHost()) );
         if ( networkInterface == null ) {
@@ -69,7 +61,7 @@ class DBDumpUtil {
                 "TABLE"
         };
         ResultSet tableNames = null;
-        final File dbBackupFile = new File(outputDirectory, MAIN_BACKUP_FILENAME);
+        final File dbBackupFile = new File(outputDirectory, backupFileName);
         if(dbBackupFile.exists()){
             dbBackupFile.delete();//is this needed?
         }
@@ -161,7 +153,8 @@ class DBDumpUtil {
 
         Connection conn = null;
         ResultSet tableNames = null;
-        final OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(outputDirectory + File.separator + AUDITS_GZ));
+        final OutputStream outputStream = new BufferedOutputStream(
+                new FileOutputStream(outputDirectory + File.separator + BackupImage.AUDIT_BACKUP_FILENAME));
         //default buffer size is 512
         final GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
 
@@ -169,6 +162,7 @@ class DBDumpUtil {
             final DBActions dba = new DBActions();
             conn = dba.getConnection(config, false);
 
+            //todo [Donal] audit heuristic
 //            final String sizeSql = "show table status like 'audit%'";
 //            final Statement stmt = conn.createStatement();
 //            final ResultSet rs = stmt.executeQuery(sizeSql);

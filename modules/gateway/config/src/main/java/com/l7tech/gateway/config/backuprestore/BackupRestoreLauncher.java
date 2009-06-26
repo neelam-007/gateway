@@ -12,13 +12,8 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 /**
- * Entrypoint for the ssg flashing utility.
- * <p/>
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Nov 8, 2006<br/>
+ * Copyright (C) 2009, Layer 7 Technologies Inc.
+ * Run backup / restore 
  */
 public class BackupRestoreLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
@@ -36,24 +31,52 @@ public class BackupRestoreLauncher {
      * backup, then the VM will exist with status 2
      * @param args
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         if (args == null || args.length < 1) {
             System.out.println(getUsage(null));
             return;
         }
 
-        // set logging
         initializeLogging();
 
         try {
-            Map<String, String> passedArgs;
             if (args[0].toLowerCase().equals("import")) {
-                final Importer importer = new Importer();
-                passedArgs = ImportExportUtilities.getAndValidateCommandLineOptions(
-                        args, Arrays.asList(Importer.ALLOPTIONS), Importer.getIgnoredOptions());
-                importer.preProcess(passedArgs);
-                importer.doIt(passedArgs, null);
-                System.out.println("\nImport completed with no errors.");
+                final Importer importer = new Importer(new File("/opt/SecureSpan/Gateway"),
+                        System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+
+                Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+                switch (result.getStatus()){
+                    case SUCCESS:
+                        if(result.isWasMigrate()){
+                            System.out.println("\nMigrate of SecureSpan Gateway image completed with no errors");
+                        }else{
+                            System.out.println("\nRestore of SecureSpan Gateway image completed with no errors");
+                        }
+                        break;
+                    case FAILURE:
+                        if(result.isWasMigrate()){
+                            System.out.println("\nMigrate of SecureSpan Gateway image failed");
+                        }else{
+                            System.out.println("\nRestore of SecureSpan Gateway image failed");
+                        }
+                        System.exit(1);
+                        break;
+                    case PARTIAL_SUCCESS:
+                        if(result.isWasMigrate()){
+                            System.out.println("\nMigrate of SecureSpan Gateway image partially succeeded");
+                        }else{
+                            System.out.println("\nRestore of SecureSpan Gateway image partially succeeded");
+                        }
+                        List<String> failedComponents = result.getFailedComponents();
+                        for(String s: failedComponents ){
+                            System.out.println("Failed component: " + s);
+                        }
+                        System.exit(2);
+                        break;
+                    default:
+                        throw new RuntimeException("Unexpected response from import");
+
+                }
             } else if (args[0].toLowerCase().equals("export")) {
                 final Exporter exporter = new Exporter(new File("/opt/SecureSpan/Gateway"),
                         System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
@@ -65,6 +88,7 @@ public class BackupRestoreLauncher {
                     case FAILURE:
                         System.out.println("\nExport of SecureSpan Gateway image failed.");
                         System.exit(1);
+                        break;
                     case PARTIAL_SUCCESS:
                         System.out.println("\nExport of SecureSpan Gateway image partially succeeded");
                         List<String> failedComponents = result.getFailedComponents();
@@ -72,12 +96,16 @@ public class BackupRestoreLauncher {
                             System.out.println("Failed component: " + s);
                         }
                         System.exit(2);
-                }
+                        break;
+                    default:
+                        throw new RuntimeException("Unexpected response from export");
 
+                }
             } else if (args[0].toLowerCase().equals("cfgdeamon")) {
+                //todo [Donal] - is this still required?
                 OSConfigManager.restoreOSConfigFilesForReal();
             } else if (args[0] != null) {
-                String issue = "unsupported option " + args[0];
+                String issue = "Unsupported option " + args[0];
                 logger.warning(issue);
                 System.out.println(issue);
                 System.out.println(getUsage(args[0]));

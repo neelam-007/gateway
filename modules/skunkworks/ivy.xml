@@ -28,6 +28,7 @@
         <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-gateway-server" rev="latest.integration" force="true" conf="core->default,test"/>
         <dependency name="layer7-gateway-console" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-gateway-config" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-proxy" rev="latest.integration" force="true" conf="core->default,test"/>
         <dependency name="layer7-xmlvpnclient" rev="latest.integration" force="true" conf="core->default,test"/>
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core->default,test"/>

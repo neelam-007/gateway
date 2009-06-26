@@ -10,11 +10,16 @@ package com.l7tech.gateway.common.transport.ftp;
 
 import java.net.UnknownHostException;
 import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.jscape.inet.ftp.Ftp;
 import com.jscape.inet.ftp.FtpException;
+import com.l7tech.util.ResourceUtils;
 
 public class FtpUtils {
+    private static final Logger logger = Logger.getLogger(FtpUtils.class.getName());
+    
     /**
      * Wrapper method to call {@link Ftp#connect} that throws a better exception.
      *
@@ -149,5 +154,39 @@ public class FtpUtils {
             ftp.disconnect();
         }
     }
+
+    /**
+     * Download a file from a FTP server and store locally
+     * @param config FtpClientConfig ftp client config
+     * @param fileNameAndPath Name of where to download the file to locally
+     * @param fileToDownload Name of the file after it has been downloaded. if this String contains path information
+     * then all directories up to the file name should exist. The file should not exist and will be created
+     * @throws FtpException
+     * @throws IOException if any IO exception writing downloaded file to disk
+     */
+    public static void download(FtpClientConfig config, String fileNameAndPath, String fileToDownload )
+            throws FtpException, IOException{
+
+        File saveFile = new File(fileNameAndPath);
+        File localParentDir = new File(saveFile.getParent());
+        if(!localParentDir.exists()) throw new IllegalArgumentException("Parent directory of fileNameAndPath does not exist");
+        if(!localParentDir.isDirectory()) throw new IllegalArgumentException("Parent directory is not a directory");
+
+        if(saveFile.exists()) saveFile.delete();
+        saveFile.createNewFile();
+        FileOutputStream fos = new FileOutputStream(saveFile);
+
+        final Ftp ftp = FtpUtils.newFtpClient(config);
+
+        try{
+            ftp.connect();
+            ftp.download(fos, fileToDownload);
+        } finally{
+            ftp.disconnect();
+            ResourceUtils.closeQuietly(fos);
+        }
+
+    }
+
 
 }

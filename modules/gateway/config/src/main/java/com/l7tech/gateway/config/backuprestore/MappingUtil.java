@@ -16,6 +16,7 @@ import org.xml.sax.SAXException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -51,15 +52,19 @@ class MappingUtil {
         public HashMap<String, String> varMapping = new HashMap<String, String>();
     }
 
-    public static void applyMappingChangesToDB(DatabaseConfig config, CorrespondanceMap mappingResults) throws SQLException {
+    public static void applyMappingChangesToDB(final DatabaseConfig config,
+                                               final CorrespondanceMap mappingResults,
+                                               final boolean verbose,
+                                               final PrintStream printStream) throws SQLException {
         Connection c = new DBActions().getConnection(config, false);
         try {
             System.out.println("Applying mappings");
 
             // iterate through policies
-            applyRoutingIpMapping(c, "published_service", "policy_xml", mappingResults);    // column exists if upgraded from 4.2
-            applyRoutingIpMapping(c, "policy", "xml", mappingResults);
-            applyRoutingIpMapping(c, "policy_version", "xml", mappingResults);
+            // column exists if upgraded from 4.2
+            applyRoutingIpMapping(c, "published_service", "policy_xml", mappingResults, verbose, printStream);
+            applyRoutingIpMapping(c, "policy", "xml", mappingResults, verbose, printStream);
+            applyRoutingIpMapping(c, "policy_version", "xml", mappingResults, verbose, printStream);
 
             // iterate through global variables
             for (String varname : mappingResults.varMapping.keySet()) {
@@ -347,7 +352,9 @@ class MappingUtil {
     private static void applyRoutingIpMapping(final Connection connection,
                                               final String table,
                                               final String policyColumn,
-                                              final CorrespondanceMap mapping)
+                                              final CorrespondanceMap mapping,
+                                              final boolean verbose,
+                                              final PrintStream printStream)
             throws SQLException {
         if (connection == null) throw new NullPointerException("connection must not be null");
         if (table == null) throw new NullPointerException("table must not be null");
@@ -389,6 +396,7 @@ class MappingUtil {
                             String toIP = mapping.backendIPMapping.get(fromIP);
                             logger.info("Mapping routing IP address for " + getDescription(connection, table, objectid) + ": from " + fromIP + " to " + toIP);
                             policyXml = policyXml.replace("stringValue=\"" + fromIP + "\"", "stringValue=\"" + toIP + "\"");
+                            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "", verbose, printStream);
                             changed = true;
                         }
                     }

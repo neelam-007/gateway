@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<L7migrate:ssgimportmapping xmlns:L7migrate="http://www.layer7tech.com/migration/stagingmapping">
+    <!--Please review backend ip addresses and global variables
+	and provide corresponding values for the target system.
+	When in doubt, duplicate the sourcevalue in the targetvalue. 
+	Do not leave properties with targetvalue="__add_your_value__"-->
+    <L7migrate:backendipmapping>
+        <L7migrate:ipmap sourcevalue="192.168.10.2" targetvalue="127.0.0.2"/>
+        <L7migrate:ipmap sourcevalue="192.168.0.3" targetvalue="127.0.0.3"/>
+    </L7migrate:backendipmapping>
+    <L7migrate:globalvarmapping>
+        <L7migrate:varmap name="cluster.hostname"
+            sourcevalue="cls1.l7tech.com" targetvalue="dev.l7tech.com"/>
+    </L7migrate:globalvarmapping>
+</L7migrate:ssgimportmapping>

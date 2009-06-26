@@ -8,6 +8,8 @@ package com.l7tech.gateway.config.backuprestore;
 
 import org.junit.Test;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.After;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +21,7 @@ import java.util.Collections;
 
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.BuildInfo;
+import com.l7tech.util.FileUtils;
 
 /**
  * Tests the ImportExportUtilitiesTest unility functions.
@@ -26,6 +29,16 @@ import com.l7tech.util.BuildInfo;
  * to fail
  */
 public class ImportExportUtilitiesTest {
+
+    @Before
+    public void setUp() throws IOException {
+        System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
+    }
+
+    @After
+    public void tearDown(){
+        System.clearProperty("com.l7tech.util.buildVersion");
+    }
 
     /**
      * Test that absolute paths are resolved correctly according to the system property ImportExportUtilities.BASE_DIR_PROPERTY
@@ -86,7 +99,7 @@ public class ImportExportUtilitiesTest {
         Assert.assertEquals("Invalid value returned from " +
                 "dbConfig.getPort()", 3306, dbConfig.getPort());
         Assert.assertEquals("Invalid value returned from " +
-                "dbConfig.getName()", "ssg_5_0_1", dbConfig.getName());
+                "dbConfig.getName()", "ssg_buzzcut", dbConfig.getName());
         Assert.assertEquals("Invalid value returned from " +
                 "dbConfig.getNodeUsername()", "gateway", dbConfig.getNodeUsername());
     }
@@ -104,9 +117,20 @@ public class ImportExportUtilitiesTest {
 
         final Map<String, String> params = ImportExportUtilities.getAndValidateCommandLineOptions(
                 args, validOptions, Collections.<CommandLineOption>emptyList());
-        Assert.assertEquals("-image option has an incorrect value", "image.zip", params.get(Exporter.IMAGE_PATH.name));
+        Assert.assertEquals("-image option has an incorrect value", "image.zip", params.get(Exporter.IMAGE_PATH.getName()));
     }
 
+    @Test
+    public void testGetAndValidateSingleArgument() throws BackupRestoreLauncher.InvalidProgramArgumentException {
+        final String [] args = new String[]{"export","-image", "image.zip"};
+        final List<CommandLineOption> validOptions = new ArrayList<CommandLineOption>();
+        validOptions.add(Exporter.IMAGE_PATH);
+
+        final String imageName = ImportExportUtilities.getAndValidateSingleArgument(
+                args, Importer.IMAGE_PATH, validOptions, Collections.<CommandLineOption>emptyList());
+
+        Assert.assertEquals("-image option has an incorrect value", "image.zip", imageName);        
+    }
     /**
      * Test that getAndValidateCommandLineOptions() correctly validates command line arguments
      * In this test the -image command line option has no value supplied
@@ -321,4 +345,18 @@ public class ImportExportUtilitiesTest {
         System.out.println(f.getName());
     }
 
+    /**
+     * Test logic used to extract port number from a host name
+     */
+    @Test
+    public void testExtractPortNumber() throws BackupRestoreLauncher.InvalidProgramArgumentException {
+        String host = "donal.l7tech.com";
+        Assert.assertEquals("Invalid host name found", "donal.l7tech.com", (ImportExportUtilities.getDbHostAndPortPair(host)).left);
+        Assert.assertEquals("Invalid port number found", "3306", (ImportExportUtilities.getDbHostAndPortPair(host)).right);
+
+        host = "donal.l7tech.com:4567";
+        Assert.assertEquals("Invalid host name found", "donal.l7tech.com", (ImportExportUtilities.getDbHostAndPortPair(host)).left);
+        Assert.assertEquals("Invalid port number found", "4567", (ImportExportUtilities.getDbHostAndPortPair(host)).right);
+    }
+    
 }

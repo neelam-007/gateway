@@ -3,31 +3,30 @@ package com.l7tech.gateway.config.backuprestore;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.io.IOException;
-import java.io.FileOutputStream;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.ResultSet;
-import java.net.NetworkInterface;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.net.SocketException;
+import java.io.*;
+import java.sql.*;
+import java.net.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
+import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
+import com.l7tech.gateway.common.transport.ftp.FtpClientConfigImpl;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.util.*;
 
 /**
+ * <p>
+ * Copyright (C) 2009, Layer 7 Technologies Inc.
+ * </p>
+ *
  * Utility class for Exporting and Importing backup image zip files
  *
- */
+ */    //todo [Donal] this class should be package private
 public class ImportExportUtilities {
     /** System property used as base directory for all relative paths. */
     public static final String BASE_DIR_PROPERTY = "com.l7tech.server.backuprestore.basedir";
@@ -51,6 +50,103 @@ public class ImportExportUtilities {
      * Default installation of the ssg appliance
      */
     public static final String OPT_SECURE_SPAN_APPLIANCE = "/opt/SecureSpan/Appliance";
+    public static final String NODE_CONF_DIR = "node/default/etc/conf/";
+    public static final String CA_JAR_DIR = "runtime/modules/lib";
+    public static final String MA_AAR_DIR = "runtime/modules/assertions";
+    public static final String POST_FIVE_O_DEFAULT_BACKUP_FOLDER = "config/backup/images";
+    static final String UNIQUE_TIMESTAMP = "yyyyMMddHHmmss";
+    private static final String FTP_PROTOCOL = "ftp://";
+
+    public static final CommandLineOption FTP_HOST =
+            new CommandLineOption("-ftp_host",
+                                    "[Optional] host to ftp backup image to: "+
+                                    "host.domain.com:port",
+                                     false, false);
+
+    public static final CommandLineOption FTP_USER = new CommandLineOption("-ftp_user",
+                                                                               "[Optional] ftp username",
+                                                                               false, false);
+    public static final CommandLineOption FTP_PASS = new CommandLineOption("-ftp_pass",
+                                                                                   "[Optional] ftp password",
+                                                                                   false, false);
+    static final CommandLineOption[] ALL_FTP_OPTIONS = {FTP_HOST, FTP_USER, FTP_PASS};
+    public static final CommandLineOption VERBOSE = new CommandLineOption("-v",
+            "verbose output, without this ssgbackup.sh is silent. Consult log file ssgbackup%g.log for logging messages",
+                                                                               false, true);
+    public static final CommandLineOption HALT_ON_FIRST_FAILURE = new CommandLineOption("-halt",
+            "halt on first failure. Default behaviour is to try each component independently",
+                                                                               false, true);
+    public static final String SSG_SQL = "/config/etc/sql/ssg.sql";
+    static final String EXCLUDE_FILES_PATH = "cfg/exclude_files";
+
+    /**
+     * Classloader designed to ONLY to load BuildInfo from Gateway jar from the standard install directory of
+     * /opt/SecureSpan/Gateway/runtime/Gateway.jar
+     */
+    private static class GatewayJarClassLoader extends ClassLoader{
+        private final ClassLoader loader;
+
+        GatewayJarClassLoader(final File gatewayJarFile) throws MalformedURLException {
+            final URL gatewayJar = gatewayJarFile.toURI().toURL();
+            loader = new URLClassLoader(new URL[]{gatewayJar}, null);
+        }
+
+        public Class<?> loadClass(final String name) throws ClassNotFoundException {
+            if(name.equals("com.l7tech.util.BuildInfo")){
+                return loader.loadClass(name);
+            }
+            throw new ClassNotFoundException(GatewayJarClassLoader.class.getName()+" only supports class BuildInfo");
+        }
+    }
+
+    /**
+     * Are we running on a pre 5.0 system? If so a BackupRestoreLauncher.FatalException is thrown. This method will
+     * return the version of the SSG installed
+     * @param gatewayJarFile File representing Gateway.jar, from the local SSG installation
+     * @return an int arrary with the major, minor and subversion values for the installed SSG as indexs 0, 1 and 2
+     * @throws RuntimeException if the SSG installation cannot be found, based on the existence of Gateway.jar. Also
+     * thrown if it's not possible to determine the SSG version from the SSG installation
+     */
+    public static int [] throwIfLessThanFiveO(final File gatewayJarFile){
+        try {
+            if(!gatewayJarFile.exists()) throw new IllegalStateException("Cannot find SSG installation");
+
+            final GatewayJarClassLoader gatewayJarClassLoader = new GatewayJarClassLoader(gatewayJarFile);
+            final Class clazz = gatewayJarClassLoader.loadClass("com.l7tech.util.BuildInfo");
+
+            Method method = clazz.getMethod("getProductVersionMajor");
+            Object test = method.invoke(clazz);
+            final int majorVersion = Integer.parseInt(test.toString());
+
+            method = clazz.getMethod("getProductVersionMinor");
+            test = method.invoke(clazz);
+            final int minorVersion = Integer.parseInt(test.toString());
+
+            method = clazz.getMethod("getProductVersionSubMinor");
+            test = method.invoke(clazz);
+            final int subMinorVersion = Integer.parseInt(test.toString());
+
+            if(majorVersion < 5) throw new UnsupportedOperationException("Pre 5.0 SSG installations are not supported");
+
+            return new int[]{majorVersion, minorVersion, subMinorVersion};
+
+        } catch (MalformedURLException e) {
+            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+        } catch (InvocationTargetException e) {
+            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+        } catch (NoSuchMethodException e) {
+            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+        } catch (IllegalAccessException e) {
+            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+        }
+    }
 
     private static enum ARGUMENT_TYPE {VALID_OPTION, IGNORED_OPTION, INVALID_OPTION, VALUE}
     private static final Logger logger = Logger.getLogger(ImportExportUtilities.class.getName());
@@ -83,7 +179,7 @@ public class ImportExportUtilities {
     protected enum ComponentType{
         OS("os", "Operating System files"),
         CONFIG("config", "SSG Config"),
-        MAINDB("maindb", "Main database backup sql (no audits) and my.cnf"),
+        MAINDB("maindb", "Main database backup sql (no audits)"),
         AUDITS("audits", "Database audits"),
         CA("ca", "Custom Assertions"),
         MA("ma", "Modular Assertions"),
@@ -104,6 +200,155 @@ public class ImportExportUtilities {
 
         private final String componentName;
         private String description;
+    }
+
+    /**
+     * Validae the ftp program parameters. If any ftp param is supplied, then they all must. This method enforces that
+     * constraint. If all ftp params are supplied then true is returned, otherwise false
+     * @param allParams map of program parameters
+     * @return true if ftp parameters were supplied and they all exist. False if NO ftp params were supplied
+     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException if an incomplete set of ftp parameters were supplied, or if the ftp
+     * host name is invalid
+     */
+    public static boolean checkAndValidateFtpParams(final Map<String, String> allParams) throws InvalidProgramArgumentException {
+        //check if ftp requested
+        for(Map.Entry<String, String> entry: allParams.entrySet()){
+            if(entry.getKey().startsWith("-ftp")){
+                //make sure they are all there
+                for(final CommandLineOption clo: ALL_FTP_OPTIONS){
+                    if(!allParams.containsKey(clo.getName())) throw new InvalidProgramArgumentException("Missing argument: " + clo.getName());
+                    if(clo == FTP_HOST){
+                        String hostName = allParams.get(FTP_HOST.getName());
+                        try {
+                            if(!hostName.startsWith(FTP_PROTOCOL)) hostName = FTP_PROTOCOL +hostName;
+                            final URL url = new URL(hostName);
+                            if(url.getPort() == -1)
+                                throw new InvalidProgramArgumentException("-ftp_host value requires a port number");
+                        } catch (MalformedURLException e) {
+                            throw new InvalidProgramArgumentException(e.getMessage());
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Extract ftp parameters from the supplied args and create and return an FtpClientConfig.
+     * Only call when you know an -ftp* parameter was supplied. Will throw an exception if expected values are not
+     * found in args
+     * @param args the command line arguments
+     * @param validOptions all possible valid options. Cannot be null
+     * @param ignoredOptions options which are no longer supported, but are ignored. Cannot be null
+     * @param imageName the value of the -image parameter. Cannot be null or the empty string or just spaces 
+     * @return a FtpClientConfig object if ftp params were supplied, null otherwise
+     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException if any
+     * required ftp parameter is missing
+     */
+    public static FtpClientConfig getFtpConfig(final String[] args,
+                                                  final List<CommandLineOption> validOptions,
+                                                  final List<CommandLineOption> ignoredOptions,
+                                                  final String imageName)
+            throws InvalidProgramArgumentException {
+        if(args == null) throw new NullPointerException("args cannot be null");
+        if(args.length == 0) throw new IllegalArgumentException("args contains no values");
+        if(validOptions == null) throw new NullPointerException("validOptions cannot be null");
+        if(ignoredOptions == null) throw new NullPointerException("ignoredOptions cannot be null");
+        if(imageName == null) throw new NullPointerException("imageName cannot be null");
+        if(imageName.trim().isEmpty()) throw new IllegalArgumentException("imageName cannot be the empty or just spaces");
+
+        final String ftpHost = getAndValidateSingleArgument(args, FTP_HOST, validOptions, ignoredOptions);
+        final String ftpUser = getAndValidateSingleArgument(args, FTP_USER, validOptions, ignoredOptions);
+        final String ftpPass = getAndValidateSingleArgument(args, FTP_PASS, validOptions, ignoredOptions);
+
+        return getFtpConfig(imageName, ftpHost, ftpUser, ftpPass);
+    }
+
+    /**
+     * Extract ftp parameters from the programParams and create and return an FtpClientConfig. If no -ftp_* parameters
+     * were passed into createBackupImage, then this will return null
+     *
+     * This can be called when it's not known whether ftp has been requested or not
+     * @param programParams The parameters passed into createBackupImage
+     * @return a FtpClientConfig object if ftp params were supplied, null otherwise
+     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException if any required ftp parameter is missing
+     */
+    public static FtpClientConfig getFtpConfig(final Map<String, String> programParams)
+            throws InvalidProgramArgumentException {
+        if(programParams == null) throw new NullPointerException("programParams cannot be null");
+        //not for much of a reason other than there is no use case when they would be empty
+        if(programParams.isEmpty()) throw new IllegalArgumentException("programParams cannot be empty");
+        
+        String ftpHost = programParams.get(FTP_HOST.getName());
+        if(ftpHost == null) return null;
+        
+        //as ftp host was supplied, validate all required ftp params exist
+        checkAndValidateFtpParams(programParams);
+
+        final String ftpUser = programParams.get(FTP_USER.getName());
+        final String ftpPass = programParams.get(FTP_PASS.getName());
+        if(ftpUser == null || ftpPass == null) throw new NullPointerException("ftp_user and ftp_pass must be non null");
+
+        final String imageName = programParams.get(Exporter.IMAGE_PATH.getName());
+        return getFtpConfig(imageName, ftpHost, ftpUser, ftpPass);
+    }
+
+    private static FtpClientConfig getFtpConfig(final String imageName,
+                                                final String ftpHost,
+                                                final String ftpUser,
+                                                final String ftpPass) throws InvalidProgramArgumentException {
+        final String ftpHostToUse;
+        if(!ftpHost.startsWith(FTP_PROTOCOL)){
+            ftpHostToUse = FTP_PROTOCOL +ftpHost;
+        }else{
+            ftpHostToUse = ftpHost;
+        }
+
+        final URL url;
+        try {
+            url = new URL(ftpHostToUse);
+        } catch (MalformedURLException e) {
+            //won't happen due to above check
+            throw new InvalidProgramArgumentException(e.getMessage());
+        }
+
+        final FtpClientConfig ftpConfig = FtpClientConfigImpl.newFtpConfig(url.getHost());
+        ftpConfig.setPort(url.getPort());
+        ftpConfig.setUser(ftpUser);
+        ftpConfig.setPass(ftpPass);
+
+        final String dirPart = getDirPart(imageName);
+        if(dirPart != null){
+            ftpConfig.setDirectory(dirPart);
+        }
+        return ftpConfig;
+    }
+
+    /**
+     * If any of the options from ImportExportUtilities.ALL_COMPONENTS) is included in the args, return true
+     * as we are doing a selective backup
+     * @param args program parameters converted to a map of string to their values
+     * @return true if a selective backup should be done, false otherwise
+     */
+    static boolean isSelectiveBackup(final Map<String, String> args){
+        for(CommandLineOption option: ALL_COMPONENTS){
+            if(args.containsKey(option.getName())) return true;
+        }
+        return false;
+    }
+
+    static Pair<String, String> getDbHostAndPortPair(final String host){
+        if (host == null) throw new NullPointerException("host cannot be null");
+        if(host.trim().isEmpty()) throw new IllegalArgumentException("host cannot be an empty string or just spaces");
+
+        if (host.indexOf(':') != -1) {
+            String [] parts = host.split(":",2);
+            return new Pair<String, String>(parts[0], parts[1]);
+        } else {
+            return new Pair<String, String>(host, "3306");
+        }
     }
 
     /**
@@ -173,6 +418,115 @@ public class ImportExportUtilities {
     }
 
     /**
+     * Validate that we have only received command line arguments that we expect. No validation of values
+     * is done.
+     * @throws InvalidProgramArgumentException, if any unexpected argument is found
+     */
+    public static void softArgumentValidation(final String[] args,
+                                              final List<CommandLineOption> validOptions,
+                                              final List<CommandLineOption> ignoredOptions)
+            throws InvalidProgramArgumentException{
+        if(args == null) throw new NullPointerException("args cannot be null");
+        if(validOptions == null) throw new NullPointerException("validOptions cannot be null");
+        if(ignoredOptions == null) throw new NullPointerException("ignoredOptions cannot be null");
+
+        //skip the first argument, because it's already used to determine the utility type (export/import)
+        for (int i = 1; i < args.length; i = i + 2) {
+            final String argument = args[i];
+
+            ARGUMENT_TYPE argType = determineArgumentType(argument, validOptions, ignoredOptions);
+            if (argType == ARGUMENT_TYPE.INVALID_OPTION) {
+                throw new InvalidProgramArgumentException("option " + argument + " is invalid");
+            }
+        }
+    }
+
+    /**
+     * See if a particular argument is included in the command line arguments
+     * @param args
+     * @param checkArgument
+     * @param validOptions
+     * @param ignoredOptions
+     * @return
+     * @throws InvalidProgramArgumentException
+     */
+    public static boolean checkArgumentExistence(final String[] args,
+                                                 final String checkArgument,
+                                                 final List<CommandLineOption> validOptions,
+                                                 final List<CommandLineOption> ignoredOptions)
+            throws InvalidProgramArgumentException{
+        if(args == null) throw new NullPointerException("args cannot be null");
+        if(validOptions == null) throw new NullPointerException("validOptions cannot be null");
+        if(ignoredOptions == null) throw new NullPointerException("ignoredOptions cannot be null");
+
+        //skip the first argument, because it's already used to determine the utility type (export/import)
+        for (int i = 1; i < args.length; i++) {
+            final String argument = args[i];
+
+            ARGUMENT_TYPE argType = determineArgumentType(argument, validOptions, ignoredOptions);
+
+            switch(argType){
+                case VALID_OPTION:
+                    if(argument.equals(checkArgument)){
+                        return true;
+                    }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * This is indended pre any call to getAndValidateCommandLineOptions, where we need just one argument.
+     * This is used to get the -image parameter during restore, as it's required
+     * @param args
+     * @param requiredOption
+     * @return String value for argument, never null, as an exception will have been thrown if it's not found
+     */
+    public static String getAndValidateSingleArgument(final String[] args,
+                                                      final CommandLineOption requiredOption,
+                                                      final List<CommandLineOption> validOptions,
+                                                      final List<CommandLineOption> ignoredOptions)
+            throws InvalidProgramArgumentException {
+        if(args == null) throw new NullPointerException("args cannot be null");
+        if(args.length == 0) throw new IllegalArgumentException("args contains no values");
+        if(requiredOption == null) throw new NullPointerException("requiredOption cannot be null");
+        if(requiredOption.isHasNoValue()) throw new IllegalArgumentException("requiredOption must require a value");
+        if(validOptions == null) throw new NullPointerException("validOptions cannot be null");
+        if(ignoredOptions == null) throw new NullPointerException("ignoredOptions cannot be null");
+
+        //skip the first argument, because it's already used to determine the utility type (export/import)
+        for (int i = 1; i < args.length; i++) {
+            final String argument = args[i];
+
+            ARGUMENT_TYPE argType = determineArgumentType(argument, validOptions, ignoredOptions);
+            switch(argType){
+                case VALID_OPTION:
+                    if (argument.equals(requiredOption.getName())) {
+                        if ((i + 1) > args.length)
+                            throw new InvalidProgramArgumentException("option " + argument + " expects a value");
+                        String value = args[i + 1];
+                        if (value == null || value.isEmpty()) {
+                            throw new InvalidProgramArgumentException("option " + argument + " expects a value");
+                        }
+                        //do a sanity check that it's actually a value and not an option
+                        ARGUMENT_TYPE testType = determineArgumentType(value, validOptions, ignoredOptions);
+                        if(testType != ARGUMENT_TYPE.VALUE){
+                            throw new InvalidProgramArgumentException("option " + argument + " expects a value");
+                        }
+                        return value;
+                    }
+                    break;
+                case INVALID_OPTION:
+                    throw new InvalidProgramArgumentException("option " + argument + " is invalid");
+            }
+        }
+
+        throw new InvalidProgramArgumentException("missing option "
+                + requiredOption.getName()
+                + ", required for exporting this image");
+    }
+    
+    /**
      * Convert command line parameters into a map, where any command line value which requires a value, is mapped to
      * it's value in the returned map.
      * validOptions lists which arguments to expect, each CommandLineOption within it, specifies whether or not it
@@ -188,17 +542,18 @@ public class ImportExportUtilities {
      * a file, and that file does not exist or cannot be written to
      */
     public static Map<String, String> getAndValidateCommandLineOptions(final String[] args,
-                                                                       List<CommandLineOption> validOptions,
-                                                List<CommandLineOption> ignoredOptions)
+                                                                       final List<CommandLineOption> validOptions,
+                                                                       final List<CommandLineOption> ignoredOptions)
             throws BackupRestoreLauncher.InvalidProgramArgumentException {
         if(args == null) throw new NullPointerException("args cannot be null");
         if(validOptions == null) throw new NullPointerException("validOptions cannot be null");
         if(ignoredOptions == null) throw new NullPointerException("ignoredOptions cannot be null");
         
-        Map<String, String> arguments = new HashMap<String, String>();
+        final Map<String, String> arguments = new HashMap<String, String>();
         int index = 1;  //skip the first argument, because it's already used to determine the utility type (export/import)
 
-        while (args != null && index < args.length) {
+        //todo [Donal] refactor loop
+        while (index < args.length) {
             final String argument = args[index];
 
             switch (determineArgumentType(argument, validOptions, ignoredOptions)) {
@@ -267,7 +622,8 @@ public class ImportExportUtilities {
      * @throws java.sql.SQLException if any database access error occurs when trying to obtain a connection. This will
      * wrap the underlying SQLException thrown by the database driver
      */
-    public static void verifyDatabaseConnection(DatabaseConfig config, boolean isRootAccount) throws SQLException {
+    public static void verifyDatabaseConnection(final DatabaseConfig config,
+                                                final boolean isRootAccount) throws SQLException {
         if (config == null) throw new NullPointerException("config cannot be null");
 
         Connection connection = null;
@@ -287,9 +643,9 @@ public class ImportExportUtilities {
      * @param fileName the file name to confirm exists
      * @throws IllegalArgumentException if the file fileName does not exist
      */
-    public static void throwIfFileExists(String fileName){
+    public static void throwIfFileExists(final String fileName){
         if (fileName == null) throw new NullPointerException("fileName cannot be null");
-        File file = new File(fileName);
+        final File file = new File(fileName);
         if(file.exists()) throw new IllegalArgumentException("file '" + fileName + "' should not exist");
     }
 
@@ -298,9 +654,9 @@ public class ImportExportUtilities {
      * @param fileName the file name to confirm does not exists
      * @throws IllegalArgumentException if the file fileName does exist
      */
-    public static void throwIfFileDoesNotExist(String fileName){
+    public static void throwIfFileDoesNotExist(final String fileName){
         if (fileName == null) throw new NullPointerException("fileName cannot be null");
-        File file = new File(fileName);
+        final File file = new File(fileName);
         if(!file.exists()) throw new IllegalArgumentException("file '" + fileName + "' should exist");
     }
 
@@ -312,11 +668,11 @@ public class ImportExportUtilities {
      * @throws NullPointerException if fileName is null
      * @throws IllegalArgumentException if fileName alredy exists
      */
-    public static void verifyCanWriteFile(String fileName) throws IOException {
+    public static void verifyCanWriteFile(final String fileName) throws IOException {
         if(fileName == null) throw new NullPointerException("fileName cannot be null");
         throwIfFileExists(fileName);
         
-        File file = new File(fileName);
+        final File file = new File(fileName);
         FileOutputStream fos = null;
         try {
             file.createNewFile();
@@ -336,8 +692,8 @@ public class ImportExportUtilities {
      * @param version   The database version to be compared to the installed SSG version
      * @throws UnsupportedOperationException if the version do not match
      */
-    public static void throwIfDbVersionDoesNotMatchSSG(String version){
-        String ssgVersion = BuildInfo.getProductVersion();
+    public static void throwIfDbVersionDoesNotMatchSSG(final String version){
+        final String ssgVersion = BuildInfo.getProductVersion();
         if (!ssgVersion.equals(version)) {
              throw new UnsupportedOperationException("Database version '"+version+"' does not match the SSG version " +
                      "'"+ssgVersion+"'. Values must match to Import using -migrate");
@@ -354,7 +710,11 @@ public class ImportExportUtilities {
      * @param password  The password for the specified username
      * @return
      */
-    public static boolean verifyDatabaseExists(String host, String dbName, int port, String username, String password) {
+    public static boolean verifyDatabaseExists(final String host,
+                                               final String dbName,
+                                               final int port,
+                                               final String username,
+                                               final String password) {
         Connection c = null;
         Statement s = null;
         ResultSet rs = null;
@@ -383,7 +743,7 @@ public class ImportExportUtilities {
      * @throws IOException if the temp directory cannot be created
      */
     public static String createTmpDirectory() throws IOException {
-        File tmp = File.createTempFile("ssg_backup_restore", "tmp");
+        final File tmp = File.createTempFile("ssg_backup_restore", "tmp");
         tmp.delete();
         tmp.mkdir();
         logger.info("created temporary directory at " + tmp.getPath());
@@ -399,8 +759,8 @@ public class ImportExportUtilities {
     public static int getLargestNameStringSize(final List<CommandLineOption> options) {
         int largestStringSize = 0;
         for (CommandLineOption option : options) {
-            if (option.name != null && option.name.length() > largestStringSize) {
-                largestStringSize = option.name.length();
+            if (option.getName() != null && option.getName().length() > largestStringSize) {
+                largestStringSize = option.getName().length();
             }
         }
         return largestStringSize;
@@ -412,7 +772,7 @@ public class ImportExportUtilities {
      * @param space The number of spaces to create
      * @return  The space string
      */
-    public static String createSpace(int space) {
+    public static String createSpace(final int space) {
         StringBuffer spaces = new StringBuffer();
         for (int i=0; i <= space; i++) {
             spaces.append(" ");
@@ -426,11 +786,11 @@ public class ImportExportUtilities {
      * @throws IllegalArgumentException if the directoryName is null, directoryName does not exist or does not represent a directory
      * @throws NullPointerException if directory name is null
      */
-    public static void verifyDirExistence(String directoryName){
+    public static void verifyDirExistence(final String directoryName){
         if (directoryName == null) throw new NullPointerException("directoryName cannot be null");
 
         // non empty check allows the utility to work with backup servlet temporary files
-        File file = new File(directoryName);
+        final File file = new File(directoryName);
         if(!file.exists()){
             throw new IllegalArgumentException("Directory '" + directoryName + "' does not exist");
         }
@@ -552,10 +912,12 @@ public class ImportExportUtilities {
      * @return  TRUE if the option name has path as option, otherwise FALSE.
      * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException     The option name is not found in the available option list
      */
-    private static boolean optionIsValuePath(String optionName, final List<CommandLineOption> options) throws BackupRestoreLauncher.InvalidProgramArgumentException {
+    private static boolean optionIsValuePath(String optionName,
+                                             final List<CommandLineOption> options)
+            throws BackupRestoreLauncher.InvalidProgramArgumentException {
         for (CommandLineOption commandLineOption : options) {
-            if (commandLineOption.name.equals(optionName)) {
-                return commandLineOption.isValuePath;
+            if (commandLineOption.getName().equals(optionName)) {
+                return commandLineOption.isValuePath();
             }
         }
         //this is a programming error
@@ -570,10 +932,12 @@ public class ImportExportUtilities {
      * @return  TRUE if the option name expects a value, otherwise FALSE.
      * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException     The option name is not found in the available option list
      */
-    private static boolean optionHasNoValue(String optionName, final List<CommandLineOption> options) throws InvalidProgramArgumentException {
+    private static boolean optionHasNoValue(final String optionName,
+                                            final List<CommandLineOption> options)
+            throws InvalidProgramArgumentException {
         for (CommandLineOption commandLineOption : options) {
-            if (commandLineOption.name.equals(optionName)) {
-                return commandLineOption.hasNoValue;
+            if (commandLineOption.getName().equals(optionName)) {
+                return commandLineOption.isHasNoValue();
             }
         }
         //this is a programming error
@@ -587,9 +951,9 @@ public class ImportExportUtilities {
      * @param options       The list of options used to find the option if in the list
      * @return  TRUE if the option name is an option, otherwise FALSE.
      */
-    private static boolean isOption(String optionName, final List<CommandLineOption> options) {
+    private static boolean isOption(final String optionName, final List<CommandLineOption> options) {
         for (CommandLineOption commandLineOption : options) {
-            if (commandLineOption.name.equals(optionName)) {
+            if (commandLineOption.getName().equals(optionName)) {
                 return true;
             }
         }
@@ -602,8 +966,9 @@ public class ImportExportUtilities {
      * @param argument  argument for comparison
      * @return  The ARGUMENT_TYPE of the parse argument.
      */
-    private static ARGUMENT_TYPE determineArgumentType(String argument, List<CommandLineOption> validOptions,
-                                                List<CommandLineOption> ignoredOptions) {
+    private static ARGUMENT_TYPE determineArgumentType(final String argument,
+                                                       final List<CommandLineOption> validOptions,
+                                                       final List<CommandLineOption> ignoredOptions) {
         if (argument != null && argument.startsWith("-")) {
             if (isOption(argument, validOptions))
                 return ARGUMENT_TYPE.VALID_OPTION;
@@ -627,8 +992,10 @@ public class ImportExportUtilities {
      * @return              The index location of the next available option found, if reached to end of argument list, then
      *                      it'll return the size of the argument list
      */
-    private static int findIndexOfNextOption(final int startIndex, final String[] args, List<CommandLineOption> validOptions,
-                                                List<CommandLineOption> ignoredOptions) {
+    private static int findIndexOfNextOption(final int startIndex,
+                                             final String[] args,
+                                             final List<CommandLineOption> validOptions,
+                                             final List<CommandLineOption> ignoredOptions) {
         int nextOptionIndex = startIndex;
         while (args != null && nextOptionIndex+1 < args.length) {
             if (!ARGUMENT_TYPE.VALUE.equals(determineArgumentType(args[++nextOptionIndex], validOptions, ignoredOptions))) {
@@ -646,12 +1013,162 @@ public class ImportExportUtilities {
      * @param endIndex      The ending index, does not include this index
      * @return      The parsed value withing the boundaries.
      */
-    private static String getFullValue(final String[] args, int startIndex, int endIndex) {
-        StringBuffer buffer = new StringBuffer();
+    private static String getFullValue(final String[] args, final int startIndex, final int endIndex) {
+        final StringBuffer buffer = new StringBuffer();
         for (int i=startIndex; i < args.length && i < endIndex; i++) {
             buffer.append(args[i] + " ");
         }
         return buffer.toString() != null ? buffer.toString().trim() : buffer.toString();
     }
 
+    //todo [Donal] complete idea
+    public static <UT extends SsgComponent> List<UT> filterComponents( final List<UT> allComponents,
+                                                 final Map<String, String> programFlagsAndValues){
+
+        final List <UT> returnList = new ArrayList<UT>();
+
+        for(UT comp: allComponents){
+
+            if(programFlagsAndValues.containsKey("-"+comp.getComponentType().getComponentName())){
+                returnList.add(comp);
+            }
+        }
+
+        return returnList;
+    }
+
+    /**
+     * Method for logging as this is used everywhere to both log and print if we have a PrintStream and
+     * the -v option was used
+     *
+     * Calls other logAndPrintMessage with newLien = true
+     * @param log
+     * @param level
+     * @param message
+     * @param verbose
+     * @param printStream
+     */
+    static void logAndPrintMessage(final Logger log,
+                                   final Level level,
+                                   final String message,
+                                   final boolean verbose,
+                                   final PrintStream printStream){
+        logAndPrintMessage(log, level, message, verbose, printStream, true);
+    }
+
+    /**
+     * Method for logging as this is used everywhere to both log and print if we have a PrintStream and
+     * the -v option was used
+     *
+     * @param log
+     * @param level
+     * @param message
+     * @param verbose
+     * @param printStream
+     * @param newLine if true, the output to the PrintStream will be on a new line
+     */
+    static void logAndPrintMessage(final Logger log,
+                                   final Level level,
+                                   final String message,
+                                   final boolean verbose,
+                                   final PrintStream printStream,
+                                   final boolean newLine){
+        if(verbose && printStream != null){
+            if(newLine) System.out.println(message);
+            else System.out.print(message); 
+        }
+        log.log(level, message);
+    }
+
+    /**
+     * Gets running SSG based on the timestamp that is updated by each SSG.  This method makes it best to determine
+     * running SSG(s).  Because we are only comparing the timestamps that are updated by SSG(s), there is no guarantee
+     * that a gateway might have been starting to start up while checking is performed.
+     *
+     * @param config            Database configuration to be used for connect to database
+     * @param sleepTime         The time to sleep in between each sample query to determine the active SSG(s).
+     *  Default time is set to 10secs. The value must be greater than 10 secs otherwise it'll revert to default 10 secs.
+     * @param verbose
+     * @param printStream
+     * @return                  List of SSG(s) name that are considered to be running.  Doesn't guarantee that the gateway
+     *                          is actually running or shutdown.  Will never return NULL.
+     * @throws SQLException
+     * @throws InterruptedException
+     */
+    static List<String> getRunningSSG(final DatabaseConfig config,
+                                      final long sleepTime,
+                                      final boolean verbose,
+                                      final PrintStream printStream)
+            throws SQLException, InterruptedException {
+        final String gatewayList = "SELECT nodeid, statustimestamp, name FROM cluster_info";
+        final long intervalSleepTime = sleepTime <= 10000 ? 10000 : sleepTime;
+        final Map<String, Long> availableSsg = new HashMap<String, Long>();
+        final List<String> runningSSG = new ArrayList<String>();
+
+        if (verbose && printStream != null) System.out.print("Making sure targets are offline .");
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet results = null;
+        try {
+            connection = (new DBActions()).getConnection(config, false);
+            statement = connection.createStatement();
+
+            //cosmetic dots - only do this when someone is actually watching, by virtue of -v or api
+            if (verbose && printStream != null) {
+                for (int i = 0; i < 2; i++) {
+                    Thread.sleep(500);
+                    System.out.print(".");
+                }
+            }
+
+            //gets all the cluster nodes
+            try {
+                results = statement.executeQuery(gatewayList);
+                while (results.next()) {
+                    availableSsg.put(results.getString(1), results.getLong(2));
+                }
+            } finally {
+                ResourceUtils.closeQuietly(results);
+            }
+
+            //sleep to allow any running gateway to update their timestamp
+            Thread.sleep(intervalSleepTime);
+
+            //cosmetic dots - again only when someone is watching
+            if ((verbose && printStream != null)) {
+                for (int i = 0; i < 3; i++) {
+                    Thread.sleep(500);
+                    System.out.print(".");
+                }
+                System.out.println(" Done");
+            }
+
+            //determine if there were any changes to the timestamp for each nodes
+            try {
+                results = statement.executeQuery(gatewayList);
+                while (results.next()) {
+                    String nodeid = results.getString(1);
+                    if (availableSsg.containsKey(nodeid)) {
+                        //check if new timestamp
+                        Long previousTimestamp = availableSsg.get(nodeid);
+                        if (!previousTimestamp.equals(results.getLong(2))) {
+                            runningSSG.add(results.getString(3));
+                        }
+                    } else {
+                        //could be newly added node in which case, we'll just assume it's running
+                        runningSSG.add(results.getString(3));
+                    }
+                }
+            } finally {
+                ResourceUtils.closeQuietly(results);
+            }
+        } finally {
+            ResourceUtils.closeQuietly(results);
+            ResourceUtils.closeQuietly(statement);
+            ResourceUtils.closeQuietly(connection);
+        }
+
+        return runningSSG;
+    }
 }
