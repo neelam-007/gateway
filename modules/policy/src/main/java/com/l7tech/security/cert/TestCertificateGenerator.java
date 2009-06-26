@@ -4,6 +4,7 @@ import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
@@ -360,5 +361,44 @@ public class TestCertificateGenerator {
         } finally {
             ResourceUtils.closeQuietly(fis);
         }
+    }
+
+    /**
+     * Convert the specified private key and certificate into a Base-64 encoded PKCS#12 keystore file
+     * using the alias "entry" and the passphrase "password".
+     *
+     * @param cert  certificate to use as entire certificate chain for this private key.  Required.
+     * @param privateKey  private key to store as key entry with alias "entry".  Required.
+     * @return a Base-64 encoded PKCS#12 file with a single entry with alias "entry" and passphrase "password".
+     */
+    public static String convertToBase64Pkcs12(X509Certificate cert, PrivateKey privateKey) throws GeneralSecurityException {
+        try {
+            char[] pass = "password".toCharArray();
+            KeyStore ks = KeyStore.getInstance("PKCS12");
+            ks.load(null, null);
+            ks.setKeyEntry("entry", privateKey, pass, new X509Certificate[] { cert });
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ks.store(baos, pass);
+            return HexUtils.encodeBase64(baos.toByteArray());
+        } catch (IOException e) {
+            throw new KeyStoreException(e); // can't happen
+        }
+    }
+
+    /**
+     * Reverse the conversion performed by {@link #convertToBase64Pkcs12(java.security.cert.X509Certificate, java.security.PrivateKey)}.
+     * Converts a Base-64 encoded PKCS#12 file with a single entry with alias "entry", with passphrase "password", back into
+     * a PrivateKey and an X509Certificate.
+     *
+     * @param base64pkcs12 a base-64 encoded PKCS#12 file, expected to have a single entry alias "entry", and expected to use the passphrase "password".  Required.
+     * @return the private key and certificate from this entry.  Never null and never contains a null cert or private key.
+     */
+    public static Pair<X509Certificate, PrivateKey> convertFromBase64Pkcs12(String base64pkcs12) throws GeneralSecurityException, IOException {
+        char[] pass = "password".toCharArray();
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(new ByteArrayInputStream(HexUtils.decodeBase64(base64pkcs12)), pass);
+        PrivateKey privateKey = (PrivateKey)ks.getKey("entry", pass);
+        Certificate[] chain = ks.getCertificateChain("entry");
+        return new Pair<X509Certificate, PrivateKey>((X509Certificate)chain[0], privateKey);
     }
 }
