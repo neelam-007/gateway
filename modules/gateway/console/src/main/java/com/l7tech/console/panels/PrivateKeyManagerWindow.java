@@ -384,7 +384,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
 
     private SsgKeyEntry performImport(long keystoreId, String alias) {
-        Throwable err = null;
+        Throwable err;
         try {
             JFileChooser fc = GuiCertUtil.createFileChooser(true);
             int r = fc.showDialog(this, "Load");
@@ -401,11 +401,13 @@ public class PrivateKeyManagerWindow extends JDialog {
             try {
                 return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, null);
             } catch (MultipleAliasesException e) {
-                int got = JOptionPane.showOptionDialog(this, "Select alias to import", "Select Alias", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, e.getAliases(), null);
-                if (got < 0)
+                Object defaultOptionPaneUI = UIManager.get("OptionPaneUI");
+                UIManager.put("OptionPaneUI", ComboBoxOptionPaneUI.class.getName());  // Let JOptionPane use JCombobox rather than JList to display aliases
+                String pkcs12alias = (String) JOptionPane.showInputDialog(this, "Select alias to import", "Select Alias", JOptionPane.QUESTION_MESSAGE, null, e.getAliases(), null);
+                UIManager.put("OptionPaneUI", defaultOptionPaneUI);
+
+                if (pkcs12alias == null)
                     return null;
-                String pkcs12alias = e.getAliases()[got];
-                assert pkcs12alias != null;
                 return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias);
             }
 
