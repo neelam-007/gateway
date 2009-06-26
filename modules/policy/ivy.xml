@@ -57,7 +57,7 @@
         <!-- Optional security provider -->
         <dependency org="com.ncipher" name="ncipher-libs" rev="1" force="true" conf="optional"/>
         <!-- Optional security provider -->
-        <dependency org="com.rsa" name="rsa-libs" rev="1" force="true" conf="optional"/>
+        <!--<dependency org="com.rsa" name="rsa-libs" rev="1" force="true" conf="optional"/>-->
 
         <override org="jaxen" module="jaxen" matcher="exact" rev="1.1.1"/>
         <override org="antlr" module="antlr" matcher="exact" rev="2.7.7-l7p1"/>
