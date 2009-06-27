@@ -58,7 +58,7 @@ public class ExporterTest {
      * tearDown deletes the tmpSsgHome directory so do not need to worry about cleaning up files copied via this method
      * @throws IOException
      */
-    public void createTestEnvironment() throws IOException {
+    public void createTestEnvironment() throws Exception {
         //Copy resources into this temp directory
         final URL nodeRes = this.getClass().getClassLoader().getResource("node");
         final File nodeDirSrc = new File(nodeRes.getPath());
@@ -72,13 +72,20 @@ public class ExporterTest {
 
         ImportExportUtilities.copyDir(runtimeSrc, runtimeDest);
 
+        final URL configRes = this.getClass().getClassLoader().getResource("config");
+        final File configSrc = new File(configRes.getPath());
+        final File configDest = new File(tmpSsgHome, "config");
+
+        ImportExportUtilities.copyDir(configSrc, configDest);
+        
         final File osFile = createPretendOsFile();
         //config/backup/cfg/backup_manifest
         createBackupManifest(osFile);
     }
 
     @Test
-    public void testConstructor(){
+    public void testConstructor() throws Exception {
+        createTestEnvironment();
         final Exporter exporter = new Exporter(tmpSsgHome, System.out,
                 ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
         Assert.assertNotNull(exporter);
@@ -94,8 +101,7 @@ public class ExporterTest {
      * tested for existence and is checked that it is a file and not a directory.
      */
     @Test
-    public void testBackupImageCreated() throws IOException,
-            BackupRestoreLauncher.FatalException, BackupRestoreLauncher.InvalidProgramArgumentException {
+    public void testBackupImageCreated() throws Exception {
         createTestEnvironment();
 
         final List<String> programArgs = new ArrayList<String>();
@@ -128,8 +134,7 @@ public class ExporterTest {
      * a directory.
      */
     @Test
-    public void testSelectiveBackupImageCreated() throws IOException,
-            BackupRestoreLauncher.FatalException, BackupRestoreLauncher.InvalidProgramArgumentException {
+    public void testSelectiveBackupImageCreated() throws Exception {
         createTestEnvironment();
 
         final List<String> programArgs = new ArrayList<String>();
@@ -164,8 +169,7 @@ public class ExporterTest {
      * validated to have backed up the correct files, based on the project's resources
      */
     @Test
-    public void testAndValidateBackupImage() throws IOException,
-            BackupRestoreLauncher.FatalException, BackupRestoreLauncher.InvalidProgramArgumentException {
+    public void testAndValidateBackupImage() throws Exception {
         createTestEnvironment();
 
         final List<String> programArgs = new ArrayList<String>();
@@ -254,8 +258,7 @@ public class ExporterTest {
      * the program parameters supplied
      */
     @Test
-    public void testAndValidateSelectiveBackupImage() throws IOException,
-            BackupRestoreLauncher.FatalException, BackupRestoreLauncher.InvalidProgramArgumentException {
+    public void testAndValidateSelectiveBackupImage() throws Exception {
         createTestEnvironment();
 
         final List<String> programArgs = new ArrayList<String>();
@@ -333,7 +336,7 @@ public class ExporterTest {
      * -image is missing
      */
     @Test(expected = BackupRestoreLauncher.InvalidProgramArgumentException.class)
-    public void testInvalidExporterArgs_NoExport() throws BackupRestoreLauncher.FatalException, IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
+    public void testInvalidExporterArgs_NoExport() throws Exception {
         final List<String> programArgs = new ArrayList<String>();
         programArgs.add("export");
         final String[] args = programArgs.toArray(new String[]{});
@@ -377,7 +380,7 @@ public class ExporterTest {
      * com.l7tech.gateway.config.backuprestore.nomodifyimagename.nouniqueimagename system property.
      */
     @Test
-    public void testInvalidExporterArgs_NoUniqueImageName() throws BackupRestoreLauncher.FatalException, IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
+    public void testInvalidExporterArgs_NoUniqueImageName() throws Exception {
         createTestEnvironment();
         final List<String> programArgs = new ArrayList<String>();
         programArgs.add("export");
@@ -431,7 +434,7 @@ public class ExporterTest {
      * @throws IOException
      */
     @Test
-    public void testConfigBackup() throws IOException {
+    public void testConfigBackup() throws Exception {
         createTestEnvironment();
         String tmpDir = null;
         try{
@@ -492,7 +495,7 @@ public class ExporterTest {
      * @throws IOException
      */
     @Test
-    public void testOsBackup() throws IOException {
+    public void testOsBackup() throws Exception {
         //Make a file which will constitute the os backup
         final File osFile = createPretendOsFile();
         //config/backup/cfg/backup_manifest
@@ -527,7 +530,7 @@ public class ExporterTest {
      * @throws IOException
      */
     @Test
-    public void testCaBackup() throws IOException {
+    public void testCaBackup() throws Exception {
         createTestEnvironment();
         String tmpDir = null;
         try{
@@ -570,7 +573,7 @@ public class ExporterTest {
      * @throws IOException
      */
     @Test
-    public void testMaBackup() throws IOException {
+    public void testMaBackup() throws Exception {
         createTestEnvironment();
         String tmpDir = null;
         try{
@@ -608,10 +611,9 @@ public class ExporterTest {
 
     /**
      * Test the creation of a zip file
-     * @throws IOException
      */
     @Test
-    public void testCreateImageFile() throws IOException {
+    public void testCreateImageFile() throws Exception {
         createTestEnvironment();
         String tmpDir = null;
         try{
@@ -638,7 +640,7 @@ public class ExporterTest {
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException
      */
     @Test
-    public void testGetFtpConfig() throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException, CloneNotSupportedException {
+    public void testGetFtpConfig() throws Exception {
         final Map<String, String> args = new HashMap<String, String>();
         args.put(ImportExportUtilities.FTP_HOST.getName(), "donal.l7tech.com:21");
         args.put(ImportExportUtilities.FTP_USER.getName(), "root");
@@ -701,7 +703,7 @@ public class ExporterTest {
     private void createBackupManifest(File osFile) throws IOException {
         final File backupManifestFolder = new File(tmpSsgHome, "config/backup/cfg");
         FileUtils.ensurePath(backupManifestFolder);
-        final File backupManifest = new File(backupManifestFolder, "backup_manifest");
+        final File backupManifest = new File(backupManifestFolder, "backup_manifest.conf");
         backupManifest.createNewFile();
 
         FileOutputStream fos = null;

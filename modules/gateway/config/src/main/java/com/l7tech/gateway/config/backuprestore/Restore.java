@@ -6,10 +6,6 @@
  */
 package com.l7tech.gateway.config.backuprestore;
 
-import com.l7tech.server.management.config.node.DatabaseConfig;
-
-import java.io.PrintStream;
-
 /**
  * Public api for Restore functionality
  */
@@ -18,8 +14,9 @@ public interface Restore {
     /**
      * Any restore method can result in success, failure or not aplicable, if the component does not apply for the
      * given back up image
+     * There is no FAILURE case, as when a failure happens, a RestoreException is thrown
      */
-    public enum Result{SUCCESS, FAILURE, NOT_APPLICABLE}
+    public enum Result{SUCCESS, NOT_APPLICABLE}
 
     /**
      * <p>
@@ -35,8 +32,6 @@ public interface Restore {
      * must be created. This is an instruction to create a new database
      * @param updateNodeProperties if true, then node.properties will be updated with database information
      * supplied on the command line
-     * @param verbose boolean, if true print messages to the supplied printStream
-     * @param printStream PrintStream if not null and verbose is true, this is where messages will be written to
      * @return Result one of either success, failure or not applicable. Not applicable can happen if the
      * DatabaseConfig represents a remote database
      */
@@ -44,34 +39,33 @@ public interface Restore {
                                          final boolean isMigrate,
                                          final boolean newDatabaseIsRequired,
                                          final String pathToMappingFile,
-                                         final boolean updateNodeProperties,
-                                         final boolean verbose,
-                                         final PrintStream printStream) throws RestoreImpl.RestoreException;
+                                         final boolean updateNodeProperties) throws RestoreException;
 
 
     /**
      * @param isRequired if true, this component must be found in the backup image
-     * @param verbose boolean, if true print messages to the supplied printStream
-     * @param printStream PrintStream if not null and verbose is true, this is where messages will be written to
-     * @return
+     * @param isMigate if true, and isRequired is true, an exception will not be thrown if no audit data is found
+     * in the backup image 
      * @return Result one of either success, failure or not applicable. Not applicable can happen if the
      * DatabaseConfig represents a remote database
      */
     public Result restoreComponentAudits(final boolean isRequired,
-                                         final boolean verbose,
-                                         final PrintStream printStream) throws RestoreImpl.RestoreException;
+                                         final boolean isMigate) throws RestoreException;
 
     /**
      * Restore OS configuration files. Regardless of whether isRequired is true or not, these files will only
      * ever be copied if the Appliance home directory is found on the target
      * @param isRequired if true, this component must be found in the backup image
-     * @param verbose boolean, if true print messages to the supplied printStream
-     * @param printStream PrintStream if not null and verbose is true, this is where messages will be written to
      * @return Result one of either success, failure or not applicable. Not applicable can happen if the
      * target does not have the appliance installed
      */
-    public Result restoreComponentOS(final boolean isRequired,
-                                     final boolean verbose,
-                                     final PrintStream printStream) throws RestoreImpl.RestoreException;
+    public Result restoreComponentOS(final boolean isRequired) throws RestoreException;
+
+
+    public static class RestoreException extends Exception{
+        public RestoreException(String message) {
+            super(message);
+        }
+    }
 }
 

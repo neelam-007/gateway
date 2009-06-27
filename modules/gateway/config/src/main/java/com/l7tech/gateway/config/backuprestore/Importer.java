@@ -140,7 +140,7 @@ public final class Importer{
      * This is the known location of where the Appliance 'would' be installed to. It has to be known in case the
      * user specifies the -os component
      */
-    public Importer(final File ssgHome, final PrintStream printStream, String applianceHome) {
+    public Importer(final File ssgHome, final PrintStream printStream, final String applianceHome) {
         if(ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
         if(!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
         if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
@@ -148,7 +148,7 @@ public final class Importer{
         if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
 
         this.ssgHome = ssgHome;
-        //this class is not usable without an installed SSG >= 5.0
+        //this class is not usable without an installed SSG < 5.0
         ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
 
         this.printStream = printStream;
@@ -156,8 +156,8 @@ public final class Importer{
     }
 
 
-    Importer(final File ssgHome, final PrintStream printStream, String applianceHome, boolean notused) {
-        //Only to be used in test cases
+    Importer(final File ssgHome, final PrintStream printStream, final String applianceHome, final boolean notused) {
+        //Only to be used in test cases within Skunkworks
         if(ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
         if(!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
         if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
@@ -340,14 +340,20 @@ public final class Importer{
     }
 
     private void validateCommonProgramParameters(final Map<String, String> args) throws InvalidProgramArgumentException {
-        adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
-        adminDBPasswd = programFlagsAndValues.get(DB_ROOT_PASSWD.getName());
-        if (adminDBUsername == null) {
-            throw new BackupRestoreLauncher.InvalidProgramArgumentException("Cannot restore the main database without" +
-                    " the root database user name and password. Please provide options: " + DB_ROOT_USER.getName() +
-                    " and " + DB_ROOT_PASSWD.getName());
+        final boolean isDbComponent = !isSelectiveRestore
+                || args.containsKey(ImportExportUtilities.MAINDB_OPTION.getName())
+                || args.containsKey(ImportExportUtilities.AUDITS_OPTION.getName());
+        
+        if(isDbComponent){
+            adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
+            adminDBPasswd = programFlagsAndValues.get(DB_ROOT_PASSWD.getName());
+            if (adminDBUsername == null) {
+                throw new BackupRestoreLauncher.InvalidProgramArgumentException("Cannot restore the main database without" +
+                        " the root database user name and password. Please provide options: " + DB_ROOT_USER.getName() +
+                        " and " + DB_ROOT_PASSWD.getName());
+            }
+            if (adminDBPasswd == null) adminDBPasswd = ""; // totally legit
         }
-        if (adminDBPasswd == null) adminDBPasswd = ""; // totally legit
 
         if(args.containsKey(ImportExportUtilities.HALT_ON_FIRST_FAILURE.getName())) isHaltOnFirstFailure = true;
     }
@@ -424,8 +430,9 @@ public final class Importer{
      */
     private void validateRestoreProgramParameters(final Map<String, String> args)
             throws InvalidProgramArgumentException, BackupImage.InvalidBackupImage, IOException {
-        validateCommonProgramParameters(args);
         isSelectiveRestore = ImportExportUtilities.isSelectiveBackup(args);
+        validateCommonProgramParameters(args);
+
 
         //do we need to do a database backup?
         boolean isDbRequested = true;//by default
@@ -661,7 +668,7 @@ public final class Importer{
      * @throws RestoreImpl.RestoreException
      */
     private List<RestoreComponent<? extends Exception>> getComponentsForRestore(final String mappingFile)
-            throws RestoreImpl.RestoreException {
+            throws Restore.RestoreException {
 
         final Restore restore = RestoreFactory.getRestoreInstance(this.applianceHome,
                 this.backupImage,
@@ -680,12 +687,13 @@ public final class Importer{
         //are filtered, and the remaining components are 'required'
 
         //Allowing the actual restoreComponentMainDb method to decide whether to back up or not
-        //by doing this we can easily log when a backup included a db, but we decided to leave it alone
+        //by doing this we can easily log when a backup included a db, but we decided to leave it alone, because
+        //it was not local for example
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
                 //when isMigrate is true, then we always want to write node.properties
                 restore.restoreComponentMainDb(isSelectiveRestore, isMigrate, canCreateNewDb, mappingFile,
-                        (isMigrate || updateNodeProperties), isVerbose, printStream);
+                        (isMigrate || updateNodeProperties));
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -695,7 +703,7 @@ public final class Importer{
 
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
-                restore.restoreComponentAudits(isSelectiveRestore, isVerbose, printStream);
+                restore.restoreComponentAudits(isSelectiveRestore, isMigrate);
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -704,12 +712,20 @@ public final class Importer{
         });
 
         //os files
-        
+        componentList.add(new RestoreComponent<Exception>(){
+            public void doRestore() throws Exception {
+                restore.restoreComponentOS(isSelectiveRestore);
+            }
+
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.OS;
+            }
+        });
+
+        //Add the config folder
         if(!isMigrate){
-            //Add the config folder
             //add the ma folder
             //add the ca folder and property files
-
         }
 
         return (isSelectiveRestore)? ImportExportUtilities.filterComponents(componentList, programFlagsAndValues)

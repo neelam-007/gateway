@@ -261,6 +261,10 @@ public final class BackupImage {
     public File getRootFolder(){
         return new File(tempDirectory);
     }
+
+    public File getOSFolder(){
+        return new File(tempDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
+    }
     
     private void unzipToDir(final String filename, final String destinationpath, boolean outputMessages)
             throws IOException {

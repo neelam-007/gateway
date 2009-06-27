@@ -119,11 +119,11 @@ public class ImporterTestsOffline {
         };
 
         try{
-            System.setProperty("com.l7tech.config.restore.mycnfdir", tmpSsgHome.getAbsolutePath());
+            System.setProperty("com.l7tech.config.backuprestore.mycnfdir", tmpSsgHome.getAbsolutePath());
             Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
             Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
         }finally{
-            System.clearProperty("com.l7tech.config.restore.mycnfdir");
+            System.clearProperty("com.l7tech.config.backuprestore.mycnfdir");
         }
     }
 

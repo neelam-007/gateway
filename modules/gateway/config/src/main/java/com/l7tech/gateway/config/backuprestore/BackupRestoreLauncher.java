@@ -25,6 +25,7 @@ public class BackupRestoreLauncher {
     private static final Logger logger = Logger.getLogger(BackupRestoreLauncher.class.getName());
     private static ArrayList<CommandLineOption> allRuntimeOptions = null;
     private static int argparseri = 0;
+    private static final String SSG_HOME = "/opt/SecureSpan/Gateway";
 
     /**
      * If the Backup / Import fails, then the VM will exist with status 1. If there is a partially successfull
@@ -41,7 +42,7 @@ public class BackupRestoreLauncher {
 
         try {
             if (args[0].toLowerCase().equals("import")) {
-                final Importer importer = new Importer(new File("/opt/SecureSpan/Gateway"),
+                final Importer importer = new Importer(new File(SSG_HOME),
                         System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
 
                 Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
@@ -59,6 +60,8 @@ public class BackupRestoreLauncher {
                         }else{
                             System.out.println("\nRestore of SecureSpan Gateway image failed");
                         }
+                        Exception e = result.getException();
+                        if(e != null) System.out.println(e.getMessage());
                         System.exit(1);
                         break;
                     case PARTIAL_SUCCESS:
@@ -78,7 +81,7 @@ public class BackupRestoreLauncher {
 
                 }
             } else if (args[0].toLowerCase().equals("export")) {
-                final Exporter exporter = new Exporter(new File("/opt/SecureSpan/Gateway"),
+                final Exporter exporter = new Exporter(new File(SSG_HOME),
                         System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
                 Exporter.BackupResult result = exporter.createBackupImage(args);
                 switch (result.getStatus()){
@@ -87,6 +90,8 @@ public class BackupRestoreLauncher {
                         break;
                     case FAILURE:
                         System.out.println("\nExport of SecureSpan Gateway image failed.");
+                        Exception e = result.getException();
+                        if(e != null) System.out.println(e.getMessage());
                         System.exit(1);
                         break;
                     case PARTIAL_SUCCESS:
@@ -102,8 +107,14 @@ public class BackupRestoreLauncher {
 
                 }
             } else if (args[0].toLowerCase().equals("cfgdeamon")) {
-                //todo [Donal] - is this still required?
-                OSConfigManager.restoreOSConfigFilesForReal();
+                final OSConfigManager osConfigManager =
+                        new OSConfigManager(new File(SSG_HOME), true, false, null);
+                try {
+                    osConfigManager.finishRestoreOfFilesOnReboot();
+                } catch (OSConfigManager.OSConfigManagerException e) {
+                    logger.log(Level.SEVERE, "Exception running cfgdaemon target of ssgrestore: " + e.getMessage());
+                    System.exit(1);
+                }
             } else if (args[0] != null) {
                 String issue = "Unsupported option " + args[0];
                 logger.warning(issue);

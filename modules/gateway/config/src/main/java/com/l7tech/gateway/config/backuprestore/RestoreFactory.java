@@ -22,7 +22,7 @@ public class RestoreFactory {
                        final String clusterPassphrase,
                        final boolean verbose,
                        final File ssgHome,
-                       final PrintStream printStream) throws RestoreImpl.RestoreException {
+                       final PrintStream printStream) throws Restore.RestoreException {
 
         return new RestoreImpl(applianceHome,
                 backupImage,

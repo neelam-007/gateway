@@ -173,7 +173,6 @@ class DatabaseRestorer {
             c.setAutoCommit(false);
             final Statement stmt = c.createStatement();
             try {
-                //always test importing the main backup
                 while ((tmp = mainBackupReader.readLine()) != null) {
                     if (tmp.endsWith(";")) {
                         if(image.getImageVersion() == BackupImage.ImageVersion.FIVE_O){

@@ -106,6 +106,8 @@ public final class Exporter{
 
     private Map<String, String> programFlagsAndValues;
 
+    private final OSConfigManager osConfigManager;
+
     public static final class BackupResult{
 
         private final String backUpImageName;
@@ -178,6 +180,12 @@ public final class Exporter{
 
         confDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
         this.applianceHome = applianceHome;
+
+        if((new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())){
+            osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
+        }else{
+            osConfigManager = null;
+        }
     }
 
     /**
@@ -207,6 +215,12 @@ public final class Exporter{
         this.printStream = printStream;
         confDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
         this.applianceHome = applianceHome;
+
+        if((new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())){
+            osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
+        }else{
+            osConfigManager = null;
+        }
     }
 
     /**
@@ -518,7 +532,7 @@ public final class Exporter{
         componentList.add(configComp);
 
         final BackupComponent<Exception> osComp = new BackupComponent<Exception>() {
-            public void doBackup() throws IOException {
+            public void doBackup() throws ExporterException {
                 //restore OS files if this is an appliance
                 backUpComponentOS(tmpOutputDirectory);
             }
@@ -738,13 +752,30 @@ public final class Exporter{
      * folder representing this component "os"
      * @throws IOException if any exception occurs writing the OS files to the backup folder
      */
-    public void backUpComponentOS(final String tmpOutputDirectory) throws IOException {
+    public void backUpComponentOS(final String tmpOutputDirectory) throws ExporterException {
         if (new File(applianceHome).exists()) {
-            // copy system config files
-            final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
-            OSConfigManager.saveOSConfigFiles(dir.getAbsolutePath(), ssgHome);
+            try {
+                // copy system config files
+                final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
+                if(osConfigManager == null){
+                    final String msg = "Operating System backup is not applicable for this host";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                    return;
+                }
+                osConfigManager.saveOSConfigFiles(dir);
+            } catch (OSConfigManager.OSConfigManagerException e) {
+                throw new ExporterException(e.getMessage());
+            } catch (IOException e) {
+                throw new ExporterException(e.getMessage());
+            }
         }
         //there is no else as backing up os files is not a user option. It just happens when were on an appliance
+    }
+
+    public static class ExporterException extends Exception{
+        public ExporterException(String message) {
+            super(message);
+        }
     }
 
     /**
