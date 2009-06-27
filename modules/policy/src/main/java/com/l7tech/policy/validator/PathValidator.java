@@ -523,8 +523,14 @@ class PathValidator {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "Assertion targets an identity, but signing is not required. The \"Target Identity\" should be cleared, or the assertion should require a signature.", null));
             } else if ( !ArrayUtils.contains( getIdentityTargetOptions(a.getPath()[0], a, target), ((IdentityTargetable)a).getIdentityTarget() ) ) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "Assertion targets an invalid identity, so will always fail. The \"Target Identity\" should be corrected.", null));
+                IdentityTarget identityTarget = ((IdentityTargetable)a).getIdentityTarget();
+                if ( identityTarget.getTargetIdentityType() == IdentityTarget.TargetIdentityType.TAG ) {
+                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                      "Assertion targets an invalid identity, so will always fail. The \"Target Identity\" should be corrected.", null));
+                } else {
+                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                      "Assertion targets an identity not explicitly required by the policy, so may fail. The \"Target Identity\" should be corrected.", null));
+                }
             }
         }
 
