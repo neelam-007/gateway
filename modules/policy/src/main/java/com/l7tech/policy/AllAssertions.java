@@ -136,6 +136,7 @@ public class AllAssertions {
         new WssVersionAssertion(),
         new WsSecurity(),
         new RemoveElement(),
+        new AddWssUsernameToken(),
     };
 
 
@@ -217,5 +218,6 @@ public class AllAssertions {
         new RemoteDomainIdentityInjection(),
         new WsSecurity(),
         new RemoveElement(),
+        new AddWssUsernameToken(),
     };
 }

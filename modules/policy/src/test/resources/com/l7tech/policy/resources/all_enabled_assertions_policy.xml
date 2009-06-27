@@ -161,5 +161,6 @@
         <L7p:RemoteDomainIdentityInjection/>
         <L7p:WsSecurity/>
         <L7p:RemoveElement/>
+        <L7p:AddWssUsernameToken/>
     </wsp:OneOrMore>
 </wsp:Policy>

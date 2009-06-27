@@ -139,7 +139,9 @@ public class PolicyProcessingTest extends TestCase {
         {"/removeheaders", "POLICY_removeheaders.xml"},
         {"/signatureconfirmation1", "POLICY_signatureconfirmation1.xml"},
         {"/signatureconfirmation2", "POLICY_signatureconfirmation2.xml"},
-        {"/signatureconfirmation3", "POLICY_signatureconfirmation3.xml"}
+        {"/signatureconfirmation3", "POLICY_signatureconfirmation3.xml"},
+        {"/addusernametoken2", "POLICY_response_wss_usernametoken_digest.xml"},
+        {"/addusernametoken3", "POLICY_response_encrypted_usernametoken.xml"}
     };
 
     /**
@@ -1091,6 +1093,36 @@ public class PolicyProcessingTest extends TestCase {
         // Test a SOAP message resolves to a SOAP service if lax resolution is
         // enabled and the request does not match an operation
         processJmsMessage(requestMessage2, 0, getServiceOid("/documentstructure"));
+    }
+
+    public void testAddWssUsernameToken() throws Exception {        
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/addusernametoken2", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                try {
+                    final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                    String wsseNS = SoapUtil.SECURITY_NAMESPACE;
+                    String wsuNS = SoapUtil.WSU_NAMESPACE;
+                    NodeList userNodeList = document.getElementsByTagNameNS(wsseNS, "Username");
+                    NodeList passNodeList = document.getElementsByTagNameNS(wsseNS, "Password");
+                    NodeList nonceNodeList = document.getElementsByTagNameNS(wsseNS, "Nonce");
+                    NodeList createdNodeList = document.getElementsByTagNameNS(wsuNS, "Created");
+                    Assert.assertEquals("Username found", 1, userNodeList.getLength());
+                    Assert.assertEquals("Password found", 1, passNodeList.getLength());
+                    Assert.assertEquals("Nonce found", 1, nonceNodeList.getLength());
+                    Assert.assertEquals("Created found", 2, createdNodeList.getLength()); // 1 in security header, 1 in token
+                    Assert.assertEquals("Username", "username", XmlUtil.getTextValue((Element)userNodeList.item(0)));
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
+    }
+
+    public void testAddEncryptedWssUsernameToken() throws Exception {
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/addusernametoken3", requestMessage, 0);
     }
 
     /**

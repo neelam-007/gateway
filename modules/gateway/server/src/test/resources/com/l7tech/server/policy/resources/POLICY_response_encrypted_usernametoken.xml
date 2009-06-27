@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This policy adds an encrypted usernametoken to the response message with signing and encryption.
+  The EncryptedUsernameToken assertion is then used to validate the EUT and create the credential used for authentication
+  The resulting message will be decrypted (due to security processing) but still signed.
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNvYXA6RW52ZWxvcGUgeG1sbnM6c29hcD0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iCiAgICB4bWxuczp4c2Q9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hIiB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIj4KICAgIDxzb2FwOkJvZHk+CiAgICAgICAgPGxpc3RQcm9kdWN0c1Jlc3BvbnNlIHhtbG5zPSJodHRwOi8vd2FyZWhvdXNlLmFjbWUuY29tL3dzIj4KICAgICAgICAgICAgPGxpc3RQcm9kdWN0c1Jlc3VsdD4KICAgICAgICAgICAgICAgIDxQcm9kdWN0TGlzdEhlYWRlcj4KICAgICAgICAgICAgICAgICAgICA8cHJvZHVjdE5hbWU+V2hpdGUgYm9hcmQ8L3Byb2R1Y3ROYW1lPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0SWQ+MTExMTExMTEzPC9wcm9kdWN0SWQ+CiAgICAgICAgICAgICAgICA8L1Byb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICA8L2xpc3RQcm9kdWN0c1Jlc3VsdD4KICAgICAgICA8L2xpc3RQcm9kdWN0c1Jlc3BvbnNlPgogICAgPC9zb2FwOkJvZHk+Cjwvc29hcDpFbnZlbG9wZT4K"/>
+        </L7p:HardcodedResponse>
+        <L7p:AddWssUsernameToken>
+            <L7p:Encrypt booleanValue="true"/>
+            <L7p:Password stringValue="password"/>
+            <L7p:Username stringValue="Alice"/>
+        </L7p:AddWssUsernameToken>
+        <L7p:WssEncryptElement/>
+        <L7p:WssSignElement/>
+        <L7p:WsSecurity>
+            <L7p:RecipientTrustedCertificateName stringValue="defaultKey"/>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:WsSecurity>
+        <L7p:RequireWssTimestamp>
+            <L7p:MaxExpiryMilliseconds intValue="3600000"/>
+            <L7p:SignatureRequired booleanValue="false"/>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:RequireWssTimestamp>
+        <L7p:EncryptedUsernameToken>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:EncryptedUsernameToken>
+        <L7p:Authentication>
+            <L7p:IdentityProviderOid longValue="9898"/>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:Authentication>
+    </wsp:All>
+</wsp:Policy>

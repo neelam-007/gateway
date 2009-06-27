@@ -287,5 +287,8 @@
         <L7p:RemoveElement>
             <L7p:Enabled booleanValue="false"/>
         </L7p:RemoveElement>
+        <L7p:AddWssUsernameToken>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:AddWssUsernameToken>
     </wsp:OneOrMore>
 </wsp:Policy>

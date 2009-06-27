@@ -66,6 +66,7 @@
 
     <!-- server side trusted cert manager -->
     <bean id="trustedCertManager" name="trustedCertCache" class="com.l7tech.server.identity.cert.TestTrustedCertManager">
+        <constructor-arg ref="defaultKey"/>
     </bean>
 
     <bean id="trustedCertServices" class="com.l7tech.server.identity.cert.TrustedCertServicesImpl">
@@ -133,6 +134,11 @@
         <property name="targetMethod" value="getCertificate"/>
     </bean>
 
+    <bean id="sslKeystoreKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref="sslKeyEntry"/>
+        <property name="targetMethod" value="getPrivateKey"/>
+    </bean>
+
     <bean id="sslKeyManagers" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject" ref="defaultKey"/>
         <property name="targetMethod" value="getSslKeyManagers"/>
@@ -176,6 +182,8 @@
     </bean>
 
     <bean id="securityTokenResolver" class="com.l7tech.security.xml.SimpleSecurityTokenResolver">
+        <constructor-arg ref="sslKeystoreCertificate"/>
+        <constructor-arg ref="sslKeystoreKey"/>
     </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.TestLicenseManager">
@@ -221,9 +229,7 @@
     </bean>
 
     <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
-        <constructor-arg>
-            <bean class="com.l7tech.server.identity.cert.TestTrustedCertManager"/>
-        </constructor-arg>
+        <constructor-arg ref="trustedCertManager"/>
         <constructor-arg>
             <bean class="com.l7tech.server.security.keystore.SsgKeyStoreManagerStub"/>
         </constructor-arg>

@@ -129,7 +129,7 @@ public class WssInteropTestMessage extends TestCase {
         // Replace the encrypted UsernameToken with our own
         UsernameTokenImpl utok = new UsernameTokenImpl(utUsername, utPassword.toCharArray());
         Element oldUtok = DomUtils.findFirstChildElementByName(secHeader, (String)null, "EncryptedData");
-        Element newUtok = utok.asElement(d, secHeader.getNamespaceURI(), secHeader.getPrefix());
+        Element newUtok = utok.asElement(secHeader, secHeader.getNamespaceURI(), secHeader.getPrefix());
         newUtok = (Element)d.importNode(newUtok, true);
         newUtok.setAttributeNS(SoapUtil.WSU_NAMESPACE, "wsu:Id", "UsernameToken");
         secHeader.replaceChild(newUtok, oldUtok);

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This policy adds a UsernameToken digest to the response message.
+  The experimental WssDigest assertion is used to perform validation of the digest.
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNvYXA6RW52ZWxvcGUgeG1sbnM6c29hcD0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iPgogICAgPHNvYXA6Qm9keT4KICAgICAgICA8bGlzdFByb2R1Y3RzUmVzcG9uc2UgeG1sbnM9Imh0dHA6Ly93YXJlaG91c2UuYWNtZS5jb20vd3MiPgogICAgICAgICAgICA8bGlzdFByb2R1Y3RzUmVzdWx0PgogICAgICAgICAgICAgICAgPFByb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0TmFtZT5QaG9uZUJvb2s8L3Byb2R1Y3ROYW1lPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0SWQ+MTExMTExMTExPC9wcm9kdWN0SWQ+CiAgICAgICAgICAgICAgICA8L1Byb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICA8L2xpc3RQcm9kdWN0c1Jlc3VsdD4KICAgICAgICA8L2xpc3RQcm9kdWN0c1Jlc3BvbnNlPgogICAgPC9zb2FwOkJvZHk+Cjwvc29hcDpFbnZlbG9wZT4K"/>
+        </L7p:HardcodedResponse>
+        <L7p:AddWssUsernameToken>
+            <L7p:Digest booleanValue="true"/>
+            <L7p:Password stringValue="password"/>
+            <L7p:Username stringValue="username"/>
+        </L7p:AddWssUsernameToken>
+        <L7p:WsSecurity>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:WsSecurity>
+        <L7p:RequireWssTimestamp>
+            <L7p:MaxExpiryMilliseconds intValue="3600000"/>
+            <L7p:SignatureRequired booleanValue="false"/>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:RequireWssTimestamp>
+        <L7p:WssDigest>
+            <L7p:RequireNonce booleanValue="true"/>
+            <L7p:RequireTimestamp booleanValue="true"/>
+            <L7p:RequiredPassword stringValue="password"/>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:WssDigest>
+    </wsp:All>
+</wsp:Policy>

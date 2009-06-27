@@ -1,23 +1,22 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.wsdl.Wsdl;
 
 /**
- * Policy validation for AddWssTimestamp.
+ * AssertionValidator for assertions used with the WsSecurity assertion.
  */
-public class AddWssTimestampValidator implements AssertionValidator {
-    private final AddWssTimestamp assertion;
-    private final boolean requiresDecoration;
+public class WssDecorationAssertionValidator implements AssertionValidator {
 
-    public AddWssTimestampValidator( final AddWssTimestamp addWssTimestamp ) {
-        assertion = addWssTimestamp;
-        requiresDecoration = !Assertion.isResponse( assertion );
+    //- PUBLIC
+
+    public WssDecorationAssertionValidator( final Assertion assertion ) {
+        this.assertion = assertion;
+        this.requiresDecoration = !Assertion.isResponse( assertion );
     }
 
     @Override
@@ -44,4 +43,10 @@ public class AddWssTimestampValidator implements AssertionValidator {
             }
         }
     }
+
+    //- PROTECTED
+
+    protected final Assertion assertion;
+    protected final boolean requiresDecoration;
+    
 }

@@ -295,6 +295,7 @@ public class GatewayFeatureSets {
             ass(AddWssSecurityToken.class),
             ass(WsSecurity.class),
             ass(WssVersionAssertion.class),
+            ass(AddWssUsernameToken.class),
             feat(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments."));
 
         // Message Validation/Transform

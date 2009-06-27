@@ -213,11 +213,13 @@ public class WssDecoratorImpl implements WssDecorator {
         // Add sender cert
         // note [bugzilla #2551] dont include a x509 BST if this is gonna use a sc context
         // note [bugzilla #3907] dont include a x509 BST if using kerberos
+        // don't include BST if adding encrypted username token
         final Pair<X509Certificate, KeyInfoDetails> senderCertKeyInfo;
         if (dreq.getSenderMessageSigningCertificate() != null &&
             !signList.isEmpty() &&
             dreq.getSecureConversationSession() == null &&
-            dreq.getKerberosTicket() == null)
+            dreq.getKerberosTicket() == null &&
+            !dreq.isEncryptUsernameToken() )
         {
             final X509Certificate senderMessageSigningCert = dreq.getSenderMessageSigningCertificate();
             switch(dreq.getKeyInfoInclusionType()) {
@@ -1110,7 +1112,7 @@ public class WssDecoratorImpl implements WssDecorator {
         //    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">password</wsse:Password>
         // </wsse:UsernameToken>
         // create elements
-        Element token = ut.asElement(securityHeader.getOwnerDocument(),
+        Element token = ut.asElement(securityHeader,                    
                                      securityHeader.getNamespaceURI(),
                                      securityHeader.getPrefix());
         securityHeader.appendChild(token);

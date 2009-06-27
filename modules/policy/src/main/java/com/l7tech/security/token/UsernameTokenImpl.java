@@ -157,27 +157,33 @@ public class UsernameTokenImpl implements UsernameToken {
     }
 
 
+    @Override
     public String getNonce() {
         return nonce;
     }
 
+    @Override
     public String getCreated() {
         return created;
     }
 
+    @Override
     public boolean isDigest() {
         return digest;
     }
 
     /** @return the username.  Never null. */
+    @Override
     public String getUsername() {
         return username;
     }
 
+    @Override
     public SecurityTokenType getType() {
         return SecurityTokenType.WSS_USERNAME;
     }
 
+    @Override
     public String getElementId() {
         if (elementId != null)
             return elementId;
@@ -188,7 +194,7 @@ public class UsernameTokenImpl implements UsernameToken {
      * Fill in the given empty UsernameToken, which must already be configured with the desired security namespace and prefix.
      * @param untokEl an empty UsernameToken element to fill in.  Required.
      */
-    public void fillInDetails(Element untokEl) {
+    public void fillInDetails(Element untokEl, String wsuPrefix) {
         Document nodeFactory = untokEl.getOwnerDocument();
         String securityNs = untokEl.getNamespaceURI();
         Element usernameEl = nodeFactory.createElementNS(securityNs, "Username");
@@ -220,14 +226,27 @@ public class UsernameTokenImpl implements UsernameToken {
         }
 
         if (nonce != null) {
-            Element nonceEl = DomUtils.createAndAppendElementNS(untokEl, "Nonce", securityNs, "wsse");
+            Element nonceEl = nodeFactory.createElementNS(securityNs, "Nonce");
+            nonceEl.setPrefix(untokEl.getPrefix());
             nonceEl.appendChild(DomUtils.createTextNode(untokEl, nonce));
+            nonceEl.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
+            untokEl.appendChild(nonceEl);
         }
 
-        Element createdEl = DomUtils.createAndAppendElementNS(untokEl, "Created", SoapConstants.WSU_NAMESPACE, "wsu");
-        createdEl.appendChild(DomUtils.createTextNode(untokEl, created));
+        if ( !created.isEmpty() ) {
+            Element createdEl;
+            if (wsuPrefix != null) {
+                createdEl = nodeFactory.createElementNS(SoapConstants.WSU_NAMESPACE, "Created");
+                createdEl.setPrefix(wsuPrefix);
+                untokEl.appendChild(createdEl);
+            } else {
+                createdEl = DomUtils.createAndAppendElementNS(untokEl, "Created", SoapConstants.WSU_NAMESPACE, "wsu");
+            }
+            createdEl.appendChild(DomUtils.createTextNode(untokEl, created));
+        }
     }
 
+    @Override
     public String getPasswordDigest() {
         if (passwordDigest != null)
             return passwordDigest;
@@ -267,7 +286,9 @@ public class UsernameTokenImpl implements UsernameToken {
         }
     }
 
-    public Element asElement(Document factory, String securityNs, String securityPrefix) {
+    @Override
+    public Element asElement(Element context, String securityNs, String securityPrefix) {
+        Document factory = context.getOwnerDocument();
         // If there's already an element, import it to preserve the existing XML instead of creating new XML
         if (element != null && (securityNs == null || securityNs.equals(element.getNamespaceURI()))) {
             if (element.getOwnerDocument() == factory)
@@ -278,25 +299,28 @@ public class UsernameTokenImpl implements UsernameToken {
 
         Element untokEl = factory.createElementNS(securityNs, "UsernameToken");
         untokEl.setPrefix(securityPrefix);
-        fillInDetails(untokEl);
+        fillInDetails(untokEl, XmlUtil.findActivePrefixForNamespace( context, SoapConstants.WSU_NAMESPACE ));
         return element = untokEl;
     }
 
+    @Override
     public Element asElement() {
         if (element == null) {
             Document doc = XmlUtil.createEmptyDocument("UsernameToken", "wsse", SoapConstants.SECURITY_NAMESPACE);
             Element untokEl = doc.getDocumentElement();
-            fillInDetails(untokEl);
+            fillInDetails(untokEl, null);
             element = untokEl;
         }
         return element;
     }
 
+    @Override
     public String toString() {
         return "UsernameToken: " + username;
     }
 
     /** @return the password, or null if there wasn't one. */
+    @Override
     public char[] getPassword() {
         return passwordAuth == null ? null : passwordAuth.getPassword();
     }

@@ -657,6 +657,9 @@ public class AssertionMessages extends Messages {
     public static final M WSSECURITY_RECIP_CERT_ERROR = m(8853, Level.WARNING, "Error when finding trusted certificate {0}: {1}");
     public static final M WSSECURITY_RECIP_CERT_EXP   = m(8854, Level.INFO, "Error checking certificate expiry for {0}");
 
+    public static final M ADD_WSS_USERNAME_NOT_SOAP            = m(8880, Level.WARNING, "{0} message is not SOAP, cannot add WSS UsernameToken");
+    public static final M ADD_WSS_USERNAME_MORE_THAN_ONE_TOKEN = m(8881, Level.WARNING, "Request included more than one X509 security token whose key ownership was proven");
+
     public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");
     public static final M MCM_TOO_MANY_MAPPINGS  = m(9003, Level.WARNING, "Message context mapping dropped {0}.");
