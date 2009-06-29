@@ -45,6 +45,7 @@
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="source" ext="jar" matcher="exact" /> 
         <exclude org="xml-apis" module="xml-apis" artifact="*" type="source" ext="jar" matcher="exact" />
         <exclude org="xom" module="xom" artifact="*" type="source" ext="jar" matcher="exact" />
+        <exclude org="bouncycastle" module="*" artifact="*" type="source" ext="jar" matcher="exact" />
 
         <override org="org.springframework" module="spring-web" matcher="exact" rev="2.5.6"/>
     </dependencies>

@@ -283,14 +283,7 @@ public class TestCertificateGenerator {
     }
 
     private static void storeAsBcPkcs12(X509Certificate[] chain, PrivateKey privateKey, char[] p12Pass, String p12Alias, OutputStream out) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException {
-        // The Clever Dan who wrote Bouncy Castle's JDKPKCS12KeyStore hardcoded the "BC" provider name everywhere,
-        // instead of just using their own classes directly whenever such was unavoidable,
-        // so we can't use their keystore implementation unless they are registered as a crypto provider
-        // TODO appears to be fixed in Bouncy Castle 1.42, so we can remove this hack after we update our repo
-        if (null == Security.getProvider("BC"))
-            Security.addProvider(new BouncyCastleProvider());
-
-        KeyStore ks = KeyStore.getInstance("PKCS12-DEF", "BC");
+        KeyStore ks = KeyStore.getInstance("PKCS12-DEF", new BouncyCastleProvider());
         ks.load(null, p12Pass);
         ks.setKeyEntry(p12Alias, privateKey, p12Pass, chain);
         ks.store(out, p12Pass);

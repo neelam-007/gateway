@@ -72,7 +72,7 @@ public abstract class JceProvider {
     }
 
     // Default driver
-    private static final String DEFAULT_ENGINE = BC_ENGINE;
+    private static final String DEFAULT_ENGINE = RSA_ENGINE;
 
     private static class Holder {
         private static final String ENGINE_NAME = mapEngine(System.getProperty(ENGINE_PROPERTY, DEFAULT_ENGINE));
