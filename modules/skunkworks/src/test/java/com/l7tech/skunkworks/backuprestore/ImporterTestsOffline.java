@@ -15,10 +15,7 @@ import com.l7tech.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.URL;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 public class ImporterTestsOffline {
 
@@ -33,6 +30,8 @@ public class ImporterTestsOffline {
         final String tmpSsgHomeLocation = ImportExportUtilities.createTmpDirectory();
         tmpSsgHome = new File(tmpSsgHomeLocation);
         setUpEnvironment();
+        System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
+        System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
     }
 
     @After
@@ -48,7 +47,8 @@ public class ImporterTestsOffline {
                 FileUtils.deleteDir(tmpSsgHome);
             }
         }
-        System.clearProperty("com.l7tech.util.buildVersion");        
+        System.clearProperty("com.l7tech.util.buildVersion");
+        System.clearProperty("com.l7tech.gateway.config.backuprestore.checkversion");
     }
 
     @Test
@@ -56,25 +56,20 @@ public class ImporterTestsOffline {
             throws Exception {
 
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
 
         final URL preFiveOZip = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/fiveo_backup_with_audits.zip");
-        final Class clazz = Importer.class;
-        final Constructor constructor = clazz.getDeclaredConstructor(File.class, PrintStream.class, String.class,
-                boolean.class);
-        constructor.setAccessible(true);
 
-        Importer importer = (Importer)
-                constructor.newInstance(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
-        String [] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final String [] args = new String[]{"import",
                 "-image", preFiveOZip.getPath(),
                 "-dbu", "root",
                 "-dbp", "7layer",
@@ -97,21 +92,21 @@ public class ImporterTestsOffline {
     public void testImportBuzzcutOIntoBuzzcut_NodeProperties()
             throws Exception {
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if (!projectSqlFile.exists() || projectSqlFile.isDirectory())
             throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
 
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
 
-        Importer importer = getImporter();
-        String[] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final String[] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "root",
                 "-dbp", "7layer",
@@ -120,7 +115,7 @@ public class ImporterTestsOffline {
 
         try{
             System.setProperty("com.l7tech.config.backuprestore.mycnfdir", tmpSsgHome.getAbsolutePath());
-            Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+            final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
             Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
         }finally{
             System.clearProperty("com.l7tech.config.backuprestore.mycnfdir");
@@ -135,13 +130,13 @@ public class ImporterTestsOffline {
     public void testImportBuzzcutOIntoBuzzcut_FTP()
             throws Exception {
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if (!projectSqlFile.exists() || projectSqlFile.isDirectory())
             throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -151,8 +146,8 @@ public class ImporterTestsOffline {
         final File tmpImage = new File(tmpImageLocation, "image.zip");
         FileUtils.copyFile(new File(buzzcutImage.getPath()), tmpImage);
 
-        Importer importer = getImporter();
-        String[] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final String[] args = new String[]{"import",
                 "-image", tmpImage.getAbsolutePath(),/*ftp will extract the directory from the image path*/
                 "-dbu", "root",
                 "-dbp", "7layer",
@@ -163,7 +158,7 @@ public class ImporterTestsOffline {
                 "-maindb"
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
     }
 
@@ -175,19 +170,19 @@ public class ImporterTestsOffline {
             throws Exception {
 
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
 
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
-        Importer importer = getImporter();
-        String [] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "root",
                 "-dbp", "7layer",
@@ -195,7 +190,7 @@ public class ImporterTestsOffline {
                 "-maindb"
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
     }
 
@@ -209,19 +204,19 @@ public class ImporterTestsOffline {
             throws Exception {
 
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
 
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
-        Importer importer = getImporter();
-        String [] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "root",
                 "-dbp", "7layer",
@@ -236,7 +231,7 @@ public class ImporterTestsOffline {
 
         try{
             System.setProperty("com.l7tech.config.backup.localDbOnly", Boolean.toString(false));
-            Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+            final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
             Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
         }finally{
             System.clearProperty("com.l7tech.config.backup.localDbOnly");            
@@ -251,19 +246,19 @@ public class ImporterTestsOffline {
             throws Exception {
 
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
 
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
-        Importer importer = getImporter();
-        String [] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "root",
                 "-dbp", "7layer",
@@ -276,7 +271,7 @@ public class ImporterTestsOffline {
                 "-maindb"
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
     }
 
@@ -293,12 +288,12 @@ public class ImporterTestsOffline {
             throws Exception {
 
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -312,8 +307,8 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(new File(ompFile.getPath()), new File(confDir, ImportExportUtilities.OMP_DAT));
         FileUtils.copyFile(new File(nodePropFile.getPath()), new File(confDir, ImportExportUtilities.NODE_PROPERTIES));
 
-        Importer importer = getImporter();
-        String [] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "root",
                 "-dbp", "7layer",
@@ -326,7 +321,7 @@ public class ImporterTestsOffline {
                 "-newdb", "ssg_buzzcut"
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
     }
 
@@ -338,12 +333,12 @@ public class ImporterTestsOffline {
             throws Exception {
 
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -357,10 +352,10 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(new File(ompFile.getPath()), new File(confDir, ImportExportUtilities.OMP_DAT));
         FileUtils.copyFile(new File(nodePropFile.getPath()), new File(confDir, ImportExportUtilities.NODE_PROPERTIES));
 
-        Importer importer = getImporter();
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
         final URL mappingFile = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/mapping_buzzcut.xml");
 
-        String [] args = new String[]{"import",
+        final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-db", "ssg_buzzcut",
                 "-dbu", "root",
@@ -374,7 +369,7 @@ public class ImporterTestsOffline {
                 "-mapping", mappingFile.getPath()
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
     }
 
@@ -387,12 +382,12 @@ public class ImporterTestsOffline {
             throws Exception {
 
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -411,10 +406,10 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(new File(ompFile.getPath()), new File(confDir, ImportExportUtilities.OMP_DAT));
         FileUtils.copyFile(new File(nodePropFile.getPath()), new File(confDir, ImportExportUtilities.NODE_PROPERTIES));
 
-        Importer importer = getImporter();
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
         final URL mappingFile = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/mapping_buzzcut.xml");
 
-        String [] args = new String[]{"import",
+        final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-db", "ssg_buzzcut",
                 "-dbu", "root",
@@ -428,7 +423,7 @@ public class ImporterTestsOffline {
                 "-mapping", mappingFile.getPath()
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
     }
 
@@ -440,12 +435,12 @@ public class ImporterTestsOffline {
             throws Exception {
 
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -459,8 +454,8 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(new File(ompFile.getPath()), new File(confDir, ImportExportUtilities.OMP_DAT));
         FileUtils.copyFile(new File(nodePropFile.getPath()), new File(confDir, ImportExportUtilities.NODE_PROPERTIES));
 
-        Importer importer = getImporter();
-        String [] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final String [] args = new String[]{"import",
                 "-image", preFiveOZip.getPath(),
                 "-dbu", "root",
                 "-dbp", "7layer",
@@ -487,8 +482,8 @@ public class ImporterTestsOffline {
         final URL preFiveOZip = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/fiveo_backup_with_audits.zip");
         final URL mappingFile = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/mapping.xml");
 
-        Importer importer = getImporter();
-        String [] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final String [] args = new String[]{"import",
                 "-image", preFiveOZip.getPath(),
                 "-db", "ssg_buzzcut",
                 "-dbu", "root",
@@ -508,12 +503,12 @@ public class ImporterTestsOffline {
 
     private void setUpEnvironment() throws IOException {
         //Copy ssg.sql for test
-        File projectSqlFile = new File("etc/db/mysql/ssg.sql");
+        final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.sql");
 
-        File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_SQL));
         FileUtils.ensurePath(sqlDir);
-        File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_SQL));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -525,16 +520,5 @@ public class ImporterTestsOffline {
         FileUtils.ensurePath(confDir);
         FileUtils.copyFile(new File(ompFile.getPath()), new File(confDir, ImportExportUtilities.OMP_DAT));
         FileUtils.copyFile(new File(nodePropFile.getPath()), new File(confDir, ImportExportUtilities.NODE_PROPERTIES));
-        System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
-    }
-
-    private Importer getImporter() throws Exception {
-        final Class clazz = Importer.class;
-        final Constructor constructor = clazz.getDeclaredConstructor(File.class, PrintStream.class, String.class,
-                boolean.class);
-        constructor.setAccessible(true);
-
-        return (Importer)
-                constructor.newInstance(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
     }
 }

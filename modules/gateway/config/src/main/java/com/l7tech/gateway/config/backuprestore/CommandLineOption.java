@@ -8,7 +8,7 @@ package com.l7tech.gateway.config.backuprestore;
  *
  * This class is immutable
  */
-public final class CommandLineOption {
+final class CommandLineOption {
     private final String name;
     private final String description;
     private final boolean isValuePath;

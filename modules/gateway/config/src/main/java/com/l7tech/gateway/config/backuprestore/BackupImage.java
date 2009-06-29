@@ -30,7 +30,7 @@ import java.util.zip.ZipEntry;
  * 
  * This class is immutable
  */
-public final class BackupImage {
+final class BackupImage {
 
     /**
      * Image location is an absolute path to where the image file is, locally or on a ftp server

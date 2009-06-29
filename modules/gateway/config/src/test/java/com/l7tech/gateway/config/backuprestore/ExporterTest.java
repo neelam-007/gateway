@@ -36,13 +36,17 @@ import com.l7tech.util.ResourceUtils;
 public class ExporterTest {
 
     private File tmpSsgHome;
+    private File imageFileToCreate;
+
     private static final String OS_FILE_TO_COPY = "osfiletocopy";
 
     @Before
     public void setUp() throws IOException {
         final String tmpSsgHomeStr =ImportExportUtilities.createTmpDirectory();
         tmpSsgHome = new File(tmpSsgHomeStr);
+        imageFileToCreate = new File(ImportExportUtilities.createTmpDirectory(), "image1.zip");
         System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
+        System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
     }
 
     @After
@@ -50,7 +54,9 @@ public class ExporterTest {
         if(tmpSsgHome == null) return;
         if(!tmpSsgHome.exists()) return;
         FileUtils.deleteDir(tmpSsgHome);
+        FileUtils.deleteDir(imageFileToCreate.getParentFile());
         System.clearProperty("com.l7tech.util.buildVersion");
+        System.clearProperty("com.l7tech.gateway.config.backuprestore.checkversion");
     }
 
     /**
@@ -87,13 +93,13 @@ public class ExporterTest {
     public void testConstructor() throws Exception {
         createTestEnvironment();
         final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
         Assert.assertNotNull(exporter);
     }
 
     @Test(expected=NullPointerException.class)
-    public void testConstructorException(){
-        new Exporter(null, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+    public void testConstructorException() throws Backup.BackupException{
+        new Exporter(null, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
     }
 
     /**
@@ -114,7 +120,7 @@ public class ExporterTest {
             programArgs.add(imageZipFile);
             final String[] args = programArgs.toArray(new String[]{});
             final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
             final Exporter.BackupResult result = exporter.createBackupImage(args);
             Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
             final String uniqueImageZipFile = result.getBackUpImageName(); 
@@ -150,7 +156,7 @@ public class ExporterTest {
             
             final String[] args = programArgs.toArray(new String[]{});
             final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
             final Exporter.BackupResult result = exporter.createBackupImage(args);
             Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
             final String uniqueImageZipFile = result.getBackUpImageName();
@@ -182,7 +188,7 @@ public class ExporterTest {
             programArgs.add(imageZipFile);
             final String[] args = programArgs.toArray(new String[]{});
             final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    tmpSsgHome.getAbsolutePath()/*just used for existence check*/, true);
+                    tmpSsgHome.getAbsolutePath()/*just used for existence check*/);
             final Exporter.BackupResult result = exporter.createBackupImage(args);
             Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
 
@@ -274,7 +280,7 @@ public class ExporterTest {
             
             final String[] args = programArgs.toArray(new String[]{});
             final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    tmpSsgHome.getAbsolutePath()/*just used for existence check*/, true);
+                    tmpSsgHome.getAbsolutePath()/*just used for existence check*/);
             final Exporter.BackupResult result = exporter.createBackupImage(args);
             Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
 
@@ -341,7 +347,7 @@ public class ExporterTest {
         programArgs.add("export");
         final String[] args = programArgs.toArray(new String[]{});
         final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
         exporter.createBackupImage(args);
     }
 
@@ -350,13 +356,13 @@ public class ExporterTest {
      * -noexist parameter is supplied, which doesn't exist
      */
     @Test(expected = BackupRestoreLauncher.InvalidProgramArgumentException.class)
-    public void testInvalidExporterArgs_InvalidArg() throws BackupRestoreLauncher.FatalException, IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
+    public void testInvalidExporterArgs_InvalidArg() throws BackupRestoreLauncher.FatalException, IOException, BackupRestoreLauncher.InvalidProgramArgumentException, Backup.BackupException {
         final List<String> programArgs = new ArrayList<String>();
         programArgs.add("export");
         programArgs.add("-noexist");
         final String[] args = programArgs.toArray(new String[]{});
         final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
         exporter.createBackupImage(args);
     }
 
@@ -365,13 +371,13 @@ public class ExporterTest {
      * export is missing
      */
     @Test(expected = BackupRestoreLauncher.InvalidProgramArgumentException.class)
-    public void testInvalidExporterArgs_ImageNeedsValue() throws BackupRestoreLauncher.FatalException, IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
+    public void testInvalidExporterArgs_ImageNeedsValue() throws BackupRestoreLauncher.FatalException, IOException, BackupRestoreLauncher.InvalidProgramArgumentException, Backup.BackupException {
         final List<String> programArgs = new ArrayList<String>();
         programArgs.add("export");
         programArgs.add("-image");
         final String[] args = programArgs.toArray(new String[]{});
         final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
         exporter.createBackupImage(args);
     }
 
@@ -392,7 +398,7 @@ public class ExporterTest {
             programArgs.add(imageZipFile);
             final String[] args = programArgs.toArray(new String[]{});
             final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
             System.setProperty(Exporter.NO_UNIQUE_IMAGE_SYSTEM_PROP, "true");
             final Exporter.BackupResult result = exporter.createBackupImage(args);
             Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
@@ -411,20 +417,21 @@ public class ExporterTest {
      * @throws IOException
      */
     @Test
-    public void testVersionBackup() throws IOException {
-        String tmpDir = null;
+    public void testVersionBackup() throws Exception {
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, "notusedinthistest",
+                true, System.out);
         try{
-            tmpDir = ImportExportUtilities.createTmpDirectory();
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
-            exporter.backUpVersion(tmpDir);
+            backup.backUpVersion();
 
+            final File backupFolder = backup.getBackupFolder();
             //Check version file exists
-            final File checkFile = new File(tmpDir, ImportExportUtilities.VERSION);
-            Assert.assertTrue(ImportExportUtilities.VERSION + " file should exist in '" + tmpDir+"'", checkFile.exists());
+            final File checkFile = new File(backupFolder, ImportExportUtilities.VERSION);
+            Assert.assertTrue(ImportExportUtilities.VERSION + " file should exist in '"
+                    + backupFolder.getAbsolutePath()+"'", checkFile.exists());
             Assert.assertTrue("'" + checkFile.getName()+"' should not be empty", checkFile.length() > 0);
         }finally{
-            if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
+            backup.deleteTemporaryDirectory();
         }
     }
 
@@ -436,54 +443,56 @@ public class ExporterTest {
     @Test
     public void testConfigBackup() throws Exception {
         createTestEnvironment();
-        String tmpDir = null;
-        try{
-            tmpDir = ImportExportUtilities.createTmpDirectory();
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
-            exporter.backUpComponentConfig(tmpDir);
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, "notusedinthistest",
+                true, System.out);
 
+        try{
+            backup.backUpComponentConfig();
+
+            final File backupFolder = backup.getBackupFolder();
             //Check config dir exists
-            final File configDir = new File(tmpDir, ImportExportUtilities.ComponentType.CONFIG.getComponentName());
+            final File configDir = new File(backupFolder, ImportExportUtilities.ComponentType.CONFIG.getComponentName());
             Assert.assertTrue(ImportExportUtilities.ComponentType.CONFIG.getComponentName() +
-                    " directory should exist in '" + tmpDir+"'", configDir.exists());
+                    " directory should exist in '" + backupFolder.getAbsolutePath()+"'", configDir.exists());
             Assert.assertTrue(ImportExportUtilities.ComponentType.CONFIG.getComponentName() +
-                    " directory should be a directory '" + tmpDir+"'", configDir.isDirectory());
+                    " directory should be a directory '" + backupFolder.getAbsolutePath()+"'", configDir.isDirectory());
 
             //Test for the individual files
-            final File nodeProp = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
+            final File nodeProp = new File(backupFolder.getAbsolutePath() + File.separator +
+                    ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
                     ImportExportUtilities.NODE_PROPERTIES);
             Assert.assertTrue(nodeProp.getName() +
                     " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName()+"'",
-                    nodeProp.exists());
+                    backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.CONFIG.getComponentName() + "'", nodeProp.exists());
 
-            final File ssgLog = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
+            final File ssgLog = new File(backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
                     ImportExportUtilities.SSGLOG_PROPERTIES);
 
-            Assert.assertTrue(ssgLog.getName() +
-                    " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName()+"'",
+            Assert.assertTrue(ssgLog.getName() + " should exist in '" + backupFolder.getAbsolutePath()
+                    + File.separator + ImportExportUtilities.ComponentType.CONFIG.getComponentName() + "'",
                     ssgLog.exists());
 
-            final File systemProp = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
+            final File systemProp = new File(backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
                     ImportExportUtilities.SYSTEM_PROPERTIES);
 
-            Assert.assertTrue(systemProp.getName() +
-                    " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName()+"'",
+            Assert.assertTrue(systemProp.getName() + " should exist in '" + backupFolder.getAbsolutePath()
+                    + File.separator + ImportExportUtilities.ComponentType.CONFIG.getComponentName() + "'",
                     systemProp.exists());
 
-            final File ompDat = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
+            final File ompDat = new File(backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
                     ImportExportUtilities.OMP_DAT);
 
-            Assert.assertTrue(ompDat.getName() +
-                    " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName()+"'",
+            Assert.assertTrue(ompDat.getName() + " should exist in '" + backupFolder.getAbsolutePath()
+                    + File.separator + ImportExportUtilities.ComponentType.CONFIG.getComponentName() + "'",
                     ompDat.exists());
 
         }finally{
-            if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
+            backup.deleteTemporaryDirectory();
         }
     }
 
@@ -502,24 +511,25 @@ public class ExporterTest {
         createBackupManifest(osFile);
 
         FileOutputStream fos = null;
-        String tmpDir = null;
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
+                tmpSsgHome.getAbsolutePath()/*just needs to exist*/, null, "notusedinthistest",
+                true, System.out);
+
         try{
-            tmpDir = ImportExportUtilities.createTmpDirectory();
 
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    tmpSsgHome.getAbsolutePath()/*just used for existence check*/, true);
-            exporter.backUpComponentOS(tmpDir);
+            backup.backUpComponentOS();
 
+            final File backupFolder = backup.getBackupFolder();
             //confirm pretend os file was copied
-            final File checkOsFile = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.OS.getComponentName() +
+            final File checkOsFile = new File(backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.OS.getComponentName() +
                     File.separator + osFile.getAbsolutePath());
-            Assert.assertTrue(checkOsFile.getName() +
-                    " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.OS.getComponentName()+"'",
+            Assert.assertTrue(checkOsFile.getName() + " should exist in '" +backupFolder.getAbsolutePath()
+                    + File.separator + ImportExportUtilities.ComponentType.OS.getComponentName() + "'",
                     checkOsFile.exists());
         } finally{
             ResourceUtils.closeQuietly(fos);
-            if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
+            backup.deleteTemporaryDirectory();
         }
     }
 
@@ -532,37 +542,39 @@ public class ExporterTest {
     @Test
     public void testCaBackup() throws Exception {
         createTestEnvironment();
-        String tmpDir = null;
-        try{
-            tmpDir = ImportExportUtilities.createTmpDirectory();
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
-            exporter.backUpComponentCA(tmpDir);
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, "notusedinthistest",
+                true, System.out);
 
+        try{
+            backup.backUpComponentCA();
+
+            final File backupFolder = backup.getBackupFolder();
             //Check config dir exists
-            final File configDir = new File(tmpDir, ImportExportUtilities.ComponentType.CA.getComponentName());
+            final File configDir = new File(backupFolder.getAbsolutePath(),
+                    ImportExportUtilities.ComponentType.CA.getComponentName());
+
             Assert.assertTrue(ImportExportUtilities.ComponentType.CA.getComponentName() +
-                    " directory should exist in '" + tmpDir+"'", configDir.exists());
+                    " directory should exist in '" + backupFolder.getAbsolutePath() + "'", configDir.exists());
             Assert.assertTrue(ImportExportUtilities.ComponentType.CA.getComponentName() +
-                    " directory should be a directory '" + tmpDir+"'", configDir.isDirectory());
+                    " directory should be a directory '" + backupFolder.getAbsolutePath() + "'",
+                    configDir.isDirectory());
 
             //Test for the individual files, based on this project's resources
-            final File nodeProp = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName(),
-                    "empty.properties");
+            final File nodeProp = new File(backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.CA.getComponentName(), "empty.properties");
             Assert.assertTrue(nodeProp.getName() +
-                    " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName()+"'",
-                    nodeProp.exists());
+                    " should exist in '" + backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.CA.getComponentName() + "'", nodeProp.exists());
 
-            final File ssgLog = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName(),
-                    "empty.jar");
+            final File ssgLog = new File(backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.CA.getComponentName(), "empty.jar");
 
-            Assert.assertTrue(ssgLog.getName() +
-                    " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName()+"'",
+            Assert.assertTrue(ssgLog.getName() + " should exist in '" + backupFolder.getAbsolutePath()
+                    + File.separator + ImportExportUtilities.ComponentType.CA.getComponentName() + "'",
                     ssgLog.exists());
         }finally{
-            if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
+            backup.deleteTemporaryDirectory();
         }
     }
 
@@ -575,37 +587,38 @@ public class ExporterTest {
     @Test
     public void testMaBackup() throws Exception {
         createTestEnvironment();
-        String tmpDir = null;
-        try{
-            tmpDir = ImportExportUtilities.createTmpDirectory();
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
-            exporter.backUpComponentCA(tmpDir);
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, "notusedinthistest",
+                true, System.out);
 
+        try{
+            backup.backUpComponentCA();
+
+            final File backupFolder = backup.getBackupFolder();
             //Check config dir exists
-            final File configDir = new File(tmpDir, ImportExportUtilities.ComponentType.CA.getComponentName());
+            final File configDir = new File(backupFolder.getAbsolutePath(),
+                    ImportExportUtilities.ComponentType.CA.getComponentName());
+
             Assert.assertTrue(ImportExportUtilities.ComponentType.CA.getComponentName() +
-                    " directory should exist in '" + tmpDir+"'", configDir.exists());
+                    " directory should exist in '" + backupFolder.getAbsolutePath() + "'", configDir.exists());
             Assert.assertTrue(ImportExportUtilities.ComponentType.CA.getComponentName() +
-                    " directory should be a directory '" + tmpDir+"'", configDir.isDirectory());
+                    " directory should be a directory '" + backupFolder.getAbsolutePath() + "'", configDir.isDirectory());
 
             //Test for the individual files, based on this project's resources
-            final File nodeProp = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName(),
-                    "empty.properties");
+            final File nodeProp = new File(backupFolder.getAbsolutePath() + File.separator +
+                    ImportExportUtilities.ComponentType.CA.getComponentName(), "empty.properties");
             Assert.assertTrue(nodeProp.getName() +
-                    " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName()+"'",
-                    nodeProp.exists());
+                    " should exist in '" + backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.CA.getComponentName() + "'", nodeProp.exists());
 
-            final File ssgLog = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName(),
-                    "empty.jar");
+            final File ssgLog = new File(backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.CA.getComponentName(), "empty.jar");
 
             Assert.assertTrue(ssgLog.getName() +
-                    " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName()+"'",
-                    ssgLog.exists());
+                    " should exist in '" + backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.CA.getComponentName() + "'", ssgLog.exists());
         }finally{
-            if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
+            backup.deleteTemporaryDirectory();
         }
     }
 
@@ -615,23 +628,22 @@ public class ExporterTest {
     @Test
     public void testCreateImageFile() throws Exception {
         createTestEnvironment();
-        String tmpDir = null;
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, imageFileToCreate.getAbsolutePath(),
+                true, System.out);
+
         try{
-            tmpDir = ImportExportUtilities.createTmpDirectory();
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out, tmpSsgHome.getAbsolutePath(), true);
-            exporter.backUpComponentCA(tmpDir);//just back up something
+            backup.backUpComponentCA();//just back up something
 
             //zip the tmpDir
-            final String testZipFile = "testzip.zip";
-            exporter.createImageZip(tmpSsgHome+File.separator+ testZipFile, tmpDir);
+            backup.createBackupImage();
 
             //confirm zip file exists, is a file and is not empty
-            final File zipFile = new File(tmpSsgHome, testZipFile);
-            Assert.assertTrue(testZipFile + " should exist in '" + tmpSsgHome+"'", zipFile.exists());
-            Assert.assertTrue(testZipFile + " should not be a directory", !zipFile.isDirectory());
-            Assert.assertTrue(testZipFile + " should not be empty", zipFile.length() > 0);
+            Assert.assertTrue(imageFileToCreate.getName() + " should exist in '" + imageFileToCreate.getParent()+"'", imageFileToCreate.exists());
+            Assert.assertTrue(imageFileToCreate.getName() + " should not be a directory", !imageFileToCreate.isDirectory());
+            Assert.assertTrue(imageFileToCreate.getName() + " should not be empty", imageFileToCreate.length() > 0);
         }finally{
-            if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
+            backup.deleteTemporaryDirectory();
         }
     }
 
@@ -665,8 +677,6 @@ public class ExporterTest {
      */
     @Test(expected = BackupRestoreLauncher.InvalidProgramArgumentException.class)
     public void testValidateFtpParametersNoPort() throws BackupRestoreLauncher.InvalidProgramArgumentException {
-        final Exporter export = new Exporter(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
 
         final Map<String, String> args = new HashMap<String, String>();
         args.put(ImportExportUtilities.FTP_HOST.getName(), "donal.l7tech.com");

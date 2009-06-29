@@ -2186,6 +2186,7 @@
             <fileset dir="${src.root}/etc">
                 <include name="ssgbackup.sh"/>
                 <include name="ssgrestore.sh"/>
+                <include name="ssgmigrate.sh"/>
                 <include name="backupgatewaylogging.properties"/>
                 <include name="backuputilitylogging.properties"/>
             </fileset>
@@ -2193,6 +2194,7 @@
 
         <chmod file="${build.dir}/backup/ssgbackup.sh" perm="755"/>
         <chmod file="${build.dir}/backup/ssgrestore.sh" perm="755"/>
+        <chmod file="${build.dir}/backup/ssgmigrate.sh" perm="755"/>
 
         <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-utility" revision="latest.integration" property="module.utility.version"/>

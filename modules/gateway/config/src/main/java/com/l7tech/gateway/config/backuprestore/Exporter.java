@@ -17,23 +17,23 @@ import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import java.sql.SQLException;
-import java.net.*;
 import java.text.SimpleDateFormat;
-
-import org.xml.sax.SAXException;
 
 
 /**
- * Copyright (C) 2009, Layer 7 Technologies Inc.
  * <p>
- * Exporter manages the creation of a complete SSG backup. Calling createBackupImage() will create a zip file
- * containing all components which constitute a complete backup.
- * See http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_Backup_Restore_Func_Spec and
- * http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_Backup_Restore_Design
+ * Copyright (C) 2009, Layer 7 Technologies Inc.
  * </p>
  *
- * <p>Instances of Exporter are not safe to be used by multiple threads</p>
- * 
+ *
+ * <p>
+ * The utility that backups up an SSG image
+ * Exporter is responsible for accecpting parameters, validating them then calling the appropriate methods of
+ * the Backup interface
+ * </p>
+ *
+ * @see BackupRestoreFactory
+ * @see com.l7tech.gateway.config.backuprestore.Backup
  */
 public final class Exporter{
 
@@ -52,7 +52,8 @@ public final class Exporter{
                                                                                "path of the output mapping template file",
                                                                                true, false);
 
-    private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH, ImportExportUtilities.VERBOSE, ImportExportUtilities.HALT_ON_FIRST_FAILURE};
+    private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH,
+            ImportExportUtilities.VERBOSE, ImportExportUtilities.HALT_ON_FIRST_FAILURE};
 
     private static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
             new CommandLineOption("-p", "Ignored parameter for partition", true, false) };
@@ -106,9 +107,10 @@ public final class Exporter{
 
     private Map<String, String> programFlagsAndValues;
 
-    private final OSConfigManager osConfigManager;
+    private Backup backup;
 
-    public static final class BackupResult{
+
+    static final class BackupResult{
 
         private final String backUpImageName;
         private final Status status;
@@ -163,64 +165,30 @@ public final class Exporter{
      * @throws NullPointerException if ssgHome or ssgAppliance are null
      * @throws IllegalArgumentException if ssgHome does not exsit or is not a directory, or if applianceHome is the
      * empty string
-     */    //todo [Donal] replace with factory method
-    public Exporter(final File ssgHome, final PrintStream printStream, final String applianceHome) {
-        if(ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
-        if(!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
-        if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
-        if(applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
-        if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
-        
-        this.ssgHome = ssgHome;
-        //this class is not usable without an installed SSG > 5.0
-        int [] versionInfo = ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
-        isPostFiveO = versionInfo[2] > 0;
-
-        this.printStream = printStream;
-
-        confDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
-        this.applianceHome = applianceHome;
-
-        if((new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())){
-            osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
-        }else{
-            osConfigManager = null;
-        }
-    }
-
-    /**
-     * This constructor is only used with tests.
-     * This constructor will not check the for an SSG installation
-     * @param ssgHome   home directory where the SSG is installed. For tests this will be a tmp directory. Cannot be null
-     * @param printStream    stream for verbose output; <code>null</code> for no verbose output
-     * @param applianceHome the standard installation directory of the SSG appliance. If this folder exists then
-     * OS files will be backed up via backUpComponentOS(). Cannot be null or the empty string. For testing this should
-     * just be any folder which exists, so that the OS backup can be tested
-     * @param flagNotUsed just used to make the constructor signature unique
-     * @throws IllegalStateException if constructor is used outside of a test environment
      */
-    Exporter(final File ssgHome, final PrintStream printStream, final String applianceHome, final boolean flagNotUsed) {
-        File f = new File(ssgHome, "runtime/Gateway.jar");
-        if(f.exists()) throw new IllegalStateException("This constructor is only for testing. Not for use in production");
-        
+    Exporter(final File ssgHome, final PrintStream printStream, final String applianceHome) throws Backup.BackupException {
         if(ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
         if(!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
         if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
         if(applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
-        if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
-
+        if(applianceHome.trim().isEmpty()) throw new IllegalArgumentException("applianceHome cannot be null");
+        
         this.ssgHome = ssgHome;
-        isPostFiveO = false;//we won't have the /opt/SecureSpan/Gateway/Backup folder
+
+        //this class is not usable without an installed SSG >= 5.0
+        final boolean checkVersion =
+                SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.checkversion", true);
+        if (checkVersion){
+            int [] versionInfo = ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
+            isPostFiveO = versionInfo[2] > 0;
+        }else{
+            isPostFiveO = false;//we won't have the /opt/SecureSpan/Gateway/Backup folder
+        }
 
         this.printStream = printStream;
+
         confDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
         this.applianceHome = applianceHome;
-
-        if((new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())){
-            osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
-        }else{
-            osConfigManager = null;
-        }
     }
 
     /**
@@ -253,8 +221,8 @@ public final class Exporter{
      * the -image parameter. A timestamp will have been added to the file name. It also contains the status. The status
      * can be SUCCESS, FAILURE or PARTIAL_SUCCESS.
      */
-    public BackupResult createBackupImage(final String [] args)
-            throws InvalidProgramArgumentException, IOException, BackupRestoreLauncher.FatalException {
+    BackupResult createBackupImage(final String [] args)
+            throws InvalidProgramArgumentException, IOException, BackupRestoreLauncher.FatalException, Backup.BackupException {
 
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALLOPTIONS));
@@ -277,7 +245,7 @@ public final class Exporter{
         if(!usingFtp){
             // check that we can write output at location asked for
             pathToUniqueImageFile = ImportExportUtilities.getAbsolutePath(pathToUniqueImageFile);
-            validateImageFile(pathToUniqueImageFile);
+            ImportExportUtilities.validateImageFile(pathToUniqueImageFile);
         }
 
         //check that node.properties exists
@@ -293,21 +261,17 @@ public final class Exporter{
             ImportExportUtilities.throwIfFileExists(programFlagsAndValues.get(MAPPING_PATH.getName()));
         }
 
-        String tmpDirectory = null;
-        try {
-            tmpDirectory = ImportExportUtilities.createTmpDirectory();
+        final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(programFlagsAndValues);
+        backup = BackupRestoreFactory.getBackupInstance(ssgHome, applianceHome, ftpConfig, pathToUniqueImageFile,
+                isVerbose, printStream);        
 
+        try {
             final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.getName());
-            final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(programFlagsAndValues);
-            performBackupSteps(mappingFile, pathToUniqueImageFile, tmpDirectory, ftpConfig);
+            performBackupSteps(mappingFile);
         } catch(Exception e){
             return new BackupResult(null, BackupResult.Status.FAILURE, null, e);
         } finally {
-          if(tmpDirectory != null){
-                logger.info("cleaning up temp files at " + tmpDirectory);
-                if (printStream != null && isVerbose) printStream.println("Cleaning temporary files at " + tmpDirectory);
-                FileUtils.deleteDir(new File(tmpDirectory));
-            }
+            backup.deleteTemporaryDirectory();
         }
 
         if(!failedComponents.isEmpty()){
@@ -378,23 +342,15 @@ public final class Exporter{
      * </p>
      *
      * @param mappingFile path (optional) and name of the mapping file to be created. if not required pass <code>null</code>
-     * @param pathToImageZip String representing the path (optional) and name of the image zip file to create. If
-     * the image is going to be ftp'd then any path information is relative to the ftp server
-     * @param tmpOutputDirectory String the temporary directory created to host the back up of each component before
-     * the image zip file is created
-     * @param ftpConfig FtpClientConfig if ftp is required, Pass <code>null</code> when ftp is not required
      * @throws Exception for any Exception when backing up the components or when creating the zip file
      * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.FatalException if ftp is requested and
      * its not possible to ftp the newly created image
      */
-    private void performBackupSteps(final String mappingFile,
-                                    final String pathToImageZip,
-                                    final String tmpOutputDirectory,
-                                    final FtpClientConfig ftpConfig)
+    private void performBackupSteps(final String mappingFile)
             throws Exception {
 
         final List<BackupComponent<? extends Exception>> compsToBackup =
-                getComponentsForBackup(mappingFile, tmpOutputDirectory);
+                getComponentsForBackup(mappingFile);
 
         for(BackupComponent<? extends Exception> component: compsToBackup){
             try{
@@ -410,27 +366,9 @@ public final class Exporter{
             }
         }
 
-        //when we are using ftp, we need to store the image file somewhere locally
-        //not using the same temp directory as the image data as it causes recursive problems when zipping
-        if(ftpConfig != null){
-            String newTmpDir = null;
-            try{
-                newTmpDir = ImportExportUtilities.createTmpDirectory();
-                //What is just the file name? We will use just the file name, and create the zip in the tmp directory
-                String zipFileName = ImportExportUtilities.getFilePart(pathToImageZip);
-                zipFileName = newTmpDir+File.separator+zipFileName;                
-                createImageZip(zipFileName, tmpOutputDirectory);
-                ftpImage(zipFileName, pathToImageZip, ftpConfig);
-            }finally{
-                if(newTmpDir != null){
-                    logger.info("cleaning up temp files at " + newTmpDir);
-                    if (printStream != null && isVerbose) printStream.println("Cleaning temporary files at " + newTmpDir);
-                    FileUtils.deleteDir(new File(newTmpDir));
-                }
-            }
-        }else{
-            createImageZip(pathToImageZip, tmpOutputDirectory);
-        }
+        //todo [Donal] make sure that when an exception is thrown it communicated that it's a big fail to the user
+        //as not image was created / ftp'ed
+        backup.createBackupImage();
     }
 
     /**
@@ -460,22 +398,20 @@ public final class Exporter{
      * contains the requested components 
      * </p>
      * @param mappingFile should the db compoment backup create a mapping file? Can be null if not required
-     * @param tmpOutputDirectory where the components should write their backup to
      * @throws IOException if any exception ocurs reading node.properties to get database information. This is always
      * @return A List of BackupComponent. Clients can iterate over this list and call doBackup() to back up the component
      * its wrapping
      */
     private List<BackupComponent<? extends Exception>> getComponentsForBackup(
-            final String mappingFile,
-            final String tmpOutputDirectory)
-            throws IOException {
+            final String mappingFile) throws IOException {
 
-        final List<BackupComponent<? extends Exception>> componentList = new ArrayList<BackupComponent<? extends Exception>>();
+        final List<BackupComponent<? extends Exception>>
+                componentList = new ArrayList<BackupComponent<? extends Exception>>();
 
-        BackupComponent<IOException> versionComp = new BackupComponent<IOException>() {
-            public void doBackup() throws IOException {
+        final BackupComponent<Backup.BackupException> versionComp = new BackupComponent<Backup.BackupException>() {
+            public void doBackup() throws Backup.BackupException {
                 // record version of this image
-                backUpVersion(tmpOutputDirectory);
+                backup.backUpVersion();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -492,10 +428,10 @@ public final class Exporter{
         //Backup database info if the db is local
         if(ImportExportUtilities.isHostLocal(config.getHost())){
 
-            final BackupComponent<IOException> dbComp = new BackupComponent<IOException>() {
-                public void doBackup() throws IOException {
+            final BackupComponent<Backup.BackupException> dbComp = new BackupComponent<Backup.BackupException>() {
+                public void doBackup() throws Backup.BackupException {
                     //this will also create the mapping file if it was requested
-                    backUpComponentMainDb(mappingFile, tmpOutputDirectory, config);
+                    backup.backUpComponentMainDb(mappingFile, config);
                 }
 
                 public ImportExportUtilities.ComponentType getComponentType() {
@@ -505,9 +441,9 @@ public final class Exporter{
             componentList.add(dbComp);
             // check whether or not we are expected to include audit in export
             if (includeAudits) {
-                final BackupComponent<Exception> auditComp = new BackupComponent<Exception>() {
-                    public void doBackup() throws IOException {
-                        backUpComponentAudits(tmpOutputDirectory, config);
+                final BackupComponent<Backup.BackupException> auditComp = new BackupComponent<Backup.BackupException>() {
+                    public void doBackup() throws Backup.BackupException {
+                        backup.backUpComponentAudits(config);
                     }
 
                     public ImportExportUtilities.ComponentType getComponentType() {
@@ -520,9 +456,9 @@ public final class Exporter{
             logger.log(Level.INFO,  "Database is not local so no backup of database being created");
         }
 
-        final BackupComponent<Exception> configComp = new BackupComponent<Exception>() {
-            public void doBackup() throws IOException {
-                backUpComponentConfig(tmpOutputDirectory);
+        final BackupComponent<Backup.BackupException> configComp = new BackupComponent<Backup.BackupException>() {
+            public void doBackup() throws Backup.BackupException {
+                backup.backUpComponentConfig();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -531,10 +467,10 @@ public final class Exporter{
         };
         componentList.add(configComp);
 
-        final BackupComponent<Exception> osComp = new BackupComponent<Exception>() {
-            public void doBackup() throws ExporterException {
+        final BackupComponent<Backup.BackupException> osComp = new BackupComponent<Backup.BackupException>() {
+            public void doBackup() throws Backup.BackupException {
                 //restore OS files if this is an appliance
-                backUpComponentOS(tmpOutputDirectory);
+                backup.backUpComponentOS();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -543,9 +479,9 @@ public final class Exporter{
         };
         componentList.add(osComp);
 
-        final BackupComponent<Exception> caComp = new BackupComponent<Exception>() {
-            public void doBackup() throws IOException {
-                backUpComponentCA(tmpOutputDirectory);
+        final BackupComponent<Backup.BackupException> caComp = new BackupComponent<Backup.BackupException>() {
+            public void doBackup() throws Backup.BackupException {
+                backup.backUpComponentCA();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -555,9 +491,9 @@ public final class Exporter{
 
         componentList.add(caComp);
 
-        final BackupComponent<Exception> maComp = new BackupComponent<Exception>() {
-            public void doBackup() throws IOException {
-                backUpComponentMA(tmpOutputDirectory);
+        final BackupComponent<Backup.BackupException> maComp = new BackupComponent<Backup.BackupException>() {
+            public void doBackup() throws Backup.BackupException {
+                backup.backUpComponentMA();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -566,470 +502,12 @@ public final class Exporter{
         };
         componentList.add(maComp);
 
-        return filterComponents(componentList);
-    }
-
-    private List<BackupComponent<? extends Exception>> filterComponents(
-            final List<BackupComponent<? extends Exception>> allComponents){
-
-        if(!isSelectiveBackup){
-            return allComponents;
-        }
-
-        if(printStream != null && isVerbose) printStream.println("Performing a selective backup");
-        logger.log(Level.INFO, "Performing a selective backup");
-
-        final List <BackupComponent<? extends Exception>>
-                returnList = new ArrayList<BackupComponent<? extends Exception>>();
-
-        for(BackupComponent<? extends Exception> comp: allComponents){
-            if(comp.getComponentType() == ImportExportUtilities.ComponentType.VERSION){
-                //We always include the version component
-                returnList.add(comp);
-                continue;
-            }
-
-            if(programFlagsAndValues.containsKey("-"+comp.getComponentType().getComponentName())){
-                returnList.add(comp);
-            } 
-        }
-
-        return returnList;
-    }
-
-    /**
-     * Ftp a local image zip file to a ftp server
-     * @param localZipFile The local image zip file. This String includes the path and the file name. Cannot be null
-     * @param destPathAndFileName The file name including path info if required, of where the file should be uploaded
-     * to on the ftp server. The filename will have a timestamp in the format "yyyyMMddHHmmss_" prepended to the
-     * front of the file name 
-     * @param ftpConfig the configuration for the ftp server to upload the localZipFile to
-     * @throws BackupRestoreLauncher.FatalException if any ftp exception occurs
-     * @throws FileNotFoundException if the localZipFile cannot be found
-     * @throws NullPointerException if any parameter is null. All are required
-     * @throws IllegalArgumentException if any String param is the emtpy string
-     */
-    public void ftpImage(final String localZipFile, final String destPathAndFileName, final FtpClientConfig ftpConfig)
-            throws BackupRestoreLauncher.FatalException, FileNotFoundException {
-        if(localZipFile == null) throw new NullPointerException("localZipFile cannot be null");
-        if(localZipFile.equals("")) throw new IllegalArgumentException("localZipFile cannot equal the empty string");
-        if(destPathAndFileName == null) throw new NullPointerException("destPathAndFileName cannot be null");
-        if(destPathAndFileName.equals("")) throw new IllegalArgumentException("destPathAndFileName cannot equal the empty string");
-        if(ftpConfig == null) throw new NullPointerException("ftpConfig cannot be null");
-
-        InputStream is = null;
-        try {
-            is = new FileInputStream(new File(localZipFile));
-            if (printStream != null && isVerbose)
-                printStream.println("Ftp file '" + localZipFile+"' to host '" + ftpConfig.getHost()+"' into directory '"
-                        + destPathAndFileName+"'");
-
-            final String filePart = ImportExportUtilities.getFilePart(destPathAndFileName);
-            FtpUtils.upload(ftpConfig, is, filePart, true);
-        } catch (FtpException e) {
-            throw new BackupRestoreLauncher.FatalException(e.getMessage());
-        } finally{
-            ResourceUtils.closeQuietly(is);
-        }
-    }
-
-    /**
-     * This method will back up database audits. Audits are written directly from memory into a gzip file to
-     * conserve space. The file created is called "audits.gz" and is contained inside the "audits" folder in
-     * the tmpOutputDirectory
-     * //todo [Donal] implement heuristic for determine backup space for audits here
-     * //todo [Donal] make audits interruptable - error depending on -halt status
-     *
-     * Note: The sql created in the file "audits.gz" will NOT contain create and drop statements. The drop and
-     * create statments are created by addDatabaseToBackupFolder. When restoring or migrating the audits tables must
-     * always be dropped and recreated. As a result the "audits.gz" file cannot be loaded into a database until
-     * the audit tables have been recreated.
-     *
-     * Audits can only be backed up if the database is local. If it's not and this method is called an
-     * IllegalStateException will be thrown. Call isHostLocal() to see if the database is local or not
-     * @param tmpOutputDirectory The name of the directory to back the audits file up into. They will be in the
-     * folder representing this component "audits"
-     * @param config DatabaseConfig object used for connecting to the database
-     * @throws IOException if any exception occurs writing the database back up files
-     */
-    public void backUpComponentAudits(final String tmpOutputDirectory, final DatabaseConfig config) throws IOException {
-        if(!ImportExportUtilities.isHostLocal(config.getHost())){
-            logger.log(Level.WARNING, "Cannot backup database as it is not local");
-            throw new IllegalStateException("Cannot back up database as it is not local");
-        }
-        try {
-            //Create the database folder
-            final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.AUDITS.getComponentName());
-            //never include audits with the main db dump
-            DBDumpUtil.auditDump(ssgHome, config, dir.getAbsolutePath(), printStream, isVerbose);
-        } catch (SQLException e) {
-            logger.log(Level.INFO, "exception dumping database, possible that the database is not running or credentials " +
-                    "are not correct", ExceptionUtils.getDebugException(e));
-            throw new IOException("cannot dump the database, please ensure the database is running and the credentials are correct");
-        }
-    }
-
-    /**
-     * This method will backup the main db excluding any audit tables. If mappingFile is not null then a mapping file
-     * will be created providing a template to specify the mapping of cluster property values and ip address values
-     * from the system being backed up to the system being restored. This method will also back up my.cnf
-     *
-     * Note: When using the backup image to import, if -migrate is not used, this template file is ignored.
-     *
-     * If the database is not local and this method is called, then an IllegalState exception will be thrown. To
-     * determine if a database is local nor not, call isHostLocal()
-     *
-     * @param mappingFile name of the mapping file. Can include path information. Can be null when it is not required
-     * @param tmpOutputDirectory The name of the directory to back the database file up into. They will be in the
-     * folder representing this component "maindb" for the db
-     * @param config DatabaseConfig object used for connecting to the database
-     * @throws IOException if any exception occurs writing the database back up files
-     */
-    public void backUpComponentMainDb(final String mappingFile, final String tmpOutputDirectory,
-                                      final DatabaseConfig config) throws IOException {
-        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.MAINDB.getComponentName());
-        addDatabaseToBackupFolder(dir, config);
-        // produce template mapping if necessary
-        if(mappingFile != null){
-            final String mappingFileName = ImportExportUtilities.getAbsolutePath(mappingFile);
-            createMappingFile(mappingFileName, config);
-        }
-
-        //add my.cnf
-        final File file = new File(BackupImage.PATH_TO_MY_CNF);
-        if ( file.exists() && !file.isDirectory()) {
-            FileUtils.copyFile(file, new File(dir.getAbsolutePath() + File.separator + file.getName()));
-        }else{
-            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, "Cannot backup my.cnf",
+        if(isSelectiveBackup){
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Performing a selective backup",
                     isVerbose, printStream);
-        }
-    }
-
-    /**
-     * Create a file called 'version' in the folder tmpOutputDirectory. This file lists the current version of the
-     * SSG software installed where this program is ran
-     * @param tmpOutputDirectory folder to create version file in
-     * @throws IOException if tmpOutputDirectory is null, doesn't exist or is not a directory
-     */
-    public void backUpVersion(final String tmpOutputDirectory) throws IOException {
-        ImportExportUtilities.verifyDirExistence(tmpOutputDirectory);
-
-        FileOutputStream fos = null;
-        try{
-            fos = new FileOutputStream(tmpOutputDirectory + File.separator + ImportExportUtilities.VERSION);
-            fos.write( BuildInfo.getProductVersion().getBytes());
-        } finally{
-            ResourceUtils.closeQuietly(fos);            
-        }
-    }
-
-    /**
-     * This method backs up the SSG config files node.properties, ssglog.properties, system.properties and omp.dat
-     * from the node/default/etc/conf folder into the "config" directory under tmpOutputDirectory
-     * @param tmpOutputDirectory The name of the directory to back the SSG config files into. They will be in the
-     * folder representing this component "config"
-     * @throws IOException if any exception occurs writing the SSG config files to the backup folder
-     */
-    public void backUpComponentConfig(final String tmpOutputDirectory) throws IOException {
-        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.CONFIG.getComponentName());
-
-        ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter(){
-            public boolean accept(File dir, String name) {
-                for(String ssgFile: ImportExportUtilities.CONFIG_FILES){
-                    if(ssgFile.equals(name)) return true;
-                }
-                return false;
-            }
-        });
-    }
-
-    /**
-     * This method backs up OS files listed in the file backup_manifest, in the config/backup/cfg folder, into the
-     * "os" directory under tmpOutputDirectory. The file backup_manifest only exists when the appliance is installed.
-     * In addition when the appliance is not installed this method will do nothing.
-     *
-     * @param tmpOutputDirectory The name of the directory to back the OS files into. They will be in the
-     * folder representing this component "os"
-     * @throws IOException if any exception occurs writing the OS files to the backup folder
-     */
-    public void backUpComponentOS(final String tmpOutputDirectory) throws ExporterException {
-        if (new File(applianceHome).exists()) {
-            try {
-                // copy system config files
-                final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
-                if(osConfigManager == null){
-                    final String msg = "Operating System backup is not applicable for this host";
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                    return;
-                }
-                osConfigManager.saveOSConfigFiles(dir);
-            } catch (OSConfigManager.OSConfigManagerException e) {
-                throw new ExporterException(e.getMessage());
-            } catch (IOException e) {
-                throw new ExporterException(e.getMessage());
-            }
-        }
-        //there is no else as backing up os files is not a user option. It just happens when were on an appliance
-    }
-
-    public static class ExporterException extends Exception{
-        public ExporterException(String message) {
-            super(message);
-        }
-    }
-
-    /**
-     * This method backs up custom assertions and their associated property files to the ca folder under
-     * tmpOutputDirectory
-     *
-     * Custom assertion jars are stored in runtime/modules/lib and their property files are kept in node/default/etc/conf
-     *
-     * @param tmpOutputDirectory The name of the directory to back the custom assertions and property files into.
-     * They will be in the folder representing this component "ca"
-     * @throws IOException if any exception occurs writing the custom assertions and property files to the backup folder
-     */
-    public void backUpComponentCA(final String tmpOutputDirectory) throws IOException {
-        final File dir =
-                createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.CA.getComponentName());
-
-        //backup all .property files in the conf folder which are not in CONFIG_FILES
-        ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter(){
-            public boolean accept(File dir, String name) {
-                if(!name.endsWith(".properties")) return false;
-
-                for(String ssgFile: ImportExportUtilities.CONFIG_FILES){
-                    if(ssgFile.equals(name)) return false;
-                }
-                return true;
-            }
-        });
-
-        //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/lib
-        ImportExportUtilities.copyFiles(new File(ssgHome, ImportExportUtilities.CA_JAR_DIR), dir, new FilenameFilter(){
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".jar");
-            }
-        });
-    }
-
-    /**
-     * This method backs up modular assertions to the ma folder under tmpOutputDirectory
-     *
-     * Custom assertion jars are stored in runtime/modules/assertions
-     *
-     * @param tmpOutputDirectory The name of the directory to back the modular assertions into.
-     * They will be in the folder representing this component "ma"
-     * @throws IOException if any exception occurs writing the modular assertions to the backup folder
-     */
-    public void backUpComponentMA(final String tmpOutputDirectory) throws IOException {
-        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.MA.getComponentName());
-
-        //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/assertions
-        ImportExportUtilities.copyFiles(new File(ssgHome, ImportExportUtilities.MA_AAR_DIR), dir, new FilenameFilter(){
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".aar");
-            }
-        });
-    }
-
-    /**
-     * Create an image zip archive from all the files and folders in tmpOutputDirectory.
-     * @param zipFileName The name of the zip file to create
-     * @param tmpOutputDirectory The folder to zip
-     * @throws IOException if any exception occurs while creating the zip
-     */
-    public void createImageZip(final String zipFileName, final String tmpOutputDirectory) throws IOException {
-        logger.info("compressing image into " + zipFileName);
-        final File dirObj = new File(tmpOutputDirectory);
-        if (!dirObj.isDirectory()) {
-            throw new IOException(tmpOutputDirectory + " is not a directory");
-        }
-        final ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
-        if (printStream != null && isVerbose) printStream.println("Compressing SecureSpan Gateway image into " + zipFileName);
-        final StringBuilder sb = new StringBuilder();
-        addDir(dirObj, out, tmpOutputDirectory, sb);
-
-        //Add the manifest listing all files in the archive to the archive
-        final File manifest = new File(tmpOutputDirectory + File.separator + ImportExportUtilities.MANIFEST_LOG);
-        manifest.createNewFile();
-        final FileOutputStream fos = new FileOutputStream(manifest);
-        fos.write(sb.toString().getBytes());
-        fos.close();
-
-        addZipFileToArchive(out, tmpOutputDirectory, manifest, sb);
-
-        out.close();
-    }
-
-    /**
-     * Add any arbitrary file to the zip archive being created. This is used to add the manifest.log file to the archive
-     * @param out The zip archive to add the file to. It must be open
-     * @param tmpOutputDirectory The directory the zip archieve is archiving. The fileToAdd should be in this directory
-     * @param fileToAdd the file to add to the zip. This file should be in tmpOutputDirectory
-     * @param sb the StringBuilder to append to, so that a record of each file archived is made.
-     * @throws IOException if any exception occurs while writing to the zip archive
-     * @throws IllegalStateException if the fileToAdd does not reside in tmpOutputDirectory
-     */
-    private void addZipFileToArchive(final ZipOutputStream out,
-                                     final String tmpOutputDirectory,
-                                     final File fileToAdd,
-                                     final StringBuilder sb)
-            throws IOException {
-        final byte[] tmpBuf = new byte[1024];
-        final FileInputStream in = new FileInputStream(fileToAdd.getAbsolutePath());
-        if (printStream != null && isVerbose) printStream.println("\t- " + fileToAdd.getAbsolutePath());
-        String zipEntryName = fileToAdd.getAbsolutePath();
-        if (zipEntryName.startsWith(tmpOutputDirectory)) {
-            zipEntryName = zipEntryName.substring(tmpOutputDirectory.length() + 1);
+            return ImportExportUtilities.filterComponents(componentList, programFlagsAndValues);
         }else{
-            throw new IllegalStateException("File '"+fileToAdd.getAbsoluteFile()+"' does not exist in directory '"
-                    +tmpOutputDirectory+"'");
-        }
-        out.putNextEntry(new ZipEntry(zipEntryName));
-        if(sb != null) sb.append(zipEntryName).append("\n");
-        // Transfer from the file to the ZIP fileToAdd
-        int len;
-        while ((len = in.read(tmpBuf)) > 0) {
-            out.write(tmpBuf, 0, len);
-        }
-        // Complete the entry
-        out.closeEntry();
-        in.close();
-    }
-
-    /**
-     * This method is intentionally private. This method represents one step in the backing up of the database component,
-     * and as a result it's private. The public method to back up the database component is addDbBackupToBackupFolder()
-     *
-     * @param dbTmpOutputDirectory The directory to back up the database to. This will create the file main_backup.sql
-     * in the folder "maindb"
-     * @param config DatabaseConfig object used for connecting to the database
-     * @throws IOException if any exception occurs writing the database back up files
-     * @throws IllegalThreadStateException if the database is not local
-     */
-    private void addDatabaseToBackupFolder(final File dbTmpOutputDirectory, final DatabaseConfig config)
-            throws IOException {
-        if(!ImportExportUtilities.isHostLocal(config.getHost())){
-            logger.log(Level.WARNING, "Cannot backup database as it is not local");
-            throw new IllegalStateException("Cannot back up database as it is not local");
-        }
-        try {
-            DBDumpUtil.dump(config, dbTmpOutputDirectory.getAbsolutePath(), printStream, isVerbose,
-                    BackupImage.MAINDB_BACKUP_FILENAME);
-        } catch (SQLException e) {
-            logger.log(Level.INFO, "exception dumping database, possible that the database is not running or credentials " +
-                    "are not correct", ExceptionUtils.getDebugException(e));
-            throw new IOException("cannot dump the database, please ensure the database is running and the credentials are correct");
-        }
-    }
-
-    /**
-     * Create the directory with the name componentName in the directory tmpOutputDirectory. This will delete any
-     * existing directory if it exists and recreate it, otherwise it just creates the directory
-     * @param tmpOutputDirectory String The directory where the componentName should be created
-     * @param componentName String The name of the new directory
-     * @return File representing the created directory
-     * @throws IOException if any exception occurs while creating the directory
-     */
-    private File createComponentDir(final String tmpOutputDirectory, final String componentName) throws IOException {
-        final File dir = new File(tmpOutputDirectory, componentName);
-        if(dir.exists()){
-            dir.delete();
-        }
-        dir.mkdir();
-        return dir;
-    }
-
-    /**
-     * Create a mapping file which can be used when migrating tables.
-     * @param mappingFileName The path(optional) and name of the mapping file to create
-     * @param config The DatabaseConfig used to connect to the database
-     * @throws IOException if any exception occurs when creating the mapping file
-     */
-    private void createMappingFile(final String mappingFileName, final DatabaseConfig config) throws IOException {
-        if(!ImportExportUtilities.isHostLocal(config.getHost())){
-            logger.log(Level.WARNING, "Cannot create maping file as database is not local");
-            throw new IllegalStateException("Cannot create maping file as database is not local");
-        }
-
-        if (mappingFileName != null) {
-            if (!testCanWriteSilently(mappingFileName)) {
-                throw new IllegalArgumentException("cannot write to the mapping template path provided: " + mappingFileName);
-            }
-            // read policy files from this dump, collect all potential mapping in order to produce mapping template file
-            try {
-                MappingUtil.produceTemplateMappingFileFromDB(config, mappingFileName);
-            } catch (SQLException e) {
-                // should not happen
-                logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
-                throw new RuntimeException("problem producing template mapping file", e);
-            } catch (SAXException e) {
-                // should not happen
-                logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
-                throw new RuntimeException("problem producing template mapping file", e);
-            }
-        }
-    }
-
-    /**
-     * Validate that the image file exists and that we can write to it
-     * @param pathToImageFile String representing the relative or absolute path to the image file. Cannot be nul
-     * @throws IOException if we cannot write to the pathToImageFile file
-     */
-    private void validateImageFile(final String pathToImageFile) throws IOException {
-        if (pathToImageFile == null) {
-            logger.info("No target image path specified");
-            throw new NullPointerException("pathToImageFile cannot be null");
-        } else {
-            //fail if file exists
-            ImportExportUtilities.throwIfFileExists(pathToImageFile);
-        }
-
-        if (!testCanWriteSilently(pathToImageFile)) {
-            throw new IOException("Cannot write image to " + pathToImageFile);
-        }
-    }
-
-    /**
-     * Quietly test if the given path have permissions to write.  This method is similar to
-     * testCanWrite except that it will not output any error messages, instead, they will be logged.
-     *
-     * @param path  Path to test
-     * @return  TRUE if can write on the given path, otherwise FALSE.
-     */
-    private boolean testCanWriteSilently(final String path) {
-        try {
-            final FileOutputStream fos = new FileOutputStream(path);
-            fos.close();
-            (new File(path)).delete();
-            logger.log(Level.INFO, "Successfully tested write permission for " + path);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Cannot write to " + path + ". ");
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Add a directory to a zip archive. The zip archive should be currently open
-     * @param dirObj The directory to add to the archive
-     * @param out The currently open ZipOutputStream
-     * @param tmpOutputDirectory The root directory being archived
-     * @param sb The StringBuilder used to record each file archived
-     * @throws IOException if any exception occurs when writing to the zip archive
-     */
-    private void addDir(final File dirObj,
-                        final ZipOutputStream out,
-                        final String tmpOutputDirectory,
-                        final StringBuilder sb) throws IOException {
-        final File[] files = dirObj.listFiles();
-
-        for (final File file : files) {
-            if (file.isDirectory()) {
-                addDir(file, out, tmpOutputDirectory, sb);
-                continue;
-            }
-            addZipFileToArchive(out, tmpOutputDirectory, file, sb);
+            return componentList;
         }
     }
 

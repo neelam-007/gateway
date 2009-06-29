@@ -21,13 +21,14 @@ import java.util.logging.Logger;
  * Copyright (C) 2009, Layer 7 Technologies Inc.
  * </p>
  *
+ *
  * <p>
  * The utility that restores or migrates an SSG image
  * Importer is responsible for accecpting parameters, validating them then calling the appropriate methods of
  * the Restore interface
  * </p>
  *
- * @see com.l7tech.gateway.config.backuprestore.RestoreFactory
+ * @see BackupRestoreFactory
  * @see com.l7tech.gateway.config.backuprestore.Restore
  */
 public final class Importer{
@@ -44,20 +45,23 @@ public final class Importer{
     static final CommandLineOption DB_NAME = new CommandLineOption("-db", "database name");
     static final CommandLineOption DB_ROOT_PASSWD = new CommandLineOption("-dbp", "database root password");
     static final CommandLineOption DB_ROOT_USER = new CommandLineOption("-dbu", "database root username");
-    static final CommandLineOption OS_OVERWRITE = new CommandLineOption("-os",
+    static final CommandLineOption OS_OVERWRITE =
+            new CommandLineOption("-"+ ImportExportUtilities.ComponentType.OS.getComponentName(),
             "overwrite os level config files",
             false, true);
     static final CommandLineOption CREATE_NEW_DB = new CommandLineOption("-newdb" ,"create new database");
     static final CommandLineOption MIGRATE = new CommandLineOption("-migrate", "migrate from environment to environment using the file exclusion and table exclusion configuration files", false, true);
 
-    static final CommandLineOption CONFIG_ONLY = new CommandLineOption("-config", "only restore configuration files, no database restore", false, true);
+    static final CommandLineOption CONFIG_ONLY =
+            new CommandLineOption("-"+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
+                    "only restore configuration files, no database restore", false, true);
     static final CommandLineOption CLUSTER_PASSPHRASE = new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database");
     static final CommandLineOption GATEWAY_DB_USERNAME = new CommandLineOption("-gdbu", "gateway database username");
     static final CommandLineOption GATEWAY_DB_PASSWORD = new CommandLineOption("-gdbp", "gateway database password");
 
     static final CommandLineOption[] ALL_MIGRATE_OPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
-            DB_HOST_NAME, DB_NAME, CONFIG_ONLY, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD,
-            CREATE_NEW_DB, MIGRATE, ImportExportUtilities.VERBOSE, ImportExportUtilities.HALT_ON_FIRST_FAILURE};
+            DB_HOST_NAME, DB_NAME, CONFIG_ONLY, OS_OVERWRITE, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD,
+            CREATE_NEW_DB, MIGRATE};
 
     static final CommandLineOption[] ALL_RESTORE_OPTIONS = {IMAGE_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
             ImportExportUtilities.HALT_ON_FIRST_FAILURE, ImportExportUtilities.VERBOSE};
@@ -79,9 +83,6 @@ public final class Importer{
     private String adminDBUsername;
     private String adminDBPasswd;
     private String suppliedClusterPassphrase;
-
-    //will be used soon
-    private File excludeTables;
 
     private final File ssgHome;
 
@@ -148,23 +149,11 @@ public final class Importer{
         if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
 
         this.ssgHome = ssgHome;
-        //this class is not usable without an installed SSG < 5.0
-        ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
+        //this class is not usable without an installed SSG >= 5.0
+        final boolean checkVersion =
+                SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.checkversion", true);
+        if (checkVersion) ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
 
-        this.printStream = printStream;
-        this.applianceHome = applianceHome;
-    }
-
-
-    Importer(final File ssgHome, final PrintStream printStream, final String applianceHome, final boolean notused) {
-        //Only to be used in test cases within Skunkworks
-        if(ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
-        if(!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
-        if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
-        if(applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
-        if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
-
-        this.ssgHome = ssgHome;
         this.printStream = printStream;
         this.applianceHome = applianceHome;
     }
@@ -515,7 +504,6 @@ public final class Importer{
                     new DefaultMasterPasswordFinder(ompFile));
 
             //we need to create a DatabaseConfig
-            //todo [Donal] at some point we need to make a node.properties
             //when migrating we work with both the node.properties supplied and the command line arguments
             //See if node.properties exists
             final File nodePropsFile = new File(ssgHome,
@@ -670,7 +658,7 @@ public final class Importer{
     private List<RestoreComponent<? extends Exception>> getComponentsForRestore(final String mappingFile)
             throws Restore.RestoreException {
 
-        final Restore restore = RestoreFactory.getRestoreInstance(this.applianceHome,
+        final Restore restore = BackupRestoreFactory.getRestoreInstance(this.applianceHome,
                 this.backupImage,
                 databaseConfig,/*I might be null and that's ok*/
                 suppliedClusterPassphrase,
@@ -728,8 +716,16 @@ public final class Importer{
             //add the ca folder and property files
         }
 
-        return (isSelectiveRestore)? ImportExportUtilities.filterComponents(componentList, programFlagsAndValues)
-                : componentList;
+        if(isSelectiveRestore){
+            if(!isMigrate){
+                //don't tell the user this if they are doing a migrate
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Performing a selective restore",
+                        isVerbose, printStream);
+            }
+            return ImportExportUtilities.filterComponents(componentList, programFlagsAndValues);
+        }else{
+            return componentList;
+        }
     }
 
     public String getDatabaseConfigCommandLineOptions(){
@@ -882,6 +878,7 @@ public final class Importer{
     private static List<CommandLineOption> getAllMigrateOptions(){
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALL_MIGRATE_OPTIONS));
+        validArgList.addAll(Arrays.asList(ImportExportUtilities.VERBOSE, ImportExportUtilities.HALT_ON_FIRST_FAILURE));
         return validArgList;
     }
 

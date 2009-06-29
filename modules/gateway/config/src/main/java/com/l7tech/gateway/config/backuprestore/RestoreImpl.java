@@ -27,10 +27,9 @@ final class RestoreImpl implements Restore{
 
     private static final Logger logger = Logger.getLogger(RestoreImpl.class.getName());
 
-    private final File ssgHome;
     private final PrintStream printStream;
-    private final String applianceHome;
     private final boolean isVerbose;
+    private final String applianceHome;
     private final BackupImage image;
     private final DatabaseRestorer dbRestorer;
     private final File ompFile;
@@ -73,7 +72,6 @@ final class RestoreImpl implements Restore{
         this.image = image;
         isVerbose = verbose;
 
-        this.ssgHome = ssgHome;
         //this class is not usable without an installed SSG > 5.0
         this.printStream = printStream;
         this.applianceHome = applianceHome;

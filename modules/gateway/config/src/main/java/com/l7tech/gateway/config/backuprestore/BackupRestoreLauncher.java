@@ -15,7 +15,7 @@ import java.util.logging.Logger;
  * Copyright (C) 2009, Layer 7 Technologies Inc.
  * Run backup / restore 
  */
-public class BackupRestoreLauncher {
+class BackupRestoreLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
     private static final String LOGCONFIG_NAME = "backuputilitylogging.properties";
     private static final String SSGBACKUP_SH = "ssgbackup.sh";
@@ -23,8 +23,6 @@ public class BackupRestoreLauncher {
     private static final String IMPORT_TYPE = "import";
     private static final String EXPORT_TYPE = "export";
     private static final Logger logger = Logger.getLogger(BackupRestoreLauncher.class.getName());
-    private static ArrayList<CommandLineOption> allRuntimeOptions = null;
-    private static int argparseri = 0;
     private static final String SSG_HOME = "/opt/SecureSpan/Gateway";
 
     /**
@@ -41,11 +39,18 @@ public class BackupRestoreLauncher {
         initializeLogging();
 
         try {
-            if (args[0].toLowerCase().equals("import")) {
+            if (args[0].equalsIgnoreCase("import") || args[0].equalsIgnoreCase("migrate")) {
+                final String [] argsToUse;
+                if(args[0].equalsIgnoreCase("migrate")){
+                    argsToUse = MigrateToRestoreConvertor.getConvertedArguments(args);
+                }else{
+                    argsToUse = args;
+                }
+
                 final Importer importer = new Importer(new File(SSG_HOME),
                         System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
 
-                Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+                Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(argsToUse);
                 switch (result.getStatus()){
                     case SUCCESS:
                         if(result.isWasMigrate()){
@@ -80,7 +85,7 @@ public class BackupRestoreLauncher {
                         throw new RuntimeException("Unexpected response from import");
 
                 }
-            } else if (args[0].toLowerCase().equals("export")) {
+            } else if (args[0].equalsIgnoreCase("export")) {
                 final Exporter exporter = new Exporter(new File(SSG_HOME),
                         System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
                 Exporter.BackupResult result = exporter.createBackupImage(args);
@@ -106,7 +111,7 @@ public class BackupRestoreLauncher {
                         throw new RuntimeException("Unexpected response from export");
 
                 }
-            } else if (args[0].toLowerCase().equals("cfgdeamon")) {
+            } else if (args[0].equalsIgnoreCase("cfgdeamon")) {
                 final OSConfigManager osConfigManager =
                         new OSConfigManager(new File(SSG_HOME), true, false, null);
                 try {

@@ -1,0 +1,453 @@
+package com.l7tech.gateway.config.backuprestore;
+
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
+import com.l7tech.gateway.common.transport.ftp.FtpUtils;
+import com.jscape.inet.ftp.FtpException;
+
+import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipEntry;
+import java.sql.SQLException;
+
+import org.xml.sax.SAXException;
+
+/**
+ * Implemenation of the Restore public api
+ * <p/>
+ * This class is immutable
+ */
+class BackupImpl implements Backup {
+
+    private static final Logger logger = Logger.getLogger(BackupImpl.class.getName());
+
+    private final PrintStream printStream;
+    private final boolean isVerbose;
+    private final File tmpOutputDirectory;
+    private final File ssgHome;
+    private final File confDir;
+    private final String applianceHome;
+    private final OSConfigManager osConfigManager;
+    private final FtpClientConfig ftpConfig;
+    private final String pathToImageZipFile;
+
+    /**
+     *
+     * @param ssgHome
+     * @param applianceHome
+     * @param ftpConfig
+     * @param pathToImageZipFile can be to a local file, or relative to a log on directory on a ftp server. Cannnot
+     * be null
+     * @param verbose
+     * @param printStream
+     * @throws BackupException
+     */
+    BackupImpl(final File ssgHome,
+               final String applianceHome,
+               final FtpClientConfig ftpConfig,
+               final String pathToImageZipFile,
+               final boolean verbose,
+               final PrintStream printStream) throws BackupException {
+
+        if (ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
+        if (!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
+        if (!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
+
+        if (applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
+        if (applianceHome.trim().isEmpty()) throw new IllegalArgumentException("applianceHome cannot be null");
+
+        if (pathToImageZipFile == null) throw new NullPointerException("pathToImageZipFile cannot be null");
+        if (pathToImageZipFile.trim().isEmpty()) throw new IllegalArgumentException("pathToImageZipFile cannot be null");
+
+        try {
+            tmpOutputDirectory = new File(ImportExportUtilities.createTmpDirectory());
+        } catch (IOException e) {
+            throw new BackupException("Could not create temp output directory for backup: " + e.getMessage());
+        }
+        this.ssgHome = ssgHome;
+        this.applianceHome = applianceHome;
+        this.ftpConfig = ftpConfig;//I might be null and thats ok
+        this.pathToImageZipFile = pathToImageZipFile;
+        this.printStream = printStream;
+        isVerbose = verbose;
+        confDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
+
+        if ((new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())) {
+            osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
+        } else {
+            osConfigManager = null;
+        }
+
+    }
+
+    public void backUpVersion() throws BackupException {
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(tmpOutputDirectory + File.separator + ImportExportUtilities.VERSION);
+            fos.write(BuildInfo.getProductVersion().getBytes());
+        } catch (IOException e) {
+            throw new BackupException("Could not write version file: " + e.getMessage());
+        } finally {
+            ResourceUtils.closeQuietly(fos);
+        }
+    }
+
+    public void backUpComponentMainDb(final String mappingFile, final DatabaseConfig config)
+            throws BackupException {
+
+        if (!ImportExportUtilities.isHostLocal(config.getHost())) {
+            logger.log(Level.WARNING, "Cannot backup database as it is not local");
+            throw new IllegalStateException("Cannot back up database as it is not local");
+        }
+
+        try {
+            final File dir =
+                    createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.MAINDB.getComponentName());
+
+            DBDumpUtil.dump(config, dir.getAbsolutePath(), printStream, isVerbose, BackupImage.MAINDB_BACKUP_FILENAME);
+
+            // produce template mapping if necessary
+            if (mappingFile != null) {
+                final String mappingFileName = ImportExportUtilities.getAbsolutePath(mappingFile);
+                createMappingFile(mappingFileName, config);
+            }
+
+            //add my.cnf
+            final File file = new File(BackupImage.PATH_TO_MY_CNF);
+            if (file.exists() && !file.isDirectory()) {
+                FileUtils.copyFile(file, new File(dir.getAbsolutePath() + File.separator + file.getName()));
+            } else {
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, "Cannot backup my.cnf",
+                        isVerbose, printStream);
+            }
+
+        } catch (SQLException e) {
+            throw new BackupException("Cannot dump the database, please ensure the database is running and the " +
+                    "credentials are correct");
+        } catch (IOException e) {
+            throw new BackupException("Cannot back up the database component: " + e.getMessage());
+        } catch (SAXException e) {
+            throw new BackupException("Cannot back up the database component: " + e.getMessage());
+        }
+    }
+
+    public void backUpComponentAudits(final DatabaseConfig config) throws BackupException {
+        if (!ImportExportUtilities.isHostLocal(config.getHost())) {
+            logger.log(Level.WARNING, "Cannot backup database as it is not local");
+            throw new IllegalStateException("Cannot back up database as it is not local");
+        }
+        try {
+            //Create the database folder
+            final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.AUDITS.getComponentName());
+            //never include audits with the main db dump
+            DBDumpUtil.auditDump(ssgHome, config, dir.getAbsolutePath(), printStream, isVerbose);
+        } catch (SQLException e) {
+            throw new BackupException("Cannot backup audits, please ensure the database is running and the credentials " +
+                    "are correct");
+        } catch (IOException e) {
+            throw new BackupException("Cannot create audits back up file: " + e.getMessage());
+        }
+    }
+
+    public void backUpComponentConfig() throws BackupException {
+        try {
+            final File dir = createComponentDir(
+                    tmpOutputDirectory, ImportExportUtilities.ComponentType.CONFIG.getComponentName());
+
+            ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    for (String ssgFile : ImportExportUtilities.CONFIG_FILES) {
+                        if (ssgFile.equals(name)) return true;
+                    }
+                    return false;
+                }
+            });
+
+        } catch (IOException e) {
+            throw new BackupException("Cannot back up ssg configuration: " + e.getMessage());
+        }
+
+    }
+
+    public void backUpComponentOS() throws BackupException {
+        if (new File(applianceHome).exists()) {
+            try {
+                // copy system config files
+                final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
+                if (osConfigManager == null) {
+                    final String msg = "Operating System backup is not applicable for this host";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                    return;
+                }
+                osConfigManager.saveOSConfigFiles(dir);
+            } catch (OSConfigManager.OSConfigManagerException e) {
+                throw new BackupException(e.getMessage());
+            } catch (IOException e) {
+                throw new BackupException(e.getMessage());
+            }
+        }
+        //no appliance -> no os files backed up
+    }
+
+    public void backUpComponentCA() throws BackupException {
+        try {
+            final File dir =
+                    createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.CA.getComponentName());
+
+            //backup all .property files in the conf folder which are not in CONFIG_FILES
+            ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    if (!name.endsWith(".properties")) return false;
+
+                    for (String ssgFile : ImportExportUtilities.CONFIG_FILES) {
+                        if (ssgFile.equals(name)) return false;
+                    }
+                    return true;
+                }
+            });
+
+            //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/lib
+            ImportExportUtilities.copyFiles(new File(ssgHome, ImportExportUtilities.CA_JAR_DIR), dir, new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".jar");
+                }
+            });
+        } catch (IOException e) {
+            throw new BackupException("Cannot back up custom assertions: " + e.getMessage());
+        }
+    }
+
+    public void backUpComponentMA() throws BackupException {
+        try {
+            final File dir =
+                    createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.MA.getComponentName());
+
+            //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/assertions
+            ImportExportUtilities.copyFiles(new File(ssgHome, ImportExportUtilities.MA_AAR_DIR), dir, new FilenameFilter(){
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".aar");
+                }
+            });
+        } catch (IOException e) {
+            throw new BackupException("Cannot back up modular assertions: " + e.getMessage());
+        }
+    }
+
+
+    public void createBackupImage() throws BackupException {
+        //when we are using ftp, we need to store the image file somewhere locally
+        //not using the same temp directory as the image data as it causes recursive problems when zipping
+        if(ftpConfig != null){
+            String newTmpDir = null;
+            try{
+                newTmpDir = ImportExportUtilities.createTmpDirectory();
+                //What is just the file name? We will use just the file name, and create the zip in the tmp directory
+                String zipFileName = ImportExportUtilities.getFilePart(pathToImageZipFile);
+                zipFileName = newTmpDir+File.separator+zipFileName;
+                createImageZip(zipFileName);
+                ftpImage(zipFileName, pathToImageZipFile, ftpConfig);
+            } catch (IOException e) {
+                throw new BackupException("Problem creating back up image zip file: " + e.getMessage());
+            } finally{
+                if(newTmpDir != null){
+                    logger.info("cleaning up temp files at " + newTmpDir);
+                    if (printStream != null && isVerbose) printStream.println("Cleaning temporary files at " + newTmpDir);
+                    FileUtils.deleteDir(new File(newTmpDir));
+                }
+            }
+        }else{
+            createImageZip(pathToImageZipFile);
+        }
+
+    }
+
+    public void deleteTemporaryDirectory() throws IOException {
+        logger.info("cleaning up temp files at " + tmpOutputDirectory);
+        if (printStream != null && isVerbose) printStream.println("Cleaning temporary files at " + tmpOutputDirectory);
+        FileUtils.deleteDir(tmpOutputDirectory);
+    }
+
+    /**
+     * Ftp a local image zip file to a ftp server
+     * @param localZipFile The local image zip file. This String includes the path and the file name. Cannot be null or
+     * empty
+     * @param destPathAndFileName The file name including path info if required, of where the file should be uploaded
+     * to on the ftp server. The filename will have a timestamp in the format "yyyyMMddHHmmss_" prepended to the
+     * front of the file name. Cannot be null or empty
+     * @param ftpConfig the configuration for the ftp server to upload the localZipFile to. Cannot be null
+     * @throws BackupException any problem either reading the image zip, or ftp'ing the image
+     */
+    private void ftpImage(final String localZipFile, final String destPathAndFileName, final FtpClientConfig ftpConfig)
+            throws BackupException {
+        if(localZipFile == null) throw new NullPointerException("localZipFile cannot be null");
+        if(localZipFile.equals("")) throw new IllegalArgumentException("localZipFile cannot equal the empty string");
+        if(destPathAndFileName == null) throw new NullPointerException("destPathAndFileName cannot be null");
+        if(destPathAndFileName.equals("")) throw new IllegalArgumentException("destPathAndFileName cannot equal the empty string");
+        if(ftpConfig == null) throw new NullPointerException("ftpConfig cannot be null");
+
+        InputStream is = null;
+        try {
+            is = new FileInputStream(new File(localZipFile));
+            if (printStream != null && isVerbose)
+                printStream.println("Ftp file '" + localZipFile+"' to host '" + ftpConfig.getHost()+"' into directory '"
+                        + destPathAndFileName+"'");
+
+            final String filePart = ImportExportUtilities.getFilePart(destPathAndFileName);
+            FtpUtils.upload(ftpConfig, is, filePart, true);
+        } catch (FtpException e) {
+            throw new BackupException("Could not ftp image to ftp host '"+ftpConfig.getHost()+"' " +
+                    "with user '"+ftpConfig.getUser()+"' :" + e.getMessage());
+        } catch (FileNotFoundException e) {
+            throw new BackupException("Problem reading image file before ftp: " + e.getMessage());
+        } finally{
+            ResourceUtils.closeQuietly(is);
+        }
+    }
+
+    /**
+     * Create an image zip archive from all the files and folders in tmpOutputDirectory.
+     * @param zipFileName The name of the zip file to create
+     * @throws IOException if any exception occurs while creating the zip
+     */
+    public void createImageZip(final String zipFileName) throws BackupException {
+        logger.info("compressing image into " + zipFileName);
+
+        ZipOutputStream out = null;
+        try {
+            out = new ZipOutputStream(new FileOutputStream(zipFileName));
+            if (printStream != null && isVerbose) printStream.println("Compressing SecureSpan Gateway image into " + zipFileName);
+            final StringBuilder sb = new StringBuilder();
+            addDir(tmpOutputDirectory, out, sb);
+
+            //Add the manifest listing all files in the archive to the archive
+            final File manifest = new File(tmpOutputDirectory, ImportExportUtilities.MANIFEST_LOG);
+            manifest.createNewFile();
+            final FileOutputStream fos = new FileOutputStream(manifest);
+            fos.write(sb.toString().getBytes());
+            fos.close();
+
+            addZipFileToArchive(out, manifest, sb);
+
+
+        } catch (IOException e) {
+            throw new BackupException("Problem creating image file: " + e.getMessage());
+        } finally {
+            ResourceUtils.closeQuietly(out);
+        }
+    }
+
+    public File getBackupFolder() {
+        return tmpOutputDirectory;
+    }
+
+    /**
+     * Add any arbitrary file to the zip archive being created. This is used to add the manifest.log file to the archive
+     * @param out The zip archive to add the file to. It must be open
+     * @param fileToAdd the file to add to the zip. This file should be in tmpOutputDirectory
+     * @param sb the StringBuilder to append to, so that a record of each file archived is made.
+     * @throws IOException if any exception occurs while writing to the zip archive
+     * @throws IllegalStateException if the fileToAdd does not reside in tmpOutputDirectory
+     */
+    private void addZipFileToArchive(final ZipOutputStream out,
+                                     final File fileToAdd,
+                                     final StringBuilder sb)
+            throws IOException {
+        final byte[] tmpBuf = new byte[1024];
+        final FileInputStream in = new FileInputStream(fileToAdd.getAbsolutePath());
+        if (printStream != null && isVerbose) printStream.println("\t- " + fileToAdd.getAbsolutePath());
+        String zipEntryName = fileToAdd.getAbsolutePath();
+        if (zipEntryName.startsWith(tmpOutputDirectory.getAbsolutePath())) {
+            zipEntryName = zipEntryName.substring(tmpOutputDirectory.getAbsolutePath().length() + 1);
+        }else{
+            throw new IllegalStateException("File '"+fileToAdd.getAbsoluteFile()+"' does not exist in directory '"
+                    +tmpOutputDirectory+"'");
+        }
+        out.putNextEntry(new ZipEntry(zipEntryName));
+        if(sb != null) sb.append(zipEntryName).append("\n");
+        // Transfer from the file to the ZIP fileToAdd
+        int len;
+        while ((len = in.read(tmpBuf)) > 0) {
+            out.write(tmpBuf, 0, len);
+        }
+        // Complete the entry
+        out.closeEntry();
+        in.close();
+    }
+
+    /**
+     * Add a directory to a zip archive. The zip archive should be currently open
+     * @param dirObj The directory to add to the archive
+     * @param out The currently open ZipOutputStream
+     * @param sb The StringBuilder used to record each file archived
+     * @throws IOException if any exception occurs when writing to the zip archive
+     */
+    private void addDir(final File dirObj,
+                        final ZipOutputStream out,
+                        final StringBuilder sb) throws IOException {
+        final File[] files = dirObj.listFiles();
+
+        for (final File file : files) {
+            if (file.isDirectory()) {
+                addDir(file, out, sb);
+                continue;
+            }
+            addZipFileToArchive(out, file, sb);
+        }
+    }
+
+    /**
+     * Create the directory with the name componentName in the directory tmpOutputDirectory. This will delete any
+     * existing directory if it exists and recreate it, otherwise it just creates the directory
+     *
+     * @param tmpOutputDirectory String The directory where the componentName should be created
+     * @param componentName      String The name of the new directory
+     * @return File representing the created directory
+     * @throws IOException if any exception occurs while creating the directory
+     */
+    private File createComponentDir(final File tmpOutputDirectory, final String componentName) throws IOException {
+        final File dir = new File(tmpOutputDirectory, componentName);
+        if (dir.exists()) {
+            dir.delete();
+        }
+        dir.mkdir();
+        return dir;
+    }
+
+    /**
+     * Create a mapping file which can be used when migrating tables.
+     *
+     * @param mappingFileName The path(optional) and name of the mapping file to create
+     * @param config          The DatabaseConfig used to connect to the database
+     * @throws IOException if any exception occurs when creating the mapping file
+     * @throws java.sql.SQLException if a database connection cannot be required
+     * @throws org.xml.sax.SAXException if problem creating the mapping xml file
+     */
+    private void createMappingFile(final String mappingFileName, final DatabaseConfig config) throws IOException,
+            SQLException, SAXException {
+        if (!ImportExportUtilities.isHostLocal(config.getHost())) {
+            logger.log(Level.WARNING, "Cannot create maping file as database is not local");
+            throw new IllegalStateException("Cannot create maping file as database is not local");
+        }
+
+        if (mappingFileName != null) {
+            if (!ImportExportUtilities.testCanWriteSilently(mappingFileName)) {
+                throw new IllegalArgumentException("cannot write to the mapping template path provided: " + mappingFileName);
+            }
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                    "Successfully tested write permission for file '" + mappingFileName+"'", isVerbose, printStream);
+            MappingUtil.produceTemplateMappingFileFromDB(config, mappingFileName);
+        }
+    }
+
+    protected void finalize() throws Throwable {
+        //in case the delete method is not called
+        FileUtils.deleteDir(tmpOutputDirectory);
+        super.finalize();
+    }
+}

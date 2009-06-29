@@ -80,6 +80,42 @@ public class ImportExportUtilities {
     static final String EXCLUDE_FILES_PATH = "cfg/exclude_files";
 
     /**
+     * Quietly test if the given path have permissions to write.  This method is similar to
+     * testCanWrite except that it will not output any error messages, instead, they will be logged.
+     *
+     * @param path  Path to test
+     * @return  TRUE if can write on the given path, otherwise FALSE.
+     */
+    static boolean testCanWriteSilently(final String path) {
+        try {
+            final FileOutputStream fos = new FileOutputStream(path);
+            fos.close();
+            (new File(path)).delete();
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Validate that the image file exists and that we can write to it
+     * @param pathToImageFile String representing the relative or absolute path to the image file. Cannot be nul
+     * @throws java.io.IOException if we cannot write to the pathToImageFile file
+     */
+    static void validateImageFile(final String pathToImageFile) throws IOException {
+        if (pathToImageFile == null) {
+            throw new NullPointerException("pathToImageFile cannot be null");
+        } else {
+            //fail if file exists
+            throwIfFileExists(pathToImageFile);
+        }
+
+        if (!testCanWriteSilently(pathToImageFile)) {
+            throw new IOException("Cannot write image to " + pathToImageFile);
+        }
+    }
+
+    /**
      * Classloader designed to ONLY to load BuildInfo from Gateway jar from the standard install directory of
      * /opt/SecureSpan/Gateway/runtime/Gateway.jar
      */
@@ -1021,13 +1057,25 @@ public class ImportExportUtilities {
         return buffer.toString() != null ? buffer.toString().trim() : buffer.toString();
     }
 
-    //todo [Donal] complete idea
-    public static <UT extends SsgComponent> List<UT> filterComponents( final List<UT> allComponents,
+    /**
+     * Filter a list of components based on the presence of component names as keys in programFlagsAndValues
+     * @param allComponents
+     * @param programFlagsAndValues
+     * @param <UT>
+     * @return
+     */
+    static <UT extends SsgComponent> List<UT> filterComponents( final List<UT> allComponents,
                                                  final Map<String, String> programFlagsAndValues){
 
         final List <UT> returnList = new ArrayList<UT>();
 
         for(UT comp: allComponents){
+
+            if(comp.getComponentType() == ImportExportUtilities.ComponentType.VERSION){
+                //We always include the version component
+                returnList.add(comp);
+                continue;
+            }
 
             if(programFlagsAndValues.containsKey("-"+comp.getComponentType().getComponentName())){
                 returnList.add(comp);

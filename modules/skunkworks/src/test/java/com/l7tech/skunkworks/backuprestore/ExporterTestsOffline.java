@@ -20,6 +20,8 @@ import java.lang.reflect.Constructor;
 
 import com.l7tech.gateway.config.backuprestore.ImportExportUtilities;
 import com.l7tech.gateway.config.backuprestore.Exporter;
+import com.l7tech.gateway.config.backuprestore.Backup;
+import com.l7tech.gateway.config.backuprestore.BackupRestoreFactory;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.ResourceUtils;
@@ -78,8 +80,10 @@ public class ExporterTestsOffline {
         constructor.setAccessible(true);
 
         final String tmpDir = ImportExportUtilities.createTmpDirectory();
-        final Exporter exporter = (Exporter) constructor.newInstance(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, "notusedhere",
+                true, System.out);
+        
         final File mappingFile = new File(tmpDir, "mapping.xml");
 
         final File nodeProp = new File(tmpSsgHome + File.separator +
@@ -96,7 +100,7 @@ public class ExporterTestsOffline {
                 new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
         databaseConfig.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(databaseConfig.getNodePassword())) );
 
-        exporter.backUpComponentMainDb(mappingFile.getAbsolutePath(), tmpDir, databaseConfig);
+        backup.backUpComponentMainDb(mappingFile.getAbsolutePath(),databaseConfig);
 
     }
 }

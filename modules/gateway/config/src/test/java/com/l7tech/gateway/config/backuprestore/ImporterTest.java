@@ -32,6 +32,7 @@ public class ImporterTest {
 
         createTestEnvironment();
         System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
+        System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
     }
 
     @After
@@ -48,6 +49,7 @@ public class ImporterTest {
             }
         }
         System.clearProperty("com.l7tech.util.buildVersion");
+        System.clearProperty("com.l7tech.gateway.config.backuprestore.checkversion");
     }
 
     /**
@@ -80,8 +82,8 @@ public class ImporterTest {
     @Test
     public void testImportFiveO() throws Exception{
         final URL preFiveOZip = this.getClass().getClassLoader().getResource("fiveo_backup_with_audits.zip");
-        Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
-        String [] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final String [] args = new String[]{"import",
                 "-image", preFiveOZip.getPath(),
                 "-dbu", "layer7",
                 "-dbp", "7layer",
@@ -93,7 +95,7 @@ public class ImporterTest {
                 "-gdbp", "7layer"
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
         Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
@@ -106,15 +108,14 @@ public class ImporterTest {
     @Test
     public void testOsFileInport() throws Exception{
         final URL preFiveOZip = this.getClass().getClassLoader().getResource("fiveo_backup_with_audits.zip");
-        Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/
-                , true);
-        String [] args = new String[]{"import",
+        final Importer importer = new Importer(tmpSsgHome, System.out,
+                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final String [] args = new String[]{"import",
                 "-image", preFiveOZip.getPath(),
                 "-os"
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
         Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
@@ -129,14 +130,13 @@ public class ImporterTest {
     public void testOsCompleteRoundTrip() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
         final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/
-                , true);
+                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-os"
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
         Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
@@ -164,14 +164,13 @@ public class ImporterTest {
     public void testOsNotApplicable() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_no_OS.zip");
         final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/
-                , true);
+                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-os"
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
         Assert.assertEquals("result should be partial success", Importer.RestoreMigrateResult.Status.PARTIAL_SUCCESS,
@@ -187,15 +186,14 @@ public class ImporterTest {
     public void testOsFailure() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_no_OS.zip");
         final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/
-                , true);
+                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-os",
                 "-halt"
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
         Assert.assertEquals("result should be failure", Importer.RestoreMigrateResult.Status.FAILURE,
@@ -213,15 +211,14 @@ public class ImporterTest {
     public void testOsPartialSuccess_NotRequired() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_no_OS.zip");
         final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/
-                , true);
+                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "notused",
                 "-dbp", "notused"
         };
 
-        Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
         Assert.assertEquals("result should be failure", Importer.RestoreMigrateResult.Status.SUCCESS,
