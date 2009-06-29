@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# This is not the real backup_manifest.conf, it's a version of it used for testing backup / restore
+# This is not the real backup_manifest, it's a version of it used for testing backup / restore
 # -----------------------------------------------------------------------------
 /etc/hosts
 /etc/ntp.conf

@@ -194,7 +194,7 @@ final class RestoreImpl implements Restore{
 
         try {
             final List<String> ssgConfigFilesToExclude;
-            final String excludeFiles = "config/backup/cfg/exclude_files.conf";
+            final String excludeFiles = "config/backup/cfg/exclude_files";
             if(isMigrate){
                 final File excludeFile = new File(ssgHome, excludeFiles);
                 ssgConfigFilesToExclude = ImportExportUtilities.processFile(excludeFile);

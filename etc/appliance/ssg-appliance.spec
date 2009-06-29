@@ -124,7 +124,7 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 %attr(0750,ssgconfig,ssgconfig) /home/ssgconfig/.bash_profile
 
 # Appliance migration configuration
-%attr(0644,layer7,layer7) /opt/SecureSpan/Gateway/config/backup/cfg/backup_manifest.conf
+%attr(0644,layer7,layer7) /opt/SecureSpan/Gateway/config/backup/cfg/backup_manifest
 
 %pre
 

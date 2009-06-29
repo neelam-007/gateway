@@ -713,7 +713,7 @@ public class ExporterTest {
     private void createBackupManifest(File osFile) throws IOException {
         final File backupManifestFolder = new File(tmpSsgHome, "config/backup/cfg");
         FileUtils.ensurePath(backupManifestFolder);
-        final File backupManifest = new File(backupManifestFolder, "backup_manifest.conf");
+        final File backupManifest = new File(backupManifestFolder, "backup_manifest");
         backupManifest.createNewFile();
 
         FileOutputStream fos = null;

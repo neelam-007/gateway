@@ -396,10 +396,10 @@ public class ImporterTestsOffline {
         final URL ompFile = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/omp.dat");
         final URL nodePropFile = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/node.properties");
 
-        //require exclude_tables.conf in tmpSsgHome
-        final URL excludeTables = this.getClass().getClassLoader().getResource("config/backup/cfg/exclude_tables.conf");
+        //require exclude_tables in tmpSsgHome
+        final URL excludeTables = this.getClass().getClassLoader().getResource("config/backup/cfg/exclude_tables");
         FileUtils.ensurePath(new File(tmpSsgHome, "config/backup/cfg"));
-        FileUtils.copyFile(new File(excludeTables.getPath()), new File(tmpSsgHome + File.separator + "config/backup/cfg", "exclude_tables.conf"));
+        FileUtils.copyFile(new File(excludeTables.getPath()), new File(tmpSsgHome + File.separator + "config/backup/cfg", "exclude_tables"));
         
         final File confDir = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR);
         FileUtils.ensurePath(confDir);

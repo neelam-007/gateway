@@ -26,7 +26,7 @@ import java.util.logging.Level;
  */
 final class OSConfigManager {
     private static final Logger logger = Logger.getLogger(OSConfigManager.class.getName());
-    static final String BACKUP_MANIFEST = "config/backup/cfg/backup_manifest.conf";
+    static final String BACKUP_MANIFEST = "config/backup/cfg/backup_manifest";
     private static final String INTERNAL_CONFIG_FILES_FOLDER = "config/backup/configfiles";
 
     private final File backUpManifest;
@@ -60,10 +60,10 @@ final class OSConfigManager {
         //=> this file is a hard requirement, regardless of what ever the caller thinks
         backUpManifest = new File(ssgHome, BACKUP_MANIFEST);
         if(!backUpManifest.exists())
-            throw new IllegalStateException("backup_manifest.conf not found in '"+backUpManifest.getAbsolutePath()+"'");
+            throw new IllegalStateException("backup_manifest not found in '"+backUpManifest.getAbsolutePath()+"'");
 
         if(!backUpManifest.isFile())
-            throw new IllegalStateException("backup_manifest.conf is not a regular file");
+            throw new IllegalStateException("backup_manifest is not a regular file");
 
         internalOsFolder = new File(ssgHome, INTERNAL_CONFIG_FILES_FOLDER);
         if(!isReboot){

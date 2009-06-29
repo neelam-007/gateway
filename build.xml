@@ -2840,7 +2840,7 @@
             </copy>
 
             <!-- Appliance SSG configuration extras -->
-            <copy file="${src.root}/etc/backup_manifest.conf" todir="@{dir}/${install.src.app.backuprestore.cfg}"/>
+            <copy file="${src.root}/etc/backup_manifest" todir="@{dir}/${install.src.app.backuprestore.cfg}"/>
             <copy file="${src.root}/etc/appliance/appliancedefs.sh" todir="@{dir}/${install.src.app.ssgprofile}"/>
         </sequential>
     </macrodef>
@@ -3018,9 +3018,9 @@
                 <fileset dir="${build.dir}/managerapplet/lib"/>
             </copy>
 
-            <copy file="${src.root}/etc/backup_tables_audit.conf" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-            <copy file="${src.root}/etc/exclude_tables.conf" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-            <copy file="${src.root}/etc/exclude_files.conf" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+            <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+            <copy file="${src.root}/etc/exclude_tables" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+            <copy file="${src.root}/etc/exclude_files" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
         </sequential>
     </macrodef>
 
