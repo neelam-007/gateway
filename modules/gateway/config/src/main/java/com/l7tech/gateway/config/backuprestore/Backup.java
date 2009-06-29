@@ -101,6 +101,14 @@ public interface Backup {
     public void backUpComponentMA() throws BackupException;
 
     /**
+     * Back up the ESM, if it is installed and not running. Backs up the ESM to the esm folder
+     *
+     * Do not call if the ESM is running
+     * @throws BackupException
+     */
+    public void backUpComponentESM() throws BackupException;
+
+    /**
      * Create the back up image file. If an instance of Backup is configured with an ftp location, then the image
      * will be ftp'ed to the ftp host, after the image has been created
      * @throws BackupException

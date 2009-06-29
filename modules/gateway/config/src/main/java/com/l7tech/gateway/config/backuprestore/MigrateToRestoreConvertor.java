@@ -47,8 +47,8 @@ public class MigrateToRestoreConvertor {
         restoreArgs.add(Importer.MIGRATE.getName());
 
         //verbose and halt always, this mimics the default behaviour of migrate
-        restoreArgs.add(ImportExportUtilities.VERBOSE.getName());
-        restoreArgs.add(ImportExportUtilities.HALT_ON_FIRST_FAILURE.getName());
+        restoreArgs.add(CommonCommandLineOptions.VERBOSE.getName());
+        restoreArgs.add(CommonCommandLineOptions.HALT_ON_FIRST_FAILURE.getName());
 
         //all other database options, currently migrate ALWAYS requires these
         //again, not validating here, invalid arguments will be caught in Importer
@@ -70,15 +70,15 @@ public class MigrateToRestoreConvertor {
 
         //main db if not config
         if(!configOnly){
-            restoreArgs.add(ImportExportUtilities.MAINDB_OPTION.getName());
-            restoreArgs.add(ImportExportUtilities.AUDITS_OPTION.getName());
+            restoreArgs.add(CommonCommandLineOptions.MAINDB_OPTION.getName());
+            restoreArgs.add(CommonCommandLineOptions.AUDITS_OPTION.getName());
         }else{
             restoreArgs.add(Importer.CONFIG_ONLY.getName());
         }
 
         //os?
-        if(initialValidArgs.containsKey(ImportExportUtilities.OS_OPTION.getName())){
-            restoreArgs.add(ImportExportUtilities.OS_OPTION.getName());
+        if(initialValidArgs.containsKey(CommonCommandLineOptions.OS_OPTION.getName())){
+            restoreArgs.add(CommonCommandLineOptions.OS_OPTION.getName());
         }
 
         //mapping file?

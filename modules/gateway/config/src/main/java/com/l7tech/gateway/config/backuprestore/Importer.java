@@ -64,7 +64,7 @@ public final class Importer{
             CREATE_NEW_DB, MIGRATE};
 
     static final CommandLineOption[] ALL_RESTORE_OPTIONS = {IMAGE_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
-            ImportExportUtilities.HALT_ON_FIRST_FAILURE, ImportExportUtilities.VERBOSE};
+            CommonCommandLineOptions.HALT_ON_FIRST_FAILURE, CommonCommandLineOptions.VERBOSE};
 
     static final CommandLineOption [] COMMAND_LINE_DB_ARGS = {DB_HOST_NAME, DB_NAME, CLUSTER_PASSPHRASE,
                 GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD};
@@ -87,11 +87,16 @@ public final class Importer{
     private final File ssgHome;
 
     /**
+     * Base folder of all Securespan products
+     */
+    private final File secureSpanHome;
+    
+
+    /**
      * Only to be used when code path starts at restoreOrMigrateBackupImage. Do not access from public methods
      */
     private final PrintStream printStream;
 
-    private final String applianceHome;
     private Map<String, String> programFlagsAndValues;
     private boolean isMigrate;
     /**
@@ -135,27 +140,27 @@ public final class Importer{
     private boolean updateNodeProperties;
 
     /**
-     * @param ssgHome The installation of the SSG e.g. /opt/SecureSpan/Gateway. Must be non null and exist
+     * @param secureSpanHome The installation of the SSG e.g. /opt/SecureSpan/Gateway. Must be non null and exist
      * @param printStream where any verbose output will be sent. Can be null
-     * @param applianceHome The home of the SSG appliance. This must be supplied, even if the SSG is not installed.
-     * This is the known location of where the Appliance 'would' be installed to. It has to be known in case the
-     * user specifies the -os component
      */
-    public Importer(final File ssgHome, final PrintStream printStream, final String applianceHome) {
-        if(ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
-        if(!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
-        if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
-        if(applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
-        if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
+    public Importer(final File secureSpanHome, final PrintStream printStream) {
+        if(secureSpanHome == null) throw new NullPointerException("ssgHome cannot be null");
+        if(!secureSpanHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
+        if(!secureSpanHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
 
-        this.ssgHome = ssgHome;
+        final File testSsgHome = new File(secureSpanHome, ImportExportUtilities.GATEWAY);
+        if(!testSsgHome.exists()) throw new IllegalArgumentException("Gateway installation not found");
+        if(!testSsgHome.isDirectory()) throw new IllegalArgumentException("Gateway incorrectly installed");
+
+        ssgHome = testSsgHome;
+        this.secureSpanHome = secureSpanHome;
+
         //this class is not usable without an installed SSG >= 5.0
         final boolean checkVersion =
                 SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.checkversion", true);
-        if (checkVersion) ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
+        if (checkVersion) ImportExportUtilities.throwIfLessThanFiveO(new File(secureSpanHome, "runtime/Gateway.jar"));
 
         this.printStream = printStream;
-        this.applianceHome = applianceHome;
     }
 
     /**
@@ -249,10 +254,10 @@ public final class Importer{
         //Can use any ftp param to validate if ftp is requested, this is further validated below, but first
         //we need to know if ftp has been specified
         final boolean ftpCheck = ImportExportUtilities.checkArgumentExistence(args,
-                ImportExportUtilities.FTP_HOST.getName(), validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+                CommonCommandLineOptions.FTP_HOST.getName(), validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
 
         isVerbose = ImportExportUtilities.checkArgumentExistence(args,
-                ImportExportUtilities.VERBOSE.getName(), validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+                CommonCommandLineOptions.VERBOSE.getName(), validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
 
         validArgList.clear();
         if(ftpCheck){
@@ -330,8 +335,8 @@ public final class Importer{
 
     private void validateCommonProgramParameters(final Map<String, String> args) throws InvalidProgramArgumentException {
         final boolean isDbComponent = !isSelectiveRestore
-                || args.containsKey(ImportExportUtilities.MAINDB_OPTION.getName())
-                || args.containsKey(ImportExportUtilities.AUDITS_OPTION.getName());
+                || args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
+                || args.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
         
         if(isDbComponent){
             adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
@@ -344,7 +349,7 @@ public final class Importer{
             if (adminDBPasswd == null) adminDBPasswd = ""; // totally legit
         }
 
-        if(args.containsKey(ImportExportUtilities.HALT_ON_FIRST_FAILURE.getName())) isHaltOnFirstFailure = true;
+        if(args.containsKey(CommonCommandLineOptions.HALT_ON_FIRST_FAILURE.getName())) isHaltOnFirstFailure = true;
     }
 
     /**
@@ -427,7 +432,7 @@ public final class Importer{
         boolean isDbRequested = true;//by default
         if(isSelectiveRestore){
             //is it included
-            isDbRequested = args.containsKey(ImportExportUtilities.MAINDB_OPTION.getName());
+            isDbRequested = args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName());
         }
 
         if(isDbRequested){
@@ -663,12 +668,11 @@ public final class Importer{
     private List<RestoreComponent<? extends Exception>> getComponentsForRestore(final String mappingFile)
             throws Restore.RestoreException {
 
-        final Restore restore = BackupRestoreFactory.getRestoreInstance(this.applianceHome,
+        final Restore restore = BackupRestoreFactory.getRestoreInstance(this.secureSpanHome,
                 this.backupImage,
                 databaseConfig,/*I might be null and that's ok*/
                 suppliedClusterPassphrase,
                 this.isVerbose,
-                this.ssgHome,
                 this.printStream);
 
 
@@ -859,8 +863,8 @@ public final class Importer{
     private static List<CommandLineOption> getStandardRestoreOptions(){
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALL_RESTORE_OPTIONS));
-        validArgList.addAll(Arrays.asList(ImportExportUtilities.ALL_FTP_OPTIONS));
-        validArgList.addAll(Arrays.asList(ImportExportUtilities.ALL_COMPONENTS));
+        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
+        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
         return validArgList;
     }
 
@@ -868,15 +872,15 @@ public final class Importer{
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(COMMAND_LINE_DB_ARGS));
         validArgList.addAll(Arrays.asList(ALL_RESTORE_OPTIONS));
-        validArgList.addAll(Arrays.asList(ImportExportUtilities.ALL_FTP_OPTIONS));
-        validArgList.addAll(Arrays.asList(ImportExportUtilities.ALL_COMPONENTS));
+        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
+        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
         return validArgList;
     }
 
     private static List<CommandLineOption> getAllMigrateOptions(){
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALL_MIGRATE_OPTIONS));
-        validArgList.addAll(Arrays.asList(ImportExportUtilities.VERBOSE, ImportExportUtilities.HALT_ON_FIRST_FAILURE));
+        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.VERBOSE, CommonCommandLineOptions.HALT_ON_FIRST_FAILURE));
         return validArgList;
     }
 

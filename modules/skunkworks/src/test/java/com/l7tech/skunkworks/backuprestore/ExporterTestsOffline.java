@@ -34,19 +34,23 @@ import com.l7tech.server.management.config.node.DatabaseConfig;
 public class ExporterTestsOffline {
 
     private File tmpSsgHome;
-    private static final String OS_FILE_TO_COPY = "osfiletocopy";
+    private File tmpSecureSpanHome;
 
     @Before
     public void setUp() throws IOException {
-        final String tmpSsgHomeStr = ImportExportUtilities.createTmpDirectory();
-        tmpSsgHome = new File(tmpSsgHomeStr);
+        final String tmpSecureSpanHomeStr = ImportExportUtilities.createTmpDirectory();
+        tmpSecureSpanHome = new File(tmpSecureSpanHomeStr);
+        tmpSsgHome = new File(tmpSecureSpanHome, ImportExportUtilities.GATEWAY);
+        tmpSsgHome.mkdir();
     }
 
     @After
     public void tearDown(){
-        if(tmpSsgHome == null) return;
-        if(!tmpSsgHome.exists()) return;
-        FileUtils.deleteDir(tmpSsgHome);
+        if(tmpSecureSpanHome != null){
+            if(tmpSecureSpanHome.exists()){
+                FileUtils.deleteDir(tmpSecureSpanHome);
+            }
+        }
     }
 
     /**
@@ -80,8 +84,7 @@ public class ExporterTestsOffline {
         constructor.setAccessible(true);
 
         final String tmpDir = ImportExportUtilities.createTmpDirectory();
-        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, "notusedhere",
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedhere",
                 true, System.out);
         
         final File mappingFile = new File(tmpDir, "mapping.xml");

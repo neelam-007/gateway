@@ -28,6 +28,10 @@ import com.l7tech.util.*;
  *
  */    //todo [Donal] this class should be package private
 public class ImportExportUtilities {
+    private static final Logger logger = Logger.getLogger(ImportExportUtilities.class.getName());
+
+    private static enum ARGUMENT_TYPE {VALID_OPTION, IGNORED_OPTION, INVALID_OPTION, VALUE}
+
     /** System property used as base directory for all relative paths. */
     public static final String BASE_DIR_PROPERTY = "com.l7tech.server.backuprestore.basedir";
     public static final String OMP_DAT = "omp.dat";
@@ -50,6 +54,23 @@ public class ImportExportUtilities {
      * Default installation of the ssg appliance
      */
     public static final String OPT_SECURE_SPAN_APPLIANCE = "/opt/SecureSpan/Appliance";
+
+    /**
+     * Relative installation location of the Gateway
+     */
+    public static final String GATEWAY = "Gateway";
+
+    /**
+     * Relative installation location of the Appliance
+     */
+    public static final String APPLIANCE = "Appliance";
+
+    /**
+     * Relative installation location of the Enterprise Service Manager
+     */
+    public static final String ENTERPRISE_SERVICE_MANAGER = "EnterpriseManager";
+
+
     public static final String NODE_CONF_DIR = "node/default/etc/conf/";
     public static final String CA_JAR_DIR = "runtime/modules/lib";
     public static final String MA_AAR_DIR = "runtime/modules/assertions";
@@ -57,28 +78,22 @@ public class ImportExportUtilities {
     static final String UNIQUE_TIMESTAMP = "yyyyMMddHHmmss";
     private static final String FTP_PROTOCOL = "ftp://";
 
-    public static final CommandLineOption FTP_HOST =
-            new CommandLineOption("-ftp_host",
-                                    "[Optional] host to ftp backup image to: "+
-                                    "host.domain.com:port",
-                                     false, false);
-
-    public static final CommandLineOption FTP_USER = new CommandLineOption("-ftp_user",
-                                                                               "[Optional] ftp username",
-                                                                               false, false);
-    public static final CommandLineOption FTP_PASS = new CommandLineOption("-ftp_pass",
-                                                                                   "[Optional] ftp password",
-                                                                                   false, false);
-    static final CommandLineOption[] ALL_FTP_OPTIONS = {FTP_HOST, FTP_USER, FTP_PASS};
-    public static final CommandLineOption VERBOSE = new CommandLineOption("-v",
-            "verbose output, without this ssgbackup.sh is silent. Consult log file ssgbackup%g.log for logging messages",
-                                                                               false, true);
-    public static final CommandLineOption HALT_ON_FIRST_FAILURE = new CommandLineOption("-halt",
-            "halt on first failure. Default behaviour is to try each component independently",
-                                                                               false, true);
     public static final String SSG_SQL = "/config/etc/sql/ssg.sql";
     static final String EXCLUDE_FILES_PATH = "cfg/exclude_files";
 
+    static void throwifEsmIsRunning() {
+        final File esmPid = new File("/var/run/ssemd.pid");
+        if(esmPid.exists())
+                throw new IllegalStateException("Cannot back up the Enterprise Service Manager while it is running");
+    }
+
+    static void throwIfEsmNotPresent(final File esmHome) {
+        if(!esmHome.exists())
+                throw new IllegalStateException("The Enterprise Service Manager is not installed");
+        if(!esmHome.isDirectory())
+                throw new IllegalStateException("The Enterprise Service Manager is not correctly installed");
+    }
+    
     /**
      * Quietly test if the given path have permissions to write.  This method is similar to
      * testCanWrite except that it will not output any error messages, instead, they will be logged.
@@ -217,30 +232,6 @@ public class ImportExportUtilities {
         }
     }
 
-    private static enum ARGUMENT_TYPE {VALID_OPTION, IGNORED_OPTION, INVALID_OPTION, VALUE}
-    private static final Logger logger = Logger.getLogger(ImportExportUtilities.class.getName());
-
-    public static final CommandLineOption OS_OPTION = new CommandLineOption("-"+ ComponentType.OS.getComponentName(),
-            "selectively include the os files for backup (if the appliance is installed)", false, true);
-
-    public static final CommandLineOption CONFIG_OPTION = new CommandLineOption("-"+ ComponentType.CONFIG.getComponentName(),
-            "selectively include the SSG config for backup", false, true);
-
-    public static final CommandLineOption MAINDB_OPTION = new CommandLineOption("-"+ ComponentType.MAINDB.getComponentName(),
-            "selectively include the database for backup (not including audits)", false, true);
-
-    public static final CommandLineOption AUDITS_OPTION = new CommandLineOption("-"+ ComponentType.AUDITS.getComponentName(),
-            "selectively include the database audits for backup", false, true);
-
-    public static final CommandLineOption CA_OPTION = new CommandLineOption("-"+ ComponentType.CA.getComponentName(),
-            "selectively include the custom assertion jars and property files for backup", false, true);
-
-    public static final CommandLineOption MA_OPTION = new CommandLineOption("-"+ ComponentType.MA.getComponentName(),
-            "selectively include the modular assertion jars for backup", false, true);
-
-    public static final CommandLineOption [] ALL_COMPONENTS = new CommandLineOption[]{OS_OPTION, CONFIG_OPTION,
-            MAINDB_OPTION, AUDITS_OPTION, CA_OPTION, MA_OPTION };
-
     /**
      * ComponentType is used for the directory names in the image zip file, and for processing selective
      * backup component parameters
@@ -252,7 +243,8 @@ public class ImportExportUtilities {
         AUDITS("audits", "Database audits"),
         CA("ca", "Custom Assertions"),
         MA("ma", "Modular Assertions"),
-        VERSION("version", "SSG Version Information");
+        VERSION("version", "SSG Version Information"),
+        ESM("esm", "Enterprise Service Manager");
 
         ComponentType(String componentName, String description) {
             this.componentName = componentName;
@@ -284,10 +276,10 @@ public class ImportExportUtilities {
         for(Map.Entry<String, String> entry: allParams.entrySet()){
             if(entry.getKey().startsWith("-ftp")){
                 //make sure they are all there
-                for(final CommandLineOption clo: ALL_FTP_OPTIONS){
+                for(final CommandLineOption clo: CommonCommandLineOptions.ALL_FTP_OPTIONS){
                     if(!allParams.containsKey(clo.getName())) throw new InvalidProgramArgumentException("Missing argument: " + clo.getName());
-                    if(clo == FTP_HOST){
-                        String hostName = allParams.get(FTP_HOST.getName());
+                    if(clo == CommonCommandLineOptions.FTP_HOST){
+                        String hostName = allParams.get(CommonCommandLineOptions.FTP_HOST.getName());
                         try {
                             if(!hostName.startsWith(FTP_PROTOCOL)) hostName = FTP_PROTOCOL +hostName;
                             final URL url = new URL(hostName);
@@ -328,9 +320,9 @@ public class ImportExportUtilities {
         if(imageName == null) throw new NullPointerException("imageName cannot be null");
         if(imageName.trim().isEmpty()) throw new IllegalArgumentException("imageName cannot be the empty or just spaces");
 
-        final String ftpHost = getAndValidateSingleArgument(args, FTP_HOST, validOptions, ignoredOptions);
-        final String ftpUser = getAndValidateSingleArgument(args, FTP_USER, validOptions, ignoredOptions);
-        final String ftpPass = getAndValidateSingleArgument(args, FTP_PASS, validOptions, ignoredOptions);
+        final String ftpHost = getAndValidateSingleArgument(args, CommonCommandLineOptions.FTP_HOST, validOptions, ignoredOptions);
+        final String ftpUser = getAndValidateSingleArgument(args, CommonCommandLineOptions.FTP_USER, validOptions, ignoredOptions);
+        final String ftpPass = getAndValidateSingleArgument(args, CommonCommandLineOptions.FTP_PASS, validOptions, ignoredOptions);
 
         return getFtpConfig(imageName, ftpHost, ftpUser, ftpPass);
     }
@@ -350,14 +342,14 @@ public class ImportExportUtilities {
         //not for much of a reason other than there is no use case when they would be empty
         if(programParams.isEmpty()) throw new IllegalArgumentException("programParams cannot be empty");
         
-        String ftpHost = programParams.get(FTP_HOST.getName());
+        String ftpHost = programParams.get(CommonCommandLineOptions.FTP_HOST.getName());
         if(ftpHost == null) return null;
         
         //as ftp host was supplied, validate all required ftp params exist
         checkAndValidateFtpParams(programParams);
 
-        final String ftpUser = programParams.get(FTP_USER.getName());
-        final String ftpPass = programParams.get(FTP_PASS.getName());
+        final String ftpUser = programParams.get(CommonCommandLineOptions.FTP_USER.getName());
+        final String ftpPass = programParams.get(CommonCommandLineOptions.FTP_PASS.getName());
         if(ftpUser == null || ftpPass == null) throw new NullPointerException("ftp_user and ftp_pass must be non null");
 
         final String imageName = programParams.get(Exporter.IMAGE_PATH.getName());
@@ -402,7 +394,7 @@ public class ImportExportUtilities {
      * @return true if a selective backup should be done, false otherwise
      */
     static boolean isSelectiveBackup(final Map<String, String> args){
-        for(CommandLineOption option: ALL_COMPONENTS){
+        for(CommandLineOption option: CommonCommandLineOptions.ALL_COMPONENTS){
             if(args.containsKey(option.getName())) return true;
         }
         return false;
@@ -918,8 +910,9 @@ public class ImportExportUtilities {
             throw new IllegalArgumentException("Directory '"+sourceDir.getAbsolutePath()+"' is not a directory");
 
         if(!destDir.exists()){
-            if(!destDir.mkdir()){
-                throw new IllegalArgumentException("Directory '"+destDir.getAbsolutePath()+"' does not exist and could not be created");
+            if(!destDir.mkdir()) {
+                throw new IllegalArgumentException("Directory '" + destDir.getAbsolutePath()
+                        + "' does not exist and could not be created");
             }
         }
 

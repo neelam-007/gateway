@@ -31,15 +31,15 @@ class BackupImpl implements Backup {
     private final File tmpOutputDirectory;
     private final File ssgHome;
     private final File confDir;
-    private final String applianceHome;
+    private final File applianceHome;
+    private final File esmHome;
     private final OSConfigManager osConfigManager;
     private final FtpClientConfig ftpConfig;
     private final String pathToImageZipFile;
 
     /**
      *
-     * @param ssgHome
-     * @param applianceHome
+     * @param secureSpanHome base instalation of Secure Span products e.g. /opt/SecureSpan
      * @param ftpConfig
      * @param pathToImageZipFile can be to a local file, or relative to a log on directory on a ftp server. Cannnot
      * be null
@@ -47,19 +47,20 @@ class BackupImpl implements Backup {
      * @param printStream
      * @throws BackupException
      */
-    BackupImpl(final File ssgHome,
-               final String applianceHome,
+    BackupImpl(final File secureSpanHome,
                final FtpClientConfig ftpConfig,
                final String pathToImageZipFile,
                final boolean verbose,
                final PrintStream printStream) throws BackupException {
 
-        if (ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
-        if (!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
-        if (!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
+        if (secureSpanHome == null) throw new NullPointerException("secureSpanHome cannot be null");
+        if (!secureSpanHome.exists()) throw new IllegalArgumentException("secureSpanHome directory does not exist");
+        if (!secureSpanHome.isDirectory()) throw new IllegalArgumentException("secureSpanHome must be a directory");
 
-        if (applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
-        if (applianceHome.trim().isEmpty()) throw new IllegalArgumentException("applianceHome cannot be null");
+        //check that the gateway exists
+        final File testSsgHome = new File(secureSpanHome, ImportExportUtilities.GATEWAY);
+        if(!testSsgHome.exists()) throw new IllegalArgumentException("Gateway installation not found");
+        if(!testSsgHome.isDirectory()) throw new IllegalArgumentException("Gateway incorrectly installed");
 
         if (pathToImageZipFile == null) throw new NullPointerException("pathToImageZipFile cannot be null");
         if (pathToImageZipFile.trim().isEmpty()) throw new IllegalArgumentException("pathToImageZipFile cannot be null");
@@ -69,8 +70,11 @@ class BackupImpl implements Backup {
         } catch (IOException e) {
             throw new BackupException("Could not create temp output directory for backup: " + e.getMessage());
         }
-        this.ssgHome = ssgHome;
-        this.applianceHome = applianceHome;
+        
+        ssgHome = testSsgHome;
+        applianceHome = new File(secureSpanHome, ImportExportUtilities.APPLIANCE);//may not exist, thats ok
+        esmHome = new File(secureSpanHome, ImportExportUtilities.ENTERPRISE_SERVICE_MANAGER);//may not exist, thats ok
+
         this.ftpConfig = ftpConfig;//I might be null and thats ok
         this.pathToImageZipFile = pathToImageZipFile;
         this.printStream = printStream;
@@ -175,7 +179,7 @@ class BackupImpl implements Backup {
     }
 
     public void backUpComponentOS() throws BackupException {
-        if (new File(applianceHome).exists()) {
+        if (applianceHome.exists()) {
             try {
                 // copy system config files
                 final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
@@ -238,6 +242,36 @@ class BackupImpl implements Backup {
         }
     }
 
+    public void backUpComponentESM() throws BackupException {
+
+        try {
+            //validate the esm looks ok - just a basic check
+            ImportExportUtilities.throwIfEsmNotPresent(esmHome);
+        } catch (Exception e) {
+            throw new BackupException(e.getMessage());
+        }
+
+        try {
+            ImportExportUtilities.throwifEsmIsRunning();
+        } catch (IllegalStateException e) {
+            throw new BackupException(e.getMessage());
+        }
+
+        try {
+            final File dir =
+                    createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.ESM.getComponentName());
+
+            //opt/SecureSpan/EnterpriseManager/etc/omp.dat
+            ImportExportUtilities.copyDir(new File(esmHome, "etc"), new File(dir, "etc"));
+
+            System.out.println("test");
+            //copyDir
+        } catch (IOException e) {
+            throw new BackupException("Cannot back up modular assertions: " + e.getMessage());
+        }
+
+
+    }
 
     public void createBackupImage() throws BackupException {
         //when we are using ftp, we need to store the image file somewhere locally

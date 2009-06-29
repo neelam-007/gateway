@@ -35,6 +35,7 @@ import com.l7tech.util.ResourceUtils;
  */
 public class ExporterTest {
 
+    private File tmpSecureSpanHome;
     private File tmpSsgHome;
     private File imageFileToCreate;
 
@@ -42,8 +43,10 @@ public class ExporterTest {
 
     @Before
     public void setUp() throws IOException {
-        final String tmpSsgHomeStr =ImportExportUtilities.createTmpDirectory();
-        tmpSsgHome = new File(tmpSsgHomeStr);
+        final String tmpSecureSpanHomeStr = ImportExportUtilities.createTmpDirectory();
+        tmpSecureSpanHome = new File(tmpSecureSpanHomeStr);
+        tmpSsgHome = new File(tmpSecureSpanHome, ImportExportUtilities.GATEWAY);
+        tmpSsgHome.mkdir();
         imageFileToCreate = new File(ImportExportUtilities.createTmpDirectory(), "image1.zip");
         System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
         System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
@@ -51,9 +54,12 @@ public class ExporterTest {
 
     @After
     public void tearDown(){
-        if(tmpSsgHome == null) return;
-        if(!tmpSsgHome.exists()) return;
-        FileUtils.deleteDir(tmpSsgHome);
+        if(tmpSecureSpanHome != null){
+            if(tmpSecureSpanHome.exists()){
+                FileUtils.deleteDir(tmpSecureSpanHome);
+            }
+        }
+
         FileUtils.deleteDir(imageFileToCreate.getParentFile());
         System.clearProperty("com.l7tech.util.buildVersion");
         System.clearProperty("com.l7tech.gateway.config.backuprestore.checkversion");
@@ -92,14 +98,13 @@ public class ExporterTest {
     @Test
     public void testConstructor() throws Exception {
         createTestEnvironment();
-        final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
         Assert.assertNotNull(exporter);
     }
 
     @Test(expected=NullPointerException.class)
     public void testConstructorException() throws Backup.BackupException{
-        new Exporter(null, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        new Exporter(null, System.out);
     }
 
     /**
@@ -119,10 +124,9 @@ public class ExporterTest {
             final String imageZipFile = tmpDir + File.separator + "image.zip";
             programArgs.add(imageZipFile);
             final String[] args = programArgs.toArray(new String[]{});
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+            final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
             final Exporter.BackupResult result = exporter.createBackupImage(args);
-            Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
+            Assert.assertEquals("Status should be success", Exporter.BackupResult.Status.SUCCESS, result.getStatus());
             final String uniqueImageZipFile = result.getBackUpImageName(); 
 
             //Check image.zip exists
@@ -155,8 +159,7 @@ public class ExporterTest {
             programArgs.add("-os");
             
             final String[] args = programArgs.toArray(new String[]{});
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+            final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
             final Exporter.BackupResult result = exporter.createBackupImage(args);
             Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
             final String uniqueImageZipFile = result.getBackUpImageName();
@@ -171,8 +174,9 @@ public class ExporterTest {
     }
 
     /**
-     * Backup a test environment with no database or os files included. After the backup image is created, it is
+     * Backup a test environment with no database files included. After the backup image is created, it is
      * validated to have backed up the correct files, based on the project's resources
+     *
      */
     @Test
     public void testAndValidateBackupImage() throws Exception {
@@ -187,8 +191,11 @@ public class ExporterTest {
             final String imageZipFile = tmpDir + File.separator + "image.zip";
             programArgs.add(imageZipFile);
             final String[] args = programArgs.toArray(new String[]{});
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    tmpSsgHome.getAbsolutePath()/*just used for existence check*/);
+            //this test validtes of files too
+            //=> make the appliance direcotry
+            final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
+            applianceFolder.mkdir();
+            final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
             final Exporter.BackupResult result = exporter.createBackupImage(args);
             Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
 
@@ -259,7 +266,7 @@ public class ExporterTest {
     }
 
     /**
-     * Selectively backs up a test environment with no database or os files included.
+     * Selectively backs up a test environment with no database files included.
      * After the backup image is created, it is validated to have backed up the correct components, based on
      * the program parameters supplied
      */
@@ -279,8 +286,12 @@ public class ExporterTest {
             programArgs.add("-os");
             
             final String[] args = programArgs.toArray(new String[]{});
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    tmpSsgHome.getAbsolutePath()/*just used for existence check*/);
+            //this test validtes of files too
+            //=> make the appliance direcotry
+            final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
+            applianceFolder.mkdir();
+            
+            final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
             final Exporter.BackupResult result = exporter.createBackupImage(args);
             Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
 
@@ -346,8 +357,7 @@ public class ExporterTest {
         final List<String> programArgs = new ArrayList<String>();
         programArgs.add("export");
         final String[] args = programArgs.toArray(new String[]{});
-        final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
         exporter.createBackupImage(args);
     }
 
@@ -361,8 +371,7 @@ public class ExporterTest {
         programArgs.add("export");
         programArgs.add("-noexist");
         final String[] args = programArgs.toArray(new String[]{});
-        final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
         exporter.createBackupImage(args);
     }
 
@@ -376,8 +385,7 @@ public class ExporterTest {
         programArgs.add("export");
         programArgs.add("-image");
         final String[] args = programArgs.toArray(new String[]{});
-        final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
         exporter.createBackupImage(args);
     }
 
@@ -397,8 +405,7 @@ public class ExporterTest {
             final String imageZipFile = tmpDir + File.separator + "image.zip";
             programArgs.add(imageZipFile);
             final String[] args = programArgs.toArray(new String[]{});
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
-                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+            final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
             System.setProperty(Exporter.NO_UNIQUE_IMAGE_SYSTEM_PROP, "true");
             final Exporter.BackupResult result = exporter.createBackupImage(args);
             Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
@@ -418,8 +425,7 @@ public class ExporterTest {
      */
     @Test
     public void testVersionBackup() throws Exception {
-        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, "notusedinthistest",
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedinthistest",
                 true, System.out);
         try{
             backup.backUpVersion();
@@ -443,8 +449,7 @@ public class ExporterTest {
     @Test
     public void testConfigBackup() throws Exception {
         createTestEnvironment();
-        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, "notusedinthistest",
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome,null, "notusedinthistest",
                 true, System.out);
 
         try{
@@ -511,8 +516,12 @@ public class ExporterTest {
         createBackupManifest(osFile);
 
         FileOutputStream fos = null;
-        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
-                tmpSsgHome.getAbsolutePath()/*just needs to exist*/, null, "notusedinthistest",
+        //this test validates os files too
+        //=> make the appliance direcotry
+        final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
+        applianceFolder.mkdir();
+        
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedinthistest",
                 true, System.out);
 
         try{
@@ -542,8 +551,7 @@ public class ExporterTest {
     @Test
     public void testCaBackup() throws Exception {
         createTestEnvironment();
-        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, "notusedinthistest",
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedinthistest",
                 true, System.out);
 
         try{
@@ -587,8 +595,7 @@ public class ExporterTest {
     @Test
     public void testMaBackup() throws Exception {
         createTestEnvironment();
-        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, "notusedinthistest",
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedinthistest",
                 true, System.out);
 
         try{
@@ -628,9 +635,8 @@ public class ExporterTest {
     @Test
     public void testCreateImageFile() throws Exception {
         createTestEnvironment();
-        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSsgHome,
-                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, null, imageFileToCreate.getAbsolutePath(),
-                true, System.out);
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null,
+                imageFileToCreate.getAbsolutePath(), true, System.out);
 
         try{
             backup.backUpComponentCA();//just back up something
@@ -654,9 +660,9 @@ public class ExporterTest {
     @Test
     public void testGetFtpConfig() throws Exception {
         final Map<String, String> args = new HashMap<String, String>();
-        args.put(ImportExportUtilities.FTP_HOST.getName(), "donal.l7tech.com:21");
-        args.put(ImportExportUtilities.FTP_USER.getName(), "root");
-        args.put(ImportExportUtilities.FTP_PASS.getName(), "7layer");
+        args.put(CommonCommandLineOptions.FTP_HOST.getName(), "donal.l7tech.com:21");
+        args.put(CommonCommandLineOptions.FTP_USER.getName(), "root");
+        args.put(CommonCommandLineOptions.FTP_PASS.getName(), "7layer");
         args.put(Exporter.IMAGE_PATH.getName(), "image.zip");
 
         final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(args);
@@ -679,9 +685,9 @@ public class ExporterTest {
     public void testValidateFtpParametersNoPort() throws BackupRestoreLauncher.InvalidProgramArgumentException {
 
         final Map<String, String> args = new HashMap<String, String>();
-        args.put(ImportExportUtilities.FTP_HOST.getName(), "donal.l7tech.com");
-        args.put(ImportExportUtilities.FTP_USER.getName(), "root");
-        args.put(ImportExportUtilities.FTP_PASS.getName(), "7layer");
+        args.put(CommonCommandLineOptions.FTP_HOST.getName(), "donal.l7tech.com");
+        args.put(CommonCommandLineOptions.FTP_USER.getName(), "root");
+        args.put(CommonCommandLineOptions.FTP_PASS.getName(), "7layer");
         args.put(Exporter.IMAGE_PATH.getName(), "image.zip");
 
         ImportExportUtilities.checkAndValidateFtpParams(args);

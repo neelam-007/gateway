@@ -29,7 +29,8 @@ final class RestoreImpl implements Restore{
 
     private final PrintStream printStream;
     private final boolean isVerbose;
-    private final String applianceHome;
+    private final File applianceHome;
+    private final File esmHome;
     private final BackupImage image;
     private final DatabaseRestorer dbRestorer;
     private final File ompFile;
@@ -41,20 +42,25 @@ final class RestoreImpl implements Restore{
      * @param verbose boolean, if true print messages to the supplied printStream
      * @param printStream PrintStream if not null and verbose is true, this is where messages will be written to
      */
-    RestoreImpl(final String applianceHome,
-                       final BackupImage image,
-                       final DatabaseConfig dbConfig,
-                       final String clusterPassphrase,
-                       final boolean verbose,
-                       final File ssgHome,
-                       final PrintStream printStream) throws RestoreException {
-        throwIfSsgInstallationInvalid(ssgHome);
+    RestoreImpl(final File secureSpanHome,
+                final BackupImage image,
+                final DatabaseConfig dbConfig,
+                final String clusterPassphrase,
+                final boolean verbose,
+                final PrintStream printStream) throws RestoreException {
+        if (secureSpanHome == null) throw new NullPointerException("secureSpanHome cannot be null");
+        if (!secureSpanHome.exists()) throw new IllegalArgumentException("secureSpanHome directory does not exist");
+        if (!secureSpanHome.isDirectory()) throw new IllegalArgumentException("secureSpanHome must be a directory");
+
+        //check that the gateway exists
+        final File testSsgHome = new File(secureSpanHome, ImportExportUtilities.GATEWAY);
+
+        throwIfSsgInstallationInvalid(testSsgHome);
+        this.ssgHome = testSsgHome;
         //we know this exists due to above validation
         ssgConfigDir = getConfigDir(ssgHome);
         ompFile = new File(ssgConfigDir, ImportExportUtilities.OMP_DAT);
 
-        if(applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
-        if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
         if(image == null) throw new NullPointerException("image cannot be null");
 
         if(dbConfig != null){
@@ -73,15 +79,15 @@ final class RestoreImpl implements Restore{
         this.image = image;
         isVerbose = verbose;
 
-        //this class is not usable without an installed SSG > 5.0
+        applianceHome = new File(secureSpanHome, ImportExportUtilities.APPLIANCE);//may not exist, thats ok
+        esmHome = new File(secureSpanHome, ImportExportUtilities.ENTERPRISE_SERVICE_MANAGER);//may not exist, thats ok
+
         this.printStream = printStream;
-        this.applianceHome = applianceHome;
         if((new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())){
             osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
         }else{
             osConfigManager = null;
         }
-        this.ssgHome = ssgHome;
     }
 
     /**
@@ -229,7 +235,7 @@ final class RestoreImpl implements Restore{
 
     public Result restoreComponentOS(boolean isRequired) throws RestoreException {
 
-        if (new File(applianceHome).exists()) {
+        if (applianceHome.exists()) {
             try {
                 //need to use the exclude file
                 final File osFolder = image.getOSFolder();

@@ -17,41 +17,37 @@ import java.io.PrintStream;
  */
 public class BackupRestoreFactory {
 
-    public static Restore getRestoreInstance(final String applianceHome,
-                       final BackupImage backupImage,
-                       final DatabaseConfig dbConfig,
-                       final String clusterPassphrase,
-                       final boolean verbose,
-                       final File ssgHome,
-                       final PrintStream printStream) throws Restore.RestoreException {
+    public static Restore getRestoreInstance(final File secureSpanHome,
+                                             final BackupImage backupImage,
+                                             final DatabaseConfig dbConfig,
+                                             final String clusterPassphrase,
+                                             final boolean verbose,
+                                             final PrintStream printStream) throws Restore.RestoreException {
 
-        return new RestoreImpl(applianceHome,
+        return new RestoreImpl(secureSpanHome,
                 backupImage,
                 dbConfig,/*I might be null and that's ok*/
                 clusterPassphrase,
                 verbose,
-                ssgHome,
                 printStream);
     }
 
     /**
      * Get an instance of a Backup
-     * @param ssgHome
-     * @param applianceHome
-     * @param ftpConfig can be null
-     * @param verbose
-     * @param printStream
-     * @return
+     * @param secureSpanHome base instalation of Secure Span products e.g. /opt/SecureSpan
+     * @param ftpConfig can be null, where and how to download the image, if required
+     * @param verbose print progress information
+     * @param printStream where to send verbose output to
+     * @return Backup instance
      * @throws Backup.BackupException
      */
-    public static Backup getBackupInstance(final File ssgHome,
-                                           final String applianceHome,
+    public static Backup getBackupInstance(final File secureSpanHome,
                                            final FtpClientConfig ftpConfig,
                                            final String pathToImageZipFile,
                                            final boolean verbose,
                                            final PrintStream printStream)
             throws Backup.BackupException {
-        return new BackupImpl(ssgHome, applianceHome, ftpConfig, pathToImageZipFile, verbose, printStream);
+        return new BackupImpl(secureSpanHome, ftpConfig, pathToImageZipFile, verbose, printStream);
     }
     
 }

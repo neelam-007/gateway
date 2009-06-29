@@ -23,7 +23,7 @@ public class BackupRestoreLauncher {
     private static final String IMPORT_TYPE = "import";
     private static final String EXPORT_TYPE = "export";
     private static final Logger logger = Logger.getLogger(BackupRestoreLauncher.class.getName());
-    private static final String SSG_HOME = "/opt/SecureSpan/Gateway";
+    private static final String SECURE_SPAN_HOME = "/opt/SecureSpan";
 
     /**
      * If the Backup / Import fails, then the VM will exist with status 1. If there is a partially successfull
@@ -47,8 +47,7 @@ public class BackupRestoreLauncher {
                     argsToUse = args;
                 }
 
-                final Importer importer = new Importer(new File(SSG_HOME),
-                        System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+                final Importer importer = new Importer(new File(SECURE_SPAN_HOME), System.out);
 
                 Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(argsToUse);
                 switch (result.getStatus()){
@@ -86,8 +85,7 @@ public class BackupRestoreLauncher {
 
                 }
             } else if (args[0].equalsIgnoreCase("export")) {
-                final Exporter exporter = new Exporter(new File(SSG_HOME),
-                        System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+                final Exporter exporter = new Exporter(new File(SECURE_SPAN_HOME), System.out);
                 Exporter.BackupResult result = exporter.createBackupImage(args);
                 switch (result.getStatus()){
                     case SUCCESS:
@@ -113,7 +111,7 @@ public class BackupRestoreLauncher {
                 }
             } else if (args[0].equalsIgnoreCase("cfgdeamon")) {
                 final OSConfigManager osConfigManager =
-                        new OSConfigManager(new File(SSG_HOME), true, false, null);
+                        new OSConfigManager(new File(SECURE_SPAN_HOME), true, false, null);
                 try {
                     osConfigManager.finishRestoreOfFilesOnReboot();
                 } catch (OSConfigManager.OSConfigManagerException e) {

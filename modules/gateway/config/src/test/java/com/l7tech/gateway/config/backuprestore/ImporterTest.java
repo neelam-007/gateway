@@ -21,12 +21,15 @@ import com.l7tech.util.FileUtils;
 
 public class ImporterTest {
 
+    private File tmpSecureSpanHome;
     private File tmpSsgHome;
 
     @Before
     public void setUp() throws Exception {
-        final String tmpSsgHomeLocation = ImportExportUtilities.createTmpDirectory();
-        tmpSsgHome = new File(tmpSsgHomeLocation);
+        final String tmpSecureSpanHomeStr = ImportExportUtilities.createTmpDirectory();
+        tmpSecureSpanHome = new File(tmpSecureSpanHomeStr);
+        tmpSsgHome = new File(tmpSecureSpanHome, ImportExportUtilities.GATEWAY);
+        tmpSsgHome.mkdir();
 
         createTestEnvironment();
         System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
@@ -35,9 +38,9 @@ public class ImporterTest {
 
     @After
     public void tearDown(){
-        if(tmpSsgHome != null){
-            if(tmpSsgHome.exists()){
-                FileUtils.deleteDir(tmpSsgHome);    
+        if(tmpSecureSpanHome != null){
+            if(tmpSecureSpanHome.exists()){
+                FileUtils.deleteDir(tmpSecureSpanHome);    
             }
         }
         System.clearProperty("com.l7tech.util.buildVersion");
@@ -74,7 +77,7 @@ public class ImporterTest {
     @Test
     public void testImportFiveO() throws Exception{
         final URL preFiveOZip = this.getClass().getClassLoader().getResource("fiveo_backup_with_audits.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", preFiveOZip.getPath(),
                 "-dbu", "layer7",
@@ -100,12 +103,16 @@ public class ImporterTest {
     @Test
     public void testOsFileInport() throws Exception{
         final URL preFiveOZip = this.getClass().getClassLoader().getResource("fiveo_backup_with_audits.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", preFiveOZip.getPath(),
                 "-os"
         };
+
+        //this test validtes of files too
+        //=> make the appliance direcotry
+        final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
+        applianceFolder.mkdir();
 
         final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
@@ -121,14 +128,18 @@ public class ImporterTest {
     @Test
     public void testOsCompleteRoundTrip() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-os",
                 "-v"
         };
 
+        //this test validtes of files too
+        //=> make the appliance direcotry
+        final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
+        applianceFolder.mkdir();
+        
         final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
@@ -156,8 +167,7 @@ public class ImporterTest {
     @Test
     public void testOsNotApplicable() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_no_OS.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-os"
@@ -178,8 +188,7 @@ public class ImporterTest {
     @Test
     public void testOsFailure() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_no_OS.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-os",
@@ -203,8 +212,7 @@ public class ImporterTest {
     @Test
     public void testOsPartialSuccess_NotRequired() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_no_OS.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "notused",
@@ -225,8 +233,7 @@ public class ImporterTest {
     @Test
     public void testCARestore() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-ca",
@@ -264,8 +271,7 @@ public class ImporterTest {
     @Test
     public void testMARestore() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-ma",
@@ -318,8 +324,7 @@ public class ImporterTest {
     @Test
     public void testConfigRestore_CodePath() throws Exception{
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out,
-                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-config",
@@ -352,7 +357,7 @@ public class ImporterTest {
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
         final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
         final Restore restore =
-                BackupRestoreFactory.getRestoreInstance("notused", image, null, "notused", true, tmpSsgHome, System.out);
+                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out);
 
         //delete all the config files that were created as part of this test set up
 
@@ -386,7 +391,7 @@ public class ImporterTest {
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
         final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
         final Restore restore =
-                BackupRestoreFactory.getRestoreInstance("notused", image, null, "notused", true, tmpSsgHome, System.out);
+                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out);
 
         //delete all the config files that were created as part of this test set up
 

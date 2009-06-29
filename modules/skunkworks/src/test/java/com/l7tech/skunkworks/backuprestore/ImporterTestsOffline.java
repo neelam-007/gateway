@@ -21,14 +21,18 @@ public class ImporterTestsOffline {
 
     private File unzipDirectory;
     private File tmpSsgHome;
+    private File tmpSecureSpanHome;
 
     @Before
     public void setUp() throws IOException {
         final String tmpImageLocation = ImportExportUtilities.createTmpDirectory();
         unzipDirectory = new File(tmpImageLocation);
 
-        final String tmpSsgHomeLocation = ImportExportUtilities.createTmpDirectory();
-        tmpSsgHome = new File(tmpSsgHomeLocation);
+        final String tmpSecureSpanHomeStr = ImportExportUtilities.createTmpDirectory();
+        tmpSecureSpanHome = new File(tmpSecureSpanHomeStr);
+        tmpSsgHome = new File(tmpSecureSpanHome, ImportExportUtilities.GATEWAY);
+        tmpSsgHome.mkdir();
+
         setUpEnvironment();
         System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
         System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
@@ -42,11 +46,12 @@ public class ImporterTestsOffline {
             }
         }
 
-        if(tmpSsgHome != null){
-            if(tmpSsgHome.exists()){
-                FileUtils.deleteDir(tmpSsgHome);
+        if(tmpSecureSpanHome != null){
+            if(tmpSecureSpanHome.exists()){
+                FileUtils.deleteDir(tmpSecureSpanHome);
             }
         }
+        
         System.clearProperty("com.l7tech.util.buildVersion");
         System.clearProperty("com.l7tech.gateway.config.backuprestore.checkversion");
     }
@@ -68,7 +73,7 @@ public class ImporterTestsOffline {
 
         final URL preFiveOZip = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/fiveo_backup_with_audits.zip");
 
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", preFiveOZip.getPath(),
                 "-dbu", "root",
@@ -105,7 +110,7 @@ public class ImporterTestsOffline {
 
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
 
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String[] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "root",
@@ -146,7 +151,7 @@ public class ImporterTestsOffline {
         final File tmpImage = new File(tmpImageLocation, "image.zip");
         FileUtils.copyFile(new File(buzzcutImage.getPath()), tmpImage);
 
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String[] args = new String[]{"import",
                 "-image", tmpImage.getAbsolutePath(),/*ftp will extract the directory from the image path*/
                 "-dbu", "root",
@@ -181,7 +186,7 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(projectSqlFile, ssgSql);
 
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "root",
@@ -215,7 +220,7 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(projectSqlFile, ssgSql);
 
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "root",
@@ -257,7 +262,7 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(projectSqlFile, ssgSql);
 
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "root",
@@ -307,7 +312,7 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(new File(ompFile.getPath()), new File(confDir, ImportExportUtilities.OMP_DAT));
         FileUtils.copyFile(new File(nodePropFile.getPath()), new File(confDir, ImportExportUtilities.NODE_PROPERTIES));
 
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
                 "-dbu", "root",
@@ -352,7 +357,7 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(new File(ompFile.getPath()), new File(confDir, ImportExportUtilities.OMP_DAT));
         FileUtils.copyFile(new File(nodePropFile.getPath()), new File(confDir, ImportExportUtilities.NODE_PROPERTIES));
 
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final URL mappingFile = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/mapping_buzzcut.xml");
 
         final String [] args = new String[]{"import",
@@ -406,7 +411,7 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(new File(ompFile.getPath()), new File(confDir, ImportExportUtilities.OMP_DAT));
         FileUtils.copyFile(new File(nodePropFile.getPath()), new File(confDir, ImportExportUtilities.NODE_PROPERTIES));
 
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final URL mappingFile = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/mapping_buzzcut.xml");
 
         final String [] args = new String[]{"import",
@@ -454,7 +459,7 @@ public class ImporterTestsOffline {
         FileUtils.copyFile(new File(ompFile.getPath()), new File(confDir, ImportExportUtilities.OMP_DAT));
         FileUtils.copyFile(new File(nodePropFile.getPath()), new File(confDir, ImportExportUtilities.NODE_PROPERTIES));
 
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", preFiveOZip.getPath(),
                 "-dbu", "root",
@@ -482,7 +487,7 @@ public class ImporterTestsOffline {
         final URL preFiveOZip = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/fiveo_backup_with_audits.zip");
         final URL mappingFile = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/mapping.xml");
 
-        final Importer importer = new Importer(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
         final String [] args = new String[]{"import",
                 "-image", preFiveOZip.getPath(),
                 "-db", "ssg_buzzcut",
