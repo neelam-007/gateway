@@ -62,7 +62,7 @@ public class TestCertificateGenerator {
         k = new KeyGenParams();
         k.setAlgorithm("RSA");
         k.setNamedParam("sect163k1");
-        k.setKeySize(768);
+        k.setKeySize(1024);
 
         c = new CertGenParams();
         c.setSerialNumber(new BigInteger(64, random).abs());

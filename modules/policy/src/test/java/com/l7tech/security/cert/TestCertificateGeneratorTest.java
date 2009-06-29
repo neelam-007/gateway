@@ -3,9 +3,9 @@ package com.l7tech.security.cert;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
+import com.rsa.jsafe.provider.JsafeJCE;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jce.X509KeyUsage;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import static org.junit.Assert.*;
 import org.junit.*;
 
@@ -25,7 +25,7 @@ public class TestCertificateGeneratorTest {
         try {
             KeyFactory.getInstance("EC");
         } catch (NoSuchAlgorithmException e) {
-            Security.addProvider(new BouncyCastleProvider());
+            Security.insertProviderAt(new JsafeJCE(), 1);
         }
     }
 
