@@ -14,19 +14,17 @@ import org.junit.Assert;
 import java.io.IOException;
 import java.io.File;
 import java.net.URL;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.l7tech.util.FileUtils;
 
 public class ImporterTest {
 
-    private File unzipDirectory;
     private File tmpSsgHome;
 
     @Before
     public void setUp() throws Exception {
-        final String tmpImageLocation =ImportExportUtilities.createTmpDirectory();
-        unzipDirectory = new File(tmpImageLocation);
-
         final String tmpSsgHomeLocation = ImportExportUtilities.createTmpDirectory();
         tmpSsgHome = new File(tmpSsgHomeLocation);
 
@@ -37,12 +35,6 @@ public class ImporterTest {
 
     @After
     public void tearDown(){
-        if(unzipDirectory != null){
-            if(unzipDirectory.exists()){
-                FileUtils.deleteDir(unzipDirectory);
-            }
-        }
-
         if(tmpSsgHome != null){
             if(tmpSsgHome.exists()){
                 FileUtils.deleteDir(tmpSsgHome);    
@@ -133,7 +125,8 @@ public class ImporterTest {
                 tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
         final String [] args = new String[]{"import",
                 "-image", buzzcutImage.getPath(),
-                "-os"
+                "-os",
+                "-v"
         };
 
         final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
@@ -223,6 +216,202 @@ public class ImporterTest {
 
         Assert.assertEquals("result should be failure", Importer.RestoreMigrateResult.Status.SUCCESS,
                 result.getStatus());
+    }
+
+    /**
+     * Test the restore of the CA component, when it's asked for
+     * @throws Exception
+     */
+    @Test
+    public void testCARestore() throws Exception{
+        final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
+        final Importer importer = new Importer(tmpSsgHome, System.out,
+                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final String [] args = new String[]{"import",
+                "-image", buzzcutImage.getPath(),
+                "-ca",
+                "-halt",
+                "-v"
+        };
+
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertNotNull("result should not be null", result);
+
+        Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS,
+                result.getStatus());
+
+        //confirm the symantext jar and properties file were correctly copied
+        final File symantecJar =
+                new File(tmpSsgHome, ImportExportUtilities.CA_JAR_DIR + File.separator + "symantec_antivirus.jar");
+        Assert.assertTrue("symantec_antivirus should exist at: " + symantecJar.getAbsolutePath(), symantecJar.exists());
+        Assert.assertFalse("File '" + symantecJar.getAbsolutePath()+"' should not be a directory",
+                symantecJar.isDirectory());
+
+        //confirm the property file was copied correctly
+        final File symantecProperties = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator
+                + "symantec_scanengine_client.properties");
+
+        Assert.assertTrue("symantec_antivirus property file should exist at: " + symantecProperties.getAbsolutePath(),
+                symantecProperties.exists());
+        Assert.assertTrue("File '" + symantecProperties.getAbsolutePath()+"' should be a file",
+                symantecProperties.isFile());
+    }
+
+    /**
+     * Test the restore of the MA component, when it's asked for
+     * @throws Exception
+     */
+    @Test
+    public void testMARestore() throws Exception{
+        final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
+        final Importer importer = new Importer(tmpSsgHome, System.out,
+                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final String [] args = new String[]{"import",
+                "-image", buzzcutImage.getPath(),
+                "-ma",
+                "-halt",
+                "-v"
+        };
+
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertNotNull("result should not be null", result);
+
+        Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS,
+                result.getStatus());
+
+        //test the following jars were created
+
+        final String [] allMaAars = new String[]{
+            "LDAPQueryAssertion-5.1.aar",
+            "RateLimitAssertion-5.1.aar",
+            "IdentityAttributesAssertion-5.1.aar",
+            "CertificateAttributesAssertion-5.1.aar",
+            "WsAddressingAssertion-5.1.aar",
+            "SnmpTrapAssertion-5.1.aar",
+            "NcesDecoratorAssertion-5.1.aar",
+            "MessageContextAssertion-5.1.aar",
+            "SamlpAssertion-5.1.aar",
+            "FtpCredentialAssertion-5.1.aar",
+            "EsmAssertion-5.1.aar",
+            "FtpRoutingAssertion-5.1.aar",
+            "NcesValidatorAssertion-5.1.aar",
+            "XacmlPdpAssertion-5.1.aar",
+            "ComparisonAssertion-5.1.aar",
+            "EchoRoutingAssertion-5.1.aar"
+        };
+
+        for(String fileName: allMaAars){
+            final File maAar = new File(tmpSsgHome, ImportExportUtilities.MA_AAR_DIR + File.separator + fileName);
+            Assert.assertTrue("Modular assertion file should exist at: " + maAar.getAbsolutePath(),
+                    maAar.exists());
+            Assert.assertTrue("Modular assertion aar file '" + maAar.getAbsolutePath()+"' should be a file",
+                    maAar.isFile());
+
+        }
+    }
+
+    /**
+     * Test the restore of the config component, when it's asked for. This tests the code path, but cannot
+     * detect if files were successfully deleted and recreated
+     * @throws Exception
+     */
+    @Test
+    public void testConfigRestore_CodePath() throws Exception{
+        final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
+        final Importer importer = new Importer(tmpSsgHome, System.out,
+                tmpSsgHome.getAbsolutePath()/*meet os restore requirement*/);
+        final String [] args = new String[]{"import",
+                "-image", buzzcutImage.getPath(),
+                "-config",
+                "-halt",
+                "-v"
+        };
+
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertNotNull("result should not be null", result);
+
+        Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS,
+                result.getStatus());
+
+        for(String fileName: ImportExportUtilities.CONFIG_FILES){
+            final File configFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + fileName);
+            Assert.assertTrue("Config file should exist at: " + configFile.getAbsolutePath(),
+                    configFile.exists());
+            Assert.assertTrue("Config file '" + configFile.getAbsolutePath()+"' should be a file",
+                    configFile.isFile());
+        }
+    }
+
+    /**
+     * Test the restore of the config component, explicitly by working with the Restore interface. This guarantees
+     * that the config files are successfully restored, as they are deleted before the restore happens
+     * @throws Exception
+     */
+    @Test
+    public void testConfigRestore_RestorePath() throws Exception{
+        final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
+        final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
+        final Restore restore =
+                BackupRestoreFactory.getRestoreInstance("notused", image, null, "notused", true, tmpSsgHome, System.out);
+
+        //delete all the config files that were created as part of this test set up
+
+        for(String fileName: ImportExportUtilities.CONFIG_FILES){
+            final File configFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + fileName);
+            configFile.delete();
+        }
+
+        restore.restoreComponentConfig(true, false);
+
+        for(String fileName: ImportExportUtilities.CONFIG_FILES){
+            final File configFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + fileName);
+            Assert.assertTrue("Config file should exist at: " + configFile.getAbsolutePath(),
+                    configFile.exists());
+            Assert.assertTrue("Config file '" + configFile.getAbsolutePath()+"' should be a file",
+                    configFile.isFile());
+        }
+    }
+
+    /**
+     * Test the restore of the config component, with the migrate capability, explicitly by working with the Restore
+     * interface. This guarantees that the config files are successfully restored, as they are deleted before the
+     * restore happens
+     *
+     * The test resouce exclude_files lists node.properties, as isMigrate is true in this test, node.properties is
+     * not copied and is excluded
+     * @throws Exception
+     */
+    @Test
+    public void testConfigRestoreWithMigrateAndExcludeFile() throws Exception{
+        final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
+        final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
+        final Restore restore =
+                BackupRestoreFactory.getRestoreInstance("notused", image, null, "notused", true, tmpSsgHome, System.out);
+
+        //delete all the config files that were created as part of this test set up
+
+        for(String fileName: ImportExportUtilities.CONFIG_FILES){
+            final File configFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + fileName);
+            configFile.delete();
+        }
+
+        //true for migrate
+        restore.restoreComponentConfig(true, true);
+
+        //node.properties should not exist
+
+        for(String fileName: ImportExportUtilities.CONFIG_FILES){
+            final File configFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + fileName);
+            if(fileName.equals("node.properties")){
+                Assert.assertFalse("Config file should not exist at: " + configFile.getAbsolutePath(),
+                        configFile.exists());
+            }else{
+                Assert.assertTrue("Config file should exist at: " + configFile.getAbsolutePath(),
+                        configFile.exists());
+                Assert.assertTrue("Config file '" + configFile.getAbsolutePath()+"' should be a file",
+                        configFile.isFile());
+            }
+        }
     }
 
 }

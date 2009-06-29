@@ -110,7 +110,7 @@ final class OSConfigManager {
      * @param destination where to place copied os files. Original directory structure of the copied folder will
      * be maintained, with destination as the new root e.g. a file in /etc/a.txt will be in destination/etc/a.txt
      */
-    void saveOSConfigFiles(final File destination) throws OSConfigManagerException{
+    void backUpOSConfigFilesToFolder(final File destination) throws OSConfigManagerException{
         if(isReboot)
             throw new IllegalStateException("Method cannot be called when OSConfigManager is in the reboot state");
         if(destination == null) throw new NullPointerException("destination cannot be null");
@@ -127,13 +127,17 @@ final class OSConfigManager {
                 if (!fileToCopy.startsWith("#")) {
                     File osConfigFileToCopy = new File(fileToCopy);
                     if (osConfigFileToCopy.isFile()) {
-                        logger.info("Saving " + osConfigFileToCopy.getPath());
                         File target = new File(new File(destination.getAbsolutePath()), osConfigFileToCopy.getPath());
                         FileUtils.ensurePath(target.getParentFile());
+                        final String msg = "Copying file '" + osConfigFileToCopy.getAbsolutePath() + "' to '"
+                                + target.getAbsolutePath() + "'";
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                         FileUtils.copyFile(osConfigFileToCopy, target);
+
                     } else {
-                        logger.info("os config file " + osConfigFileToCopy.getPath() + " does not exist on this " +
-                                "system and will not be included in image");
+                        final String msg = "File '" + osConfigFileToCopy.getAbsolutePath()
+                                + "' does not exist on this host and will not be backed up.";
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     }
                 }
             }

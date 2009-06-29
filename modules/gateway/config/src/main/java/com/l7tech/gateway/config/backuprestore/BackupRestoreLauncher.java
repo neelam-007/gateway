@@ -15,7 +15,7 @@ import java.util.logging.Logger;
  * Copyright (C) 2009, Layer 7 Technologies Inc.
  * Run backup / restore 
  */
-class BackupRestoreLauncher {
+public class BackupRestoreLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
     private static final String LOGCONFIG_NAME = "backuputilitylogging.properties";
     private static final String SSGBACKUP_SH = "ssgbackup.sh";

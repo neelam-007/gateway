@@ -17,7 +17,6 @@ import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
@@ -514,44 +513,12 @@ class DatabaseRestorer {
     /**
      * Reads the list of table names to be excluded. Read from the default within the file.
      *
+     * @param ssgHome
      * @return  The list of table names found in the file.
      * @throws java.io.IOException
      */
     private List<String> getExcludedTableNames(final File ssgHome) throws IOException {
-        return processFile(new File(ssgHome, EXCLUDE_TABLES_PATH), "Table");
+        return ImportExportUtilities.processFile(new File(ssgHome, EXCLUDE_TABLES_PATH));
     }
 
-    /**
-     *
-     * @param fileToProcess
-     * @param logPrefix File or Table
-     * @return
-     * @throws java.io.IOException
-     */
-    private List<String> processFile(final File fileToProcess, final String logPrefix) throws IOException {
-        final List<String> returnList = new ArrayList<String>();
-        if(!fileToProcess.exists() || !fileToProcess.isFile()) return returnList;
-        FileReader omitFileReader = null;
-        BufferedReader omitBufferedReader = null;
-
-        try {
-            omitFileReader = new FileReader(fileToProcess);
-            omitBufferedReader = new BufferedReader(omitFileReader);
-
-            String line;
-            while ((line = omitBufferedReader.readLine()) != null) {
-                if (!line.startsWith("#")) {//ignore comments
-                    String fileName = line.trim();
-                    if (!fileName.isEmpty() && !returnList.contains(fileName)) {//no duplicates and no empty table names
-                        logger.finest(logPrefix+" '" + fileName + "' will be excluded.");
-                        returnList.add(fileName);
-                    }
-                }
-            }
-        } finally {
-            ResourceUtils.closeQuietly(omitBufferedReader);
-            ResourceUtils.closeQuietly(omitFileReader);
-        }
-        return returnList;
-    }
 }

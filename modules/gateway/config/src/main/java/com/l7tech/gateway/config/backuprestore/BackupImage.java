@@ -52,7 +52,7 @@ final class BackupImage {
      */
     static final String PATH_TO_MY_CNF = "/etc/"+ MY_CNF;
 
-    public BackupImage(final String imageName,
+    BackupImage(final String imageName,
                         final PrintStream printStream,
                         final boolean isVerbose) throws IOException, InvalidBackupImage {
         if(imageName == null) throw new NullPointerException("image cannot be null");
@@ -73,7 +73,7 @@ final class BackupImage {
         versionFile = getVersionFileThrowIfNotFound();
     }
 
-    public BackupImage(final FtpClientConfig ftpConfig,
+    BackupImage(final FtpClientConfig ftpConfig,
                         final String imageNameAndPath,
                         final PrintStream printStream,
                         final boolean isVerbose)
@@ -117,18 +117,9 @@ final class BackupImage {
     }
     
     /**
-     * Does this backup image require the creation of a new database?
-     * @return
-     */
-    //may not be required
-    public boolean isNewDbRequired(){
-        return true;
-    }
-
-    /**
      * @return the version this back up represents
      */
-    public ImageVersion getImageVersion() {
+    ImageVersion getImageVersion() {
         return imageVersion;
     }
 
@@ -139,7 +130,7 @@ final class BackupImage {
         final String msg = "Uncompressing image to temporary directory " + tempDirectory;
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
-        unzipToDir(image.getAbsolutePath(), tempDirectory, true);
+        unzipToDir(image.getAbsolutePath(), tempDirectory);
 
         //What does the image look like? 5.0 or Buzzcut?
         //5.0 has no directories, its a flat layout
@@ -161,7 +152,7 @@ final class BackupImage {
     /**
      * Remove the temp directory this backup image created when it unzipped the image
      */
-    public void removeTempDirectory(){
+    void removeTempDirectory(){
         final String msg = "cleaning up temp files at " + tempDirectory;
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
         boolean success = FileUtils.deleteDir(new File(tempDirectory));
@@ -180,7 +171,7 @@ final class BackupImage {
      * @return File representing the directory where the backup data can be found. Can be null if after 5.0 and
      * imgae does not contain a maindb folder
      */
-    public File getMainDbBackupFolder(){
+    File getMainDbBackupFolder(){
         if(imageVersion == ImageVersion.AFTER_FIVE_O){
             File dbDir = new File(tempDirectory, ImportExportUtilities.ComponentType.MAINDB.getComponentName());
             if(!dbDir.exists() || !dbDir.isDirectory()) return null;
@@ -194,7 +185,7 @@ final class BackupImage {
      * Get my.cnf Can only be returned if the image is > 5.0
      * @return File representing my.cnf, never null
      */
-    public File getDatabaseConfiguration(){
+    File getDatabaseConfiguration(){
         return new File(getMainDbBackupFolder(), MY_CNF);
     }
     
@@ -204,7 +195,7 @@ final class BackupImage {
      * @return File representing the file containing the audits backup. It will be a file not a directory. Can be null
      * when after 5.0 and the image does not contain any audits
      */
-    public File getAuditsBackupFile(){
+    File getAuditsBackupFile(){
         if(imageVersion == ImageVersion.AFTER_FIVE_O){
             final File auditsDir= new File(tempDirectory, ImportExportUtilities.ComponentType.AUDITS.getComponentName());
             if(!auditsDir.exists() || !auditsDir.isDirectory()) return null;
@@ -237,7 +228,7 @@ final class BackupImage {
      * Get the actual version file, not just the directory containing it
      * @return the version file
      */
-    public File getVersionFile(){
+    File getVersionFile(){
         return versionFile;
     }
 
@@ -247,7 +238,12 @@ final class BackupImage {
         }
     }
 
-    public File getConfigurationFolder(){
+    /**
+     * Get the config folder from the image, or the root folder if the image is from 5.0
+     *
+     * @return File the config folder. If it's not null, then the folder exists and is a directory
+     */
+    File getConfigFolder(){
         if(imageVersion == ImageVersion.AFTER_FIVE_O){
             File configFolder =
                     new File(tempDirectory, ImportExportUtilities.ComponentType.CONFIG.getComponentName());
@@ -258,15 +254,44 @@ final class BackupImage {
         }
     }
 
-    public File getRootFolder(){
+    File getRootFolder(){
         return new File(tempDirectory);
     }
 
-    public File getOSFolder(){
-        return new File(tempDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
+    /**
+     * Get the os folder from the image, the os folder is the same for 5.0 and post 5.0
+     * @return File the os folder. If it's not null, then the folder exists and is a directory
+     */
+    File getOSFolder(){
+        final File osFolder = new File(tempDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
+        if(!osFolder.exists() || !osFolder.isDirectory()) return null;
+
+        return osFolder;
     }
-    
-    private void unzipToDir(final String filename, final String destinationpath, boolean outputMessages)
+
+    /**
+     * Get the ca folder from the image, the ca folder only exists in a post 5.0 image
+     * @return File the ca folder. If it's not null, then the folder exists and is a directory
+     */
+    File getCAFolder(){
+        final File caFolder = new File(tempDirectory, ImportExportUtilities.ComponentType.CA.getComponentName());
+        if(!caFolder.exists() || !caFolder.isDirectory()) return null;
+
+        return caFolder;
+    }
+
+    /**
+     * Get the ma folder from the image, the ma folder only exists in a post 5.0 image
+     * @return File the ma folder. If it's not null, then the folder exists and is a directory
+     */
+    File getMAFolder(){
+        final File maFolder = new File(tempDirectory, ImportExportUtilities.ComponentType.MA.getComponentName());
+        if(!maFolder.exists() || !maFolder.isDirectory()) return null;
+
+        return maFolder;
+    }
+
+    private void unzipToDir(final String filename, final String destinationpath)
             throws IOException {
         ZipInputStream zipinputstream = null;
         try {
@@ -280,9 +305,7 @@ final class BackupImage {
                 if ( zipentry.isDirectory() ) {
                     outputFile.mkdirs();
                 } else {
-                    if (outputMessages) {
-                        if (isVerbose && printStream != null) System.out.println("\t- " + entryName);
-                    }
+                    if (isVerbose && printStream != null) System.out.println("\t- " + entryName);
                     FileUtils.ensurePath( outputFile.getParentFile() );
                     FileOutputStream fileoutputstream = null;
                     try {

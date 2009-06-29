@@ -42,7 +42,7 @@ public interface Backup {
      * @param mappingFile name of the mapping file. Can include path information. Can be null when it is not required
      * @param config DatabaseConfig object used for connecting to the database. It must represent a database which
      * is local, otherwise an exception will be thrown
-     * @throws IOException if any exception occurs writing the database back up files
+     * @throws BackupException if any exception occurs writing the database back up files
      */
     public void backUpComponentMainDb(final String mappingFile,
                                       final DatabaseConfig config) throws BackupException;

@@ -1,7 +1,6 @@
 package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ResourceUtils;
@@ -167,7 +166,7 @@ class BackupImpl implements Backup {
                     }
                     return false;
                 }
-            });
+            }, isVerbose, printStream);
 
         } catch (IOException e) {
             throw new BackupException("Cannot back up ssg configuration: " + e.getMessage());
@@ -185,7 +184,7 @@ class BackupImpl implements Backup {
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     return;
                 }
-                osConfigManager.saveOSConfigFiles(dir);
+                osConfigManager.backUpOSConfigFilesToFolder(dir);
             } catch (OSConfigManager.OSConfigManagerException e) {
                 throw new BackupException(e.getMessage());
             } catch (IOException e) {
@@ -210,14 +209,14 @@ class BackupImpl implements Backup {
                     }
                     return true;
                 }
-            });
+            }, isVerbose, printStream);
 
             //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/lib
             ImportExportUtilities.copyFiles(new File(ssgHome, ImportExportUtilities.CA_JAR_DIR), dir, new FilenameFilter() {
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".jar");
                 }
-            });
+            }, isVerbose, printStream);
         } catch (IOException e) {
             throw new BackupException("Cannot back up custom assertions: " + e.getMessage());
         }
@@ -233,7 +232,7 @@ class BackupImpl implements Backup {
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".aar");
                 }
-            });
+            }, isVerbose, printStream);
         } catch (IOException e) {
             throw new BackupException("Cannot back up modular assertions: " + e.getMessage());
         }

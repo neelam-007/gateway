@@ -25,7 +25,7 @@ import com.l7tech.util.FileUtils;
 import com.l7tech.util.ResourceUtils;
 
 /**
- * Tests eveything in Exporter except for any database related backup
+ * Tests eveything in the Backup interface except for any database related backup
  * These tests write to temporary folder in the system temp directory
  * Regardless of test outcome, no temp folders will be left over in the system temp directory. If there are its a
  * coding error

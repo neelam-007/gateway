@@ -431,7 +431,7 @@ public final class Importer{
         }
 
         if(isDbRequested){
-            final File configFolder = backupImage.getConfigurationFolder();
+            final File configFolder = backupImage.getConfigFolder();
 
             if(backupImage.getImageVersion() == BackupImage.ImageVersion.AFTER_FIVE_O && configFolder != null){
 
@@ -650,7 +650,12 @@ public final class Importer{
     }
 
     /**
-     *
+     * Note: below there is no filtering of what components are added when isMigrate is true. Migrate is a capability
+     * added to the restore of certain components - db, os and config files.
+     * ssgmigrate.sh ensuqres that the Importer class is provided with the correct command line arguments, and it
+     * should always produce a selective restote, in which cases components like ca, ma won't be included, but they
+     * can be part of a selective restore with migrate capabilities if desired
+     * 
      * @param mappingFile can be null
      * @return list of applicable RestoreComponent's. Filtered for selective restore if applicable
      * @throws RestoreImpl.RestoreException
@@ -710,12 +715,40 @@ public final class Importer{
             }
         });
 
-        //Add the config folder
-        if(!isMigrate){
-            //add the ma folder
-            //add the ca folder and property files
-        }
+        //ssg config files
+        componentList.add(new RestoreComponent<Exception>(){
+            public void doRestore() throws Exception {
+                restore.restoreComponentConfig(isSelectiveRestore, isMigrate);
+            }
 
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.CONFIG;
+            }
+        });
+
+        //custom assertion files and jars
+        componentList.add(new RestoreComponent<Exception>(){
+            public void doRestore() throws Exception {
+                restore.restoreComponentCA(isSelectiveRestore);
+            }
+
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.CA;
+            }
+        });
+
+        //modular assertion aar files
+        componentList.add(new RestoreComponent<Exception>(){
+            public void doRestore() throws Exception {
+                restore.restoreComponentMA(isSelectiveRestore);
+            }
+
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.MA;
+            }
+        });
+
+        //feedback to user
         if(isSelectiveRestore){
             if(!isMigrate){
                 //don't tell the user this if they are doing a migrate
@@ -743,41 +776,6 @@ public final class Importer{
         output.append(BackupRestoreLauncher.EOL_CHAR);
 
         return output.toString();
-    }
-
-    //will be used soon
-    private void copySystemConfigFiles(final String tempDirectory, List<String> omitFiles) throws IOException {
-        if (isVerbose && printStream != null) System.out.print("Cloning SecureSpan Gateway settings ..");
-
-        for (String file : CONFIG_FILES) {
-            if (!omitFiles.contains(file)) {
-                restoreConfigFile(CONFIG_PATH + file, tempDirectory);
-            }
-        }
-
-        if (isVerbose && printStream != null) System.out.println(". DONE");
-    }
-
-    private void restoreConfigFile(final String destination, final String tempDirectory) throws IOException {
-        File toFile = new File(destination);
-        File fromFile = new File(tempDirectory + File.separator + toFile.getName());
-        if (fromFile.exists()) {
-            if (toFile.getParentFile() == null || !toFile.getParentFile().exists()) {
-                logger.warning("the parent directory for the target file " + toFile.getPath() + " does not " +
-                        "exist on this target system. perhaps this system is not configured properly. " +
-                        "trying to create directory");
-                FileUtils.ensurePath(toFile.getParentFile());
-            }
-            if (toFile.exists()) {
-                logger.info("overwriting local " + toFile.getPath());
-                toFile.delete();
-            } else {
-                logger.info("adding local file " + toFile.getPath());
-            }
-            FileUtils.copyFile(fromFile, toFile);
-        } else {
-            logger.info("image does not contain config file " + fromFile.getName() + " leaving this file alone");
-        }
     }
 
     /**

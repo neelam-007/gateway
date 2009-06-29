@@ -116,6 +116,39 @@ public class ImportExportUtilities {
     }
 
     /**
+     * Read the fileToProcess and extract all lines of text, except for lines starting with '#', and return
+     * them in a list of strings
+     * @param fileToProcess file to read
+     * @return List<String> of each line of text found in the file
+     * @throws java.io.IOException if any problems reading the file
+     */
+    static List<String> processFile(final File fileToProcess) throws IOException {
+        final List<String> returnList = new ArrayList<String>();
+        if(!fileToProcess.exists() || !fileToProcess.isFile()) return returnList;
+        FileReader omitFileReader = null;
+        BufferedReader omitBufferedReader = null;
+
+        try {
+            omitFileReader = new FileReader(fileToProcess);
+            omitBufferedReader = new BufferedReader(omitFileReader);
+
+            String line;
+            while ((line = omitBufferedReader.readLine()) != null) {
+                if (!line.startsWith("#")) {//ignore comments
+                    String fileName = line.trim();
+                    if (!fileName.isEmpty() && !returnList.contains(fileName)) {//no duplicates and no empty table names
+                        returnList.add(fileName);
+                    }
+                }
+            }
+        } finally {
+            ResourceUtils.closeQuietly(omitBufferedReader);
+            ResourceUtils.closeQuietly(omitFileReader);
+        }
+        return returnList;
+    }
+
+    /**
      * Classloader designed to ONLY to load BuildInfo from Gateway jar from the standard install directory of
      * /opt/SecureSpan/Gateway/runtime/Gateway.jar
      */
@@ -843,7 +876,11 @@ public class ImportExportUtilities {
      * @param fileFilter FilenameFilter can be null. Use to filter the files in sourceDir
      * @throws IOException if any exception occurs while copying the files
      */
-    public static void copyFiles(final File sourceDir, final File destinationDir, final FilenameFilter fileFilter)
+    public static void copyFiles(final File sourceDir,
+                                 final File destinationDir,
+                                 final FilenameFilter fileFilter,
+                                 final boolean isVerbose,
+                                 final PrintStream printStream)
             throws IOException{
         if(!sourceDir.exists())
             throw new IllegalArgumentException("Directory '"+sourceDir.getAbsolutePath()+"' does not exist");
@@ -860,7 +897,16 @@ public class ImportExportUtilities {
         for ( final String filename : filesToCopy ) {
             final File file = new File(sourceDir, filename);
             if ( file.exists() && !file.isDirectory()) {
-                FileUtils.copyFile(file, new File(destinationDir.getAbsolutePath() + File.separator + file.getName()));
+                final File destFile = new File(destinationDir.getAbsolutePath() + File.separator + file.getName());
+                if(destFile.exists()){
+                    final boolean success = destFile.delete();
+                    final String msg = "File '" + destFile.getAbsolutePath()+"' exists. File was "
+                            + ((success)? "successfully": "unsuccessfully") + " deleted";
+                    logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                }
+                FileUtils.copyFile(file, destFile);
+                final String msg = "File '" + file.getAbsolutePath()+"' copied to '" + destFile.getAbsolutePath()+"'";
+                logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
             }
         }
     }

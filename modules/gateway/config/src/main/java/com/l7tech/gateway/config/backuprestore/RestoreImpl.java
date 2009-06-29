@@ -33,8 +33,9 @@ final class RestoreImpl implements Restore{
     private final BackupImage image;
     private final DatabaseRestorer dbRestorer;
     private final File ompFile;
-    private final File configDirectory;
+    private final File ssgConfigDir;
     private final OSConfigManager osConfigManager;
+    private final File ssgHome;
 
     /**
      * @param verbose boolean, if true print messages to the supplied printStream
@@ -49,8 +50,8 @@ final class RestoreImpl implements Restore{
                        final PrintStream printStream) throws RestoreException {
         throwIfSsgInstallationInvalid(ssgHome);
         //we know this exists due to above validation
-        configDirectory = getConfigDir(ssgHome);
-        ompFile = new File(configDirectory, ImportExportUtilities.OMP_DAT);
+        ssgConfigDir = getConfigDir(ssgHome);
+        ompFile = new File(ssgConfigDir, ImportExportUtilities.OMP_DAT);
 
         if(applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
         if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
@@ -80,11 +81,13 @@ final class RestoreImpl implements Restore{
         }else{
             osConfigManager = null;
         }
+        this.ssgHome = ssgHome;
     }
 
     /**
      * Validates that omp.dat exists in the SSG installation. It must exist if the SSG has been correctly
      * installed
+     * Also validates that the custom assertion and modular assertion directories exist
      * @param testSsgHome
      */
     private void throwIfSsgInstallationInvalid(final File testSsgHome){
@@ -96,6 +99,15 @@ final class RestoreImpl implements Restore{
         final File ompFile = new File(getConfigDir(testSsgHome), ImportExportUtilities.NODE_PROPERTIES);
         if(!ompFile.exists() || !ompFile.isFile())
             throw new IllegalStateException("File '"+ ompFile.getAbsolutePath()+" not found");
+
+        final File testCADir = new File(testSsgHome, ImportExportUtilities.CA_JAR_DIR);
+        if(!testCADir.exists() || !testCADir.isDirectory())
+            throw new IllegalStateException("Custom assertion directory '"+testCADir.getAbsolutePath()+"'is missing");
+
+        final File testMADir = new File(testSsgHome, ImportExportUtilities.MA_AAR_DIR);
+        if(!testMADir.exists() || !testMADir.isDirectory())
+            throw new IllegalStateException("Modular assertion directory '"+testMADir.getAbsolutePath()+"'is missing");
+
     }
 
     /**
@@ -107,11 +119,117 @@ final class RestoreImpl implements Restore{
         return new File(testSsgHome, ImportExportUtilities.NODE_CONF_DIR);
     }
 
+    public Result restoreComponentCA(boolean isRequired) throws RestoreException {
+
+        final File imageCADir = image.getCAFolder();
+        if(imageCADir == null){
+            final String msg = "No ca folder found. No custom assertions or property files can be restored";
+            if(isRequired){
+                throw new RestoreException(msg);
+            }
+            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+            return Result.NOT_APPLICABLE;
+        }
+
+        try {
+            //restore all .property files found in the ca folder to the node/default/etc/conf folder
+            ImportExportUtilities.copyFiles(imageCADir, ssgConfigDir, new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".properties");
+                }
+            }, isVerbose, printStream);
+
+            final File ssgCaFolder = new File(ssgHome, ImportExportUtilities.CA_JAR_DIR);
+            //restore all jar files found to /opt/SecureSpan/Gateway/runtime/modules/lib
+            ImportExportUtilities.copyFiles(imageCADir, ssgCaFolder, new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".jar");
+                }
+            }, isVerbose, printStream);
+
+        } catch (IOException e) {
+            throw new RestoreException("Problem restoring custom assertion component: " + e.getMessage());
+        }
+
+        return Result.SUCCESS;
+    }
+
+    public Result restoreComponentMA(boolean isRequired) throws RestoreException {
+        final File imageMADir = image.getMAFolder();
+        if(imageMADir == null){
+            final String msg = "No ma folder found. No modular assertions can be restored";
+            if(isRequired){
+                throw new RestoreException(msg);
+            }
+            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+            return Result.NOT_APPLICABLE;
+        }
+
+        try {
+            final File ssgCaFolder = new File(ssgHome, ImportExportUtilities.MA_AAR_DIR);
+            //restore all aar files found to /opt/SecureSpan/Gateway/runtime/modules/assertions
+            ImportExportUtilities.copyFiles(imageMADir, ssgCaFolder, new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".aar");
+                }
+            }, isVerbose, printStream);
+
+        } catch (IOException e) {
+            throw new RestoreException("Problem restoring modular assertion component: " + e.getMessage());
+        }
+
+        return Result.SUCCESS;
+    }
+
+    public Result restoreComponentConfig(final boolean isRequired, final boolean isMigrate) throws RestoreException {
+        final File imageConfigDir = image.getConfigFolder();
+        if(imageConfigDir == null){
+            final String msg = "No config folder found. No ssg configuration can be restored";
+            if(isRequired){
+                throw new RestoreException(msg);
+            }
+            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+            return Result.NOT_APPLICABLE;
+        }
+
+        try {
+            final List<String> ssgConfigFilesToExclude;
+            final String excludeFiles = "config/backup/cfg/exclude_files.conf";
+            if(isMigrate){
+                final File excludeFile = new File(ssgHome, excludeFiles);
+                ssgConfigFilesToExclude = ImportExportUtilities.processFile(excludeFile);
+            }else{
+                ssgConfigFilesToExclude = null;
+            }
+
+            //copy all ssg config property files from the config folder to the ssg config folder
+            ImportExportUtilities.copyFiles(imageConfigDir, ssgConfigDir, new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+
+                    //has this file being excluded during a migrate?
+                    if(isMigrate && ssgConfigFilesToExclude != null){
+                        if(ssgConfigFilesToExclude.contains(name)) return false;                        
+                    }
+                    
+                    //this is not necessary, however it a safeguard against copying config files accidently
+                    //we are explicitly only copying files we know about
+                    for (String ssgFile : ImportExportUtilities.CONFIG_FILES) {
+                        if (ssgFile.equals(name)) return true;
+                    }
+                    return false;
+                }
+            }, isVerbose, printStream);
+
+        } catch (IOException e) {
+            throw new RestoreException("Problem restoring config component: " + e.getMessage());
+        }
+        
+        return Result.SUCCESS;        
+    }
+
     public Result restoreComponentOS(boolean isRequired) throws RestoreException {
 
         if (new File(applianceHome).exists()) {
-            // copy system config files
-            //OSConfigManager.saveOSConfigFiles(dir.getAbsolutePath(), ssgHome);
             try {
                 //need to use the exclude file
                 final File osFolder = image.getOSFolder();
@@ -120,16 +238,16 @@ final class RestoreImpl implements Restore{
                     if(isRequired){
                         throw new RestoreException(msg);
                     }
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
                     return Result.NOT_APPLICABLE;
 
-                }else if(!osFolder.exists() || !osFolder.isDirectory()){
+                }else if(osFolder == null){
                     //no os backup in image
                     final String msg = "No Operating System backup found in image";
                     if(isRequired){
                         throw new RestoreException(msg);
                     }
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
                     return Result.NOT_APPLICABLE;
                 }
                 osConfigManager.copyFilesToInternalFolderPriorToReboot(osFolder);
@@ -439,7 +557,7 @@ final class RestoreImpl implements Restore{
         nodePropertyConfig.setProperty("node.cluster.pass",
                 mpm.encryptPassword(this.dbRestorer.getClusterPassphrase().toCharArray()));
         try {
-            nodePropertyConfig.save(new File(configDirectory, ImportExportUtilities.NODE_PROPERTIES));
+            nodePropertyConfig.save(new File(ssgConfigDir, ImportExportUtilities.NODE_PROPERTIES));
         } catch (ConfigurationException e) {
             throw new RestoreException("Could not save node.properties: " + e.getMessage());
         }

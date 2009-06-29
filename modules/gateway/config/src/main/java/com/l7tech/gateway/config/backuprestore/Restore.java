@@ -46,7 +46,7 @@ public interface Restore {
      * @param isRequired if true, this component must be found in the backup image
      * @param isMigate if true, and isRequired is true, an exception will not be thrown if no audit data is found
      * in the backup image 
-     * @return Result one of either success, failure or not applicable. Not applicable can happen if the
+     * @return Result is either success or not applicable. Not applicable can happen if the
      * DatabaseConfig represents a remote database
      */
     public Result restoreComponentAudits(final boolean isRequired,
@@ -61,7 +61,48 @@ public interface Restore {
      */
     public Result restoreComponentOS(final boolean isRequired) throws RestoreException;
 
+    /**
+     * Restore any found custom assertions and their associated properties files, if any, from the ca folder of the i
+     * mage. The custom assertion component will only ever exist in a post 5.0 image
+     *
+     * This will restore any .properties files found in the ca folder from the image into the ssg configuration folder
+     * and will copy any custom assertion jars into the custom assertion jar folder
+     *
+     * @param isRequired if true, this component must be found in the backup image
+     * @return Result is either success or not applicable, which happens when no custom assertion data is found
+     * in the backup image
+     * @throws RestoreException
+     */
+    public Result restoreComponentCA(final boolean isRequired) throws RestoreException;
 
+    /**
+     * Restore the ssg configuration files to the ssg configuration folder. Configuratoin data is found in the
+     * config folder in a post 5.0 image and in the root folder of a 5.0 image
+     *
+     * 5.0 does not back up any files which represent the nodes identity (node.properties or omp.dat)
+     *
+     * @param isRequired if true, this component must be found in the backup image
+     * @param isMigrate if true, the file /config/backup/cfg/exclude_files.conf will be consulted and any files
+     * listed will be ignored during the restore
+     * @return Result is either success or not applicable, which happens when no configuration data is found
+     * in the backup image
+     * @throws RestoreException
+     */
+    public Result restoreComponentConfig(final boolean isRequired, final boolean isMigrate) throws RestoreException;
+
+    /**
+     * Restore any found modular assertions from the ma folder of the image. The modular assertion component
+     * will only ever exist in a post 5.0 image
+     *
+     * This will restore found modular assertion aar jar files into the modular assertion folder
+     *
+     * @param isRequired if true, this component must be found in the backup image
+     * @return Result is either success or not applicable, which happens when no modular assertion data is found
+     * in the backup image
+     * @throws RestoreException
+     */
+    public Result restoreComponentMA(final boolean isRequired) throws RestoreException;
+    
     public static class RestoreException extends Exception{
         public RestoreException(String message) {
             super(message);

@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Buzzcut separates migrate and restore. A migrate in restore is simply a restore with 'migrate' capabilities
- * See FUNCSPEC //todo [Donal]
+ * See http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_Backup_Restore_Func_Spec#ssgmigrate.sh
  * for details.
  * This class accecpts 'classic' migrate parameters and converts them into the equivilant parameters for a
  * selective restore, producing exactly the same behaviour as the old migrate parameters.
