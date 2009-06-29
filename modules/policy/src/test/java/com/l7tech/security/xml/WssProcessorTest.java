@@ -246,7 +246,6 @@ public class WssProcessorTest {
         }
     }
 
-    @Ignore("Temporarily disabled because RSA Jsafe doesn't support OAEP")
     @Test
     public void testLayer7Interop2008Response222() throws Exception {
         Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "wssInterop/interop_2008_layer7_222_response.xml");

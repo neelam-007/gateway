@@ -64,7 +64,6 @@ public class XencUtilTest {
         assertTrue(Arrays.equals(keyBytes, decrypted));
     }
 
-    @Ignore("Temporarily disabled becuase RSA Jsafe doesn't support OAEP")
     @Test
     public void testRoundTripRsaOaepEncryptedKey() throws Exception {
         PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();

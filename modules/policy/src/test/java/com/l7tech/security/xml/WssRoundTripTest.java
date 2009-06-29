@@ -338,7 +338,6 @@ public class WssRoundTripTest {
                                                false);
     }
 
-    @Ignore("Temporarily disabled because RSA Jsafe doesn't support OAEP")
     @Test
     public void testOaepEncryptedKey() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedKeyAlgorithm",
