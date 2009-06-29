@@ -38,12 +38,13 @@ public class GenerateCertificateTest {
 
     @Test
     public void testGenCustom() throws Exception {
-        String got = generate("-keySize", "818", "-subject", "cn=2hasdfiuh2", "-noExtKeyUsagE", "-daysUntilExpiry", "17");
+        int wantKeySize = 1024 + 256;
+        String got = generate("-keySize", Integer.toString(wantKeySize), "-subject", "cn=2hasdfiuh2", "-noExtKeyUsagE", "-daysUntilExpiry", "17");
         final X509Certificate cert = CertUtils.decodeFromPEM(got);
         assertNotNull(cert);
         assertTrue("cn=2hasdfiuh2".equalsIgnoreCase(cert.getSubjectDN().getName()));
         int keybits = CertUtils.getRsaKeyBits((RSAPublicKey) cert.getPublicKey());
-        assertTrue("Should get at least the number of key bits we asked for", keybits >= 818);
+        assertTrue("Should get at least the number of key bits we asked for", keybits >= wantKeySize);
         assertTrue("Should not get too many key bits", keybits < 1024);
         assertTrue("Should have default key usage", cert.getKeyUsage()[2]);
         assertFalse("Should have default key usage", cert.getKeyUsage()[6]);
