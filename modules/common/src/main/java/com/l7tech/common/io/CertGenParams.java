@@ -63,6 +63,9 @@ public class CertGenParams implements Serializable {
 
         setSignatureAlgorithm(sigAlg);
 
+        if (expiryDays < 1)
+            throw new IllegalArgumentException("Expiry days must be positive");
+
         setDaysUntilExpiry(expiryDays);
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.HOUR, -1);

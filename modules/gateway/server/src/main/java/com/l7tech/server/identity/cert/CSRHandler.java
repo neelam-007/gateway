@@ -151,7 +151,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
         // sign request
         try {
-            CertGenParams cgp = new CertGenParams(certSubject, 0, false, null).useUserCertDefaults();
+            CertGenParams cgp = new CertGenParams(certSubject, 365 * 2, false, null).useUserCertDefaults();
 
             // for internal users, if an account expiration is specified, make sure the cert created matches it
             if (authenticatedUser instanceof InternalUser) {

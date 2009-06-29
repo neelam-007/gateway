@@ -423,7 +423,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new FindException("cannot find keystore");
         }
         try {
-            CertificateRequest res = keystore.makeCertificateSigningRequest(alias, new CertGenParams(dn, 0, false, sigAlg));
+            CertificateRequest res = keystore.makeCertificateSigningRequest(alias, new CertGenParams(dn, 365 * 2, false, sigAlg));
             return res.getEncoded();
         } catch (Exception e) {
             logger.log(Level.WARNING, "error getting keystore", e);
@@ -458,7 +458,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         X509Certificate cert;
         try {
             byte[] decodedCsrBytes = CertUtils.csrPemToBinary(csrBytes);
-            cert = (X509Certificate) signer.createCertificate(decodedCsrBytes, new CertGenParams(null, 0, false, sigAlg).useUserCertDefaults());
+            cert = (X509Certificate) signer.createCertificate(decodedCsrBytes, new CertGenParams(null, 365 * 2, false, sigAlg).useUserCertDefaults());
         } catch (GeneralSecurityException e) {
             throw e;
         } catch (Exception e) {
