@@ -45,7 +45,7 @@ public class GenerateCertificateTest {
         assertTrue("cn=2hasdfiuh2".equalsIgnoreCase(cert.getSubjectDN().getName()));
         int keybits = CertUtils.getRsaKeyBits((RSAPublicKey) cert.getPublicKey());
         assertTrue("Should get at least the number of key bits we asked for", keybits >= wantKeySize);
-        assertTrue("Should not get too many key bits", keybits < 1024);
+        assertTrue("Should not get too many key bits", keybits < wantKeySize);
         assertTrue("Should have default key usage", cert.getKeyUsage()[2]);
         assertFalse("Should have default key usage", cert.getKeyUsage()[6]);
         assertNull("Should not have ext key usage", cert.getExtendedKeyUsage());
