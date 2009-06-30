@@ -24,9 +24,9 @@ public class WssEncryptElementValidator extends WssEncryptingDecorationAssertion
     private String errString;
     private Throwable errThrowable;
 
-    public WssEncryptElementValidator(WssEncryptElement ra) {
-        super(ra, true);
-        assertion = ra;
+    public WssEncryptElementValidator( final WssEncryptElement wssEncryptElement ) {
+        super(wssEncryptElement, true, false);
+        assertion = wssEncryptElement;
         String pattern = null;
         if (assertion.getXpathExpression() != null) {
             pattern = assertion.getXpathExpression().getExpression();

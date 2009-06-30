@@ -8,6 +8,6 @@ import com.l7tech.policy.assertion.xmlsec.AddWssUsernameToken;
 public class AddWssUsernameTokenValidator extends WssEncryptingDecorationAssertionValidator {
 
     public AddWssUsernameTokenValidator( final AddWssUsernameToken assertion ) {
-        super( assertion, assertion.isEncrypt() );
+        super( assertion, assertion.isEncrypt(), assertion.isEncrypt() );
     }
 }

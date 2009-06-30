@@ -22,8 +22,10 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
 
     //- PUBLIC
 
-    public WssEncryptingDecorationAssertionValidator( final Assertion assertion, boolean encrypts ) {
-        super(assertion);
+    public WssEncryptingDecorationAssertionValidator( final Assertion assertion,
+                                                      boolean encrypts,
+                                                      boolean isWss11 ) {
+        super(assertion, isWss11);
         this.encrypts = encrypts;
         this.defaultActor = isDefaultActor( assertion );
         this.defaultIdentityTarget = isDefaultIdentityTarget( assertion );
