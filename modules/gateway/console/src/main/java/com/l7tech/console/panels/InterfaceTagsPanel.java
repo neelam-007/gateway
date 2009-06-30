@@ -279,6 +279,8 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
      * @return true if the name has beens used by some interface tag.
      */
     private boolean isDuplicateInterfaceName(String interfaceTagName) {
+        if (interfaceTagName == null) throw new IllegalArgumentException("Interface Tag Name is not specified.");
+
         Collection<InterfaceTag> tags = tagListModel.toList();
         if (tags == null || tags.isEmpty()) return false;
 
@@ -299,12 +301,34 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
                     return;
                 final String pattern = option.toString();
                 if (!InterfaceTag.isValidPattern(pattern)) {
-                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "Invalid Address Pattern", "Address patterns should be in this format: 127.0.0/24", null);
+                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "Address patterns should be in this format: 127.0.0/24",
+                        "Invalid Address Pattern", JOptionPane.ERROR_MESSAGE, null);
+                    return;
+                } else if (isDuplicateAddressPattern(pattern)) {
+                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The address pattern '" + pattern + "' already exists.  Please use a new pattern to try again.",
+                        "Duplicate Address Pattern", JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
                 patternUser.call(pattern);
             }
         });
+    }
+
+    /**
+     * Check if the address pattern already exists in the pattern list.
+     * @param addressPattern: the address pattern to be checked.
+     * @return true if the address pattern already exists.
+     */
+    private boolean isDuplicateAddressPattern(String addressPattern) {
+        if (addressPattern == null) throw new IllegalArgumentException("Address Pattern is not specified.");
+
+        for (int i = 0; i < patternList.getModel().getSize(); i++) {
+            if (addressPattern.equals(patternList.getModel().getElementAt(i))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean isSelectedInRange(JList list) {
