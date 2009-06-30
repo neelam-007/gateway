@@ -135,6 +135,8 @@ public class SampleMessageDialog extends JDialog {
         });
 
         add(mainPanel);
+
+        enableButtons();
     }
 
     private void enableButtons() {
