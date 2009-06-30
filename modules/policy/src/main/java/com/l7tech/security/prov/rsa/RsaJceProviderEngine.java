@@ -55,7 +55,7 @@ public class RsaJceProviderEngine extends JceProvider {
 
     @Override
     protected String getRsaOaepPaddingCipherName() {
-        return "RSA/ECB/OAEPWithSHA1AndMGF1Padding ";
+        return "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
     }
 
     @Override
