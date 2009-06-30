@@ -264,13 +264,24 @@ class BackupImpl implements Backup {
             //opt/SecureSpan/EnterpriseManager/etc/omp.dat
             ImportExportUtilities.copyDir(new File(esmHome, "etc"), new File(dir, "etc"));
 
-            System.out.println("test");
+            final File dbFile = new File(dir, "var" + File.separator + "db");
+            FileUtils.ensurePath(dbFile);
+            ImportExportUtilities.copyDir(new File(esmHome, "var" + File.separator + "db"), dbFile);
+
+            final String emConfigProp = "emconfig.properties";
+            FileUtils.copyFile(new File(esmHome, "var" + File.separator + emConfigProp),
+                    new File(dir, "var" + File.separator + emConfigProp));
+
+            String firewallRules = "firewall_rules";
+            final File tmpFolder = new File(dir, "var" + File.separator + "tmp");
+            FileUtils.ensurePath(tmpFolder);
+            FileUtils.copyFile(new File(esmHome, "var" + File.separator + "tmp" + File.separator + firewallRules),
+                    new File(tmpFolder + File.separator + firewallRules));
+
             //copyDir
         } catch (IOException e) {
             throw new BackupException("Cannot back up modular assertions: " + e.getMessage());
         }
-
-
     }
 
     public void createBackupImage() throws BackupException {

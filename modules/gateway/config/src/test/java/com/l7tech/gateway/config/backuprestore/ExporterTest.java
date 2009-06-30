@@ -93,6 +93,14 @@ public class ExporterTest {
         final File osFile = createPretendOsFile();
         //config/backup/cfg/backup_manifest
         createBackupManifest(osFile);
+
+        //Set up the esm
+        final URL esmRes = this.getClass().getClassLoader().getResource("EnterpriseManager");
+        final File esmDirSrc = new File(esmRes.getPath());
+        final File esmDirDest = new File(tmpSecureSpanHome, ImportExportUtilities.ENTERPRISE_SERVICE_MANAGER);
+        esmDirDest.mkdir();
+        ImportExportUtilities.copyDir(esmDirSrc, esmDirDest);
+
     }
 
     @Test
@@ -586,6 +594,47 @@ public class ExporterTest {
         }
     }
 
+    @Test
+    public void testEsmbackup() throws Exception{
+        createTestEnvironment();
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null,
+                imageFileToCreate.getAbsolutePath(), true, System.out);
+
+        try{
+            backup.backUpComponentESM();
+            final File backupFolder = backup.getBackupFolder();
+
+            final File esmFolder = new File(backupFolder, ImportExportUtilities.ComponentType.ESM.getComponentName());
+            Assert.assertTrue("esm folder not found", esmFolder.exists());
+            Assert.assertTrue("esm folder incorrectly created", esmFolder.isDirectory());
+
+            final File etcFolder = new File(esmFolder, "etc");
+            Assert.assertTrue("etc folder not found", etcFolder.exists());
+            Assert.assertTrue("etc folder incorrectly created", etcFolder.isDirectory());
+
+            final File ompDat = new File(etcFolder, "omp.dat");
+            Assert.assertTrue("omp.dat file not found", ompDat.exists());
+            Assert.assertTrue("omp.dat file incorrectly created", ompDat.isFile());
+
+            final File varFolder = new File(esmFolder, "var");
+            Assert.assertTrue("var folder not found", varFolder.exists());
+            Assert.assertTrue("var folder incorrectly created", varFolder.isDirectory());
+
+            //jump ahead to a file low down
+            final File dbLck = new File(varFolder, "/db/emsdb/db.lck");
+            Assert.assertTrue("db.lck file not found", dbLck.exists());
+            Assert.assertTrue("db.lck file incorrectly created", dbLck.isFile());
+
+            final File firewallRules = new File(varFolder, "/tmp/firewall_rules");
+            Assert.assertTrue("firewall_rules file not found", firewallRules.exists());
+            Assert.assertTrue("firewall_rules file incorrectly created", firewallRules.isFile());
+
+
+        }finally{
+            backup.deleteTemporaryDirectory();
+        }
+    }
+    
     /**
      * Test the modular assertion backup
      * Tests that the folder "ma" is created in the tmp folder used for generating the backup image from, and that
