@@ -27,6 +27,8 @@ import java.util.logging.Logger;
  */
 public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
     private static final Logger logger = Logger.getLogger(InterfaceTagsPanel.class.getName());
+    private final int INDEX_VALUE = 0;
+    private final int INDEX_DONE = 1;
 
     private JPanel mainPanel;
     private JButton createTagButton;
@@ -118,6 +120,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         createTagButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                tagList.clearSelection();
                 promptForInterfaceName(new Functions.UnaryVoid<String>() {
                     @Override
                     public void call(final String interfaceName) {
@@ -253,24 +256,33 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
     }
 
     private void promptForInterfaceName(final Functions.UnaryVoid<String> nameUser) {
-        DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter a name for the new interface.", "Interface Name", JOptionPane.PLAIN_MESSAGE, null, null, null, new DialogDisplayer.InputListener() {
-            @Override
-            public void reportResult(Object option) {
-                if (option == null || option.toString().length() < 1)
-                    return;
-                final String name = option.toString();
-                if (!InterfaceTag.isValidName(name)) {
-                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface name must start with a letter or underscore, and can contain only ASCII letters, uderscores, or numbers.",
-                        "Invalid Interface Name", JOptionPane.ERROR_MESSAGE, null);
-                    return;
-                } else if (isDuplicateInterfaceName(name)) {
-                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The interface '" + name + "' already exists.  Please use a new interface name to try again.",
-                        "Duplicate Interface Name", JOptionPane.ERROR_MESSAGE, null);
-                    return;
+        final Object[] info = new Object[] {
+            null, // Input value with an initial value, null.
+            false // Flag to indicate if the input process is finished or not.
+        };
+        while (! (Boolean)info[INDEX_DONE]) {
+            DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter a name for the new interface.", "Interface Name", JOptionPane.PLAIN_MESSAGE, null, null, info[INDEX_VALUE], new DialogDisplayer.InputListener() {
+                @Override
+                public void reportResult(Object option) {
+                    if (option == null || option.toString().length() < 1) {
+                        info[INDEX_DONE] = true;
+                        return;
+                    }
+                    final String name = option.toString();
+                    if (!InterfaceTag.isValidName(name)) {
+                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface name must start with a letter or underscore, and can contain only ASCII letters, uderscores, or numbers.",
+                            "Invalid Interface Name", JOptionPane.ERROR_MESSAGE, null);
+                    } else if (isDuplicateInterfaceName(name)) {
+                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The interface '" + name + "' already exists.  Please use a new interface name to try again.",
+                            "Duplicate Interface Name", JOptionPane.ERROR_MESSAGE, null);
+                    } else {
+                        info[INDEX_DONE] = true;
+                        nameUser.call(name);
+                    }
+                    info[INDEX_VALUE] = name;
                 }
-                nameUser.call(name);
-            }
-        });
+            });
+        }
     }
 
     /**
@@ -294,24 +306,34 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
     }
 
     private void promptForAddressPattern(String initialValue, final Functions.UnaryVoid<String> patternUser) {
-        DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter an address pattern.", "Address Pattern", JOptionPane.PLAIN_MESSAGE, null, null, initialValue, new DialogDisplayer.InputListener() {
-            @Override
-            public void reportResult(Object option) {
-                if (option == null || option.toString().length() < 1)
-                    return;
-                final String pattern = option.toString();
-                if (!InterfaceTag.isValidPattern(pattern)) {
-                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "Address patterns should be in this format: 127.0.0/24",
-                        "Invalid Address Pattern", JOptionPane.ERROR_MESSAGE, null);
-                    return;
-                } else if (isDuplicateAddressPattern(pattern)) {
-                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The address pattern '" + pattern + "' already exists.  Please use a new pattern to try again.",
-                        "Duplicate Address Pattern", JOptionPane.ERROR_MESSAGE, null);
-                    return;
+        final Object[] info = new Object[] {
+            initialValue, // Input value with a given initial value, initialValue.
+            false         // Flag to indicate if the input process is finished or not.
+        };
+        while (! (Boolean)info[INDEX_DONE]) {
+            DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter an address pattern.", "Address Pattern", JOptionPane.PLAIN_MESSAGE, null, null, info[INDEX_VALUE], new DialogDisplayer.InputListener() {
+                @Override
+                public void reportResult(Object option) {
+                    if (option == null || option.toString().length() < 1) {
+                        info[INDEX_DONE] = true;
+                        return;
+                    }
+                    final String pattern = option.toString();
+                    if (!InterfaceTag.isValidPattern(pattern)) {
+                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "Address patterns should be in this format: 127.0.0/24",
+                            "Invalid Address Pattern", JOptionPane.ERROR_MESSAGE, null);
+                    } else if (isDuplicateAddressPattern(pattern)) {
+                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The address pattern '" + pattern + "' already exists.  Please use a new pattern to try again.",
+                            "Duplicate Address Pattern", JOptionPane.ERROR_MESSAGE, null);
+                    }
+                    else {
+                        info[INDEX_DONE] = true;
+                        patternUser.call(pattern);
+                    }
+                    info[INDEX_VALUE] = pattern;
                 }
-                patternUser.call(pattern);
-            }
-        });
+            });
+        }
     }
 
     /**
