@@ -5,6 +5,7 @@ package com.l7tech.security.xml.decorator;
 
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.security.token.UsernameToken;
+import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.processor.SecurityContext;
@@ -364,6 +365,10 @@ public class DecorationRequirements {
             return key;
         }
 
+        public SecurityToken getSecurityToken() {
+            return null;
+        }
+
         @Override
         public String getSCNamespace() {
             return ns;
@@ -664,6 +669,19 @@ public class DecorationRequirements {
      */
     public String getSignatureMessageDigest() {
         return signatureMessageDigest;
+    }
+
+    /**
+     * Remove any configured recipient tokens.
+     */
+    public void clearTokens() {
+        recipientCertificate = null;
+        secureConversationSession = null;
+        encryptedKey = null;
+        encryptedKeySha1 = null;
+        kerberosTicket = null;
+        includeKerberosTicket = false;
+        kerberosTicketId = null;
     }
 
     /**

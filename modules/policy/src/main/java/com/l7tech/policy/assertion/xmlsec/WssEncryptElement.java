@@ -6,7 +6,14 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.UsesEntities;
+import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.RequestIdentityTargetable;
 import com.l7tech.util.Functions;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.objectmodel.EntityHeader;
 
 /**
  * Enforces XML security on the message elements or the entire message.
@@ -16,7 +23,7 @@ import com.l7tech.util.Functions;
  *
  * @author flascell
  */
-public class WssEncryptElement extends XmlSecurityAssertionBase {
+public class WssEncryptElement extends XmlSecurityAssertionBase implements RequestIdentityTargetable, UsesEntities {
     public WssEncryptElement() {
         this(XpathExpression.soapBodyXpathValue());
     }
@@ -54,6 +61,32 @@ public class WssEncryptElement extends XmlSecurityAssertionBase {
     }
 
     @Override
+    public IdentityTarget getIdentityTarget() {
+        return identityTarget;
+    }
+
+    @Override
+    public void setIdentityTarget( final IdentityTarget identityTarget ) {
+        this.identityTarget = identityTarget;
+    }
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.USERGROUP)
+    public EntityHeader[] getEntitiesUsed() {
+        return identityTarget != null ?
+                identityTarget.getEntitiesUsed():
+                new EntityHeader[0];
+    }
+
+    @Override
+    public void replaceEntity( final EntityHeader oldEntityHeader,
+                               final EntityHeader newEntityHeader ) {
+        if ( identityTarget != null ) {
+            identityTarget.replaceEntity(oldEntityHeader, newEntityHeader);
+        }
+    }
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
@@ -82,6 +115,7 @@ public class WssEncryptElement extends XmlSecurityAssertionBase {
         return meta;
     }
 
+    private IdentityTarget identityTarget;
     private String xencAlgorithm = XencUtil.AES_128_CBC;
     private String xencKeyAlgorithm = null;
 }

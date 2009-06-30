@@ -32,7 +32,7 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
     //- PUBLIC
 
     public ServerAddWssUsernameToken( final AddWssUsernameToken assertion, final ApplicationContext spring ) {
-        super( assertion, assertion, assertion, logger );
+        super( assertion, assertion, assertion, assertion, logger );
         auditor = new Auditor(this, spring, logger);
         variableNames = assertion.getVariablesUsed();
         usernameHasVariables = assertion.getUsername() != null && assertion.getUsername().indexOf( "${" ) > -1;
@@ -79,7 +79,7 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
             try {
                 encryptionContext = buildEncryptionContext( context );
                 DecorationRequirements wssReq = message.getSecurityKnob().getAlternateDecorationRequirements(encryptionContext.getRecipientContext());
-                applyDecorationRequirements( wssReq, encryptionContext );
+                applyDecorationRequirements( context, wssReq, encryptionContext );
             } catch ( MultipleTokensException mte ) {
                 auditor.logAndAudit(AssertionMessages.ADD_WSS_USERNAME_MORE_THAN_ONE_TOKEN);
                 return AssertionStatus.BAD_REQUEST;

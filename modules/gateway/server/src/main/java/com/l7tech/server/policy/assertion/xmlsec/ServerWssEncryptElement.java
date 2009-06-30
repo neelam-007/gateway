@@ -39,8 +39,8 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
     private final Auditor auditor;
     private final DeferredFailureDomCompiledXpathHolder compiledXpath;
 
-    public ServerWssEncryptElement(WssEncryptElement data, ApplicationContext ctx) throws IOException {
-        super(data, data, data, logger);
+    public ServerWssEncryptElement( final WssEncryptElement data, final ApplicationContext ctx) throws IOException {
+        super(data, data, data, data, logger);
         this.auditor = new Auditor(this, ctx, logger);
         this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(assertion.getXpathExpression());
     }
@@ -121,7 +121,7 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
             wssReq.getElementsToEncrypt().addAll(selectedElements);
             wssReq.setEncryptionAlgorithm(assertion.getXEncAlgorithm());
             wssReq.setKeyEncryptionAlgorithm(assertion.getKeyEncryptionAlgorithm());
-            applyDecorationRequirements( wssReq, encryptionContext );
+            applyDecorationRequirements( context, wssReq, encryptionContext );
 
             auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_ENCRYPTED, messageDescription, String.valueOf(selectedElements.size()));
             return AssertionStatus.NONE;

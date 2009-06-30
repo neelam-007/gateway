@@ -6,12 +6,16 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.UsesEntities;
+import com.l7tech.policy.assertion.RequestIdentityTargetable;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.util.Functions;
 
 import java.util.List;
@@ -22,7 +26,7 @@ import java.util.Arrays;
  * Add a WS-Security UsernameToken decoration.
  */
 @RequiresSOAP(wss = true)
-public class AddWssUsernameToken extends MessageTargetableAssertion implements SecurityHeaderAddressable, UsesVariables {
+public class AddWssUsernameToken extends MessageTargetableAssertion implements SecurityHeaderAddressable, RequestIdentityTargetable, UsesVariables, UsesEntities {
 
     //- PUBLIC
 
@@ -99,6 +103,32 @@ public class AddWssUsernameToken extends MessageTargetableAssertion implements S
     }
 
     @Override
+    public IdentityTarget getIdentityTarget() {
+        return identityTarget;
+    }
+
+    @Override
+    public void setIdentityTarget( final IdentityTarget identityTarget ) {
+        this.identityTarget = identityTarget;
+    }
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.USERGROUP)
+    public EntityHeader[] getEntitiesUsed() {
+        return identityTarget != null ?
+                identityTarget.getEntitiesUsed():
+                new EntityHeader[0];
+    }
+
+    @Override
+    public void replaceEntity( final EntityHeader oldEntityHeader,
+                               final EntityHeader newEntityHeader ) {
+        if ( identityTarget != null ) {
+            identityTarget.replaceEntity(oldEntityHeader, newEntityHeader);
+        }
+    }
+
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         List<String> vars = new ArrayList<String>( Arrays.asList(super.getVariablesUsed()));
@@ -145,6 +175,7 @@ public class AddWssUsernameToken extends MessageTargetableAssertion implements S
     //- PRIVATE
 
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
+    private IdentityTarget identityTarget;
     private boolean includePassword = true;
     private boolean includeNonce = true;
     private boolean includeCreated = true;

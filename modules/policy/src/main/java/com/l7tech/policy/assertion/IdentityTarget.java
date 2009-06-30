@@ -28,6 +28,11 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
         this( TargetIdentityType.TAG, 0, identityTag, null );
     }
 
+    /**
+     * Create a new identity target from the given target.
+     *
+     * @param identityTarget The target (may be null)
+     */
     public IdentityTarget( final IdentityTarget identityTarget ) {
         if ( identityTarget != null ) {
             this.targetIdentityType = identityTarget.targetIdentityType;
@@ -52,6 +57,10 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
         return targetIdentityType;
     }
 
+    /**
+     * @deprecated For serialization only
+     */
+    @Deprecated
     public void setTargetIdentityType( final TargetIdentityType targetIdentityType ) {
         this.targetIdentityType = targetIdentityType;
     }
@@ -60,6 +69,10 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
         return identityProviderOid;
     }
 
+    /**
+     * @deprecated For serialization only
+     */
+    @Deprecated
     public void setIdentityProviderOid( final long identityProviderOid ) {
         this.identityProviderOid = identityProviderOid;
     }
@@ -81,6 +94,10 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
         return identityId;
     }
 
+    /**
+     * @deprecated For serialization only
+     */
+    @Deprecated
     public void setIdentityId( final String identityId ) {
         this.identityId = identityId;
     }
@@ -89,6 +106,10 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
         return identityInfo;
     }
 
+    /**
+     * @deprecated For serialization only
+     */
+    @Deprecated
     public void setIdentityInfo( final String identityInfo ) {
         this.identityInfo = identityInfo;
     }

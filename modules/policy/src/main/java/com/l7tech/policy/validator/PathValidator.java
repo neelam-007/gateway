@@ -450,7 +450,7 @@ class PathValidator {
      */
     private static IdentityTarget[] getIdentityTargetOptions( final Assertion policy,
                                                               final Assertion identityTargetableAssertion,
-                                                              final MessageTargetable messageTargetable  ) {
+                                                              final MessageTargetable messageTargetable ) {
         final TreeSet<IdentityTarget> targetOptions = new TreeSet<IdentityTarget>();
         final Iterator<Assertion> assertionIterator = policy.preorderIterator();
 
@@ -465,12 +465,12 @@ class PathValidator {
             }
 
             if ( assertion instanceof IdentityAssertion &&
-                 AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) ) {
+                 AssertionUtils.isSameTargetMessage( assertion, messageTargetable ) ) {
                 targetOptions.add( ((IdentityAssertion)assertion).getIdentityTarget() );
             }
 
             if ( assertion instanceof IdentityTagable &&
-                 AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) &&
+                 AssertionUtils.isSameTargetMessage( assertion, messageTargetable ) &&
                  ((IdentityTagable)assertion).getIdentityTag() != null ) {
                 targetOptions.add( new IdentityTarget(((IdentityTagable)assertion).getIdentityTag()) );
             }
@@ -514,12 +514,14 @@ class PathValidator {
 
         if (a instanceof IdentityTargetable && ((IdentityTargetable)a).getIdentityTarget()!=null ) {
             MessageTargetable target = new MessageTargetableSupport();
-            if ( a instanceof MessageTargetable ) {
+            if ( a instanceof RequestIdentityTargetable ) {
+                // request is he target
+            } else if ( a instanceof MessageTargetable ) {
                 target = (MessageTargetable) a;
             } else if ( Assertion.isResponse( a ) ) {
-                target = new MessageTargetableSupport(TargetMessageType.RESPONSE);
+                target.setTarget(TargetMessageType.RESPONSE);
             }
-            if ( !hasFlag(a, ValidatorFlag.REQUIRE_SIGNATURE) ) {
+            if ( !(a instanceof RequestIdentityTargetable) && !hasFlag(a, ValidatorFlag.REQUIRE_SIGNATURE) ) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "Assertion targets an identity, but signing is not required. The \"Target Identity\" should be cleared, or the assertion should require a signature.", null));
             } else if ( !ArrayUtils.contains( getIdentityTargetOptions(a.getPath()[0], a, target), ((IdentityTargetable)a).getIdentityTarget() ) ) {

@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.IdentityTagable;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RequestIdentityTargetable;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.console.util.Registry;
@@ -92,7 +93,9 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
     private static MessageTargetable getMessageTargetable( final Assertion assertion ) {
         MessageTargetable messageTargetable = new MessageTargetableSupport(TargetMessageType.REQUEST);
 
-        if ( assertion instanceof MessageTargetable ) {
+        if ( assertion instanceof RequestIdentityTargetable ) {
+            // then the request is the target
+        } else if ( assertion instanceof MessageTargetable ) {
             messageTargetable = (MessageTargetable) assertion;
         } else {
             if ( Assertion.isResponse( assertion ) ) {

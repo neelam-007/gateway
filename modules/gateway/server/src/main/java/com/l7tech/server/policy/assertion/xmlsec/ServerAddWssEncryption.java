@@ -1,31 +1,42 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.IdentityTargetable;
+import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.kerberos.KerberosServiceTicket;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.EncryptedKey;
-import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
+import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.GeneralSecurityException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * Support class for server assertions that perform encryption.
@@ -37,9 +48,11 @@ public abstract class ServerAddWssEncryption<AT extends Assertion> extends Abstr
     public ServerAddWssEncryption( final AT assertion,
                                    final SecurityHeaderAddressable securityHeaderAddressable,
                                    final MessageTargetable messageTargetable,
+                                   final IdentityTargetable identityTargetable,
                                    final Logger logger ) {
         super( assertion, messageTargetable );
         this.securityHeaderAddressable = securityHeaderAddressable;
+        this.identityTarget = new IdentityTarget( identityTargetable.getIdentityTarget() );
 
         X509Certificate rccert = null;
         if (!securityHeaderAddressable.getRecipientContext().localRecipient()) {
@@ -58,13 +71,20 @@ public abstract class ServerAddWssEncryption<AT extends Assertion> extends Abstr
 
     protected final X509Certificate recipientContextCert;
     protected final SecurityHeaderAddressable securityHeaderAddressable;
+    protected final IdentityTarget identityTarget;
 
+    /**
+     * Build an EncryptionContext for configuration of message decoration requirements. 
+     *
+     * @param context The current pec
+     * @return The EncryptionContext to use
+     * @throws PolicyAssertionException If an error occurs
+     * @throws MultipleTokensException If it is not possible to find a single token to encrypt for
+     */
     protected EncryptionContext buildEncryptionContext( final PolicyEnforcementContext context )
             throws PolicyAssertionException, MultipleTokensException {
         X509Certificate clientCert = null;
-        KerberosServiceTicket kerberosServiceTicket = null;
-        SecurityContextToken secConvContext = null;
-        EncryptedKey encryptedKey = null;
+        SigningSecurityToken signingSecurityToken = null;
         String keyEncryptionAlgorithm = null;
         XmlSecurityRecipientContext recipientContext = null;
 
@@ -77,90 +97,119 @@ public abstract class ServerAddWssEncryption<AT extends Assertion> extends Abstr
             clientCert = recipientContextCert;
             recipientContext = securityHeaderAddressable.getRecipientContext();
         } else if ( isResponse() ) {
-            final ProcessorResult wssResult = context.getRequest().getSecurityKnob().getProcessorResult();
-            final XmlSecurityToken[] tokens;
-            if ( wssResult != null ) {
-                tokens = wssResult.getXmlSecurityTokens();
+            final Message requestMessage = context.getRequest();
+            final AuthenticationContext authContext = context.getAuthenticationContext(requestMessage);
+            final ProcessorResult wssResult = requestMessage.getSecurityKnob().getProcessorResult();
+
+            final SigningSecurityToken[] ssts;
+            if ( new IdentityTarget().equals( identityTarget ) ) {
+                ssts = WSSecurityProcessorUtils.getSigningSecurityTokens( authContext.getCredentials() );
+            } else if ( wssResult != null ) {
+                SigningSecurityToken token = WSSecurityProcessorUtils.getSigningSecurityTokenByIdentity( authContext, wssResult, identityTarget );
+                if ( token != null ) {
+                    ssts = new SigningSecurityToken[]{ token };
+                } else {
+                    ssts = new SigningSecurityToken[0];
+                }
             } else {
-                tokens = new XmlSecurityToken[0];
+                ssts = new SigningSecurityToken[0];
             }
 
-            // Ecrypting the Response will require either the presence of a client cert (to encrypt the symmetric key)
-            // or a SecureConversation in progress or an Encrypted Key or Kerberos Session
-            for (XmlSecurityToken token : tokens) {
-                if (token instanceof SamlSecurityToken ) {
-                    SamlSecurityToken samlToken = (SamlSecurityToken)token;
-                    if (samlToken.isPossessionProved()) {
-                        if (clientCert != null) {
-                            throw new MultipleTokensException();
-                        }
-                        clientCert = samlToken.getSubjectCertificate();
-                    }
-                } else if (token instanceof X509SigningSecurityToken ) {
-                    X509SigningSecurityToken x509token = (X509SigningSecurityToken)token;
-                    if (x509token.isPossessionProved()) {
-                        if (clientCert != null) {
-                            throw new MultipleTokensException();
-                        }
-                        clientCert = x509token.getMessageSigningCertificate();
-                        keyEncryptionAlgorithm = wssResult.getLastKeyEncryptionAlgorithm();
-                    }
-                } else if (token instanceof KerberosSigningSecurityToken ) {
-                    KerberosSigningSecurityToken kerberosSecurityToken = (KerberosSigningSecurityToken)token;
-                    if (kerberosServiceTicket != null) {
-                        throw new MultipleTokensException();
-                    }
-                    kerberosServiceTicket = kerberosSecurityToken.getServiceTicket();
-                } else if (token instanceof SecurityContextToken) {
-                    SecurityContextToken secConvTok = (SecurityContextToken)token;
-                    if (secConvTok.isPossessionProved()) {
-                        secConvContext = secConvTok;
-                    }
-                } else if (token instanceof EncryptedKey) {
-                    if (encryptedKey != null) {
-                        throw new MultipleTokensException();
-                    }
-                    encryptedKey = (EncryptedKey)token;
+            if ( ssts.length == 1 ) {
+                signingSecurityToken = ssts[0];
+
+                if ( wssResult != null && signingSecurityToken instanceof X509SigningSecurityToken ) {
+                    if ( signingSecurityToken instanceof SamlSecurityToken && !useDetectedKeyAlgorithmForSAML )
+                    keyEncryptionAlgorithm = wssResult.getLastKeyEncryptionAlgorithm();
                 }
+            } else if ( ssts.length > 1 ) {
+                throw new MultipleTokensException();
             }
         }
 
         return new EncryptionContext(
                 clientCert,
-                kerberosServiceTicket,
-                secConvContext,
-                encryptedKey,
+                signingSecurityToken,
                 keyEncryptionAlgorithm,
                 recipientContext );
     }
 
-    protected void applyDecorationRequirements( final DecorationRequirements wssReq,
-                                                 final EncryptionContext encryptionContext ) {
-        if (encryptionContext.clientCert != null) {
-            wssReq.setRecipientCertificate(encryptionContext.clientCert);
-            if (wssReq.getKeyEncryptionAlgorithm()==null)
-                wssReq.setKeyEncryptionAlgorithm(encryptionContext.keyEncryptionAlgorithm);
-            // LYONSM: need to rethink configuring a signature and assuming a signature source here
-            //wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
-            //wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
-            //wssReq.setSignTimestamp();
-        } else if (encryptionContext.secConvContext != null) {
-            // We'll rely on the ServerSecureConversation assertion to (have) configure(d) the WS-SC session.
-            wssReq.setSignTimestamp();
-        } else if (encryptionContext.encryptedKey != null && encryptionContext.encryptedKey.isUnwrapped()) {
-            // As a last resort, we'll use an EncryptedKeySHA1 reference if we have nothing else to go on,
-            // but only if it was already unwrapped.
-            try {
-                wssReq.setEncryptedKey(encryptionContext.encryptedKey.getSecretKey());
-                wssReq.setEncryptedKeySha1(encryptionContext.encryptedKey.getEncryptedKeySHA1());
-            } catch ( InvalidDocumentFormatException e) {
-                throw new IllegalStateException(); // can't happen, it's unwrapped already
-            } catch (GeneralSecurityException e) {
-                throw new IllegalStateException(); // can't happen, it's unwrapped already
+    /**
+     * Apply the previously constructed EncryptionContext to the given DecorationRequirements.
+     *
+     * @param policyEnforcementContext The pec to use if adding deferred assertion (may be null)
+     * @param wssReq The DecorationRequirements to be udpated
+     * @param encryptionContext The EncryptionContext that specifies the key to use
+     */
+    protected void applyDecorationRequirements( final PolicyEnforcementContext policyEnforcementContext,
+                                                final DecorationRequirements wssReq,
+                                                final EncryptionContext encryptionContext ) {
+        if ( isResponse() && !new IdentityTarget().equals( identityTarget ) ) {
+            // If decorating the response message we'll need to reset the requirements to
+            // ensure that only the token we want to use for our identity is configured.
+            wssReq.clearTokens();
+
+            if ( policyEnforcementContext != null ) {
+                // We also have to do this later in case credential assertions deferred
+                // assertions have reset the decoration requirements.
+                policyEnforcementContext.addDeferredAssertion( this, new AbstractServerAssertion<AT>(assertion){
+                    @Override
+                    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
+                        applyDecorationRequirements( null, wssReq, encryptionContext );
+                        return AssertionStatus.NONE;
+                    }
+                } );
             }
-            wssReq.setSignTimestamp();
-        } else if (encryptionContext.kerberosServiceTicket != null ) {
-            wssReq.setKerberosTicket(encryptionContext.kerberosServiceTicket);
+        }
+
+        if ( wssReq.getKeyEncryptionAlgorithm() == null ) {
+            wssReq.setKeyEncryptionAlgorithm( encryptionContext.keyEncryptionAlgorithm );
+        }
+
+        if ( encryptionContext.clientCert != null ) {
+            wssReq.setRecipientCertificate( encryptionContext.clientCert );
+        } else if ( encryptionContext.signingSecurityToken != null ) {
+            SigningSecurityToken token = encryptionContext.signingSecurityToken;
+            if ( token instanceof X509SigningSecurityToken ) {
+                // NOTE: this includes SAML assertions
+                wssReq.setRecipientCertificate( ((X509SigningSecurityToken)token).getMessageSigningCertificate() );
+            } else if ( token instanceof KerberosSigningSecurityToken ) {
+                wssReq.setKerberosTicket( ((KerberosSecurityToken)token).getServiceTicket() );
+            } else if ( token instanceof SecurityContextToken ) {
+                final SecurityContextToken sct = (SecurityContextToken) token;
+                final SecurityContext context = sct.getSecurityContext();
+                if ( context instanceof SecureConversationSession ) {
+                    final SecureConversationSession session = (SecureConversationSession) context;
+                    wssReq.setSignTimestamp();
+                    wssReq.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
+                        @Override
+                        public String getId() {
+                            return session.getIdentifier();
+                        }
+                        @Override
+                        public byte[] getSecretKey() {
+                            return session.getSharedSecret();
+                        }
+                        @Override
+                        public String getSCNamespace() {
+                            return session.getSecConvNamespaceUsed();
+                        }
+                    });
+                }
+            } else if ( token instanceof EncryptedKey ) {
+                EncryptedKey encryptedKey = (EncryptedKey) token;
+                // As a last resort, we'll use an EncryptedKeySHA1 reference if we have nothing else to go on,
+                // but only if it was already unwrapped.
+                try {
+                    wssReq.setEncryptedKey( encryptedKey.getSecretKey() );
+                    wssReq.setEncryptedKeySha1( encryptedKey.getEncryptedKeySHA1() );
+                } catch (InvalidDocumentFormatException e) {
+                    throw new IllegalStateException(); // can't happen, it's unwrapped already
+                } catch (GeneralSecurityException e) {
+                    throw new IllegalStateException(); // can't happen, it's unwrapped already
+                }
+                wssReq.setSignTimestamp();
+            }
         }
     }
 
@@ -169,9 +218,7 @@ public abstract class ServerAddWssEncryption<AT extends Assertion> extends Abstr
 
     protected static class EncryptionContext {
         private final X509Certificate clientCert;
-        private final KerberosServiceTicket kerberosServiceTicket;
-        private final SecurityContextToken secConvContext;
-        private final EncryptedKey encryptedKey;
+        private final SigningSecurityToken signingSecurityToken;
         private final String keyEncryptionAlgorithm;
         private final XmlSecurityRecipientContext recipientContext;
 
@@ -179,37 +226,35 @@ public abstract class ServerAddWssEncryption<AT extends Assertion> extends Abstr
          * Create a new EncryptionContext
          *
          * @param clientCert client cert to encrypt to, or null to use alternate means
-         * @param kerberosServiceTicket   kerberos ticked to use for encrypting response, or null to use alternate means
-         * @param secConvContext WS-SecureConversation session to encrypt to, or null to use alternate means
-         *                   for when the policy uses a secure conversation so that the response
-         *                   can be encrypted using that context instead of a client cert.
-         *                   this should be plugged in, no idea why it is no longer there
-         * @param encryptedKey encrypted key already known to recipient, to use with #EncryptedKeySHA1 reference,
-         *                     or null.  This will only be used if no other encryption source is available.
+         * @param signingSecurityToken  The token to encrypt to, or null if not available
          * @param keyEncryptionAlgorithm The key encryption algorithm to use in the response (if X.509 cert)
          * @param recipientContext the intended recipient for the Security header to create
          */
         private EncryptionContext( final X509Certificate clientCert,
-                                   final KerberosServiceTicket kerberosServiceTicket,
-                                   final SecurityContextToken secConvContext,
-                                   final EncryptedKey encryptedKey,
+                                   final SigningSecurityToken signingSecurityToken,
                                    final String keyEncryptionAlgorithm,
                                    final XmlSecurityRecipientContext recipientContext ) {
             this.clientCert = clientCert;
-            this.kerberosServiceTicket = kerberosServiceTicket;
-            this.secConvContext = secConvContext;
-            this.encryptedKey = encryptedKey;
+            this.signingSecurityToken = signingSecurityToken;
             this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
             this.recipientContext = recipientContext;
         }
 
         public boolean hasEncryptionKey() {
-            return clientCert != null || secConvContext != null || encryptedKey != null || kerberosServiceTicket != null;    
+            return clientCert != null || signingSecurityToken != null;    
         }
 
         public XmlSecurityRecipientContext getRecipientContext() {
             return recipientContext;
         }
     }
+
+    //- PRIVATE
+
+    // In 5.0 we did not use the request encrypted key algorithm for anything other than
+    // X.509 credentials, it seems useful for any X509SigningSecurityToken though.
+    //
+    // This system property allows you to return the default behaviour to that used in 5.0
+    private static boolean useDetectedKeyAlgorithmForSAML = SyspropUtil.getBoolean( "com.l7tech.server.wss.decoration.useDetectedKeyAlgorithmForSaml", true );
 
 }

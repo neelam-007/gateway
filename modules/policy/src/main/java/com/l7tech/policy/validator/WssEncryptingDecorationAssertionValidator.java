@@ -2,6 +2,8 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.IdentityTargetable;
+import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
@@ -24,6 +26,7 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
         super(assertion);
         this.encrypts = encrypts;
         this.defaultActor = isDefaultActor( assertion );
+        this.defaultIdentityTarget = isDefaultIdentityTarget( assertion );
     }
 
     @Override
@@ -32,6 +35,12 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
                           final boolean soap,
                           final PolicyValidatorResult result ) {
         super.validate( path, wsdl, soap, result );
+
+        if ( !defaultActor || !Assertion.isResponse(assertion ) && !defaultIdentityTarget ) {
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+                    "The \"Target Identity\" will be ignored for this assertion. A \"Target Identity\" should be used for response encryption when multiple identities are used in a request.", null));
+        }
+
         boolean seenSelf = true;
         boolean requiresTargetEncKey = encrypts && defaultActor && Assertion.isResponse(assertion); // non response validation is handled by WsSecurity validator
         Assertion[] assertionPath = path.getPath();
@@ -68,7 +77,8 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
         }
 
         if ( requiresTargetEncKey ) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "This assertion requires a (Request) WSS Signature assertion, a WS Secure Conversation assertion, a SAML assertion, an Encrypted UsernameToken assertion, or a WSS Kerberos assertion.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+                    "This assertion requires a (Request) WSS Signature assertion, a WS Secure Conversation assertion, a SAML assertion, an Encrypted UsernameToken assertion, or a WSS Kerberos assertion.", null));
         }
     }
 
@@ -83,6 +93,7 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
     //- PRIVATE
 
     private boolean defaultActor;
+    private boolean defaultIdentityTarget;
     private boolean encrypts;
 
     private static boolean isDefaultActor( final Assertion assertion ) {
@@ -94,5 +105,15 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
         }
 
         return defaultActor;
+    }
+
+    private static boolean isDefaultIdentityTarget( final Assertion assertion ) {
+        boolean defaultIdentityTarget = true;
+
+        if ( assertion instanceof IdentityTargetable ) {
+            defaultIdentityTarget = new IdentityTarget().equals(new IdentityTarget(((IdentityTargetable)assertion).getIdentityTarget()));
+        }
+
+        return defaultIdentityTarget;
     }
 }
