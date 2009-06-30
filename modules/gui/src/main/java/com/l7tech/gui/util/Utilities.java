@@ -7,6 +7,8 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.text.JTextComponent;
+import javax.swing.text.Document;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.event.*;
@@ -774,6 +776,11 @@ public class Utilities {
         pane.setBorder(null);
     }
 
+    public static void setMaxLength( final Document document, final int maxLength ) {
+        if ( document instanceof AbstractDocument ) {
+            ((AbstractDocument)document).setDocumentFilter( new DocumentSizeFilter(maxLength) );
+        }
+    }
 
     /**
      * Creates pop-up menus for text components.

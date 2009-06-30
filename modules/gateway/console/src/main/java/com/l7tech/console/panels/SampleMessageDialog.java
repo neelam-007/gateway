@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.japisoft.xmlpad.XMLContainer;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.service.SampleMessage;
 
@@ -36,17 +37,8 @@ public class SampleMessageDialog extends JDialog {
 
     private static final String TITLE = "Sample Message";
 
-    public SampleMessageDialog(Dialog owner, SampleMessage message, boolean allowOperationChange, Map<String, String> namespaces) throws HeadlessException {
-        super(owner, TITLE, true);
-        this.message = message;
-        this.allowOperationChange = allowOperationChange;
-        this.namespaces = namespaces;
-        init();
-        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
-    }
-
-    public SampleMessageDialog(Frame owner, SampleMessage message, boolean allowOperationChange, Map<String, String> namespaces) throws HeadlessException {
-        super(owner, TITLE, true);
+    public SampleMessageDialog(Window owner, SampleMessage message, boolean allowOperationChange, Map<String, String> namespaces) throws HeadlessException {
+        super(owner, TITLE, SampleMessageDialog.DEFAULT_MODALITY_TYPE);
         this.message = message;
         this.allowOperationChange = allowOperationChange;
         this.namespaces = namespaces;
@@ -73,6 +65,7 @@ public class SampleMessageDialog extends JDialog {
 
         xmlContainer.getAccessibility().setText(message.getXml());
         nameField.setText(message.getName());
+        Utilities.setMaxLength(nameField.getDocument(), 128);
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
