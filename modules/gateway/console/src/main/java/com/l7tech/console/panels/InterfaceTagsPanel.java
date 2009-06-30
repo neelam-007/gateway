@@ -261,12 +261,34 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
                 final String name = option.toString();
                 if (!InterfaceTag.isValidName(name)) {
                     DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface name must start with a letter or underscore, and can contain only ASCII letters, uderscores, or numbers.",
-                            "Invalid Interface Name", JOptionPane.ERROR_MESSAGE, null);
+                        "Invalid Interface Name", JOptionPane.ERROR_MESSAGE, null);
+                    return;
+                } else if (isDuplicateInterfaceName(name)) {
+                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The interface '" + name + "' already exists.  Please use a new interface name to try again.",
+                        "Duplicate Interface Name", JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
                 nameUser.call(name);
             }
         });
+    }
+
+    /**
+     * Check if the name has been used by any interface tag.
+     * @param interfaceTagName: the name of an interface tag.
+     * @return true if the name has beens used by some interface tag.
+     */
+    private boolean isDuplicateInterfaceName(String interfaceTagName) {
+        Collection<InterfaceTag> tags = tagListModel.toList();
+        if (tags == null || tags.isEmpty()) return false;
+
+        for (InterfaceTag tag: tags) {
+            if (tag.getName().equals(interfaceTagName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void promptForAddressPattern(String initialValue, final Functions.UnaryVoid<String> patternUser) {
