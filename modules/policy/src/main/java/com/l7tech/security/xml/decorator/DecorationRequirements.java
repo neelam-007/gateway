@@ -365,6 +365,7 @@ public class DecorationRequirements {
             return key;
         }
 
+        @Override
         public SecurityToken getSecurityToken() {
             return null;
         }

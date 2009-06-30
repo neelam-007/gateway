@@ -653,6 +653,10 @@ public class WssRoundTripTest {
                     public byte[] getSharedSecret() {
                         return secureConversationSession.getSecretKey();
                     }
+                    @Override
+                    public SecurityToken getSecurityToken() {
+                        return null;
+                    }
                 };
             }
         };

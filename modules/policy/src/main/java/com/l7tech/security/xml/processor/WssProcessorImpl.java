@@ -676,6 +676,41 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
+    private KerberosSigningSecurityToken findKerberosSigningSecurityTokenBySha1( final String sha1, 
+                                                                                 final Element securityTokenReference ) {
+        KerberosSigningSecurityToken kerberosSigningSecurityToken = null;
+
+        for ( XmlSecurityToken xmlSecurityToken : securityTokens ) {
+            if ( xmlSecurityToken instanceof KerberosSigningSecurityToken ) {
+                KerberosSigningSecurityToken token = (KerberosSigningSecurityToken)xmlSecurityToken;
+                if ( sha1.equals(KerberosUtils.getBase64Sha1(token.getTicket())) ) {
+                    kerberosSigningSecurityToken = token;
+                    break;
+                }
+            }
+        }
+
+        if ( kerberosSigningSecurityToken == null ) {
+            String identifier = KerberosUtils.getSessionIdentifier(sha1);
+            SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
+            if ( secContext != null && secContext.getSecurityToken() instanceof KerberosSigningSecurityToken ) {
+                KerberosSigningSecurityToken sessionToken = (KerberosSigningSecurityToken) secContext.getSecurityToken();
+                kerberosSigningSecurityToken = KerberosSigningSecurityTokenImpl.createBinarySecurityToken(
+                        securityTokenReference.getOwnerDocument(),
+                        sessionToken.getServiceTicket(),
+                        securityTokenReference.getPrefix(),
+                        securityTokenReference.getNamespaceURI() );
+                securityTokens.add( kerberosSigningSecurityToken );
+            }
+        }
+
+        if ( kerberosSigningSecurityToken != null ) {
+            strToTarget.put( securityTokenReference, kerberosSigningSecurityToken.asElement() );
+        }
+
+        return kerberosSigningSecurityToken;
+    }
+
     // @return a new DerivedKeyToken.  Never null.
     private static DerivedKeyToken deriveKeyFromKerberosToken(Element derivedKeyEl, KerberosSigningSecurityToken kst)
             throws InvalidDocumentFormatException
@@ -1054,15 +1089,8 @@ public class WssProcessorImpl implements WssProcessor {
                 throw new ProcessorException("Kerberos KeyIdentifier element found in message, but caller did not " +
                                              "provide a SecurityContextFinder");
 
-            String identifier = KerberosUtils.getSessionIdentifier(value);
-            SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
-            if (secContext != null) {
-                SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
-                                                                                  keyIdentifierElement,
-                                                                                  identifier);
-                securityTokens.add(secConTok);
-            }
-            else {
+            KerberosSigningSecurityToken ksst = findKerberosSigningSecurityTokenBySha1(value,str);
+            if ( ksst == null ) {
                 logger.warning("Could not find referenced Kerberos security token '"+value+"'.");
             }
         } else {
@@ -1074,7 +1102,7 @@ public class WssProcessorImpl implements WssProcessor {
     private void processDerivedKey(Element derivedKeyEl)
             throws InvalidDocumentFormatException, ProcessorException, GeneralSecurityException {
         // get corresponding shared secret reference wsse:SecurityTokenReference
-        Element sTokrefEl = DomUtils.findFirstChildElementByName(derivedKeyEl,
+        final Element sTokrefEl = DomUtils.findFirstChildElementByName(derivedKeyEl,
                                                                 SoapConstants.SECURITY_URIS_ARRAY,
                                                                 SoapConstants.SECURITYTOKENREFERENCE_EL_NAME);
         if (sTokrefEl == null) throw new InvalidDocumentFormatException("DerivedKeyToken should " +
@@ -1105,7 +1133,7 @@ public class WssProcessorImpl implements WssProcessor {
                 XmlSecurityToken xst = securityTokenResolver.getKerberosTokenBySha1(ref);
 
                 if(xst==null) {
-                    xst = findSecurityContextTokenBySessionId( KerberosUtils.getSessionIdentifier(ref));
+                    xst = findKerberosSigningSecurityTokenBySha1(ref, sTokrefEl);
                 }
 
                 derivationSource = xst;

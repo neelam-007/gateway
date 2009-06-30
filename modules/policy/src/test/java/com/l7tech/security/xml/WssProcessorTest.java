@@ -501,10 +501,16 @@ public class WssProcessorTest {
             // Set up a fake ws-sc session, in case this example will be needing it
             final byte[] sharedSecret = TestDocuments.getDotNetSecureConversationSharedSecret();
             SecurityContextFinder dotNetSecurityContextFinder = new SecurityContextFinder() {
+                @Override
                 public SecurityContext getSecurityContext(String securityContextIdentifier) {
                     return new SecurityContext(){
+                        @Override
                         public byte[] getSharedSecret() {
                             return sharedSecret;
+                        }
+                        @Override
+                        public SecurityToken getSecurityToken() {
+                            return null;
                         }
                     };
                 }

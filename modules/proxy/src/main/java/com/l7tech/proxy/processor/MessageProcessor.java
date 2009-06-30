@@ -30,6 +30,7 @@ import com.l7tech.proxy.util.DomainIdInjector;
 import com.l7tech.proxy.util.SslUtils;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
@@ -779,10 +780,16 @@ public class MessageProcessor {
         if (sessionId != null) {
             final byte[] sessionKey = context.getSecureConversationSharedSecret();
             scf = new SecurityContextFinder() {
+                @Override
                 public SecurityContext getSecurityContext(String securityContextIdentifier) {
                     return new SecurityContext() {
+                        @Override
                         public byte[] getSharedSecret() {
                             return sessionKey;
+                        }
+                        @Override
+                        public SecurityToken getSecurityToken() {
+                            return null;
                         }
                     };
                 }

@@ -1,6 +1,7 @@
 package com.l7tech.server.secureconversation;
 
 import com.l7tech.security.xml.processor.SecurityContext;
+import com.l7tech.security.token.SecurityToken;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
@@ -11,7 +12,6 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 3, 2004<br/>
- * $Id$<br/>
  */
 public class SecureConversationSession implements SecurityContext {
     public String getIdentifier() {
@@ -22,12 +22,18 @@ public class SecureConversationSession implements SecurityContext {
         this.identifier = identifier;
     }
 
+    @Override
     public byte[] getSharedSecret() {
         return sharedSecret;
     }
 
     public void setSharedSecret(byte[] sharedSecret) {
         this.sharedSecret = sharedSecret;
+    }
+
+    @Override
+    public SecurityToken getSecurityToken() {
+        return credentials!=null ? credentials.getSecurityToken() : null;
     }
 
     public long getExpiration() {

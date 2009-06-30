@@ -8,17 +8,14 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
-import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
-import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.util.CausedIOException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -28,10 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Server side processing for Kerberos Binary Security Tokens.
- *
- * @author $Author$
- * @version $Version: $
+ * Server side processing for WS-Security Kerberos Tokens.
  */
 public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWssKerberos> {
 
@@ -75,58 +69,33 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
             return AssertionStatus.AUTH_REQUIRED;
         }
 
+        String configSpn = requestWssKerberos.getServicePrincipalName();
+        if (configSpn == null) {
+            try {
+                configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal(false));
+            }
+            catch(KerberosException ke) {
+                // fallback to system property name
+            }
+            if (configSpn == null) {
+                configSpn = KerberosClient.getGSSServiceName();
+            }
+        }
+
         KerberosSigningSecurityToken kerberosToken = null;
-        SecureConversationSession kerberosSession = null;
         for( XmlSecurityToken tok : tokens ) {
             if( tok instanceof KerberosSigningSecurityToken) {
-                kerberosToken = (KerberosSigningSecurityToken) tok;
-            } else if( tok instanceof SecurityContextToken ) {
-                SecurityContext securityContext = ( (SecurityContextToken) tok ).getSecurityContext();
-                if( securityContext instanceof SecureConversationSession ) {
-                    kerberosSession = (SecureConversationSession) securityContext;
+                KerberosSigningSecurityToken ksst = (KerberosSigningSecurityToken) tok;
+
+                if(!configSpn.equals(ksst.getServiceTicket().getServicePrincipalName())) {
+                    logger.info("Ignoring Kerberos session for another service ('"+requestWssKerberos.getServicePrincipalName()+"', '"+ksst.getServiceTicket().getServicePrincipalName()+"').");
                 } else {
-                    logger.warning( "Found security context of incorrect type '" + ( securityContext == null ? "null" : securityContext.getClass().getName() ) + "'." );
+                    kerberosToken = ksst;
                 }
             }
         }
 
-        if (kerberosSession !=null ) { // process reference to previously sent ticket
-            LoginCredentials creds = kerberosSession.getCredentials();
-            if(kerberosSession.getExpiration() < System.currentTimeMillis()) {
-                logger.info("Ignoring expired Kerberos session.");
-            }
-            else {
-                KerberosServiceTicket kerberosServiceTicket = (KerberosServiceTicket) creds.getPayload();
-                String configSpn = requestWssKerberos.getServicePrincipalName();
-                if (configSpn == null) {
-                    try {
-                        configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal(false));
-                    }
-                    catch(KerberosException ke) {
-                        // fallback to system property name
-                    }
-                    if (configSpn == null) {
-                        configSpn = KerberosClient.getGSSServiceName();
-                    }
-                }
-
-                if(!configSpn.equals(kerberosServiceTicket.getServicePrincipalName())) {
-                    logger.info("Ignoring Kerberos session for another service ('"+requestWssKerberos.getServicePrincipalName()+"', '"+kerberosServiceTicket.getServicePrincipalName()+"').");
-                }
-                else {
-                    context.getAuthenticationContext(context.getRequest()).addCredentials(creds);
-                    context.setVariable("kerberos.realm", extractRealm(kerberosServiceTicket.getClientPrincipalName()));
-
-                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_SESSION, new String[] {kerberosServiceTicket.getClientPrincipalName()});
-
-                    // Set up response to be able to sign and encrypt using a reference to this ticket
-                    addDeferredAssertion(context, kerberosServiceTicket);
-
-                    return AssertionStatus.NONE;
-                }
-            }
-        }
-        else if (kerberosToken != null) { // process token
+        if ( kerberosToken != null ) { // process token
             KerberosServiceTicket kerberosServiceTicket = kerberosToken.getServiceTicket();
             assert kerberosServiceTicket!=null;
             LoginCredentials loginCreds = LoginCredentials.makeLoginCredentials( kerberosToken, assertion.getClass() );
@@ -136,14 +105,16 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 
             // stash for later reference
-            SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
+            final SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
             final String sessionIdentifier = KerberosUtils.getSessionIdentifier(kerberosServiceTicket.getGSSAPReqTicket());
-            try {
-                sccm.createContextForUser(sessionIdentifier, kerberosServiceTicket.getExpiry(), null, loginCreds, kerberosServiceTicket.getKey());
-            }
-            catch(DuplicateSessionException dse) {
-                //can't happen since duplicate tickets are detected by kerberos.
-                logger.log(Level.SEVERE, "Duplicate session key error when creating kerberos session.", dse);
+            if ( sccm.getSecurityContext( sessionIdentifier ) == null) {
+                try {
+                    sccm.createContextForUser(sessionIdentifier, kerberosServiceTicket.getExpiry(), null, loginCreds, kerberosServiceTicket.getKey());
+                }
+                catch(DuplicateSessionException dse) {
+                    //can't happen since duplicate tickets are detected by kerberos.
+                    logger.log(Level.SEVERE, "Duplicate session key error when creating kerberos session.", dse);
+                }
             }
 
             // Set up response to be able to sign and encrypt using a reference to this ticket

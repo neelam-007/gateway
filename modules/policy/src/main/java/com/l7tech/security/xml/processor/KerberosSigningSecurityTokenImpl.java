@@ -9,7 +9,11 @@ import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.SoapConstants;
+import com.l7tech.util.HexUtils;
 import org.w3c.dom.Element;
+import org.w3c.dom.Document;
 
 /**
  * Security token implementation for Kerberos.
@@ -24,6 +28,12 @@ public class KerberosSigningSecurityTokenImpl extends SigningSecurityTokenImpl i
         super(null);
         this.kerberosServiceTicket = ticket;
         this.wsuId = wsuId;
+    }
+
+    public KerberosSigningSecurityTokenImpl(KerberosServiceTicket ticket, Element element) {
+        super(element);
+        this.kerberosServiceTicket = ticket;
+        this.wsuId = null;
     }
 
     public KerberosSigningSecurityTokenImpl( final KerberosGSSAPReqTicket ticket,
@@ -68,6 +78,37 @@ public class KerberosSigningSecurityTokenImpl extends SigningSecurityTokenImpl i
     public SecurityTokenType getType() {
         return SecurityTokenType.WSS_KERBEROS_BST;
     }
+
+    /**
+     * Generate a KerberosSigningSecurityTokenImpl for the given info.
+     *
+     * <p>The <code>asElement</code> method will return a DOM suitable for use
+     * with the STR-Transform.</p>
+     *
+     * @param domFactory The Document that will own the BST fragment.
+     * @param kerberosServiceTicket The Kerberos Service Ticket for the BST
+     * @param wssePrefix The namespace prefix for the WS-Security namespace
+     * @param wssePrefix The namespace URI for the WS-Security namespace
+     * @return A new X509SigningSecurityTokenImpl
+     */
+    public static KerberosSigningSecurityTokenImpl createBinarySecurityToken( final Document domFactory,
+                                                                              final KerberosServiceTicket kerberosServiceTicket,
+                                                                              final String wssePrefix,
+                                                                              final String wsseNs ) {
+        final Element bst;
+        if (wssePrefix == null) {
+            bst = domFactory.createElementNS(wsseNs, "BinarySecurityToken");
+            bst.setAttributeNS( DomUtils.XMLNS_NS, "xmlns", wsseNs);
+        } else {
+            bst = domFactory.createElementNS(wsseNs, wssePrefix+":BinarySecurityToken");
+            bst.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:"+wssePrefix, wsseNs);
+        }
+        bst.setAttribute("ValueType", SoapConstants.VALUETYPE_X509);
+        DomUtils.setTextContent(bst, HexUtils.encodeBase64(kerberosServiceTicket.getGSSAPReqTicket().toByteArray(), true));
+
+        return new KerberosSigningSecurityTokenImpl(kerberosServiceTicket, bst);
+    }
+
 
     //- PRIVATE
 
