@@ -54,19 +54,19 @@ public class ImporterTest {
      */
     public void createTestEnvironment() throws Exception {
         //Copy resources into this temp directory
-        final URL nodeRes = this.getClass().getClassLoader().getResource("node");
+        final URL nodeRes = this.getClass().getClassLoader().getResource("Gateway/node");
         final File nodeDirSrc = new File(nodeRes.getPath());
         final File nodeDirDest = new File(tmpSsgHome, "node");
         nodeDirDest.mkdir();
         ImportExportUtilities.copyDir(nodeDirSrc, nodeDirDest);
 
-        final URL runtimeRes = this.getClass().getClassLoader().getResource("runtime");
+        final URL runtimeRes = this.getClass().getClassLoader().getResource("Gateway/runtime");
         final File runtimeSrc = new File(runtimeRes.getPath());
         final File runtimeDest = new File(tmpSsgHome, "runtime");
 
         ImportExportUtilities.copyDir(runtimeSrc, runtimeDest);
 
-        final URL configRes = this.getClass().getClassLoader().getResource("config");
+        final URL configRes = this.getClass().getClassLoader().getResource("Gateway/config");
         final File configSrc = new File(configRes.getPath());
         final File configDest = new File(tmpSsgHome, "config");
 
@@ -418,5 +418,4 @@ public class ImporterTest {
             }
         }
     }
-
 }

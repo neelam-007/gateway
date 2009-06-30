@@ -86,9 +86,9 @@ public class ImportExportUtilitiesTest {
     @Test
     public void testGetNodeConfig() throws IOException {
 
-        final URL nodeRes = this.getClass().getClassLoader().getResource("node/default/etc/conf/node.properties");
+        final URL nodeRes = this.getClass().getClassLoader().getResource("Gateway/node/default/etc/conf/node.properties");
         File nodeFile = new File(nodeRes.getPath());
-        final URL ompRes = this.getClass().getClassLoader().getResource("node/default/etc/conf/omp.dat");
+        final URL ompRes = this.getClass().getClassLoader().getResource("Gateway/node/default/etc/conf/omp.dat");
         File ompFile = new File(ompRes.getPath());
 
         DatabaseConfig dbConfig = ImportExportUtilities.getNodeConfig(nodeFile, ompFile);
