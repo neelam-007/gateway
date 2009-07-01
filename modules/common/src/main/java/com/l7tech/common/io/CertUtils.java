@@ -107,6 +107,7 @@ public class CertUtils {
     private static final Pattern PATTERN_BASE64 = Pattern.compile(REGEX_BASE64);
     private static final Pattern PATTERN_CRL = Pattern.compile(PEM_CSR_BEGIN_MARKER + REGEX_BASE64 + PEM_CSR_END_MARKER);
     private static final Pattern PATTERN_NEW_CRL = Pattern.compile(PEM_CSR_BEGIN_NEW_MARKER + REGEX_BASE64 + PEM_CSR_END_NEW_MARKER);
+    private static final Pattern SUN_X509KEY_EC_CURVENAME_GUESSER = Pattern.compile("^algorithm = EC([a-zA-Z0-9]+)(?:\\s|,|$)");
 
     public static boolean isCertCaCapable(X509Certificate cert) {
         if (cert == null) return false;
@@ -871,7 +872,7 @@ public class CertUtils {
         String keyStr = publicKey.toString();
         if (keyStr == null || !(keyStr.startsWith("algorithm = EC")))
             return null;
-        Matcher matcher = Pattern.compile("^algorithm = EC([a-zA-Z0-9]+)(?:\\s|,|$)").matcher(keyStr);
+        Matcher matcher = SUN_X509KEY_EC_CURVENAME_GUESSER.matcher(keyStr);
         return matcher.find() ? matcher.group(1) : null;
     }
 
