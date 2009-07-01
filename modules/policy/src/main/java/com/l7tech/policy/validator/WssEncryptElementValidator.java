@@ -21,30 +21,12 @@ import java.util.logging.Logger;
 public class WssEncryptElementValidator extends WssEncryptingDecorationAssertionValidator {
     private static final Logger logger = Logger.getLogger(WssEncryptElementValidator.class.getName());
     private final WssEncryptElement assertion;
-    private String errString;
-    private Throwable errThrowable;
+    private final XpathBasedAssertionValidator xpathBasedAssertionValidator;
 
     public WssEncryptElementValidator( final WssEncryptElement wssEncryptElement ) {
         super(wssEncryptElement, true, false);
         assertion = wssEncryptElement;
-        String pattern = null;
-        if (assertion.getXpathExpression() != null) {
-            pattern = assertion.getXpathExpression().getExpression();
-        }
-        if (pattern == null) {
-            errString = "XPath pattern is missing";
-            logger.info(errString);
-        } else if (pattern.equals("/soapenv:Envelope")) {
-            errString = "The path " + pattern + " is not valid for XML encryption";
-        } else {
-            try {
-                new DOMXPath(pattern);
-            } catch (Exception e) {
-                errString = "XPath pattern is not valid";
-                errThrowable = e;
-                logger.info(errString);
-            }
-        }
+        xpathBasedAssertionValidator = new XpathBasedAssertionValidator( wssEncryptElement );
     }
 
     @Override
@@ -52,8 +34,7 @@ public class WssEncryptElementValidator extends WssEncryptingDecorationAssertion
                           final Wsdl wsdl,
                           final boolean soap,
                           final PolicyValidatorResult result ) {
-        if (errString != null)
-            result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
+        xpathBasedAssertionValidator.validate( path, wsdl, soap, result );
 
         super.validate( path, wsdl, soap, result );
     }

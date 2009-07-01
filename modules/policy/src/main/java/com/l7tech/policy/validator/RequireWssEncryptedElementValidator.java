@@ -12,11 +12,12 @@ import java.util.*;
 /**
  *
  */
-public class RequireWssEncryptedElementValidator implements AssertionValidator {
+public class RequireWssEncryptedElementValidator extends XpathBasedAssertionValidator {
 
     //- PUBLIC
 
     public RequireWssEncryptedElementValidator( final RequireWssEncryptedElement assertion ) {
+        super(assertion);
         this.assertion = assertion;
     }
 
@@ -25,6 +26,8 @@ public class RequireWssEncryptedElementValidator implements AssertionValidator {
                           final Wsdl wsdl,
                           final boolean soap,
                           final PolicyValidatorResult result ) {
+        super.validate( path, wsdl, soap, result );
+
         Assertion[] assertionPath = path.getPath();
         for ( int i = assertionPath.length - 1; i >= 0; i-- ) {
             Assertion a = assertionPath[i];

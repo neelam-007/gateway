@@ -39,7 +39,17 @@ public final class PolicyVariableUtils {
         return vars;
     }
 
-    public static Map<String, VariableMetadata> getVariablesSetByPredecessors(Assertion assertion) {
+    /**
+     * Get the variables (that may be) set before this assertions runs.
+     *
+     * <p>The returned Map keys are in the correct case, and the Map is case
+     * insensitive.</p>
+     *
+     * @param assertion The assertion to process.
+     * @return The Map of names to VariableMetadata, may be empty but never null.
+     * @see VariableMetadata
+     */
+    public static Map<String, VariableMetadata> getVariablesSetByPredecessors( final Assertion assertion ) {
         Assertion ancestor = assertion.getPath()[0];
         Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
         for (Iterator i = ancestor.preorderIterator(); i.hasNext(); ) {

@@ -10,6 +10,9 @@ import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 
 import javax.xml.soap.SOAPConstants;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Base class for XML Security Assertions (Confidentiality and Integrity). Shares the concept
@@ -73,7 +76,10 @@ public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion imple
 
     @Override
     public String[] getVariablesUsed() {
-        return messageTargetableSupport.getVariablesUsed();
+        List<String> variables = new ArrayList<String>();
+        variables.addAll( Arrays.asList( super.getVariablesUsed() ) );
+        variables.addAll( Arrays.asList( messageTargetableSupport.getVariablesUsed() ) );
+        return variables.toArray( new String[variables.size()] );
     }
 
     @Override

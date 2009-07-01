@@ -20,37 +20,20 @@ import java.util.logging.Logger;
  *
  * @author emil
  */
-public class WssSignElementValidator implements AssertionValidator {
+public class WssSignElementValidator extends XpathBasedAssertionValidator {
     private static final Logger logger = Logger.getLogger(WssSignElementValidator.class.getName());
     private final WssSignElement assertion;
     private final boolean requiresDecoration;
-    private String errString;
-    private Throwable errThrowable;
 
-    public WssSignElementValidator(WssSignElement ra) {
-        assertion = ra;
+    public WssSignElementValidator( final WssSignElement wssSignElement ) {
+        super(wssSignElement);
+        assertion = wssSignElement;
         requiresDecoration = !Assertion.isResponse( assertion );
-        String pattern = null;
-        if (assertion.getXpathExpression() != null)
-            pattern = assertion.getXpathExpression().getExpression();
-        if (pattern == null) {
-            errString = "XPath pattern is missing";
-            logger.info(errString);
-        } else {
-            try {
-                new DOMXPath(pattern);
-            } catch (Exception e) {
-                errString = "XPath pattern is not valid";
-                logger.info(errString);
-                errThrowable = e;
-            }
-        }
     }
 
     @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
-        if (errString != null)
-            result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
+        super.validate( path, wsdl, soap, result );
 
         boolean seenSelf = true;
         boolean seenDecoration = false;

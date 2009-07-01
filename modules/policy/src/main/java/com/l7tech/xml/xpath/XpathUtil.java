@@ -35,6 +35,7 @@ public class XpathUtil {
         final List<String> seenvars = new ArrayList<String>();
         try {
             XPathHandler handler = new XPathHandlerAdapter() {
+                @Override
                 public void variableReference(String prefix, String localName) throws SAXPathException {
                     if (prefix == null || prefix.length() < 1)
                         seenvars.add(localName);
@@ -63,6 +64,7 @@ public class XpathUtil {
         final boolean[] sawAny = { false };
         try {
             XPathHandler handler = new XPathHandlerAdapter() {
+                @Override
                 public void variableReference(String prefix1, String localname) throws SAXPathException {
                     sawAny[0] = true;
                 }
@@ -153,22 +155,36 @@ public class XpathUtil {
     /**
      * Scan the specified list and, if it is empty or all its members are DOM Element instances, return it as a list of Element.
      *
+     * <p>If the list contains any Element[] or Node[] then each element will be placed in the result list.</p>
+     *
      * @param list the List to examine.  If null, this method will return an empty list.
      * @return the same List as a List< Element >, as long as it is either empty or contains only Element instances.
      * @throws JaxenException if the list contains anything other than an Element.
      */
-    public static List<Element> ensureAllResultsAreElements(List list) throws JaxenException {
+    public static List<Element> ensureAllResultsAreElements( final List list ) throws JaxenException {
         if (list == null)
             return Collections.emptyList();
+
+        final List<Element> resultList = new ArrayList<Element>();
         for (Object obj : list) {
-            if (!(obj instanceof org.w3c.dom.Node))  // fix for Bug #984
+            if ( obj instanceof org.w3c.dom.Node ) {  // fix for Bug #984
+                org.w3c.dom.Node node = (org.w3c.dom.Node) obj;
+                if (node.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE)
+                    throw new JaxenException("Xpath result included a non-Element Node of type " + node.getNodeType());
+
+                resultList.add( (Element) node );
+            } else if ( obj instanceof org.w3c.dom.Node[] ) {
+                for ( org.w3c.dom.Node node : (org.w3c.dom.Node[]) obj ) {
+                    if (node.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE)
+                        throw new JaxenException("Xpath result included a non-Element Node of type " + node.getNodeType());
+
+                    resultList.add( (Element) node );
+                }
+            } else {
                 throw new JaxenException("Xpath evaluation produced a non-empty result, but it wasn't of type Node.  Type: " + obj.getClass().getName());
-            org.w3c.dom.Node node = (org.w3c.dom.Node) obj;
-            if (node.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE)
-                throw new JaxenException("Xpath result included a non-Element Node of type " + node.getNodeType());
+            }
         }
-        //noinspection unchecked
-        return (List<Element>)list;
+        return resultList;
     }
 
     /**
