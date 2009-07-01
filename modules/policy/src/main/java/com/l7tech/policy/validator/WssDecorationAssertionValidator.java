@@ -15,6 +15,13 @@ public class WssDecorationAssertionValidator implements AssertionValidator {
 
     //- PUBLIC
 
+    /**
+     * Required default constructor.
+     */
+    public WssDecorationAssertionValidator( final Assertion assertion ) {
+        this(assertion, false);
+    }
+
     public WssDecorationAssertionValidator( final Assertion assertion, final boolean isWss11 ) {
         this.assertion = assertion;
         this.requiresDecoration = !Assertion.isResponse( assertion );
