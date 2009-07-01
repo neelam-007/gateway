@@ -3,6 +3,7 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.util.Functions;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.identity.User;
 import com.l7tech.identity.ldap.LdapIdentity;
 import com.l7tech.message.Message;
@@ -19,9 +20,10 @@ class AuthenticatedUserGetter implements Getter {
 
     @Override
     public Object get( final String name, final PolicyEnforcementContext context ) {
-        final List<AuthenticationResult> authResults = message==null ?
-                context.getDefaultAuthenticationContext().getAllAuthenticationResults() :
-                context.getAuthenticationContext(message).getAllAuthenticationResults();
+        final AuthenticationContext authenticationContext = message==null ?
+                context.getDefaultAuthenticationContext() :
+                context.getAuthenticationContext(message) ;
+        final List<AuthenticationResult> authResults = authenticationContext.getAllAuthenticationResults();
         if (multivalued) {
             final List<String> strings = Functions.map(authResults, userToValue);
             return strings.toArray(new String[strings.size()]);
@@ -31,7 +33,7 @@ class AuthenticatedUserGetter implements Getter {
         String suffix = name.substring(prefixLength);
         if (suffix.length() == 0) {
             // Without suffix
-            return userToValue.call(context.getDefaultAuthenticationContext().getLastAuthenticationResult());
+            return userToValue.call(authenticationContext.getLastAuthenticationResult());
         }
 
         if (!suffix.startsWith("."))
