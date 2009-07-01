@@ -112,7 +112,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
         }
 
         if (haveLuna && list.isEmpty()) {
-            list.add(new LunaSsgKeyStore(3, SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "Luna"));
+            list.add(new LunaSsgKeyStore(3, SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "SafeNet HSM"));
         }
 
         // TODO maybe offer software keystores even if HSM is available?

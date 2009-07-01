@@ -803,7 +803,7 @@ insert into keystore_file values (1, 0, "HSM", "hsm.sca.targz", null, null);
 insert into keystore_file values (2, 0, "Software DB", "sdb.pkcs12", null, null);
 
 -- placeholder for ID reserved for Luna, never loaded or saved
-insert into keystore_file values (3, 0, "Luna", "luna", null, null);
+insert into keystore_file values (3, 0, "SafeNet HSM", "luna", null, null);
 
 DROP TABLE IF EXISTS shared_keys;
 CREATE TABLE shared_keys (
