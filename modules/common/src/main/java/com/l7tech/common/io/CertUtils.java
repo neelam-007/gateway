@@ -836,17 +836,43 @@ public class CertUtils {
                 ECPublicKey ecKey = (ECPublicKey) publicKey;
                 ECParameterSpec params = ecKey.getParams();
 
-                // TODO look up named curve for params
-                //l.add(new Pair<String, String>(CERT_PROP_EC_CURVE_NAME, curveName.toString()));
+                String curveName = guessEcCurveName(publicKey);
+                if (curveName != null)
+                    l.add(new Pair<String, String>(CERT_PROP_EC_CURVE_NAME, curveName));
                 l.add(new Pair<String, String>(CERT_PROP_EC_CURVE_POINT_W_X, ecKey.getW().getAffineX().toString()));
                 //noinspection SuspiciousNameCombination
                 l.add(new Pair<String, String>(CERT_PROP_EC_CURVE_POINT_W_Y, ecKey.getW().getAffineY().toString()));
                 l.add(new Pair<String, String>(CERT_PROP_EC_ORDER,  params.getOrder().toString()));
                 l.add(new Pair<String, String>(CERT_PROP_EC_COFACTOR,  Integer.toString(params.getCofactor())));
+            } else if ("EC".equals(publicKey.getAlgorithm())) {
+                // It's EC, but there's no EC KeyFactory available in this process.
+                String curveName = guessEcCurveName(publicKey);
+                if (curveName != null)
+                    l.add(new Pair<String, String>(CERT_PROP_EC_CURVE_NAME, curveName));
             }
         }
 
         return l;
+    }
+
+    /**
+     * Try to guess the curve name of an EC public key that doesn't necessarily implement ECPublicKey.
+     * The Sun JDK's X509Certificate impl will use a generic X509Key instance to hold an EC key
+     * if there's no EC key factory available.  This method abuses that class's current toString() method.
+     *
+     * @param publicKey a key to examine.  Need not implement ECPublicKey.  Required.
+     * @return the named curve, if we are willing to hazard a guess, or null.
+     */
+    public static String guessEcCurveName(PublicKey publicKey) {
+        if (!"EC".equals(publicKey.getAlgorithm()))
+            return null;
+        if (!"sun.security.x509.X509Key".equals(publicKey.getClass().getName()))
+            return null;
+        String keyStr = publicKey.toString();
+        if (keyStr == null || !(keyStr.startsWith("algorithm = EC")))
+            return null;
+        Matcher matcher = Pattern.compile("^algorithm = EC([a-zA-Z0-9]+)(?:\\s|,|$)").matcher(keyStr);
+        return matcher.find() ? matcher.group(1) : null;
     }
 
     private static String basicConstraintsToString(int basicConstraints) {

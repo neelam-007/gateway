@@ -759,6 +759,14 @@ public class PrivateKeyManagerWindow extends JDialog {
                     String modulus = rsaKey.getModulus().toString(16);
                     alg = MessageFormat.format("{0} {1} bits", alg, modulus.length() * 4);
                 }
+
+                if ("EC".equals(alg)) {
+                    // See if we can be more specific
+                    String guessedCurveName = CertUtils.guessEcCurveName(publicKey);
+                    if (guessedCurveName != null)
+                        alg = "EC " + guessedCurveName;
+                }
+
                 keyType = alg;
             }
             return keyType;
