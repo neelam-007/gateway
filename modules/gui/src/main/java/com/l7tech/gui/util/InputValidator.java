@@ -36,19 +36,23 @@ public class InputValidator implements FocusListener {
     private AbstractButton buttonToEnable = null;
     private Component componentToMakeVisible = null;
     private DocumentListener validatingDocumentListener = new DocumentListener() {
+        @Override
         public void insertUpdate(DocumentEvent e) {
             isValid();
         }
 
+        @Override
         public void removeUpdate(DocumentEvent e) {
             isValid();
         }
 
+        @Override
         public void changedUpdate(DocumentEvent e) {
             isValid();
         }
     };
     private PropertyChangeListener validatingEnableStateListener = new PropertyChangeListener() {
+        @Override
         public void propertyChange(PropertyChangeEvent evt) {
             String prop = evt.getPropertyName();
             if (prop == null || "enabled".equals(prop)) {
@@ -226,6 +230,7 @@ public class InputValidator implements FocusListener {
 
         final String mess = "The " + fieldName + " field must be a number between " + min + " and " + max + ".";
         ValidationRule rule = new ComponentValidationRule(comp) {
+            @Override
             public String getValidationError() {
                 if (!comp.isEnabled())
                     return null;
@@ -270,6 +275,7 @@ public class InputValidator implements FocusListener {
         if (comp == null) throw new NullPointerException();
         final String mess = "The " + fieldName + " field must not be empty.";
         ValidationRule rule = new ComponentValidationRule(comp) {
+            @Override
             public String getValidationError() {
                 if (!getComponent().isEnabled())
                     return null;
@@ -360,6 +366,7 @@ public class InputValidator implements FocusListener {
      */
     public void attachToButton(final AbstractButton button, final ActionListener runOnSuccess) {
         button.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if (validateWithDialog()) runOnSuccess.actionPerformed(e);
             }
@@ -420,7 +427,7 @@ public class InputValidator implements FocusListener {
                 }
             }
             if (buttonToEnable != null) buttonToEnable.setEnabled(errors.isEmpty());
-            return errors.toArray(new String[0]);
+            return errors.toArray(new String[errors.size()]);
         } finally {
             updateAllFeedback();
         }
@@ -496,6 +503,7 @@ public class InputValidator implements FocusListener {
         }
     }
 
+    @Override
     public void focusGained(FocusEvent e) {
         // If we left an empty text component showing error feedback, hide it when it gains focus
         Component comp = e.getComponent();
@@ -518,6 +526,7 @@ public class InputValidator implements FocusListener {
         }
     }
 
+    @Override
     public void focusLost(FocusEvent e) {
         if (hiddenFeedbacks.isEmpty())
             return;

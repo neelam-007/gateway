@@ -1,40 +1,30 @@
 package com.l7tech.console.panels;
 
-import java.awt.Dialog;
-import java.awt.Frame;
-import java.awt.Component;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.util.Collections;
-import java.util.List;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
-
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.console.util.ClusterPropertyCrud;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.EntityType.CLUSTER_PROPERTY;
 import static com.l7tech.objectmodel.EntityType.REVOCATION_CHECK_POLICY;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.RevocationCheckPolicy;
-import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
-import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.VersionException;
-import com.l7tech.objectmodel.ConstraintViolationException;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.util.ResolvingComparator;
+
+import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.*;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Dialog for management of Certificate Validation settings.
@@ -269,13 +259,7 @@ public class ManageCertificateValidationDialog extends JDialog {
                 int index = options.indexOf(option);
                 if (index >= 0) {
                     try {
-                        ClusterProperty property = csa.findPropertyByName(CLUSTER_PROP_INFO[row][2]);
-                        if (property == null) {
-                            property = new ClusterProperty();
-                            property.setName(CLUSTER_PROP_INFO[row][2]);
-                        }
-                        property.setValue(OPTIONS[index]);
-                        csa.saveProperty(property);
+                        ClusterPropertyCrud.putClusterProperty(CLUSTER_PROP_INFO[row][2], OPTIONS[index]);
                         validationOptionsTable.setValueAt(resources.getString(RES_VAL_PROP_PREFIX + OPTIONS[index]), row, 1);
                     } catch (ObjectModelException ome) {
                         String msg = resources.getString("error.validationproperty.text");

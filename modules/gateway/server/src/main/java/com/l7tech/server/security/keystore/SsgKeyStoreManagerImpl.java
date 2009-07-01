@@ -122,7 +122,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     }
 
     public boolean isUsingLuna() {
-        return JceProvider.LUNA_PKCS11_ENGINE.equals(JceProvider.getEngineClass()) || JceProvider.LUNA_ENGINE.equals(JceProvider.getEngineClass());
+        return JceProvider.LUNA_ENGINE.equals(JceProvider.getEngineClass());
     }
 
     public boolean isHsmAvailable() {

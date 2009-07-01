@@ -440,7 +440,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         try {
             final ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
             String accel = clusterStatusAdmin.getHardwareCapability(ClusterStatusAdmin.CAPABILITY_HWXPATH);
-            return ClusterStatusAdmin.CAPABILITY_HWXPATH_TARARI.equals(accel);
+            return ClusterStatusAdmin.CAPABILITY_VALUE_HWXPATH_TARARI.equals(accel);
         } catch (Exception e) {
             // Oh well, it's cosmetic anyway
             return false;

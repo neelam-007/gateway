@@ -44,6 +44,10 @@ public class ClusterProperty extends NamedEntityImp {
         hiddenInGui.add("krb5.keytab");
         hiddenInGui.add("keyStore.defaultSsl.alias");
         hiddenInGui.add("keyStore.defaultCa.alias");
+        hiddenInGui.add("keyStore.luna.pinFinder"); // Currently no such cluster property, but just in case
+        hiddenInGui.add("keyStore.luna.encryptedLunaPin");
+        hiddenInGui.add("keyStore.luna.lunaSlotNum");
+        hiddenInGui.add("security.jceProviderEngineName");
         hiddenInGui.add("interfaceTags");
     }
 

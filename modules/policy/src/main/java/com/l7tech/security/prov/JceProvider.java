@@ -7,6 +7,7 @@ package com.l7tech.security.prov;
 
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
 import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.x509.X509Name;
@@ -20,6 +21,8 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provide a single point where our Security providers can be configured and queried,
@@ -27,7 +30,13 @@ import java.util.Map;
  * provider selection, when necessary, for certain operations when using certain providers.
  */
 public abstract class JceProvider {
+    private static final Logger logger = Logger.getLogger(JceProvider.class.getName());
+
+    // Raw engine classname
     public static final String ENGINE_PROPERTY = "com.l7tech.common.security.jceProviderEngine";
+
+    // Whitelisted engine short name; if set, takes precedence over ENGINE_PROPERTY
+    public static final String ENGINE_OVERRIDE_PROPERTY = "com.l7tech.common.security.jceProviderEngineName";
 
     public static final int DEFAULT_RSA_KEYSIZE = SyspropUtil.getInteger("com.l7tech.security.prov.defaultRsaKeySize", 1024);
     public static final String DEFAULT_CSR_SIG_ALG = SyspropUtil.getString("com.l7tech.security.prov.defaultCsrSigAlg", "SHA1withRSA");
@@ -37,8 +46,6 @@ public abstract class JceProvider {
     public static final String SUN_ENGINE = "com.l7tech.security.prov.sun.SunJceProviderEngine";
     public static final String PKCS11_ENGINE = "com.l7tech.security.prov.pkcs11.Pkcs11JceProviderEngine";
     public static final String LUNA_ENGINE = "com.l7tech.security.prov.luna.LunaJceProviderEngine";
-    public static final String LUNA_PKCS11_ENGINE = "com.l7tech.security.prov.lunapkcs11.LunaPkcs11JceProviderEngine";
-    public static final String CERTICOM_ENGINE = "com.l7tech.security.prov.certicom.CerticomJceProviderEngine";
     public static final String RSA_ENGINE = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
 
     // Old driver class names
@@ -61,7 +68,19 @@ public abstract class JceProvider {
         DRIVER_MAP = Collections.unmodifiableMap(driverMap);
     }
 
+    // Engines that will be recognized by short name.
+    // We prefer to avoid instantiating classnames read from the DB without a whitelist; this is the whitelist.
+    private static final Map<String,String> OVERRIDE_MAP = new HashMap<String,String>(){{
+        put("default", DEFAULT_ENGINE);
+        put("bc", BC_ENGINE);
+        put("luna", LUNA_ENGINE);
+        put("rsa", RSA_ENGINE);
+    }};
+
     static String mapEngine( final String engineClass ) {
+        if (engineClass == null || engineClass.trim().length() < 1)
+            return DEFAULT_ENGINE;
+
         String mappedClass = DRIVER_MAP.get( engineClass );
 
         if ( mappedClass == null ) {
@@ -75,14 +94,35 @@ public abstract class JceProvider {
     private static final String DEFAULT_ENGINE = RSA_ENGINE;
 
     private static class Holder {
-        private static final String ENGINE_NAME = mapEngine(System.getProperty(ENGINE_PROPERTY, DEFAULT_ENGINE));
+        private static final String ENGINE_NAME = getEngineClassname();
         private static final JceProvider engine = createEngine();
+
+        private static String getEngineClassname() {
+            String overrideEngineName = SyspropUtil.getString(ENGINE_OVERRIDE_PROPERTY, null);
+            if (overrideEngineName != null && overrideEngineName.trim().length() > 0) {
+                String overrideClassname = OVERRIDE_MAP.get(overrideEngineName.trim().toLowerCase());
+                if (overrideClassname != null)
+                    return overrideClassname;
+                logger.log(Level.WARNING, "Ignoring unknown " + ENGINE_OVERRIDE_PROPERTY + ": " + overrideEngineName);
+            }
+
+            return mapEngine(SyspropUtil.getString(ENGINE_PROPERTY, DEFAULT_ENGINE));
+        }
 
         private static JceProvider createEngine() {
             try {
                 return (JceProvider) Class.forName(ENGINE_NAME).getConstructors()[0].newInstance();
             } catch (Throwable t) {
-                throw new RuntimeException("Requested JceProvider could not be instantiated: " + t.getMessage(), t);
+                String msg = "Requested JceProvider could not be instantiated: " + ExceptionUtils.getMessage(t);
+                logger.log(Level.SEVERE, msg, t);
+                if (DEFAULT_ENGINE.equals(ENGINE_NAME))
+                    throw new RuntimeException(t);
+                logger.log(Level.SEVERE, "Attempting to fallback to default JceProvider engine: " + DEFAULT_ENGINE);
+                try {
+                    return (JceProvider) Class.forName(DEFAULT_ENGINE).getConstructors()[0].newInstance();
+                } catch (Throwable e) {
+                    throw new RuntimeException("Fallback to default JceProvider engine failed: " + ExceptionUtils.getMessage(e), e);
+                }
             }
         }
 
@@ -92,14 +132,12 @@ public abstract class JceProvider {
     }
 
     public static void init() {
-        // no action should be required
-        Holder.getEngine();
+        getInstance();
     }
 
     /** @return the JceProvider class name currently being used. */
     public static String getEngineClass() {
-        init();
-        return Holder.ENGINE_NAME;
+        return getInstance().getClass().getName();
     }
 
     public static JceProvider getInstance() {

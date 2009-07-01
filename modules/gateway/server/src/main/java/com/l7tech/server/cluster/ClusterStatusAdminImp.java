@@ -8,27 +8,29 @@ import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.cluster.*;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.*;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.security.keystore.luna.GatewayLunaPinFinder;
+import com.l7tech.server.security.keystore.luna.LunaProber;
+import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
-import com.l7tech.util.CollectionUpdate;
-import com.l7tech.util.CollectionUpdateProducer;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.TarariLoader;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.logging.Logger;
+import java.security.KeyStoreException;
 
 /**
  * Server side implementation of the ClusterStatusAdmin interface.
@@ -53,7 +55,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
                                  ServerConfig serverConfig,
                                  AssertionRegistry assertionRegistry,
                                  TrustedEsmManager trustedEsmManager,
-                                 TrustedEsmUserManager trustedEsmUserManager)
+                                 TrustedEsmUserManager trustedEsmUserManager,
+                                 RbacServices rbacServices)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
@@ -65,6 +68,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         this.assertionRegistry = (ServerAssertionRegistry)assertionRegistry;
         this.trustedEsmManager = trustedEsmManager;
         this.trustedEsmUserManager = trustedEsmUserManager;
+        this.rbacServices = rbacServices;
 
         if (clusterInfoManager == null)
             throw new IllegalArgumentException("Cluster Info manager is required");
@@ -327,10 +331,77 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return ret;
     }
 
+    // Hardware capability support.
+    // TODO refactor these methods into a separate HardwareCapabilityManager bean that delegates to HardwareCapability instances
+
+    private static boolean isKnownCapability(String capability) {
+        return ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability) || ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability);
+    }
+
     @Override
     public String getHardwareCapability(String capability) {
-        if (!ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability)) return null;
-        return TarariLoader.getGlobalContext() != null ? ClusterStatusAdmin.CAPABILITY_HWXPATH_TARARI : null;
+        if (!isKnownCapability(capability))
+            return null;
+        if (ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability)) {
+            return LunaProber.isLunaClientLibraryAvailable() ? "true" : null;
+        } else if (ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability)) {
+            return TarariLoader.getGlobalContext() != null ? ClusterStatusAdmin.CAPABILITY_VALUE_HWXPATH_TARARI : null;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Object getHardwareCapabilityProperty(String capability, String property) throws NoSuchCapabilityException, NoSuchPropertyException {
+        // Currently the only supported capability property, the Luna client PIN, is write-only
+        if (!isKnownCapability(capability))
+            throw new NoSuchCapabilityException();
+        throw new NoSuchPropertyException();
+    }
+
+    @Override
+    public void putHardwareCapabilityProperty(String capability, String property, Object value) throws NoSuchCapabilityException, NoSuchPropertyException, ClassCastException, IllegalArgumentException {
+        if (!isKnownCapability(capability))
+            throw new NoSuchCapabilityException();
+
+        if (!ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability) || !ClusterStatusAdmin.CAPABILITY_PROPERTY_LUNAPIN.equals(property)) {
+            throw new NoSuchPropertyException();
+        }
+
+        if (value instanceof char[]) {
+            char[] chars = (char[]) value;
+            try {
+                setLunaClientPin(chars);
+            } finally {
+                ArrayUtils.zero(chars);
+            }
+        } else if (value instanceof CharSequence) {
+            setLunaClientPin(value.toString().toCharArray());
+        } else {
+            throw new IllegalArgumentException("Value for hardware capability propery " + ClusterStatusAdmin.CAPABILITY_PROPERTY_LUNAPIN + " must be a char array or CharSequence");
+        }
+    }
+
+    @Override
+    public void testHardwareTokenAvailability(String capability, int slotNum, char[] tokenPin) throws NoSuchCapabilityException, KeyStoreException {
+        try {
+            if (!ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability))
+                throw new NoSuchCapabilityException();
+            LunaProber.testHardwareTokenAvailability(slotNum, tokenPin);
+        } finally {
+            ArrayUtils.zero(tokenPin);
+        }
+    }
+
+    // TODO move this method somewhere more reasonable
+    private void setLunaClientPin(char[] clientPin) {
+        try {
+            if (!rbacServices.isPermittedForAnyEntityOfType(JaasUtils.getCurrentUser(), OperationType.DELETE, EntityType.SSG_KEY_ENTRY))
+                throw new PermissionDeniedException(OperationType.DELETE, EntityType.SSG_KEY_ENTRY, "Unable to change the Luna client PIN on this cluster");
+            clusterPropertyManager.putProperty("keyStore.luna.encryptedLunaPin", GatewayLunaPinFinder.encryptLunaPin(clientPin));
+        } catch (ObjectModelException e) {
+            throw new RuntimeException("Unable to change Luna client PIN on this cluster: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
     }
 
     @Override
@@ -371,6 +442,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     private final ServerAssertionRegistry assertionRegistry;
     private final TrustedEsmManager trustedEsmManager;
     private final TrustedEsmUserManager trustedEsmUserManager;
+    private final RbacServices rbacServices;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 

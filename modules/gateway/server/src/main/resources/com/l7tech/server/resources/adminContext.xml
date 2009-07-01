@@ -315,6 +315,7 @@
         <constructor-arg ref="assertionRegistry"/>
         <constructor-arg ref="trustedEsmManager"/>
         <constructor-arg ref="trustedEsmUserManager"/>
+        <constructor-arg ref="rbacServices"/>
     </bean>
 
     <!-- RBAC admin impl -->

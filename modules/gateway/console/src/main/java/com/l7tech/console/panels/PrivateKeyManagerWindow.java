@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.AliasNotFoundException;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.DefaultAliasTracker;
@@ -37,8 +37,14 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.*;
-import java.security.cert.*;
+import java.security.AccessControlException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
+import java.security.PublicKey;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.text.DateFormat;
 import java.text.MessageFormat;
@@ -61,6 +67,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     private JButton createButton;
     private JButton importButton;
     private JButton signCsrButton;
+    private JButton manageKeystoreButton;
     private DefaultAliasTracker defaultAliasTracker;
 
     private static final Timer jobStatusTimer = new Timer("PrivateKeyManagerWindow job status timer");
@@ -168,6 +175,13 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
         });
 
+        manageKeystoreButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doManageKeystore();
+            }
+        });
+
         pack();
         enableOrDisableButtons();
 
@@ -229,6 +243,15 @@ public class PrivateKeyManagerWindow extends JDialog {
     private void showErrorMessage(String title, String msg, Throwable e) {
         logger.log(Level.WARNING, msg, e);
         DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    private void doManageKeystore() {
+        boolean usingLuna = mutableKeystore != null && "LUNA_HARDWARE".equals(mutableKeystore.getKeyStoreType());
+        ManageKeystoresDialog dlg = new ManageKeystoresDialog(this, usingLuna);
+        dlg.pack();
+        dlg.setModal(true);
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg);
     }
 
     private void doSignCsr() {
@@ -630,6 +653,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         boolean certSelected = row != null && activeKeypairJob == null;
         propertiesButton.setEnabled(certSelected);
         signCsrButton.setEnabled(certSelected && flags.canDeleteSome());
+        manageKeystoreButton.setEnabled(flags.canDeleteAll());
     }
 
     /**

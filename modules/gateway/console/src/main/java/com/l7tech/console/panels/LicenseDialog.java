@@ -5,21 +5,21 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.License;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.TooManyChildElementsException;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.FileChooserUtil;
-import com.l7tech.util.*;
 import com.l7tech.console.action.ActionVetoException;
+import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.gateway.common.License;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.util.*;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -421,9 +421,7 @@ public class LicenseDialog extends JDialog {
 
                         try {
                             // Go behind the license manager's back and forcibly install the invalid license
-                            ClusterProperty licProp = admin.findPropertyByName("license");
-                            if (licProp == null) licProp = new ClusterProperty("license", licenseXml);
-                            admin.saveProperty(licProp);
+                            ClusterPropertyCrud.putClusterProperty("license", licenseXml);
                             // Fallthrough and update the license panel
                         } catch (ObjectModelException e2) {
                             JOptionPane.showMessageDialog(LicenseDialog.this,

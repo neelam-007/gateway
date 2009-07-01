@@ -5,11 +5,10 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.DefaultAliasTracker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -20,7 +19,9 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.security.cert.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
@@ -37,8 +38,8 @@ import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -341,14 +342,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         String value = subject.getKeyEntry().getKeystoreId() + ":" + subject.getAlias();
         String failmess = "Failed to change default " + what + " key: ";
         try {
-            ClusterStatusAdmin csa = Registry.getDefault().getClusterStatusAdmin();
-            ClusterProperty property = csa.findPropertyByName(clusterProp);
-            if (property == null)
-                property = new ClusterProperty(clusterProp, value);
-            else
-                property.setValue(value);
-            csa.saveProperty(property);
-            TopComponents.getInstance().getBean("defaultAliasTracker", DefaultAliasTracker.class).invalidate();                    
+            ClusterPropertyCrud.putClusterProperty(clusterProp, value);            
+            TopComponents.getInstance().getBean("defaultAliasTracker", DefaultAliasTracker.class).invalidate();
 
             triggerButton.setEnabled(false);
             DialogDisplayer.showMessageDialog(this,
@@ -357,13 +352,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     JOptionPane.INFORMATION_MESSAGE, null);
             defaultKeyChanged = true;
             close();
-        } catch (SaveException e) {
-            showErrorMessage("Update Failed", failmess + ExceptionUtils.getMessage(e), e);
-        } catch (UpdateException e) {
-            showErrorMessage("Update Failed", failmess + ExceptionUtils.getMessage(e), e);
-        } catch (DeleteException e) {
-            showErrorMessage("Update Failed", failmess + ExceptionUtils.getMessage(e), e);
-        } catch (FindException e) {
+        } catch (ObjectModelException e) {
             showErrorMessage("Update Failed", failmess + ExceptionUtils.getMessage(e), e);
         }
     }

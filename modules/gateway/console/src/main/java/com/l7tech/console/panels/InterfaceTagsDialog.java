@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -8,10 +9,8 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.ValidatedPanel;
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
@@ -87,6 +86,7 @@ public class InterfaceTagsDialog extends OkCancelDialog<Set<InterfaceTag>> {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (dlg.wasOKed()) {
                     Set<InterfaceTag> newTags = dlg.getValue();
@@ -94,19 +94,10 @@ public class InterfaceTagsDialog extends OkCancelDialog<Set<InterfaceTag>> {
                     if (oldStringForm != null && oldStringForm.equals(stringForm))
                         return;
                     try {
-                        ClusterProperty cprop = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(InterfaceTag.PROPERTY_NAME);
-                        if (cprop == null) cprop = new ClusterProperty(InterfaceTag.PROPERTY_NAME, stringForm);
-                        else cprop.setValue(stringForm);
-                        Registry.getDefault().getClusterStatusAdmin().saveProperty(cprop);
+                        ClusterPropertyCrud.putClusterProperty(InterfaceTag.PROPERTY_NAME, stringForm);
                         if (callback != null)
                             callback.call(stringForm);
-                    } catch (SaveException e) {
-                        reportError("Unable to Save Interface Tags", "Unable to save interface", e);
-                    } catch (UpdateException e) {
-                        reportError("Unable to Save Interface Tags", "Unable to save interface", e);
-                    } catch (DeleteException e) {
-                        reportError("Unable to Save Interface Tags", "Unable to save interface", e);
-                    } catch (FindException e) {
+                    } catch (ObjectModelException e) {
                         reportError("Unable to Save Interface Tags", "Unable to save interface", e);
                     }
                 }

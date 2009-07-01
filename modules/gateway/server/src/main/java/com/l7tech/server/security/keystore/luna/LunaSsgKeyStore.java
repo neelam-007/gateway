@@ -42,7 +42,7 @@ public class LunaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements Ssg
     }
 
     private static boolean isUsingPkcs11() {
-        return JceProvider.LUNA_PKCS11_ENGINE.equals(JceProvider.getEngineClass()) || JceProvider.PKCS11_ENGINE.equals(JceProvider.getEngineClass());
+        return JceProvider.PKCS11_ENGINE.equals(JceProvider.getEngineClass());
     }
 
     @Override

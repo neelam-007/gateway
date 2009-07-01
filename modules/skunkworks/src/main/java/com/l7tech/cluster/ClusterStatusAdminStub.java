@@ -238,6 +238,21 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
+    public Object getHardwareCapabilityProperty(String capability, String property) throws NoSuchCapabilityException, NoSuchPropertyException {
+        throw new NoSuchCapabilityException();
+    }
+
+    @Override
+    public void putHardwareCapabilityProperty(String capability, String property, Object value) throws NoSuchCapabilityException, NoSuchPropertyException, ClassCastException, IllegalArgumentException {
+        throw new NoSuchCapabilityException();
+    }
+
+    @Override
+    public void testHardwareTokenAvailability(String capability, int slotNum, char[] tokenPin) throws NoSuchCapabilityException {
+        throw new NoSuchCapabilityException();
+    }
+
+    @Override
     @Transactional(propagation = Propagation.REQUIRED)
     public Collection<TrustedEsm> getTrustedEsmInstances() throws FindException {
         return Collections.emptyList();

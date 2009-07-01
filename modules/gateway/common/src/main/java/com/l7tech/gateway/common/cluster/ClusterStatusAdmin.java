@@ -7,8 +7,10 @@ import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_MULTI;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
+import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
 import com.l7tech.util.CollectionUpdate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+import java.security.KeyStoreException;
 
 /**
  * Remote interface for getting the status of nodes in a gateway cluster.
@@ -361,6 +364,14 @@ public interface ClusterStatusAdmin {
         private static final long serialVersionUID = 982374277812732928L;
     }
 
+    public static final class NoSuchCapabilityException extends Exception {
+        private static final long serialVersionUID = 682345724356023459L;
+    }
+
+    public static final class NoSuchPropertyException extends Exception {
+        private static final long serialVersionUID = 356702534346778195L;
+    }
+
     /**
      * Check hardware capabilities of the node that receives this admin request.
      * TODO this information should be moved to ClusterNodeInfo instead, since it is really per-node.
@@ -371,6 +382,48 @@ public interface ClusterStatusAdmin {
     @Transactional(propagation=Propagation.SUPPORTS)
     @Administrative(licensed=false)
     String getHardwareCapability(String capability);
+
+    /**
+     * Read a property for a hardware capability of the node that receives this admin request.
+     *
+     * @param capability the capability to interrogate.  Must not be null.
+     * @param property the capability-specific property to read.  Required.
+     * @return the value of this property, which may be of some capability- and property-specific type, and which may be null.
+     * @throws NoSuchCapabilityException if the specified hardware capability is not available.
+     * @throws NoSuchPropertyException if the specified hardware capability does not have or does not allow read access to the specified property.
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    Object getHardwareCapabilityProperty(String capability, String property) throws NoSuchCapabilityException, NoSuchPropertyException;
+
+    /**
+     * Configure a property for a hardware capability of the node that receives this admin request.
+     *
+     * @param capability the capability to interrogate.  Must not be null.
+     * @param property the capability-specific property to set.  Required.
+     * @param value the value this property is to be set to.  May be null.
+     * @throws NoSuchCapabilityException if the specified hardware capability is not available.
+     * @throws NoSuchPropertyException if the specified hardware capability does not have or does not allow write access to the specified property.
+     * @throws ClassCastException  if the specified property value is not the correct type for the specified property.
+     * @throws IllegalArgumentException  if the specified property value is not a valid setting for the specified property.
+     */
+    @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
+    void putHardwareCapabilityProperty(String capability, String property, Object value) throws NoSuchCapabilityException, NoSuchPropertyException, ClassCastException, IllegalArgumentException;
+
+    /**
+     * Check if this Gateway node is capable of connecting to the specific hardware token type (identified
+     * by a hardware capability name) using the specified slot number (or -1 to use the default), using
+     * the specified token pin.
+     * <p/>
+     * If this method returns without throwing, this Gateway node is confirmed as able to make use of the specified
+     * token using the specified settings.
+     *
+     * @param capability the hardware capability that provides the hardware token.  Required.
+     * @param slotNum the slot number, or -1 to use the default.
+     * @param tokenPin the token pin to use when connecting, or null if not relevant.
+     * @throws NoSuchCapabilityException if the specified hardware capability is not available.
+     * @throws KeyStoreException if the specified token cannot be accessed using the specified settings.
+     */
+    void testHardwareTokenAvailability(String capability, int slotNum, char[] tokenPin) throws NoSuchCapabilityException, KeyStoreException;
 
     /**
      * Get all TrustedEsm instances currently registered to administer this Gateway cluster.
@@ -411,6 +464,24 @@ public interface ClusterStatusAdmin {
     @Secured(types=EntityType.TRUSTED_ESM_USER, stereotype=MethodStereotype.FIND_ENTITIES)
     Collection<TrustedEsmUser> getTrustedEsmUserMappings(long trustedEsmId) throws FindException;
 
+    /**
+     * Query for this capability to see if hardware XPath acceleration is available.
+     * The return value will be either null, or the type of Xpath acceleration, ie {@link #CAPABILITY_VALUE_HWXPATH_TARARI}.
+     */
     public static final String CAPABILITY_HWXPATH = "hardwareXpath";
-    public static final String CAPABILITY_HWXPATH_TARARI = "tarari";
+
+    /** Value returned from a query for {@link #CAPABILITY_HWXPATH} if Tarari XPath acceleration is available. */
+    public static final String CAPABILITY_VALUE_HWXPATH_TARARI = "tarari";
+
+    /**
+     * Query for this capability to see if the SafeNet HSM (formerly Luna) client libraries are installed and available.
+     * The return value will be either null, or "true" if Luna client libraries are detected.
+     */
+    public static final String CAPABILITY_LUNACLIENT = "keystore.luna";
+
+    /**
+     * Write-only property.  Set this capability property to a String set the Luna client PIN.  This will end up setting a cluster property
+     * to the client PIN, encrypted in some way that the GatewayLunaPinFinder will be able to decrypt.
+     */
+    public static final String CAPABILITY_PROPERTY_LUNAPIN = "keystore.luna.clientPin";
 }
