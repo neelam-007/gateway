@@ -45,6 +45,7 @@ import com.l7tech.security.xml.XencAlgorithm;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
@@ -52,6 +53,8 @@ import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.xml.xpath.FastXpath;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.xml.xpath.XpathVariableFinder;
+import com.l7tech.xml.xpath.NoSuchXpathVariableException;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
@@ -1231,8 +1234,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             return new XpathFeedBack(-1, xpath, "The path " + xpath + " is not valid for XML encryption", null);
         }
         try {
-            // TODO simulate appropriate context variables being in scope.  Difficult problem: what data types to use for each?!
-            XpathUtil.compileAndEvaluate(testEvaluator, xpath, namespaces, null);
+            final Set<String> variables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+            XpathUtil.compileAndEvaluate(testEvaluator, xpath, namespaces, buildXpathVariableFinder(variables));
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
             feedback.hardwareAccelFeedback = getHardwareAccelFeedBack(nsMap, xpath);
             return feedback;
@@ -1241,7 +1244,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             return new XpathFeedBack(e.getPosition(), xpath, e.getMessage(), e.getMultilineMessage());
         } catch (JaxenException e) {
             log.log(Level.FINE, e.getMessage(), e);
-            return new XpathFeedBack(-1, xpath, e.getMessage(), e.getMessage());
+            return new XpathFeedBack(-1, xpath, ExceptionUtils.getMessage( e ), ExceptionUtils.getMessage( e ));
         } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
             log.log(Level.WARNING, e.getMessage(), e);
             return new XpathFeedBack(-1, xpath, "XPath expression error '" + xpath + "'", null);
@@ -1256,10 +1259,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         // Check if hardware accel is known not to work with this xpath
         String convertedXpath = xpath;
         try {
+            final Set<String> variables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
             FastXpath fastXpath = TarariXpathConverter.convertToFastXpath(nsMap, xpath);
             convertedXpath = fastXpath.getExpression();
-            // TODO simulate appropriate context variables being in scope.  Difficult problem: what data types to use for each?!
-            XpathUtil.compileAndEvaluate(testEvaluator, convertedXpath, namespaces, null);
+            XpathUtil.compileAndEvaluate(testEvaluator, convertedXpath, namespaces, buildXpathVariableFinder(variables));
             hardwareFeedback = null;
         } catch (ParseException e) {
             hardwareFeedback = new XpathFeedBack(e.getErrorOffset(), convertedXpath, e.getMessage(), e.getMessage());
@@ -1271,6 +1274,22 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             hardwareFeedback = new XpathFeedBack(-1, convertedXpath, "XPath expression error '" + convertedXpath + "'", null);
         }
         return hardwareFeedback;
+    }
+
+    private XpathVariableFinder buildXpathVariableFinder( final Set<String> variables ) {
+        return new XpathVariableFinder(){
+            @Override
+            public Object getVariableValue( final String namespaceUri,
+                                            final String variableName ) throws NoSuchXpathVariableException {
+                if ( namespaceUri != null )
+                    throw new NoSuchXpathVariableException("Unsupported XPath variable namespace '"+namespaceUri+"'.");
+
+                if ( !variables.contains(variableName) )
+                    throw new NoSuchXpathVariableException("Unsupported XPath variable name '"+variableName+"'.");
+
+                return "";
+            }
+        };
     }
 
     /**
