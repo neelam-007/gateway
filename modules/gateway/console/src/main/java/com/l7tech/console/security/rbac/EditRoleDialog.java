@@ -102,7 +102,11 @@ public class EditRoleDialog extends JDialog {
         } else {
             setTitle(MessageFormat.format(resources.getString(flags.canUpdateSome()?"editRoleDialog.existingTitle":"editRoleDialog.readOnlyExistingTitle"), role.getName()));
             roleName.setText(role.getName());
-            roleDescription.setText(RbacUtilities.getDescriptionString(role, false));
+            if ( shouldAllowEdits ) {
+                roleDescription.setText(role.getDescription()); // then we need to show the actual description with placeholders 
+            } else {
+                roleDescription.setText(RbacUtilities.getDescriptionString(role, false));
+            }
             roleDescription.getCaret().setDot(0);
         }
 
@@ -437,8 +441,10 @@ public class EditRoleDialog extends JDialog {
 
     private void onOK() {
         if (flags.canUpdateSome()) {
-            role.setName(roleName.getText());
-            role.setDescription(roleDescription.getText());
+            if ( shouldAllowEdits ) {
+                role.setName(roleName.getText());
+                role.setDescription(roleDescription.getText());
+            }
             Set<Permission> perms = role.getPermissions();
             perms.clear();
             for (Permission perm : tableModel.getPermissions()) {

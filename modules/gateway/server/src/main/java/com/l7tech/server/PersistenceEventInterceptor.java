@@ -48,7 +48,6 @@ import java.util.logging.Logger;
  * if and when the current transaction commits.
  *
  * @author alex
- * @version $Revision$
  */
 public class PersistenceEventInterceptor extends ApplicationObjectSupport implements Interceptor {
     private static Logger logger = Logger.getLogger(PersistenceEventInterceptor.class.getName());
@@ -69,6 +68,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(MessageContextMappingValues.class.getName());
         ignoredClassNames.add(LogonInfo.class.getName());
         ignoredClassNames.add(EmailListenerState.class.getName());
+        ignoredClassNames.add(RoleAssignment.class.getName());
         ignoredClassNames.add("com.l7tech.server.ems.standardreports.StandardReportArtifact");
         ignoredClassNames.add("com.l7tech.server.ems.migration.MigrationMappingRecord");
 
