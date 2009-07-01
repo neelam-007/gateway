@@ -25,7 +25,6 @@ import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.Functions;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.wsdl.Wsdl;
 
 import javax.wsdl.BindingOperation;
@@ -444,41 +443,6 @@ class PathValidator {
         setSeenCredentialsSinceModified(a, true);
     }
 
-    /**
-     * Find options for the identity that preceed the given assertion in the
-     * policy for the same target message.
-     */
-    private static IdentityTarget[] getIdentityTargetOptions( final Assertion policy,
-                                                              final Assertion identityTargetableAssertion,
-                                                              final MessageTargetable messageTargetable ) {
-        final TreeSet<IdentityTarget> targetOptions = new TreeSet<IdentityTarget>();
-        final Iterator<Assertion> assertionIterator = policy.preorderIterator();
-
-        while( assertionIterator.hasNext() ){
-            Assertion assertion = assertionIterator.next();
-            if ( assertion == identityTargetableAssertion ) {
-                break;
-            }
-
-            if ( !assertion.isEnabled() ) {
-                continue;
-            }
-
-            if ( assertion instanceof IdentityAssertion &&
-                 AssertionUtils.isSameTargetMessage( assertion, messageTargetable ) ) {
-                targetOptions.add( ((IdentityAssertion)assertion).getIdentityTarget() );
-            }
-
-            if ( assertion instanceof IdentityTagable &&
-                 AssertionUtils.isSameTargetMessage( assertion, messageTargetable ) &&
-                 ((IdentityTagable)assertion).getIdentityTag() != null ) {
-                targetOptions.add( new IdentityTarget(((IdentityTagable)assertion).getIdentityTag()) );
-            }
-        }
-
-        return targetOptions.toArray(new IdentityTarget[targetOptions.size()]);
-    }
-
     private void processPrecondition(final Assertion a) {
         final  String targetName = AssertionUtils.getTargetName(a);
 
@@ -509,30 +473,6 @@ class PathValidator {
                 !hasFlag(a, ValidatorFlag.PROCESSES_NON_LOCAL_WSS_RECIPIENT)) {
                 String msg = "A WSS Recipient other than \"Default\" will not be enforced by the gateway. This assertion will always succeed.";
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
-            }
-        }
-
-        if (a instanceof IdentityTargetable && ((IdentityTargetable)a).getIdentityTarget()!=null ) {
-            MessageTargetable target = new MessageTargetableSupport();
-            if ( a instanceof RequestIdentityTargetable ) {
-                // request is he target
-            } else if ( a instanceof MessageTargetable ) {
-                target = (MessageTargetable) a;
-            } else if ( Assertion.isResponse( a ) ) {
-                target.setTarget(TargetMessageType.RESPONSE);
-            }
-            if ( !(a instanceof RequestIdentityTargetable) && !hasFlag(a, ValidatorFlag.REQUIRE_SIGNATURE) ) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "Assertion targets an identity, but signing is not required. The \"Target Identity\" should be cleared, or the assertion should require a signature.", null));
-            } else if ( !ArrayUtils.contains( getIdentityTargetOptions(a.getPath()[0], a, target), ((IdentityTargetable)a).getIdentityTarget() ) ) {
-                IdentityTarget identityTarget = ((IdentityTargetable)a).getIdentityTarget();
-                if ( identityTarget.getTargetIdentityType() == IdentityTarget.TargetIdentityType.TAG ) {
-                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      "Assertion targets an invalid identity, so will always fail. The \"Target Identity\" should be corrected.", null));
-                } else {
-                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      "Assertion targets an identity not explicitly required by the policy, so may fail. The \"Target Identity\" should be corrected.", null));
-                }
             }
         }
 

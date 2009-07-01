@@ -140,6 +140,7 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
             }
         });
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.AddWssSecurityTokenPropertiesAction");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssDecorationAssertionValidator");
 
         return meta;
     }

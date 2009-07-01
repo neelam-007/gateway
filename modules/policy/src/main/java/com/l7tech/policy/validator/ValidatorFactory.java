@@ -5,6 +5,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -138,7 +139,15 @@ class ValidatorFactory {
         AssertionValidator decoratedValidator = assertionValidator;
 
         if ( assertion instanceof UsesVariables ) {
-            decoratedValidator = new SequenceValidator( assertionValidator, new VariableUseValidator(assertion) );
+            decoratedValidator = new SequenceValidator( decoratedValidator, new VariableUseValidator(assertion) );
+        }
+
+        if ( assertion instanceof WssDecorationConfig ) {
+            decoratedValidator = new SequenceValidator( decoratedValidator, new WssDecorationConfigAssertionValidator(assertion) );
+        }
+
+        if ( assertion instanceof IdentityTargetable ) {
+            decoratedValidator = new SequenceValidator( decoratedValidator, new IdentityTargetableAssertionValidator(assertion) );
         }
 
         return decoratedValidator;
