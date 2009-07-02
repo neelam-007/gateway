@@ -9,6 +9,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -17,6 +18,7 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -36,6 +38,7 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
     public ServerWssBasic(final WssBasic data, final ApplicationContext springContext) {
         super(data, data);
         this.auditor = new Auditor(this, springContext, logger);
+        this.securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
     }
 
     @Override
@@ -62,7 +65,11 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
                 auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            wssResults = message.getSecurityKnob().getProcessorResult();
+            if ( isRequest() ) {
+                wssResults = message.getSecurityKnob().getProcessorResult();
+            } else {
+                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, auditor);
+            }
         } catch (SAXException e) {
             throw new CausedIOException("Message '"+messageDescription+"' declared as XML but is not well-formed", e);
         }
@@ -104,4 +111,5 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private final Auditor auditor;
+    private final SecurityTokenResolver securityTokenResolver;
 }

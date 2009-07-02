@@ -764,7 +764,7 @@ class PathValidator {
         MessageTargetContext context = messageTargetContexts.get( targetName.toLowerCase() );
         if ( context == null ) {
             context = new MessageTargetContext();
-            messageTargetContexts.put( targetName.toLowerCase(), new MessageTargetContext() );
+            messageTargetContexts.put( targetName.toLowerCase(), context );
         }
         return context;
     }

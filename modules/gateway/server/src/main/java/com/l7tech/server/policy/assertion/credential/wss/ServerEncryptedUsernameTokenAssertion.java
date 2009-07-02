@@ -14,6 +14,7 @@ import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.message.SecurityKnob;
@@ -27,6 +28,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -47,6 +49,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
         super(data,data);
         this.data = data;
         this.auditor = new Auditor(this, springContext, logger);
+        this.securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
     }
 
     @Override
@@ -73,7 +76,11 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
                 auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            wssResults = message.getSecurityKnob().getProcessorResult();
+            if ( isRequest() ) {
+                wssResults = message.getSecurityKnob().getProcessorResult();
+            } else {
+                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, auditor);
+            }
         } catch (SAXException e) {
             throw new CausedIOException("Request declared as XML but is not well-formed", e);
         }
@@ -156,6 +163,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
 
     private final EncryptedUsernameTokenAssertion data;
     private final Auditor auditor;
+    private final SecurityTokenResolver securityTokenResolver;
 
     private void addDeferredAssertion(final PolicyEnforcementContext policyEnforcementContext,
                                       final String encryptedKeySha1,
