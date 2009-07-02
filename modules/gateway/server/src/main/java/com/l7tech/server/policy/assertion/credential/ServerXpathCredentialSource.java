@@ -140,7 +140,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
             // a dummy document.  (Bug #7224)
             if (!requiresTargetDocument) {
                 // Make a dummy document
-                requestDoc = XmlUtil.createEmptyDocument("dummy", "d", "urn:dummy");
+                requestDoc = XmlUtil.createEmptyDocument();
             } else {
                 auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML, null, e);
                 return AssertionStatus.FAILED;
