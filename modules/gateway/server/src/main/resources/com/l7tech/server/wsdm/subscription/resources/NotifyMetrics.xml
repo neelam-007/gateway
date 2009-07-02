@@ -11,6 +11,7 @@
   <soap:Header>
     <wsa:Action>http://docs.oasis-open.org/wsn/bw-2/NotificationConsumer/Notify</wsa:Action>
     <wsa:To>^$^$^_WSA_TARGET_^$^$^</wsa:To>
+    <wsa:RelatesTo>^$^$^_RELATES_TO_^$^$^</wsa:RelatesTo>
   </soap:Header>
   <soap:Body>
     <wsnt:Notify>
