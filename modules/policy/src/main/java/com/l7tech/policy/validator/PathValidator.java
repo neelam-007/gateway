@@ -533,7 +533,7 @@ class PathValidator {
             }
         } else if (a instanceof WssBasic) {
             // bugzilla 2518
-            if (!(a instanceof EncryptedUsernameTokenAssertion)) {
+            if (!(a instanceof EncryptedUsernameTokenAssertion) && Assertion.isRequest( a )) {
                 if (!haveSeen(targetName, SslAssertion.class)) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                       "This assertion should be preceded by a SSL or TLS Transport assertion.", null));
