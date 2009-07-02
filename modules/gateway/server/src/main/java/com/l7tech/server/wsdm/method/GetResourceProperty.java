@@ -1,6 +1,8 @@
 package com.l7tech.server.wsdm.method;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.Document;
+import com.l7tech.message.Message;
 
 /**
  * Abstraction for the wsrf-rp:GetResourceProperty method.
@@ -15,7 +17,8 @@ import org.w3c.dom.Element;
 public class GetResourceProperty extends ESMMethod {
     private ResourceProperty propertyRequested;
 
-    private GetResourceProperty(Element getResourcePropertyEl) {
+    private GetResourceProperty(Element getResourcePropertyEl, Document doc, Message request) {
+        super(doc, request);
         /*String val = XmlUtil.getTextValue(getResourcePropertyEl);
         if (val == null || val.length() < 1) {
             throw new InvalidDocumentFormatException("Could not find requested wsrf-rp:GetResourceProperty value");

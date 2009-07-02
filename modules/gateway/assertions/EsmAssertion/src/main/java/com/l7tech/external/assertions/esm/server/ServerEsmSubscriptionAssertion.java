@@ -39,30 +39,24 @@ public class ServerEsmSubscriptionAssertion extends AbstractServerAssertion<EsmS
         this.esmService = EsmApplicationContext.getInstance(springAppContext).getEsmService();
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         logger.info("Forwarding message to ESM Subscription Service");
 
         final HttpRequestKnob reqHttp = context.getRequest().getHttpRequestKnob();
-        StringBuffer buf = new StringBuffer(reqHttp.getRequestUrl());
+        StringBuffer origFullUrl = new StringBuffer(reqHttp.getRequestUrl());
         String qs = reqHttp.getQueryString();
         if (qs != null && qs.length() > 0) {
-            buf.append("?").append(qs);
+            origFullUrl.append("?").append(qs);
         }
 
-        String origFullUrl = buf.toString();
-
-        final Document messageDoc;
         try {
-            messageDoc = context.getRequest().getXmlKnob().getDocumentReadOnly();
+            final Document response = esmService.handleSubscriptionRequest(new URL(origFullUrl.toString()), context.getRequest(), assertion.getNotificationPolicyGuid());
+            context.getResponse().initialize(response);
+            return AssertionStatus.NONE;
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.BAD_REQUEST;
-        }
-
-        try {
-            final Document response = esmService.handleSubscriptionRequest(new URL(origFullUrl), messageDoc, assertion.getNotificationPolicyGuid());
-            context.getResponse().initialize(response);
-            return AssertionStatus.NONE;
         } catch (FaultMappableException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, e.getMessage());
             context.getResponse().initialize(ContentTypeHeader.XML_DEFAULT, e.getSoapFaultXML().getBytes("UTF-8"));

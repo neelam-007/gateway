@@ -4,6 +4,8 @@ import com.l7tech.util.ISO8601Date;
 import com.l7tech.server.wsdm.Namespaces;
 
 import java.util.Date;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Exceptions thrown containing faults to be returned to requesters. Meant to be subclassed.
@@ -17,6 +19,10 @@ import java.util.Date;
 public class FaultMappableException extends Exception {
     private String actor;
     protected String msg;
+    protected static final Map<String, String> namespaces = new HashMap<String, String>() {{
+        put(Namespaces.WSA, "wsa");
+        put(Namespaces.WSRF_BF, "wsrf-bf");
+    }};
 
     public FaultMappableException(String msg) {
         super(msg);
@@ -25,31 +31,52 @@ public class FaultMappableException extends Exception {
 
     public String getSoapFaultXML() {
         return
-        "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:wsa=\"" + Namespaces.WSA + "\" xmlns:wsrf-bf=\"" + Namespaces.WSRF_BF + "\">\n" +
+        "<soap:Envelope " + getNamespacesXML() + ">\n" +
         "  <soap:Header>\n" +
-        "    <wsa:Action>\n" +
-        "      " + getWSAAction() + "\n" +
-        "    </wsa:Action>\n" +
+        getHeadersXML() +
         "  </soap:Header>\n" +
         "  <soap:Body>\n" +
         "    <soap:Fault>\n" +
-        "      <faultcode>soap:Client</faultcode>\n" +
+        "      <faultcode>" + getFaultCode() + "</faultcode>\n" +
         "      <faultstring>" + getFaultString() + "</faultstring>\n" +
         (getActor()==null ? "" : "      <faultactor>" + getActor() + "</faultactor>\n") +
-        "      <detail>\n" +
-                getDetailContent() +
-        "      </detail>\n" +
+        getSoapFaultDetailXML() +
         "    </soap:Fault>\n" +
         "  </soap:Body>\n" +
         "</soap:Envelope>";
     }
 
     /**
+     * @return xmlns:prefix="namespace_uri"... String
+     */
+    private String getNamespacesXML() {
+        StringBuilder nsXML = new StringBuilder();
+        Map<String,String> namespaces = getNamespaces();
+        for (String ns : namespaces.keySet()) {
+            nsXML.append(" xmlns:").append(namespaces.get(ns)).append("=\"").append(ns).append("\"");
+        }
+        return nsXML.toString();
+    }
+
+    protected static Map<String, String> getNamespaces() {
+        return namespaces;
+    }
+
+    protected String getNamespacePrefix(String namespace) {
+        return namespaces.get(namespace);
+    }
+
+    protected String getHeadersXML() {
+        String wsaPrefix = getNamespacePrefix(Namespaces.WSA);
+        return "    <" + wsaPrefix + ":Action>\n      " + getWSAAction() + "\n" + "    </" + wsaPrefix + ":Action>\n";
+    }
+
+    /**
      * Subclasses may override to provide details.
      *
-     * @return The detail content for the fault.
+     * @return The SOAP 1.1 Body/Fault/detail element in String format.
      */
-    protected String getDetailContent(){
+    protected String getSoapFaultDetailXML(){
         return "";
     }
 
@@ -71,6 +98,13 @@ public class FaultMappableException extends Exception {
 
     protected String now() {
         return ISO8601Date.format(new Date(System.currentTimeMillis()));
+    }
+
+    /**
+     * @return the subsubcode, subcode, or code of the fault if present, in this order
+     */
+    protected String getFaultCode() {
+        return "soap:Client";
     }
 }
 

@@ -4,8 +4,12 @@ import com.l7tech.server.wsdm.Namespaces;
 import com.l7tech.server.wsdm.faults.FaultMappableException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.message.Message;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
 
 /**
  * Abstraction of mows-xs:GetManageabilityReferences
@@ -20,7 +24,8 @@ import org.w3c.dom.Element;
 public class GetManageabilityReferences extends ESMMethod {
     private String resourceIdRequested;
 
-    private GetManageabilityReferences(Document doc) throws FaultMappableException {
+    private GetManageabilityReferences(Document doc, Message request) throws FaultMappableException {
+        super(doc, request);
         try {
             // look for the presence of an incoming Header/ResourceId
             Element headerEl = SoapUtil.getHeaderElement(doc);
@@ -39,12 +44,13 @@ public class GetManageabilityReferences extends ESMMethod {
         return resourceIdRequested;
     }
 
-    public static GetManageabilityReferences resolve(Document doc) throws FaultMappableException {
+    public static GetManageabilityReferences resolve(Message request) throws FaultMappableException, SAXException, IOException {
+        Document doc = request.getXmlKnob().getDocumentReadOnly();
         try {
             Element bodychild = getFirstBodyChild(doc);
             if (bodychild == null) return null;
             if (testElementLocalName(bodychild, "GetManageabilityReferences")) {
-                return new GetManageabilityReferences(doc);
+                return new GetManageabilityReferences(doc, request);
             }
             return null;
         } catch (Exception e) {

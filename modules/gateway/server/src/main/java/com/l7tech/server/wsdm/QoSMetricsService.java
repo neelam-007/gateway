@@ -47,9 +47,8 @@ public class QoSMetricsService {
     private Aggregator aggregator;
 
     public Document handleMultipleResourcePropertiesRequest(URL incomingURL,
-                                                            GetMultipleResourceProperties method,
-                                                            Document fullDoc)
-            throws GenericWSRFExceptionFault, ResourceUnknownFault {
+                                                            GetMultipleResourceProperties method)
+        throws GenericWSRFExceptionFault, ResourceUnknownFault {
         StringBuffer output = new StringBuffer();
         output.append(
                 "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\" xmlns:wsa=\"" + Namespaces.WSA + "\">\n" +
@@ -70,7 +69,7 @@ public class QoSMetricsService {
         if (serviceId == null) {
             Element header;
             try {
-                header = SoapUtil.getHeaderElement(fullDoc);
+                header = SoapUtil.getHeaderElement(method.getReqestDoc());
             } catch (InvalidDocumentFormatException e) {
                 logger.log(Level.WARNING, "error getting header", e);
                 header = null;

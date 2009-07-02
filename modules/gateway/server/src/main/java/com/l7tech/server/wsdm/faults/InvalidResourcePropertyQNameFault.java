@@ -16,15 +16,18 @@ public class InvalidResourcePropertyQNameFault extends GenericWSRFExceptionFault
         super(msg);
     }
 
+    @Override
     protected String getWSAAction() {
         return "http://docs.oasis-open.org/wsrf/rpw-2/GetMultipleResourceProperties/InvalidResourcePropertyQNameFault";
     }
 
-    protected String getDetailContent() {
-        //
-        return  "        <wsrf-rpw:InvalidResourcePropertyQNameFault xmlns:wsrf-rpw=\"" + Namespaces.WSRF_RPW + "\">\n" +
+    @Override
+    protected String getSoapFaultDetailXML() {
+        return  "      <detail>\n" +
+                "        <wsrf-rpw:InvalidResourcePropertyQNameFault xmlns:wsrf-rpw=\"" + Namespaces.WSRF_RPW + "\">\n" +
                 "            <wsrf-bf:Timestamp>" + now() + "</wsrf-bf:Timestamp>\n" +
                 "            <wsrf-bf:Description>" + msg + "</wsrf-bf:Description>\n" +
-                "        </wsrf-rpw:InvalidResourcePropertyQNameFault>\n";
+                "        </wsrf-rpw:InvalidResourcePropertyQNameFault>\n" +
+                "      </detail>\n";
     }
 }

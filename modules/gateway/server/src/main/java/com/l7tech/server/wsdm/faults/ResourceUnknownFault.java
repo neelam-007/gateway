@@ -19,10 +19,13 @@ public class ResourceUnknownFault extends GenericNotificationExceptionFault {
         super(msg);
     }
 
-    protected String getDetailContent() {
-        return  "        <wsrf-rw:ResourceUnknownFault xmlns:wsrf-rw=\"" + Namespaces.WSRF_RW + "\" >\n" +
+    @Override
+    protected String getSoapFaultDetailXML() {
+        return  "      <detail>\n" +
+                "        <wsrf-rw:ResourceUnknownFault xmlns:wsrf-rw=\"" + Namespaces.WSRF_RW + "\" >\n" +
                 "            <wsrf-bf:Timestamp>" + now() + "</wsrf-bf:Timestamp>\n" +
                 "            <wsrf-bf:Description>" + msg + "</wsrf-bf:Description>\n" +
-                "        </wsrf-rw:ResourceUnknownFault>\n";
+                "        </wsrf-rw:ResourceUnknownFault>\n" +
+                "      </detail>\n";
     }
 }

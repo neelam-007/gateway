@@ -5,14 +5,17 @@ import com.l7tech.server.wsdm.faults.FaultMappableException;
 import com.l7tech.server.wsdm.faults.GenericWSRFExceptionFault;
 import com.l7tech.server.wsdm.faults.InvalidResourcePropertyQNameFault;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.message.Message;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.io.IOException;
 
 /**
  * Abstraction for wsrf-rp:GetMultipleResourceProperties
@@ -29,7 +32,8 @@ public class GetMultipleResourceProperties extends ESMMethod {
     private Element getMultipleResourcePropertiesEl;
     private boolean isReallyMultiResource;
 
-    private GetMultipleResourceProperties(Element rootEl) throws InvalidResourcePropertyQNameFault {
+    private GetMultipleResourceProperties(Element rootEl, Document doc, Message request) throws InvalidResourcePropertyQNameFault {
+        super(doc, request);
         getMultipleResourcePropertiesEl = rootEl;
         isReallyMultiResource = inspectForMultiResource();
         // sometimes, the request has the pattern
@@ -84,7 +88,9 @@ public class GetMultipleResourceProperties extends ESMMethod {
         return requestedProperties;
     }
 
-    public static GetMultipleResourceProperties resolve(Document doc) throws FaultMappableException {
+    public static GetMultipleResourceProperties resolve(Message request) throws FaultMappableException, SAXException, IOException {
+        Document doc = request.getXmlKnob().getDocumentReadOnly();
+
         Element bodychild;
         try {
             bodychild = getFirstBodyChild(doc);
@@ -93,7 +99,7 @@ public class GetMultipleResourceProperties extends ESMMethod {
         }
         if (bodychild == null) return null;
         if (testElementLocalName(bodychild, "GetMultipleResourceProperties")) {
-            return new GetMultipleResourceProperties(bodychild);
+            return new GetMultipleResourceProperties(bodychild, doc, request);
         }
         return null;
     }

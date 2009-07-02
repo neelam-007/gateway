@@ -17,10 +17,13 @@ public class InvalidMessageContentExpressionFault extends GenericNotificationExc
         super(msg);
     }
 
-    protected String getDetailContent() {
-        return  "        <wsntw:InvalidMessageContentExpressionFault xmlns:wsntw=\"" + Namespaces.WSNTW + "\">\n" +
+    @Override
+    protected String getSoapFaultDetailXML() {
+        return  "      <detail>\n" +
+                "        <wsntw:InvalidMessageContentExpressionFault xmlns:wsntw=\"" + Namespaces.WSNTW + "\">\n" +
                 "            <wsrf-bf:Timestamp>" + now() + "</wsrf-bf:Timestamp>\n" +
                 "            <wsrf-bf:Description>" + msg + "</wsrf-bf:Description>\n" +
-                "        </wsntw:InvalidMessageContentExpressionFault>\n";
+                "        </wsntw:InvalidMessageContentExpressionFault>\n" +
+                "      </detail>\n";
     }
 }

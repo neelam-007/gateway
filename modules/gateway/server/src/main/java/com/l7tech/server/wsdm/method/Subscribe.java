@@ -1,16 +1,15 @@
 package com.l7tech.server.wsdm.method;
 
-import com.l7tech.util.ISO8601Date;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.wsdm.Namespaces;
-import com.l7tech.server.wsdm.faults.GenericNotificationExceptionFault;
-import com.l7tech.server.wsdm.faults.InvalidMessageContentExpressionFault;
-import com.l7tech.server.wsdm.faults.UnacceptableTerminationTimeFault;
+import com.l7tech.server.wsdm.faults.*;
 import com.l7tech.server.wsdm.subscription.Subscription;
 import com.l7tech.server.wsdm.util.ISO8601Duration;
+import com.l7tech.message.Message;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.net.URL;
@@ -18,6 +17,7 @@ import java.net.MalformedURLException;
 import java.text.MessageFormat;
 import java.util.Date;
 import java.util.Map;
+import java.io.IOException;
 
 /**
  * Abstraction for the wsnt:Subscribe method
@@ -34,9 +34,12 @@ public class Subscribe extends ESMMethod {
     private boolean terminationParsed;
     private String topicValue;
     private String serviceId;
+    private String messageId;
 
-    private Subscribe( final Element subscribeEl ) throws GenericNotificationExceptionFault {
+    private Subscribe(final Element subscribeEl, Document doc, Message request) throws GenericNotificationExceptionFault {
+        super(doc, request);
         try {
+            // todo: ReferenceParameters should be included in all notification messages
             // extract ConsumerReference/Address/Text()
             Element consumerReferenceEl = XmlUtil.findOnlyOneChildElementByName(subscribeEl, Namespaces.WSNT, "ConsumerReference");
             if (consumerReferenceEl == null) {
@@ -97,7 +100,20 @@ public class Subscribe extends ESMMethod {
         }
     }
 
-    public static Subscribe resolve(Document doc) throws GenericNotificationExceptionFault {
+    @Override
+    protected void validateRequest() throws FaultMappableException {
+        super.validateRequest();
+        Element soapHeader = getSoapHeader();
+        messageId = DomUtils.getTextValue(validateExactlyOneElement(soapHeader, Namespaces.WSA, "MessageID", null));
+        // todo: should also check that the message id is a valid IRI
+    }
+
+    public String getWsaMessageID() {
+        return messageId;
+    }
+
+    public static Subscribe resolve(Message request) throws GenericNotificationExceptionFault, SAXException, IOException {
+        Document doc = request.getXmlKnob().getDocumentReadOnly();
         Element bodychild;
         try {
             bodychild = getFirstBodyChild(doc);
@@ -106,7 +122,7 @@ public class Subscribe extends ESMMethod {
         }
         if (bodychild == null) return null;
         if (testElementLocalName(bodychild, "Subscribe")) {
-            return new Subscribe(bodychild);
+            return new Subscribe(bodychild, doc, request);
         }
         return null;
     }

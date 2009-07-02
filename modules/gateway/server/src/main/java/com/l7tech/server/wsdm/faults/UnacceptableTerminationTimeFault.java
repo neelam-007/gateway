@@ -17,11 +17,14 @@ public class UnacceptableTerminationTimeFault extends GenericNotificationExcepti
         super(msg);
     }
 
-    protected String getDetailContent() {
-        return  "        <wsntw:UnacceptableTerminationTimeFault xmlns:wsntw=\"" + Namespaces.WSNTW + "\" xmlns:wsnt=\"" + Namespaces.WSNT + "\">\n" +
+    @Override
+    protected String getSoapFaultDetailXML() {
+        return  "      <detail>\n" +
+                "        <wsntw:UnacceptableTerminationTimeFault xmlns:wsntw=\"" + Namespaces.WSNTW + "\" xmlns:wsnt=\"" + Namespaces.WSNT + "\">\n" +
                 "            <wsrf-bf:Timestamp>" + now() + "</wsrf-bf:Timestamp>\n" +
                 "            <wsrf-bf:Description>" + msg + "</wsrf-bf:Description>\n" +
                 "            <wsnt:MinimumTime>" + now() + "</wsnt:MinimumTime>\n" +
-                "        </wsntw:UnacceptableTerminationTimeFault>\n";
+                "        </wsntw:UnacceptableTerminationTimeFault>\n" +
+                "      </detail>\n";
     }
 }

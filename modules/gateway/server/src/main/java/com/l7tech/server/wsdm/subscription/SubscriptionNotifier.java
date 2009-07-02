@@ -138,6 +138,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
 
         // worker thread deleting expired subscriptions
         maintenanceTask = new TimerTask() {
+            @Override
             public void run() {
                 try {
                     subscriptionManager.deleteExpiredSubscriptions();
@@ -149,12 +150,14 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                 }
             }
             
+            @Override
             public String toString() {
                 return "ESM Maintenance Task";
             }
         };
 
         notificationTask = new TimerTask() {
+            @Override
             public void run() {
                 long now = System.currentTimeMillis();
 
@@ -162,15 +165,18 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
 
                 lastNotificationRun = now;
             }
+            @Override
             public String toString() {
                 return "ESM Notification Task";
             }
         };
 
         notificationStealerTask = new TimerTask() {
+            @Override
             public void run() {
                 subscriptionManager.stealSubscriptionsFromDeadNodes(clusterNodeId, System.currentTimeMillis() - (5 * notificationPeriod.get()));
             }
+            @Override
             public String toString() {
                 return "ESM Notification Failover Task";
             }
@@ -312,6 +318,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         }
     }
 
+    @Override
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);
         this.auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
@@ -320,6 +327,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     public class ServiceStatusNotificationContext {
         public String subscriptionId;
         public long serviceId;
+        public String requestId;
         public String target;
         public long ts;
         public String eventId;
@@ -327,12 +335,14 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         public MetricsSummaryBin bin;
     }
 
+    @Override
     public void onServiceDisabled(final long serviceoid) {
         if ( notificationEnabled.get() ) {
             notify(serviceoid, NotificationType.DISABLED);
         }
     }
 
+    @Override
     public void onServiceEnabled(final long serviceoid) {
         if ( notificationEnabled.get() ) {
             notify(serviceoid, NotificationType.ENABLED);
@@ -368,6 +378,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                     ServiceStatusNotificationContext ssnc = new ServiceStatusNotificationContext();
                     ssnc.subscriptionId = s.getUuid();
                     ssnc.serviceId = serviceoid;
+                    ssnc.requestId = s.getRequestId();
                     ssnc.target = s.getReferenceCallback();
                     ssnc.notificationPolicyGuid = s.getNotificationPolicyGuid();
                     ssnc.ts = now;
@@ -379,6 +390,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         if (callbacks.size() <= 0) return;
 
         threadPool.execute(new Runnable() {
+            @Override
             public void run() {
                 for (ServiceStatusNotificationContext ssnc : callbacks) {
                     try {
@@ -503,6 +515,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
             if ( request instanceof RerunnableHttpRequest ) {
                 RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) request;
                 rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
+                    @Override
                     public InputStream getInputStream() {
                          return new ByteArrayInputStream(requestBody);
                     }
@@ -592,10 +605,12 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         return value;
     }
 
+    @Override
     public void onServiceCreated(final long serviceoid) {
         onServiceEnabled(serviceoid);
     }
 
+    @Override
     public void onServiceDeleted(final long serviceoid) {
         onServiceDisabled(serviceoid);
     }
@@ -626,6 +641,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         }
 
         threadPool.execute(new Runnable() {
+            @Override
             public void run() {
                 for (ServiceStatusNotificationContext ssnc : callbacks) {
                     try {
@@ -745,6 +761,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         ssnc.eventId = notificationEventId;
         output = output.replace("^$^$^_WSA_TARGET_^$^$^", ssnc.target);
         output = output.replace("^$^$^_SUBSCRIPTION_ID_^$^$^", ssnc.subscriptionId);
+        output = output.replace("^$^$^_RELATES_TO_^$^$^", ssnc.requestId);
         output = output.replace("^$^$^_ESM_SUBS_SVC_URL_^$^$^", baseURL + "/ssg/wsdm/esmsubscriptions");
         output = output.replace("^$^$^_EVENT_UUID_^$^$^", "urn:uuid:" + notificationEventId);
         output = output.replace("^$^$^_SRC_SVC_URL_^$^$^", baseURL + "/service/" + ssnc.serviceId);

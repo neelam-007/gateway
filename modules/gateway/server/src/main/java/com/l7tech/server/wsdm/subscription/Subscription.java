@@ -32,6 +32,7 @@ public class Subscription extends PersistentEntityImp {
     private String uuid;
     private long publishedServiceOid;
     private String referenceCallback;
+    private String requestId;
     private int topic = -1;
     private volatile long termination;
     private String notificationPolicyGuid;
@@ -46,6 +47,7 @@ public class Subscription extends PersistentEntityImp {
         this.uuid = uuid;
         this.publishedServiceOid = Long.parseLong(method.getServiceId());
         this.ownerNodeId = ownerNodeId;
+        this.requestId = method.getWsaMessageID();
         if (method.isTerminationParsed()) {
             termination = method.getTermination();
         }
@@ -83,6 +85,11 @@ public class Subscription extends PersistentEntityImp {
     @Column(name="callback_url", nullable=false, length=255)
     public String getReferenceCallback() {
         return referenceCallback;
+    }
+
+    @Column(name="request_id", nullable=false, length=255) // todo
+    public String getRequestId() {
+        return requestId;
     }
 
     @Column(name="termination_time", nullable=false)

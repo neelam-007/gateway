@@ -9,13 +9,16 @@ import com.l7tech.server.wsdm.util.ISO8601Duration;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.message.Message;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.text.ParseException;
 import java.util.Date;
+import java.io.IOException;
 
 /**
  * Abstraction for the Renew method
@@ -31,12 +34,12 @@ public class Renew extends ESMMethod {
     private String subscriptionIdValue;
     private String terminationTimeValue;
 
-    private Renew(String subscriptionId, Element r) throws GenericNotificationExceptionFault {
-        Element renewEl = r;
+    private Renew(String subscriptionId, Element r, Document doc, Message request) throws GenericNotificationExceptionFault {
+        super(doc, request);
 
         // find the termination time value
         boolean terminationCheck = false;
-        NodeList nl = renewEl.getElementsByTagNameNS("*", "TerminationTime");
+        NodeList nl = r.getElementsByTagNameNS("*", "TerminationTime");
         for (int i = 0; i < nl.getLength(); i++) {
             if (nl.item(i) instanceof Element) {
                 Element termTimeEl = (Element)nl.item(i);
@@ -65,7 +68,7 @@ public class Renew extends ESMMethod {
         }
         
         // find the subscription id
-        nl = renewEl.getElementsByTagNameNS("*", "SubscriptionId" );
+        nl = r.getElementsByTagNameNS("*", "SubscriptionId" );
         for (int i = 0; i < nl.getLength(); i++) {
             if (nl.item(i) instanceof Element) {
                 Element subidel = (Element)nl.item(i);
@@ -86,12 +89,13 @@ public class Renew extends ESMMethod {
         }
     }
 
-    public static Renew resolve(Document doc) throws GenericNotificationExceptionFault {
+    public static Renew resolve(Message request) throws GenericNotificationExceptionFault, SAXException, IOException {
+        Document doc = request.getXmlKnob().getDocumentReadOnly();
         try {
             Element bodychild = getFirstBodyChild(doc);
             if ( bodychild != null ) {
                 if (testElementLocalName(bodychild, "Renew")) {
-                    return new Renew(getSubscriptionIdAddressingParameter(doc), bodychild);
+                    return new Renew(getSubscriptionIdAddressingParameter(doc), bodychild, doc, request);
                 }
             }
         } catch (InvalidDocumentFormatException e) {
@@ -110,8 +114,7 @@ public class Renew extends ESMMethod {
     }
 
     public String respond(String thisURL) {
-        String output =
-        "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\" xmlns:wsa=\"" + Namespaces.WSA + "\">\n" +
+        return "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\" xmlns:wsa=\"" + Namespaces.WSA + "\">\n" +
         "  <soap:Header>\n" +
         "    <wsa:Action>\n" +
         "      http://docs.oasis-open.org/wsn/bw-2/SubscriptionManager/RenewResponse\n" +
@@ -136,6 +139,5 @@ public class Renew extends ESMMethod {
         "    </wsnt:RenewResponse>\n" +
         "  </soap:Body>\n" +
         "</soap:Envelope>";
-        return output;
     }
 }

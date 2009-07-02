@@ -16,10 +16,13 @@ public class TopicNotSupportedFaultException extends FaultMappableException {
         super(msg);
     }
 
-    protected String getDetailContent() {
-        return  "        <wsntw:TopicNotSupportedFault xmlns:wsntw=\"" + Namespaces.WSNTW + "\" >\n" +
+    @Override
+    protected String getSoapFaultDetailXML() {
+        return  "      <detail>\n" +
+                "        <wsntw:TopicNotSupportedFault xmlns:wsntw=\"" + Namespaces.WSNTW + "\" >\n" +
                 "            <wsrf-bf:Timestamp>" + now() + "</wsrf-bf:Timestamp>\n" +
                 "            <wsrf-bf:Description>" + msg + "</wsrf-bf:Description>\n" +
-                "        </wsntw:TopicNotSupportedFault>\n";
+                "        </wsntw:TopicNotSupportedFault>\n" +
+                "      </detail>\n";
     }
 }

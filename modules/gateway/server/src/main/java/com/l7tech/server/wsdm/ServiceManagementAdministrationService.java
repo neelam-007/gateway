@@ -14,6 +14,7 @@ import com.l7tech.server.wsdm.subscription.SubscriptionNotifier;
 import com.l7tech.server.wsdm.util.EsmUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.message.Message;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.w3c.dom.Document;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * Entry point for the ESM subsystem
@@ -64,17 +66,17 @@ public class ServiceManagementAdministrationService implements ApplicationListen
      * Entry point for ESM subsystem. This could be called by a servlet or a special ESM assertion.
      *
      * @param incomingURL      the URL for that request
-     * @param incomingDocument the parsed xml payload of the request
+     * @param incomingRequest  the incoming request message
      * @return a response xml
      * @throws FaultMappableException in case the service should return a soap fault
+     * @throws SAXException     if there's an error processing the request
      */
-    public Document handleESMRequest(URL incomingURL, Document incomingDocument) throws FaultMappableException {
+    public Document handleESMRequest(URL incomingURL, Message incomingRequest) throws FaultMappableException, IOException, SAXException {
         // method classification
-        ESMMethod method = ESMMethod.resolve(incomingDocument);
-
+        ESMMethod method = ESMMethod.resolve(incomingRequest);
 
         if (method instanceof GetMultipleResourceProperties) {
-            return qosService.handleMultipleResourcePropertiesRequest(incomingURL, (GetMultipleResourceProperties)method, incomingDocument);
+            return qosService.handleMultipleResourcePropertiesRequest(incomingURL, (GetMultipleResourceProperties)method);
         } else {
             throw new FaultMappableException( buildUnknownMethodMessage(method) );
         }
@@ -84,20 +86,21 @@ public class ServiceManagementAdministrationService implements ApplicationListen
      * Entry point for ESM subsystem. This could be called by a servlet or a special ESM assertion.
      *
      * @param incomingURL      the URL for that request
-     * @param incomingDocument the parsed xml payload of the request
+     * @param incomingRequest  the incoming request message
      * @return a response xml
      * @throws FaultMappableException in case the service should return a soap fault
+     * @throws SAXException     if there's an error processing the request
      */
-    public Document handleSubscriptionRequest(URL incomingURL, Document incomingDocument, String policyGuid)
-        throws FaultMappableException {
+    public Document handleSubscriptionRequest(URL incomingURL, Message incomingRequest, String policyGuid)
+        throws FaultMappableException, IOException, SAXException {
         // method classification
-        ESMMethod method = ESMMethod.resolve(incomingDocument);
+        ESMMethod method = ESMMethod.resolve(incomingRequest);
 
         try {
             if (method instanceof Renew) {
                 return respondToRenew((Renew)method, incomingURL, policyGuid);
             } else if (method instanceof Subscribe) {
-                return respondToSubscribe((Subscribe)method, incomingURL, incomingDocument, policyGuid);
+                return respondToSubscribe((Subscribe)method, incomingURL, policyGuid);
             } else if (method instanceof Unsubscribe) {
                 return respondToUnsubscribe((Unsubscribe)method, incomingURL);
             } else {
@@ -127,10 +130,10 @@ public class ServiceManagementAdministrationService implements ApplicationListen
         return XmlUtil.stringToDocument(output);
     }
 
-    private Document respondToSubscribe(Subscribe subscribe, URL incomingURL, Document incomingDocument, String policyGuid)
+    private Document respondToSubscribe(Subscribe subscribe, URL incomingURL, String policyGuid)
         throws SAXException, FaultMappableException {
         // look for a resource id
-        String serviceID = identifyService(incomingURL.toString(), incomingDocument);
+        String serviceID = identifyService(incomingURL.toString(), subscribe.getReqestDoc());
         if (serviceID != null) {
             subscribe.setServiceId(serviceID);
         } else {
@@ -149,12 +152,11 @@ public class ServiceManagementAdministrationService implements ApplicationListen
         if (serviceid != null) {
             return serviceid;
         } else {
-            Element header;
+            Element header = null;
             try {
                 header = SoapUtil.getHeaderElement(fullDoc);
             } catch (InvalidDocumentFormatException e) {
                 logger.log(Level.WARNING, "error getting header", e);
-                header = null;
             }
             if (header != null) {
                 Element residel = XmlUtil.findFirstChildElementByName(header, new String[]{ Namespaces.MUWS1, Namespaces.MUWS2 }, "ResourceId");
@@ -227,6 +229,7 @@ public class ServiceManagementAdministrationService implements ApplicationListen
         return null;
     }*/
 
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (!(event instanceof EntityInvalidationEvent)) return;
         try {
