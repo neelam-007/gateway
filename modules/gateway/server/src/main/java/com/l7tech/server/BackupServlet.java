@@ -28,6 +28,7 @@ import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.FileUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -39,12 +40,14 @@ import java.io.*;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * This servlet provides remotely downloadable backup image which are created
- * on-demand using the Migration Utility (a.k.a. Flasher). The backup is accessed
+ * on-demand using the ssgbackup.sh script. The backup is accessed
  * through simple URL (e.g., https://ssghost:8443/ssg/backup?node=SSG1), thus
  * allowing customers to write scripts for automated download. An HTML page is
  * returned if the node parameter is not submitted (e.g., https://ssghost:8443/ssg/backup).
@@ -205,8 +208,13 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             out.println("<p>Please select a Gateway node to back up:</p>");
             for (ClusterNodeInfo nodeInfo : nodeInfos) {
                 // Using <a> instead of <input type="submit"> because I want the
-                // URL to be displayed in the browser status bar when hover.
-                out.println("<p><a class=\"button\" href=\"?node=" + nodeInfo.getName() + "\">" + nodeInfo.getName() + "</a></p>");
+                // The URL can be can be seen when the node button is clicked, as http method get is used, it will be
+                // visible in the URL, do not want to write any javascript from the inside of a servlet
+                out.println("<form action=\"/ssg/backup\" method=\"get\">");
+                out.println("<input type=\"checkbox\" name=\"audits\" value=\"true\">Include Audits</input>");
+                out.println("<input type=\"hidden\" name=\"node\" value=\""+nodeInfo.getName()+"\" />");
+                out.println("<input type=\"submit\" value=\""+nodeInfo.getName()+"\" />");
+                out.println("</form><br>");
             }
             out.println("</body>");
             out.println("</html>");
@@ -230,52 +238,95 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                           final String nodeName,
                           final User user)
             throws IOException {
-        File tmpFile  = File.createTempFile("backup", ".tmp");
-        final String ssgHome = System.getProperty("com.l7tech.server.home");
-        final File flasherHome = new File(ssgHome, "../../config/backup");
-
+        File tmpDirectory = null;
         try {
-            ProcResult result = ProcUtils.exec(flasherHome, new File(flasherHome, "ssgbackup.sh"), new String[] { "-image", tmpFile.getCanonicalPath() }, null, false);
-            logger.log( Level.INFO, "Backup completed with output: \n{0}", new String( result.getOutput()) );
-        } catch (IOException e) {
-            logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_CREATE_IMAGE, e, nodeName);
-            respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
-            //noinspection ResultOfMethodCallIgnored
-            tmpFile.delete();
-            return;
-        }
+            //we need a temp folder
+            tmpDirectory = File.createTempFile("ssg_backup_restore", "tmp");
+            tmpDirectory.createNewFile();
+            tmpDirectory.delete();
+            tmpDirectory.mkdir();
 
-        InputStream in = null;
-        OutputStream out = null;
-        try {
-            long size;
+            final String imageName = "image.zip";
+
+            final String ssgHome = System.getProperty("com.l7tech.server.home");
+            final File backupHome = new File(ssgHome, "../../config/backup");
+
             try {
-                size = tmpFile.length();
-                in = new BufferedInputStream(new FileInputStream(tmpFile));
-            } catch (Exception e) {
-                logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_READ_IMAGE, e, nodeName);
+                final String includeAuditsParam = request.getParameter("audits");
+                final boolean includeAudits = includeAuditsParam != null;
+                final List<String> paramList = new ArrayList<String>();
+                paramList.add("-image");
+                paramList.add((new File(tmpDirectory, imageName)).getCanonicalPath());
+                paramList.add("-maindb");
+                if(includeAudits) paramList.add("-audits");
+
+                ProcResult result = ProcUtils.exec(backupHome, new File(backupHome, "ssgbackup.sh"),
+                        paramList.toArray(new String[paramList.size()]), null, false);
+                logger.log( Level.INFO, "Backup completed with output: \n{0}", new String( result.getOutput()) );
+            } catch (IOException e) {
+                logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_CREATE_IMAGE, e, nodeName);
+                respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
+                //noinspection ResultOfMethodCallIgnored
+                return;
+            }
+
+            //We need to find the actual image, as it will have been given a unique name
+            final File [] files = tmpDirectory.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(imageName);
+                }
+            });
+
+            if(files.length == 0){
+                //this should never happen
+                logAndAudit(getOriginalClientAddr(request),
+                        user, "Backup failed", ServiceMessages.BACKUP_CANNOT_FIND_BACKUP, null, nodeName);
                 respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
                 return;
             }
 
-            if (size > Integer.MAX_VALUE) {
-                logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_TOO_BIG, null, nodeName, Long.toString(size));
-                respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
-                return;
+            //there should only ever be 1 file found
+            final File imageFile = files[0];
+            logger.log( Level.INFO, "Backup image created and found: \n{0}", imageFile.getAbsolutePath() );
+
+            InputStream in = null;
+            OutputStream out = null;
+            
+            try {
+                final long size;
+                //Find the temp file
+                try {
+                    size = imageFile.length();
+                    in = new BufferedInputStream(new FileInputStream(imageFile));
+                } catch (Exception e) {
+                    logAndAudit(getOriginalClientAddr(request), user, "Backup failed",
+                            ServiceMessages.BACKUP_CANT_READ_IMAGE, e, nodeName);
+                    respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
+                    return;
+                }
+
+                if (size > Integer.MAX_VALUE) {
+                    logAndAudit(getOriginalClientAddr(request), user, "Backup failed",
+                            ServiceMessages.BACKUP_TOO_BIG, null, nodeName, Long.toString(size));
+                    respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
+                    return;
+                }
+
+                final String saveAsFilename = nodeName + ".zip";
+                response.setContentType("application/zip");
+                response.setContentLength((int)size);
+                response.setHeader("Content-Disposition", "attachment; filename=\"" + saveAsFilename + "\"; size=" + size);
+                response.setHeader("Accept-Ranges", "none");
+
+                out = response.getOutputStream();
+                IOUtils.copyStream(in, out);
+            } finally {
+                ResourceUtils.closeQuietly(in, out);
+                //noinspection ResultOfMethodCallIgnored
+                imageFile.delete();//not really necessary as the folder will get deleted
             }
-
-            final String saveAsFilename = nodeName + ".zip";
-            response.setContentType("application/zip");
-            response.setContentLength((int)size);
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + saveAsFilename + "\"; size=" + size);
-            response.setHeader("Accept-Ranges", "none");
-
-            out = response.getOutputStream();
-            IOUtils.copyStream(in, out);
         } finally {
-            ResourceUtils.closeQuietly(in, out);
-            //noinspection ResultOfMethodCallIgnored
-            tmpFile.delete();
+            if(tmpDirectory!= null) FileUtils.deleteDir(tmpDirectory);
         }
 
         logAndAudit(getOriginalClientAddr(request), user, "Backup downloaded", ServiceMessages.BACKUP_SUCCESS, null, nodeName, user.getName(), getOriginalClientHostAndAddr(request));

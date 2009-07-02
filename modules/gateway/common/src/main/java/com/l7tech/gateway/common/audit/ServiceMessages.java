@@ -39,6 +39,7 @@ public class ServiceMessages extends Messages {
     public static final M BACKUP_NO_CLUSTER_INFO        = m(3612, Level.WARNING, "Backup request routing failed: cannot get cluster nodes information");
     public static final M BACKUP_NO_SUCH_NODE           = m(3613, Level.WARNING, "Backup request routing failed: no such node: {0}");
     public static final M BACKUP_ROUTING_IO_ERROR       = m(3614, Level.WARNING, "Backup request routing failed");
+    public static final M BACKUP_CANNOT_FIND_BACKUP     = m(3615, Level.WARNING, "Backup request failed, backup image could not be found");
 
     // ESM Notification Service Messages
     public static final M ESM_NOTIFY_NOTIFICATION       = m(3650, Level.FINE,    "Sending notification to ''{0}''");
