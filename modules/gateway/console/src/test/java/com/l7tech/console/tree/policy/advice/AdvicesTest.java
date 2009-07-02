@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
@@ -39,7 +40,7 @@ import java.util.*;
  */
 public class AdvicesTest {
 
-    private static Collection<Class<? extends Assertion>> assertionAdviceWhitelist = Arrays.asList(
+    private static Collection<Class> assertionAdviceWhitelist = Arrays.<Class>asList(
             Assertion.class,
             RoutingAssertion.class,
             SchemaValidation.class,
@@ -68,7 +69,8 @@ public class AdvicesTest {
             WsiSamlAssertion.class,
             HtmlFormDataAssertion.class,
             CodeInjectionProtectionAssertion.class,
-            SimpleXpathAssertion.class
+            SimpleXpathAssertion.class,
+            MessageTargetable.class
             );
 
     /**
@@ -76,7 +78,7 @@ public class AdvicesTest {
      */
     @Test
     public void testNoNewAdvices() {
-        for ( Class<? extends Assertion> assClass : Advices.getAdviceAssertionClasses() ) {
+        for ( Class assClass : Advices.getAdviceAssertionClasses() ) {
             Assert.assertTrue(
                     "Advice for '"+assClass+"' should use assertion metadata (see AssertionMetadata.POLICY_ADVICE_CLASSNAME)",
                     assertionAdviceWhitelist.contains( assClass ) );

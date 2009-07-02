@@ -42,7 +42,7 @@ public class Advices {
 
         try {
             List<Advice> advices = new ArrayList<Advice>();
-            for (Class<? extends Assertion> assertionClass : advicesMap.keySet()) {
+            for (Class<?> assertionClass : advicesMap.keySet()) {
                 if (assertionClass.isAssignableFrom(assertion.getClass())) {
                     Collection<Class<? extends Advice>> adviceClasses = advicesMap.get(assertionClass);
                     for (Class<? extends Advice> adviceClass : adviceClasses) {
@@ -80,7 +80,7 @@ public class Advices {
         }
     }
 
-    static Set<Class<? extends Assertion>> getAdviceAssertionClasses() {
+    static Set<Class<?>> getAdviceAssertionClasses() {
         return Collections.unmodifiableSet( advicesMap.keySet() );    
     }
 
@@ -91,8 +91,8 @@ public class Advices {
 
     // maping assertions to advices, the Class#isAssignable() is used to determine
     // the advice that applies to the assertion
-    private static Map<Class<? extends Assertion>, Collection<Class<? extends Advice>>> advicesMap =
-            new HashMap<Class<? extends Assertion>, Collection<Class<? extends Advice>>>() {{
+    private static Map<Class<?>, Collection<Class<? extends Advice>>> advicesMap =
+            new HashMap<Class<?>, Collection<Class<? extends Advice>>>() {{
                 put(Assertion.class, ary(PolicyValidatorAdvice.class));
                 put(RoutingAssertion.class, ary(AddRoutingAssertionAdvice.class));
                 put(SchemaValidation.class, ary(AddSchemaValidationAssertionAdvice.class));
@@ -119,5 +119,6 @@ public class Advices {
                 put(WsiSamlAssertion.class, ary(AddWsiSamlAssertionAdvice.class));
                 put(HtmlFormDataAssertion.class, ary(HtmlFormDataAssertionAdvice.class));
                 put(SimpleXpathAssertion.class, ary(AddXPathAssertionAdvice.class));
+                put(MessageTargetable.class, ary(MessageTargetableAdvice.class));
             }};
 }
