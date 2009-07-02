@@ -2831,6 +2831,13 @@
                     <include name="firewall_control.sh"/>
                     <include name="upgrade-appliance.sh"/>
                 </fileset>
+                <fileset dir="${src.root}/etc/appliance/db/mysql">
+                    <include name="add_slave_user.sh"/>
+                    <include name="create_slave.sh"/>
+                    <include name="restart_replication.sh"/>
+
+                </fileset>
+
             </copy>
 
             <copy todir="@{dir}/${install.src.app.etc}">
