@@ -47,7 +47,6 @@ public class CaptureProperty extends JDialog {
     private String title;
     private boolean oked = false;
     private Collection<ClusterPropertyDescriptor> descriptors;
-    private Collection<ClusterProperty> existingProperties;
     private boolean isEditable;
 
     public CaptureProperty(JDialog parent, String title, String description, ClusterProperty property, Collection<ClusterPropertyDescriptor> descriptors, boolean isEditable) {
@@ -119,17 +118,16 @@ public class CaptureProperty extends JDialog {
             }
         });
 
-        propulateExistingClusterProps();
-
         enableReadOnlyIfNeeded();
         Utilities.setEscKeyStrokeDisposes(this);
     }
 
     /**
      * Retrieve all cluster properties existing in the Global Cluster Properties table.
+     * @return a list of existing cluster properties
      */
-    private void propulateExistingClusterProps() {
-        existingProperties = new ArrayList<ClusterProperty>();
+    private Collection<ClusterProperty> propulateExistingClusterProps() {
+        Collection<ClusterProperty> existingProperties = new ArrayList<ClusterProperty>();
         try {
             Collection<ClusterProperty> allProperties = Registry.getDefault().getClusterStatusAdmin().getAllProperties();
             for (ClusterProperty property : allProperties) {
@@ -140,6 +138,7 @@ public class CaptureProperty extends JDialog {
         } catch (FindException e) {
             logger.log(Level.SEVERE, "exception getting properties", e);
         }
+        return existingProperties;
     }
 
     /**
@@ -149,16 +148,12 @@ public class CaptureProperty extends JDialog {
      */
     private String getCurrentPropValue(String propName) {
         String value = null;
-
-        if (existingProperties != null && !existingProperties.isEmpty()) {
-            for (ClusterProperty prop: existingProperties) {
-                if (prop.getName().equals(propName)) {
-                    value = prop.getValue();
-                    break;
-                }
+        for (ClusterProperty prop: propulateExistingClusterProps()) {
+            if (prop.getName().equals(propName)) {
+                value = prop.getValue();
+                break;
             }
         }
-
         return value;
     }
 
