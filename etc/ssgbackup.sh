@@ -17,6 +17,10 @@ cd ../..
 SSG_HOME=`pwd`
 popd > /dev/null
 
+if [ -z "${SSGNODE}" ] ; then
+    SSGNODE="default"
+fi
+
 # This will set the location of the jdk into SSG_JAVA_HOME.
 . ${SSG_HOME}/runtime/etc/profile
 

@@ -18,7 +18,11 @@ SSG_HOME=`pwd`
 popd > /dev/null
 
 #Set environment variables
-SSGNODE="default"
+
+if [ -z "${SSGNODE}" ] ; then
+    SSGNODE="default"
+fi
+
 GATEWAY_PID="${SSG_HOME}/node/${SSGNODE}/var/ssg.pid"
 
 # Helper functions
