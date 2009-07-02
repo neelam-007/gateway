@@ -103,6 +103,8 @@ public interface Backup {
     /**
      * Back up the ESM, if it is installed and not running. Backs up the ESM to the esm folder
      *
+     * Backing up the ESM consists of : backing up omp.dat, emconfig.properties and the /var/db folder
+     *
      * Do not call if the ESM is running
      * @throws BackupException
      */

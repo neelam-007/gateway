@@ -20,10 +20,18 @@ public interface Restore {
 
     /**
      * <p>
-     * Restore the main database component. If this is post 5.0 release, this may also include my.cnf
+     * Restore the main database component. If this is post 5.0 release, this may also include my.cnf. If the
+     * configured database host is not local, then no database information will be restored, however my.cnf if found
+     * can be restored
      * </p>
      * <p>
      * This will never restore database audits
+     * </p>
+     * <p>
+     * The restore of /etc/my.cnf is a two step process and works just how the os files are restored. When this
+     * method is called, if my.cnf is found in the backup, its copied into an internal folder to the SSG. When
+     * the SSG's host restarts, if it's configured, my.cnf will be copied from this internal folder to its correct
+     * folder. This has to be done to ensure the procedure to copy my.cnf has the correct priviledges
      * </p>
      * @param isRequired if true, this component must be found in the backup image
      * @param pathToMappingFile String path to any mapping file, if a migrate is happening. Can be null
@@ -102,6 +110,19 @@ public interface Restore {
      * @throws RestoreException
      */
     public Result restoreComponentMA(final boolean isRequired) throws RestoreException;
+
+    /**
+     * Restore the ESM. The ESM must be installed for the ESM component to be called.
+     * The ESM cannot be restored if it is running
+     *
+     * Restoring a ESM consists of : restoring omp.dat, restoring emconfig.properties and restoring the /var/db folder
+     * 
+     * @param isRequired if true, this component must be found in the backup image
+     * @return Result is either success or not applicable, which happens when no esm data is found
+     * in the backup image
+     * @throws RestoreException
+     */
+    public Result restoreComponentESM(final boolean isRequired) throws RestoreException;
     
     public static class RestoreException extends Exception{
         public RestoreException(String message) {

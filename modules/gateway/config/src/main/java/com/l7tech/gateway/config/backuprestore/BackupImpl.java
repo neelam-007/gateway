@@ -33,9 +33,9 @@ class BackupImpl implements Backup {
     private final File confDir;
     private final File applianceHome;
     private final File esmHome;
-    private final OSConfigManager osConfigManager;
     private final FtpClientConfig ftpConfig;
     private final String pathToImageZipFile;
+    private final boolean isPostFiveO;
 
     /**
      *
@@ -50,8 +50,10 @@ class BackupImpl implements Backup {
     BackupImpl(final File secureSpanHome,
                final FtpClientConfig ftpConfig,
                final String pathToImageZipFile,
+               final boolean isPostFiveO,
                final boolean verbose,
-               final PrintStream printStream) throws BackupException {
+               final PrintStream printStream
+    ) throws BackupException {
 
         if (secureSpanHome == null) throw new NullPointerException("secureSpanHome cannot be null");
         if (!secureSpanHome.exists()) throw new IllegalArgumentException("secureSpanHome directory does not exist");
@@ -81,12 +83,7 @@ class BackupImpl implements Backup {
         isVerbose = verbose;
         confDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
 
-        if ((new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())) {
-            osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
-        } else {
-            osConfigManager = null;
-        }
-
+        this.isPostFiveO = isPostFiveO;
     }
 
     public void backUpVersion() throws BackupException {
@@ -126,8 +123,8 @@ class BackupImpl implements Backup {
             if (file.exists() && !file.isDirectory()) {
                 FileUtils.copyFile(file, new File(dir.getAbsolutePath() + File.separator + file.getName()));
             } else {
-                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, "Cannot backup my.cnf",
-                        isVerbose, printStream);
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING,
+                        file.getAbsolutePath()+" does not exist on the host, ignoring", isVerbose, printStream);
             }
 
         } catch (SQLException e) {
@@ -183,11 +180,13 @@ class BackupImpl implements Backup {
             try {
                 // copy system config files
                 final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
-                if (osConfigManager == null) {
+                if (!(new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())) {
                     final String msg = "Operating System backup is not applicable for this host";
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     return;
                 }
+
+                OSConfigManager osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
                 osConfigManager.backUpOSConfigFilesToFolder(dir);
             } catch (OSConfigManager.OSConfigManagerException e) {
                 throw new BackupException(e.getMessage());
@@ -248,10 +247,12 @@ class BackupImpl implements Backup {
             //validate the esm looks ok - just a basic check
             ImportExportUtilities.throwIfEsmNotPresent(esmHome);
         } catch (Exception e) {
-            throw new BackupException(e.getMessage());
+            throw new IllegalStateException(e.getMessage());
         }
 
         try {
+            //this is a BackupException as opposed to an Illegal state. The above throw if esm not present
+            //is an illegal state as this component shuoldn't be called if the esm is not installed
             ImportExportUtilities.throwifEsmIsRunning();
         } catch (IllegalStateException e) {
             throw new BackupException(e.getMessage());
@@ -262,23 +263,27 @@ class BackupImpl implements Backup {
                     createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.ESM.getComponentName());
 
             //opt/SecureSpan/EnterpriseManager/etc/omp.dat
-            ImportExportUtilities.copyDir(new File(esmHome, "etc"), new File(dir, "etc"));
+            ImportExportUtilities.copyDir(new File(esmHome, "etc"), new File(dir, "etc"), null, isVerbose, printStream);
 
-            final File dbFile = new File(dir, "var" + File.separator + "db");
+            final String varDbFolder = "var" + File.separator + "db";
+            final File dbFile = new File(dir, varDbFolder);
             FileUtils.ensurePath(dbFile);
-            ImportExportUtilities.copyDir(new File(esmHome, "var" + File.separator + "db"), dbFile);
+            ImportExportUtilities.copyDir(new File(esmHome, varDbFolder), dbFile, new FilenameFilter(){
+                public boolean accept(File dir, String name) {
+                    return !name.endsWith("derby.log");
+                }
+            }, isVerbose, printStream);
 
             final String emConfigProp = "emconfig.properties";
-            FileUtils.copyFile(new File(esmHome, "var" + File.separator + emConfigProp),
-                    new File(dir, "var" + File.separator + emConfigProp));
+            final String varEmConfig = "var" + File.separator + emConfigProp;
+            final File sourceFile = new File(esmHome, varEmConfig);
+            final File targetFile = new File(dir, varEmConfig);
+            FileUtils.copyFile(sourceFile, targetFile);
 
-            String firewallRules = "firewall_rules";
-            final File tmpFolder = new File(dir, "var" + File.separator + "tmp");
-            FileUtils.ensurePath(tmpFolder);
-            FileUtils.copyFile(new File(esmHome, "var" + File.separator + "tmp" + File.separator + firewallRules),
-                    new File(tmpFolder + File.separator + firewallRules));
+            final String msg = "Copied file '"+ sourceFile.getAbsolutePath()+"' to file '"
+                    + targetFile.getAbsolutePath()+"'";
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
-            //copyDir
         } catch (IOException e) {
             throw new BackupException("Cannot back up modular assertions: " + e.getMessage());
         }
@@ -291,7 +296,7 @@ class BackupImpl implements Backup {
             String newTmpDir = null;
             try{
                 newTmpDir = ImportExportUtilities.createTmpDirectory();
-                //What is just the file name? We will use just the file name, and create the zip in the tmp directory
+                //Whats the file name? We will use just the file name, and create the zip in the tmp directory
                 String zipFileName = ImportExportUtilities.getFilePart(pathToImageZipFile);
                 zipFileName = newTmpDir+File.separator+zipFileName;
                 createImageZip(zipFileName);
@@ -364,8 +369,19 @@ class BackupImpl implements Backup {
 
         ZipOutputStream out = null;
         try {
-            out = new ZipOutputStream(new FileOutputStream(zipFileName));
-            if (printStream != null && isVerbose) printStream.println("Compressing SecureSpan Gateway image into " + zipFileName);
+            if(isPostFiveO){
+                //this logic for placing files with no path part into the /config/backup/images directory
+                //is only post 5.0
+                //does the file name contain a path part?
+                final String dirPart = ImportExportUtilities.getDirPart(zipFileName);
+                out = new ZipOutputStream(new FileOutputStream(
+                        (dirPart == null)?"images"+File.separator+zipFileName: zipFileName));
+            }else{
+                out = new ZipOutputStream(new FileOutputStream(zipFileName));
+            }
+            
+            final String msg = "Compressing SecureSpan Gateway image into " + zipFileName;
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
             final StringBuilder sb = new StringBuilder();
             addDir(tmpOutputDirectory, out, sb);
 

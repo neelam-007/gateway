@@ -433,7 +433,7 @@ public class ExporterTest {
      */
     @Test
     public void testVersionBackup() throws Exception {
-        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedinthistest",
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedinthistest", true,
                 true, System.out);
         try{
             backup.backUpVersion();
@@ -457,7 +457,7 @@ public class ExporterTest {
     @Test
     public void testConfigBackup() throws Exception {
         createTestEnvironment();
-        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome,null, "notusedinthistest",
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome,null, "notusedinthistest", true,
                 true, System.out);
 
         try{
@@ -530,7 +530,7 @@ public class ExporterTest {
         applianceFolder.mkdir();
         
         final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedinthistest",
-                true, System.out);
+                true, true, System.out);
 
         try{
 
@@ -560,7 +560,7 @@ public class ExporterTest {
     public void testCaBackup() throws Exception {
         createTestEnvironment();
         final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedinthistest",
-                true, System.out);
+                true, true, System.out);
 
         try{
             backup.backUpComponentCA();
@@ -598,7 +598,7 @@ public class ExporterTest {
     public void testEsmbackup() throws Exception{
         createTestEnvironment();
         final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null,
-                imageFileToCreate.getAbsolutePath(), true, System.out);
+                imageFileToCreate.getAbsolutePath(), true, true, System.out);
 
         try{
             backup.backUpComponentESM();
@@ -625,11 +625,6 @@ public class ExporterTest {
             Assert.assertTrue("db.lck file not found", dbLck.exists());
             Assert.assertTrue("db.lck file incorrectly created", dbLck.isFile());
 
-            final File firewallRules = new File(varFolder, "/tmp/firewall_rules");
-            Assert.assertTrue("firewall_rules file not found", firewallRules.exists());
-            Assert.assertTrue("firewall_rules file incorrectly created", firewallRules.isFile());
-
-
         }finally{
             backup.deleteTemporaryDirectory();
         }
@@ -645,7 +640,7 @@ public class ExporterTest {
     public void testMaBackup() throws Exception {
         createTestEnvironment();
         final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedinthistest",
-                true, System.out);
+                true, true, System.out);
 
         try{
             backup.backUpComponentCA();
@@ -685,7 +680,7 @@ public class ExporterTest {
     public void testCreateImageFile() throws Exception {
         createTestEnvironment();
         final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null,
-                imageFileToCreate.getAbsolutePath(), true, System.out);
+                imageFileToCreate.getAbsolutePath(), true, true, System.out);
 
         try{
             backup.backUpComponentCA();//just back up something
@@ -779,5 +774,15 @@ public class ExporterTest {
         } finally{
             ResourceUtils.closeQuietly(fos);
         }
+    }
+
+    @Test
+    public void testGetUniqueImageFileName() throws Exception{
+        final String image = "image1.zip";
+        System.setProperty("com.l7tech.gateway.config.backuprestore.setpostfiveo", Boolean.toString(true));
+        final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
+        final String test = exporter.getUniqueImageFileName(image);
+        System.clearProperty("com.l7tech.gateway.config.backuprestore.setpostfiveo");
+        System.out.println(test);
     }
 }

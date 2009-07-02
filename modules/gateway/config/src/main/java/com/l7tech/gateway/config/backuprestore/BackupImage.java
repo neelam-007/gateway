@@ -52,6 +52,12 @@ final class BackupImage {
      */
     static final String PATH_TO_MY_CNF = "/etc/"+ MY_CNF;
 
+    public static class InvalidBackupImage extends Exception{
+        public InvalidBackupImage(String message) {
+            super(message);
+        }
+    }
+    
     BackupImage(final String imageName,
                         final PrintStream printStream,
                         final boolean isVerbose) throws IOException, InvalidBackupImage {
@@ -173,9 +179,7 @@ final class BackupImage {
      */
     File getMainDbBackupFolder(){
         if(imageVersion == ImageVersion.AFTER_FIVE_O){
-            File dbDir = new File(tempDirectory, ImportExportUtilities.ComponentType.MAINDB.getComponentName());
-            if(!dbDir.exists() || !dbDir.isDirectory()) return null;
-            return dbDir;
+            return getFolder(ImportExportUtilities.ComponentType.MAINDB);
         }else{
             return new File(tempDirectory);
         }
@@ -197,8 +201,9 @@ final class BackupImage {
      */
     File getAuditsBackupFile(){
         if(imageVersion == ImageVersion.AFTER_FIVE_O){
-            final File auditsDir= new File(tempDirectory, ImportExportUtilities.ComponentType.AUDITS.getComponentName());
-            if(!auditsDir.exists() || !auditsDir.isDirectory()) return null;
+
+            final File auditsDir= getFolder(ImportExportUtilities.ComponentType.AUDITS);
+            if(auditsDir == null) return null;
             final File auditsFile = new File(auditsDir, AUDIT_BACKUP_FILENAME);
             if(!auditsFile.exists() || auditsFile.isDirectory()) return null;
             return auditsFile;
@@ -232,12 +237,6 @@ final class BackupImage {
         return versionFile;
     }
 
-    public static class InvalidBackupImage extends Exception{
-        public InvalidBackupImage(String message) {
-            super(message);
-        }
-    }
-
     /**
      * Get the config folder from the image, or the root folder if the image is from 5.0
      *
@@ -245,10 +244,7 @@ final class BackupImage {
      */
     File getConfigFolder(){
         if(imageVersion == ImageVersion.AFTER_FIVE_O){
-            File configFolder =
-                    new File(tempDirectory, ImportExportUtilities.ComponentType.CONFIG.getComponentName());
-            if(!configFolder.exists() || !configFolder.isDirectory()) return null;
-            return configFolder;
+            return getFolder(ImportExportUtilities.ComponentType.CONFIG);
         }else{
             return new File(tempDirectory);
         }
@@ -263,10 +259,7 @@ final class BackupImage {
      * @return File the os folder. If it's not null, then the folder exists and is a directory
      */
     File getOSFolder(){
-        final File osFolder = new File(tempDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
-        if(!osFolder.exists() || !osFolder.isDirectory()) return null;
-
-        return osFolder;
+        return getFolder(ImportExportUtilities.ComponentType.OS);
     }
 
     /**
@@ -274,10 +267,7 @@ final class BackupImage {
      * @return File the ca folder. If it's not null, then the folder exists and is a directory
      */
     File getCAFolder(){
-        final File caFolder = new File(tempDirectory, ImportExportUtilities.ComponentType.CA.getComponentName());
-        if(!caFolder.exists() || !caFolder.isDirectory()) return null;
-
-        return caFolder;
+        return getFolder(ImportExportUtilities.ComponentType.CA);
     }
 
     /**
@@ -285,10 +275,27 @@ final class BackupImage {
      * @return File the ma folder. If it's not null, then the folder exists and is a directory
      */
     File getMAFolder(){
-        final File maFolder = new File(tempDirectory, ImportExportUtilities.ComponentType.MA.getComponentName());
-        if(!maFolder.exists() || !maFolder.isDirectory()) return null;
+        return getFolder(ImportExportUtilities.ComponentType.MA);
+    }
 
-        return maFolder;
+    /**
+     * Get the esm folder from the image, the esm folder only exists in a post 5.0 image
+     * @return File the ma folder. If it's not null, then the folder exists and is a directory
+     */
+    File getESMFolder(){
+        return getFolder(ImportExportUtilities.ComponentType.ESM);
+    }
+
+    /**
+     * Get the folder for a component from the image.
+     * @param component the component to get the folder for
+     * @return File folder for the component. If it's not null, then the folder exists and is a directory
+     */
+    private File getFolder(ImportExportUtilities.ComponentType component){
+        final File compFolder = new File(tempDirectory, component.getComponentName());
+        if(!compFolder.exists() || !compFolder.isDirectory()) return null;
+
+        return compFolder;
     }
 
     private void unzipToDir(final String filename, final String destinationpath)

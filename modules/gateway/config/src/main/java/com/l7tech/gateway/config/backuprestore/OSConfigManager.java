@@ -194,7 +194,7 @@ final class OSConfigManager {
     }
 
     /**
-     *
+     * This can also be used to copy files like my.cnf which are restored outside of the os backup component
      * @param source is either our internal folder or a directory where a backup image was unzipped to
      * @throws IOException
      */
@@ -231,9 +231,19 @@ final class OSConfigManager {
         }
         if (systemFileOverWritten && !isReboot) {
             final String msg = "Certain system files are set to be overwritten the next time the SSG host is restarted" +
-                    " if this has been configured on host startup";
+                    " ,if this has been configured on host startup";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
         }
+    }
+
+    void copyFileFromSource(final File fileToCopy) throws IOException{
+        final File targetRoot = new File(internalOsFolder.getParentFile().getAbsolutePath());
+        final File targetFile = new File(targetRoot, fileToCopy.getAbsolutePath());
+        FileUtils.ensurePath(targetFile.getParentFile());
+        FileUtils.copyFile(fileToCopy, targetFile);
+        final String msg = "File '" + fileToCopy.getAbsolutePath()+"' is set to be overwritten the next time the SSG " +
+                "host is restarted, if this has been configured on host startup";
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
     }
 
     /**

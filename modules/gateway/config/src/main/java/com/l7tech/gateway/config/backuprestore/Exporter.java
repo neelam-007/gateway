@@ -178,10 +178,11 @@ public final class Exporter{
         final boolean checkVersion =
                 SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.checkversion", true);
         if (checkVersion){
-            int [] versionInfo = ImportExportUtilities.throwIfLessThanFiveO(new File(secureSpanHome, "runtime/Gateway.jar"));
-            isPostFiveO = versionInfo[2] > 0;
+            int [] versionInfo = ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
+            isPostFiveO = versionInfo[1] > 0;
         }else{
-            isPostFiveO = false;//we won't have the /opt/SecureSpan/Gateway/Backup folder
+            //we won't have the /opt/SecureSpan/Gateway/Backup folder, set false by default, system prop is for testing
+            isPostFiveO = SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.setpostfiveo", false);
         }
 
         this.printStream = printStream;
@@ -254,7 +255,7 @@ public final class Exporter{
 
         final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(programFlagsAndValues);
         final Backup backup = BackupRestoreFactory.getBackupInstance(secureSpanHome, ftpConfig, pathToUniqueImageFile,
-                isVerbose, printStream);        
+                isPostFiveO, isVerbose, printStream);
 
         try {
             final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.getName());
@@ -280,7 +281,7 @@ public final class Exporter{
      * @param pathToImageFile path and file name to make unique
      * @return a unique file name
      */
-    private String getUniqueImageFileName(final String pathToImageFile) {
+    String getUniqueImageFileName(final String pathToImageFile) {
 
         final String imagePathAndName = (isPostFiveO)?getPostFiveOAbsImagePath(pathToImageFile):pathToImageFile;
 
@@ -623,6 +624,7 @@ public final class Exporter{
         allOptList.addAll(Arrays.asList(ALLOPTIONS));
         allOptList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
         allOptList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+        allOptList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
 
         int largestNameStringSize;
         largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(allOptList);

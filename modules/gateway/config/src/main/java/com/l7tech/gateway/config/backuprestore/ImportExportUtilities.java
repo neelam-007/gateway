@@ -84,7 +84,7 @@ public class ImportExportUtilities {
     static void throwifEsmIsRunning() {
         final File esmPid = new File("/var/run/ssemd.pid");
         if(esmPid.exists())
-                throw new IllegalStateException("Cannot back up the Enterprise Service Manager while it is running");
+                throw new IllegalStateException("Enterprise Service Manager is running");
     }
 
     static void throwIfEsmNotPresent(final File esmHome) {
@@ -904,24 +904,51 @@ public class ImportExportUtilities {
     }
 
     public static void copyDir(final File sourceDir, final File destDir) throws IOException {
+        copyDir(sourceDir,  destDir, null, false, null);
+    }
+
+    public static void copyDir(final File sourceDir, final File destDir, final FilenameFilter sourceFilter)
+            throws IOException {
+        copyDir(sourceDir,  destDir, sourceFilter, false, null);
+    }
+
+    public static void copyDir(final File sourceDir,
+                               final File destDir,
+                               final FilenameFilter sourceFilter,
+                               final boolean isVerbose,
+                               final PrintStream printStream) throws IOException {
         if(!sourceDir.exists())
             throw new IllegalArgumentException("Directory '"+sourceDir.getAbsolutePath()+"' does not exist");
         if(!sourceDir.isDirectory())
             throw new IllegalArgumentException("Directory '"+sourceDir.getAbsolutePath()+"' is not a directory");
 
+        if(destDir.exists()){
+            //if it exists, delete it
+            if(!FileUtils.deleteDirContents(destDir)){
+                throw new IllegalStateException("Directory '" + destDir.getAbsolutePath()
+                        + "' could not be deleted before copying files");
+            }
+        }
+
+        //make sure destination exists
         if(!destDir.exists()){
             if(!destDir.mkdir()) {
-                throw new IllegalArgumentException("Directory '" + destDir.getAbsolutePath()
+                throw new IllegalStateException("Directory '" + destDir.getAbsolutePath()
                         + "' does not exist and could not be created");
             }
         }
 
-        final File [] allFiles = sourceDir.listFiles();
+        //it is ok for sourceFilter to be null, if it is, then listFiles just returns everything in the dir
+        final File [] allFiles = sourceDir.listFiles(sourceFilter);
         for(final  File f: allFiles){
             if(f.isDirectory()) {
-                copyDir(f, new File(destDir, f.getName()));
+                //not passing the source filter down, it's only for the intital directory, for now anyway
+                copyDir(f, new File(destDir, f.getName()), null, isVerbose, printStream);
             } else {
-                FileUtils.copyFile(f, new File(destDir.getAbsolutePath() + File.separator + f.getName()));
+                final File destFile = new File(destDir.getAbsolutePath() + File.separator + f.getName());
+                FileUtils.copyFile(f, destFile);
+                String msg = "File '" + f.getAbsolutePath()+"' copied to '" + destFile.getAbsolutePath()+"'";
+                logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
             }
         }
     }

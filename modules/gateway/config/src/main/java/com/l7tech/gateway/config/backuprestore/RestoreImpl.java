@@ -269,6 +269,71 @@ final class RestoreImpl implements Restore{
         }
     }
 
+    public Result restoreComponentESM(boolean isRequired) throws RestoreException {
+        try {
+            //validate the esm looks ok - just a basic check
+            ImportExportUtilities.throwIfEsmNotPresent(esmHome);
+        } catch (Exception e) {
+            throw new IllegalStateException(e.getMessage());
+        }
+
+        try {
+            //this is a RestoreException as opposed to an Illegal state. The above throw if esm not present
+            //is an illegal state as this component shouldn't be called if the esm is not installed
+            ImportExportUtilities.throwifEsmIsRunning();
+        } catch (IllegalStateException e) {
+            throw new RestoreException(e.getMessage());
+        }
+
+        final File esmFolder = image.getESMFolder();
+        if(esmFolder == null){
+            final String msg = "No ESM backup found in image";
+            if(isRequired){
+                throw new RestoreException(msg);
+            }
+            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+            return Result.NOT_APPLICABLE;
+        }
+
+        try {
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Restoring ESM component", isVerbose,
+                    printStream);
+
+            //copyDir will always delete the destination folder if it exists
+            //copy the etc folder - contains omp.dat
+            ImportExportUtilities.copyDir(new File(esmFolder, "etc"),
+                    new File(esmHome, "etc"), null, isVerbose, printStream);
+
+            final String varDbFolder = "var" + File.separator + "db";
+
+            ImportExportUtilities.copyDir(new File(esmFolder, varDbFolder), new File(esmHome, varDbFolder), null, isVerbose, printStream);
+
+            final String emConfigProp = "emconfig.properties";
+
+            final String varEmConfig = "var" + File.separator + emConfigProp;
+            final File emConfigTargetFile = new File(esmHome, varEmConfig);
+            if(emConfigTargetFile.exists()){
+                if(!emConfigTargetFile.delete()){
+                    throw new RestoreException("Cannot delete file '" + emConfigTargetFile.getAbsolutePath()
+                            +"' before restoring it");
+                }
+            }
+
+            final File emConfigSourceFile = new File(esmFolder, varEmConfig);
+
+            FileUtils.copyFile(emConfigSourceFile, emConfigTargetFile);
+
+            final String msg = "File '"+ emConfigSourceFile.getAbsolutePath()+"' copied to '"
+                    + emConfigTargetFile.getAbsolutePath()+"'";
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
+        } catch (IOException e) {
+            throw new RestoreException("Could not restore the ESM component: " + e.getMessage());
+        }
+        
+        return Result.SUCCESS;
+    }
+
     public Result restoreComponentAudits(final boolean isRequired, final boolean isMigate)
             throws RestoreException {
         final File auditsFile = image.getAuditsBackupFile();
@@ -368,20 +433,6 @@ final class RestoreImpl implements Restore{
         return Result.SUCCESS;
     }
 
-    /**
-     * It's ok to call this method if the image has no database info and if the DatabaseConfig is null from
-     * the constructor. When no backup is done, this is logged and Result.NOT_APPLICABLE is returned.
-     * <p/>
-     * Restore the database component. This includes the main database backup and my.cnf and not audits
-     * Backup only happens if the BackupImage contains these elements. If they don't happen, nothing happens
-     * The database restore will only happen if the dbConfig object represents a host local to this system.
-     * <p/>
-     * If the image contains db information but the host is not local, it will beignored. This will be logged
-     * and printed if verbose is true was used
-     * <p/>
-     * Restores the main database - all schema and data apart from audit data. Will create the gateway user if the
-     * database had to be created
-     */
     public Result restoreComponentMainDb(final boolean isRequired,
                                          final boolean isMigrate,
                                          final boolean newDatabaseIsRequired,
@@ -531,7 +582,7 @@ final class RestoreImpl implements Restore{
                     ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
                 } else {
                     try {
-                        FileUtils.copyFile(myCnf, new File(etcDir, myCnf.getName()));
+                        osConfigManager.copyFileFromSource(myCnf);
                     } catch (IOException e) {
                         final String msg = "Cannot copy my.cnf: " + e.getMessage();
                         ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);

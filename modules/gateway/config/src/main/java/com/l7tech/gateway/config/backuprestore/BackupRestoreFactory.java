@@ -44,10 +44,11 @@ public class BackupRestoreFactory {
     public static Backup getBackupInstance(final File secureSpanHome,
                                            final FtpClientConfig ftpConfig,
                                            final String pathToImageZipFile,
+                                           final boolean isPostFiveO,
                                            final boolean verbose,
                                            final PrintStream printStream)
             throws Backup.BackupException {
-        return new BackupImpl(secureSpanHome, ftpConfig, pathToImageZipFile, verbose, printStream);
+        return new BackupImpl(secureSpanHome, ftpConfig, pathToImageZipFile, isPostFiveO, verbose, printStream);
     }
     
 }

@@ -20,8 +20,11 @@ public class BackupRestoreLauncher {
     private static final String LOGCONFIG_NAME = "backuputilitylogging.properties";
     private static final String SSGBACKUP_SH = "ssgbackup.sh";
     private static final String SSGRESTORE_SH = "ssgrestore.sh";
+    private static final String SSGMIGRATE_SH = "ssgmigrate.sh";
     private static final String IMPORT_TYPE = "import";
     private static final String EXPORT_TYPE = "export";
+    private static final String MIGRATE_TYPE = "migrate";
+    private static final String CFGDAEMON_TYPE = "cfgdeamon";
     private static final Logger logger = Logger.getLogger(BackupRestoreLauncher.class.getName());
     private static final String SECURE_SPAN_HOME = "/opt/SecureSpan";
 
@@ -39,9 +42,9 @@ public class BackupRestoreLauncher {
         initializeLogging();
 
         try {
-            if (args[0].equalsIgnoreCase("import") || args[0].equalsIgnoreCase("migrate")) {
+            if (args[0].equalsIgnoreCase(IMPORT_TYPE) || args[0].equalsIgnoreCase(MIGRATE_TYPE)) {
                 final String [] argsToUse;
-                if(args[0].equalsIgnoreCase("migrate")){
+                if(args[0].equalsIgnoreCase(MIGRATE_TYPE)){
                     argsToUse = MigrateToRestoreConvertor.getConvertedArguments(args);
                 }else{
                     argsToUse = args;
@@ -84,7 +87,7 @@ public class BackupRestoreLauncher {
                         throw new RuntimeException("Unexpected response from import");
 
                 }
-            } else if (args[0].equalsIgnoreCase("export")) {
+            } else if (args[0].equalsIgnoreCase(EXPORT_TYPE)) {
                 final Exporter exporter = new Exporter(new File(SECURE_SPAN_HOME), System.out);
                 Exporter.BackupResult result = exporter.createBackupImage(args);
                 switch (result.getStatus()){
@@ -109,7 +112,7 @@ public class BackupRestoreLauncher {
                         throw new RuntimeException("Unexpected response from export");
 
                 }
-            } else if (args[0].equalsIgnoreCase("cfgdeamon")) {
+            } else if (args[0].equalsIgnoreCase(CFGDAEMON_TYPE)) {
                 final OSConfigManager osConfigManager =
                         new OSConfigManager(new File(SECURE_SPAN_HOME), true, false, null);
                 try {
@@ -196,7 +199,11 @@ public class BackupRestoreLauncher {
             output.append("usage: " + SSGRESTORE_SH + " [OPTIONS]").append(EOL_CHAR);
             output.append("\tOPTIONS:").append(EOL_CHAR);
             Importer.getImporterUsage(output);
-        } else if (utilityType.equals(EXPORT_TYPE)) {
+        }else if (utilityType.equals(MIGRATE_TYPE)) {
+            output.append("usage: " + SSGMIGRATE_SH + " [OPTIONS]").append(EOL_CHAR);
+            output.append("\tOPTIONS:").append(EOL_CHAR);
+            Importer.getMigrateUsage(output);
+        }  else if (utilityType.equals(EXPORT_TYPE)) {
             output.append("usage: " + SSGBACKUP_SH + " [OPTIONS]").append(EOL_CHAR);
             output.append("\tOPTIONS:").append(EOL_CHAR);
             Exporter.getExporterUsage(output);

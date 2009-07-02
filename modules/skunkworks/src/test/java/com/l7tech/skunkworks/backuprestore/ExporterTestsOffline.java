@@ -84,7 +84,7 @@ public class ExporterTestsOffline {
         constructor.setAccessible(true);
 
         final String tmpDir = ImportExportUtilities.createTmpDirectory();
-        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedhere",
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedhere", true,
                 true, System.out);
         
         final File mappingFile = new File(tmpDir, "mapping.xml");

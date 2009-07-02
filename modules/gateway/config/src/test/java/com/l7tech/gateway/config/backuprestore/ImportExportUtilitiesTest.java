@@ -358,5 +358,10 @@ public class ImportExportUtilitiesTest {
         Assert.assertEquals("Invalid host name found", "donal.l7tech.com", (ImportExportUtilities.getDbHostAndPortPair(host)).left);
         Assert.assertEquals("Invalid port number found", "4567", (ImportExportUtilities.getDbHostAndPortPair(host)).right);
     }
-    
+
+    @Test
+    public void testGetDirpart(){
+        final String image = "image1.zip";
+        Assert.assertNull("Dir part should be null", ImportExportUtilities.getDirPart(image));
+    }
 }

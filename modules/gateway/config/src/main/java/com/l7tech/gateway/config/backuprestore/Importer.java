@@ -73,13 +73,6 @@ public final class Importer{
             new CommandLineOption("-p", "Ignored parameter for partition", true, false),
             new CommandLineOption("-mode", "Ignored parameter for mode type", true, false) };
 
-
-    private static final String CONFIG_PATH = ImportExportUtilities.NODE_CONF_DIR;
-    private static final String[] CONFIG_FILES = new String[]{
-            "ssglog.properties",
-            "system.properties",
-    };
-
     private String adminDBUsername;
     private String adminDBPasswd;
     private String suppliedClusterPassphrase;
@@ -158,7 +151,7 @@ public final class Importer{
         //this class is not usable without an installed SSG >= 5.0
         final boolean checkVersion =
                 SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.checkversion", true);
-        if (checkVersion) ImportExportUtilities.throwIfLessThanFiveO(new File(secureSpanHome, "runtime/Gateway.jar"));
+        if (checkVersion) ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
 
         this.printStream = printStream;
     }
@@ -350,6 +343,19 @@ public final class Importer{
         }
 
         if(args.containsKey(CommonCommandLineOptions.HALT_ON_FIRST_FAILURE.getName())) isHaltOnFirstFailure = true;
+
+        //do a quick check to see if the -esm was requrested
+        final boolean esmRequested = args.containsKey("-"
+                + ImportExportUtilities.ComponentType.ESM.getComponentName());
+        //if the esm is requested, then it's required
+        //check if it's running, lets not start any backup if the esm is running
+        if(esmRequested){
+            ImportExportUtilities.throwifEsmIsRunning();
+            //validate the esm looks ok - just a basic check
+            ImportExportUtilities.throwIfEsmNotPresent(
+                    new File(secureSpanHome, ImportExportUtilities.ENTERPRISE_SERVICE_MANAGER));
+        }
+        
     }
 
     /**
@@ -752,6 +758,19 @@ public final class Importer{
             }
         });
 
+        //Check for -esm, we don't add this by default, only when it's explicitly asked for
+        if(programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())){
+            componentList.add(new RestoreComponent<Exception>(){
+                public void doRestore() throws Exception {
+                    restore.restoreComponentESM(isSelectiveRestore);
+                }
+
+                public ImportExportUtilities.ComponentType getComponentType() {
+                    return ImportExportUtilities.ComponentType.ESM;
+                }
+            });
+        }
+
         //feedback to user
         if(isSelectiveRestore){
             if(!isMigrate){
@@ -787,10 +806,8 @@ public final class Importer{
      * @param output StringBuilder to write the usage information to
      */
     static void getImporterUsage(final StringBuilder output) {
-        //first do the restore options
-        output.append("Restore options:\n");
         final List<CommandLineOption> restoreArgList = getRestoreOptionsWithDb();
-        int largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(restoreArgList);
+        final int largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(restoreArgList);
         for (CommandLineOption option : restoreArgList) {
             output.append("\t")
                     .append(option.getName())
@@ -799,11 +816,15 @@ public final class Importer{
                     .append(BackupRestoreLauncher.EOL_CHAR);
         }
         output.append(BackupRestoreLauncher.EOL_CHAR);
+    }
 
-        //then do the migrate options
-        output.append("Migrate options:\n");
+    /**
+     * Get the usage for the traditional migrate. Usage information is written to the StringBuilder output
+     * @param output StringBuilder to write the usage information to
+     */
+    static void getMigrateUsage(final StringBuilder output) {
         final List<CommandLineOption> migrateArgList = getAllMigrateOptions();
-        largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(migrateArgList);
+        final int largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(migrateArgList);
         for (CommandLineOption option : migrateArgList) {
             output.append("\t")
                     .append(option.getName())
@@ -865,6 +886,7 @@ public final class Importer{
         validArgList.addAll(Arrays.asList(ALL_RESTORE_OPTIONS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
         return validArgList;
     }
 
@@ -874,14 +896,13 @@ public final class Importer{
         validArgList.addAll(Arrays.asList(ALL_RESTORE_OPTIONS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
         return validArgList;
     }
 
     private static List<CommandLineOption> getAllMigrateOptions(){
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALL_MIGRATE_OPTIONS));
-        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.VERBOSE, CommonCommandLineOptions.HALT_ON_FIRST_FAILURE));
         return validArgList;
     }
-
 }

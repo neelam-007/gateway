@@ -72,6 +72,12 @@ public class ImporterTest {
 
         ImportExportUtilities.copyDir(configSrc, configDest);
 
+        //Set up the esm
+        final URL esmRes = this.getClass().getClassLoader().getResource("EnterpriseManager");
+        final File esmDirSrc = new File(esmRes.getPath());
+        final File esmDirDest = new File(tmpSecureSpanHome, ImportExportUtilities.ENTERPRISE_SERVICE_MANAGER);
+        esmDirDest.mkdir();
+        ImportExportUtilities.copyDir(esmDirSrc, esmDirDest);
     }
     
     @Test
@@ -417,5 +423,17 @@ public class ImporterTest {
                         configFile.isFile());
             }
         }
+    }
+
+    @Test
+    public void testESMRestore() throws Exception{
+        final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
+        final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
+        final Restore restore =
+                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out);
+
+        final Restore.Result result = restore.restoreComponentESM(true);
+        Assert.assertEquals("Incorrect result found", Restore.Result.SUCCESS, result);
+
     }
 }

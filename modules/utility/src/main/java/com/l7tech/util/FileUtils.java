@@ -364,6 +364,27 @@ public class FileUtils {
     }
 
     /**
+     * Convenience method to delete the contents of a direcotory. The directory itself will not be deleted
+     * @param dir the directory to empty. Cannot be null. It's contents will be deleted
+     * @return true if all the contents could be successfully deleted. Returns false on the first problem deleting
+     * a file. Returns true if dir is not a directory
+     */
+    public static boolean deleteDirContents(File dir){
+        if(dir == null) throw new NullPointerException("dir cannot be null");
+        if(!dir.isDirectory()) return true;
+        
+        File [] files = dir.listFiles();
+        for(File f: files){
+            if(f.isDirectory()){
+                if(!deleteDir(f)) return false;
+            }else{
+                if(!f.delete()) return false;
+            }
+        }
+
+        return true;
+    }
+    /**
      * Ensures that a parent directory exists, creating intermediate directories as necessary.
      *
      * @param in the path whose directory should be ensured to exist.  Required.
