@@ -17,7 +17,7 @@ public class LunaProberImpl {
         return isAtLeastOneTokenPresent();
     }
 
-    private static boolean isAtLeastOneTokenPresent() {
+    private synchronized static boolean isAtLeastOneTokenPresent() {
         boolean sawTokenPresent = false;
         LunaTokenManager tm = LunaTokenManager.getInstance();
         int numSlots = tm.GetNumberOfSlots();
@@ -35,7 +35,7 @@ public class LunaProberImpl {
         return sawTokenPresent;
     }
 
-    public static void testHardwareTokenAvailability(int slotNum, char[] pin) throws KeyStoreException {
+    public synchronized static void testHardwareTokenAvailability(int slotNum, char[] pin) throws KeyStoreException {
         LunaTokenManager tm = LunaTokenManager.getInstance();
         if (tm.isLoggedIn())
             throw new KeyStoreException("SafeNet HSM is already in use");
