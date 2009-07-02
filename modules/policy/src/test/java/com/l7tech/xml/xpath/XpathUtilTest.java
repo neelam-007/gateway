@@ -264,4 +264,41 @@ public class XpathUtilTest {
         bool = (Boolean)res.iterator().next();
         assertFalse(bool);
     }
+
+    @Test
+    public void testGetUnprefixedVars() throws Exception {
+        List<String> got = XpathUtil.getUnprefixedVariablesUsedInXpath("$foo = $bar + $pfx:blat");
+        assertEquals(2, got.size());
+        assertEquals("foo", got.get(0));
+        assertEquals("bar", got.get(1));
+    }
+
+    @Test
+    public void testUsesTargetDocument() throws Exception {
+        assertTrue(XpathUtil.usesTargetDocument("//foo"));
+        assertTrue(XpathUtil.usesTargetDocument("/foo/bar/baz"));
+        assertTrue(XpathUtil.usesTargetDocument("*[namespace-uri() = $foo]"));
+        assertTrue(XpathUtil.usesTargetDocument("foo/bar"));
+        assertTrue(XpathUtil.usesTargetDocument("../$blah"));
+        assertTrue(XpathUtil.usesTargetDocument("count(//foo)"));
+        assertTrue(XpathUtil.usesTargetDocument("4 = sum(*)"));
+        assertTrue(XpathUtil.usesTargetDocument("id(foo)"));
+        assertTrue(XpathUtil.usesTargetDocument("id(\"A\")"));
+    }
+
+    @Test
+    public void testUsesTargetDocument_inconclusive() throws Exception {
+        // These are inconclusive and so report that it might indeed use the target document
+        assertTrue(XpathUtil.usesTargetDocument("$blah/bar/baz"));
+        assertTrue(XpathUtil.usesTargetDocument("5 + 4 / 4 + namespace-uri()"));
+    }
+
+    @Test
+    public void testUsesTargetDocument_neg() {
+        assertFalse(XpathUtil.usesTargetDocument("0=0"));
+        assertFalse(XpathUtil.usesTargetDocument("1=0"));
+        assertFalse(XpathUtil.usesTargetDocument("$blah"));
+        assertFalse(XpathUtil.usesTargetDocument("$blah > 4"));
+        assertFalse(XpathUtil.usesTargetDocument("count($blah)"));
+    }
 }

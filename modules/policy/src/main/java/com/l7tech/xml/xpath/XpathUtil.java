@@ -24,6 +24,65 @@ public class XpathUtil {
     public static final Logger logger = Logger.getLogger(XpathUtil.class.getName());
 
     /**
+     * Check whether the specified XPath expression makes any use of its target document.
+     * This can be used to distinguish expressions that must be evaluated against a meaningful
+     * target document, such as "//foo", from those that do not require a meaningful target document,
+     * such as "$var > 17".
+     *
+     * @param expr the expression to examine.  Required.
+     * @return true if this expression might make use of a target document.  False if this expression is known to not require a target document.
+     */
+    public static boolean usesTargetDocument(String expr) {
+        final boolean[] nodeUse = { false };
+        try {
+            XPathHandler handler = new XPathHandlerAdapter() {
+                @Override
+                public void startAbsoluteLocationPath() throws SAXPathException {
+                    nodeUse[0] = true;
+                }
+
+                @Override
+                public void startRelativeLocationPath() throws SAXPathException {
+                    nodeUse[0] = true;
+                }
+
+                @Override
+                public void startProcessingInstructionNodeStep(int i, String s) throws SAXPathException {
+                    nodeUse[0] = true;
+                }
+
+                @Override
+                public void startTextNodeStep(int i) throws SAXPathException {
+                    nodeUse[0] = true;
+                }
+
+                @Override
+                public void startCommentNodeStep(int i) throws SAXPathException {
+                    nodeUse[0] = true;
+                }
+
+                @Override
+                public void startAllNodeStep(int i) throws SAXPathException {
+                    nodeUse[0] = true;
+                }
+
+                @Override
+                public void startFunction(String prefix, String functionName) throws SAXPathException {
+                    if ("id".equalsIgnoreCase(functionName))
+                        nodeUse[0] = true;
+                }
+            };
+            XPathReader reader = new XPathReader();
+            reader.setXPathHandler(handler);
+            reader.parse(expr);
+        } catch (SAXPathException e) {
+            logger.log(Level.INFO, "Unable to parse XPath expression to determine whether it refers to the target document: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return true;
+        }
+        return nodeUse[0];
+    }
+
+    /**
      * Find all unprefixed variables used in the specified XPath expression.
      * This method ignores any variables that are used with a namespace prefix.
      * If the expression cannot be parsed, this method returns an empty list. 

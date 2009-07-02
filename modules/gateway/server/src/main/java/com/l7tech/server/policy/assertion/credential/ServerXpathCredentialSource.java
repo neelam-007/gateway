@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.credential;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.message.XmlKnob;
@@ -7,15 +8,16 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
 import com.l7tech.xml.xpath.XpathVariableContext;
 import com.l7tech.xml.xpath.XpathVariableFinderVariableContext;
-import com.l7tech.security.token.UsernamePasswordSecurityToken;
-import com.l7tech.security.token.SecurityTokenType;
 import org.jaxen.FunctionContext;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathFunctionContext;
@@ -39,6 +41,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
     private static final FunctionContext XPATH_FUNCTIONS = new XPathFunctionContext(false);
     private final Auditor auditor;
     private final DOMXPath loginXpath, passwordXpath;
+    private final boolean requiresTargetDocument;
     private final XpathCredentialSource assertion;
 
     public ServerXpathCredentialSource(XpathCredentialSource assertion, ApplicationContext springContext) {
@@ -46,6 +49,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
         this.assertion = assertion;
         this.auditor = new Auditor(this, springContext, logger);
 
+        boolean loginUsesTargetDoc = true;
         XpathExpression loginExpr = null;
         try {
             loginExpr = assertion.getXpathExpression();
@@ -53,7 +57,10 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                 logger.warning("Login XPath is null; assertion is non-functional");
                 loginXpath = null;
             } else {
-                loginXpath = new DOMXPath(loginExpr.getExpression());
+                String expr = loginExpr.getExpression();
+                if (!XpathUtil.usesTargetDocument(expr))
+                    loginUsesTargetDoc = false;
+                loginXpath = new DOMXPath(expr);
                 loginXpath.setFunctionContext(XPATH_FUNCTIONS);
                 loginXpath.setVariableContext(new XpathVariableFinderVariableContext(null)); // uses thread-local rendezvous
                 for (String prefix : loginExpr.getNamespaces().keySet()) {
@@ -61,10 +68,12 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                     loginXpath.addNamespace(prefix, uri);
                 }
             }
+
         } catch (JaxenException e) {
             throw new RuntimeException("Invalid login xpath expression '" + loginExpr + "'", e);
         }
 
+        boolean passwordUsesTargetDoc = true;
         XpathExpression passwordExpr = null;
         try {
             passwordExpr = assertion.getPasswordExpression();
@@ -72,7 +81,10 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                 logger.warning("Password XPath is null; assertion is non-functional");
                 passwordXpath = null;
             } else {
-                passwordXpath = new DOMXPath(passwordExpr.getExpression());
+                String expr = passwordExpr.getExpression();
+                if (!XpathUtil.usesTargetDocument(expr))
+                    passwordUsesTargetDoc = false;
+                passwordXpath = new DOMXPath(expr);
                 passwordXpath.setFunctionContext(XPATH_FUNCTIONS);
                 passwordXpath.setVariableContext(new XpathVariableFinderVariableContext(null)); // uses thread-local rendezvous
                 for (String prefix : passwordExpr.getNamespaces().keySet()) {
@@ -83,6 +95,8 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
         } catch (JaxenException e) {
             throw new RuntimeException("Invalid password xpath expression '" + passwordExpr + "'", e);
         }
+
+        this.requiresTargetDocument = loginUsesTargetDoc || passwordUsesTargetDoc;
     }
 
     @Override
@@ -122,8 +136,15 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                 requestDoc = requestXml.getDocumentReadOnly();
             }
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML, null, e);
-            return AssertionStatus.FAILED;
+            // If neither expression actually cares about the target document, go ahead anyway using
+            // a dummy document.  (Bug #7224)
+            if (!requiresTargetDocument) {
+                // Make a dummy document
+                requestDoc = XmlUtil.createEmptyDocument("dummy", "d", "urn:dummy");
+            } else {
+                auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML, null, e);
+                return AssertionStatus.FAILED;
+            }
         }
 
         String login;

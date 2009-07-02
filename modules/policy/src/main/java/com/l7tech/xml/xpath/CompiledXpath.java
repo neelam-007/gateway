@@ -21,6 +21,7 @@ public abstract class CompiledXpath {
     private final String expression;
     private final Map nsmap;
     private final boolean mightUseVariables;
+    private final boolean requiresTargetDocument;
 
     /**
      * Initialize the CompiledXpath superclass.
@@ -39,6 +40,7 @@ public abstract class CompiledXpath {
             vars = true;
         }
         this.mightUseVariables = vars;
+        this.requiresTargetDocument = XpathUtil.usesTargetDocument(expression);
     }
 
     /** @return the generic xpath expression string.  Never null. */
@@ -54,6 +56,14 @@ public abstract class CompiledXpath {
     /** @return true if this compiled xpath might use any XPath variables. */
     public boolean usesVariables() {
         return mightUseVariables;
+    }
+
+    /**
+     * @return true if this compiled xpath might require a real target document.
+     *         False if it does not refer to a target document and so should be safe to match against a dummy document.
+     */
+    public boolean requiresTargetDocument() {
+        return requiresTargetDocument;
     }
 
     /** A utility expression that is always true. */
