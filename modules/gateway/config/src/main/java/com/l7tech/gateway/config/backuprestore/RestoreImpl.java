@@ -187,7 +187,9 @@ final class RestoreImpl implements Restore{
         return Result.SUCCESS;
     }
 
-    public Result restoreComponentConfig(final boolean isRequired, final boolean isMigrate) throws RestoreException {
+    public Result restoreComponentConfig(final boolean isRequired,
+                                         final boolean isMigrate,
+                                         final boolean ignoreNodeProperties) throws RestoreException {
         final File imageConfigDir = image.getConfigFolder();
         if(imageConfigDir == null){
             final String msg = "No config folder found. No ssg configuration can be restored";
@@ -220,6 +222,7 @@ final class RestoreImpl implements Restore{
                     //this is not necessary, however it a safeguard against copying config files accidently
                     //we are explicitly only copying files we know about
                     for (String ssgFile : ImportExportUtilities.CONFIG_FILES) {
+                        if(ignoreNodeProperties && ssgFile.equals(ImportExportUtilities.NODE_PROPERTIES)) continue;
                         if (ssgFile.equals(name)) return true;
                     }
                     return false;

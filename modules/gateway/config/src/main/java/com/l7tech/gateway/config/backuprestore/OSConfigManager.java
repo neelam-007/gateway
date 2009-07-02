@@ -72,12 +72,18 @@ final class OSConfigManager {
                 if (!success)
                     throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
             } else {
-                //were going to delete it, even if somehow it got turned into a file
-                if(internalOsFolder.isFile()) internalOsFolder.delete();
-                else FileUtils.deleteDir(internalOsFolder);
-                boolean success = internalOsFolder.mkdir();
-                if (!success)
-                    throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
+                //were going to delete it, if somehow it got turned into a file
+                if(internalOsFolder.isFile()){
+                    internalOsFolder.delete();
+                    boolean success = internalOsFolder.mkdir();
+                    if (!success)
+                        throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
+                }
+                else {
+                    //if it exists, then just empty the contents, this will allow this to work as the gateway user
+                    //as it doesn't have permissions to delete and recreate the directory
+                    FileUtils.deleteDirContents(internalOsFolder);
+                }
             }
             //At this point we are guaranteed to have a completely new internalOsFolder directory
         }else{

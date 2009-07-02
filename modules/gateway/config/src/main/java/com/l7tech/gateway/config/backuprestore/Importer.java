@@ -728,7 +728,7 @@ public final class Importer{
         //ssg config files
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
-                restore.restoreComponentConfig(isSelectiveRestore, isMigrate);
+                restore.restoreComponentConfig(isSelectiveRestore, isMigrate, updateNodeProperties);
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {

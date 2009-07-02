@@ -372,7 +372,7 @@ public class ImporterTest {
             configFile.delete();
         }
 
-        restore.restoreComponentConfig(true, false);
+        restore.restoreComponentConfig(true, false, false);
 
         for(String fileName: ImportExportUtilities.CONFIG_FILES){
             final File configFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + fileName);
@@ -407,7 +407,7 @@ public class ImporterTest {
         }
 
         //true for migrate
-        restore.restoreComponentConfig(true, true);
+        restore.restoreComponentConfig(true, true, false);
 
         //node.properties should not exist
 

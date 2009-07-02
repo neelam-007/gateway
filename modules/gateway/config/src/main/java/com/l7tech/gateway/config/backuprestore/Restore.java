@@ -92,11 +92,16 @@ public interface Restore {
      * @param isRequired if true, this component must be found in the backup image
      * @param isMigrate if true, the file /config/backup/cfg/exclude_files.conf will be consulted and any files
      * listed will be ignored during the restore
+     * @param ignoreNodeProperties if true, then node.properties will not be restored. This happens when the restore
+     * process creates node.properties due to all database information having been supplied during the restore
+     * process, when false, node.properties will be restored, if it's found in the backup image 
      * @return Result is either success or not applicable, which happens when no configuration data is found
      * in the backup image
      * @throws RestoreException
      */
-    public Result restoreComponentConfig(final boolean isRequired, final boolean isMigrate) throws RestoreException;
+    public Result restoreComponentConfig(final boolean isRequired,
+                                         final boolean isMigrate,
+                                         final boolean ignoreNodeProperties) throws RestoreException;
 
     /**
      * Restore any found modular assertions from the ma folder of the image. The modular assertion component
