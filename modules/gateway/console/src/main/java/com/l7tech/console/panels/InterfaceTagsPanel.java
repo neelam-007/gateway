@@ -270,7 +270,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
                     }
                     final String name = option.toString();
                     if (!InterfaceTag.isValidName(name)) {
-                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface name must start with a letter or underscore, and can contain only ASCII letters, uderscores, or numbers.",
+                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface name must start with a letter or underscore, and can contain only ASCII letters, underscores, or numbers.",
                             "Invalid Interface Name", JOptionPane.ERROR_MESSAGE, null);
                     } else if (isDuplicateInterfaceName(name)) {
                         DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The interface '" + name + "' already exists.  Please use a new interface name to try again.",
