@@ -17,7 +17,8 @@ import java.util.logging.Logger;
  */
 public class BackupRestoreLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
-    private static final String LOGCONFIG_NAME = "backuputilitylogging.properties";
+    private static final String BACKUP_LOGCONFIG_NAME = "backuputilitylogging.properties";
+    private static final String RESTORE_LOGCONFIG_NAME = "restore_logging.properties";
     private static final String SSGBACKUP_SH = "ssgbackup.sh";
     private static final String SSGRESTORE_SH = "ssgrestore.sh";
     private static final String SSGMIGRATE_SH = "ssgmigrate.sh";
@@ -39,7 +40,7 @@ public class BackupRestoreLauncher {
             return;
         }
 
-        initializeLogging();
+        initializeLogging(args[0]);
 
         try {
             if (args[0].equalsIgnoreCase(IMPORT_TYPE) || args[0].equalsIgnoreCase(MIGRATE_TYPE)) {
@@ -152,9 +153,17 @@ public class BackupRestoreLauncher {
         }
     }
 
-    private static void initializeLogging() {
+    private static void initializeLogging(final String launcherTarget) {
         final LogManager logManager = LogManager.getLogManager();
-        final File file = new File(SyspropUtil.getString("java.util.logging.config.file", LOGCONFIG_NAME));
+
+        final String logFileToUseAsDefault;
+        if(launcherTarget.equalsIgnoreCase(IMPORT_TYPE) || launcherTarget.equalsIgnoreCase(MIGRATE_TYPE)){
+            logFileToUseAsDefault = RESTORE_LOGCONFIG_NAME;
+        }else{
+            logFileToUseAsDefault = BACKUP_LOGCONFIG_NAME;
+        }
+
+        final File file = new File(SyspropUtil.getString("java.util.logging.config.file", logFileToUseAsDefault));
         if (file.exists()) {
             InputStream in = null;
             try {
