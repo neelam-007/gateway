@@ -30,6 +30,8 @@ import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -119,10 +121,6 @@ public class ServerVariables {
                 return tk == null ? null : tk.getRemoteHost();
             }
         }),
-            new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USER, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USER, false, AuthenticatedUserGetter.USER_TO_NAME)),
-            new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USERS, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USERS, true, AuthenticatedUserGetter.USER_TO_NAME)),
-            new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USER_DN, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USER_DN, false, AuthenticatedUserGetter.USER_TO_DN)),
-            new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USER_DNS, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USER_DNS, true, AuthenticatedUserGetter.USER_TO_DN)),
         new Variable("request.clientid", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
@@ -443,25 +441,6 @@ public class ServerVariables {
                 }
             }
         }),
-        new Variable("request.username", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                LoginCredentials creds = context.getAuthenticationContext(context.getRequest()).getLastCredentials();
-                if (creds == null) return null;
-                return creds.getName();
-            }
-        }),
-        new Variable("request.password", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                LoginCredentials creds = context.getAuthenticationContext(context.getRequest()).getLastCredentials();
-                if (creds == null) return null;
-                final char[] pass = creds.getCredentials();
-                if (pass == null || pass.length == 0) return null;
-                return new String(pass);
-            }
-        }),
-
         new Variable("request.ssl.clientCertificate", new Getter(){
             @Override
             public Object get(String name, PolicyEnforcementContext context){
@@ -574,17 +553,18 @@ public class ServerVariables {
             }
         }),
 
-        new Variable("request.wss", new Getter() {
+        new MultiVariable("request", MessageSelector.getPrefixes(), new SelectingGetter("request") {
             @Override
-            public Object get(String name, final PolicyEnforcementContext context) {
-                return ExpandVariables.process(name, new HashMap() {{ put("request", context.getRequest()); }}, new LogOnlyAuditor(logger));
+            protected Object getBaseObject( PolicyEnforcementContext context ) {
+                return context.getRequest();
             }
+
         }),
 
-        new Variable("response.wss", new Getter() {
+        new MultiVariable("response", MessageSelector.getPrefixes(), new SelectingGetter("response") {
             @Override
-            public Object get(String name, final PolicyEnforcementContext context) {
-                return ExpandVariables.process(name, new HashMap() {{ put("response", context.getResponse()); }}, new LogOnlyAuditor(logger));
+            protected Object getBaseObject( PolicyEnforcementContext context ) {
+                return context.getResponse();
             }
         }),
 
@@ -684,17 +664,40 @@ public class ServerVariables {
 
     static {
         for (Variable var : VARS) {
-            String name = var.getName();
-            VariableMetadata meta = BuiltinVariables.getMetadata(name);
-
-            if (meta == null)
-                throw new IllegalStateException("ServerVariable '" + name + "' was not found in BuiltinVariables!");
-
-            if (meta.isPrefixed()) {
-                varsByPrefix.put(name.toLowerCase(), var);
+            List<String> names = new ArrayList<String>();
+            if ( var instanceof MultiVariable ) {
+                for ( String subName : ((MultiVariable)var).getSubNames() ) {
+                    names.add( var.getName().toLowerCase() + "." + subName.toLowerCase() );
+                }
             } else {
-                varsByName.put(name.toLowerCase(), var);
+                names.add( var.getName() );
             }
+
+            for ( String name : names ) {
+                VariableMetadata meta = BuiltinVariables.getMetadata(name);
+
+                if (meta == null)
+                    throw new IllegalStateException("ServerVariable '" + name + "' was not found in BuiltinVariables!");
+
+                if (meta.isPrefixed()) {
+                    varsByPrefix.put(name.toLowerCase(), var);
+                } else {
+                    varsByName.put(name.toLowerCase(), var);
+                }
+            }
+        }
+    }
+
+    private static class MultiVariable extends Variable {
+        private final String[] subNames;
+
+        MultiVariable( final String name, final String[] subNames, final Getter getter ) {
+            super( name, getter );
+            this.subNames = subNames;
+        }
+
+        public String[] getSubNames() {
+            return subNames;
         }
     }
 
@@ -745,6 +748,28 @@ public class ServerVariables {
                 return null;
             }
         }
+    }
+
+    private static abstract class SelectingGetter implements Getter {
+        private final String baseName;
+
+        private SelectingGetter( final String baseName ) {
+            this.baseName = baseName;
+        }
+
+        @Override
+        public final Object get(final String name, final PolicyEnforcementContext context) {
+            Object object = getBaseObject(context);
+            if ( object != null && !baseName.equalsIgnoreCase(name) ) {
+                object = ExpandVariables.processSingleVariableAsObject(
+                        "${"+name+"}",
+                        Collections.singletonMap(baseName, object),
+                        new LogOnlyAuditor(logger) );
+            }
+            return object;
+        }
+
+        protected abstract Object getBaseObject( PolicyEnforcementContext context );
     }
 
 }

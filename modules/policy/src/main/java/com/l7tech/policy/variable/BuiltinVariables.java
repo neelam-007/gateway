@@ -29,12 +29,6 @@ public class BuiltinVariables {
     public static final String PREFIX_REQUEST_URL = "request.url";
     public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table
 
-    public static final String PREFIX_AUTHENTICATED_USER = "request.authenticateduser";
-    public static final String PREFIX_AUTHENTICATED_USERS = "request.authenticatedusers";
-
-    public static final String PREFIX_AUTHENTICATED_USER_DN = "request.authenticateddn";
-    public static final String PREFIX_AUTHENTICATED_USER_DNS = "request.authenticateddns";
-
     private static final Map metadataByName = new HashMap();
     private static final Map metadataPresetByName = new HashMap();
 
@@ -93,10 +87,6 @@ public class BuiltinVariables {
         new VariableMetadata("request.tcp.remoteAddress", false, false, null, false),
         new VariableMetadata("request.tcp.remoteip", false, false, "request.tcp.remoteAddress", false),
         new VariableMetadata("request.tcp.remoteHost", false, false, null, false),
-        new VariableMetadata(PREFIX_AUTHENTICATED_USER, true, false, null, false),
-        new VariableMetadata(PREFIX_AUTHENTICATED_USERS, false, true, null, false),
-        new VariableMetadata(PREFIX_AUTHENTICATED_USER_DN, true, false, null, false),
-        new VariableMetadata(PREFIX_AUTHENTICATED_USER_DNS, false, true, null, false),
         new VariableMetadata("request.clientid", false, false, null, false),
         new VariableMetadata("request.tcp.localPort", false, false, null, false, DataType.INTEGER),
         new VariableMetadata("request.http.method", false, false, null, false),
@@ -137,8 +127,6 @@ public class BuiltinVariables {
 
         new VariableMetadata("response.http.status", false, false, null, false, DataType.INTEGER),
         new VariableMetadata(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, true, true, null, false),
-        new VariableMetadata("request.username", false, false, null, false),
-        new VariableMetadata("request.password", false, false, null, false),
 
         new VariableMetadata("request.ssl.clientcertificate", false, false, null, false, DataType.CERTIFICATE),
         new VariableMetadata("request.ssl.clientcertificate.base64", false, false, null, false, DataType.STRING),
@@ -148,8 +136,25 @@ public class BuiltinVariables {
         new VariableMetadata("request.wss.signingcertificate.base64", false, false, null, false, DataType.STRING, "request.wss.signingcertificates.value.1.base64"),
         new VariableMetadata("request.wss.signingcertificate.pem", false, false, null, false, DataType.STRING, "request.wss.signingcertificates.value.1.pem"),
 
+        new VariableMetadata("request.http", true, false, null, false),
+        new VariableMetadata("request.mainpart", false, false, null, false),
         new VariableMetadata("request.wss", true, false, null, false),
+        new VariableMetadata("request.username", false, false, null, false),
+        new VariableMetadata("request.password", false, false, null, false),
+        new VariableMetadata("request.authenticateduser", true, false, null, false),
+        new VariableMetadata("request.authenticatedusers", true, false, null, false),
+        new VariableMetadata("request.authenticateddn", true, false, null, false),
+        new VariableMetadata("request.authenticateddns", true, false, null, false),
+
+        new VariableMetadata("response.http", true, false, null, false),
+        new VariableMetadata("response.mainpart", false, false, null, false),
         new VariableMetadata("response.wss", true, false, null, false),
+        new VariableMetadata("response.password", false, false, null, false),
+        new VariableMetadata("response.username", false, false, null, false),
+        new VariableMetadata("response.authenticateduser", true, false, null, false),
+        new VariableMetadata("response.authenticatedusers", true, false, null, false),
+        new VariableMetadata("response.authenticateddn", true, false, null, false),
+        new VariableMetadata("response.authenticateddns", true, false, null, false),
 
         new VariableMetadata("request.compression.gzip.found", false, false, null, true, DataType.BOOLEAN),
     };
@@ -169,18 +174,4 @@ public class BuiltinVariables {
         if (newname == null) return null;
         return (VariableMetadata) metadataByName.get(newname);
     }
-
-    private static final String[] SINGLEOBJECT = {
-        "request.http.clientCert",
-        "ssg.cert",
-        "protectedService.cert",
-        "authenticatedUser",
-        "service",
-    };
-
-    private static final String[] MULTIOBJECT = {
-        "request.http.clientCert.chain",
-        "ssg.cert.chain",
-    };
-
 }

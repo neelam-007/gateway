@@ -25,6 +25,7 @@ class AuthenticatedUserGetter implements Getter {
                 context.getAuthenticationContext(message) ;
         final List<AuthenticationResult> authResults = authenticationContext.getAllAuthenticationResults();
         if (multivalued) {
+            if ( !name.equalsIgnoreCase(prefix) ) return null; // suffix not supported
             final List<String> strings = Functions.map(authResults, userToValue);
             return strings.toArray(new String[strings.size()]);
         }

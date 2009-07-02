@@ -9,8 +9,10 @@ import com.l7tech.message.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.X509SigningSecurityToken;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.io.IOException;
@@ -60,6 +62,11 @@ class MessageSelector implements ExpandVariables.Selector {
         final MessageAttributeSelector selector;
 
         final String lname = name.toLowerCase();
+        String prefix = lname;
+        int index = prefix.indexOf( '.' );
+        if ( index > -1) prefix = prefix.substring( 0, index );
+        if ( !ArrayUtils.contains(getPrefixes(), prefix)) return null; // this check ensures prefixes are added to the list
+
         if (lname.startsWith(HTTP_HEADER_PREFIX))
             selector = singleHeaderSelector;
         else if (lname.startsWith(HTTP_HEADERVALUES_PREFIX))
@@ -87,6 +94,21 @@ class MessageSelector implements ExpandVariables.Selector {
         }
 
         return selector.select(message, name, handler, strict);
+    }
+
+    // prefix must also be added in BuiltinVariables
+    static String[] getPrefixes() {
+        return new String[]{
+                "http",
+                "mainpart",
+                "wss",
+                AUTH_USER_PASSWORD,
+                AUTH_USER_USERNAME,
+                AUTH_USER_USER,
+                AUTH_USER_USERS,
+                AUTH_USER_DN,
+                AUTH_USER_DNS
+        };
     }
 
     private MessageAttributeSelector select( final AuthenticatedUserGetter authenticatedUserGetter ) {
@@ -177,9 +199,10 @@ class MessageSelector implements ExpandVariables.Selector {
                 String rname = prefix == null ? null : lname.substring(prefix.length());
                 String[] valueParts = rname == null ? null : rname.split("\\.", 2);
                 if (valueParts != null && valueParts.length > 0 && isInt(valueParts[0]) ) {
-                    return new Selection(
-                        getCertificate(context, Integer.parseInt(valueParts[0]), WSS_SIGN_CERT_VALUES_PREFIX.equals(prefix)),
-                        valueParts.length > 1 ? valueParts[1] : null);
+                    X509Certificate cert = getCertificate(context, Integer.parseInt(valueParts[0]), WSS_SIGN_CERT_VALUES_PREFIX.equals(prefix));
+                    return cert == null ?
+                            null :
+                            new Selection(cert , valueParts.length > 1 ? valueParts[1] : null);
                 } else if (strict) {
                     String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
                     throw new IllegalArgumentException(msg);
@@ -208,18 +231,24 @@ class MessageSelector implements ExpandVariables.Selector {
 
     private static int getCertificateCount(Message message, boolean signingOnly) {
         int count = 0;
-        for(SecurityToken token : message.getSecurityKnob().getProcessorResult().getXmlSecurityTokens()) {
-            if ( token instanceof X509SigningSecurityToken && (!signingOnly || ((X509SigningSecurityToken)token).isPossessionProved()))
-                count++;
+        ProcessorResult result = message.getSecurityKnob().getProcessorResult();
+        if ( result != null ) {
+            for(SecurityToken token : result.getXmlSecurityTokens()) {
+                if ( token instanceof X509SigningSecurityToken && (!signingOnly || ((X509SigningSecurityToken)token).isPossessionProved()))
+                    count++;
+            }
         }
         return count;
     }
 
     private static X509Certificate getCertificate(Message message, int index, boolean signingOnly) {
         ArrayList<X509SigningSecurityToken> candidates = new ArrayList<X509SigningSecurityToken>();
-        for(SecurityToken token : message.getSecurityKnob().getProcessorResult().getXmlSecurityTokens()) {
-            if(token instanceof X509SigningSecurityToken && (!signingOnly || ((X509SigningSecurityToken)token).isPossessionProved()))
-                candidates.add((X509SigningSecurityToken) token);
+        ProcessorResult result = message.getSecurityKnob().getProcessorResult();
+        if ( result != null ) {
+            for(SecurityToken token : result.getXmlSecurityTokens()) {
+                if(token instanceof X509SigningSecurityToken && (!signingOnly || ((X509SigningSecurityToken)token).isPossessionProved()))
+                    candidates.add((X509SigningSecurityToken) token);
+            }
         }
         return index < 1 || index > candidates.size() ? null : candidates.get(index - 1).getCertificate();
     }
