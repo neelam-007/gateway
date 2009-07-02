@@ -491,10 +491,10 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
         } catch (KeyStoreException e) {
-            logger.log(Level.WARNING, "error setting new cert", e);
-            throw new UpdateException("error getting keystore", e);
+            logger.log(Level.INFO, "error getting keystore to set new cert: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new UpdateException("Error getting keystore: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
-            throw new UpdateException("error getting keystore", e);
+            throw new UpdateException("Error getting keystore: " + ExceptionUtils.getMessage(e), e);
         }
 
         SsgKeyStore keystore = keyFinder.getKeyStore();
@@ -506,8 +506,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             // Force it to be synchronous (Bug #3852)
             future.get();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "error setting new cert", e);
-            throw new UpdateException("error setting new cert", e);
+            logger.log(Level.INFO, "error setting new cert: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new UpdateException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

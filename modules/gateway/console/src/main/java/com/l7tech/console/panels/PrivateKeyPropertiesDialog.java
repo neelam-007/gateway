@@ -88,59 +88,69 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         AttemptedOperation updateOperation = new AttemptedUpdate(EntityType.SSG_KEY_ENTRY, subject.getKeyEntry());
 
         closeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 close();
             }
         });
 
         destroyPrivateKeyButton.addActionListener(new SecureAction(deleteOperation) {
+            @Override
             protected void performAction() {
                 delete();
             }
         });
 
         replaceCertificateChainButton.addActionListener(new SecureAction(updateOperation) {
+            @Override
             public void performAction() {
                 assignCert();
             }
         });
 
         generateCSRButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 getCSR();
             }
         });
 
         viewCertificateButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 viewCert();
             }
         });
 
         makeDefaultSSLButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 makeDefaultSsl();
             }
         });
 
         makeDefaultCAButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 makeDefaultCa();
             }
         });
 
         exportKeyButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 exportKey();
             }
         });
 
         Utilities.setEnterAction(this, new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 close();
             }
         });
         Utilities.setEscAction(this, new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 close();
             }
@@ -161,6 +171,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         makeDefaultSSLButton.setEnabled(!subject.isDefaultSsl());
 
         certList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent listSelectionEvent) {
                 Object seled = certList.getSelectedValue();
                 if (seled != null) {
@@ -224,6 +235,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             return cert;
         }
 
+        @Override
         public String toString() {
             return cert.getSubjectDN().getName();
         }
@@ -307,6 +319,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     JOptionPane.YES_NO_CANCEL_OPTION,
                     JOptionPane.WARNING_MESSAGE,
                     new DialogDisplayer.OptionListener() {
+                        @Override
                         public void reportResult(int option) {
                             if (option == JOptionPane.YES_OPTION)
                                 doMakeDefaultCa();
@@ -330,6 +343,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 JOptionPane.YES_NO_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 new DialogDisplayer.OptionListener() {
+                    @Override
                     public void reportResult(int option) {
                         if (option == JOptionPane.YES_OPTION)
                             doPutClusterProperty(triggerButton, what, clusterProp, subject);
@@ -360,6 +374,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private void getCSR() {
         final TrustedCertAdmin admin = getTrustedCertAdmin();
         DialogDisplayer.InputListener listener = new DialogDisplayer.InputListener() {
+            @Override
             public void reportResult(Object option) {
                 if (option == null)
                     return;
@@ -384,6 +399,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 }
                 // save CSR to file
                 SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+                    @Override
                     public void useFileChooser(JFileChooser chooser) {
                         chooser.setDialogTitle("Save CSR to File");
                         chooser.setMultiSelectionEnabled(false);
@@ -448,6 +464,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private void assignCert() {
         final CertImportMethodsPanel sp = new CertImportMethodsPanel(
                             new CertDetailsPanel(null) {
+                                @Override
                                 public boolean canFinish() {
                                     return true;
                                 }
@@ -456,6 +473,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         final AddCertificateWizard w = new AddCertificateWizard(this, sp);
         w.setTitle("Assign Certificate to Private Key");
         w.addWizardListener(new WizardAdapter() {
+            @Override
             public void wizardFinished(WizardEvent we) {
                 Object o = w.getWizardInput();
 
@@ -484,19 +502,22 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     populateList();
                 } catch (GeneralSecurityException e) {
                     showErrorMessage("Error Assigning Certificate",
-                            "Error Assigning new Cert. Make sure the " +
+                            "Error Assigning new Cert: " + ExceptionUtils.getMessage(e) + "\n\nMake sure the " +
                             "cert you choose is related to the public " +
-                            "key it is being assigned for.", e);
+                            "key it is being assigned for.",
+                            ExceptionUtils.getDebugException(e));
                 } catch (ObjectModelException e) {
                     showErrorMessage("Error Assigning Certificate",
-                            "Error Assigning new Cert. Make sure the " +
+                            "Error Assigning new Cert: " + ExceptionUtils.getMessage(e) + "\n\nMake sure the " +
                             "cert you choose is related to the public " +
-                            "key it is being assigned for.", e);
+                            "key it is being assigned for.",
+                            ExceptionUtils.getDebugException(e));
                 } catch (IOException e) {
                     showErrorMessage("Error Assigning Certificate",
-                            "Error Assigning new Cert. Make sure the " +
+                            "Error Assigning new Cert: " + ExceptionUtils.getMessage(e) + "\n\nMake sure the " +
                             "cert you choose is related to the public " +
-                            "key it is being assigned for.", e);
+                            "key it is being assigned for.",
+                            ExceptionUtils.getDebugException(e));
                 }
             }
         });
@@ -513,6 +534,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
         final PasswordDoubleEntryDialog passDlg = new PasswordDoubleEntryDialog(this, "Enter Export Passphrase");
         DialogDisplayer.display(passDlg, new Runnable() {
+            @Override
             public void run() {
                 if (!passDlg.isConfirmed())
                     return;
@@ -536,6 +558,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     private void saveKeystoreBytes(final byte[] p12bytes) {
         FileChooserUtil.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser chooser) {
                 chooser.setDialogTitle("Save As PKCS#12 File");
                 chooser.setMultiSelectionEnabled(false);
@@ -604,6 +627,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             JOptionPane.WARNING_MESSAGE,
             465, 180,
             new DialogDisplayer.OptionListener() {
+                @Override
                 public void reportResult(int option) {
                     if (option == JOptionPane.CANCEL_OPTION) {
                         return;
