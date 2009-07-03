@@ -34,7 +34,6 @@ public class Subscribe extends ESMMethod {
     private boolean terminationParsed;
     private String topicValue;
     private String serviceId;
-    private String messageId;
 
     private Subscribe(final Element subscribeEl, Document doc, Message request) throws GenericNotificationExceptionFault {
         super(doc, request);
@@ -100,18 +99,6 @@ public class Subscribe extends ESMMethod {
         }
     }
 
-    @Override
-    protected void validateRequest() throws FaultMappableException {
-        super.validateRequest();
-        Element soapHeader = getSoapHeader();
-        messageId = DomUtils.getTextValue(validateExactlyOneElement(soapHeader, Namespaces.WSA, "MessageID", null));
-        // todo: should also check that the message id is a valid IRI
-    }
-
-    public String getWsaMessageID() {
-        return messageId;
-    }
-
     public static Subscribe resolve(Message request) throws GenericNotificationExceptionFault, SAXException, IOException {
         Document doc = request.getXmlKnob().getDocumentReadOnly();
         Element bodychild;
@@ -166,6 +153,9 @@ public class Subscribe extends ESMMethod {
         "    <wsa:Action>\n" +
         "      http://docs.oasis-open.org/wsn/bw-2/NotificationProducer/SubscribeResponse\n" +
         "    </wsa:Action>\n" +
+        "    <wsa:RelatesTo>\n" +
+        "      " + getMessageId() + "\n" +
+        "    </wsa:RelatesTo>\n" +
         "  </soap:Header>\n" +
         "  <soap:Body>\n" +
         "    <wsnt:SubscribeResponse xmlns:wsnt=\"" + Namespaces.WSNT + "\">\n" +

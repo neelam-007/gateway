@@ -39,6 +39,9 @@ public class GetResourceProperty extends ESMMethod {
                 "        <wsa:Action>\n" +
                 "            http://docs.oasis-open.org/wsrf/rpw-2/GetResourceProperty/GetResourcePropertyResponse\n" +
                 "        </wsa:Action>\n" +
+                "        <wsa:RelatesTo>\n" +
+                "            " + getMessageId() + "\n" +
+                "        </wsa:RelatesTo>\n" +
                 "    </soap:Header>\n" +
                 "    <soap:Body>\n" +
                 "        <wsrf-rp:GetResourcePropertyResponse\n" +

@@ -29,6 +29,7 @@ import java.io.IOException;
 public abstract class ESMMethod {
     private final Document reqestDoc;
     private final Message requestMessage;
+    private String messageId;
     private Element soapHeader;
 
     private static final String WSA_ANONYMOUS_ADDRESS = "http://www.w3.org/2005/08/addressing/anonymous";
@@ -59,7 +60,9 @@ public abstract class ESMMethod {
 
         validateNoMoreThanOne(soapHeader, Namespaces.WSA, "To");
         validateNoMoreThanOne(soapHeader, Namespaces.WSA, "FaultTo");
-        validateNoMoreThanOne(soapHeader, Namespaces.WSA, "MessageID");
+
+        messageId = DomUtils.getTextValue(validateExactlyOneElement(soapHeader, Namespaces.WSA, "MessageID", null));
+        // todo: should also check that the message id is a valid IRI
 
         // ReplyTo address checks
         Element replyTo = validateNoMoreThanOne(soapHeader, Namespaces.WSA, "ReplyTo");
@@ -174,5 +177,9 @@ public abstract class ESMMethod {
 
     public Document getReqestDoc() {
         return reqestDoc;
+    }
+
+    public String getMessageId() {
+        return messageId;
     }
 }

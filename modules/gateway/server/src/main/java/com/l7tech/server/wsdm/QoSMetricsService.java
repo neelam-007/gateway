@@ -56,6 +56,9 @@ public class QoSMetricsService {
                 "        <wsa:Action>\n" +
                 "            http://docs.oasis-open.org/wsrf/rpw-2/GetMultipleResourceProperties/GetMultipleResourcePropertiesResponse\n" +
                 "        </wsa:Action>\n" +
+                "        <wsa:RelatesTo>\n" +
+                "            " + method.getMessageId() + "\n" +
+                "        </wsa:RelatesTo>\n" +
                 "    </soap:Header>\n" +
                 "    <soap:Body xmlns:wsrf-rp=\"" + Namespaces.WSRF_RP + "\" " +
                                "xmlns:muws2=\""   + Namespaces.MUWS2   + "\" " +

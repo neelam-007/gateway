@@ -327,7 +327,6 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     public class ServiceStatusNotificationContext {
         public String subscriptionId;
         public long serviceId;
-        public String requestId;
         public String target;
         public long ts;
         public String eventId;
@@ -378,7 +377,6 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                     ServiceStatusNotificationContext ssnc = new ServiceStatusNotificationContext();
                     ssnc.subscriptionId = s.getUuid();
                     ssnc.serviceId = serviceoid;
-                    ssnc.requestId = s.getRequestId();
                     ssnc.target = s.getReferenceCallback();
                     ssnc.notificationPolicyGuid = s.getNotificationPolicyGuid();
                     ssnc.ts = now;
@@ -761,7 +759,6 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         ssnc.eventId = notificationEventId;
         output = output.replace("^$^$^_WSA_TARGET_^$^$^", ssnc.target);
         output = output.replace("^$^$^_SUBSCRIPTION_ID_^$^$^", ssnc.subscriptionId);
-        output = output.replace("^$^$^_RELATES_TO_^$^$^", ssnc.requestId);
         output = output.replace("^$^$^_ESM_SUBS_SVC_URL_^$^$^", baseURL + "/ssg/wsdm/esmsubscriptions");
         output = output.replace("^$^$^_EVENT_UUID_^$^$^", "urn:uuid:" + notificationEventId);
         output = output.replace("^$^$^_SRC_SVC_URL_^$^$^", baseURL + "/service/" + ssnc.serviceId);

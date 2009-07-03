@@ -119,6 +119,9 @@ public class Renew extends ESMMethod {
         "    <wsa:Action>\n" +
         "      http://docs.oasis-open.org/wsn/bw-2/SubscriptionManager/RenewResponse\n" +
         "    </wsa:Action>\n" +
+        "    <wsa:RelatesTo>\n" +
+        "      " + getMessageId() + "\n" +
+        "    </wsa:RelatesTo>\n" +
         "  </soap:Header>\n" +
         "  <soap:Body>\n" +
         "    <wsnt:RenewResponse xmlns:wsnt=\"" + Namespaces.WSNT + "\">\n" +

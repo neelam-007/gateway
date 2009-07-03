@@ -79,6 +79,9 @@ public class Unsubscribe extends ESMMethod {
         "    <wsa:Action>\n" +
         "      http://docs.oasis-open.org/wsn/bw-2/SubscriptionManager/UnsubscribeResponse\n" +
         "    </wsa:Action>\n" +
+        "    <wsa:RelatesTo>\n" +
+        "      " + getMessageId() + "\n" +
+        "    </wsa:RelatesTo>\n" +
         "  </soap:Header>\n" +
         "  <soap:Body>\n" +
         "    <wsnt:UnsubscribeResponse xmlns:wsnt=\"" + Namespaces.WSNT + "\">\n" +

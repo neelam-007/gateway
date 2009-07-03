@@ -1160,7 +1160,6 @@ CREATE TABLE wsdm_subscription (
   version int(11) NOT NULL,
   uuid varchar(36) NOT NULL,
   callback_url varchar(255) NOT NULL,
-  request_id varchar(255) NOT NULL,
   published_service_oid bigint(20) NOT NULL,
   termination_time bigint(20) NOT NULL,
   topic int(11) NOT NULL,

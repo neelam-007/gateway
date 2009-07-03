@@ -65,6 +65,9 @@ public class GetManageabilityReferences extends ESMMethod {
         "    <wsa:Action>\n" +
         "      http://docs.oasis-open.org/wsdm/mows/GetManageabilityReferencesResponse\n" +
         "    </wsa:Action>\n" +
+        "    <wsa:RelatesTo>\n" +
+        "      " + getMessageId() + "\n" +
+        "    </wsa:RelatesTo>\n" +
         "  </soap:Header>\n" +
         "  <soap:Body>\n" +
         "    <mows-xs:GetManageabilityReferencesResponse xmlns:mows-xs=\"http://docs.oasis-open.org/wsdm/2004/12/mows/wsdm-mows.xsd\">\n" +
