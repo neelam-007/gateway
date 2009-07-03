@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -94,6 +95,8 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             defaultRecipientCertificateRadioButton.setSelected( true );
         }
 
+        isResponse = Assertion.isResponse( assertion );
+
         updateState();
     }
 
@@ -169,6 +172,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JPanel applySecuritySettingsPanel;
 
     private long recipientCertificateOid;
+    private boolean isResponse;
 
     private void doSelectRecipientTrustedCertificate() {
         CertSearchPanel sp = new CertSearchPanel(this, false, true);
@@ -191,6 +195,9 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private void updateState() {
         boolean enableApplySettings = applyWsSecurityCheckBox.isSelected();
         Utilities.setEnabled(applySecuritySettingsPanel, enableApplySettings );
+        if ( isResponse ) {
+            wssVersionComboBox.setEnabled( false );
+        }
 
         boolean enableSelection = selectedRecipientCertificateRadioButton.isSelected();
         selectButton.setEnabled( !isReadOnly() && enableSelection );

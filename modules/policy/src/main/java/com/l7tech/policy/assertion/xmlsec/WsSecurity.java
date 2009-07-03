@@ -147,7 +147,9 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
                 }
 
                 nameBuilder.append("WS-Security");
-                if ( wsSecurity.isApplyWsSecurity() && wsSecurity.getWsSecurityVersion() != null ) {
+                if ( wsSecurity.isApplyWsSecurity() &&
+                     !Assertion.isResponse( wsSecurity ) &&
+                     wsSecurity.getWsSecurityVersion() != null ) {
                     nameBuilder.append(" ");
                     nameBuilder.append(wsSecurity.getWsSecurityVersion());
                 }
