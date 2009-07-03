@@ -255,7 +255,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         if (! conflict)  return false;
 
         String title = "Port Conflict";
-        String warningMessage = "The port " + connector.getPort() + " has already been in use.  Please try another port again.";
+        String warningMessage = "The port " + connector.getPort() + " is already in use. Please try another port.";
         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), title, warningMessage, null);
         return true;
     }
