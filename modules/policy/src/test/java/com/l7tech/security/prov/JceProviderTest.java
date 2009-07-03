@@ -164,7 +164,7 @@ public class JceProviderTest {
             log.info("Signed: " + CertUtils.toString(signedClientCert));
 
             log.info("pretest: signing XML message");
-            final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
+            final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest();
             WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
             new WssDecoratorImpl().decorateMessage(new Message(td.c.message), td.req);
 
@@ -184,7 +184,7 @@ public class JceProviderTest {
             }
         });
 
-        final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
+        final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest();
         reportTime("Prepare test document (baseline)", 10000 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();

@@ -55,7 +55,7 @@ public class WssRoundTripTest {
         }
     }
 
-    WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
+    WssDecoratorTest wssDecoratorTest = new WssDecoratorTest();
 
     @Test
     public void testSimple() throws Exception {

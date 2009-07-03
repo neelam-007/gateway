@@ -30,9 +30,8 @@ import com.l7tech.util.Pair;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.*;
+import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -56,25 +55,14 @@ import java.util.regex.Pattern;
  * @author mike
  * @noinspection RedundantCast
  */
-public class WssDecoratorTest extends TestCase {
+public class WssDecoratorTest {
     private static Logger log = Logger.getLogger(WssDecoratorTest.class.getName());
     private static final String ACTOR_NONE = "";
     public static final String TEST_WSSC_SESSION_ID = "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid";
 
-    static {
+    @BeforeClass
+    public static void beforeClass() {
         JceProvider.init();
-    }
-
-    public WssDecoratorTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(WssDecoratorTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 
     public static class Context {
@@ -229,11 +217,13 @@ public class WssDecoratorTest extends TestCase {
         log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
     }
 
-    public void testSimpleDecoration() throws Exception {
+    @Test
+	public void testSimpleDecoration() throws Exception {
         runTest(getSimpleTestDocument());
     }
 
-    public void testUsernameTokenDecoration() throws Exception {
+    @Test
+	public void testUsernameTokenDecoration() throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         log.info("Before decoration:" + XmlUtil.nodeToFormattedString(doc));
@@ -256,7 +246,8 @@ public class WssDecoratorTest extends TestCase {
     }
 
     /* we no longer support this
-    public void testWrappedSecurityHeader() throws Exception {
+    @Test
+	public void testWrappedSecurityHeader() throws Exception {
         runTest(getWrappedSecurityHeaderTestDocument());
     }*/
 
@@ -280,11 +271,13 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[0]);
     }
 
-    public void testSigningOnly() throws Exception {
+    @Test
+	public void testSigningOnly() throws Exception {
         runTest(getSigningOnlyTestDocument());
     }
 
-    public void testSigningOnlyWithProtectTokens() throws Exception {
+    @Test
+	public void testSigningOnlyWithProtectTokens() throws Exception {
         runTest(getSigningOnlyWithProtectTokensTestDocument());
     }
 
@@ -302,7 +295,8 @@ public class WssDecoratorTest extends TestCase {
         return td;
     }
 
-    public void testSigningProtectTokenNoBst() throws Exception {
+    @Test
+	public void testSigningProtectTokenNoBst() throws Exception {
         runTest(getSigningProtectTokenNoBstTestDocument());
     }
 
@@ -321,7 +315,8 @@ public class WssDecoratorTest extends TestCase {
         return td;
     }
 
-    public void testGoogleProblem() throws Exception {
+    @Test
+	public void testGoogleProblem() throws Exception {
         TestDocument doc = getGoogleTestDocument();
         Message msg = new Message(doc.c.message);
         assertTrue(msg.isSoap());
@@ -352,7 +347,8 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body});
     }
 
-    public void testSigningHirezTimestamps() throws Exception {
+    @Test
+	public void testSigningHirezTimestamps() throws Exception {
         TestDocument td = getSigningOnlyTestDocument();
 
         WssDecorator decorator = new WssDecoratorImpl();
@@ -379,7 +375,8 @@ public class WssDecoratorTest extends TestCase {
         }
     }
 
-    public void testEncryptionOnly() throws Exception {
+    @Test
+	public void testEncryptionOnly() throws Exception {
         runTest(getEncryptionOnlyTestDocument());
     }
 
@@ -401,7 +398,8 @@ public class WssDecoratorTest extends TestCase {
         return testDocument;
     }
 
-    public void testSingleSignatureMultipleEncryption() throws Exception {
+    @Test
+	public void testSingleSignatureMultipleEncryption() throws Exception {
         runTest(getSingleSignatureMultipleEncryptionTestDocument());
     }
 
@@ -417,7 +415,8 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body});
     }
 
-    public void testEncryptedBodySignedEnvelope() throws Exception {
+    @Test
+	public void testEncryptedBodySignedEnvelope() throws Exception {
         runTest(getEncryptedBodySignedEnvelopeTestDocument());
     }
 
@@ -445,7 +444,8 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.message.getDocumentElement()});
     }
 
-    public void testSkilessRecipientCert() throws Exception {
+    @Test
+	public void testSkilessRecipientCert() throws Exception {
         runTest(getSkilessRecipientCertTestDocument());
     }
 
@@ -461,7 +461,8 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body});
     }
 
-    public void testNonsensicalSignedBodyEncryptedEnvelope() throws Exception {
+    @Test
+	public void testNonsensicalSignedBodyEncryptedEnvelope() throws Exception {
         runTest(getNonsensicalSignedBodyEncryptedEnvelope());
     }
 
@@ -477,7 +478,8 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body});
     }
 
-    public void testSigningOnlyWithSecureConversation() throws Exception {
+    @Test
+	public void testSigningOnlyWithSecureConversation() throws Exception {
         runTest(getSigningOnlyWithSecureConversationTestDocument());
     }
 
@@ -489,7 +491,8 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
     }
 
-    public void testSigningAndEncryptionWithSecureConversation() throws Exception {
+    @Test
+	public void testSigningAndEncryptionWithSecureConversation() throws Exception {
         runTest(getSigningAndEncryptionWithSecureConversationTestDocument());
     }
 
@@ -501,7 +504,8 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
     }
 
-    public void testSignedSamlHolderOfKeyRequest() throws Exception {
+    @Test
+	public void testSignedSamlHolderOfKeyRequest() throws Exception {
         runTest(getSignedSamlHolderOfKeyRequestTestDocument(1));
     }
 
@@ -524,7 +528,8 @@ public class WssDecoratorTest extends TestCase {
                                 null, false, KeyInfoInclusionType.CERT);
     }
 
-    public void testSignedSamlSenderVouchesRequest() throws Exception {
+    @Test
+	public void testSignedSamlSenderVouchesRequest() throws Exception {
         runTest(getSignedSamlSenderVouchesRequestTestDocument(1));
     }
 
@@ -578,7 +583,8 @@ public class WssDecoratorTest extends TestCase {
         return generator.createAssertion(subjectStatement, samlOptions).getDocumentElement();
     }
 
-    public void testSignedEmptyElement() throws Exception {
+    @Test
+	public void testSignedEmptyElement() throws Exception {
         runTest(getSignedEmptyElementTestDocument());
     }
 
@@ -596,7 +602,8 @@ public class WssDecoratorTest extends TestCase {
 
     }
 
-    public void testEncryptedEmptyElement() throws Exception {
+    @Test
+	public void testEncryptedEmptyElement() throws Exception {
         runTest(getEncryptedEmptyElementTestDocument());
     }
 
@@ -614,7 +621,8 @@ public class WssDecoratorTest extends TestCase {
 
     }
 
-    public void testEncryptedGooglesearchResponse() throws Exception {
+    @Test
+	public void testEncryptedGooglesearchResponse() throws Exception {
         runTest(getEncryptedGooglesearchResponseTestDocument());
     }
 
@@ -634,7 +642,8 @@ public class WssDecoratorTest extends TestCase {
     }
 
 
-    public void testSignedGooglesearchResponse() throws Exception {
+    @Test
+	public void testSignedGooglesearchResponse() throws Exception {
         runTest(getSignedGooglesearchResponseTestDocument());
     }
 
@@ -653,7 +662,8 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{ret});
     }
 
-    public void testNonSoapRequest() throws Exception {
+    @Test
+	public void testNonSoapRequest() throws Exception {
         try {
             runTest(getNonSoapRequestTestDocument());
             fail("Expected MessageNotSoapException was not thrown");
@@ -674,7 +684,8 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[0]);
     }
 
-    public void testSoapWithUnsignedAttachment() throws Exception {
+    @Test
+	public void testSoapWithUnsignedAttachment() throws Exception {
         runTest(getSoapWithUnsignedAttachmentTestDocument());
     }
 
@@ -690,7 +701,8 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[0]);
     }
 
-    public void testSoapWithSignedAttachment() throws Exception {
+    @Test
+	public void testSoapWithSignedAttachment() throws Exception {
         runTest(getSoapWithSignedAttachmentTestDocument());
     }
 
@@ -708,7 +720,8 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body});
     }
 
-    public void testSoapWithSignedEncryptedAttachment() throws Exception {
+    @Test
+	public void testSoapWithSignedEncryptedAttachment() throws Exception {
         runTest(getSoapWithSignedEncryptedAttachmentTestDocument());
     }
 
@@ -724,16 +737,19 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body});
     }
 
-    public void testSignedAndEncryptedBodyWithNoBst() throws Exception {
+    @Test
+	public void testSignedAndEncryptedBodyWithNoBst() throws Exception {
         runTest(getSignedAndEncryptedBodySkiTestDocument());
     }
 
-    public void testSignedBodyWithSki() throws Exception {
+    @Test
+	public void testSignedBodyWithSki() throws Exception {
         TestDocument doc = getSignedBodyDocument(KeyInfoInclusionType.STR_SKI);
         runTest(doc);
     }
 
-    public void testSignedBodyWithIssuerSerial() throws Exception {
+    @Test
+	public void testSignedBodyWithIssuerSerial() throws Exception {
         TestDocument doc = getSignedBodyDocument(KeyInfoInclusionType.ISSUER_SERIAL);
         runTest(doc);
     }
@@ -771,7 +787,8 @@ public class WssDecoratorTest extends TestCase {
         );
     }
 
-    public void testEncryptedUsernameToken() throws Exception {
+    @Test
+	public void testEncryptedUsernameToken() throws Exception {
         runTest(getEncryptedUsernameTokenTestDocument());
     }
 
@@ -790,7 +807,8 @@ public class WssDecoratorTest extends TestCase {
                                 true);
     }
 
-    public void testSignedAndEncryptedUsernameToken() throws Exception {
+    @Test
+	public void testSignedAndEncryptedUsernameToken() throws Exception {
         runTest(getSignedAndEncryptedUsernameTokenTestDocument());
     }
 
@@ -808,7 +826,8 @@ public class WssDecoratorTest extends TestCase {
                                 false, true);
     }
 
-    public void testSignedUsernameToken() throws Exception {
+    @Test
+	public void testSignedUsernameToken() throws Exception {
         runTest(getSignedUsernameTokenTestDocument());
     }
 
@@ -836,7 +855,8 @@ public class WssDecoratorTest extends TestCase {
                                 true);
     }
 
-    public void testEncryptedUsernameTokenWithDerivedKeys() throws Exception {
+    @Test
+	public void testEncryptedUsernameTokenWithDerivedKeys() throws Exception {
         runTest(getEncryptedUsernameTokenWithDerivedKeysTestDocument());
     }
 
@@ -855,7 +875,8 @@ public class WssDecoratorTest extends TestCase {
                                 true);
     }
 
-    public void testWssInteropResponse() throws Exception {
+    @Test
+	public void testWssInteropResponse() throws Exception {
         runTest(getWssInteropResponseTestDocument());
     }
 
@@ -966,7 +987,8 @@ public class WssDecoratorTest extends TestCase {
              "------=Part_-763936460.00306951464153826--\r\n";
 
 
-    public void testExplicitSignatureConfirmations() throws Exception {
+    @Test
+	public void testExplicitSignatureConfirmations() throws Exception {
         runTest(getExplicitSignatureConfirmationsTestDocument());
     }
 
@@ -991,7 +1013,8 @@ public class WssDecoratorTest extends TestCase {
         return td;
     }
 
-    public void testConfigSecHdrAttributes() throws Exception {
+    @Test
+	public void testConfigSecHdrAttributes() throws Exception {
         runTest(getConfigSecHdrAttributesTestDocument());
     }
 
@@ -1010,11 +1033,13 @@ public class WssDecoratorTest extends TestCase {
         return new TestDocument(c, dreq, server.right, null);
     }
 
-    public void testSysPropSecHdrMustUnderstandFalse() throws Exception {
+    @Test
+	public void testSysPropSecHdrMustUnderstandFalse() throws Exception {
         doTestSecHdrMustUnderstand(false);
     }
 
-    public void testSysPropSecHdrMustUnderstandTrue() throws Exception {
+    @Test
+	public void testSysPropSecHdrMustUnderstandTrue() throws Exception {
         doTestSecHdrMustUnderstand(true);
     }
 
@@ -1038,11 +1063,13 @@ public class WssDecoratorTest extends TestCase {
     }
 
     /* Testing Suite-B Crypto support */
-    public void testSigningWithEcdsaSha256Algorithm() throws Exception {
+    @Test
+	public void testSigningWithEcdsaSha256Algorithm() throws Exception {
         runTest(getSuiteBSigningTestDocument(null)); // default to sha-256
     }
 
-    public void testSigningWithEcdsaSha384Algorithm() throws Exception {
+    @Test
+	public void testSigningWithEcdsaSha384Algorithm() throws Exception {
         runTest(getSuiteBSigningTestDocument("SHA-384"));
     }
 
@@ -1058,6 +1085,29 @@ public class WssDecoratorTest extends TestCase {
         dreq.getElementsToSign().add(c.body);
         if (hashMD != null)
             dreq.setSignatureMessageDigest(hashMD);
+        return new TestDocument(c, dreq, server.right, null);
+    }
+
+    @Ignore("Message level encryption using ECDH-ES not yet supported")
+    @Test
+	public void testEccSigEnc() throws Exception {
+        runTest(getEccSigEncTestDocument());
+    }
+
+    public TestDocument getEccSigEncTestDocument() throws Exception {
+        // Set up a test that attempts to encrypt some stuff for an EC server cert.
+        // This will require using elliptic curve Diffie-Hellman in Ephemeral-Static mode 
+        Pair<X509Certificate, PrivateKey> client = new TestCertificateGenerator().curveName("secp384r1").subject("cn=ecctestclient").generateWithKey();
+        Pair<X509Certificate, PrivateKey> server = new TestCertificateGenerator().curveName("secp384r1").subject("cn=ecctestserver").generateWithKey();
+
+        Context c = new Context(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT_ONELINE));
+        DecorationRequirements dreq = new DecorationRequirements();
+        dreq.setRecipientCertificate(server.left);
+        dreq.setSenderMessageSigningCertificate(client.left);
+        dreq.setSenderMessageSigningPrivateKey(client.right);
+        dreq.getElementsToSign().add(c.body);
+        dreq.getElementsToEncrypt().add(c.body);
+        dreq.setSignatureMessageDigest("SHA-384");
         return new TestDocument(c, dreq, server.right, null);
     }
 }
