@@ -259,10 +259,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         });
 
         interfacesButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 InterfaceTagsDialog.show(SsgConnectorPropertiesDialog.this, new Functions.UnaryVoid<String>() {
+                    @Override
                     public void call(String newInterfaceTags) {
+                        Object prev = interfaceComboBox.getSelectedItem();
                         populateInterfaceComboBox(newInterfaceTags);
+                        interfaceComboBox.getModel().setSelectedItem(prev);
                     }
                 });
             }

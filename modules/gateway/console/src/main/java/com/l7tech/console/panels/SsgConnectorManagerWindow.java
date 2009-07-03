@@ -112,6 +112,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         });
 
         interfacesButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 InterfaceTagsDialog.show(SsgConnectorManagerWindow.this, null);
             }
