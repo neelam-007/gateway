@@ -69,6 +69,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     private WebApplicationContext applicationContext;
 
+    protected ServerConfig serverConfig;
     protected PolicyManager policyManager;
     protected ServiceManager serviceManager;
     protected ClientCertManager clientCertManager;
@@ -85,6 +86,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             throw new ServletException("Configuration error; could not get application context");
         }
 
+        serverConfig = getBean("serverConfig", ServerConfig.class);
         clientCertManager = getBean("clientCertManager", ClientCertManager.class);
         identityProviderFactory = getBean("identityProviderFactory", IdentityProviderFactory.class);
         licenseManager = getBean("licenseManager",LicenseManager.class);
@@ -517,7 +519,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             }
         }
 
-        if (allIdentitiesAreFederated) {
+        if (allIdentitiesAreFederated && isAllowAnonymousPolicyIfAllIdentitiesFederated()) {
             // TODO support federated credentials in PolicyServlet
             logger.info("All IdentityAssertions point to a Federated IDP. Treating as anonymous");
             return true;
@@ -529,6 +531,22 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
         logger.info("Policy does allow anonymous requests.");
         return true;
+    }
+
+    /**
+     * Check if this servlet wants to treat a policy containing nothing but federated identities
+     * as a policy that allows anonymous access, for purposes of checking whether a user should
+     * be given information relating to this policy or service.
+     * <p/>
+     * This is used in the identity bridging use case to allow an XVC from a different trust domain
+     * to download the policy from the Gateway so that it will know what kind of SAML token to apply for
+     * and how to consume the service.
+     *
+     * @return true iff. a policy with nothing but federated identity assertions should be treated by
+     *              {@link #policyAllowAnonymous(com.l7tech.policy.Policy)} as though it had no identity assertions.
+     */
+    protected boolean isAllowAnonymousPolicyIfAllIdentitiesFederated() {
+        return serverConfig.getBooleanPropertyCached("service.anonFederatedPolicies", false, 120000);
     }
 
     /**
