@@ -83,7 +83,7 @@ public final class Importer{
      * Base folder of all Securespan products
      */
     private final File secureSpanHome;
-    
+
 
     /**
      * Only to be used when code path starts at restoreOrMigrateBackupImage. Do not access from public methods
@@ -204,25 +204,25 @@ public final class Importer{
                 IMAGE_PATH, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
         final File imageFile = getAndValidateImageExists(imageValue);
         
-        backupImage = new BackupImage(imageFile.getAbsolutePath(), printStream, isVerbose);
-
-        programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
-
-        isVerbose = programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName());
-
-        //backup image is required validateRestoreProgramParameters is called
-        validateMigrateProgramParameters(programFlagsAndValues);
-
         //what ever happens we need to delete any unzipped directory no matter what the outcome
         try {
+            backupImage = new BackupImage(imageFile.getAbsolutePath(), printStream, isVerbose);
+
+            programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
+                    validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+
+            isVerbose = programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName());
+
+            //backup image is required validateRestoreProgramParameters is called
+            validateMigrateProgramParameters(programFlagsAndValues);
+            
             //build list of components and filter appropriately
             performRestoreSteps();
 
         } catch (Exception e) {
             return new RestoreMigrateResult(false, RestoreMigrateResult.Status.FAILURE, null, e);
         } finally {
-            backupImage.removeTempDirectory();
+            if (backupImage != null) backupImage.removeTempDirectory();
         }
 
         if(!failedComponents.isEmpty()){
@@ -258,36 +258,36 @@ public final class Importer{
         isVerbose = ImportExportUtilities.checkArgumentExistence(args,
                 CommonCommandLineOptions.VERBOSE.getName(), validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
 
-        validArgList.clear();
-        if(ftpCheck){
-            validArgList.addAll(getStandardRestoreOptions());
-            //get the ftp config
-            final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(args,
-                    validArgList,
-                    Arrays.asList(ALL_IGNORED_OPTIONS),
-                    imageValue);
-            
-            backupImage = new BackupImage(ftpConfig, imageValue, printStream, isVerbose);
-        }else{
-            final File imageFile = getAndValidateImageExists(imageValue);
-            backupImage = new BackupImage(imageFile.getAbsolutePath(), printStream, isVerbose);
-            validArgList.addAll(getRestoreOptionsWithDb());
-        }
-
-        programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
-
-        validateRestoreProgramParameters(programFlagsAndValues);
-
         //what ever happens we need to delete any unzipped directory no matter what the outcome
         try {
+            validArgList.clear();
+            if(ftpCheck){
+                validArgList.addAll(getStandardRestoreOptions());
+                //get the ftp config
+                final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(args,
+                        validArgList,
+                        Arrays.asList(ALL_IGNORED_OPTIONS),
+                        imageValue);
+
+                backupImage = new BackupImage(ftpConfig, imageValue, printStream, isVerbose);
+            }else{
+                final File imageFile = getAndValidateImageExists(imageValue);
+                backupImage = new BackupImage(imageFile.getAbsolutePath(), printStream, isVerbose);
+                validArgList.addAll(getRestoreOptionsWithDb());
+            }
+
+            programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
+                    validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+
+            validateRestoreProgramParameters(programFlagsAndValues);
+            
             //build list of components and filter appropriately
             performRestoreSteps();
 
         } catch (Exception e) {
             return new RestoreMigrateResult(false, RestoreMigrateResult.Status.FAILURE, null, e);
         } finally {
-            backupImage.removeTempDirectory();
+            if(backupImage != null) backupImage.removeTempDirectory();
         }
 
         if(!failedComponents.isEmpty()){
