@@ -495,7 +495,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
 
         if (sawExpired || sawNotYetValid || sawDnMismatch || sawBadSignature) {
-            StringBuffer mess = new StringBuffer("The specified private key was imported successfully.  However, at lease one certificate in its chain: \n\n");
+            StringBuffer mess = new StringBuffer("The specified private key was imported successfully.  However, at least one certificate in its chain: \n\n");
             if (sawExpired) mess.append("     * has expired\n");
             if (sawNotYetValid) mess.append("     * is not yet valid\n");
             if (sawDnMismatch) mess.append("     * has an issuer DN that does not match its issuer's DN\n");
