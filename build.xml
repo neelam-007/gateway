@@ -2147,11 +2147,12 @@
         <copy todir="${build.dir}/gatewayconfig">
             <fileset dir="${src.root}/etc">
                 <include name="ssgbackup_noninstall.sh" />
-                <include name="backuputilitylogging.properties"/>
+                <include name="backuputilitylogging_noninstall.properties"/>
             </fileset>
         </copy>
 
         <move file="${build.dir}/gatewayconfig/ssgbackup_noninstall.sh" tofile="${build.dir}/gatewayconfig/ssgbackup.sh" />
+        <move file="${build.dir}/gatewayconfig/backuputilitylogging_noninstall.properties" tofile="${build.dir}/gatewayconfig/backuputilitylogging.properties" />
 
         <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-gateway-config" revision="latest.integration" property="module.gateway.config.version"/>
