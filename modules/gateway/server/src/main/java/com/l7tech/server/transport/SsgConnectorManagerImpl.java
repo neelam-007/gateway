@@ -55,20 +55,24 @@ public class SsgConnectorManagerImpl
         this.serverConfig = serverConfig;
 
         eventProxy.addApplicationListener(new ApplicationListener() {
+            @Override
             public void onApplicationEvent(ApplicationEvent event) {
                 handleEvent(event);
             }
         });
     }
 
+    @Override
     public Class<? extends Entity> getImpClass() {
         return SsgConnector.class;
     }
 
+    @Override
     public Class<? extends Entity> getInterfaceClass() {
         return SsgConnector.class;
     }
 
+    @Override
     public String getTableName() {
         return "connector";
     }
@@ -145,6 +149,7 @@ public class SsgConnectorManagerImpl
         }
     }
 
+    @Override
     public String translateBindAddress(String bindAddress, int port) throws ListenerException {
         if (!looksLikeInterfaceTagName(bindAddress))
             return bindAddress;
@@ -168,12 +173,15 @@ public class SsgConnectorManagerImpl
 
         Set<String> patterns = tag.getIpPatterns();
         InetAddress match = null;
-        for (InetAddress addr : localAddrs) {
+        outer: for (InetAddress addr : localAddrs) {
             for (String pattern : patterns) {
                 if (InetAddressUtil.patternMatchesAddress(pattern, addr)) {
-                    if (match != null)
+                    if (match == null) {
+                        match = addr;
+                    } else {
                         logger.log(Level.WARNING, "Interface " + bindAddress + " contains patterns matching more than one network addresses on this node.  Will use first match of " + match);
-                    match = addr;
+                        break outer;
+                    }
                 }
             }
         }
@@ -207,8 +215,9 @@ public class SsgConnectorManagerImpl
             collectAddresses(interfaces.nextElement(), collected);
 
         return Functions.sort(collected, new Comparator<InetAddress>() {
+            @Override
             public int compare(InetAddress left, InetAddress right) {
-                return ArrayUtils.compareArrays(left.getAddress(), right.getAddress());
+                return ArrayUtils.compareArrays(right.getAddress(), left.getAddress());
             }
         });
     }
@@ -244,6 +253,7 @@ public class SsgConnectorManagerImpl
         return tagInfo;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (!InterfaceTag.PROPERTY_NAME.equals(evt.getPropertyName()))
             return;
@@ -276,6 +286,7 @@ public class SsgConnectorManagerImpl
         applicationEventPublisher.publishEvent(eie);
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationEventPublisher = applicationContext;
     }
@@ -293,6 +304,7 @@ public class SsgConnectorManagerImpl
         openFirewallForConnectors();
     }
 
+    @Override
     public void destroy() throws Exception {
         closeFirewallForConnectors();
     }
@@ -301,6 +313,7 @@ public class SsgConnectorManagerImpl
         File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
         List<SsgConnector> connectors = new ArrayList<SsgConnector>(knownConnectors.values());
         connectors = Functions.map(connectors, new Functions.Unary<SsgConnector, SsgConnector>() {
+            @Override
             public SsgConnector call(SsgConnector ssgConnector) {
                 return translateSsgConnectorBindAddress(ssgConnector);
             }
