@@ -98,7 +98,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
 
         if ( assertion.isSignatureRequired() ) {
             final Collection<ParsedElement> elements = ProcessorResultUtil.getParsedElementsForNode( wssTimestamp.asElement(), processorResult.getElementsThatWereSigned() );
-            ParsedElement[] elementsToCheck = WSSecurityProcessorUtils.processSignatreConfirmations(msg.getSecurityKnob(), processorResult, elements.toArray(new ParsedElement[elements.size()]));
+            ParsedElement[] elementsToCheck = WSSecurityProcessorUtils.processSignatureConfirmations(msg.getSecurityKnob(), processorResult, elements.toArray(new ParsedElement[elements.size()]));
             if ( new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
                 if ( elements.isEmpty() ||
                     ! WSSecurityProcessorUtils.isValidSignatureConfirmations(processorResult.getSignatureConfirmation(), auditor) ||

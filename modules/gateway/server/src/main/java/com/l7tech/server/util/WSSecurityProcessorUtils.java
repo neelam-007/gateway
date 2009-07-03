@@ -463,12 +463,16 @@ public class WSSecurityProcessorUtils {
     }
 
     /**
-     * Processes the signature confirmations for this message, as extracted in the
-     * SignatureConfirmation result by the WSS Processor.
+     * If the signature confirmations were processed successfully by the (identity unaware) WSS Processor,
+     * the elements containing them are added to the list of elements for which the signature and signer
+     * identity need to be checked.
+     *
+     * If applicable, the check needs to be performed only once (by the first WSS assertion targeted at a message), 
+     * and the result of the validation is recorded in the message's security knob.
      *
      * @return the full list of elements, including the signature confirmations, for which the signature must be checked
      */
-    public static ParsedElement[] processSignatreConfirmations(SecurityKnob securityKnob, ProcessorResult wssResults, ParsedElement[] elements) {
+    public static ParsedElement[] processSignatureConfirmations(SecurityKnob securityKnob, ProcessorResult wssResults, ParsedElement[] elements) {
         ParsedElement[] elementsToCheck = elements;
         SignatureConfirmation.Status status = wssResults.getSignatureConfirmation().getStatus();
 

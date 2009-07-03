@@ -76,7 +76,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         // the assertion.
         if( elements.length>0 &&
            new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
-            WSSecurityProcessorUtils.processSignatreConfirmations(message.getSecurityKnob(), wssResults, elements);
+            WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, elements);
             valid = WSSecurityProcessorUtils.isValidSignatureConfirmations(wssResults.getSignatureConfirmation(), auditor) &&
                     WSSecurityProcessorUtils.isValidSingleSigner(
                         context.getAuthenticationContext(message),
@@ -101,7 +101,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         // the assertion.
         if ( !new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
 
-            ParsedElement[] elementsToCheck = WSSecurityProcessorUtils.processSignatreConfirmations(message.getSecurityKnob(), wssResults, elements);
+            ParsedElement[] elementsToCheck = WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, elements);
 
             return WSSecurityProcessorUtils.isValidSignatureConfirmations(wssResults.getSignatureConfirmation(), auditor) &&
                    WSSecurityProcessorUtils.isValidSigningIdentity(

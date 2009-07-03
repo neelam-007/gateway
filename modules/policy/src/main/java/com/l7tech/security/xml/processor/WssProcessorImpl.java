@@ -79,6 +79,8 @@ public class WssProcessorImpl implements WssProcessor {
     private boolean rejectOnMustUnderstand = true;
     private boolean permitMultipleTimestampSignatures = false;
     private boolean permitUnknownBinarySecurityTokens = false;
+    private boolean strictSignatureConfirmationValidation = true;
+    private boolean contextUsesWss11 = false;
     // WARNING : Settings must be copied in undecorateMessage
 
     private Document processedDocument;
@@ -97,7 +99,6 @@ public class WssProcessorImpl implements WssProcessor {
     private boolean encryptionIgnored = false;
     private String lastKeyEncryptionAlgorithm = null;
     private boolean isWsse11Seen = false;
-    private boolean strictSignatureConfirmationValidation = true;
     private boolean isDerivedKeySeen = false; // If we see any derived keys, we'll assume we can derive our own keys in reponse
     private Resolver<String,X509Certificate> messageX509TokenResolver = null;
 
@@ -134,6 +135,8 @@ public class WssProcessorImpl implements WssProcessor {
         context.setPermitMultipleTimestampSignatures(permitMultipleTimestampSignatures);
         context.setPermitUnknownBinarySecurityTokens(permitUnknownBinarySecurityTokens);
         context.setRejectOnMustUnderstand(rejectOnMustUnderstand);
+        context.setStrictSignatureConfirmationValidation(strictSignatureConfirmationValidation);
+        context.setContextUsesWss11(contextUsesWss11);
         return context.processMessage();
     }
 
@@ -230,6 +233,19 @@ public class WssProcessorImpl implements WssProcessor {
 
     public void setStrictSignatureConfirmationValidation(boolean strictSignatureConfirmationValidation) {
         this.strictSignatureConfirmationValidation = strictSignatureConfirmationValidation;
+    }
+
+    /**
+     * Flag for passing the global WSS 1.1 configuration from the context.
+     *
+     * @return true if the use of WSS 1.1 is configured globally at the context level, false otherwise
+     */
+    public boolean isContextUsesWss11() {
+        return contextUsesWss11;
+    }
+
+    public void setContextUsesWss11(boolean contextUsesWss11) {
+        this.contextUsesWss11 = contextUsesWss11;
     }
 
     /**
@@ -579,32 +595,43 @@ public class WssProcessorImpl implements WssProcessor {
         SecurityKnob requestSK = relatedRequest == null ? null : relatedRequest.getSecurityKnob();
         WssDecorator.DecorationResult requestDecResult = requestSK == null ? null : requestSK.getDecorationResult();
         Map<String, Boolean> reqSignatures = requestDecResult == null ? null : requestDecResult.getSignatures();
-        WsSecurityVersion requestWssVer = requestSK == null ? null : requestSK.getPolicyWssVersion(); // may be null
 
         if (reqSignatures == null) { // we're ok only if the message is using WSS 1.0 as far as we can tell
-            if (isWsse11Seen || ! signatureConfirmation.getConfirmationElements().isEmpty()) {
+            if (isWsse11Seen) {
                 signatureConfirmation.addError("Message has WSS 1.1 elements, but related request signatures are not available.");
             }
-        } else {
-            // there is a decorated request to validate against
+        } else { // there is a decorated request to validate against : inbound response validation
+            boolean configuredWss11;
+            boolean usesWss11;
+            if (requestSK.getPolicyWssVersion() != null) {
+                // explicitly configured WSS version overrides all the other flags
+                configuredWss11 = requestSK.getPolicyWssVersion() == WsSecurityVersion.WSS11;
+                usesWss11 = configuredWss11;
+            } else {
+                // fall-back to auto-detect if WSS 1.1 is not explicitly configured
+                configuredWss11 = contextUsesWss11;
+                usesWss11 = configuredWss11 || isWsse11Seen;
+            }
+
             switch (signatureConfirmation.getConfirmationElements().size()) {
                 case 0:
-                    if ((requestWssVer == WsSecurityVersion.WSS11 || isWsse11Seen)) {
+                    if (usesWss11) {
                         if (strictSignatureConfirmationValidation)
                             signatureConfirmation.addError("No SignatureConfirmation element found, expected at least one in a WSS 1.1 nessage.");
-                        else if (!reqSignatures.isEmpty())
+                        else if (configuredWss11 && !reqSignatures.isEmpty()) // don't fail if not strict and WSS 1.1 not configured
                             signatureConfirmation.addError("No signatures from the request are confirmed.");
                     }
                     break;
 
                 case 1:
+                    // isWsse11Seen is true at this point
                     if (signatureConfirmation.hasNullValue() && !reqSignatures.isEmpty() &&
-                        (strictSignatureConfirmationValidation || requestWssVer == WsSecurityVersion.WSS11))
+                        (strictSignatureConfirmationValidation || configuredWss11))
                         signatureConfirmation.addError("No signatures from the request are confirmed.");
+                    // no break, the one non-null-value signature confirmation needs to be validated
 
                 default:
-                    // isWsse11Seen is true at this point
-                    if (requestWssVer == WsSecurityVersion.WSS11 || strictSignatureConfirmationValidation) {
+                    if (usesWss11 || strictSignatureConfirmationValidation) {
                         Set<String> unconfirmedSignatures = signatureConfirmation.getConfirmationElements().keySet();
                         unconfirmedSignatures.remove(null);// value-less entry already processed
 
