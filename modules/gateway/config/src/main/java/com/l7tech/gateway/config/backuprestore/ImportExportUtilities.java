@@ -26,7 +26,7 @@ import com.l7tech.util.*;
  *
  * Utility class for Exporting and Importing backup image zip files
  *
- */    //todo [Donal] this class should be package private
+ */
 public class ImportExportUtilities {
     private static final Logger logger = Logger.getLogger(ImportExportUtilities.class.getName());
 
@@ -389,11 +389,11 @@ public class ImportExportUtilities {
 
     /**
      * If any of the options from ImportExportUtilities.ALL_COMPONENTS) is included in the args, return true
-     * as we are doing a selective backup
+     * as we are doing a selective backup / restore
      * @param args program parameters converted to a map of string to their values
      * @return true if a selective backup should be done, false otherwise
      */
-    static boolean isSelectiveBackup(final Map<String, String> args){
+    static boolean isSelective(final Map<String, String> args){
         for(CommandLineOption option: CommonCommandLineOptions.ALL_COMPONENTS){
             if(args.containsKey(option.getName())) return true;
         }

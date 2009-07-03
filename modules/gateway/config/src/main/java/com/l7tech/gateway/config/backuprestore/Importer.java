@@ -333,7 +333,7 @@ public final class Importer{
     }
 
     private void validateCommonProgramParameters(final Map<String, String> args) throws InvalidProgramArgumentException {
-        isSelectiveRestore = ImportExportUtilities.isSelectiveBackup(args);
+        isSelectiveRestore = ImportExportUtilities.isSelective(args);
         
         final boolean isDbComponent = !isSelectiveRestore
                 || args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
@@ -475,9 +475,6 @@ public final class Importer{
                     throw new BackupImage.InvalidBackupImage("File '"+
                             ompFile.getAbsolutePath()+"' is not a regular file");
 
-                final MasterPasswordManager mpm = new MasterPasswordManager(
-                        new DefaultMasterPasswordFinder(ompFile));
-
                 try {
                     nodePropertyConfig = new PropertiesConfiguration();
                     nodePropertyConfig.setAutoSave(false);
@@ -495,16 +492,18 @@ public final class Importer{
                 }else{
                     updateNodeProperties = true;
                     //we must have received all db params on the command line
-                    nodePropertyConfig = getNodePropertiesConfig(args);
-                    databaseConfig = getDatabaseConfig(nodePropertyConfig);
+                    final Pair<PropertiesConfiguration, MasterPasswordManager> pair = getNodePropertiesConfig(args);
+                    nodePropertyConfig = pair.left;
+                    databaseConfig = getDatabaseConfig(nodePropertyConfig, pair.right);
                 }
             }else{
                 //5.0 image - WE MUST HAVE A node.properties AND omp.dat, from the system where it is being
                 //restored onto - this is identical to the case when migrate is being used
                 updateNodeProperties = true;
                 //we must have received all db params on the command line
-                nodePropertyConfig = getNodePropertiesConfig(args);
-                databaseConfig = getDatabaseConfig(nodePropertyConfig);
+                final Pair<PropertiesConfiguration, MasterPasswordManager> pair = getNodePropertiesConfig(args);
+                nodePropertyConfig = pair.left;
+                databaseConfig = getDatabaseConfig(nodePropertyConfig, pair.right);
             }
             setDbAdminInfo();
         }
@@ -517,14 +516,14 @@ public final class Importer{
      * This is when isMigrate is true, its a 5.0 image or no config folder was found
      * @return PropertiesConfiguration, in a state where it can be saved and be correct
      */
-    private final PropertiesConfiguration getNodePropertiesConfig(final Map<String, String> args)
+    private final Pair<PropertiesConfiguration, MasterPasswordManager> getNodePropertiesConfig(final Map<String, String> args)
             throws InvalidProgramArgumentException {
         wereCompleteDbParamsSupplied(true);
 
         final File confDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
         final File ompFile = new File(confDir, ImportExportUtilities.OMP_DAT);
         if(!ompFile.exists() || !ompFile.isFile())
-            throw new IllegalStateException("File '"+ompFile.getAbsolutePath()+" not found");
+            throw new IllegalStateException("File '"+ompFile.getAbsolutePath()+"' not found");
 
         final MasterPasswordManager mpm = new MasterPasswordManager(
                 new DefaultMasterPasswordFinder(ompFile));
@@ -599,15 +598,13 @@ public final class Importer{
         returnConfig.setProperty("node.db.config.main.port", dbPort);
         returnConfig.setProperty("node.db.config.main.name", dbName);
         returnConfig.setProperty("node.db.config.main.user", gwUser);
-        //don't encrypt the password - it was passed in plain text and no where downstream will it get
-        //decrypted
-        returnConfig.setProperty("node.db.config.main.pass", gwPass);
+        returnConfig.setProperty("node.db.config.main.pass", mpm.encryptPassword(gwPass.toCharArray()));
         //supplied cluster passphrase always comes from the command line
         suppliedClusterPassphrase = programFlagsAndValues.get(CLUSTER_PASSPHRASE.getName());
         returnConfig.setProperty("node.cluster.pass",
                 mpm.encryptPassword(suppliedClusterPassphrase.toCharArray()));
 
-        return returnConfig;
+        return new Pair<PropertiesConfiguration, MasterPasswordManager>(returnConfig, mpm);
     }
 
     /**
@@ -627,9 +624,10 @@ public final class Importer{
             //check if the -newdb option was supplied
             canCreateNewDb = args.containsKey(CREATE_NEW_DB.getName());
 
-            nodePropertyConfig = getNodePropertiesConfig(args);
+            final Pair<PropertiesConfiguration, MasterPasswordManager> pair = getNodePropertiesConfig(args);
+            nodePropertyConfig = pair.left;
 
-            databaseConfig = getDatabaseConfig(nodePropertyConfig);
+            databaseConfig = getDatabaseConfig(nodePropertyConfig, pair.right);
             
             //set the admin username and password, previously collected in validateCommonProgramParameters
             setDbAdminInfo();
@@ -637,13 +635,15 @@ public final class Importer{
         
     }
 
-    private final DatabaseConfig getDatabaseConfig(final PropertiesConfiguration propConfig){
+    private final DatabaseConfig getDatabaseConfig(final PropertiesConfiguration propConfig,
+                                                   final MasterPasswordManager mpm){
 
         final String dbHost = propConfig.getString("node.db.config.main.host");
         final String dbPort = propConfig.getString("node.db.config.main.port");
         final String dbName = propConfig.getString("node.db.config.main.name");
         final String gwUser = propConfig.getString("node.db.config.main.user");
-        final String gwPass = propConfig.getString("node.db.config.main.pass");
+        final String gwPass =
+                new String(mpm.decryptPasswordIfEncrypted(propConfig.getString("node.db.config.main.pass")));
 
         return new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass);
     }
@@ -677,10 +677,6 @@ public final class Importer{
     }
 
     private void setDbAdminInfo(){
-        //todo [Donal] delete when finished testing
-        System.out.println("Setting db root user: " + adminDBUsername);
-        System.out.println("Setting db root pass: " + adminDBPasswd);
-
         databaseConfig.setDatabaseAdminUsername(adminDBUsername);
         databaseConfig.setDatabaseAdminPassword(adminDBPasswd);
     }
@@ -756,6 +752,8 @@ public final class Importer{
         //ssg config files - SSG CONFIG MUST ALWAYS COME FIRST
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
+                final String msg = "Restoring component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 //if it's migrate, we don't want to use any found node.properties
                 restore.restoreComponentConfig(isSelectiveRestore, isMigrate, (isMigrate || updateNodeProperties));
             }
@@ -770,6 +768,8 @@ public final class Importer{
         //it was not local for example
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
+                final String msg = "Restoring component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 //when isMigrate is true, then we always want to write node.properties
                 restore.restoreComponentMainDb(isSelectiveRestore, isMigrate, canCreateNewDb, mappingFile,
                         (isMigrate || updateNodeProperties), nodePropertyConfig);
@@ -782,6 +782,8 @@ public final class Importer{
 
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
+                final String msg = "Restoring component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 restore.restoreComponentAudits(isSelectiveRestore, isMigrate);
             }
 
@@ -793,6 +795,8 @@ public final class Importer{
         //os files
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
+                final String msg = "Restoring component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 restore.restoreComponentOS(isSelectiveRestore);
             }
 
@@ -804,6 +808,8 @@ public final class Importer{
         //custom assertion files and jars
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
+                final String msg = "Restoring component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 restore.restoreComponentCA(isSelectiveRestore);
             }
 
@@ -815,6 +821,8 @@ public final class Importer{
         //modular assertion aar files
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
+                final String msg = "Restoring component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 restore.restoreComponentMA(isSelectiveRestore);
             }
 
@@ -827,6 +835,8 @@ public final class Importer{
         if(programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())){
             componentList.add(new RestoreComponent<Exception>(){
                 public void doRestore() throws Exception {
+                    final String msg = "Restoring component " + getComponentType().getComponentName();
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     restore.restoreComponentESM(isSelectiveRestore);
                 }
 

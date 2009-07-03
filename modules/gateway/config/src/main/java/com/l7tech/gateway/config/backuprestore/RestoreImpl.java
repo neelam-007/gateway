@@ -33,7 +33,6 @@ final class RestoreImpl implements Restore{
     private final File esmHome;
     private final BackupImage image;
     private final DatabaseRestorer dbRestorer;
-    private final File ompFile;
     private final File ssgConfigDir;
     private final OSConfigManager osConfigManager;
     private final File ssgHome;
@@ -59,7 +58,6 @@ final class RestoreImpl implements Restore{
         this.ssgHome = testSsgHome;
         //we know this exists due to above validation
         ssgConfigDir = getConfigDir(ssgHome);
-        ompFile = new File(ssgConfigDir, ImportExportUtilities.OMP_DAT);
 
         if(image == null) throw new NullPointerException("image cannot be null");
 
@@ -100,11 +98,6 @@ final class RestoreImpl implements Restore{
         if(testSsgHome == null) throw new NullPointerException("ssgHome cannot be null");
         if(!testSsgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
         if(!testSsgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
-
-        //We have to have omp.dat
-        final File ompFile = new File(getConfigDir(testSsgHome), ImportExportUtilities.NODE_PROPERTIES);
-        if(!ompFile.exists() || !ompFile.isFile())
-            throw new IllegalStateException("File '"+ ompFile.getAbsolutePath()+" not found");
 
         final File testCADir = new File(testSsgHome, ImportExportUtilities.CA_JAR_DIR);
         if(!testCADir.exists() || !testCADir.isDirectory())

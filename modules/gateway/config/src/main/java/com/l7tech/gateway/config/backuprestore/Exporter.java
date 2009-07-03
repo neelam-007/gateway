@@ -566,7 +566,7 @@ public final class Exporter{
         if(args.containsKey(CommonCommandLineOptions.HALT_ON_FIRST_FAILURE.getName())) isHaltOnFirstFailure = true;
 
         //determine if we are doing a selective backup
-        isSelectiveBackup = ImportExportUtilities.isSelectiveBackup(args);
+        isSelectiveBackup = ImportExportUtilities.isSelective(args);
 
         //the decision to back up audits can come from the -ia flag or from the audits flag
         //-ia means backup audits with a full backup
