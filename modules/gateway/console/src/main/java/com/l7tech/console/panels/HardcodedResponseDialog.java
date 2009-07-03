@@ -28,6 +28,7 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
     private JTextArea responseBody;
     private JTextField contentType;
     private JCheckBox earlyResponseCheckBox;
+    private JScrollPane responseScrollPane;
 
     private HardcodedResponseAssertion assertion;
     private boolean modified;
@@ -67,7 +68,15 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
         httpStatus.setText(String.valueOf(assertion.getResponseStatus()));
         earlyResponseCheckBox.setSelected(assertion.isEarlyResponse());
         String body = assertion.responseBodyString();
-        responseBody.setText(body == null ? "" : body);
+        if (body == null || body.trim().isEmpty()) {
+            responseScrollPane.setPreferredSize(new Dimension(500, 70));
+            responseBody.setText("");
+        } else {
+            String[] lines = body.split("\n");
+            responseScrollPane.setPreferredSize(new Dimension(500, lines.length >= 30? 400 : 150));
+            responseBody.setText(body);
+            responseBody.setCaretPosition(0);
+        }
         String ctype = assertion.getResponseContentType();
         contentType.setText(ctype == null ? "" : ctype);
     }
