@@ -179,7 +179,7 @@ public class SsgConnectorManagerImpl
         }
 
         if (match == null)
-            throw new ListenerException("No address pattern for interface named " + bindAddress + " matches any network address on thsi node (for listen port " + port + ")");
+            throw new ListenerException("No address pattern for interface named " + bindAddress + " matches any network address on this node (for listen port " + port + ")");
 
         return match.getHostAddress();
     }
