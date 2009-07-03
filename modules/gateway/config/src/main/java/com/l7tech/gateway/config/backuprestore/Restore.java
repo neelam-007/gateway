@@ -6,6 +6,8 @@
  */
 package com.l7tech.gateway.config.backuprestore;
 
+import org.apache.commons.configuration.PropertiesConfiguration;
+
 /**
  * Public api for Restore functionality
  */
@@ -40,6 +42,8 @@ public interface Restore {
      * must be created. This is an instruction to create a new database
      * @param updateNodeProperties if true, then node.properties will be updated with database information
      * supplied on the command line
+     * @param propertiesConfiguration this stoes what will be written to node.properties, if updateNodeProperties is
+     * true
      * @return Result one of either success, failure or not applicable. Not applicable can happen if the
      * DatabaseConfig represents a remote database
      */
@@ -47,7 +51,8 @@ public interface Restore {
                                          final boolean isMigrate,
                                          final boolean newDatabaseIsRequired,
                                          final String pathToMappingFile,
-                                         final boolean updateNodeProperties) throws RestoreException;
+                                         final boolean updateNodeProperties,
+                                         final PropertiesConfiguration propertiesConfiguration) throws RestoreException;
 
 
     /**

@@ -249,6 +249,7 @@ class DatabaseRestorer {
                 //if not a new DB, verify the supplied cluster passphrase is correct
                 if (!isNewDatabase) {
                     final ClusterPassphraseManager cpm = new ClusterPassphraseManager(targetConfig);
+                    cpm.setUseAdminUser(true);
                     if (cpm.getDecryptedSharedKey(clusterPassphrase) == null) {
                         throw new DatabaseRestorerException("Incorrect cluster passphrase.");
                     }

@@ -51,16 +51,6 @@ checkRunningLocalGateway() {
 cd ${RESTORE_HOME}
 
 #
-if [ "$1" == "cfgdeamon" ]; then
-    ${SSG_JAVA_HOME}/bin/java \
-        -Dcom.l7tech.server.home=${SSG_HOME} \
-        -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
-        -jar ${RESTORE_HOME}/SSGBackupUtility.jar cfgdeamon
-    chown layer7.layer7 *.log
-    chmod 644 *.log
-    exit
-fi
-
 checkRunningLocalGateway
 
 # This must be run as layer7

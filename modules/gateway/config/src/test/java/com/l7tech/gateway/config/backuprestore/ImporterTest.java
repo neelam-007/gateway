@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
 import org.junit.Assert;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 import java.io.IOException;
 import java.io.File;
@@ -79,7 +80,46 @@ public class ImporterTest {
         esmDirDest.mkdir();
         ImportExportUtilities.copyDir(esmDirSrc, esmDirDest);
     }
-    
+
+
+    /**
+     * Test that node.properties is managed correctly
+     * @throws Exception
+     */
+//    @Test
+//    public void testNodeProperties() throws Exception{
+//        final URL preFiveOZip = this.getClass().getClassLoader().getResource("fiveo_backup_with_audits.zip");
+//        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+//        final String [] args = new String[]{"import",
+//                "-image", preFiveOZip.getPath(),
+//                "-dbu", "layer7",
+//                "-dbp", "7layer",
+//                "-v",
+//                "-dbh", "donal.l7tech.com",
+//                "-db", "ssg_buzzcut",
+//                "-cp", "111111",
+//                "-gdbu", "gateway",
+//                "-gdbp", "7layer"
+//        };
+//
+//        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+//        Assert.assertNotNull("result should not be null", result);
+//
+//        Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+//
+//        //check node.properties
+//
+//        final File nodeProp = new File(tmpSsgHome,
+//                ImportExportUtilities.NODE_CONF_DIR + File.separator + ImportExportUtilities.NODE_PROPERTIES);
+//
+//        final PropertiesConfiguration returnConfig = new PropertiesConfiguration();
+//        returnConfig.load(nodeProp);
+//
+//        //Check dbh has been changed correctly
+//        final String dbHost = returnConfig.getString("node.db.config.main.host");
+//        Assert.assertEquals("Invalid host found in node.properties", "donal.l7tech.com", dbHost);
+//    }
+
     @Test
     public void testImportFiveO() throws Exception{
         final URL preFiveOZip = this.getClass().getClassLoader().getResource("fiveo_backup_with_audits.zip");
@@ -90,7 +130,7 @@ public class ImporterTest {
                 "-dbp", "7layer",
                 "-v",
                 "-dbh", "donal.l7tech.com",
-                "-db", "ssg",
+                "-db", "ssg_buzzcut",
                 "-cp", "111111",
                 "-gdbu", "gateway",
                 "-gdbp", "7layer"

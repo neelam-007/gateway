@@ -440,7 +440,8 @@ final class RestoreImpl implements Restore{
                                          final boolean isMigrate,
                                          final boolean newDatabaseIsRequired,
                                          final String pathToMappingFile,
-                                         final boolean updateNodeProperties) throws RestoreException {
+                                         final boolean updateNodeProperties,
+                                         final PropertiesConfiguration propertiesConfiguration) throws RestoreException {
         if (this.dbRestorer == null) {
             if (isRequired) {
                 throw new RestoreException("No database backup found in image");
@@ -566,7 +567,7 @@ final class RestoreImpl implements Restore{
             }
         }
         //migrate always requires that node.properties is updated
-        if (isMigrate || updateNodeProperties) writeNewNodeProperties();
+        if (isMigrate || updateNodeProperties) writeNewNodeProperties(propertiesConfiguration);
 
         //See if my.cnf needs to be copied
 
@@ -597,27 +598,9 @@ final class RestoreImpl implements Restore{
         return Restore.Result.SUCCESS;
     }
 
-    private void writeNewNodeProperties() throws RestoreException {
-
-        DatabaseConfig dbConfig = dbRestorer.getDbConfig();
-        MasterPasswordManager mpm = new MasterPasswordManager(
-                new DefaultMasterPasswordFinder(ompFile));
-
-        final PropertiesConfiguration nodePropertyConfig = new PropertiesConfiguration();
-        nodePropertyConfig.setAutoSave(false);
-        nodePropertyConfig.setListDelimiter((char) 0);
-
-        nodePropertyConfig.setProperty("node.db.config.main.host", dbConfig.getHost());
-        nodePropertyConfig.setProperty("node.db.config.main.host", dbConfig.getHost());
-        nodePropertyConfig.setProperty("node.db.config.main.port", dbConfig.getPort());
-        nodePropertyConfig.setProperty("node.db.config.main.name", dbConfig.getName());
-        nodePropertyConfig.setProperty("node.db.config.main.user", dbConfig.getNodeUsername());
-        nodePropertyConfig.setProperty("node.db.config.main.pass",
-                mpm.encryptPassword(dbConfig.getNodePassword().toCharArray()));
-        nodePropertyConfig.setProperty("node.cluster.pass",
-                mpm.encryptPassword(this.dbRestorer.getClusterPassphrase().toCharArray()));
+    private void writeNewNodeProperties(final PropertiesConfiguration propertiesConfiguration) throws RestoreException {
         try {
-            nodePropertyConfig.save(new File(ssgConfigDir, ImportExportUtilities.NODE_PROPERTIES));
+            propertiesConfiguration.save(new File(ssgConfigDir, ImportExportUtilities.NODE_PROPERTIES));
         } catch (ConfigurationException e) {
             throw new RestoreException("Could not save node.properties: " + e.getMessage());
         }

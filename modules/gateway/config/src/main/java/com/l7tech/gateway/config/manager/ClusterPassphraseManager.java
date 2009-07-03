@@ -31,6 +31,7 @@ public class ClusterPassphraseManager {
 
     private final DatabaseConfig dbConfig;
     private byte[] sharedKey = null;
+    private boolean useAdminUser;
 
     public ClusterPassphraseManager(final DatabaseConfig dbConfig) {
         this.dbConfig = dbConfig;
@@ -99,6 +100,14 @@ public class ClusterPassphraseManager {
     }
 
 
+    public boolean isUseAdminUser() {
+        return useAdminUser;
+    }
+
+    public void setUseAdminUser(boolean useAdminUser) {
+        this.useAdminUser = useAdminUser;
+    }
+
     private String readSharedKeyB64(final DatabaseConfig config) throws CausedIOException {
         String sharedKeyB64 = null;
 
@@ -107,14 +116,14 @@ public class ClusterPassphraseManager {
         Statement statement = null;
         ResultSet resultSet = null;
         try {
-            connection = dbactions.getConnection(config, false);
+            connection = dbactions.getConnection(config, useAdminUser, false);
             statement = connection.createStatement();
             resultSet = statement.executeQuery("select b64edval from shared_keys where shared_keys.encodingid = '%ClusterWidePBE%'");
             if (resultSet.next()) {
                 sharedKeyB64 = resultSet.getString(1);
             }
         } catch (SQLException sqle) {
-            throw new CausedIOException("Could not read shared key.", sqle);
+            throw new CausedIOException("Could not read shared key: " + sqle.getMessage(), sqle);
         } finally {
             ResourceUtils.closeQuietly(resultSet);
             ResourceUtils.closeQuietly(statement);

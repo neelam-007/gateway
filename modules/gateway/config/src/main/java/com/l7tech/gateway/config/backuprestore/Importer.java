@@ -64,7 +64,7 @@ public final class Importer{
             CREATE_NEW_DB, MIGRATE};
 
     static final CommandLineOption[] ALL_RESTORE_OPTIONS = {IMAGE_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
-            CommonCommandLineOptions.HALT_ON_FIRST_FAILURE, CommonCommandLineOptions.VERBOSE};
+            CommonCommandLineOptions.HALT_ON_FIRST_FAILURE, CommonCommandLineOptions.VERBOSE, MIGRATE};
 
     static final CommandLineOption [] COMMAND_LINE_DB_ARGS = {DB_HOST_NAME, DB_NAME, CLUSTER_PASSPHRASE,
                 GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD};
@@ -132,6 +132,8 @@ public final class Importer{
      */
     private boolean updateNodeProperties;
 
+    private PropertiesConfiguration nodePropertyConfig;
+
     /**
      * @param secureSpanHome The installation of the SSG e.g. /opt/SecureSpan/Gateway. Must be non null and exist
      * @param printStream where any verbose output will be sent. Can be null
@@ -194,7 +196,9 @@ public final class Importer{
 
     private RestoreMigrateResult performMigrate(final String [] args) throws InvalidProgramArgumentException,
             IOException, BackupImage.InvalidBackupImage {
-        final List<CommandLineOption> validArgList = getAllMigrateOptions();
+        //All restore options are valid for migrate. Remember that ssgmigrate.sh gets tranlsated into ssgrestore.sh
+        //with a migrate capability. Therefore here we are actually validating ssgrestore.sh parameters
+        final List<CommandLineOption> validArgList = getRestoreOptionsWithDb();
 
         final String imageValue = ImportExportUtilities.getAndValidateSingleArgument(args,
                 IMAGE_PATH, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
@@ -204,6 +208,8 @@ public final class Importer{
 
         programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
                 validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+
+        isVerbose = programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName());
 
         //backup image is required validateRestoreProgramParameters is called
         validateMigrateProgramParameters(programFlagsAndValues);
@@ -327,6 +333,8 @@ public final class Importer{
     }
 
     private void validateCommonProgramParameters(final Map<String, String> args) throws InvalidProgramArgumentException {
+        isSelectiveRestore = ImportExportUtilities.isSelectiveBackup(args);
+        
         final boolean isDbComponent = !isSelectiveRestore
                 || args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
                 || args.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
@@ -430,7 +438,6 @@ public final class Importer{
      */
     private void validateRestoreProgramParameters(final Map<String, String> args)
             throws InvalidProgramArgumentException, BackupImage.InvalidBackupImage, IOException {
-        isSelectiveRestore = ImportExportUtilities.isSelectiveBackup(args);
         validateCommonProgramParameters(args);
 
 
@@ -452,42 +459,155 @@ public final class Importer{
                 //the user can always do a selective restore and avoid the db if needed
                 final boolean completeDb = wereCompleteDbParamsSupplied(false);
 
-                if(!completeDb){
-                    //we need node.properties and omp.dat
-                    final File nodeProperties = new File(configFolder, ImportExportUtilities.NODE_PROPERTIES);
-                    if(!nodeProperties.exists())
-                        throw new BackupImage.InvalidBackupImage("File '"+
-                                nodeProperties.getAbsolutePath()+"' does not exist");
-                    if(nodeProperties.isDirectory())
-                        throw new BackupImage.InvalidBackupImage("File '"+
-                                nodeProperties.getAbsolutePath()+"' is not a regular file");
+                //we need node.properties and omp.dat in the image - always
+                final File nodeProperties = new File(configFolder, ImportExportUtilities.NODE_PROPERTIES);
+                if(!nodeProperties.exists())
+                    throw new BackupImage.InvalidBackupImage("File '"+
+                            nodeProperties.getAbsolutePath()+"' does not exist");
+                if(nodeProperties.isDirectory())
+                    throw new BackupImage.InvalidBackupImage("File '"+
+                            nodeProperties.getAbsolutePath()+"' is not a regular file");
 
-                    final File ompFile = new File(configFolder, ImportExportUtilities.OMP_DAT);
-                    if(!ompFile.exists())
-                        throw new BackupImage.InvalidBackupImage("File '"+ompFile.getAbsolutePath()+"' does not exist");
-                    if(ompFile.isDirectory())
-                        throw new BackupImage.InvalidBackupImage("File '"+
-                                ompFile.getAbsolutePath()+"' is not a regular file");
+                final File ompFile = new File(configFolder, ImportExportUtilities.OMP_DAT);
+                if(!ompFile.exists())
+                    throw new BackupImage.InvalidBackupImage("File '"+ompFile.getAbsolutePath()+"' does not exist");
+                if(ompFile.isDirectory())
+                    throw new BackupImage.InvalidBackupImage("File '"+
+                            ompFile.getAbsolutePath()+"' is not a regular file");
+
+                final MasterPasswordManager mpm = new MasterPasswordManager(
+                        new DefaultMasterPasswordFinder(ompFile));
+
+                try {
+                    nodePropertyConfig = new PropertiesConfiguration();
+                    nodePropertyConfig.setAutoSave(false);
+                    nodePropertyConfig.setListDelimiter((char) 0);
+                    nodePropertyConfig.load(nodeProperties);
+                } catch (ConfigurationException e) {
+                    throw new IllegalStateException("Cannot load node.properties from backup image: " + e.getMessage());
+                }
+                
+                if(!completeDb){
                     //need to validate the contents of node.properties and omp.dat
                     final Pair<DatabaseConfig, String> dbConfigPhrasePair = getDatabaseConfig(nodeProperties, ompFile);
                     databaseConfig = dbConfigPhrasePair.left;
                     suppliedClusterPassphrase = dbConfigPhrasePair.right;
                 }else{
                     updateNodeProperties = true;
-                    suppliedClusterPassphrase = programFlagsAndValues.get(CLUSTER_PASSPHRASE.getName());
-                    configureDatabaseConfigFromArgs(args);
+                    //we must have received all db params on the command line
+                    nodePropertyConfig = getNodePropertiesConfig(args);
+                    databaseConfig = getDatabaseConfig(nodePropertyConfig);
                 }
             }else{
-                //5.0 image
-                //see if the other db args are required
-                //this is just validation, not setting any instance variables
-                wereCompleteDbParamsSupplied(true);
-                //5.0 or post 5.0 with no config directory
-                suppliedClusterPassphrase = programFlagsAndValues.get(CLUSTER_PASSPHRASE.getName());
-                configureDatabaseConfigFromArgs(args);
+                //5.0 image - WE MUST HAVE A node.properties AND omp.dat, from the system where it is being
+                //restored onto - this is identical to the case when migrate is being used
+                updateNodeProperties = true;
+                //we must have received all db params on the command line
+                nodePropertyConfig = getNodePropertiesConfig(args);
+                databaseConfig = getDatabaseConfig(nodePropertyConfig);
             }
             setDbAdminInfo();
         }
+    }
+
+
+    /**
+     * Only call when the use has supplied all required db parameters
+     * If the host has node.properties then it will be read. Omp.dat must exist
+     * This is when isMigrate is true, its a 5.0 image or no config folder was found
+     * @return PropertiesConfiguration, in a state where it can be saved and be correct
+     */
+    private final PropertiesConfiguration getNodePropertiesConfig(final Map<String, String> args)
+            throws InvalidProgramArgumentException {
+        wereCompleteDbParamsSupplied(true);
+
+        final File confDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
+        final File ompFile = new File(confDir, ImportExportUtilities.OMP_DAT);
+        if(!ompFile.exists() || !ompFile.isFile())
+            throw new IllegalStateException("File '"+ompFile.getAbsolutePath()+" not found");
+
+        final MasterPasswordManager mpm = new MasterPasswordManager(
+                new DefaultMasterPasswordFinder(ompFile));
+
+        final File nodePropsFile = new File(ssgHome,
+                ImportExportUtilities.NODE_CONF_DIR + File.separator + ImportExportUtilities.NODE_PROPERTIES);
+
+        final boolean nodePropExists = nodePropsFile.exists() && nodePropsFile.isFile();
+
+        final String gwUser = args.get(GATEWAY_DB_USERNAME.getName());
+        //password is from the command line, cannot be encrypted, if it is that's an input error
+        final String gwPass = args.get(GATEWAY_DB_PASSWORD.getName());
+
+        final Pair<String, String> hostPortPair =
+                ImportExportUtilities.getDbHostAndPortPair(args.get(DB_HOST_NAME.getName()));
+        final String dbHost = hostPortPair.left;
+        final String dbPort = hostPortPair.right;
+
+        //check if the -newdb option was supplied
+        final boolean newDbRequested = args.containsKey(CREATE_NEW_DB.getName());
+        //db name can come from either the newdb or the dbname.
+        final String dbName = (newDbRequested)? args.get(CREATE_NEW_DB.getName()): args.get(DB_NAME.getName());
+
+        final PropertiesConfiguration returnConfig = new PropertiesConfiguration();
+        returnConfig.setAutoSave(false);
+        returnConfig.setListDelimiter((char) 0);
+
+        //if were creating a new db, then we can still use an existing node.id
+        if(nodePropExists){
+            try {
+                returnConfig.load(nodePropsFile);
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                        "node.properties file was found. Checking database name match", isVerbose, printStream);
+                //note: we don't need the value from node.properties, but if it's there well check they match
+                final String nodePropHostName = returnConfig.getString("node.db.config.main.name");
+                if(nodePropHostName != null && !nodePropHostName.isEmpty()){
+                    if(!dbName.equals(nodePropHostName)){
+                        throw new InvalidProgramArgumentException("Provided database name does not match with database " +
+                                "name in node.properties file.  If you wish to create a new database, use the " +
+                                CREATE_NEW_DB.getName() + " option");
+                    }
+                }
+                //valildity check on node.properties
+                final String nodeId = returnConfig.getString("node.id");
+                if(nodeId == null || nodeId.isEmpty()){
+                    throw new IllegalStateException("node.id does not exist in SSG node.properties. SSG is not" +
+                            " correctly configured");
+                }
+
+
+            } catch (ConfigurationException e) {
+                throw new IllegalStateException("Cannot read from node.properties");
+            }
+            final String nodeId = returnConfig.getString("node.id");
+            if(nodeId == null || nodeId.isEmpty()){
+                throw new IllegalStateException("node.id does not exist in SSG node.properties. SSG is not" +
+                        " correctly configured");
+            }
+
+        }else{
+            try {
+                final String nodeId = NodeConfigurationManager.loadOrCreateNodeIdentifier("default",
+                        new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass), true);
+                returnConfig.setProperty("node.id", nodeId );
+            } catch (IOException e) {
+                throw new IllegalStateException("Could not generate a node.id: " + e.getMessage());
+            }
+
+        }
+
+        returnConfig.setProperty("node.db.config.main.host", dbHost);
+        returnConfig.setProperty("node.db.config.main.port", dbPort);
+        returnConfig.setProperty("node.db.config.main.name", dbName);
+        returnConfig.setProperty("node.db.config.main.user", gwUser);
+        //don't encrypt the password - it was passed in plain text and no where downstream will it get
+        //decrypted
+        returnConfig.setProperty("node.db.config.main.pass", gwPass);
+        //supplied cluster passphrase always comes from the command line
+        suppliedClusterPassphrase = programFlagsAndValues.get(CLUSTER_PASSPHRASE.getName());
+        returnConfig.setProperty("node.cluster.pass",
+                mpm.encryptPassword(suppliedClusterPassphrase.toCharArray()));
+
+        return returnConfig;
     }
 
     /**
@@ -503,109 +623,38 @@ public final class Importer{
         //do we need to do a database backup? If -config was specified, then we don't want to modify the database
         final boolean isDbRequested = !args.containsKey(CONFIG_ONLY.getName());
         if(isDbRequested){
-            //see if the other db args are required
-            //this is just validation, not setting any instance variables
-            wereCompleteDbParamsSupplied(true);
-            final File confDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
-            final File ompFile = new File(confDir, ImportExportUtilities.OMP_DAT);
-            if(!ompFile.exists() || !ompFile.isFile())
-                throw new IllegalStateException("File '"+ompFile.getAbsolutePath()+" not found");
-            
-            final MasterPasswordManager mpm = new MasterPasswordManager(
-                    new DefaultMasterPasswordFinder(ompFile));
-
-            //we need to create a DatabaseConfig
-            //when migrating we work with both the node.properties supplied and the command line arguments
-            //See if node.properties exists
-            final File nodePropsFile = new File(ssgHome,
-                    ImportExportUtilities.NODE_CONF_DIR + File.separator + ImportExportUtilities.NODE_PROPERTIES);
-
-            final String gwUser = args.get(GATEWAY_DB_USERNAME.getName());
-            //password is from the command line, cannot be encrypted, if it is that's an input error
-            final String gwPass = args.get(GATEWAY_DB_PASSWORD.getName());
 
             //check if the -newdb option was supplied
             canCreateNewDb = args.containsKey(CREATE_NEW_DB.getName());
-            //db name can come from either the newdb or the dbname.
-            //todo [Donal] in the future the -newdb should not take a value, but should just be a flag and use -db instead
-            final String dbName = (canCreateNewDb)? args.get(CREATE_NEW_DB.getName()): args.get(DB_NAME.getName());
 
-            //at the end encrypt the decrypt and encrypt before writing node.properties
-            //migrate could add a task to do this
-            //or define a post task - don't want to save node.properties if the hostname supplied is not local
+            nodePropertyConfig = getNodePropertiesConfig(args);
 
-            final Pair<String, String> hostPortPair =
-                    ImportExportUtilities.getDbHostAndPortPair(args.get(DB_HOST_NAME.getName()));
-            final String dbHost = hostPortPair.left;
-            final String dbPort = hostPortPair.right;
-
-            //Sanity check the db name, only when were not creating a new db
-            //also need the node.id
-            final String nodeId;
-            if(!canCreateNewDb && nodePropsFile.exists() && nodePropsFile.isFile()){
-                final PropertiesConfiguration nodePropertyConfig = new PropertiesConfiguration();
-                nodePropertyConfig.setAutoSave(false);
-                nodePropertyConfig.setListDelimiter((char) 0);
-                try {
-                    nodePropertyConfig.load(nodePropsFile);
-                } catch (ConfigurationException e) {
-                    throw new IllegalStateException("Cannot read from node.properties");
-                }
-
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                        "node.properties file was found. Checking database name match", isVerbose, printStream);
-
-                //note: we don't need the value from node.properties, but if it's there well check they match
-                final String nodePropHostName = nodePropertyConfig.getString("node.db.config.main.name");
-                if(nodePropHostName != null && !nodePropHostName.isEmpty()){
-                    if(!dbName.equals(nodePropHostName)){
-                        throw new InvalidProgramArgumentException("Provided database name does not match with database " +
-                                "name in node.properties file.  If you wish to create a new database, use the " +
-                                CREATE_NEW_DB.getName() + " option");
-                    }
-                }
-                nodeId = nodePropertyConfig.getString("node.id");
-                if(nodeId == null || nodeId.isEmpty()){
-                    throw new IllegalStateException("node.id does not exist in SSG node.properties. SSG is not" +
-                            "correctly configured");                    
-                }
-
-            }else{
-                nodeId = NodeConfigurationManager.loadOrCreateNodeIdentifier("default",
-                        new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass), true);
-            }
-
-            suppliedClusterPassphrase = programFlagsAndValues.get(CLUSTER_PASSPHRASE.getName());
-
-            //Build up a properties object
-            final Properties nodePropsForMigrate = new Properties();
-            nodePropsForMigrate.setProperty("node.db.config.main.host", dbHost);
-            nodePropsForMigrate.setProperty("node.db.config.main.port", dbPort);
-            nodePropsForMigrate.setProperty("node.db.config.main.name", dbName);
-            nodePropsForMigrate.setProperty("node.db.config.main.user", gwUser);
-            //don't encrypt the password - it was passed in plain text and no where downstream will it get
-            //decrypted
-            nodePropsForMigrate.setProperty("node.db.config.main.pass", gwPass);
-            //supplied cluster passphrase always comes from the command line
-            nodePropsForMigrate.setProperty("node.cluster.pass",
-                    mpm.encryptPassword(suppliedClusterPassphrase.toCharArray()));
-
-            nodePropsForMigrate.setProperty("node.id", nodeId );
-
-            final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsForMigrate, true);
-            databaseConfig = nodeConfig.getDatabase( DatabaseType.NODE_ALL,
-                    NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
+            databaseConfig = getDatabaseConfig(nodePropertyConfig);
+            
             //set the admin username and password, previously collected in validateCommonProgramParameters
             setDbAdminInfo();
-            if ( databaseConfig == null ) {
-                throw new InvalidProgramArgumentException("DatabaseConfig could not be configured with program arguments " +
-                        "and omp.dat");
-            }
         }
         
     }
 
-    private void configureDatabaseConfigFromArgs(final Map<String, String> args) throws InvalidProgramArgumentException {
+    private final DatabaseConfig getDatabaseConfig(final PropertiesConfiguration propConfig){
+
+        final String dbHost = propConfig.getString("node.db.config.main.host");
+        final String dbPort = propConfig.getString("node.db.config.main.port");
+        final String dbName = propConfig.getString("node.db.config.main.name");
+        final String gwUser = propConfig.getString("node.db.config.main.user");
+        final String gwPass = propConfig.getString("node.db.config.main.pass");
+
+        return new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass);
+    }
+
+
+
+
+    private void configureDatabaseConfigFromArgs(final Map<String, String> args,
+                                                 final PropertiesConfiguration nodePropertyConfig,
+                                                 final MasterPasswordManager mpm)
+            throws InvalidProgramArgumentException {
         final Pair<String, String> hostPortPair = ImportExportUtilities.getDbHostAndPortPair(args.get(DB_HOST_NAME.getName()));
         final String dbHost = hostPortPair.left;
         final String dbPort = hostPortPair.right;
@@ -614,9 +663,24 @@ public final class Importer{
         final String gwPass = args.get(GATEWAY_DB_PASSWORD.getName());
 
         databaseConfig = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass);
+
+        nodePropertyConfig.setProperty("node.db.config.main.host", dbHost);
+        nodePropertyConfig.setProperty("node.db.config.main.port", dbPort);
+        nodePropertyConfig.setProperty("node.db.config.main.name", dbName);
+        nodePropertyConfig.setProperty("node.db.config.main.user", gwUser);
+        //don't encrypt the password - it was passed in plain text and no where downstream will it get
+        //decrypted
+        nodePropertyConfig.setProperty("node.db.config.main.pass", gwPass);
+        //supplied cluster passphrase always comes from the command line
+        nodePropertyConfig.setProperty("node.cluster.pass",
+                mpm.encryptPassword(suppliedClusterPassphrase.toCharArray()));
     }
 
     private void setDbAdminInfo(){
+        //todo [Donal] delete when finished testing
+        System.out.println("Setting db root user: " + adminDBUsername);
+        System.out.println("Setting db root pass: " + adminDBPasswd);
+
         databaseConfig.setDatabaseAdminUsername(adminDBUsername);
         databaseConfig.setDatabaseAdminPassword(adminDBPasswd);
     }
@@ -689,6 +753,18 @@ public final class Importer{
         //at the end the list of components is filtered, so if isSelectiveRestore is true, then the components
         //are filtered, and the remaining components are 'required'
 
+        //ssg config files - SSG CONFIG MUST ALWAYS COME FIRST
+        componentList.add(new RestoreComponent<Exception>(){
+            public void doRestore() throws Exception {
+                //if it's migrate, we don't want to use any found node.properties
+                restore.restoreComponentConfig(isSelectiveRestore, isMigrate, (isMigrate || updateNodeProperties));
+            }
+
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.CONFIG;
+            }
+        });
+
         //Allowing the actual restoreComponentMainDb method to decide whether to back up or not
         //by doing this we can easily log when a backup included a db, but we decided to leave it alone, because
         //it was not local for example
@@ -696,7 +772,7 @@ public final class Importer{
             public void doRestore() throws Exception {
                 //when isMigrate is true, then we always want to write node.properties
                 restore.restoreComponentMainDb(isSelectiveRestore, isMigrate, canCreateNewDb, mappingFile,
-                        (isMigrate || updateNodeProperties));
+                        (isMigrate || updateNodeProperties), nodePropertyConfig);
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -722,17 +798,6 @@ public final class Importer{
 
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.OS;
-            }
-        });
-
-        //ssg config files
-        componentList.add(new RestoreComponent<Exception>(){
-            public void doRestore() throws Exception {
-                restore.restoreComponentConfig(isSelectiveRestore, isMigrate, updateNodeProperties);
-            }
-
-            public ImportExportUtilities.ComponentType getComponentType() {
-                return ImportExportUtilities.ComponentType.CONFIG;
             }
         });
 
@@ -820,6 +885,8 @@ public final class Importer{
 
     /**
      * Get the usage for the traditional migrate. Usage information is written to the StringBuilder output
+     *
+     * This is used to show what the valid arguments to ssgmigrate.sh are
      * @param output StringBuilder to write the usage information to
      */
     static void getMigrateUsage(final StringBuilder output) {
@@ -900,6 +967,12 @@ public final class Importer{
         return validArgList;
     }
 
+    /**
+     * This is only for the getMigrateUsage() method. Remember, when we are validating what's been passed into
+     * the Importer, we are validating ssgrestore.sh's parameters. ssgmigrate.sh's parameters will have been
+     * translated by BackupRestoreLauncher
+     * @return
+     */
     private static List<CommandLineOption> getAllMigrateOptions(){
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALL_MIGRATE_OPTIONS));

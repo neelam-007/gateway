@@ -78,7 +78,8 @@ class DBDumpUtil {
                         // in order to be able to put back same id when we restore the original
                         // target license. this will avoid clashing object id
                         final long licenseobjectid = resultSet.getLong(1);
-                        final FileOutputStream licenseFos = new FileOutputStream(outputDirectory + File.separator + LICENCEORIGINALID);
+                        final File parentFile = (new File(outputDirectory)).getParentFile();
+                        final FileOutputStream licenseFos = new FileOutputStream(new File(parentFile, LICENCEORIGINALID));
                         licenseFos.write(Long.toString(licenseobjectid).getBytes());
                         licenseFos.close();
                         return true;
