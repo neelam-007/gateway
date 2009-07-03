@@ -28,10 +28,16 @@ public class MigrateToRestoreConvertor {
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(Importer.ALL_MIGRATE_OPTIONS));
 
+        final List<CommandLineOption> ignoredOptions = new ArrayList<CommandLineOption>();
+        ignoredOptions.addAll(Arrays.asList(Importer.ALL_IGNORED_OPTIONS));
+        //this is ignored as its not needed for anything in ssgmigrate.sh, as just calling this script
+        //tells us that you want to do a migrate
+        ignoredOptions.add(Importer.MIGRATE);
+
         //validate that we only get allowed options, and that any options requiring a value recieve one
         final Map<String, String> initialValidArgs =
                 ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                        validArgList, Arrays.asList(Importer.ALL_IGNORED_OPTIONS));
+                        validArgList, ignoredOptions);
 
         //Now going to build up the translation between what was supplied to migrate and what
         //was is required to achieve the same results with a selective restore
@@ -68,13 +74,15 @@ public class MigrateToRestoreConvertor {
         //if config - don't add db and audits
         final boolean configOnly = initialValidArgs.containsKey(Importer.CONFIG_ONLY.getName());
 
-        //main db if not config
+        //only add maindb and audits, if the user didn't speicyf -config, which for traditional migrate means
+        //"config only, no database"
         if(!configOnly){
             restoreArgs.add(CommonCommandLineOptions.MAINDB_OPTION.getName());
             restoreArgs.add(CommonCommandLineOptions.AUDITS_OPTION.getName());
-        }else{
-            restoreArgs.add(Importer.CONFIG_ONLY.getName());
         }
+
+        //always add the config, its processed by default by traditional migrate
+        restoreArgs.add(CommonCommandLineOptions.CONFIG_OPTION.getName());
 
         //os?
         if(initialValidArgs.containsKey(CommonCommandLineOptions.OS_OPTION.getName())){
@@ -84,6 +92,7 @@ public class MigrateToRestoreConvertor {
         //mapping file?
         if(initialValidArgs.containsKey(Importer.MAPPING_PATH.getName())){
             restoreArgs.add(Importer.MAPPING_PATH.getName());
+            restoreArgs.add(initialValidArgs.get(Importer.MAPPING_PATH.getName()));
         }
 
         //new db or dbname

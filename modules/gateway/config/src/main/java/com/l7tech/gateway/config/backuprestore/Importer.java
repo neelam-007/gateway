@@ -50,7 +50,9 @@ public final class Importer{
             "overwrite os level config files",
             false, true);
     static final CommandLineOption CREATE_NEW_DB = new CommandLineOption("-newdb" ,"create new database");
-    static final CommandLineOption MIGRATE = new CommandLineOption("-migrate", "migrate from environment to environment using the file exclusion and table exclusion configuration files", false, true);
+    static final CommandLineOption MIGRATE = new CommandLineOption("-migrate",
+            "Apply migrate capability to the restore, by using the file exclusion and table exclusion configuration " +
+                    "files", false, true);
 
     static final CommandLineOption CONFIG_ONLY =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
@@ -59,12 +61,16 @@ public final class Importer{
     static final CommandLineOption GATEWAY_DB_USERNAME = new CommandLineOption("-gdbu", "gateway database username");
     static final CommandLineOption GATEWAY_DB_PASSWORD = new CommandLineOption("-gdbp", "gateway database password");
 
+    /**
+     * Note this doesn't list MIGRATE. for ssgmigrate.sh, MIGRATE is an ignored option
+     */
     static final CommandLineOption[] ALL_MIGRATE_OPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
             DB_HOST_NAME, DB_NAME, CONFIG_ONLY, OS_OVERWRITE, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD,
-            CREATE_NEW_DB, MIGRATE};
+            CREATE_NEW_DB};
 
     static final CommandLineOption[] ALL_RESTORE_OPTIONS = {IMAGE_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
-            CommonCommandLineOptions.HALT_ON_FIRST_FAILURE, CommonCommandLineOptions.VERBOSE, MIGRATE};
+            CommonCommandLineOptions.HALT_ON_FIRST_FAILURE, CommonCommandLineOptions.VERBOSE, MIGRATE, MAPPING_PATH,
+    CREATE_NEW_DB};
 
     static final CommandLineOption [] COMMAND_LINE_DB_ARGS = {DB_HOST_NAME, DB_NAME, CLUSTER_PASSPHRASE,
                 GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD};
@@ -83,7 +89,6 @@ public final class Importer{
      * Base folder of all Securespan products
      */
     private final File secureSpanHome;
-
 
     /**
      * Only to be used when code path starts at restoreOrMigrateBackupImage. Do not access from public methods
@@ -111,7 +116,7 @@ public final class Importer{
      * object and use it. The public restoreXXX() methods may accept a DatabseConfig, and when it does this should
      * be used and not the instance variable
      */
-    private DatabaseConfig databaseConfig; 
+    private DatabaseConfig databaseConfig;
 
     /**
      * Backup is not fail fast. As a result we will allow clients access to this list of error message so that they
@@ -203,7 +208,7 @@ public final class Importer{
         final String imageValue = ImportExportUtilities.getAndValidateSingleArgument(args,
                 IMAGE_PATH, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
         final File imageFile = getAndValidateImageExists(imageValue);
-        
+
         //what ever happens we need to delete any unzipped directory no matter what the outcome
         try {
             backupImage = new BackupImage(imageFile.getAbsolutePath(), printStream, isVerbose);
@@ -215,7 +220,7 @@ public final class Importer{
 
             //backup image is required validateRestoreProgramParameters is called
             validateMigrateProgramParameters(programFlagsAndValues);
-            
+
             //build list of components and filter appropriately
             performRestoreSteps();
 
@@ -280,7 +285,7 @@ public final class Importer{
                     validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
 
             validateRestoreProgramParameters(programFlagsAndValues);
-            
+
             //build list of components and filter appropriately
             performRestoreSteps();
 
@@ -291,7 +296,7 @@ public final class Importer{
         }
 
         if(!failedComponents.isEmpty()){
-            return new RestoreMigrateResult(false, RestoreMigrateResult.Status.PARTIAL_SUCCESS, failedComponents, null);            
+            return new RestoreMigrateResult(false, RestoreMigrateResult.Status.PARTIAL_SUCCESS, failedComponents, null);
         }
 
         return new RestoreMigrateResult(false, RestoreMigrateResult.Status.SUCCESS);
@@ -334,11 +339,11 @@ public final class Importer{
 
     private void validateCommonProgramParameters(final Map<String, String> args) throws InvalidProgramArgumentException {
         isSelectiveRestore = ImportExportUtilities.isSelective(args);
-        
+
         final boolean isDbComponent = !isSelectiveRestore
                 || args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
                 || args.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
-        
+
         if(isDbComponent){
             adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
             adminDBPasswd = programFlagsAndValues.get(DB_ROOT_PASSWD.getName());
@@ -363,7 +368,7 @@ public final class Importer{
             ImportExportUtilities.throwIfEsmNotPresent(
                     new File(secureSpanHome, ImportExportUtilities.ENTERPRISE_SERVICE_MANAGER));
         }
-        
+
     }
 
     /**
@@ -431,7 +436,7 @@ public final class Importer{
      * then we will ensure before any thing is restored, that everything we need to restore it is present
      *
      * Sets databaseConfig
-     * 
+     *
      * @param args The name value pair map of each argument to it's value, if a vaule exists
      * @throws IOException for arguments which are files, they are checked to see if the exist, which may cause an IOException
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException if any program params are invalid
@@ -483,7 +488,7 @@ public final class Importer{
                 } catch (ConfigurationException e) {
                     throw new IllegalStateException("Cannot load node.properties from backup image: " + e.getMessage());
                 }
-                
+
                 if(!completeDb){
                     //need to validate the contents of node.properties and omp.dat
                     final Pair<DatabaseConfig, String> dbConfigPhrasePair = getDatabaseConfig(nodeProperties, ompFile);
@@ -542,6 +547,8 @@ public final class Importer{
         final String dbHost = hostPortPair.left;
         final String dbPort = hostPortPair.right;
 
+        //todo [Donal] this needs to be refactored, canCreateNewDb knows the answer to create new db when ismigrate
+        //is true
         //check if the -newdb option was supplied
         final boolean newDbRequested = args.containsKey(CREATE_NEW_DB.getName());
         //db name can come from either the newdb or the dbname.
@@ -558,12 +565,14 @@ public final class Importer{
                 ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
                         "node.properties file was found. Checking database name match", isVerbose, printStream);
                 //note: we don't need the value from node.properties, but if it's there well check they match
-                final String nodePropHostName = returnConfig.getString("node.db.config.main.name");
-                if(nodePropHostName != null && !nodePropHostName.isEmpty()){
-                    if(!dbName.equals(nodePropHostName)){
-                        throw new InvalidProgramArgumentException("Provided database name does not match with database " +
-                                "name in node.properties file.  If you wish to create a new database, use the " +
-                                CREATE_NEW_DB.getName() + " option");
+                if (isMigrate && !newDbRequested){
+                    final String nodePropHostName = returnConfig.getString("node.db.config.main.name");
+                    if(nodePropHostName != null && !nodePropHostName.isEmpty()){
+                        if(!dbName.equals(nodePropHostName)){
+                            throw new InvalidProgramArgumentException("Provided database name does not match with database " +
+                                    "name in node.properties file. If you wish to create a new database, use the " +
+                                    CREATE_NEW_DB.getName() + " option");
+                        }
                     }
                 }
                 //valildity check on node.properties
@@ -618,7 +627,7 @@ public final class Importer{
             throws InvalidProgramArgumentException, IOException {
         validateCommonProgramParameters(args);
         //do we need to do a database backup? If -config was specified, then we don't want to modify the database
-        final boolean isDbRequested = !args.containsKey(CONFIG_ONLY.getName());
+        final boolean isDbRequested = args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName());
         if(isDbRequested){
 
             //check if the -newdb option was supplied
@@ -628,11 +637,11 @@ public final class Importer{
             nodePropertyConfig = pair.left;
 
             databaseConfig = getDatabaseConfig(nodePropertyConfig, pair.right);
-            
+
             //set the admin username and password, previously collected in validateCommonProgramParameters
             setDbAdminInfo();
         }
-        
+
     }
 
     private final DatabaseConfig getDatabaseConfig(final PropertiesConfiguration propConfig,
@@ -646,34 +655,6 @@ public final class Importer{
                 new String(mpm.decryptPasswordIfEncrypted(propConfig.getString("node.db.config.main.pass")));
 
         return new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass);
-    }
-
-
-
-
-    private void configureDatabaseConfigFromArgs(final Map<String, String> args,
-                                                 final PropertiesConfiguration nodePropertyConfig,
-                                                 final MasterPasswordManager mpm)
-            throws InvalidProgramArgumentException {
-        final Pair<String, String> hostPortPair = ImportExportUtilities.getDbHostAndPortPair(args.get(DB_HOST_NAME.getName()));
-        final String dbHost = hostPortPair.left;
-        final String dbPort = hostPortPair.right;
-        final String dbName = args.get(DB_NAME.getName());
-        final String gwUser = args.get(GATEWAY_DB_USERNAME.getName());
-        final String gwPass = args.get(GATEWAY_DB_PASSWORD.getName());
-
-        databaseConfig = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass);
-
-        nodePropertyConfig.setProperty("node.db.config.main.host", dbHost);
-        nodePropertyConfig.setProperty("node.db.config.main.port", dbPort);
-        nodePropertyConfig.setProperty("node.db.config.main.name", dbName);
-        nodePropertyConfig.setProperty("node.db.config.main.user", gwUser);
-        //don't encrypt the password - it was passed in plain text and no where downstream will it get
-        //decrypted
-        nodePropertyConfig.setProperty("node.db.config.main.pass", gwPass);
-        //supplied cluster passphrase always comes from the command line
-        nodePropertyConfig.setProperty("node.cluster.pass",
-                mpm.encryptPassword(suppliedClusterPassphrase.toCharArray()));
     }
 
     private void setDbAdminInfo(){
@@ -726,7 +707,7 @@ public final class Importer{
      * ssgmigrate.sh ensuqres that the Importer class is provided with the correct command line arguments, and it
      * should always produce a selective restote, in which cases components like ca, ma won't be included, but they
      * can be part of a selective restore with migrate capabilities if desired
-     * 
+     *
      * @param mappingFile can be null
      * @return list of applicable RestoreComponent's. Filtered for selective restore if applicable
      * @throws RestoreImpl.RestoreException

@@ -2190,6 +2190,7 @@
                 <include name="ssgmigrate.sh"/>
                 <include name="backupgatewaylogging.properties"/>
                 <include name="backuputilitylogging.properties"/>
+                <include name="restore_logging.properties"/>
             </fileset>
         </copy>
 

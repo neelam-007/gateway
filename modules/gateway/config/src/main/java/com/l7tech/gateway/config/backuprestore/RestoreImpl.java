@@ -539,13 +539,16 @@ final class RestoreImpl implements Restore{
             if (mappingPath != null && !wasNewDbCreated) {
                 try {
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                            "loading mapping file " + mappingPath, isVerbose, this.printStream);
+                            "Loading mapping file " + mappingPath, isVerbose, this.printStream);
 
                     MappingUtil.CorrespondanceMap mapping = MappingUtil.loadMapping(mappingPath);
-                    MappingUtil.applyMappingChangesToDB(dbRestorer.getDbConfig(), mapping, isVerbose, printStream);
-
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Mapping file loaded",
                             isVerbose, this.printStream);
+
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Applying mappings",
+                            isVerbose, this.printStream);
+
+                    MappingUtil.applyMappingChangesToDB(dbRestorer.getDbConfig(), mapping, isVerbose, printStream);
 
                 } catch (Exception e) {
                     String msg = "Problem loading / applying mappings: " + e.getMessage();
