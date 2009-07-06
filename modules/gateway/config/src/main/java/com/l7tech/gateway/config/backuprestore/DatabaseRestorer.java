@@ -431,17 +431,24 @@ class DatabaseRestorer {
                 }
 
                 // commit at the end if everything updated correctly
-                final String msg1 = "Database dump import loaded succesfully, committing now.";
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, verbose, printStream);
+                final String msg1 = "Database dump import loaded succesfully, committing... ";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, verbose, printStream, false);
                 c.commit();
             } catch (SQLException e) {
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                        "Error loading database dump. Rolling back now. " + e.getMessage(), verbose, printStream);
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING,
+                        "Error loading database dump due to error: " + e.getMessage(), verbose, printStream, false);
+
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING,
+                        "Rolling back database changes... ", verbose, printStream, false);
+                
                 c.rollback();
                 throw e;
             } catch (IOException e) {
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                        "Error loading database dump. Rolling back now. " + e.getMessage(), verbose, printStream);
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING,
+                        "Error loading database dump due to error: " + e.getMessage(), verbose, printStream, false);
+
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING,
+                        "Rolling back database changes... ", verbose, printStream, false);
                 c.rollback();
                 throw e;
             } finally {

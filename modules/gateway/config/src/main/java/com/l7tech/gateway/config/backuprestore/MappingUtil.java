@@ -58,7 +58,7 @@ class MappingUtil {
                                                final PrintStream printStream) throws SQLException {
         Connection c = new DBActions().getConnection(config, false);
         try {
-            System.out.println("Applying mappings");
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Applying mappings", verbose, printStream);
 
             // iterate through policies
             // column exists if upgraded from 4.2
@@ -74,15 +74,16 @@ class MappingUtil {
                 updateps.setString(2, varname);
                 int res = updateps.executeUpdate();
                 if (res > 0) {
-                    logger.info("Setting cluster property " + varname + " to value " + varval);
-                    System.out.println("\tSetting cluster property " + varname + " to value " + varval);
+                    final String msg = "\tSetting cluster property " + varname + " to value " + varval;
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, verbose, printStream);
                 } else {
-                    logger.info("Target system does not have cluster property " + varname + ". Ignoring this mapping.");
-                    System.out.println("\tTarget system does not have cluster property " + varname + ". Ignoring this mapping.");
+                    final String msg = "\tTarget system does not have cluster property " + varname
+                            + ". Ignoring this mapping";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, verbose, printStream);
                 }
                 updateps.close();
             }
-            System.out.println("Mapping Complete.");
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Mapping Complete", verbose, printStream);
         } finally {
             c.close();
         }
@@ -394,9 +395,10 @@ class MappingUtil {
                     for (String fromIP : mapping.backendIPMapping.keySet()) {
                         if (policyXml.indexOf("stringValue=\"" + fromIP + "\"") >= 0) {
                             String toIP = mapping.backendIPMapping.get(fromIP);
-                            logger.info("Mapping routing IP address for " + getDescription(connection, table, objectid) + ": from " + fromIP + " to " + toIP);
+                            final String msg = "\tMapping routing IP address for " +
+                                    getDescription(connection, table, objectid) + ": from " + fromIP + " to " + toIP;
+                            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, verbose, printStream);
                             policyXml = policyXml.replace("stringValue=\"" + fromIP + "\"", "stringValue=\"" + toIP + "\"");
-                            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "", verbose, printStream);
                             changed = true;
                         }
                     }

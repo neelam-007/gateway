@@ -597,9 +597,6 @@ final class RestoreImpl implements Restore{
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Mapping file loaded",
                             isVerbose, this.printStream);
 
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Applying mappings",
-                            isVerbose, this.printStream);
-
                     MappingUtil.applyMappingChangesToDB(dbRestorer.getDbConfig(), mapping, isVerbose, printStream);
 
                 } catch (Exception e) {
