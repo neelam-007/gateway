@@ -11,13 +11,13 @@ import com.l7tech.message.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.HexUtils;
 
 import javax.wsdl.Operation;
@@ -444,33 +444,22 @@ public class ServerVariables {
         new Variable("request.ssl.clientCertificate", new Getter(){
             @Override
             public Object get(String name, PolicyEnforcementContext context){
-                List<LoginCredentials> allCreds = context.getAuthenticationContext(context.getRequest()).getCredentials();
-                for(LoginCredentials creds : allCreds){
-                    if(creds != null && creds.getFormat().isClientCert()){
-                        //can only have one credential of a particular type per ProcessingContext, so this must be it
-                        return creds.getClientCert();
-                    }
-                }
-                return null;
+                return getOnlyOneClientCertificateForSource(
+                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
+                        SslAssertion.class );
             }
         }),
         new Variable("request.ssl.clientCertificate.base64", new Getter(){
             @Override
             public Object get(String name, PolicyEnforcementContext context){
-                List<LoginCredentials> allCreds = context.getAuthenticationContext(context.getRequest()).getCredentials();
-                for(LoginCredentials creds : allCreds){
-                    if(creds != null && creds.getFormat().isClientCert()){
-                        //can only have one credential of a particular type per ProcessingContext, so this must be it
-                        BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
-                        try{
-                            String encoding = "UTF-8";
-                            bos.write(HexUtils.encodeBase64(creds.getClientCert().getEncoded()).getBytes(encoding));
-                            return bos.toString(encoding);
-                        }catch(Exception e){
-                            return null;
-                        }finally{
-                            bos.close();
-                        }
+                final X509Certificate certificate = getOnlyOneClientCertificateForSource(
+                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
+                        SslAssertion.class );
+                if ( certificate != null ) {
+                    try {
+                        return HexUtils.encodeBase64(certificate.getEncoded(), true);//strip whitespaces
+                    } catch (Exception e) {
+                        logger.log(Level.SEVERE, "Error getting base64 value.", e);
                     }
                 }
                 return null;
@@ -479,16 +468,14 @@ public class ServerVariables {
         new Variable("request.ssl.clientCertificate.pem", new Getter(){
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                List<LoginCredentials> allCreds = context.getAuthenticationContext(context.getRequest()).getCredentials();
-                for (LoginCredentials creds : allCreds) {
-                    if (creds != null && creds.getFormat().isClientCert()) {
-                        //can only have one credential of a particular type per ProcessingContext, so this must be it
-                        try{
-                            return CertUtils.encodeAsPEM(creds.getClientCert());
-                        }catch(Exception e){
-                            logger.log(Level.SEVERE, "Error getting certificate's PEM value.", e);
-                            return null;
-                        }
+                final X509Certificate certificate = getOnlyOneClientCertificateForSource(
+                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
+                        SslAssertion.class );
+                if ( certificate != null ) {
+                    try {
+                        return CertUtils.encodeAsPEM(certificate);
+                    } catch (Exception e) {
+                        logger.log(Level.SEVERE, "Error getting certificate's PEM value.", e);
                     }
                 }
                 return null;
@@ -497,16 +484,14 @@ public class ServerVariables {
         new Variable("request.ssl.clientCertificate.der", new Getter(){
             @Override
             public Object get(String name, PolicyEnforcementContext context){
-                List<LoginCredentials> allCreds = context.getAuthenticationContext(context.getRequest()).getCredentials();
-                for(LoginCredentials creds : allCreds){
-                    if(creds != null && creds.getFormat().isClientCert()){
-                        //can only have one credential of a particular type per ProcessingContext, so this must be it
-                        try {
-                            return creds.getClientCert().getEncoded();
-                        } catch (CertificateEncodingException cee) {
-                            logger.log(Level.SEVERE, "Error getting certificate encoding.", cee);
-                            return null;
-                        }
+                final X509Certificate certificate = getOnlyOneClientCertificateForSource(
+                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
+                        SslAssertion.class );
+                if ( certificate != null ) {
+                    try {
+                        return certificate.getEncoded();
+                    } catch (CertificateEncodingException cee) {
+                        logger.log(Level.SEVERE, "Error getting certificate encoding.", cee);
                     }
                 }
                 return null;
