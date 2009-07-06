@@ -200,6 +200,13 @@ final class RestoreImpl implements Restore{
             //restore all aar files found to /opt/SecureSpan/Gateway/runtime/modules/assertions
             ImportExportUtilities.copyFiles(imageMADir, ssgMaFolder, new FilenameFilter() {
                 public boolean accept(File dir, String name) {
+                    //if it's not .aar, ignore it completely
+                    if(!name.endsWith(".aar")){
+                        final String msg = "Ignoring non modular assertion file found: '" + name+"' ";
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                        return false;
+                    }
+
                     //check if this modular assertion already exists on the host
                     //extract the name part of the found assertion
                     final String namePart = ImportExportUtilities.getFilePart(name);
@@ -211,9 +218,14 @@ final class RestoreImpl implements Restore{
                         assertionName = namePart.substring(0, namePart.lastIndexOf("-"));
                     }
 
-                    if(uniqueAssertionNames.contains(assertionName)) return false;
+                    if(uniqueAssertionNames.contains(assertionName)){
+                        final String msg = "Modular assertion '" + name+"' is being skipped as it already exists in "
+                                + ssgMaFolder.getAbsolutePath();
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                        return false;
+                    }
 
-                    return name.endsWith(".aar");
+                    return true;
                 }
             }, isVerbose, printStream);
 
