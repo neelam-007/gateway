@@ -49,10 +49,7 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -604,8 +601,15 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             List<String> aliases = new ArrayList<String>(Collections.list(inks.aliases()));
             if (aliases.isEmpty())
                 throw new AliasNotFoundException("PKCS#12 file contains no private key entries");
-            if (aliases.size() > 1)
+            if (aliases.size() > 1) {
+                // Retain private keys and filter out those certificates.
+                for (Iterator<String> itr = aliases.iterator(); itr.hasNext();) {
+                    if (! inks.isKeyEntry(itr.next())) {
+                        itr.remove();
+                    }
+                }
                 throw new MultipleAliasesException(aliases.toArray(new String[aliases.size()]));
+            }
             pkcs12alias = aliases.iterator().next();
         }
 
