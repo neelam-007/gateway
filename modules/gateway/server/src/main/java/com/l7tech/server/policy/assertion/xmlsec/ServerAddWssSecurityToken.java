@@ -24,7 +24,7 @@ public class ServerAddWssSecurityToken extends ServerAddWssSignature<AddWssSecur
     private static final Logger logger = Logger.getLogger(ServerAddWssSecurityToken.class.getName());
 
     public ServerAddWssSecurityToken( final AddWssSecurityToken assertion, final ApplicationContext spring ) {
-        super(assertion, assertion, assertion, spring, ServerAddWssSecurityToken.logger);
+        super(assertion, assertion, assertion, spring, ServerAddWssSecurityToken.logger, true);
     }
 
     @Override

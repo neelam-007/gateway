@@ -45,15 +45,18 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
     protected final SignerInfo signerInfo;
     protected final WssDecorationConfig wssConfig;
     protected final Auditor auditor;
+    protected final boolean failIfNotSigning;
 
     protected ServerAddWssSignature( final AT assertion,
                                      final WssDecorationConfig responseWssAssertion,
                                      final MessageTargetable messageTargetable,
                                      final ApplicationContext spring,
-                                     final Logger logger) {
+                                     final Logger logger,
+                                     final boolean failIfNotSigning ) {
         super(assertion, messageTargetable);
         this.auditor = new Auditor(this, spring, logger);
         this.wssConfig = responseWssAssertion;
+        this.failIfNotSigning = failIfNotSigning;
         try {
             this.signerInfo = ServerAssertionUtils.getSignerInfo(spring, responseWssAssertion);
         } catch (KeyStoreException e) {
@@ -115,8 +118,12 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
         if (howMany < 0) {
             return AssertionStatus.FAILED;
         } else if (howMany == 0) {
-            auditor.logAndAudit(AssertionMessages.ADD_WSS_SIGNATURE_MESSAGE_NO_MATCHING_EL, messageDescription);
-            return AssertionStatus.FALSIFIED;
+            if ( failIfNotSigning ) {
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_SIGNATURE_MESSAGE_NO_MATCHING_EL, messageDescription);
+                return AssertionStatus.FALSIFIED;
+            } else {
+                return AssertionStatus.NONE;
+            }
         }
 
         // TODO need some way to guess whether sender would prefer we sign with our cert or with his

@@ -20,7 +20,7 @@ public class ServerAddWssTimestamp extends ServerAddWssSignature<AddWssTimestamp
     private static final Logger logger = Logger.getLogger(ServerAddWssTimestamp.class.getName());
 
     public ServerAddWssTimestamp(AddWssTimestamp assertion, ApplicationContext spring) {
-        super(assertion, assertion, assertion, spring, logger);
+        super(assertion, assertion, assertion, spring, logger, false);
     }
 
     @Override
