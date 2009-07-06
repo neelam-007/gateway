@@ -291,11 +291,6 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         if (!policy.isSoap()) {
             authSamlRadio.setEnabled(false);
-            for (AbstractButton button : secHdrButtons) {
-                button.setSelected(false);
-                button.setEnabled(false);
-            }
-            wssPromoteActorCombo.setEnabled(false);
         }
 
         ButtonGroup wssButtons = new ButtonGroup();
