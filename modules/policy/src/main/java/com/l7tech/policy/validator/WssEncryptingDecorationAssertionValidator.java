@@ -38,7 +38,7 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
                           final PolicyValidatorResult result ) {
         super.validate( path, wsdl, soap, result );
 
-        if ( !defaultActor || !Assertion.isResponse(assertion ) && !defaultIdentityTarget ) {
+        if ( (!defaultActor || !Assertion.isResponse(assertion )) && !defaultIdentityTarget ) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
                     "The \"Target Identity\" will be ignored for this assertion. A \"Target Identity\" should be used for response encryption when multiple identities are used in a request.", null));
         }
