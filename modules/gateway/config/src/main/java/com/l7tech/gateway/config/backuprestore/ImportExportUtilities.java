@@ -134,7 +134,7 @@ public class ImportExportUtilities {
      * Read the fileToProcess and extract all lines of text, except for lines starting with '#', and return
      * them in a list of strings
      * @param fileToProcess file to read
-     * @return List<String> of each line of text found in the file
+     * @return List<String> of each line of text found in the file. Can be empty, never null
      * @throws java.io.IOException if any problems reading the file
      */
     static List<String> processFile(final File fileToProcess) throws IOException {

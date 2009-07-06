@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.lang.StringUtils;
@@ -42,7 +43,7 @@ class DatabaseRestorer {
     private final File ssgHome;
     private final DBActions dbAction = new DBActions();
     private final BackupImage image;
-    private static final String EXCLUDE_TABLES_PATH = "config/backup/cfg/exclude_tables.conf";
+    private static final String EXCLUDE_TABLES_PATH = "config/backup/cfg/exclude_tables";
 
     /**
      *
@@ -526,7 +527,32 @@ class DatabaseRestorer {
      * @throws java.io.IOException
      */
     private List<String> getExcludedTableNames(final File ssgHome) throws IOException {
-        return ImportExportUtilities.processFile(new File(ssgHome, EXCLUDE_TABLES_PATH));
+        final File excludeTableFile = new File(ssgHome, EXCLUDE_TABLES_PATH);
+        if(!excludeTableFile.exists() || !excludeTableFile.isFile()){
+            final String msg = "File '" + excludeTableFile.getAbsolutePath()+"' was not found. No tables will" +
+                    " be excluded";
+            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, verbose, printStream);
+            return Collections.emptyList();
+        }
+
+        final List<String> returnList = ImportExportUtilities.processFile(new File(ssgHome, EXCLUDE_TABLES_PATH));
+        if(!returnList.isEmpty()){
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "The following tables will not be modified: ",
+                    verbose, printStream, false);
+
+            for(String s: returnList){
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, s+" ",
+                        verbose, printStream, false);
+            }
+            //just for pretty formatting
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "", verbose, printStream);
+        }else{
+            //this is a warning, as with migrate, you would expect that some tables will be excluded
+            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, "No tables will be excluded",
+                    verbose, printStream);
+        }
+
+        return returnList;
     }
 
 }
