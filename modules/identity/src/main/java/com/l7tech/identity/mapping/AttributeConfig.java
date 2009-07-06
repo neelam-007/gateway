@@ -9,18 +9,10 @@ import java.util.Set;
 /**
  * A description of a generic attribute that users and/or credentials might have.
  * (e.g. email address, membership status, account balance...)
- * <p>
- * Mappings of this attribute to fields that might be found in users or groups
- * can be found in the {@link #identityMappings} belonging to this object.
- * <p>
- * Mappings of this attribute to values derived from security tokens can be found in the
- * {@link #securityTokenMappings} belonging to this object.
  */
 public class AttributeConfig extends NamedEntityImp {
     private AttributeHeader header;
     private String description;
-    private Set<? extends SecurityTokenMapping> securityTokenMappings;
-    private Set<? extends IdentityMapping> identityMappings;
 
     /**
      * Overrides the default variable name in {@link #header}.
@@ -80,22 +72,6 @@ public class AttributeConfig extends NamedEntityImp {
 
     public DataType getType() {
         return header.getType();
-    }
-
-    public Set<? extends SecurityTokenMapping> getSecurityTokenMappings() {
-        return securityTokenMappings;
-    }
-
-    public void setSecurityTokenMappings(Set<? extends SecurityTokenMapping> securityTokenMappings) {
-        this.securityTokenMappings = securityTokenMappings;
-    }
-
-    public Set<? extends IdentityMapping> getIdentityMappings() {
-        return identityMappings;
-    }
-
-    public void setIdentityMappings(Set<? extends IdentityMapping> identityMappings) {
-        this.identityMappings = identityMappings;
     }
 
     public boolean equals(Object o) {
