@@ -44,6 +44,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M CERT_KEY_USAGE              = m(3031, Level.WARNING, "Certificate key usage or extended key usage disallowed by key usage enforcement policy for activity: {0}");
     public static final M ERROR_WSS_PROCESSING_INFO   = m(3032, Level.INFO, "Error in WSS processing of request: {0}");
     public static final M MESSAGE_NO_SIG_CONFIRMATION = m(3033, Level.WARNING, "No suitable decoration was found for adding signature confirmations.");
+    public static final M ERROR_WSS_RESPONSE          = m(3034, Level.WARNING, "Error in WSS processing of response: {0}");
 
     // Service resolver messages
     public static final M SR_HTTPURI_CACHEDFAIL      = m(3100, Level.FINE, "Using cached failure @\"{0}\"");

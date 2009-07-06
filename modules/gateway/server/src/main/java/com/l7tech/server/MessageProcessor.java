@@ -414,6 +414,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                         wssDecorator.decorateMessage(response, responseDecoReq);
                     }
                 } catch (Exception e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_RESPONSE, ExceptionUtils.getMessage(e));                    
                     throw new PolicyAssertionException(null, "Failed to apply WSS decoration to response", e);
                 }
             }

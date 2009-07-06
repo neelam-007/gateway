@@ -1372,7 +1372,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                          String actor,
                                          Boolean mustUnderstand,
                                          boolean useExisting)
-            throws InvalidDocumentFormatException
+            throws DecoratorException, InvalidDocumentFormatException
     {
         final Element resultSecurity;
         Element oldSecurity = SoapUtil.getSecurityElement(message, actor);
@@ -1385,8 +1385,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 } else {
                     error = "This message already has a security header for the default actor";
                 }
-                logger.warning(error);
-                throw new InvalidDocumentFormatException(error);
+                throw new DecoratorException(error);
             }
 
             String activeWsuNS = DomUtils.findActiveNamespace(oldSecurity, SoapConstants.WSU_URIS_ARRAY);
