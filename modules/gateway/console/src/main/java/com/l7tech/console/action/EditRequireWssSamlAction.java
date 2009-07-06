@@ -26,14 +26,12 @@ import java.util.logging.Level;
  * @author emil
  */
 public class EditRequireWssSamlAction extends NodeAction {
-    private RequireWssSaml requestWssSaml;
 
     public EditRequireWssSamlAction(AssertionTreeNode node) {
         super(node, RequireWssSaml.class);
         if (!(node.asAssertion() instanceof RequireWssSaml)) {
             throw new IllegalArgumentException();
         }
-        requestWssSaml = (RequireWssSaml)node.asAssertion();
     }
 
     public String getName() {
@@ -49,6 +47,7 @@ public class EditRequireWssSamlAction extends NodeAction {
     }
 
     protected void performAction() {
+        final RequireWssSaml requestWssSaml = (RequireWssSaml)node.asAssertion();
         final Frame mw = TopComponents.getInstance().getTopParent();
         final RequireWssSamlPropertiesPanel dlg =
           new RequireWssSamlPropertiesPanel(requestWssSaml, mw, true, !node.canEdit());
@@ -69,7 +68,6 @@ public class EditRequireWssSamlAction extends NodeAction {
                     if (requestWssSaml.getParent() != null) {
                         requestWssSaml.getParent().replaceChild(requestWssSaml, updatedAssertion);
                     }
-                    requestWssSaml = updatedAssertion; // else 2nd edit is ignored ...
 
                     final JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
