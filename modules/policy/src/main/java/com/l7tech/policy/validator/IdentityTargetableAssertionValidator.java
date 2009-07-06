@@ -112,15 +112,13 @@ public class IdentityTargetableAssertionValidator implements AssertionValidator 
                 continue;
             }
 
-            if ( assertion instanceof IdentityAssertion &&
-                 AssertionUtils.isSameTargetMessage( assertion, messageTargetable ) ) {
-                targetOptions.add( ((IdentityAssertion)assertion).getIdentityTarget() );
-            }
-
             if ( assertion instanceof IdentityTagable &&
                  AssertionUtils.isSameTargetMessage( assertion, messageTargetable ) &&
                  ((IdentityTagable)assertion).getIdentityTag() != null ) {
                 targetOptions.add( new IdentityTarget(((IdentityTagable)assertion).getIdentityTag()) );
+            } else if ( assertion instanceof IdentityAssertion &&
+                 AssertionUtils.isSameTargetMessage( assertion, messageTargetable ) ) {
+                targetOptions.add( ((IdentityAssertion)assertion).getIdentityTarget() );
             }
         }
 
