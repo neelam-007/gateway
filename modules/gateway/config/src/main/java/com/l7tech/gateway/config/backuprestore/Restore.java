@@ -114,6 +114,10 @@ public interface Restore {
      *
      * This will restore found modular assertion aar jar files into the modular assertion folder
      *
+     * Only assertions which do not exist on the target will be copied. The backup / restore of modular assertions
+     * is designed to catch any custom modular assertions which may be installed. It is not intended to be a backup
+     * /restore for modular assertions which come with the product
+     *
      * @param isRequired if true, this component must be found in the backup image
      * @return Result is either success or not applicable, which happens when no modular assertion data is found
      * in the backup image

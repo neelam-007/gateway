@@ -10,13 +10,10 @@ import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
 import org.junit.Assert;
-import org.apache.commons.configuration.PropertiesConfiguration;
 
 import java.io.IOException;
 import java.io.File;
 import java.net.URL;
-import java.util.Map;
-import java.util.HashMap;
 
 import com.l7tech.util.FileUtils;
 
@@ -312,6 +309,10 @@ public class ImporterTest {
 
     /**
      * Test the restore of the MA component, when it's asked for
+     *
+     * This also tests that when a modular asssertion is found on a target, it is not overwritten by whats in the
+     * back up image. EchoRoutingAssertion is a test resource and causes the newer 5.1 from the back up image
+     * to be ignored
      * @throws Exception
      */
     @Test
@@ -349,7 +350,7 @@ public class ImporterTest {
             "NcesValidatorAssertion-5.1.aar",
             "XacmlPdpAssertion-5.1.aar",
             "ComparisonAssertion-5.1.aar",
-            "EchoRoutingAssertion-5.1.aar"
+            "EchoRoutingAssertion-5.0.aar"
         };
 
         for(String fileName: allMaAars){

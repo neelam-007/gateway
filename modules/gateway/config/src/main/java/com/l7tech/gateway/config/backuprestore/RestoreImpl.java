@@ -13,6 +13,8 @@ import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.sql.SQLException;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -165,10 +167,52 @@ final class RestoreImpl implements Restore{
         }
 
         try {
-            final File ssgCaFolder = new File(ssgHome, ImportExportUtilities.MA_AAR_DIR);
-            //restore all aar files found to /opt/SecureSpan/Gateway/runtime/modules/assertions
-            ImportExportUtilities.copyFiles(imageMADir, ssgCaFolder, new FilenameFilter() {
+            //We want to restore only modular assertions which do not exist on the target system.
+            //As back up backes up each assertion found, we need to check to see if a modular assertion
+            //exists on the target, and if so, don't copy it
+
+            //first build up the list of modular assertsions on the target system
+            final File ssgMaFolder = new File(ssgHome, ImportExportUtilities.MA_AAR_DIR);
+            if(!ssgMaFolder.exists() || !ssgMaFolder.isDirectory())
+                throw new IllegalStateException("Modular assertion folder not found");
+
+            final String [] foundAssertions = ssgMaFolder.list(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
+                    return name.endsWith(".aar");
+                }
+            });
+
+            final Set<String> uniqueAssertionNames = new HashSet<String>();
+            for(String s: foundAssertions){
+                //extract the name part of the found assertion
+                final String namePart = ImportExportUtilities.getFilePart(s);
+                //EchoRoutingAssertion-5.0.aar - remove everything after -
+                final String assertionName;
+                if(namePart.indexOf("-") == -1){
+                    assertionName = namePart;                    
+                }else{
+                    assertionName = namePart.substring(0, namePart.lastIndexOf("-"));
+                }
+
+                uniqueAssertionNames.add(assertionName);
+            }
+
+            //restore all aar files found to /opt/SecureSpan/Gateway/runtime/modules/assertions
+            ImportExportUtilities.copyFiles(imageMADir, ssgMaFolder, new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    //check if this modular assertion already exists on the host
+                    //extract the name part of the found assertion
+                    final String namePart = ImportExportUtilities.getFilePart(name);
+                    //EchoRoutingAssertion-5.0.aar - remove everhthing after -
+                    final String assertionName;
+                    if(namePart.indexOf("-") == -1){
+                        assertionName = namePart;
+                    }else{
+                        assertionName = namePart.substring(0, namePart.lastIndexOf("-"));
+                    }
+
+                    if(uniqueAssertionNames.contains(assertionName)) return false;
+
                     return name.endsWith(".aar");
                 }
             }, isVerbose, printStream);
