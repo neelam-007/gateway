@@ -247,10 +247,35 @@ final class RestoreImpl implements Restore{
 
         try {
             final List<String> ssgConfigFilesToExclude;
-            final String excludeFiles = "config/backup/cfg/exclude_files";
             if(isMigrate){
+                final String excludeFiles = "config/backup/cfg/exclude_files";
                 final File excludeFile = new File(ssgHome, excludeFiles);
-                ssgConfigFilesToExclude = ImportExportUtilities.processFile(excludeFile);
+                if(!excludeFile.exists() || !excludeFile.isFile()){
+                    final String msg = "File '" + excludeFile.getAbsolutePath()
+                            +"' was not found. No ssg configuration files will be excluded";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                    ssgConfigFilesToExclude = null;
+                }else{
+                    ssgConfigFilesToExclude = ImportExportUtilities.processFile(excludeFile);
+                    if(!ssgConfigFilesToExclude.isEmpty()){
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                                "The following ssg configuration files will not be overwritten: ", isVerbose,
+                                printStream, false);
+
+                        for(String s: ssgConfigFilesToExclude){
+                            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, s+" ",
+                                    isVerbose, printStream, false);
+                        }
+                        //just for pretty formatting
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "", isVerbose, printStream);
+                    }else{
+                        //this is a warning, as with migrate, you would expect that some tables will be excluded
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING,
+                                "No ssg configuration files will be excluded", isVerbose, printStream);
+                    }
+
+                }
+                
             }else{
                 ssgConfigFilesToExclude = null;
             }
