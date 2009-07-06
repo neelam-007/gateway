@@ -58,8 +58,7 @@ final class RestoreImpl implements Restore{
 
         throwIfSsgInstallationInvalid(testSsgHome);
         this.ssgHome = testSsgHome;
-        //we know this exists due to above validation
-        ssgConfigDir = getConfigDir(ssgHome);
+        ssgConfigDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
 
         if(image == null) throw new NullPointerException("image cannot be null");
 
@@ -101,6 +100,12 @@ final class RestoreImpl implements Restore{
         if(!testSsgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
         if(!testSsgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
 
+        //Make sure ssg configuration folder exists
+        final File testSsgConfigDir = new File(testSsgHome, ImportExportUtilities.NODE_CONF_DIR);
+        if(!testSsgConfigDir.exists() || !testSsgConfigDir.isDirectory())
+            throw new IllegalStateException("SSG configuration directory '"+testSsgConfigDir.getAbsolutePath()+"'is missing");
+
+
         final File testCADir = new File(testSsgHome, ImportExportUtilities.CA_JAR_DIR);
         if(!testCADir.exists() || !testCADir.isDirectory())
             throw new IllegalStateException("Custom assertion directory '"+testCADir.getAbsolutePath()+"'is missing");
@@ -109,15 +114,6 @@ final class RestoreImpl implements Restore{
         if(!testMADir.exists() || !testMADir.isDirectory())
             throw new IllegalStateException("Modular assertion directory '"+testMADir.getAbsolutePath()+"'is missing");
 
-    }
-
-    /**
-     * The returned File may not exist, this method it just for convenience
-     * @param testSsgHome may not exist
-     * @return
-     */
-    private File getConfigDir(final File testSsgHome){
-        return new File(testSsgHome, ImportExportUtilities.NODE_CONF_DIR);
     }
 
     public Result restoreComponentCA(boolean isRequired) throws RestoreException {

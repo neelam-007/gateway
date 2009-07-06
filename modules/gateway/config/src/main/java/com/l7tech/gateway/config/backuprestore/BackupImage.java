@@ -74,9 +74,8 @@ final class BackupImage {
         this.printStream = printStream;
         this.isVerbose = isVerbose;
         this.imageVersion = unzipAndDetermineVersion();
-
-        //verify backup contains the version info
-        versionFile = getVersionFileThrowIfNotFound();
+        //this exists due to unzipAndDetermineVersion above
+        versionFile = new File(tempDirectory, ImportExportUtilities.ComponentType.VERSION.getComponentName());
     }
 
     BackupImage(final FtpClientConfig ftpConfig,
@@ -113,7 +112,8 @@ final class BackupImage {
         }
         image = new File(downloadedFile);
         imageVersion = unzipAndDetermineVersion();
-        versionFile = getVersionFileThrowIfNotFound();
+        //this exists due to unzipAndDetermineVersion above
+        versionFile = new File(tempDirectory, ImportExportUtilities.ComponentType.VERSION.getComponentName());
     }
 
     public static class BackupImageException extends Exception{
@@ -132,7 +132,7 @@ final class BackupImage {
     /**
      * What type of image file is it?
      */
-    private ImageVersion unzipAndDetermineVersion() throws IOException {
+    private ImageVersion unzipAndDetermineVersion() throws IOException, InvalidBackupImage {
         final String msg = "Uncompressing image to temporary directory " + tempDirectory;
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
@@ -140,19 +140,36 @@ final class BackupImage {
 
         //What does the image look like? 5.0 or Buzzcut?
         //5.0 has no directories, its a flat layout
-
-        ImportExportUtilities.ComponentType [] allValues = ImportExportUtilities.ComponentType.values();
-        boolean anyDirectoryFound = false;
-        for(ImportExportUtilities.ComponentType component: allValues){
-            File f = new File(tempDirectory, component.getComponentName());
-            if(f.exists() && f.isDirectory()){
-                anyDirectoryFound = true;
-                break;
-            }
+        //A 5.0 image can contain a os folder, so this is not a valid way of determing version
+        //instead read the version file
+        //Version is in the same place for 5.0 and post 5.0 (for now)
+        final File versionFile = new File(tempDirectory, ImportExportUtilities.ComponentType.VERSION.getComponentName());
+        if(!versionFile.exists() || !versionFile.isFile()){
+            //version file can never be missing - invalid backup image
+            throw new InvalidBackupImage("Invalid backup image. Version file '"+
+                    versionFile.getAbsolutePath()+"' not found");
         }
 
-        if(anyDirectoryFound) return ImageVersion.AFTER_FIVE_O;
-        else return ImageVersion.FIVE_O;
+        FileInputStream versionStream = null;
+        try{
+            versionStream = new FileInputStream(versionFile);
+            final byte [] bytes = IOUtils.slurpStream(new FileInputStream(versionFile), 50);//should just contain 5.0 or 5.1
+            final String version = new String(bytes);
+            final String [] parts = version.split("\\.");//need to escape the . so it's treated literally
+            if(parts.length < 2)
+                throw new InvalidBackupImage("Invalid version number '"+version+"' found in version file ");
+
+            if(Integer.parseInt(parts[0]) < 5) throw new InvalidBackupImage("Unsupported version found '"+version+"'"); 
+
+            if(Integer.parseInt(parts[1]) > 0){
+                return ImageVersion.AFTER_FIVE_O;
+            }else{
+                return ImageVersion.FIVE_O;
+            }
+
+        }finally{
+            ResourceUtils.closeQuietly(versionStream);
+        }
     }
 
     /**
@@ -211,22 +228,6 @@ final class BackupImage {
             final File dbFolder = getMainDbBackupFolder();
             return new File(dbFolder, BackupImage.MAINDB_BACKUP_FILENAME);
         }
-    }
-
-    /**
-     * Get the actual version file, not just the directory containing it
-     * @return the version file
-     * @throws InvalidBackupImage if the version file is not found. It is required in any backup image zip
-     */
-    private File getVersionFileThrowIfNotFound() throws InvalidBackupImage {
-        //Version is in the same place for 5.0 and post 5.0 (for now)
-        final File versionFile = new File(tempDirectory, ImportExportUtilities.ComponentType.VERSION.getComponentName());
-        if(!versionFile.exists() || !versionFile.isFile()){
-            //version file can never be missing - invalid backup image
-            throw new InvalidBackupImage("Invalid backup image. Version file '"+
-                    versionFile.getAbsolutePath()+"' not found");
-        }
-        return versionFile;
     }
 
     /**

@@ -521,7 +521,7 @@ public final class Importer{
      * This is when isMigrate is true, its a 5.0 image or no config folder was found
      * @return PropertiesConfiguration, in a state where it can be saved and be correct
      */
-    private final Pair<PropertiesConfiguration, MasterPasswordManager> getNodePropertiesConfig(final Map<String, String> args)
+    private Pair<PropertiesConfiguration, MasterPasswordManager> getNodePropertiesConfig(final Map<String, String> args)
             throws InvalidProgramArgumentException {
         wereCompleteDbParamsSupplied(true);
 
