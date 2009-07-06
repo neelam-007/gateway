@@ -823,14 +823,16 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         // Check if there are invalid configurations.
         if (xencAlgorithmList.isEmpty()) {
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
-                            "You did not choose any encryption methods.  Please choose at least one of them.", null);
+                            "Selection of an encryption method is required. \n" +
+                            "Please select an encryption method.", null);
             return false;
         }
         if (assertion instanceof WssEncryptElement) {
             // Response Encryption Assertion allows only one encryption method.
             if (xencAlgorithmList.size() > 1) {
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
-                            "It is not allowed to choose more than one encryption methods.  Please choose one of them.", null);
+                            "Selection of multiple encryption methods is not permitted.\n" +
+                            "Please select a single encryption method.", null);
                 return false;
             }
             WssEncryptElement responseWssConfidentiality = (WssEncryptElement)assertion;
