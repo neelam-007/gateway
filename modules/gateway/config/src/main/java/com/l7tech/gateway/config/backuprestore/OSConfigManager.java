@@ -186,13 +186,14 @@ final class OSConfigManager {
     /**
      * Copy files from our internal folder to their ultimate desintation. Unless this code is running as root
      * this method will fail
+     * @return true if any files were copied on reboot
      */
-    void finishRestoreOfFilesOnReboot() throws OSConfigManagerException {
+    boolean finishRestoreOfFilesOnReboot() throws OSConfigManagerException {
         if(!isReboot)
             throw new IllegalStateException("Method cannot be called when OSConfigManager is not in the reboot state");
 
         try {
-            copyFilesFromSource(internalOsFolder);
+            return copyFilesFromSource(internalOsFolder);
         } catch (IOException e) {
             throw new OSConfigManagerException("Cannot copy files to internal folder: " + e.getMessage());
         }
@@ -202,9 +203,10 @@ final class OSConfigManager {
     /**
      * This can also be used to copy files like my.cnf which are restored outside of the os backup component
      * @param source is either our internal folder or a directory where a backup image was unzipped to
+     * @return true, if any files were copied
      * @throws IOException
      */
-    private void copyFilesFromSource(final File source) throws IOException {
+    private boolean copyFilesFromSource(final File source) throws IOException {
         final List<String> allFiles = getFlattenedDirectoryForFilesOnly(source);
         final String sourceRoot = source.getAbsolutePath();
 
@@ -225,8 +227,6 @@ final class OSConfigManager {
             //structure  so that source/etc/a.txt ends up in target/etc/a.txt
 
             final String rawFilePath = osFile.substring(sourceRoot.length());
-            final String msg = "Copying file '"+osFile+"' into folder '"+ targetRoot.getAbsolutePath()+"'";
-            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
             final File sourceFile = new File(osFile);
             final File targetFile = new File(targetRoot, rawFilePath);
@@ -234,12 +234,18 @@ final class OSConfigManager {
             FileUtils.ensurePath(targetFile.getParentFile());
             FileUtils.copyFile(sourceFile, targetFile);
             systemFileOverWritten = true;
+
+            final String msg = "Copied file '"+osFile+"' into folder '"+ targetFile.getAbsolutePath()+"'";
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
         }
         if (systemFileOverWritten && !isReboot) {
             final String msg = "Certain system files are set to be overwritten the next time the SSG host is restarted" +
                     " ,if this has been configured on host startup";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
         }
+
+        return systemFileOverWritten;
     }
 
     void copyFileFromSource(final File fileToCopy) throws IOException{

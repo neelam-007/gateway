@@ -195,7 +195,8 @@ public class ImporterTest {
         try {
             //modify the root folder of where files are copied to
             System.setProperty("com.l7tech.config.backuprestore.osrootdir", tempDirectory);
-            osConfigManager.finishRestoreOfFilesOnReboot();
+            final boolean filesCopied = osConfigManager.finishRestoreOfFilesOnReboot();
+            Assert.assertTrue("Files should have been copied", filesCopied);
         } finally{
             FileUtils.deleteDir(new File(tempDirectory));
             System.clearProperty("com.l7tech.config.backuprestore.osrootdir");

@@ -42,6 +42,10 @@ public class BackupRestoreLauncher {
 
         initializeLogging(args[0]);
 
+        //when noOutput is true, no System.out.println calls should happen, regardless of error conditions
+        //this is for when cfgdaemon target is ran on system reboot, errors should still be logged
+        final boolean noConsoleOutput = args[0].equalsIgnoreCase(CFGDAEMON_TYPE);
+        
         try {
             if (args[0].equalsIgnoreCase(IMPORT_TYPE) || args[0].equalsIgnoreCase(MIGRATE_TYPE)) {
                 final String [] argsToUse;
@@ -114,10 +118,13 @@ public class BackupRestoreLauncher {
 
                 }
             } else if (args[0].equalsIgnoreCase(CFGDAEMON_TYPE)) {
+                final File ssgHome = new File(SECURE_SPAN_HOME, ImportExportUtilities.GATEWAY);
                 final OSConfigManager osConfigManager =
-                        new OSConfigManager(new File(SECURE_SPAN_HOME), true, false, null);
+                        new OSConfigManager(ssgHome, true, false, null);
                 try {
-                    osConfigManager.finishRestoreOfFilesOnReboot();
+                    final boolean filesWereCopied = osConfigManager.finishRestoreOfFilesOnReboot();
+                    //this is the only output from cfgdaemon
+                    if(filesWereCopied) System.out.println("Files were restored by the cfgdaemon");
                 } catch (OSConfigManager.OSConfigManagerException e) {
                     logger.log(Level.SEVERE, "Exception running cfgdaemon target of ssgrestore: " + e.getMessage());
                     System.exit(1);
@@ -130,24 +137,24 @@ public class BackupRestoreLauncher {
             }
         } catch (InvalidProgramArgumentException e) {
             String message = "Invalid argument due to '" + e.getMessage() + "'.";
-            System.out.println(message);
-            logger.log(Level.INFO, message);
-            System.out.println(getUsage(args[0]));
+            if(!noConsoleOutput) System.out.println(message);
+            logger.log(Level.WARNING, message);
+            if(!noConsoleOutput) System.out.println(getUsage(args[0]));
             System.exit(1);
         } catch (IOException e) {
             String message = "Error occurred due to '" + e.getMessage() + "'.";
-            System.out.println(message);
+            if(!noConsoleOutput) System.out.println(message);
             logger.log(Level.WARNING, message);
             System.exit(1);
         } catch (FatalException e) {
             String message = "Import failed due to '" + e.getMessage() + "'.";
-            System.out.println(message);
+            if(!noConsoleOutput) System.out.println(message);
             logger.log(Level.WARNING, message);
             System.exit(1);
         } catch (Exception e) {
             //this catches all runtime Exceptions which can be thrown for Null pointers, Illegal States and Unsupported Ops
             String message = "Import / Export failed due to '" + ExceptionUtils.getMessage(e,"Unknown error") + "'.";
-            System.out.println(message);
+            if(!noConsoleOutput) System.out.println(message);
             logger.log(Level.WARNING, message);
             System.exit(1);
         }
