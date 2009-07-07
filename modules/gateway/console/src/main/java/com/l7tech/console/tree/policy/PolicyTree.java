@@ -524,6 +524,24 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         /**
+         * The main purpose of overriding this method is to check if the location of a left-click is within the bounds
+         * of the JTree.  If it is not within the bounds, then set no selection in the JTree.  This overridden is for
+         * fixing the bug 7427 - "Selection is not cleared in policy editor when focus moves outside assertion area."
+         *
+         * @param e: the mouse event
+         */
+        @Override
+        public void mousePressed(MouseEvent e) {
+            JTree tree = (JTree)e.getSource();
+            int closestRow = tree.getRowForLocation(e.getX(), e.getY());
+            if (closestRow == -1) { // -1 means not within the bounds of the JTree
+                PolicyTree.this.clearSelection();
+            }
+            
+            super.mousePressed(e);
+        }
+
+        /**
          * Invoked when the mouse enters a component.
          */
         @Override
