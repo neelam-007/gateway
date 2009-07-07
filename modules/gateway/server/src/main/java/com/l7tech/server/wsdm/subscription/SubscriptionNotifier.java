@@ -29,6 +29,7 @@ import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.wsdm.Aggregator;
 import com.l7tech.server.wsdm.MetricsRequestContext;
 import com.l7tech.server.wsdm.QoSMetricsService;
+import com.l7tech.server.wsdm.Namespaces;
 import com.l7tech.server.wsdm.faults.FaultMappableException;
 import com.l7tech.server.wsdm.faults.GenericWSRFExceptionFault;
 import com.l7tech.server.wsdm.faults.ResourceUnknownFault;
@@ -39,6 +40,7 @@ import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.w3c.dom.Element;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -328,6 +330,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         public String subscriptionId;
         public long serviceId;
         public String target;
+        public String refParamsXml;
         public long ts;
         public String eventId;
         public String notificationPolicyGuid;
@@ -632,6 +635,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
             ssnc.subscriptionId = sub.getUuid();
             ssnc.serviceId = sub.getPublishedServiceOid();
             ssnc.target = sub.getReferenceCallback();
+            ssnc.refParamsXml = processReferenceParameters(sub);
             ssnc.notificationPolicyGuid = sub.getNotificationPolicyGuid();
             ssnc.ts = now;
             ssnc.bin = bin;
@@ -657,6 +661,31 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                 }
             }
         });
+    }
+
+    private String processReferenceParameters(Subscription subscription) {
+        String referenceParams = subscription.getReferenceParams();
+        if (referenceParams == null) return "";
+        StringBuilder result = new StringBuilder();
+
+        Element paramElement = XmlUtil.findFirstChildElement(XmlUtil.stringAsDocument(referenceParams).getDocumentElement());
+        while(paramElement != null) {
+            paramElement.setAttributeNS(Namespaces.WSA, "IsReferenceParameter", "true");
+            final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+            try {
+                XmlUtil.nodeToOutputStreamWithXss4j(paramElement, out);
+                result.append(out.toString("UTF-8"));
+            } catch (IOException e) {
+                auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_IO_ERROR,
+                        new String[]{subscription.getReferenceCallback(), subscription.getNotificationPolicyGuid(), ExceptionUtils.getMessage(e)},
+                        ExceptionUtils.getDebugException(e) );
+            } finally {
+                out.close();
+            }
+            paramElement = XmlUtil.findNextElementSibling(paramElement);
+        }
+
+        return result.toString();
     }
 
     private String prepareNotificationForEnabledEvent(ServiceStatusNotificationContext ssnc, NotificationType what) throws IOException {
@@ -758,6 +787,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         String notificationEventId = generateNewSubscriptionId();
         ssnc.eventId = notificationEventId;
         output = output.replace("^$^$^_WSA_TARGET_^$^$^", ssnc.target);
+        output = output.replace("^$^$^_REFERENCE_PARAMS_^$^$^", ssnc.refParamsXml);
         output = output.replace("^$^$^_SUBSCRIPTION_ID_^$^$^", ssnc.subscriptionId);
         output = output.replace("^$^$^_ESM_SUBS_SVC_URL_^$^$^", baseURL + "/ssg/wsdm/esmsubscriptions");
         output = output.replace("^$^$^_EVENT_UUID_^$^$^", "urn:uuid:" + notificationEventId);

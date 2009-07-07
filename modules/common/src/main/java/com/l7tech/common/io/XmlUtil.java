@@ -407,7 +407,7 @@ public class XmlUtil extends DomUtils {
             nodeToOutputStreamWithXMLSerializer(node, os);
     }
 
-    static void nodeToOutputStreamWithXss4j(Node node, final OutputStream os) throws IOException {
+    public static void nodeToOutputStreamWithXss4j(Node node, final OutputStream os) throws IOException {
         Canonicalizer canon = getTransparentXMLSerializer_XSS4J_W3C();
         canon.canonicalize(node, os);
     }

@@ -9,14 +9,14 @@ import com.l7tech.server.wsdm.util.ISO8601Duration;
 import com.l7tech.message.Message;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.text.MessageFormat;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 import java.io.IOException;
 
 /**
@@ -34,11 +34,19 @@ public class Subscribe extends ESMMethod {
     private boolean terminationParsed;
     private String topicValue;
     private String serviceId;
+    private String referenceParams;
 
-    private Subscribe(final Element subscribeEl, Document doc, Message request) throws GenericNotificationExceptionFault {
+    private Set<String> unallowedNsInRefParams = new HashSet<String>() {{
+        add(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        add(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
+        add(Namespaces.WSA);
+    }};
+
+    private static final int MAX_REFERENCE_PARAMS_SIZE = 16384; // match Subscription.getReferenceParams column length
+
+    private Subscribe(final Element subscribeEl, Document doc, Message request) throws GenericNotificationExceptionFault, WsAddressingFault {
         super(doc, request);
         try {
-            // todo: ReferenceParameters should be included in all notification messages
             // extract ConsumerReference/Address/Text()
             Element consumerReferenceEl = XmlUtil.findOnlyOneChildElementByName(subscribeEl, Namespaces.WSNT, "ConsumerReference");
             if (consumerReferenceEl == null) {
@@ -81,6 +89,29 @@ public class Subscribe extends ESMMethod {
                 terminationParsed = true;
             }
 
+            // extract reference parameters
+            Element refParams = XmlUtil.findOnlyOneChildElementByName(getSoapHeader(), Namespaces.WSA, "ReferenceParameters");
+            if(refParams != null) {
+                checkUnallowedNamespaces(refParams);
+                final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+                try {
+                    XmlUtil.nodeToOutputStreamWithXss4j(refParams, out);
+                    referenceParams = out.toString("UTF-8");
+                    if(referenceParams.length() > MAX_REFERENCE_PARAMS_SIZE)
+                        throw new WsAddressingFault(new WsAddressingFault.WsaFaultDetail(
+                            WsAddressingFault.WsaFaultDetailType.PROBLEM_HEADER_QNAME,
+                            new HashMap<String, String>() {{ put("errMsg", "WSA Reference Parameters maximum size exceeded: " + referenceParams.length() + " > " + MAX_REFERENCE_PARAMS_SIZE); }},
+                            refParams.getLocalName()));
+                } catch (final IOException e) {
+                    throw new WsAddressingFault(new WsAddressingFault.WsaFaultDetail(
+                        WsAddressingFault.WsaFaultDetailType.PROBLEM_HEADER_QNAME,
+                        new HashMap<String, String>() {{ put("errMsg", "Error processing WSA header: " + ExceptionUtils.getMessage(e)); }},
+                        refParams.getLocalName()));
+                } finally {
+                    out.close();
+                }
+            }
+
             // Parse Filter value
             Element filterEl = XmlUtil.findOnlyOneChildElementByName(subscribeEl, Namespaces.WSNT, "Filter");
             if (filterEl == null) {
@@ -99,7 +130,7 @@ public class Subscribe extends ESMMethod {
         }
     }
 
-    public static Subscribe resolve(Message request) throws GenericNotificationExceptionFault, SAXException, IOException {
+    public static Subscribe resolve(Message request) throws GenericNotificationExceptionFault, WsAddressingFault, SAXException, IOException {
         Document doc = request.getXmlKnob().getDocumentReadOnly();
         Element bodychild;
         try {
@@ -124,6 +155,10 @@ public class Subscribe extends ESMMethod {
 
     public boolean isTerminationParsed() {
         return terminationParsed;
+    }
+
+    public String getReferenceParams() {
+        return referenceParams;
     }
 
     /**
@@ -199,6 +234,31 @@ public class Subscribe extends ESMMethod {
         }
 
         return canonical;
+    }
+
+    private void checkUnallowedNamespaces(Element refParams) throws WsAddressingFault {
+        Node node = refParams.getFirstChild();
+        Stack<Node> stack = new Stack<Node>();
+        while (node != null) {
+            // test
+            for(final String unallowedNS : unallowedNsInRefParams) {
+                if (unallowedNS.equals(node.getNamespaceURI()) || node.isDefaultNamespace(unallowedNS))
+                    throw new WsAddressingFault( new WsAddressingFault.WsaFaultDetail(
+                        WsAddressingFault.WsaFaultDetailType.PROBLEM_HEADER_QNAME,
+                        new HashMap<String,String>() {{ put("errMsg", "Namespace not allowed in WSA Reference Parameters: " + unallowedNS); }},
+                        refParams.getLocalName()
+                    ));
+            }
+            // move to next
+            if (node.hasChildNodes()) {
+                stack.push(node);
+                node = node.getFirstChild();
+            } else {
+                while((node = node.getNextSibling()) == null && ! stack.isEmpty()) {
+                    node = stack.pop();
+                }
+            }
+        }
     }
 }
 

@@ -13,6 +13,11 @@ public class WsAddressingFault extends FaultMappableException {
         super(msg);
     }
 
+    public WsAddressingFault(WsaFaultDetail detail) {
+        super(detail.content);
+        wsaFaultDetails.add(detail);
+    }
+
     @Override
     protected String getWSAAction() {
         return "http://www.w3.org/2005/08/addressing/fault";

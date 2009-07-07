@@ -8,7 +8,7 @@
                xmlns:muws-ev="http://docs.oasis-open.org/wsdm/muwse2-2.xml">
   <soap:Header>
     <wsa:Action>http://docs.oasis-open.org/wsn/bw-2/NotificationConsumer/Notify</wsa:Action>
-    <wsa:To>^$^$^_WSA_TARGET_^$^$^</wsa:To>
+    <wsa:To>^$^$^_WSA_TARGET_^$^$^</wsa:To>^$^$^_REFERENCE_PARAMS_^$^$^
   </soap:Header>
   <soap:Body>
     <wsnt:Notify>

@@ -41,6 +41,7 @@ public class Subscription extends PersistentEntityImp {
     private static final String OPERATIONAL_STATUS_CAPABILITY_PREFIX = "muws-ev";
     private static final String METRICS_CAPABILITY = "MetricsCapability";
     private static final String METRICS_CAPABILITY_PREFIX = "mowse";
+    private String referenceParams;
 
     public Subscription(Subscribe method, String uuid, String ownerNodeId) throws TopicNotSupportedFaultException {
         this.uuid = uuid;
@@ -49,6 +50,7 @@ public class Subscription extends PersistentEntityImp {
         if (method.isTerminationParsed()) {
             termination = method.getTermination();
         }
+        referenceParams = method.getReferenceParams();
 
         String topicValue = method.getTopicValue();
         String prefix = null;
@@ -103,6 +105,16 @@ public class Subscription extends PersistentEntityImp {
     @Column(name="notification_policy_guid", length=36)
     public String getNotificationPolicyGuid() {
         return notificationPolicyGuid;
+    }
+
+    @Column(name="reference_parameters", length=16384)
+    public String getReferenceParams() {
+        return referenceParams;
+    }
+
+    @Deprecated
+    public void setReferenceParams(String referenceParams) {
+        this.referenceParams = referenceParams;
     }
 
     public void setNotificationPolicyGuid(String notificationPolicyGuid) {
