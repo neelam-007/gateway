@@ -254,15 +254,18 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                 description = "name " + trustedCertificateName;
                 Collection<TrustedCert> trustedCertificates = trustedCertCache.findByName( trustedCertificateName );
                 X509Certificate certificate = null;
+                X509Certificate expiredCertificate = null;
                 for ( TrustedCert trustedCert : trustedCertificates ) {
                     if ( !isExpiredCert(trustedCert) ) {
                         certificate = trustedCert.getCertificate();
                         break;
+                    } else if ( expiredCertificate == null ) {
+                        expiredCertificate = trustedCert.getCertificate();
                     }
                 }
                 
-                if ( certificate != null ) {
-                    decoration.setRecipientCertificate( certificate );
+                if ( certificate != null || expiredCertificate != null ) {
+                    decoration.setRecipientCertificate( certificate!=null ? certificate : expiredCertificate );
                 } else {
                     auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
