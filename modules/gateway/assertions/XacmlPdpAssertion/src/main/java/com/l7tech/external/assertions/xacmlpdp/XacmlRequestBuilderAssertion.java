@@ -704,7 +704,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
         //meta.put(PALETTE_NODE_NAME, "CentraSite Metrics Assertion");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
-        meta.put(PALETTE_FOLDERS, new String[] { "xml" });
+        meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
 
         meta.put(POLICY_NODE_NAME, "XACML Request Builder");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
