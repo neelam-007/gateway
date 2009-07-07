@@ -29,6 +29,7 @@ import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
+import com.l7tech.security.xml.processor.ProcessorValidationException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.MessageProcessed;
@@ -714,6 +715,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     cfault.setFaultTemplate(SoapFaultUtils.badKeyInfoFault(context.getService() != null ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN, getIncomingURL(context)));
                     context.setFaultlevel(cfault);
                     assertionStatusHolder[0] = AssertionStatus.FAILED;
+                    return false;
+                } catch (ProcessorValidationException pve){
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING_INFO,
+                            new String[]{ExceptionUtils.getMessage( pve )},
+                            ExceptionUtils.getDebugException( pve ));
+                    assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
                     return false;
                 } catch (ProcessorException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);

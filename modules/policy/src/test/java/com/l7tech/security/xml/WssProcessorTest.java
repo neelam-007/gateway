@@ -430,8 +430,8 @@ public class WssProcessorTest {
             result = new TestDocument(TestDocuments.WAREHOUSE_REQUEST_UNKNOWN_MUSTUNDERSTAND, d, null, null, null, null, null );
             doTest(result);
             Assert.fail("Expected  ProcessorException for unknown header with MustUnderstand=1");
-        } catch ( InvalidDocumentFormatException idfe ) {
-            Assert.assertTrue("Exception is MustUnderstand", ExceptionUtils.getMessage(idfe).contains("mustUnderstand"));
+        } catch ( ProcessorValidationException pve ) {
+            Assert.assertTrue("Exception is MustUnderstand", ExceptionUtils.getMessage(pve).contains("mustUnderstand"));
         }
     }
 
@@ -455,8 +455,8 @@ public class WssProcessorTest {
             result = new TestDocument(TestDocuments.WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS, d, null, null, null, null, null );
             doTest(result);
             Assert.fail("Expected  ProcessorException for multiple signatures for timestamp");
-        } catch ( IllegalStateException ise ) {
-            Assert.assertTrue("Exception is timestamp signature", ExceptionUtils.getMessage(ise).contains("Timestamp"));
+        } catch ( ProcessorValidationException pve ) {
+            Assert.assertTrue("Exception is timestamp signature", ExceptionUtils.getMessage(pve).contains("Timestamp"));
         }
     }
 
@@ -791,7 +791,7 @@ public class WssProcessorTest {
                 processor.processMessage();
                 if (shouldReject)
                     fail("failed to reject message with mustUnderstand=1 : " + test);
-            } catch (InvalidDocumentFormatException e) {
+            } catch (ProcessorValidationException e) {
                 if (!shouldReject)
                     fail("rejected a document that should have passed : " + test);
                 assertTrue(e.getMessage().contains("mustUnderstand"));

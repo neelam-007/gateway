@@ -428,8 +428,7 @@ public class WssProcessorImpl implements WssProcessor {
                     String msg = "Unrecognized element in Security header: " +
                                  securityChildToProcess.getNodeName() +
                                  " with mustUnderstand=\"" + mu + "\"; rejecting message";
-                    logger.warning(msg);
-                    throw new ProcessorException(msg);
+                    throw new ProcessorValidationException(msg);
                 } else {
                     logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
                 }
@@ -492,7 +491,7 @@ public class WssProcessorImpl implements WssProcessor {
      * @throws InvalidDocumentFormatException if there is at least one SOAP header addressed to us
      *                                        with mustUnderstand=1 that we don't understand
      */
-    private void rejectIfHeadersNotUnderstood() throws InvalidDocumentFormatException {
+    private void rejectIfHeadersNotUnderstood() throws InvalidDocumentFormatException, ProcessorException {
         Element header = SoapUtil.getHeaderElement(processedDocument);
         if (header == null)
             return;
@@ -532,7 +531,7 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             });
         } catch (MustUnderstandException e) {
-            throw new InvalidDocumentFormatException("Header addressed to us with mustUnderstand: " + ExceptionUtils.getMessage(e), e);
+            throw new ProcessorValidationException("Header addressed to us with mustUnderstand: " + ExceptionUtils.getMessage(e));
         }
     }
 
@@ -870,7 +869,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private ProcessorResult produceResult() {
+    private ProcessorResult produceResult() throws ProcessorException {
         ProcessorResult processorResult = new ProcessorResult() {
             @Override
             public SignedElement[] getElementsThatWereSigned() {
@@ -996,7 +995,7 @@ public class WssProcessorImpl implements WssProcessor {
             Element timeElement = timestamp.asElement();
             SigningSecurityToken[] signingTokens = processorResult.getSigningTokens(timeElement);
             if (signingTokens.length > 1) {
-                throw new IllegalStateException("More then one signing token over Timestamp detected!");
+                throw new ProcessorValidationException("More than one signing token over Timestamp detected!");
             }
         }
         return processorResult;
@@ -1449,7 +1448,7 @@ public class WssProcessorImpl implements WssProcessor {
             if (permitUnknownBinarySecurityTokens) {
                 return; // ignore this token
             } else {
-                throw new ProcessorException("BinarySecurityToken has unsupported ValueType " + valueType);
+                throw new ProcessorValidationException("BinarySecurityToken has unsupported ValueType " + valueType);
             }
         }
         if (!encodingType.endsWith("Base64Binary"))

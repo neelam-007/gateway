@@ -2,6 +2,7 @@ package com.l7tech.server.util;
 
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
+import com.l7tech.security.xml.processor.ProcessorValidationException;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.token.*;
@@ -57,8 +58,15 @@ public class WSSecurityProcessorUtils {
             ProcessorResult wssResults = impl.processMessage();
             msg.getSecurityKnob().setProcessorResult(wssResults); // In case someone else needs it later
             return wssResults;
+        } catch (ProcessorValidationException e) {
+            if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
+                    new String[] { what, ExceptionUtils.getMessage(e) },
+                    ExceptionUtils.getDebugException( e ));
+            return null;
         } catch (Exception e) {
-            if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
+                    new String[] { what, ExceptionUtils.getMessage(e) }, 
+                    e );
             return null;
         }
     }
