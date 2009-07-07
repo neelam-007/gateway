@@ -637,6 +637,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         httpAuthPanel.setVisible(password);
         samlAuthPanel.setVisible(saml);
+        samlAuthPanel.setEnabled(saml);
         windowsAuthPanel.setVisible(win);
         authDetailsPanel.revalidate();
     }
