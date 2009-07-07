@@ -85,6 +85,9 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 selectedCertificateNameTextField.setText( certificate==null ? "<Not Found>" : certificate.getName() );
                 selectedCertificateSubjectTextField.setText( certificate==null ? "<Not Found>" : certificate.getSubjectDn() );
                 selectedCertificateIssuerTextField.setText( certificate==null ? "<Not Found>" : certificate.getIssuerDn() );
+                selectedCertificateNameTextField.setCaretPosition( 0 );
+                selectedCertificateSubjectTextField.setCaretPosition( 0 );
+                selectedCertificateIssuerTextField.setCaretPosition( 0 );
             } catch (FindException e) {
                 logger.warning("Could not find the specified certificate in the trust store. " + ExceptionUtils.getMessage(e));
             }
@@ -184,6 +187,9 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 selectedCertificateNameTextField.setText( cert.getName() );
                 selectedCertificateSubjectTextField.setText( cert.getSubjectDn() );
                 selectedCertificateIssuerTextField.setText( cert.getIssuerDn() );
+                selectedCertificateNameTextField.setCaretPosition( 0 );
+                selectedCertificateSubjectTextField.setCaretPosition( 0 );
+                selectedCertificateIssuerTextField.setCaretPosition( 0 );
                 updateState();
             }
         });
