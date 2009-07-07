@@ -249,8 +249,15 @@ class DatabaseRestorer {
 
                 //if not a new DB, verify the supplied cluster passphrase is correct
                 if (!isNewDatabase) {
-                    final ClusterPassphraseManager cpm = new ClusterPassphraseManager(targetConfig);
-                    cpm.setUseAdminUser(true);
+                    //Cluster passphrase manager will ask for a non admin connection
+                    //the gateway user in our targetConfig will not have access to the temporary database
+                    //created, so we will create a new DatabaseConfig and set the node username / password to
+                    //that of the admin user
+                    final DatabaseConfig adminDbConfig = new DatabaseConfig(targetConfig);
+                    adminDbConfig.setNodeUsername(adminDbConfig.getDatabaseAdminUsername());
+                    adminDbConfig.setNodePassword(adminDbConfig.getDatabaseAdminPassword());
+
+                    final ClusterPassphraseManager cpm = new ClusterPassphraseManager(adminDbConfig);
                     if (cpm.getDecryptedSharedKey(clusterPassphrase) == null) {
                         throw new DatabaseRestorerException("Incorrect cluster passphrase.");
                     }
