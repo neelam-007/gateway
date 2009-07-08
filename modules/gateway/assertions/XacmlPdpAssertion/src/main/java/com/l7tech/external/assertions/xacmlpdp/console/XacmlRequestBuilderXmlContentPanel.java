@@ -2,10 +2,13 @@ package com.l7tech.external.assertions.xacmlpdp.console;
 
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableModel;
 import java.util.Map;
 import java.awt.event.ActionListener;
@@ -45,11 +48,17 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
         this.genericXmlElementHolder = genericXmlElementHolder;
         this.window = window;
 
-        tableModel = new DefaultTableModel(new Object[] {"Name", "Value"}, 0);
+        tableModel = new DefaultTableModel(new Object[] {"Name", "Value"}, 0){
+            @Override
+            public boolean isCellEditable( int row, int column ) {
+                return false;
+            }
+        };
         for(Map.Entry<String, String> entry : genericXmlElementHolder.getAttributes().entrySet()) {
             tableModel.addRow(new Object[] {entry.getKey(), entry.getValue()});
         }
         xmlAttributesTable.setModel(tableModel);
+        xmlAttributesTable.getTableHeader().setReorderingAllowed( false );
 
         contentField.setText(genericXmlElementHolder.getContent());
 
@@ -71,8 +80,15 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
 
     public void init(boolean showSettings) {
         xmlAttributesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        xmlAttributesTable.getSelectionModel().addListSelectionListener( new ListSelectionListener(){
+            @Override
+            public void valueChanged( ListSelectionEvent e) {
+                enableOrDisableButtons();
+            }
+        } );
 
         addButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 XacmlRequestBuilderXmlAttrPanel dialog = new XacmlRequestBuilderXmlAttrPanel(window, "", "");
                 dialog.setVisible(true);
@@ -85,6 +101,7 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
         });
 
         modifyButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 int selectedRow = xmlAttributesTable.getSelectedRow();
                 if(selectedRow == -1) {
@@ -108,6 +125,7 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
         });
 
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 int selectedRow = xmlAttributesTable.getSelectedRow();
                 if(selectedRow == -1) {
@@ -121,20 +139,24 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
         });
 
         contentField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent evt) {
                 genericXmlElementHolder.setContent(contentField.getText().trim());
             }
 
+            @Override
             public void insertUpdate(DocumentEvent evt) {
                 genericXmlElementHolder.setContent(contentField.getText().trim());
             }
 
+            @Override
             public void removeUpdate(DocumentEvent evt) {
                 genericXmlElementHolder.setContent(contentField.getText().trim());
             }
         });
 
         repeatCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 if(genericXmlElementHolder instanceof XacmlRequestBuilderAssertion.XmlElementCanRepeatTag){
                     XacmlRequestBuilderAssertion.XmlElementCanRepeatTag repeatTag =
@@ -145,9 +167,19 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
         });
 
         settingsPanel.setVisible(showSettings);
+
+        Utilities.setDoubleClickAction( xmlAttributesTable, modifyButton );
+        enableOrDisableButtons();
     }
 
+    @Override
     public boolean handleDispose() {
         return true;
+    }
+
+    private void enableOrDisableButtons() {
+        boolean enable = xmlAttributesTable.getSelectedRow() > -1;
+        modifyButton.setEnabled( enable );
+        removeButton.setEnabled( enable );
     }
 }

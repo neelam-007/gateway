@@ -13,7 +13,8 @@
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="ID"/>
+          <labelFor value="eca5e"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="id"/>
         </properties>
       </component>
       <vspacer id="a0063">
@@ -26,7 +27,8 @@
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Issuer"/>
+          <labelFor value="6111a"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="issuer"/>
         </properties>
       </component>
       <component id="eca5e" class="javax.swing.JTextField" binding="idField">
@@ -50,7 +52,8 @@
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Issue Instant"/>
+          <labelFor value="b91c6"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="issue.instant"/>
         </properties>
       </component>
       <component id="b91c6" class="javax.swing.JTextField" binding="issueInstantField">
@@ -74,7 +77,8 @@
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Data Type"/>
+          <labelFor value="a067a"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="data.type"/>
         </properties>
       </component>
     </children>

@@ -3,18 +3,23 @@ package com.l7tech.external.assertions.xacmlpdp.console;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.widgets.OkCancelDialog;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.console.panels.UrlPanel;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.variable.PolicyVariableUtils;
@@ -30,8 +35,6 @@ import com.japisoft.xmlpad.action.ActionModel;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -41,6 +44,7 @@ import java.util.logging.Logger;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.ResourceBundle;
 import java.net.URLConnection;
 import java.net.URL;
 import java.security.AccessControlException;
@@ -55,6 +59,7 @@ import org.xml.sax.SAXException;
  * Time: 5:29:48 PM
  */
 public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<XacmlPdpAssertion> {
+    private static final ResourceBundle resources = ResourceBundle.getBundle( XacmlPdpPropertiesDialog.class.getName() );
     public static class MessageSourceEntry {
         private XacmlAssertionEnums.MessageLocation messageSource;
         private String messageVariableName;
@@ -73,6 +78,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             return messageVariableName;
         }
 
+        @Override
         public String toString() {
             if(messageSource != XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE){
                 return messageSource.getLocationName();
@@ -98,12 +104,13 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     private JCheckBox failCheckBox;
     private JButton okButton;
     private JButton cancelButton;
-    private JComboBox messageFormatComboBox;
     private JTextField urlToMonitorField;
     private JPanel monitorUrlPolicyPanel;
     private JPanel preconfiguredPolicyPanel;
     private JComboBox policyLocationComboBox;
     private JPanel xacmlPolicyPanel;
+    private JCheckBox sourceSOAPEncapsulatedCheckBox;
+    private JCheckBox targetSOAPEncapsulatedCheckBox;
 
     private UIAccessibility uiAccessibility;
 
@@ -111,13 +118,14 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     private boolean confirmed;
 
     public XacmlPdpPropertiesDialog(Frame owner, XacmlPdpAssertion a) {
-        super(owner, "XACML PDP Properties");
+        super(owner, resources.getString( "dialog.title" ) );
         assertion = a;
         initComponents();
         enableDisableComponents();
     }
 
     private void initComponents() {
+        Utilities.setEscKeyStrokeDisposes( this );
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
@@ -145,27 +153,32 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         comboBoxModel.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE);
         comboBoxModel.addElement(XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE);
         messageOutputComboBox.setModel(comboBoxModel);
+        messageOutputComboBox.setRenderer( new TextListCellRenderer<XacmlAssertionEnums.MessageLocation>( new Functions.Unary<String,XacmlAssertionEnums.MessageLocation>(){
+            @Override
+            public String call( final XacmlAssertionEnums.MessageLocation messageLocation ) {
+                return messageLocation.getLocationName();
+            }
+        }) );
 
         outputMessageVariableNameField.setEnabled(false);
 
-        messageFormatComboBox.setModel(
-                new DefaultComboBoxModel(XacmlPdpAssertion.SoapEncapsulationType.allTypesAsStrings()));
-
-        policyLocationComboBox.setModel(new DefaultComboBoxModel(new String[] {CONFIGURED_IN_ADVANCE, "Monitor URL for latest value"}));
+        policyLocationComboBox.setModel(new DefaultComboBoxModel(new String[] {CONFIGURED_IN_ADVANCE, resources.getString( "monitor.url.label" ) }));
         monitorUrlPolicyPanel.setVisible(false);
-        ((TitledBorder)xacmlPolicyPanel.getBorder()).setTitle("XACML Policy - " + CONFIGURED_IN_ADVANCE);
+        ((TitledBorder)xacmlPolicyPanel.getBorder()).setTitle( resources.getString( "xacml.policy" ) + CONFIGURED_IN_ADVANCE);
 
         policyLocationComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 if(CONFIGURED_IN_ADVANCE.equals(policyLocationComboBox.getSelectedItem())) {
                     monitorUrlPolicyPanel.setVisible(false);
                     preconfiguredPolicyPanel.setVisible(true);
-                    ((TitledBorder)xacmlPolicyPanel.getBorder()).setTitle("XACML Policy - " + CONFIGURED_IN_ADVANCE);
+                    ((TitledBorder)xacmlPolicyPanel.getBorder()).setTitle(resources.getString( "xacml.policy" ) + CONFIGURED_IN_ADVANCE);
                 } else if(MONITOR_URL.equals(policyLocationComboBox.getSelectedItem())) {
                     monitorUrlPolicyPanel.setVisible(true);
                     preconfiguredPolicyPanel.setVisible(false);
-                    ((TitledBorder)xacmlPolicyPanel.getBorder()).setTitle("XACML Policy - " + MONITOR_URL);
+                    ((TitledBorder)xacmlPolicyPanel.getBorder()).setTitle(resources.getString( "xacml.policy" ) + MONITOR_URL);
                 }
+                enableDisableComponents();
             }
         });
 
@@ -214,17 +227,20 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         Utilities.equalizeButtonSizes(new JButton[] {okButton, cancelButton});
 
         fetchFileButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 readFromFile();
             }
         });
 
         fetchUrlButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                final OkCancelDialog dlg = new OkCancelDialog(XacmlPdpPropertiesDialog.this, "Enter the URL to load the XACML policy from:", true, new UrlPanel("XACML Policy URL:", null));
+                final OkCancelDialog dlg = new OkCancelDialog(XacmlPdpPropertiesDialog.this, resources.getString( "xacml.url.label" ), true, new UrlPanel( resources.getString( "xacml.policy.url" ), null));
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
                 DialogDisplayer.display(dlg, new Runnable() {
+                    @Override
                     public void run() {
                         String url = (String)dlg.getValue();
                         if (url != null) {
@@ -235,36 +251,21 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             }
         });
 
-        DocumentListener documentListener = new DocumentListener() {
-            public void changedUpdate(DocumentEvent evt) {
-                enableDisableComponents();
-            }
-
-            public void insertUpdate(DocumentEvent evt) {
-                enableDisableComponents();
-            }
-
-            public void removeUpdate(DocumentEvent evt) {
-                enableDisableComponents();
-            }
-        };
-        uiAccessibility.getEditor().getDocument().addDocumentListener(documentListener);
-        outputMessageVariableNameField.getDocument().addDocumentListener(documentListener);
-        urlToMonitorField.getDocument().addDocumentListener(documentListener);
-
-        messageOutputComboBox.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
+        RunOnChangeListener validationListener = new RunOnChangeListener(new Runnable(){
+            @Override
+            public void run() {
                 enableDisableComponents();
             }
         });
 
-        failCheckBox.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                enableDisableComponents();
-            }
-        });
+        uiAccessibility.getEditor().getDocument().addDocumentListener(validationListener);
+        outputMessageVariableNameField.getDocument().addDocumentListener(validationListener);
+        urlToMonitorField.getDocument().addDocumentListener(validationListener);
+        messageOutputComboBox.addActionListener(validationListener);
+        failCheckBox.addActionListener(validationListener);
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 getData(assertion);
                 confirmed = true;
@@ -273,6 +274,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 dispose();
             }
@@ -280,6 +282,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
         // Initialize the XML editor to the XACML policy from the assertion, if any, else to an identity transform
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 if(assertion.getResourceInfo() instanceof StaticResourceInfo) {
                     StaticResourceInfo sri = (StaticResourceInfo)assertion.getResourceInfo();
@@ -311,6 +314,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
     private void readFromFile() {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser fc) {
                 doRead(fc);
             }
@@ -378,7 +382,6 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     private void readFromUrl(String urlstr) {
         // try to get document
         byte[] bytes;
-        String encoding;
         ByteOrderMarkInputStream bomis = null;
         InputStream httpStream = null;
         try {
@@ -459,7 +462,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         //is a remote url being used?
         if(monitorUrlPolicyPanel.isVisible()){
             //we need the url value
-            enableOkButton = urlToMonitorField.getText().trim().length() != 0;
+            enableOkButton = ValidationUtils.isValidUrl(urlToMonitorField.getText().trim());
         }else{
             //otherwise we need the policy in the xml editor
             enableOkButton = uiAccessibility.getEditor().getText().trim().length() != 0;            
@@ -468,10 +471,12 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         
     }
 
+    @Override
     public boolean isConfirmed() {
         return confirmed;
     }
 
+    @Override
     public void setData(XacmlPdpAssertion assertion) {
         this.assertion = assertion;
 
@@ -526,7 +531,20 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             outputMessageVariableNameField.setText(assertion.getOutputMessageVariableName());
         }
 
-        messageFormatComboBox.setSelectedItem(assertion.getSoapEncapsulation().toString());
+        switch ( assertion.getSoapEncapsulation() ) {
+            case NONE:
+                break;
+            case REQUEST:
+                sourceSOAPEncapsulatedCheckBox.setSelected( true );
+                break;
+            case REQUEST_AND_RESPONSE:
+                sourceSOAPEncapsulatedCheckBox.setSelected( true );
+                targetSOAPEncapsulatedCheckBox.setSelected( true );
+                break;
+            case RESPONSE:
+                targetSOAPEncapsulatedCheckBox.setSelected( true );
+                break;
+        }
 
         if(assertion.getResourceInfo() instanceof StaticResourceInfo) {
             StaticResourceInfo sri = (StaticResourceInfo)assertion.getResourceInfo();
@@ -547,6 +565,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         failCheckBox.setSelected(assertion.getFailIfNotPermit());
     }
 
+    @Override
     public XacmlPdpAssertion getData(XacmlPdpAssertion assertion) {
         MessageSourceEntry messageSourceEntry = (MessageSourceEntry)messageSourceComboBox.getSelectedItem();
         assertion.setInputMessageSource(messageSourceEntry.getMessageSource());
@@ -560,11 +579,19 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                 (XacmlAssertionEnums.MessageLocation)messageOutputComboBox.getSelectedItem();
         assertion.setOutputMessageTarget(outputEntry);
         if(outputEntry == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
-            assertion.setOutputMessageVariableName(outputMessageVariableNameField.getText().trim());
+            assertion.setOutputMessageVariableName( VariablePrefixUtil.fixVariableName(outputMessageVariableNameField.getText()) );
         }
 
-        String type = (String) messageFormatComboBox.getSelectedItem();
-        assertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.findEncapsulationType(type));
+        if ( sourceSOAPEncapsulatedCheckBox.isSelected() &&
+             targetSOAPEncapsulatedCheckBox.isSelected()) {
+            assertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.REQUEST_AND_RESPONSE);
+        } else if ( sourceSOAPEncapsulatedCheckBox.isSelected() ) {
+            assertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.REQUEST);
+        } else if ( targetSOAPEncapsulatedCheckBox.isSelected() ) {
+            assertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.RESPONSE);
+        } else {
+            assertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.NONE);
+        }
 
         if(CONFIGURED_IN_ADVANCE.equals(policyLocationComboBox.getSelectedItem())) {
             String policyText = uiAccessibility.getEditor().getText();

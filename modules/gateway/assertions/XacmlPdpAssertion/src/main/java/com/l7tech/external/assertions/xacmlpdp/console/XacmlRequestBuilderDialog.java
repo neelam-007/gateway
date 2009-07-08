@@ -4,6 +4,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.util.VariablePrefixUtil;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionListener;
@@ -18,6 +19,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.ResourceBundle;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -27,6 +29,8 @@ import java.util.ArrayList;
  * To change this template use File | Settings | File Templates.
  */
 public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<XacmlRequestBuilderAssertion> {
+    private static final ResourceBundle resources = ResourceBundle.getBundle( XacmlRequestBuilderDialog.class.getName() );
+
     private JPanel mainPanel;
     private JScrollPane treePane;
     private JPanel nodeSettingsPanel;
@@ -45,7 +49,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     private static final String XACML_REQUEST_ELEMENT = "Request";
 
     public XacmlRequestBuilderDialog(Window owner, XacmlRequestBuilderAssertion a) {
-        super(owner, "XACML Request Builder");
+        super(owner, resources.getString( "xacml.request.builder" ) );
         createPopupMenu();
         initComponents();
 
@@ -53,12 +57,14 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     public void initComponents() {
+        Utilities.setEscKeyStrokeDisposes( this );
         treeModel = new DefaultTreeModel(buildInitialTree());
         tree = new JTree(treeModel);
         treePane.setViewportView(tree);
         treePane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         treePane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         tree.addTreeSelectionListener(new TreeSelectionListener() {
+            @Override
             public void valueChanged(TreeSelectionEvent evt) {
                 if(lastNodePanel != null && lastNodePanel == lastErrorNodePanel) {
                     lastErrorNodePanel = null;
@@ -119,32 +125,38 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         });
 
         tree.addMouseListener(new MouseListener() {
+            @Override
             public void mouseEntered(MouseEvent evt) {
                 //
             }
 
+            @Override
             public void mouseReleased(MouseEvent evt) {
                 if(popupMenu.isPopupTrigger(evt)) {
                     handlePopupTrigger(evt);
                 }
             }
 
+            @Override
             public void mouseExited(MouseEvent evt) {
                 //
             }
 
+            @Override
             public void mouseClicked(MouseEvent evt) {
                 if(popupMenu.isPopupTrigger(evt)) {
                     popupMenu.show((Component)evt.getSource(), evt.getX(), evt.getY());
                 }
             }
 
+            @Override
             public void mousePressed(MouseEvent evt) {
                 //
             }
         });
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 if(lastNodePanel != null && !lastNodePanel.handleDispose()) {
                     return;
@@ -153,7 +165,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                 java.util.List<String> messages = new ArrayList<String>();
                 if(!isTreeValid(messages)) {
                     StringBuilder sb = new StringBuilder();
-                    sb.append("<html><body><h3>Correct the following errors.</h3><ul>");
+                    sb.append("<html><body><h3>");
+                    sb.append(resources.getString( "correct.errors" ));
+                    sb.append("</h3><ul>");
                     for(String message : messages) {
                         sb.append("<li>");
                         sb.append(message);
@@ -161,7 +175,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                     }
                     sb.append("</ul></body></html>");
 
-                    JOptionPane.showMessageDialog(XacmlRequestBuilderDialog.this, sb.toString(), "Message Errors", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(XacmlRequestBuilderDialog.this, sb.toString(), resources.getString( "message.errors" ), JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
@@ -171,6 +185,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
             }
         });
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 XacmlRequestBuilderDialog.this.dispose();
             }
@@ -231,8 +246,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void addRequestMenuItems(final DefaultMutableTreeNode node) {
-        JMenuItem item = new JMenuItem("Add Subject");
+        JMenuItem item = new JMenuItem( resources.getString( "add.subject" ) );
         item.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 int index = 0;
                 for(int i = 0;i < node.getChildCount();i++) {
@@ -251,8 +267,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         popupMenu.add(item);
 
         if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0) {
-            item = new JMenuItem("Add Resource");
+            item = new JMenuItem( resources.getString( "add.resource" ) );
             item.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent evt) {
                     int index = 0;
                     for(int i = 0;i < node.getChildCount();i++) {
@@ -282,8 +299,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         }
 
         if(!haveEnvironment) {
-            item = new JMenuItem("Add Environment");
+            item = new JMenuItem( resources.getString( "add.environment" ) );
             item.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent evt) {
                     treeModel.insertNodeInto(buildAttributeHolderNode(new XacmlRequestBuilderAssertion.Environment()), node, node.getChildCount());
                 }
@@ -293,8 +311,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void addAttributeHolderMenuItems(final DefaultMutableTreeNode node) {
-        JMenuItem item = new JMenuItem("Add Attribute");
+        JMenuItem item = new JMenuItem( resources.getString( "add.attribute" ) );
         item.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 int index = node.getChildCount();
                 for(int i = 0;i < node.getChildCount();i++) {
@@ -311,8 +330,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         });
         popupMenu.add(item);
 
-        item = new JMenuItem("Add XPath Multiple Attributes");
+        item = new JMenuItem( resources.getString( "add.xpath.multiple.attributes" ) );
         item.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 treeModel.insertNodeInto(buildXpathMultiAttrNode(new XacmlRequestBuilderAssertion.MultipleAttributeConfig()), node, node.getChildCount());
             }
@@ -334,8 +354,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                 popupMenu.add(new JPopupMenu.Separator());
                 String name = node.getUserObject().toString();
 
-                item = new JMenuItem("Remove " + name);
+                item = new JMenuItem( resources.getString( "remove" ) + name);
                 item.addActionListener(new ActionListener() {
+                    @Override
                     public void actionPerformed(ActionEvent evt) {
                         treeModel.removeNodeFromParent(node);
                     }
@@ -355,8 +376,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         }
 
         if(!haveResourceContent) {
-            JMenuItem item = new JMenuItem("Add ResourceContent");
+            JMenuItem item = new JMenuItem( resources.getString( "add.resourcecontent" ) );
             item.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent evt) {
                     int index = node.getChildCount();
                     for(int i = 0;i < node.getChildCount();i++) {
@@ -382,8 +404,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
         if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0) {
             popupMenu.add(new JPopupMenu.Separator());
-            JMenuItem item = new JMenuItem("Remove Environment");
+            JMenuItem item = new JMenuItem( resources.getString( "remove.environment" ) );
             item.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent evt) {
                     treeModel.removeNodeFromParent(node);
                 }
@@ -393,8 +416,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void addAttributeMenuItems(final DefaultMutableTreeNode node) {
-        JMenuItem item = new JMenuItem("Add Attribute Value");
+        JMenuItem item = new JMenuItem( resources.getString( "add.attribute.value" ) );
         item.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 treeModel.insertNodeInto(buildValueNode(new XacmlRequestBuilderAssertion.AttributeValue()), node, node.getChildCount());
             }
@@ -402,8 +426,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         popupMenu.add(item);
 
         popupMenu.add(new JPopupMenu.Separator());
-        item = new JMenuItem("Remove Attribute");
+        item = new JMenuItem( resources.getString( "remove.attribute" ) );
         item.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 treeModel.removeNodeFromParent(node);
             }
@@ -412,8 +437,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void addValueMenuItems(final DefaultMutableTreeNode node) {
-        JMenuItem item = new JMenuItem("Remove Attribute Value");
+        JMenuItem item = new JMenuItem( resources.getString( "remove.attribute.value" ) );
         item.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 treeModel.removeNodeFromParent(node);
             }
@@ -422,8 +448,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void addXpathMultiAttrMenuItems(final DefaultMutableTreeNode node) {
-        JMenuItem item = new JMenuItem("Remove XPath Multiple Attributes");
+        JMenuItem item = new JMenuItem( resources.getString( "remove.xpath.multiple.attributes" ) );
         item.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 treeModel.removeNodeFromParent(node);
             }
@@ -432,8 +459,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void addResourceContentMenuItems(final DefaultMutableTreeNode node) {
-        JMenuItem item = new JMenuItem("Remove Resource Content");
+        JMenuItem item = new JMenuItem( resources.getString( "remove.resource.content" ) );
         item.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 treeModel.removeNodeFromParent(node);
             }
@@ -494,10 +522,12 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         return resourceNode;
     }
 
+    @Override
     public boolean isConfirmed() {
         return confirmed;
     }
 
+    @Override
     public void setData(XacmlRequestBuilderAssertion assertion) {
         this.assertion = (XacmlRequestBuilderAssertion)assertion.clone();
 
@@ -515,6 +545,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
         treeModel = new DefaultTreeModel(root);
         tree.setModel(treeModel);
+        tree.setSelectionInterval( 0, 0 );
     }
 
     private XacmlRequestBuilderAssertion.Attribute extractAttribute(DefaultMutableTreeNode node) {
@@ -569,6 +600,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         return resource;
     }
 
+    @Override
     public XacmlRequestBuilderAssertion getData(XacmlRequestBuilderAssertion assertion) {
         assertion.getSubjects().clear();
         assertion.getResources().clear();
@@ -579,7 +611,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         assertion.setSoapEncapsulation(this.assertion.getSoapEncapsulation());
         assertion.setOutputMessageDestination(this.assertion.getOutputMessageDestination());
         if(this.assertion.getOutputMessageDestination() == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
-            assertion.setOutputMessageVariableName(this.assertion.getOutputMessageVariableName());
+            assertion.setOutputMessageVariableName( VariablePrefixUtil.fixVariableName( this.assertion.getOutputMessageVariableName() ) );
         } else {
             assertion.setOutputMessageVariableName(null);
         }
@@ -621,16 +653,16 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
         if(resourceCount == 0) {
             if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0) {
-                messages.add("There must be at least one Resource element");
+                messages.add( resources.getString( "error.resource.missing" ) );
             } else {
-                messages.add("The Resource element is mandatory");
+                messages.add( resources.getString( "error.resource.required" ) );
             }
         } else if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0 && resourceCount > 1) {
-            messages.add("There cannot be more than one Resource element");
+            messages.add( resources.getString( "error.resource.toomany" ) );
         }
 
         if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0 && environmentCount < 1) {
-            messages.add("The Environment element is mandatory");
+            messages.add( resources.getString( "error.environment.required" ) );
         }
 
         boolean haveAttributeValueErrors = false;
@@ -651,11 +683,11 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
         if(haveAttributeValueErrors) {
             if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
-                messages.add("There cannot be more than one AttributeValue element for each Attribute element");
+                messages.add( resources.getString( "error.attributevalue.multiple" ) );
             } else if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_1) {
-                messages.add("The must be one and only one AttributeValue element for each Attribute element");
+                messages.add( resources.getString( "error.attributevalue.wrongnumberof" ) );
             } else if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0) {
-                messages.add("There must be at least one AttributeValue element for each Attribute element");
+                messages.add( resources.getString( "error.attributevalue.required" ) );
             }
         }
 
@@ -693,11 +725,10 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     public static void main(String[] args) {
-        Frame f = new JFrame();
-        f.setVisible(true);
-        XacmlRequestBuilderDialog d = new XacmlRequestBuilderDialog(f, null);
+        XacmlRequestBuilderAssertion xacmlRequestBuilderAssertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderDialog d = new XacmlRequestBuilderDialog(null, xacmlRequestBuilderAssertion);
+        d.setData( xacmlRequestBuilderAssertion );
         d.setVisible(true);
         d.dispose();
-        f.dispose();
     }
 }

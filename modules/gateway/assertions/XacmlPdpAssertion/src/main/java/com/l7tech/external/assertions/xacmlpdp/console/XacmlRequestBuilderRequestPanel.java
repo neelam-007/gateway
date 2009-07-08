@@ -3,6 +3,9 @@ package com.l7tech.external.assertions.xacmlpdp.console;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.util.Functions;
+import com.l7tech.console.util.VariablePrefixUtil;
 
 import javax.swing.*;
 import java.awt.event.ActionListener;
@@ -23,7 +26,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
 
     private XacmlRequestBuilderAssertion assertion;
 
-    public XacmlRequestBuilderRequestPanel(XacmlRequestBuilderAssertion assertion) {
+    public XacmlRequestBuilderRequestPanel( final XacmlRequestBuilderAssertion assertion ) {
         this.assertion = assertion;
         init();
     }
@@ -38,6 +41,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
         versionComboBox.setSelectedItem(assertion.getXacmlVersion());
 
         versionComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 assertion.setXacmlVersion((XacmlAssertionEnums.XacmlVersionType)versionComboBox.getSelectedItem());
             }
@@ -48,16 +52,23 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
         encapsulationComboBox.setSelectedItem(assertion.getSoapEncapsulation());
 
         encapsulationComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 assertion.setSoapEncapsulation((XacmlAssertionEnums.SoapVersion)encapsulationComboBox.getSelectedItem());
             }
         });
 
         model = new DefaultComboBoxModel();
-        model.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST.getLocationName());
-        model.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE.getLocationName());
-        model.addElement(XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE.getLocationName());
+        model.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST);
+        model.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE);
+        model.addElement(XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE);
         outputMessageComboBox.setModel(model);
+        outputMessageComboBox.setRenderer( new TextListCellRenderer<XacmlAssertionEnums.MessageLocation>( new Functions.Unary<String,XacmlAssertionEnums.MessageLocation>(){
+            @Override
+            public String call( final XacmlAssertionEnums.MessageLocation messageLocation ) {
+                return messageLocation.getLocationName();
+            }
+        }) );
 
         switch(assertion.getOutputMessageDestination()) {
             case DEFAULT_REQUEST:
@@ -81,6 +92,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
         }
 
         outputMessageComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 XacmlAssertionEnums.MessageLocation entry =
                         (XacmlAssertionEnums.MessageLocation)outputMessageComboBox.getSelectedItem();
@@ -88,28 +100,15 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
                 assertion.setOutputMessageDestination(entry);
             }
         });
-
-        /*outputMessageContextVarField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent evt) {
-                assertion.setOutputMessageVariableName(outputMessageContextVarField.getText().trim());
-            }
-
-            public void insertUpdate(DocumentEvent evt) {
-                assertion.setOutputMessageVariableName(outputMessageContextVarField.getText().trim());
-            }
-
-            public void removeUpdate(DocumentEvent evt) {
-                assertion.setOutputMessageVariableName(outputMessageContextVarField.getText().trim());
-            }
-        });*/
     }
 
+    @Override
     public boolean handleDispose() {
         if(outputMessageComboBox.getSelectedItem()!= XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             return true;
         }
 
-        if(VariableMetadata.isNameValid(outputMessageContextVarField.getText().trim())) {
+        if(VariableMetadata.isNameValid( VariablePrefixUtil.fixVariableName(outputMessageContextVarField.getText()))) {
             assertion.setOutputMessageVariableName(outputMessageContextVarField.getText().trim());
             return true;
         } else {

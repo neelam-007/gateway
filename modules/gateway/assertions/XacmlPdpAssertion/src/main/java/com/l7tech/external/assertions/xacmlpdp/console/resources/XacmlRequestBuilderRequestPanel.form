@@ -13,7 +13,8 @@
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="XACML Version"/>
+          <labelFor value="41f09"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="xacml.version"/>
         </properties>
       </component>
       <vspacer id="52376">
@@ -26,7 +27,8 @@
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="SOAP Encapsulation"/>
+          <labelFor value="220f7"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="soap.encapsulation"/>
         </properties>
       </component>
       <grid id="d9dab" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -76,7 +78,8 @@
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Message Output"/>
+          <labelFor value="fd49a"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="message.output"/>
         </properties>
       </component>
       <grid id="d88df" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

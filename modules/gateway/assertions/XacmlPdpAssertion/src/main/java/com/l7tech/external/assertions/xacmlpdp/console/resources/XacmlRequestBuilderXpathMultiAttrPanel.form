@@ -13,7 +13,8 @@
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Message Source"/>
+          <labelFor value="b79b7"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="message.source"/>
         </properties>
       </component>
       <vspacer id="70a39">
@@ -26,7 +27,8 @@
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="ID"/>
+          <labelFor value="5e733"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="id"/>
         </properties>
       </component>
       <component id="83f1e" class="javax.swing.JLabel">
@@ -34,7 +36,8 @@
           <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Data Type"/>
+          <labelFor value="18992"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="data.type"/>
         </properties>
       </component>
       <component id="8b35c" class="javax.swing.JLabel">
@@ -42,7 +45,8 @@
           <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Issuer"/>
+          <labelFor value="d2a41"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="issuer"/>
         </properties>
       </component>
       <component id="152b1" class="javax.swing.JLabel">
@@ -50,7 +54,8 @@
           <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Value"/>
+          <labelFor value="de639"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="value"/>
         </properties>
       </component>
       <grid id="13fdf" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -180,10 +185,12 @@
       </grid>
       <component id="187ac" class="javax.swing.JLabel">
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Namespaces"/>
+          <labelFor value="5e59"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="namespaces"/>
+          <verticalAlignment value="0"/>
         </properties>
       </component>
       <grid id="b0ed6" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -223,7 +230,7 @@
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="Add"/>
+                  <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="add"/>
                 </properties>
               </component>
               <vspacer id="5585b">
@@ -236,7 +243,7 @@
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="Modify"/>
+                  <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="modify"/>
                 </properties>
               </component>
               <component id="4f843" class="javax.swing.JButton" binding="removeNamespaceButton">
@@ -244,7 +251,7 @@
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="Remove"/>
+                  <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="remove"/>
                 </properties>
               </component>
             </children>
@@ -264,7 +271,8 @@
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="XPath Base"/>
+          <labelFor value="79ee8"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="xpath.base"/>
         </properties>
       </component>
       <component id="3fd6" class="javax.swing.JLabel" binding="issueInstantLabel">
@@ -272,7 +280,8 @@
           <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Issue Instant"/>
+          <labelFor value="7fee2"/>
+          <text resource-bundle="com/l7tech/external/assertions/xacmlpdp/console/XacmlRequestBuilderDialog" key="issue.instant"/>
         </properties>
       </component>
       <grid id="6800f" binding="issueInstantFieldsPanel" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

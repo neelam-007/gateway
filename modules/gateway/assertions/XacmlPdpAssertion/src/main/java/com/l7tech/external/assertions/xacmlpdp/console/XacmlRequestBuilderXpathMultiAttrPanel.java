@@ -8,6 +8,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Map;
@@ -63,13 +65,19 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             messageSourceComboBox.setSelectedIndex(1);
         }
 
-        tableModel = new DefaultTableModel(new String[] {"Prefix", "URI"}, 0);
+        tableModel = new DefaultTableModel(new String[] {"Prefix", "URI"}, 0){
+            @Override
+            public boolean isCellEditable( int row, int column ) {
+                return false;
+            }
+        };
         if(multipleAttributeConfig.getNamespaces() != null) {
             for(Map.Entry<String, String> entry : multipleAttributeConfig.getNamespaces().entrySet()) {
                 tableModel.addRow(new String[] {entry.getKey(), entry.getValue()});
             }
         }
         namespacesTable.setModel(tableModel);
+        namespacesTable.getTableHeader().setReorderingAllowed( false );
 
         xpathBaseField.setText(multipleAttributeConfig.getXpathBase());
         idField.setText(multipleAttributeConfig.getIdField().getValue());
@@ -92,7 +100,15 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     }
 
     public void init(XacmlAssertionEnums.XacmlVersionType version) {
+        namespacesTable.getSelectionModel().addListSelectionListener( new ListSelectionListener(){
+            @Override
+            public void valueChanged( ListSelectionEvent e) {
+                enableOrDisableButtons();
+            }
+        } );
+        
         messageSourceComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 String selectedItem = messageSourceComboBox.getSelectedItem().toString();
                 if(XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST.getLocationName().equals(selectedItem)) {
@@ -104,6 +120,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         });
 
         addNamespaceButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 XacmlRequestBuilderNamespaceDialog dialog = new XacmlRequestBuilderNamespaceDialog(window, null, null);
                 Utilities.centerOnScreen(dialog);
@@ -120,6 +137,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         });
 
         modifyNamespaceButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 if(namespacesTable.getSelectedRow() == -1) {
                     return;
@@ -144,6 +162,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         });
 
         removeNamespaceButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 if(namespacesTable.getSelectedRow() == -1) {
                     return;
@@ -156,56 +175,68 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         });
 
         xpathBaseField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.setXpathBase(xpathBaseField.getText().trim());
             }
 
+            @Override
             public void insertUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.setXpathBase(xpathBaseField.getText().trim());
             }
 
+            @Override
             public void removeUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.setXpathBase(xpathBaseField.getText().trim());
             }
         });
 
         idField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getIdField().setValue(idField.getText().trim());
             }
 
+            @Override
             public void insertUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getIdField().setValue(idField.getText().trim());
             }
 
+            @Override
             public void removeUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getIdField().setValue(idField.getText().trim());
             }
         });
 
         dataTypeField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getDataTypeField().setValue(dataTypeField.getText().trim());
             }
 
+            @Override
             public void insertUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getDataTypeField().setValue(dataTypeField.getText().trim());
             }
 
+            @Override
             public void removeUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getDataTypeField().setValue(dataTypeField.getText().trim());
             }
         });
 
         issuerField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getIssuerField().setValue(issuerField.getText().trim());
             }
 
+            @Override
             public void insertUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getIssuerField().setValue(issuerField.getText().trim());
             }
 
+            @Override
             public void removeUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getIssuerField().setValue(issuerField.getText().trim());
             }
@@ -216,20 +247,24 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             issueInstantFieldsPanel.setVisible(false);
         } else {
             issueInstantField.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
                 public void changedUpdate(DocumentEvent evt) {
                     multipleAttributeConfig.getIssueInstantField().setValue(issueInstantField.getText().trim());
                 }
 
+                @Override
                 public void insertUpdate(DocumentEvent evt) {
                     multipleAttributeConfig.getIssueInstantField().setValue(issueInstantField.getText().trim());
                 }
 
+                @Override
                 public void removeUpdate(DocumentEvent evt) {
                     multipleAttributeConfig.getIssueInstantField().setValue(issueInstantField.getText().trim());
                 }
             });
 
             issueInstantOptionsButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent evt) {
                     XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Issue Instant", multipleAttributeConfig.getIssueInstantField());
                     Utilities.centerOnScreen(dialog);
@@ -244,20 +279,24 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         }
 
         valueField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getValueField().setValue(valueField.getText().trim());
             }
 
+            @Override
             public void insertUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getValueField().setValue(valueField.getText().trim());
             }
 
+            @Override
             public void removeUpdate(DocumentEvent evt) {
                 multipleAttributeConfig.getValueField().setValue(valueField.getText().trim());
             }
         });
 
         idOptionsButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "ID", multipleAttributeConfig.getIdField());
                 Utilities.centerOnScreen(dialog);
@@ -271,6 +310,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         });
 
         dataTypeOptionsButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Data Type", multipleAttributeConfig.getDataTypeField());
                 Utilities.centerOnScreen(dialog);
@@ -284,6 +324,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         });
 
         issuerOptionsButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Issuer", multipleAttributeConfig.getIssuerField());
                 Utilities.centerOnScreen(dialog);
@@ -297,6 +338,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         });
 
         valueOptionsButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Value", multipleAttributeConfig.getValueField());
                 Utilities.centerOnScreen(dialog);
@@ -308,9 +350,19 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                 }
             }
         });
+
+        Utilities.setDoubleClickAction( namespacesTable, modifyNamespaceButton );
+        enableOrDisableButtons();
     }
 
+    @Override
     public boolean handleDispose() {
         return true;
+    }
+
+    private void enableOrDisableButtons() {
+        boolean enable = namespacesTable.getSelectedRow() > -1;
+        modifyNamespaceButton.setEnabled( enable );
+        removeNamespaceButton.setEnabled( enable );
     }
 }

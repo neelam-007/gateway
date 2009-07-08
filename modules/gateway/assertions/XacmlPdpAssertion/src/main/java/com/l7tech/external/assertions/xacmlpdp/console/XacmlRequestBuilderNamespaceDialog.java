@@ -38,14 +38,17 @@ public class XacmlRequestBuilderNamespaceDialog extends JDialog{
         uriField.setText((uri == null) ? "" : uri);
 
         DocumentListener documentListener = new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent evt) {
                 enableDisableButtons();
             }
 
+            @Override
             public void insertUpdate(DocumentEvent evt) {
                 enableDisableButtons();
             }
 
+            @Override
             public void removeUpdate(DocumentEvent evt) {
                 enableDisableButtons();
             }
@@ -55,6 +58,7 @@ public class XacmlRequestBuilderNamespaceDialog extends JDialog{
         uriField.getDocument().addDocumentListener(documentListener);
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 confirmed = true;
                 XacmlRequestBuilderNamespaceDialog.this.dispose();
@@ -62,11 +66,13 @@ public class XacmlRequestBuilderNamespaceDialog extends JDialog{
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 XacmlRequestBuilderNamespaceDialog.this.dispose();
             }
         });
 
+        enableDisableButtons();
         setContentPane(mainPanel);
         pack();
     }
