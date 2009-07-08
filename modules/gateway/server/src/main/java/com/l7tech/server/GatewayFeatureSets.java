@@ -468,6 +468,11 @@ public class GatewayFeatureSets {
  	 	    mass("assertion:SamlpRequestBuilder"),
  	 	    mass("assertion:SamlpResponseEvaluation"));
 
+        GatewayFeatureSet xacmlAssertions =
+        fsr("set:XACML:Assertions", "The necessary assertions to enable XACML functionality",
+            mass("assertion:XacmlRequestBuilder"),
+            mass("assertion:XacmlPdp"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -560,6 +565,7 @@ public class GatewayFeatureSets {
             fs(ssb),
             fs(modularAssertions),
             fs(samlpAssertions),
+            fs(xacmlAssertions),
             fs(uiFw),
             fs(wssp));
 

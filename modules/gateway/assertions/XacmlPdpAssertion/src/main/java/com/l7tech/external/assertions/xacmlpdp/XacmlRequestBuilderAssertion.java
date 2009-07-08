@@ -712,6 +712,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.console.XacmlRequestBuilderDialog");
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.server.ServerXacmlRequestBuilderAssertion");
 
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(WSP_EXTERNAL_NAME, "XacmlRequestBuilderAssertion"); // keep same WSP name as pre-3.7 (Bug #3605)
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();

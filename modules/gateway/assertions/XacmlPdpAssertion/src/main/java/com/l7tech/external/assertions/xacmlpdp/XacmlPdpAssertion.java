@@ -164,6 +164,7 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.console.XacmlPdpPropertiesDialog");
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.server.ServerXacmlPdpAssertion");
 
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(WSP_EXTERNAL_NAME, "XacmlPdpAssertion"); // keep same WSP name as pre-3.7 (Bug #3605)
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
