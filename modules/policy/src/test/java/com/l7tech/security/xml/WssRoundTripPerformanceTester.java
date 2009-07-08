@@ -33,6 +33,7 @@ public class WssRoundTripPerformanceTester {
     static SignerInfo SENDER_RSA;
     static SignerInfo RECIP_ECC;
     static SignerInfo RECIP_RSA;
+    static String PLACEORDER_CLEARTEXT;
 
     @BeforeClass
     public static void createKeys() throws Exception {
@@ -42,6 +43,8 @@ public class WssRoundTripPerformanceTester {
         SENDER_RSA = new SignerInfo(new TestCertificateGenerator().keySize(1024).generateWithKey());
         RECIP_ECC = new SignerInfo(new TestCertificateGenerator().curveName("secp384r1").generateWithKey());
         RECIP_RSA = new SignerInfo(new TestCertificateGenerator().keySize(1024).generateWithKey());
+
+        PLACEORDER_CLEARTEXT = XmlUtil.nodeToString(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT_ONELINE));
     }
 
     void benchmark(String name, final int iters, final int threads, final Callable code) throws InterruptedException {
@@ -153,7 +156,7 @@ public class WssRoundTripPerformanceTester {
     }
 
     Document newSoapMessage() throws IOException, SAXException {
-        return TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        return XmlUtil.stringToDocument(PLACEORDER_CLEARTEXT);
     }
 
     String toString(Message msg) throws IOException, SAXException {
