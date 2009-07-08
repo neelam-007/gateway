@@ -22,7 +22,7 @@ import java.util.Random;
  * Holds utility methods of interest to users of WssProcessor.
  */
 public class WssProcessorUtil {
-    private static Random random = new SecureRandom();
+    private static final Random random = new SecureRandom();
 
     /**
      * Creates a virtual EncryptedKey security token that uses the specified SecretKey identified

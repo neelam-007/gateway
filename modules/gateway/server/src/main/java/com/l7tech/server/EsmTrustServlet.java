@@ -103,7 +103,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
     private TrustedEsmUserManager trustedEsmUserManager;
     private AdminLogin adminLogin;
     private LicenseManager licenseManager;
-    private Random random;
+    private static final Random random = new SecureRandom();
     private byte[] secretData;
 
     @Override
@@ -113,7 +113,6 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
         this.trustedEsmUserManager = (TrustedEsmUserManager) config.getServletContext().getAttribute("trustedEsmUserManager");
         this.adminLogin = (AdminLogin) config.getServletContext().getAttribute("adminLogin");
         this.licenseManager = (LicenseManager) config.getServletContext().getAttribute("licenseManager");        
-        this.random = new SecureRandom();
         this.secretData = new byte[32];
         random.nextBytes(secretData);
     }

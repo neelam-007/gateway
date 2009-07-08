@@ -35,7 +35,7 @@ public class FileDownloadServlet extends HttpServlet {
     private final int INITIAL_TASK_DELAY = 30000;  // after 30 seconds, run the timer task at the first time.
     private final int NORMAL_TASK_DELAY =  90000;  // in every 90-second, run the timer task after the first time.
     private final int FILE_EXPIRY_PERIOD = 60000;  // each file owns a 60-second of life time.
-    private final SecureRandom random = new SecureRandom();
+    private static final SecureRandom random = new SecureRandom();
     private final LRUMap fileMap = new LRUMap(10);
 
     private WebApplicationContext applicationContext;

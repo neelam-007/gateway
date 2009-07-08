@@ -27,6 +27,7 @@ public class TestCertificateGenerator {
     private CertGenParams c;
     private KeyGenParams k;
 
+    private static final SecureRandom defaultRandom = new SecureRandom();
     private SecureRandom random;
     private KeyPair keyPair;
 
@@ -55,7 +56,7 @@ public class TestCertificateGenerator {
     }
 
     public TestCertificateGenerator reset() {
-        random = new SecureRandom();
+        random = defaultRandom;
         keyPair = null;
         issuer = null;
 

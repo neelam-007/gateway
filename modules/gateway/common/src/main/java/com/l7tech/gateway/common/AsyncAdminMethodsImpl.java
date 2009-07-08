@@ -38,7 +38,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
         }
     }
 
-    private final Random random = new SecureRandom();
+    private static final Random random = new SecureRandom();
     private Map<JobId, JobEntry> jobs = new HashMap<JobId, JobEntry>();
     private TimerTask cleanupTask;
 

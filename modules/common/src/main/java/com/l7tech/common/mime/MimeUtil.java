@@ -29,7 +29,7 @@ public class MimeUtil {
     public static final String MULTIPART_BOUNDARY = "boundary";
     public static final String MULTIPART_BOUNDARY_PREFIX = "--";
     public static final String CONTENT_ID = "Content-Id";
-    private static SecureRandom random = new SecureRandom();
+    private static final SecureRandom random = new SecureRandom();
     public static final byte[] CRLF = "\r\n".getBytes();
 
     /**

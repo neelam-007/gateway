@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.chrysalisits.crypto.LunaTokenManager;
+
 /**
  * Standalone test of various functionality required to do ECC key generation, key import, message level
  * signing and verification, and SSL cipher suites.
@@ -567,6 +569,7 @@ public class EllipticCurveProviderTester {
             String tokenPin = getRequiredSystemProperty("lunaTokenPin");
             final Object lunaTokenManager = invokeStaticMethod("com.chrysalisits.crypto.LunaTokenManager", "getInstance", new Class[0]);
             invokeMethod(lunaTokenManager, "Login", new Class[] { String.class }, tokenPin);
+            LunaTokenManager.getInstance().SetSecretKeysExtractable(true);
             super.install();
         }
     }

@@ -88,7 +88,7 @@ public class LicenseSpecPanel extends JPanel {
     private FocusListener focusListener;
     private DocumentListener documentListener;
     private Map<JTextField, String> oldFieldValues = new HashMap<JTextField, String>();
-    private Random random = new SecureRandom();
+    private static final Random random = new SecureRandom();
     private TreeModel featureTreeModel;
     private TreeCellEditor featureTreeEditor;
     private FeatureTreeRenderer featureTreeRenderer;

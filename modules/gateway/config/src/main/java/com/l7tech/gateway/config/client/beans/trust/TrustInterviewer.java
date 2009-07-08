@@ -43,6 +43,8 @@ public class TrustInterviewer {
     static String HOSTPROPERTIES_NODEMANAGEMENT_PORT ="host.controller.sslPort";
 
     private static final String DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME = "remoteNodeManagementTruststore.jks";
+    private static final SecureRandom rand = new SecureRandom();
+
     public static void main(String[] args) {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
         new TrustInterviewer().run();
@@ -185,7 +187,7 @@ public class TrustInterviewer {
                 if (trustStore == null) {
                     try {
                         byte[] newpass = new byte[8];
-                        new SecureRandom().nextBytes(newpass);
+                        rand.nextBytes(newpass);
                         trustStorePass = HexUtils.hexDump(newpass).toCharArray();
                         trustStore = KeyStore.getInstance(trustStoreType);
                         trustStore.load(null, null);

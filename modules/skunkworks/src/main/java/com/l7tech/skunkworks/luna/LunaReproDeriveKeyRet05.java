@@ -23,7 +23,7 @@ public class LunaReproDeriveKeyRet05 {
     public static void main(String[] args) throws Exception {
         Security.insertProviderAt(new LunaJCEProvider(), 1);
         Security.insertProviderAt(new LunaJCAProvider(), 1);
-        LunaTokenManager.getInstance().Login("FGAA-3LJT-tsHW-NC3E");
+        LunaTokenManager.getInstance().Login("t46/-979S-LHW3-dS6W");
 
         // These params would normally come from the server's certified EC public key, sent to the client
         // in the Certificate message.

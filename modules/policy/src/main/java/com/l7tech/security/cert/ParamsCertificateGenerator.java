@@ -31,6 +31,7 @@ public class ParamsCertificateGenerator {
     private final CertGenParams c;
 
     static final boolean PREFER_SHA1_SIG = SyspropUtil.getBoolean("com.l7tech.security.cert.alwaysSignWithSha1", false);
+    private static final SecureRandom rand = new SecureRandom();
 
     /**
      * Create a CertificateGenerator that will use the specified CertGenParams.
@@ -65,7 +66,7 @@ public class ParamsCertificateGenerator {
                 : new Date(new Date().getTime() - (10 * 60 * 1000L)); // default: 10 min ago
         Date notAfter = c.getNotAfter() != null ? c.getNotAfter()
                 : new Date(notBefore.getTime() + (daysUntilExpiry * 24 * 60 * 60 * 1000L)); // default: daysUntilExpiry days after notBefore
-        BigInteger serialNumber = c.getSerialNumber() != null ? c.getSerialNumber() : new BigInteger(64, new SecureRandom()).abs();
+        BigInteger serialNumber = c.getSerialNumber() != null ? c.getSerialNumber() : new BigInteger(64, rand).abs();
 
         X509V3CertificateGenerator certgen = new X509V3CertificateGenerator();
 

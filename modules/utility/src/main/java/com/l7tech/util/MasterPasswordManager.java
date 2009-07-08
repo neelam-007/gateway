@@ -24,8 +24,9 @@ public class MasterPasswordManager {
 
     private final MasterPasswordFinder finder;
     private final byte[] keyBytes;
+    private static final SecureRandom rand = new SecureRandom();
 
-     /**
+    /**
       * @return the master password converted to key bytes, or null if the master password is unavailable.
       */
      private byte[] getMasterPasswordBytes() {
@@ -144,7 +145,7 @@ public class MasterPasswordManager {
         Cipher aes = getAes();
         int blocksize = aes.getBlockSize();
         byte[] saltBytes = new byte[blocksize];
-        new SecureRandom().nextBytes(saltBytes);
+        rand.nextBytes(saltBytes);
         return HexUtils.encodeBase64(saltBytes, true);
     }
 

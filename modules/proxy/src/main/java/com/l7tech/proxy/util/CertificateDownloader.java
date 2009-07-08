@@ -42,6 +42,7 @@ public class CertificateDownloader {
     private List checks = Collections.EMPTY_LIST;
     private String nonce = "";
     private boolean sawNoPass = false;
+    private static final SecureRandom rand = new SecureRandom();
 
     /**
      * Create a new CertificateDownloader using the specified HTTP client, target URL, and credentials.
@@ -148,6 +149,6 @@ public class CertificateDownloader {
      * Get the next nonce value.
      */
     protected String getNonce() {        
-        return String.valueOf(Math.abs(new SecureRandom().nextLong()));
+        return String.valueOf(Math.abs(rand.nextLong()));
     }
 }

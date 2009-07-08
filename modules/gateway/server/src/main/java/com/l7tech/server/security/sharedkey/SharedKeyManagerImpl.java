@@ -58,6 +58,7 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
 
     private final PlatformTransactionManager transactionManager;
     private SecretKey sharedKeyDecryptionKey;
+    private static final SecureRandom rand = new SecureRandom();
 
     /**
      * Create a SharedKeyManager that will decrypt the shared key using a symmetric key derived from the
@@ -250,7 +251,7 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
     private byte[] generate64RandomBytes() {
         // this should only be called once the first time the key is created
         byte[] output = new byte[64];
-        (new SecureRandom()).nextBytes(output);
+        rand.nextBytes(output);
         return output;
     }
 }

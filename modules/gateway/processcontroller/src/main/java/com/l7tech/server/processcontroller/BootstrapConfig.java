@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 public class BootstrapConfig {
     private static final Logger logger = Logger.getLogger(BootstrapConfig.class.getName());
     private static final String DEFAULT_ALIAS = "processController";
+    private static final SecureRandom rand = new SecureRandom();
 
     public static void main(String[] args) {
         try {
@@ -137,7 +138,7 @@ public class BootstrapConfig {
 
     private static String generatePassword() {
         final byte[] passBytes = new byte[4];
-        new SecureRandom().nextBytes(passBytes);
+        rand.nextBytes(passBytes);
         return HexUtils.hexDump(passBytes);
     }
 

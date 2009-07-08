@@ -498,11 +498,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         logonServ.resetLogonFailCount(user);
     }
 
-    private static SecureRandom secureRandom = null;
+    private static final SecureRandom secureRandom = new SecureRandom();
 
-    private synchronized SecureRandom getSecureRandom() {
-        if (secureRandom != null) return secureRandom;
-        return secureRandom = new SecureRandom();
+    private SecureRandom getSecureRandom() {
+        return secureRandom;
     }
 
     @Override

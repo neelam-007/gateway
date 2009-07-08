@@ -60,13 +60,12 @@ public class WssDecoratorImpl implements WssDecorator {
     private static final int NEW_DERIVED_KEY_LENGTH = 32;
     private static final int OLD_DERIVED_KEY_LENGTH = 16;
 
-    private static Random random = new SecureRandom();
+    private static final Random rand = new SecureRandom();
 
     public WssDecoratorImpl() {
     }
 
     private static class Context {
-        SecureRandom rand = new SecureRandom();
         long count = 0;
         Message message;
         Map<String, Element> idToElementCache = new HashMap<String, Element>();
@@ -88,7 +87,7 @@ public class WssDecoratorImpl implements WssDecorator {
      * @return random extra microseconds to add to the timestamp to make it more unique, or zero to not bother.
      */
     private static long getExtraTime() {
-        return SyspropUtil.getBoolean(PROPERTY_SUPPRESS_NANOSECONDS) ? -1L : (long)random.nextInt(1000000);
+        return SyspropUtil.getBoolean(PROPERTY_SUPPRESS_NANOSECONDS) ? -1L : (long) rand.nextInt(1000000);
     }
 
     /**
@@ -845,7 +844,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         // Gather derived key params
         byte[] nonce = new byte[length];
-        c.rand.nextBytes(nonce);
+        rand.nextBytes(nonce);
 
         // Encode derived key params for the recipient
         Element generationEl = DomUtils.createAndAppendElementNS(dkt, "Generation", namespaceFactory.getWsscNs(), "wssc");
@@ -1303,7 +1302,7 @@ public class WssDecoratorImpl implements WssDecorator {
      */
     private String createWsuId(Context c, Element element, String basename) throws DecoratorException {
         byte[] randbytes = new byte[16];
-        c.rand.nextBytes(randbytes);
+        rand.nextBytes(randbytes);
         String id = basename + "-" + c.count++ + "-" + HexUtils.hexDump(randbytes);
 
         if (c.idToElementCache.get(id) != null)
@@ -1422,7 +1421,7 @@ public class WssDecoratorImpl implements WssDecorator {
      */
     private XencUtil.XmlEncKey generateXmlEncKey(String xEncAlgorithm, Context c) throws NoSuchAlgorithmException {
         byte[] keyBytes = new byte[32]; // (max for aes 256)
-        c.rand.nextBytes(keyBytes);
+        rand.nextBytes(keyBytes);
         XencUtil.XmlEncKey xek = new XencUtil.XmlEncKey(xEncAlgorithm, keyBytes);
         // Ensure algorithm and length are valid
         xek.getSecretKey();

@@ -16,11 +16,12 @@ import java.util.Arrays;
 public final class OpaqueId implements Serializable {
     private final byte[] opaque;
     private transient int hash = 0;
+    private static final SecureRandom rand = new SecureRandom();
 
     /** Create a new OpaqueId with a random byte array. */
     public OpaqueId() {
         opaque = new byte[20];
-        new SecureRandom().nextBytes(opaque);
+        rand.nextBytes(opaque);
     }
 
     /** Create a new OpaqueId with the specified random byte array. */

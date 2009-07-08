@@ -12,13 +12,13 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 public class LunaReproSigVerifyFalse {
-    static boolean parsePublicKeyWithBouncyCastle = false;
+    static boolean parsePublicKeyWithBouncyCastle = true;
     static boolean parsePrivateKeyWithBouncyCastle = true;
 
     public static void main(String[] args) throws Exception {
         Security.addProvider(new LunaJCEProvider());
         Security.addProvider(new LunaJCAProvider());
-        LunaTokenManager.getInstance().Login("FGAA-3LJT-tsHW-NC3E");
+        LunaTokenManager.getInstance().Login("t46/-979S-LHW3-dS6W");
 
         // Test data to sign
         final byte[] data =

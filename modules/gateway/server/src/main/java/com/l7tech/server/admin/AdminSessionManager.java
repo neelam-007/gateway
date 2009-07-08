@@ -448,7 +448,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     //
     @SuppressWarnings({"deprecation"})
     private final LRUMap sessionMap = new LRUMap(1000);
-    private final SecureRandom random = new SecureRandom();
+    private static final SecureRandom random = new SecureRandom();
     private final Object providerSync = new Object();
     private final GroupCache groupCache;
 

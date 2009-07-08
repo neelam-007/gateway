@@ -215,7 +215,8 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
 
     //- PRIVATE
 
-    private static final long CHECK_INTERVAL = (5L * 60L * 1000L) + (new SecureRandom().nextInt(60000)); // recheck every 5 min + random desync interval
+    private static final SecureRandom rand = new SecureRandom();
+    private static final long CHECK_INTERVAL = (5L * 60L * 1000L) + (rand.nextInt(60000)); // recheck every 5 min + random desync interval
     private static final long DB_FAILURE_GRACE_PERIOD = 72L * 60L * 60L * 1000L; // ignore a DB failure for up to 72 hours before canceling any current license
     private static final String LICENSE_PROPERTY_NAME = "license";
     private static final Object LICENSE_PROPERTY_VAL = getVal();

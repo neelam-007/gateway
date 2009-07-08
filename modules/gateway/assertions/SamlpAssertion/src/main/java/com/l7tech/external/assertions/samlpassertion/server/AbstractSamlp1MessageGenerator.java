@@ -63,7 +63,7 @@ public abstract class AbstractSamlp1MessageGenerator<REQ_MSG extends SubjectQuer
     protected EvidenceBlockResolver evidenceBlockResolver;
 
     private DatatypeFactory xmltypeFactory;
-    private Random rand = new SecureRandom();
+    private static final Random rand = new SecureRandom();
 
     public AbstractSamlp1MessageGenerator(final Map<String, Object> variablesMap, final Auditor auditor)
         throws SamlpAssertionException
