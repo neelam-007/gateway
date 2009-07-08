@@ -20,7 +20,9 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.Policy;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -65,8 +67,10 @@ public final class RegistryImpl extends Registry
     private PolicyAdmin policyAdmin;
     private LogSinkAdmin logSinkAdmin;
     private PolicyValidator policyValidator;
+    private GuidBasedEntityManager<Policy> policyFinder;
     private PolicyPathBuilderFactory policyPathBuilderFactory;
 
+    @Override
     public boolean isAdminContextPresent() {
         return adminContext != null;
     }
@@ -74,6 +78,7 @@ public final class RegistryImpl extends Registry
     /**
      * @return the {@link IdentityAdmin} implementation
      */
+    @Override
     public synchronized AdminLogin getAdminLogin() {
         checkAdminContext();
         if (adminLogin != null) {
@@ -86,6 +91,7 @@ public final class RegistryImpl extends Registry
     /**
      * @return the {@link IdentityAdmin} implementation
      */
+    @Override
     public synchronized IdentityAdmin getIdentityAdmin() {
         checkAdminContext();
         if (identityAdmin != null) {
@@ -99,6 +105,7 @@ public final class RegistryImpl extends Registry
     /**
      * @return the internal identity provider
      */
+    @Override
     public IdentityProviderConfig getInternalProviderConfig() {
         IdentityAdmin admin = getIdentityAdmin();
         try {
@@ -111,6 +118,7 @@ public final class RegistryImpl extends Registry
     /**
      * @return the service manager
      */
+    @Override
     public synchronized ServiceAdmin getServiceManager() {
         checkAdminContext();
         if (serviceAdmin != null) {
@@ -120,6 +128,7 @@ public final class RegistryImpl extends Registry
         return serviceAdmin;
     }
 
+    @Override
     public FolderAdmin getFolderAdmin() {
         checkAdminContext();
         if (folderAdmin != null) {
@@ -132,6 +141,7 @@ public final class RegistryImpl extends Registry
     /**
      * @return the JMS manager
      */
+    @Override
     public synchronized JmsAdmin getJmsManager() {
         checkAdminContext();
         if (jmsAdmin != null) {
@@ -144,6 +154,7 @@ public final class RegistryImpl extends Registry
     /**
      * @return the FTP manager
      */
+    @Override
     public synchronized FtpAdmin getFtpManager() {
         checkAdminContext();
         if (ftpAdmin != null) {
@@ -156,6 +167,7 @@ public final class RegistryImpl extends Registry
     /**
      * @return the Trusted Cert Manager
      */
+    @Override
     public synchronized TrustedCertAdmin getTrustedCertManager() {
         checkAdminContext();
         if (trustedCertAdmin != null) {
@@ -165,6 +177,7 @@ public final class RegistryImpl extends Registry
         return trustedCertAdmin;
     }
 
+    @Override
     public synchronized SchemaAdmin getSchemaAdmin() {
         checkAdminContext();
         if (schemaAdmin != null) {
@@ -177,6 +190,7 @@ public final class RegistryImpl extends Registry
     /**
      * @return the custome assertions registrar
      */
+    @Override
     public synchronized CustomAssertionsRegistrar getCustomAssertionsRegistrar() {
         checkAdminContext();
         if (customAssertionsRegistrar != null) {
@@ -189,6 +203,7 @@ public final class RegistryImpl extends Registry
     /**
      * @return the {@link AuditAdmin} implementation
      */
+    @Override
     public synchronized AuditAdmin getAuditAdmin() {
         checkAdminContext();
         if (auditAdmin !=null) {
@@ -198,6 +213,7 @@ public final class RegistryImpl extends Registry
         return auditAdmin;
     }
 
+    @Override
     public ClusterStatusAdmin getClusterStatusAdmin() {
         checkAdminContext();
         if (clusterStatusAdmin !=null) {
@@ -207,6 +223,7 @@ public final class RegistryImpl extends Registry
         return clusterStatusAdmin;
     }
 
+    @Override
     public KerberosAdmin getKerberosAdmin() {
         checkAdminContext();
         if (kerberosAdmin != null) {
@@ -216,6 +233,7 @@ public final class RegistryImpl extends Registry
         return kerberosAdmin;
     }
 
+    @Override
     public RbacAdmin getRbacAdmin() {
         checkAdminContext();
         if (rbacAdmin != null) {
@@ -225,6 +243,7 @@ public final class RegistryImpl extends Registry
         return rbacAdmin;
     }
 
+    @Override
     public TransportAdmin getTransportAdmin() {
         checkAdminContext();
         if (transportAdmin != null)
@@ -233,6 +252,7 @@ public final class RegistryImpl extends Registry
         return transportAdmin;
     }
 
+    @Override
     public EmailListenerAdmin getEmailListenerAdmin() {
         checkAdminContext();
         if (emailListenerAdmin != null) {
@@ -242,6 +262,7 @@ public final class RegistryImpl extends Registry
         return emailListenerAdmin;
     }
 
+    @Override
     public EmailAdmin getEmailAdmin() {
         checkAdminContext();
         if (emailAdmin != null) {
@@ -251,6 +272,7 @@ public final class RegistryImpl extends Registry
         return emailAdmin;
     }
 
+    @Override
     public PolicyAdmin getPolicyAdmin() {
         checkAdminContext();
         if (policyAdmin != null) {
@@ -259,22 +281,33 @@ public final class RegistryImpl extends Registry
         policyAdmin = adminContext.getPolicyAdmin();
         return policyAdmin;
     }
+    @Override
     public SecurityProvider getSecurityProvider() {
-        return (SecurityProvider)applicationContext.getBean("securityProvider");
+        return (SecurityProvider)applicationContext.getBean("securityProvider", SecurityProvider.class);
     }
 
+    @Override
+    public GuidBasedEntityManager<Policy> getPolicyFinder() {
+        checkAdminContext();
+        if (policyFinder != null) return policyFinder;
+        return policyFinder = (GuidBasedEntityManager<Policy>) applicationContext.getBean("managerPolicyCache");
+    }
+
+    @Override
     public PolicyValidator getPolicyValidator() {
         checkAdminContext();
         if (policyValidator != null) return policyValidator;
-        return policyValidator = (PolicyValidator) applicationContext.getBean("defaultPolicyValidator");
+        return policyValidator = (PolicyValidator) applicationContext.getBean("defaultPolicyValidator", PolicyValidator.class);
     }
 
+    @Override
     public PolicyPathBuilderFactory getPolicyPathBuilderFactory() {
         checkAdminContext();
         if (policyPathBuilderFactory != null) return policyPathBuilderFactory;
-        return policyPathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
+        return policyPathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory", PolicyPathBuilderFactory.class);
     }
 
+    @Override
     public LogSinkAdmin getLogSinkAdmin() {
         checkAdminContext();
         if (logSinkAdmin != null) {
@@ -298,6 +331,7 @@ public final class RegistryImpl extends Registry
      *          if thrown by application applicationContext methods
      * @see org.springframework.beans.factory.BeanInitializationException
      */
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
@@ -307,6 +341,7 @@ public final class RegistryImpl extends Registry
       *
       * @param event the event to respond to
       */
+     @Override
      public void onApplicationEvent(ApplicationEvent event) {
          if (event instanceof LogonEvent) {
              LogonEvent le = (LogonEvent)event;

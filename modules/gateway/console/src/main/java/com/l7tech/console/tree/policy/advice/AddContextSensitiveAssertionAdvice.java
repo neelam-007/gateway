@@ -1,19 +1,20 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.console.tree.policy.PolicyChange;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.PolicyUtil;
+import com.l7tech.policy.Policy;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
 
 /**
  * Abstract add assertion advice that provides pre/post routing notification.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public abstract class AddContextSensitiveAssertionAdvice implements Advice {
 
     //- PUBLIC
 
+    @Override
     public void proceed(PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1) {
@@ -57,6 +58,7 @@ public abstract class AddContextSensitiveAssertionAdvice implements Advice {
 
     private boolean isInsertPostRouting(PolicyChange pc) {
         Assertion ass = pc.getParent().asAssertion();
-        return PolicyUtil.isLocationPostRouting(ass, pc.getChildLocation());
+        GuidBasedEntityManager<Policy> finder = Registry.getDefault().getPolicyFinder();
+        return PolicyUtil.isLocationPostRouting(ass, finder, pc.getChildLocation());
     }
 }

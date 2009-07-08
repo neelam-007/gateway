@@ -6,15 +6,19 @@ package com.l7tech.console.policy;
 import com.l7tech.policy.Policy;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.*;
+import com.l7tech.gateway.common.audit.LogonEvent;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
+
 /**
  * @author alex
  */
-public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyEntityManager<Policy, EntityHeader>, GuidBasedEntityManager<Policy> {
+public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyEntityManager<Policy, EntityHeader>, GuidBasedEntityManager<Policy>, ApplicationListener {
     private final Map<Long, Policy> cache = new ConcurrentHashMap<Long, Policy>();
     private final Map<String, Long> guidToOidMap = new ConcurrentHashMap<String, Long>();
 
@@ -81,6 +85,14 @@ public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyE
     @Override
     public Class<Policy> getImpClass() {
         return Policy.class;
+    }
+
+    @Override
+    public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
+        if ( applicationEvent instanceof LogonEvent ) {
+            cache.clear();
+            guidToOidMap.clear();
+        }
     }
 
     private void invalidate( final EntityHeader entityHeader ) {

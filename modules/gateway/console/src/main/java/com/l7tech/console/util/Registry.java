@@ -21,15 +21,16 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.Policy;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
 
 
 /**
  * A central place that provides initial access to all components
  * and services used in the console.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * @author Emil Marceta
  */
 public abstract class Registry {
     /**
@@ -158,6 +159,13 @@ public abstract class Registry {
     public abstract PolicyPathBuilderFactory getPolicyPathBuilderFactory();
 
     /**
+     * Get the PolicyFinder to use for policy lookup.
+     *
+     * @return The PolicyFinder.
+     */
+    public abstract GuidBasedEntityManager<Policy> getPolicyFinder();
+
+    /**
      * @return the log sink admin interface implementation
      */
     public abstract LogSinkAdmin getLogSinkAdmin();
@@ -173,18 +181,22 @@ public abstract class Registry {
         Empty() {
         }
 
+        @Override
         public boolean isAdminContextPresent() {
             return false;
         }
 
+        @Override
         public AdminLogin getAdminLogin() {
             return null;
         }
 
+        @Override
         public IdentityAdmin getIdentityAdmin() {
             return null;
         }
 
+        @Override
         public IdentityProviderConfig getInternalProviderConfig() {
             return null;
         }
@@ -192,26 +204,32 @@ public abstract class Registry {
         /**
          * @return the service managerr
          */
+        @Override
         public ServiceAdmin getServiceManager() {
             return null;
         }
 
+        @Override
         public FolderAdmin getFolderAdmin() {
             return null;
         }
 
+        @Override
         public JmsAdmin getJmsManager() {
             return null;
         }
 
+        @Override
         public FtpAdmin getFtpManager() {
             return null;
         }
 
+        @Override
         public TrustedCertAdmin getTrustedCertManager() {
             return null;
         }
 
+        @Override
         public SchemaAdmin getSchemaAdmin() {
             return null;
         }
@@ -219,54 +237,72 @@ public abstract class Registry {
         /**
          * @return the custome assertions registrar
          */
+        @Override
         public CustomAssertionsRegistrar getCustomAssertionsRegistrar() {
             return null;
         }
 
+        @Override
         public AuditAdmin getAuditAdmin() {
             return null;
         }
 
+        @Override
         public ClusterStatusAdmin getClusterStatusAdmin() {
             return null;
         }
 
+        @Override
         public KerberosAdmin getKerberosAdmin() {
             return null;
         }
 
+        @Override
         public RbacAdmin getRbacAdmin() {
             return null;
         }
 
+        @Override
         public TransportAdmin getTransportAdmin() {
             return null;
         }
 
+        @Override
         public EmailListenerAdmin getEmailListenerAdmin() {
             return null;
         }
 
+        @Override
         public EmailAdmin getEmailAdmin() {
             return null;
         }
 
+        @Override
         public PolicyAdmin getPolicyAdmin() {
             return null;
         }
 
+        @Override
         public SecurityProvider getSecurityProvider() {
             return null;
         }
 
+        @Override
         public PolicyValidator getPolicyValidator() {
             return null;
         }
 
+        @Override
         public PolicyPathBuilderFactory getPolicyPathBuilderFactory() {
             return null;
         }
 
+        @Override
+        public GuidBasedEntityManager<Policy> getPolicyFinder() {
+            return null;
+        }
+
+        @Override
         public LogSinkAdmin getLogSinkAdmin() {
             return null;
         }
