@@ -13,7 +13,7 @@
 	</configurations>
 	<publications/>
 	<dependencies>
-		<dependency org="com.chrysalisits.cryptox" name="luna-jcasp" rev="4.4.1.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.chrysalisits.cryptox" name="luna-jcesp" rev="4.4.1.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.chrysalisits.cryptox" name="luna-jcasp" rev="4.4.1.4" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.chrysalisits.cryptox" name="luna-jcesp" rev="4.4.1.4" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 	</dependencies>
 </ivy-module>
