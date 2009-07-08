@@ -8,7 +8,8 @@ package com.l7tech.external.assertions.xacmlpdp.server;
 
 import org.junit.Test;
  import org.junit.Assert;
- import org.springframework.mock.web.MockServletContext;
+import static org.junit.Assert.assertEquals;
+import org.springframework.mock.web.MockServletContext;
  import org.springframework.mock.web.MockHttpServletRequest;
  import org.springframework.mock.web.MockHttpServletResponse;
  import org.xml.sax.SAXException;
@@ -265,6 +266,37 @@ import org.junit.Test;
          AssertionStatus status = serverPdpAssertion.checkRequest(context);
          Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FAILED, status);
      }
+
+    //-------------Test with variable interpolation
+    @Test
+    public void testCheckRequest_PolicyFromContextVariable() throws Exception {
+        XacmlPdpAssertion xacmlPdpAssertion = new XacmlPdpAssertion();
+        StaticResourceInfo sri = new StaticResourceInfo("${pdpPolicyXml}");
+        xacmlPdpAssertion.setResourceInfo(sri);
+
+        xacmlPdpAssertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.REQUEST);
+        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE);
+        String messageVariableName = "CONTEXT_VARIABLE_NAME";
+        xacmlPdpAssertion.setInputMessageVariableName(messageVariableName);
+
+        assertEquals(1, xacmlPdpAssertion.getVariablesUsed().length);
+        assertEquals("pdpPolicyXml", xacmlPdpAssertion.getVariablesUsed()[0]);
+
+        ServerXacmlPdpAssertion serverPdpAssertion =
+                new ServerXacmlPdpAssertion(xacmlPdpAssertion, ApplicationContexts.getTestApplicationContext());
+
+        PolicyEnforcementContext context = getContext(XACML_REQUEST_1_0_AND_1_1_SOAP_XML, false, messageVariableName);
+        context.setVariable("pdpPolicyXml", PDP_POLICY_XML);
+
+        AssertionStatus status = serverPdpAssertion.checkRequest(context);
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
+
+        //check decision from PDP for permit
+        Message response = context.getResponse();
+        String responseXml = XmlUtil.elementToXml(response.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+        Assert.assertEquals("Invalid response received from PDP", PERMIT_DECISION, fixLines(responseXml).trim());
+    }
+
 
      /**
       * contextVariableName takes precedence over useRequest. When not null the xacmlRequestXml is placed in a variable

@@ -1,26 +1,18 @@
 package com.l7tech.external.assertions.xacmlpdp;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.SetsVariables;
-import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.LONG_NAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_ICON;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_FOLDERS;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_ADVICE_CLASSNAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.WSP_EXTERNAL_NAME;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
-import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -29,8 +21,7 @@ import java.util.Collection;
  * Time: 5:21:36 PM
  * To change this template use File | Settings | File Templates.
  */
-public class XacmlPdpAssertion extends Assertion implements SetsVariables {
-
+public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsVariables {
     public enum SoapEncapsulationType {
         NONE("None"),
         REQUEST("Request"),
@@ -45,6 +36,7 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
             return encapType;
         }
 
+        @Override
         public String toString(){
             return encapType;
         }
@@ -62,7 +54,7 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
                 allTypes.add(aType.toString());
             }
             
-            return allTypes.toArray(new String[]{});
+            return allTypes.toArray(new String[allTypes.size()]);
         }
 
         private final String encapType;
@@ -79,12 +71,24 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
     public XacmlPdpAssertion() {
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         if(outputMessageLocation == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             return new VariableMetadata[] {new VariableMetadata(outputMessageVariableName, false, false, null, false)};
         } else {
             return new VariableMetadata[0];
         }
+    }
+
+    @Override
+    public String[] getVariablesUsed() {
+        if (resourceInfo instanceof StaticResourceInfo) {
+            StaticResourceInfo sri = (StaticResourceInfo) resourceInfo;
+            String doc = sri.getDocument();
+            if (doc != null)
+                return Syntax.getReferencedNames(doc);
+        }
+        return new String[0];
     }
 
     public XacmlAssertionEnums.MessageLocation getInputMessageSource() {
@@ -143,6 +147,7 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
         this.failIfNotPermit = failIfNotPermit;
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 

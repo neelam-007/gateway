@@ -1,53 +1,58 @@
 package com.l7tech.external.assertions.xacmlpdp.server;
 
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.util.res.ResourceGetter;
-import com.l7tech.server.util.res.ResourceObjectFactory;
-import com.l7tech.server.util.res.UrlFinder;
-import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
+import com.l7tech.common.http.GenericHttpClientFactory;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.url.AbstractUrlObjectCache;
+import com.l7tech.server.url.HttpObjectCache;
+import com.l7tech.server.util.res.ResourceGetter;
+import static com.l7tech.server.util.res.ResourceGetter.*;
+import com.l7tech.server.util.res.ResourceObjectFactory;
+import com.l7tech.server.util.res.UrlFinder;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.message.Message;
-import com.l7tech.server.url.HttpObjectCache;
-import com.l7tech.server.url.AbstractUrlObjectCache;
-import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.xml.ElementCursor;
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.cluster.ClusterPropertyCache;
-import com.sun.xacml.*;
+import com.sun.xacml.Indenter;
+import com.sun.xacml.PDP;
+import com.sun.xacml.PDPConfig;
+import com.sun.xacml.ParsingException;
 import com.sun.xacml.ctx.RequestCtx;
 import com.sun.xacml.ctx.ResponseCtx;
 import com.sun.xacml.ctx.Result;
-import com.sun.xacml.finder.impl.CurrentEnvModule;
-import com.sun.xacml.finder.PolicyFinder;
 import com.sun.xacml.finder.AttributeFinder;
-
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.logging.Logger;
-import java.util.*;
-import java.text.ParseException;
-import java.security.GeneralSecurityException;
-
-import org.springframework.context.ApplicationContext;
+import com.sun.xacml.finder.AttributeFinderModule;
+import com.sun.xacml.finder.PolicyFinder;
+import com.sun.xacml.finder.impl.CurrentEnvModule;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.text.ParseException;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -65,18 +70,26 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         envModule = new CurrentEnvModule();
         clusterPropertyEnvModule = new ClusterPropertyAttributeFinderModule(clusterPropertyCache);
 
+        this.variablesUsed = ea.getVariablesUsed();
+
         ResourceObjectFactory<PolicyFinder> resourceObjectfactory =
             new ResourceObjectFactory<PolicyFinder>()
             {
+                @Override
                 public PolicyFinder createResourceObject(final String resourceString) throws ParseException {
                     try {
                         return cacheObjectFactory.createUserObject("", new AbstractUrlObjectCache.UserObjectSource(){
+                            @Override
                             public byte[] getBytes() throws IOException {
                                 throw new IOException("Not supported");
                             }
+
+                            @Override
                             public ContentTypeHeader getContentType() {
                                 return null;
                             }
+
+                            @Override
                             public String getString(boolean isXml) {
                                 return resourceString;
                             }
@@ -87,11 +100,13 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                     }
                 }
 
+                @Override
                 public void closeResourceObject( final PolicyFinder resourceObject ) {
                 }
             };
 
         UrlFinder urlFinder = new UrlFinder() {
+            @Override
             public String findUrl(ElementCursor message) throws ResourceGetter.InvalidMessageException {
                 return null;
             }
@@ -99,7 +114,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
 
         //fyi if assertion.getResourceInfo() returns a SingleUrlResourceGetter then the above ResourceObjectFactory
         //will NEVER be used by the ResourceGetter
-        resourceGetter = ResourceGetter.createResourceGetter(
+        resourceGetter = (variablesUsed != null && variablesUsed.length > 0) ? null : ResourceGetter.createResourceGetter(
                 assertion,
                 assertion.getResourceInfo(),
                 resourceObjectfactory,
@@ -108,16 +123,17 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                 auditor);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             AttributeFinder attrFinder = new AttributeFinder();
-            List attrModules = new ArrayList();
+            List<AttributeFinderModule> attrModules = new ArrayList<AttributeFinderModule>();
             attrModules.add(envModule);
             attrModules.add(new ContextVariableAttributeFinderModule(context));
             attrModules.add(clusterPropertyEnvModule);
             attrFinder.setModules(attrModules);
 
-            PolicyFinder policyFinder = resourceGetter.getResource(null, new HashMap<String, String>());
+            PolicyFinder policyFinder = getPolicyFinder(context);
             PDP pdp = new PDP(new PDPConfig(attrFinder, policyFinder, null));
 
             Element rootElement;
@@ -183,14 +199,17 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                 responseCtx.encode(baos, new Indenter() {
                     private String spaces = "    ";
 
+                    @Override
                     public void in() {
                         spaces += "  ";
                     }
 
+                    @Override
                     public String makeString() {
                         return spaces;
                     }
 
+                    @Override
                     public void out() {
                         spaces = spaces.substring(2);
                     }
@@ -229,22 +248,34 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             return AssertionStatus.FAILED;
         } catch(ParsingException pe) {
             return AssertionStatus.FAILED;
-        } catch(ResourceGetter.InvalidMessageException ime) {
+        } catch(InvalidMessageException ime) {
             auditor.logAndAudit(AssertionMessages.REQUEST_NOT_SOAP);
             return AssertionStatus.BAD_REQUEST;
-        } catch(ResourceGetter.UrlNotFoundException unfe) {
-            return AssertionStatus.BAD_REQUEST;
-        } catch(ResourceGetter.MalformedResourceUrlException mue) {
-            return AssertionStatus.BAD_REQUEST;
-        } catch(ResourceGetter.UrlNotPermittedException unpe) {
-            return AssertionStatus.BAD_REQUEST;
-        } catch(ResourceGetter.ResourceIOException rioe) {
-            return AssertionStatus.BAD_REQUEST;
-        } catch(ResourceGetter.ResourceParseException rpe) {
+        } catch(UrlResourceException unfe) {
             return AssertionStatus.BAD_REQUEST;
         } catch(GeneralSecurityException gse) {
             return AssertionStatus.BAD_REQUEST;
+        } catch (UrlNotFoundException e) {
+            return AssertionStatus.BAD_REQUEST;
+        } catch (SAXException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Invalid XACML policy after variable expansion: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.SERVER_ERROR;
         }
+    }
+
+    private PolicyFinder getPolicyFinder(PolicyEnforcementContext context)
+            throws IOException, InvalidMessageException, UrlResourceException, GeneralSecurityException, UrlNotFoundException, SAXException, ParsingException {
+        if (variablesUsed == null || variablesUsed.length < 1)
+            return resourceGetter.getResource(null, new HashMap<String, String>());
+
+        String policy = ((StaticResourceInfo)assertion.getResourceInfo()).getDocument();
+        String expandedPolicy = ExpandVariables.process(policy, context.getVariableMap(variablesUsed, auditor), auditor, false);
+        ConstantPolicyModule policyModule = new ConstantPolicyModule(expandedPolicy);
+        PolicyFinder policyFinder = new PolicyFinder();
+        Set<ConstantPolicyModule> policyModules = new HashSet<ConstantPolicyModule>();
+        policyModules.add(policyModule);
+        policyFinder.setModules(policyModules);
+        return policyFinder;
     }
 
     private static synchronized HttpObjectCache<PolicyFinder> getCache(BeanFactory spring) {
@@ -268,6 +299,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
     private CurrentEnvModule envModule;
     private ClusterPropertyAttributeFinderModule clusterPropertyEnvModule;
     private final ResourceGetter<PolicyFinder> resourceGetter;
+    private final String[] variablesUsed;
 
     private static final Logger logger = Logger.getLogger(ServerXacmlPdpAssertion.class.getName());
     private final Auditor auditor;
@@ -277,12 +309,13 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
 
     private static final HttpObjectCache.UserObjectFactory<PolicyFinder> cacheObjectFactory =
                 new HttpObjectCache.UserObjectFactory<PolicyFinder>() {
+                    @Override
                     public PolicyFinder createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
                         String response = responseSource.getString(true);
                         try {
                             ConstantPolicyModule policyModule = new ConstantPolicyModule(response);
                             PolicyFinder policyFinder = new PolicyFinder();
-                            Set policyModules = new HashSet();
+                            Set<ConstantPolicyModule> policyModules = new HashSet<ConstantPolicyModule>();
                             policyModules.add(policyModule);
                             policyFinder.setModules(policyModules);
 
