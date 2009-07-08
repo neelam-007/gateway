@@ -65,37 +65,7 @@ final class OSConfigManager {
         if(!backUpManifest.isFile())
             throw new IllegalStateException("backup_manifest is not a regular file");
 
-        internalOsFolder = new File(ssgHome, INTERNAL_CONFIG_FILES_FOLDER);
-        if(!isReboot){
-            if (!internalOsFolder.exists()) {
-                boolean success = internalOsFolder.mkdir();
-                if (!success)
-                    throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
-            } else {
-                //were going to delete it, if somehow it got turned into a file
-                if(internalOsFolder.isFile()){
-                    internalOsFolder.delete();
-                    boolean success = internalOsFolder.mkdir();
-                    if (!success)
-                        throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
-                }
-                else {
-                    //if it exists, then just empty the contents, this will allow this to work as the gateway user
-                    //as it doesn't have permissions to delete and recreate the directory
-                    FileUtils.deleteDirContents(internalOsFolder);
-                }
-            }
-            //At this point we are guaranteed to have a completely new internalOsFolder directory
-        }else{
-            //this folder should exist
-            if(!internalOsFolder.exists())
-                throw new IllegalArgumentException("Folder '"+internalOsFolder.getAbsolutePath()+"' not found");
-            if(!internalOsFolder.isDirectory())
-                throw new IllegalArgumentException("File '" + internalOsFolder.getAbsoluteFile() + "' is not a directory");
-        }
-
-        if(!internalOsFolder.isDirectory())
-            throw new IllegalStateException("'"+internalOsFolder.getAbsolutePath()+"' is not a folder");
+        internalOsFolder = new File(ssgHome, INTERNAL_CONFIG_FILES_FOLDER);//this may not exist and thats ok
 
         this.isReboot = isReboot;
         this.isVerbose = isVerbose;
@@ -170,7 +140,10 @@ final class OSConfigManager {
     void copyFilesToInternalFolderPriorToReboot(final File source) throws OSConfigManagerException {
         if(isReboot)
             throw new IllegalStateException("Method cannot be called when OSConfigManager is in the reboot state");
-   
+
+        //we must be able to empty or create this folder if this method is called
+        emptyCreateOrThrowInternalFolder(true);
+
         if(source == null) throw new NullPointerException("source cannot be null");
         if(!source.exists()) throw new IllegalArgumentException("source does not exist");
         if(!source.isDirectory()) throw new IllegalArgumentException("source is not a directory");
@@ -192,12 +165,36 @@ final class OSConfigManager {
         if(!isReboot)
             throw new IllegalStateException("Method cannot be called when OSConfigManager is not in the reboot state");
 
+        if(!internalOsFolder.exists() || !internalOsFolder.isDirectory()){
+            final String msg = "No files were required to be restored on appliance reboot";
+            //this is info logging, as the appliance can reboot before any restore / migrate is ever done
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            return false;
+        }
         try {
             return copyFilesFromSource(internalOsFolder);
         } catch (IOException e) {
             throw new OSConfigManagerException("Cannot copy files to internal folder: " + e.getMessage());
         }
 
+    }
+
+    /**
+     * The configfiles folder must exist or be capable of being created for this method to be called.
+     * If it exists, it will not be emptied. If it does not exist, then it must be successfull in creating it
+     * @param fileToCopy
+     * @throws IOException
+     */
+    void copyFileToInternalFolder(final File fileToCopy) throws IOException{
+
+        emptyCreateOrThrowInternalFolder(false);
+        final File targetRoot = new File(internalOsFolder.getParentFile().getAbsolutePath());
+        final File targetFile = new File(targetRoot, fileToCopy.getAbsolutePath());
+        FileUtils.ensurePath(targetFile.getParentFile());
+        FileUtils.copyFile(fileToCopy, targetFile);
+        final String msg = "File '" + fileToCopy.getAbsolutePath()+"' is set to be overwritten the next time the SSG " +
+                "host is restarted, if this has been configured on host startup";
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
     }
 
     /**
@@ -248,16 +245,6 @@ final class OSConfigManager {
         return systemFileOverWritten;
     }
 
-    void copyFileFromSource(final File fileToCopy) throws IOException{
-        final File targetRoot = new File(internalOsFolder.getParentFile().getAbsolutePath());
-        final File targetFile = new File(targetRoot, fileToCopy.getAbsolutePath());
-        FileUtils.ensurePath(targetFile.getParentFile());
-        FileUtils.copyFile(fileToCopy, targetFile);
-        final String msg = "File '" + fileToCopy.getAbsolutePath()+"' is set to be overwritten the next time the SSG " +
-                "host is restarted, if this has been configured on host startup";
-        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
-    }
-
     /**
      * Get a list of the absolute paths of each file in a directory, regardless of the depth of child folders.
      * Empty directorys will not be included
@@ -282,4 +269,31 @@ final class OSConfigManager {
             return output;
         } else return Collections.emptyList();
     }
+
+    /**
+     * Ensure the internal folder exists. If it doesn't, it's created. If it can not be created an exception will
+     * be thrown
+     * @param deleteIfFound if true, the internal folder will be emptied
+     */
+    private void emptyCreateOrThrowInternalFolder(final boolean deleteIfFound) {
+        if (!internalOsFolder.exists()) {
+            boolean success = internalOsFolder.mkdir();
+            if (!success)
+                throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
+        } else {
+            //were going to delete it, if somehow it got turned into a file
+            if(internalOsFolder.isFile()){
+                internalOsFolder.delete();
+                boolean success = internalOsFolder.mkdir();
+                if (!success)
+                    throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
+            }
+            else {
+                //if it exists, then just empty the contents, this will allow this to work as the gateway user
+                //as it doesn't have permissions to delete and recreate the directory
+                if(deleteIfFound) FileUtils.deleteDirContents(internalOsFolder);
+            }
+        }
+    }
+    
 }

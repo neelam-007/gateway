@@ -656,7 +656,7 @@ final class RestoreImpl implements Restore{
                     ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
                 } else {
                     try {
-                        osConfigManager.copyFileFromSource(myCnf);
+                        osConfigManager.copyFileToInternalFolder(myCnf);
                     } catch (IOException e) {
                         final String msg = "Cannot copy my.cnf: " + e.getMessage();
                         ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);

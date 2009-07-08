@@ -403,6 +403,8 @@ public final class Exporter{
 
         final BackupComponent<Backup.BackupException> versionComp = new BackupComponent<Backup.BackupException>() {
             public void doBackup() throws Backup.BackupException {
+                final String msg = "Backing up component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 // record version of this image
                 backup.backUpVersion();
             }
@@ -423,6 +425,9 @@ public final class Exporter{
 
             final BackupComponent<Backup.BackupException> dbComp = new BackupComponent<Backup.BackupException>() {
                 public void doBackup() throws Backup.BackupException {
+                    final String msg = "Backing up component " + getComponentType().getComponentName();
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
                     //this will also create the mapping file if it was requested
                     backup.backUpComponentMainDb(mappingFile, config);
                 }
@@ -436,6 +441,9 @@ public final class Exporter{
             if (includeAudits) {
                 final BackupComponent<Backup.BackupException> auditComp = new BackupComponent<Backup.BackupException>() {
                     public void doBackup() throws Backup.BackupException {
+                        final String msg = "Backing up component " + getComponentType().getComponentName();
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
                         backup.backUpComponentAudits(config);
                     }
 
@@ -451,6 +459,9 @@ public final class Exporter{
 
         final BackupComponent<Backup.BackupException> configComp = new BackupComponent<Backup.BackupException>() {
             public void doBackup() throws Backup.BackupException {
+                final String msg = "Backing up component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
                 backup.backUpComponentConfig();
             }
 
@@ -462,6 +473,9 @@ public final class Exporter{
 
         final BackupComponent<Backup.BackupException> osComp = new BackupComponent<Backup.BackupException>() {
             public void doBackup() throws Backup.BackupException {
+                final String msg = "Backing up component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
                 //restore OS files if this is an appliance
                 backup.backUpComponentOS();
             }
@@ -474,6 +488,9 @@ public final class Exporter{
 
         final BackupComponent<Backup.BackupException> caComp = new BackupComponent<Backup.BackupException>() {
             public void doBackup() throws Backup.BackupException {
+                final String msg = "Backing up component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
                 backup.backUpComponentCA();
             }
 
@@ -486,6 +503,9 @@ public final class Exporter{
 
         final BackupComponent<Backup.BackupException> maComp = new BackupComponent<Backup.BackupException>() {
             public void doBackup() throws Backup.BackupException {
+                final String msg = "Backing up component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
                 backup.backUpComponentMA();
             }
 
@@ -499,6 +519,9 @@ public final class Exporter{
         if(programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())){
             final BackupComponent<Backup.BackupException> emComp = new BackupComponent<Backup.BackupException>() {
                 public void doBackup() throws Backup.BackupException {
+                    final String msg = "Backing up component " + getComponentType().getComponentName();
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
                     backup.backUpComponentESM();
                 }
 

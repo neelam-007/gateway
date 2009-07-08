@@ -259,6 +259,9 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                 paramList.add((new File(tmpDirectory, imageName)).getCanonicalPath());
                 paramList.add("-maindb");
                 if(includeAudits) paramList.add("-audits");
+                paramList.add("-os");
+                paramList.add("-config");
+                paramList.add("-halt");
 
                 ProcResult result = ProcUtils.exec(backupHome, new File(backupHome, "ssgbackup.sh"),
                         paramList.toArray(new String[paramList.size()]), null, false);

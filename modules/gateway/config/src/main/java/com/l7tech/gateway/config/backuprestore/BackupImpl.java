@@ -180,9 +180,11 @@ class BackupImpl implements Backup {
             try {
                 // copy system config files
                 final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
-                if (!(new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())) {
-                    final String msg = "Operating System backup is not applicable for this host";
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                final File backupManifest = new File(ssgHome, OSConfigManager.BACKUP_MANIFEST);
+                if (!(backupManifest.exists())) {
+                    final String msg = "File '"+backupManifest.getAbsolutePath()
+                            +"' does not exist. Cannot back up os files";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
                     return;
                 }
 
