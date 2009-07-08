@@ -592,7 +592,7 @@ public class PolicyProcessingTest extends TestCase {
         assertEquals("2", getRequestAttribute(request, "request.wss.certificates.count", null));
         assertEquals("CN=OASIS Interop Test CA, O=OASIS", getRequestAttribute(request, "request.wss.certificates.value.1.issuer", null));
         assertEquals("cn=oasis interop test ca,o=oasis", getRequestAttribute(request, "request.wss.certificates.value.1.issuer.canonical", null));
-        assertEquals("O=OASIS", getRequestAttribute(request, "request.wss.certificates.value.1.issuer.dn.2", null));
+        assertEquals("CN=OASIS Interop Test CA", getRequestAttribute(request, "request.wss.certificates.value.1.issuer.dn.2", null));
         assertEquals("OASIS Interop Test CA", getRequestAttribute(request, "request.wss.certificates.value.2.issuer.dn.cn", null));
         assertEquals("", getRequestAttribute(request, "request.wss.certificates.value.2.issuerAltNameEmail", null));
         assertEquals("NQM0IBvuplAtETQvk+6gn8C13wE=", getRequestAttribute(request, "request.wss.certificates.value.2.thumbprintSHA1", null));
@@ -732,7 +732,7 @@ public class PolicyProcessingTest extends TestCase {
 
                     NodeList signingcert1rdn1NodeList = document.getElementsByTagNameNS(tns, "signingcert1rdn1");
                     Assert.assertEquals("signingcert1rdn1 found", 1, signingcert1rdn1NodeList.getLength());
-                    Assert.assertEquals("signingcert1rdn1", "CN=Alice", XmlUtil.getTextValue((Element)signingcert1rdn1NodeList.item(0)));
+                    Assert.assertEquals("signingcert1rdn1", "O=OASIS", XmlUtil.getTextValue((Element)signingcert1rdn1NodeList.item(0)));
 
                     NodeList signingcert1b64NodeList = document.getElementsByTagNameNS(tns, "signingcert1b64");
                     Assert.assertEquals("signingcert1b64 found", 1, signingcert1b64NodeList.getLength());

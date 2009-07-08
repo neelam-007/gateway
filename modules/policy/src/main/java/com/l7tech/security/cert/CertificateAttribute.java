@@ -564,11 +564,10 @@ public enum CertificateAttribute {
         try {
             if (x500Principal != null) {
                 addToMap(result, attrName, x500Principal.toString());
-                int rdnPos = 0;
                 List<Rdn> rdns = new ArrayList<Rdn>(new LdapName(x500Principal.getName(X500Principal.RFC2253)).getRdns());
+                int rdnPos = rdns.size();
                 Collections.reverse(rdns);
                 for (Rdn rdn : rdns) {
-                    rdnPos++;
                     addToMap(result, attrName + "." + Integer.toString(rdnPos), rdn.toString());
 
                     NamingEnumeration<? extends Attribute> attrs = rdn.toAttributes().getAll();
@@ -583,12 +582,13 @@ public enum CertificateAttribute {
                             addToMap(result, attrName + "." + id, value);
                         }
                     }
+                    rdnPos--;
                 }
             }
         } catch (Exception e) {
             // should not happen
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Error Could not extract issuer alternative names from certificate '" +
+                logger.log(Level.FINE, "Error extracting issuer alternative names from certificate '" +
                     ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             }
         }

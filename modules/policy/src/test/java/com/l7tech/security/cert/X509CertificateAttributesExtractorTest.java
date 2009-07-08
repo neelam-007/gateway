@@ -106,6 +106,12 @@ public class X509CertificateAttributesExtractorTest {
         assertEquals("OU value 0", "foo", ous[0]);
         assertEquals("OU value 1", "bar", ous[1]);
         assertEquals("OU value 2", "baz", ous[2]);
+
+        assertEquals("DN by index retrieval", "C=ca", ((Object[])cae.getAttributeValue("subject.dn.1"))[0]);
+        assertEquals("DN by index retrieval", "OU=baz", ((Object[])cae.getAttributeValue("subject.dn.2"))[0]);
+        assertEquals("DN by index retrieval", "OU=bar", ((Object[])cae.getAttributeValue("subject.dn.3"))[0]);
+        assertEquals("DN by index retrieval", "OU=foo", ((Object[])cae.getAttributeValue("subject.dn.4"))[0]);
+        assertEquals("DN by index retrieval", "CN=blah", ((Object[])cae.getAttributeValue("subject.dn.5"))[0]);
     }
 
     @Test
