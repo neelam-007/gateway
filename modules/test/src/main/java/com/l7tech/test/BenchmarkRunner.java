@@ -46,9 +46,17 @@ public class BenchmarkRunner {
      * Test constructor
      */
     public BenchmarkRunner(Runnable r, int times, String name) {
+        this(r, times, 0, name);
+    }
+
+    /**
+     * Test constructor
+     */
+    public BenchmarkRunner(Runnable r, int times, int threadCount, String name) {
         this.runnable = r;
         this.runCount = times;
         this.name = name;
+        this.threadCount = threadCount;
     }
 
     public BenchmarkRunner(Runnable r, int times) {

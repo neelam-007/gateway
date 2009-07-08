@@ -1,5 +1,7 @@
 package com.l7tech.security.xml;
 
+import com.l7tech.util.Pair;
+
 import java.io.Serializable;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -27,6 +29,18 @@ public class SignerInfo implements Serializable {
     public SignerInfo(PrivateKey privateKey, X509Certificate[] certificateChain) {
         this.privateKey = privateKey;
         this.certificateChain = certificateChain;
+    }
+
+    /**
+     * Constructs a signer info from the given private key and certificate.
+     * The public key is retrieved from the certificate.
+     *
+     * @param certWithPrivateKey a Pair holding the subject cert and private key.  Required.
+     */
+    public SignerInfo(Pair<X509Certificate, PrivateKey> certWithPrivateKey) {
+        if (certWithPrivateKey.left == null) throw new IllegalArgumentException("A certificate is required.");
+        this.privateKey = certWithPrivateKey.right;
+        this.certificateChain = new X509Certificate[] { certWithPrivateKey.left };
     }
 
     /**
