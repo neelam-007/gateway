@@ -121,14 +121,9 @@ public class BackupRestoreLauncher {
                 final File ssgHome = new File(SECURE_SPAN_HOME, ImportExportUtilities.GATEWAY);
                 final OSConfigManager osConfigManager =
                         new OSConfigManager(ssgHome, true, false, null);
-                try {
-                    final boolean filesWereCopied = osConfigManager.finishRestoreOfFilesOnReboot();
-                    //this is the only output from cfgdaemon
-                    if(filesWereCopied) System.out.println("Files were restored by the cfgdaemon");
-                } catch (OSConfigManager.OSConfigManagerException e) {
-                    logger.log(Level.SEVERE, "Exception running cfgdaemon target of ssgrestore: " + e.getMessage());
-                    System.exit(1);
-                }
+                final boolean filesWereCopied = osConfigManager.finishRestoreOfFilesOnReboot();
+                //this is the only output from cfgdaemon
+                if(filesWereCopied) System.out.println("Files were restored by the cfgdaemon");
             } else if (args[0] != null) {
                 String issue = "Unsupported option " + args[0];
                 logger.warning(issue);
@@ -164,7 +159,9 @@ public class BackupRestoreLauncher {
         final LogManager logManager = LogManager.getLogManager();
 
         final String logFileToUseAsDefault;
-        if(launcherTarget.equalsIgnoreCase(IMPORT_TYPE) || launcherTarget.equalsIgnoreCase(MIGRATE_TYPE)){
+        if(launcherTarget.equalsIgnoreCase(IMPORT_TYPE)
+                || launcherTarget.equalsIgnoreCase(MIGRATE_TYPE) 
+                || launcherTarget.equalsIgnoreCase(CFGDAEMON_TYPE)){
             logFileToUseAsDefault = RESTORE_LOGCONFIG_NAME;
         }else{
             logFileToUseAsDefault = BACKUP_LOGCONFIG_NAME;

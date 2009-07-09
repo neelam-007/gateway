@@ -176,7 +176,7 @@ public final class BackupImage {
      * Remove the temp directory this backup image created when it unzipped the image
      */
     void removeTempDirectory(){
-        final String msg = "cleaning up temp files at " + tempDirectory;
+        final String msg = "Deleting temp directory " + tempDirectory;
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
         boolean success = FileUtils.deleteDir(new File(tempDirectory));
 

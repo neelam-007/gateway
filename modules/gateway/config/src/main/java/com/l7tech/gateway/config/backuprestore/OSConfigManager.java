@@ -85,6 +85,7 @@ final class OSConfigManager {
      * 
      * @param destination where to place copied os files. Original directory structure of the copied folder will
      * be maintained, with destination as the new root e.g. a file in /etc/a.txt will be in destination/etc/a.txt
+     * @throws OSConfigManagerException if any problem copying files to destination
      */
     void backUpOSConfigFilesToFolder(final File destination) throws OSConfigManagerException{
         if(isReboot)
@@ -137,7 +138,7 @@ final class OSConfigManager {
      *
      * @param source the directory containing the files to copy. Must exist and be a directory
      */
-    void copyFilesToInternalFolderPriorToReboot(final File source) throws OSConfigManagerException {
+    void copyFilesToInternalFolderPriorToReboot(final File source){
         if(isReboot)
             throw new IllegalStateException("Method cannot be called when OSConfigManager is in the reboot state");
 
@@ -148,22 +149,28 @@ final class OSConfigManager {
         if(!source.exists()) throw new IllegalArgumentException("source does not exist");
         if(!source.isDirectory()) throw new IllegalArgumentException("source is not a directory");
 
-        try {
-            copyFilesFromSource(source);
-        } catch (IOException e) {
-            throw new OSConfigManagerException("Cannot copy files to internal folder: " + e.getMessage());
+        if(!copyFilesFromSource(source)){
+            final String msg = "No files were copied from source '" + source.getAbsolutePath()+"'";
+            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
         }
-
     }
 
     /**
-     * Copy files from our internal folder to their ultimate desintation. Unless this code is running as root
-     * this method will fail
-     * @return true if any files were copied on reboot
+     * Copy files from our internal folder to their ultimate destination. To successfully copy the files, this method
+     * must be running as root
+     *
+     * All files copied successfully are deleted from the internal folder
+     * All files which could not be copied are not deleted from the internal folder
+     * Both the success / fail of copying the file from the internal folder is logged
+     * Both the success / fail of deleting a successfully copied file from the internal folder is logged
+     * @return true if any files were restored on reboot
      */
-    boolean finishRestoreOfFilesOnReboot() throws OSConfigManagerException {
+    boolean finishRestoreOfFilesOnReboot(){
         if(!isReboot)
             throw new IllegalStateException("Method cannot be called when OSConfigManager is not in the reboot state");
+
+        final String msg2 = "Restoring os files on reboot...";
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg2, isVerbose, printStream);
 
         if(!internalOsFolder.exists() || !internalOsFolder.isDirectory()){
             final String msg = "No files were required to be restored on appliance reboot";
@@ -171,12 +178,21 @@ final class OSConfigManager {
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
             return false;
         }
-        try {
-            return copyFilesFromSource(internalOsFolder);
-        } catch (IOException e) {
-            throw new OSConfigManagerException("Cannot copy files to internal folder: " + e.getMessage());
-        }
 
+        final boolean someFilesCopied= copyFilesFromSource(internalOsFolder);
+        final String msg1 = "Restored " +((someFilesCopied) ? "some" : "no") + " os files on reboot";
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
+
+        //Delete the contents of the internal folder
+        if(FileUtils.deleteDirContents(internalOsFolder)){
+            final String deleteMsg = "Sucessfully deleted contents of internal folder";
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, deleteMsg, isVerbose, printStream);
+        }else{
+            final String deleteMsg = "Could not delete contents of internal folder: '"
+                    + internalOsFolder.getAbsolutePath()+"'";
+            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, deleteMsg, isVerbose, printStream);
+        }
+        return someFilesCopied;
     }
 
     /**
@@ -199,11 +215,12 @@ final class OSConfigManager {
 
     /**
      * This can also be used to copy files like my.cnf which are restored outside of the os backup component
+     *
+     * Note: This method catches all it's IO Exceptions as it reports a list of successfully copied files
      * @param source is either our internal folder or a directory where a backup image was unzipped to
-     * @return true, if any files were copied
-     * @throws IOException
+     * @return true if some files were copied from the source, false otherwise
      */
-    private boolean copyFilesFromSource(final File source) throws IOException {
+    private boolean copyFilesFromSource(final File source){
         final List<String> allFiles = getFlattenedDirectoryForFilesOnly(source);
         final String sourceRoot = source.getAbsolutePath();
 
@@ -228,17 +245,22 @@ final class OSConfigManager {
             final File sourceFile = new File(osFile);
             final File targetFile = new File(targetRoot, rawFilePath);
 
-            FileUtils.ensurePath(targetFile.getParentFile());
-            FileUtils.copyFile(sourceFile, targetFile);
-            systemFileOverWritten = true;
-
-            final String msg = "Copied file '"+osFile+"' into folder '"+ targetFile.getAbsolutePath()+"'";
-            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
-
+            try{
+                FileUtils.ensurePath(targetFile.getParentFile());
+                FileUtils.copyFile(sourceFile, targetFile);
+                systemFileOverWritten = true;
+                final String msg = "Copied file '"+osFile+"' into folder '"+ targetFile.getAbsolutePath()+"'";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            }catch(IOException e){
+                final String msg = "Could not copy file '"+osFile+"' into folder '"+ targetFile.getAbsolutePath()+"' :"
+                        + e.getMessage();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            }
         }
+        
         if (systemFileOverWritten && !isReboot) {
             final String msg = "Certain system files are set to be overwritten the next time the SSG host is restarted" +
-                    " ,if this has been configured on host startup";
+                    ", if this has been configured on host startup";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
         }
 
@@ -291,7 +313,17 @@ final class OSConfigManager {
             else {
                 //if it exists, then just empty the contents, this will allow this to work as the gateway user
                 //as it doesn't have permissions to delete and recreate the directory
-                if(deleteIfFound) FileUtils.deleteDirContents(internalOsFolder);
+                final String msg = "Deleting contents of internal folder";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                if(deleteIfFound){
+                    if(FileUtils.deleteDirContents(internalOsFolder)){
+                        final String msg1="Successfully deleted contents of internal folder";
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
+                    }else{
+                        final String msg1="Could not delete contents of internal folder";
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg1, isVerbose, printStream);
+                    }
+                }
             }
         }
     }

@@ -371,7 +371,8 @@ public class FileUtils {
      */
     public static boolean deleteDirContents(File dir){
         if(dir == null) throw new NullPointerException("dir cannot be null");
-        if(!dir.isDirectory()) return true;
+        if(!dir.isDirectory())
+            throw new IllegalArgumentException("dir must be a directory, whose contents are to be deleted");
         
         File [] files = dir.listFiles();
         for(File f: files){

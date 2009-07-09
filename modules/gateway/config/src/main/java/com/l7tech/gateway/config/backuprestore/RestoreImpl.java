@@ -310,31 +310,27 @@ final class RestoreImpl implements Restore{
     public Result restoreComponentOS(boolean isRequired) throws RestoreException {
 
         if (applianceHome.exists()) {
-            try {
-                //need to use the exclude file
-                final File osFolder = image.getOSFolder();
-                if(osConfigManager == null){
-                    final String msg = "Operating System restore is not applicable for this host";
-                    if(isRequired){
-                        throw new RestoreException(msg);
-                    }
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                    return Result.NOT_APPLICABLE;
-
-                }else if(osFolder == null){
-                    //no os backup in image
-                    final String msg = "No Operating System backup found in image";
-                    if(isRequired){
-                        throw new RestoreException(msg);
-                    }
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                    return Result.NOT_APPLICABLE;
+            //need to use the exclude file
+            final File osFolder = image.getOSFolder();
+            if(osConfigManager == null){
+                final String msg = "Operating System restore is not applicable for this host";
+                if(isRequired){
+                    throw new RestoreException(msg);
                 }
-                osConfigManager.copyFilesToInternalFolderPriorToReboot(osFolder);
-                return Result.SUCCESS;
-            } catch (OSConfigManager.OSConfigManagerException e) {
-                throw new RestoreException("Could not restore OS configuration files: " + e.getMessage());
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                return Result.NOT_APPLICABLE;
+
+            }else if(osFolder == null){
+                //no os backup in image
+                final String msg = "No Operating System backup found in image";
+                if(isRequired){
+                    throw new RestoreException(msg);
+                }
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                return Result.NOT_APPLICABLE;
             }
+            osConfigManager.copyFilesToInternalFolderPriorToReboot(osFolder);
+            return Result.SUCCESS;
         }else{
             if(isRequired){
                 throw new RestoreException("No Operation System backup found in image");
