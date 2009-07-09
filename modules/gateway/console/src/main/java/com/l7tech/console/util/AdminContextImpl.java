@@ -126,6 +126,22 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     @Override
     protected Object doRemoteInvocation( final Object targetObject,
                                          final Method method,
+                                         final Object[] args) throws Throwable
+    {
+        long start = TRACE ? System.currentTimeMillis() : 0;
+        try {
+            return reallyDoRemoteInvocation(targetObject, method, args);
+        } finally {
+            if (TRACE) {
+                long end = System.currentTimeMillis();
+                double total = ((double)end - (double)start) / 1000;
+                System.out.printf("%6.2f sec for: %s\n", total, method.toString());
+            }
+        }
+    }
+
+    private Object reallyDoRemoteInvocation( final Object targetObject,
+                                         final Method method,
                                          final Object[] args) throws Throwable {
         if (NO_CANCEL_DIALOGS || !SwingUtilities.isEventDispatchThread() || Utilities.isAnyThreadDoingWithDelayedCancelDialog())
             return super.doRemoteInvocation(targetObject, method, args);    //To change body of overridden methods use File | Settings | File Templates.
@@ -173,6 +189,7 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     private static final String PROP_BASE = "com.l7tech.console.";
     private static final boolean NO_CANCEL_DIALOGS = SyspropUtil.getBoolean(PROP_BASE + "suppressRemoteInvocationCancelDialog");
     private static final long MS_BEFORE_DLG = SyspropUtil.getLong(PROP_BASE + "remoteInvocationCancelDialogDelayMillis", 2500L);
+    private static final boolean TRACE = SyspropUtil.getBoolean(PROP_BASE + "remoteInvocationTracing", false);
 
     private static class ThrowableWrapper extends Exception {
         private ThrowableWrapper(Throwable cause) {
