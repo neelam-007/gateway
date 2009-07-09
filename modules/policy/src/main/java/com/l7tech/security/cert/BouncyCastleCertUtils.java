@@ -62,7 +62,7 @@ public class BouncyCastleCertUtils {
 
         // Generate request
         final PKCS10CertificationRequest certReq = sigProvider == null
-                ? new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey)
+                ? new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey, null)
                 : new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey, sigProvider.getName());
         return new BouncyCastleCertificateRequest(certReq, publicKey);
     }
