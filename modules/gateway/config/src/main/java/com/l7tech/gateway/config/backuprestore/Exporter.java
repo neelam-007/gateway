@@ -226,7 +226,7 @@ public final class Exporter{
         final boolean usingFtp = ImportExportUtilities.checkAndValidateFtpParams(programFlagsAndValues);
 
         //overwrite the supplied image name with a unique name based on it
-        String pathToUniqueImageFile = getUniqueImageFileName(programFlagsAndValues.get(IMAGE_PATH.getName()));
+        String pathToUniqueImageFile = getUniqueImageFileName(programFlagsAndValues.get(IMAGE_PATH.getName()), usingFtp);
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
                 "Creating image: " + pathToUniqueImageFile, isVerbose, printStream);
         
@@ -253,7 +253,8 @@ public final class Exporter{
             ImportExportUtilities.throwIfFileExists(programFlagsAndValues.get(MAPPING_PATH.getName()));
         }
 
-        final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(programFlagsAndValues);
+        final FtpClientConfig ftpConfig = (usingFtp)?ImportExportUtilities.getFtpConfig(programFlagsAndValues): null;
+
         final Backup backup = BackupRestoreFactory.getBackupInstance(secureSpanHome, ftpConfig, pathToUniqueImageFile,
                 isPostFiveO, isVerbose, printStream);
 
@@ -279,11 +280,13 @@ public final class Exporter{
      * If the system property com.l7tech.gateway.config.backuprestore.nomodifyimagename.nouniqueimagename is set
      * to 'true', then this will return the pathToImageFile unmodified 
      * @param pathToImageFile path and file name to make unique
+     * @param usingFtp if true, then if pathToImageFile has no path part, it won't add the default images folder
      * @return a unique file name
      */
-    String getUniqueImageFileName(final String pathToImageFile) {
+    String getUniqueImageFileName(final String pathToImageFile, final boolean usingFtp) {
 
-        final String imagePathAndName = (isPostFiveO)?getPostFiveOAbsImagePath(pathToImageFile):pathToImageFile;
+        final String imagePathAndName = (isPostFiveO && !usingFtp)?getPostFiveOAbsImagePath(pathToImageFile)
+                :pathToImageFile;
 
         final String ignoreProp = System.getProperty(NO_UNIQUE_IMAGE_SYSTEM_PROP);
         if(ignoreProp != null){

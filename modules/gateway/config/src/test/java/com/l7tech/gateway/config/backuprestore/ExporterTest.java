@@ -722,10 +722,8 @@ public class ExporterTest {
     }
 
     /**
-     * Test that if no port is supplied with the host string for -ftp_host, that the correct exception is thrown
-     * @throws BackupRestoreLauncher.InvalidProgramArgumentException
+     * Test that if no port is supplied with the host string for -ftp_host, that no exception is thrown
      */
-    @Test(expected = BackupRestoreLauncher.InvalidProgramArgumentException.class)
     public void testValidateFtpParametersNoPort() throws BackupRestoreLauncher.InvalidProgramArgumentException {
 
         final Map<String, String> args = new HashMap<String, String>();
@@ -776,13 +774,78 @@ public class ExporterTest {
         }
     }
 
+    /**
+     * Tests the logic of how the image name supplied by the user is made unique
+     * 
+     * Tests the following:
+     * - In all situations the file name is made unique 
+     * - In a 5.0 environement if the file name has no path part, then none is added
+     * - When ftp is being used, no path part is added when the image name does not contain any
+     * - When ftp is not being used, and the environment is post 5.0, then the default images folder is added to
+     * the image name, if it contains no path part
+     *
+     * @throws Exception
+     */
     @Test
     public void testGetUniqueImageFileName() throws Exception{
-        final String image = "image1.zip";
+        final String imageNameNoPath = "image1.zip";
+
+        //pre five o the image name should not be changed
+        final Exporter fiveOExporter = new Exporter(tmpSecureSpanHome, System.out);
+
+        final String fiveOUniqueImage = fiveOExporter.getUniqueImageFileName(imageNameNoPath, false);
+        //confirm no path info added
+        Assert.assertNull("No path info should have been added", ImportExportUtilities.getDirPart(fiveOUniqueImage));
+        //confirm that the image name has been made unique
+        Assert.assertFalse("image name should have been made unique", fiveOUniqueImage.equals(imageNameNoPath));
+        //confirm that the image name ends with the original
+        Assert.assertTrue("File name ending should not have been changed",
+                fiveOUniqueImage.endsWith(imageNameNoPath));
+
         System.setProperty("com.l7tech.gateway.config.backuprestore.setpostfiveo", Boolean.toString(true));
         final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
-        final String test = exporter.getUniqueImageFileName(image);
+        final String uniqueImageNameNoPath = exporter.getUniqueImageFileName(imageNameNoPath, false);
         System.clearProperty("com.l7tech.gateway.config.backuprestore.setpostfiveo");
-        System.out.println(test);
+
+        //Validate the directory part was created correctly
+        Assert.assertEquals("Incorret file part",
+                new File(tmpSsgHome, ImportExportUtilities.POST_FIVE_O_DEFAULT_BACKUP_FOLDER).getAbsolutePath(),
+                ImportExportUtilities.getDirPart(uniqueImageNameNoPath));
+
+        Assert.assertTrue("File name ending should not have been changed",
+                uniqueImageNameNoPath.endsWith(imageNameNoPath));
+
+        //confirm the image name has timestamp added
+        Assert.assertFalse("image name should have been made unique", uniqueImageNameNoPath.equals(imageNameNoPath));
+        //confirm the image name has timestamp added, when we remove the dir part
+        Assert.assertFalse("image name should have been made unique",
+                ImportExportUtilities.getFilePart(uniqueImageNameNoPath).equals(imageNameNoPath));        
+
+
+        //validate no file part is added when ftp is being used
+        final String ftpUniqueImageName = exporter.getUniqueImageFileName(imageNameNoPath, true);
+        Assert.assertNull("No dir part should have been created", ImportExportUtilities.getDirPart(ftpUniqueImageName));
+
+        //validate that the file name generated ends with the original file name after the unique timestampe was added
+        Assert.assertTrue("File name ending should not have been changed",
+                uniqueImageNameNoPath.endsWith(ftpUniqueImageName));
+
+        Assert.assertFalse("image name should have been made unique", ftpUniqueImageName.equals(imageNameNoPath));
+
+        //validate ftp file name unique generation ok, when the image name has path information
+        final String imageNameWithPath = "/home/darmstrong/image.zip";
+        final String uniqueImageNameWithPath = exporter.getUniqueImageFileName(imageNameWithPath, true);
+
+        Assert.assertEquals("path part of unique ftp image name should have have been changed",
+                ImportExportUtilities.getDirPart(imageNameWithPath), 
+                ImportExportUtilities.getDirPart(uniqueImageNameWithPath));
+
+        //validate that the file part of the ftp image has been made unique
+        Assert.assertFalse("image name should have been made unique",
+                ImportExportUtilities.getFilePart(uniqueImageNameWithPath).equals(imageNameWithPath));
+
+        //confirm that the unique file name ends with the orignal file name
+        Assert.assertTrue("File name ending should not have been changed",
+                uniqueImageNameWithPath.endsWith(ImportExportUtilities.getFilePart(imageNameWithPath)));
     }
 }

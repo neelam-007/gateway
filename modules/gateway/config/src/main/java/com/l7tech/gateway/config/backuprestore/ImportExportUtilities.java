@@ -268,23 +268,24 @@ public class ImportExportUtilities {
      * constraint. If all ftp params are supplied then true is returned, otherwise false
      * @param allParams map of program parameters
      * @return true if ftp parameters were supplied and they all exist. False if NO ftp params were supplied
-     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException if an incomplete set of ftp parameters were supplied, or if the ftp
-     * host name is invalid
+     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException if an
+     * incomplete set of ftp parameters were supplied, or if the ftp host name is invalid
      */
-    public static boolean checkAndValidateFtpParams(final Map<String, String> allParams) throws InvalidProgramArgumentException {
+    public static boolean checkAndValidateFtpParams(final Map<String, String> allParams)
+            throws InvalidProgramArgumentException {
         //check if ftp requested
         for(Map.Entry<String, String> entry: allParams.entrySet()){
             if(entry.getKey().startsWith("-ftp")){
                 //make sure they are all there
                 for(final CommandLineOption clo: CommonCommandLineOptions.ALL_FTP_OPTIONS){
-                    if(!allParams.containsKey(clo.getName())) throw new InvalidProgramArgumentException("Missing argument: " + clo.getName());
+                    if(!allParams.containsKey(clo.getName()))
+                        throw new InvalidProgramArgumentException("Missing argument: " + clo.getName());
+                    
                     if(clo == CommonCommandLineOptions.FTP_HOST){
                         String hostName = allParams.get(CommonCommandLineOptions.FTP_HOST.getName());
                         try {
                             if(!hostName.startsWith(FTP_PROTOCOL)) hostName = FTP_PROTOCOL +hostName;
-                            final URL url = new URL(hostName);
-                            if(url.getPort() == -1)
-                                throw new InvalidProgramArgumentException("-ftp_host value requires a port number");
+                            new URL(hostName);//validate its ok
                         } catch (MalformedURLException e) {
                             throw new InvalidProgramArgumentException(e.getMessage());
                         }

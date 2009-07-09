@@ -10,7 +10,7 @@ final class CommonCommandLineOptions {
     static final CommandLineOption FTP_HOST =
             new CommandLineOption("-ftp_host",
                                     "[Optional] host to ftp backup image to: "+
-                                    "host.domain.com:port",
+                                    "host.domain.com[:port]",
                                      false, false);
     static final CommandLineOption FTP_USER = new CommandLineOption("-ftp_user",
                                                                                "[Optional] ftp username",

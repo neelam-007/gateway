@@ -40,7 +40,7 @@ class BackupImpl implements Backup {
     /**
      *
      * @param secureSpanHome base instalation of Secure Span products e.g. /opt/SecureSpan
-     * @param ftpConfig
+     * @param ftpConfig if not null, where the backup image will be ftp'd to
      * @param pathToImageZipFile can be to a local file, or relative to a log on directory on a ftp server. Cannnot
      * be null
      * @param verbose
