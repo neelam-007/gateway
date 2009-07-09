@@ -23,18 +23,19 @@ public class XacmlRequestBuilderMultiAttrOptionsDialog extends JDialog {
 
     private boolean confirmed = false;
 
-    public XacmlRequestBuilderMultiAttrOptionsDialog(Frame owner, String propertyName, XacmlRequestBuilderAssertion.MultipleAttributeConfigField field) {
+    public XacmlRequestBuilderMultiAttrOptionsDialog(Frame owner, String propertyName, XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field) {
         super(owner, propertyName + " Options", true);
         initComponents(field);
     }
 
-    public XacmlRequestBuilderMultiAttrOptionsDialog(Dialog owner, String propertyName, XacmlRequestBuilderAssertion.MultipleAttributeConfigField field) {
+    public XacmlRequestBuilderMultiAttrOptionsDialog(Dialog owner, String propertyName, XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field) {
         super(owner, propertyName + " Options", true);
         initComponents(field);
     }
 
-    private void initComponents(XacmlRequestBuilderAssertion.MultipleAttributeConfigField field) {
+    private void initComponents(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field) {
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 confirmed = true;
                 XacmlRequestBuilderMultiAttrOptionsDialog.this.dispose();
@@ -42,14 +43,18 @@ public class XacmlRequestBuilderMultiAttrOptionsDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 XacmlRequestBuilderMultiAttrOptionsDialog.this.dispose();
             }
         });
 
         isXPathExpressionCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 isRelativeToXPathCheckBox.setEnabled(isXPathExpressionCheckBox.isSelected());
+                if (! isXPathExpressionCheckBox.isSelected())
+                    isRelativeToXPathCheckBox.setSelected(false); // can't be relative if it's not XPath
             }
         });
         isRelativeToXPathCheckBox.setEnabled(false);

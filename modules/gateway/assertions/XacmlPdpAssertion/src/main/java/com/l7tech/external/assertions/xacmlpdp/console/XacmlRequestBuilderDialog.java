@@ -9,10 +9,7 @@ import com.l7tech.console.util.VariablePrefixUtil;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -60,6 +57,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         Utilities.setEscKeyStrokeDisposes( this );
         treeModel = new DefaultTreeModel(buildInitialTree());
         tree = new JTree(treeModel);
+        tree.setExpandsSelectedPaths(true);
         treePane.setViewportView(tree);
         treePane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         treePane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -261,7 +259,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                     }
                 }
 
-                treeModel.insertNodeInto(buildAttributeHolderNode(new XacmlRequestBuilderAssertion.Subject()), node, index);
+                insertAndSelectNode(node, buildAttributeHolderNode(new XacmlRequestBuilderAssertion.Subject()), index);
             }
         });
         popupMenu.add(item);
@@ -281,7 +279,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                         }
                     }
 
-                    treeModel.insertNodeInto(buildResourceNode(new XacmlRequestBuilderAssertion.Resource()), node, index);
+                    insertAndSelectNode(node, buildResourceNode(new XacmlRequestBuilderAssertion.Resource()), index);
                 }
             });
             popupMenu.add(item);
@@ -303,7 +301,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
             item.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
-                    treeModel.insertNodeInto(buildAttributeHolderNode(new XacmlRequestBuilderAssertion.Environment()), node, node.getChildCount());
+                    insertAndSelectNode(node, buildAttributeHolderNode(new XacmlRequestBuilderAssertion.Environment()), node.getChildCount());
                 }
             });
             popupMenu.add(item);
@@ -325,7 +323,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                     }
                 }
 
-                treeModel.insertNodeInto(buildAttributeNode(new XacmlRequestBuilderAssertion.Attribute()), node, index);
+                insertAndSelectNode(node, buildAttributeNode(new XacmlRequestBuilderAssertion.Attribute()), index);
             }
         });
         popupMenu.add(item);
@@ -334,7 +332,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                treeModel.insertNodeInto(buildXpathMultiAttrNode(new XacmlRequestBuilderAssertion.MultipleAttributeConfig()), node, node.getChildCount());
+                insertAndSelectNode(node, buildXpathMultiAttrNode(new XacmlRequestBuilderAssertion.MultipleAttributeConfig()), node.getChildCount());
             }
         });
         popupMenu.add(item);
@@ -390,7 +388,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                         }
                     }
 
-                    treeModel.insertNodeInto(buildResourceContentNode(new XacmlRequestBuilderAssertion.ResourceContent()), node, index);
+                    insertAndSelectNode(node, buildResourceContentNode(new XacmlRequestBuilderAssertion.ResourceContent()), index);
                 }
             });
             popupMenu.add(item);
@@ -420,7 +418,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                treeModel.insertNodeInto(buildValueNode(new XacmlRequestBuilderAssertion.AttributeValue()), node, node.getChildCount());
+                insertAndSelectNode(node, buildValueNode(new XacmlRequestBuilderAssertion.AttributeValue()), node.getChildCount());
             }
         });
         popupMenu.add(item);
@@ -434,6 +432,12 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
             }
         });
         popupMenu.add(item);
+    }
+
+    private void insertAndSelectNode(MutableTreeNode parent, DefaultMutableTreeNode child, int index) {
+        treeModel.insertNodeInto(child, parent, index);
+        tree.setSelectionPath(new TreePath(child.getPath()));
+
     }
 
     private void addValueMenuItems(final DefaultMutableTreeNode node) {

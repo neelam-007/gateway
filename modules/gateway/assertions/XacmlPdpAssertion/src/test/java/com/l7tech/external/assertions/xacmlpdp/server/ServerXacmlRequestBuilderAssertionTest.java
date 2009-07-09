@@ -14,6 +14,7 @@ import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import org.xml.sax.SAXException;
 import org.springframework.mock.web.MockServletContext;
@@ -51,10 +52,10 @@ public class ServerXacmlRequestBuilderAssertionTest {
         attributeValue.setCanElementHaveSameTypeSibilings(true);
 
         attributeValue.setContent("${"+contextVariable+"}");
-        attribute.setValues(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeValue[]{attributeValue}));
+        attribute.setValues(Arrays.asList(attributeValue));
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{attribute}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -100,10 +101,10 @@ public class ServerXacmlRequestBuilderAssertionTest {
         attributeValue.setCanElementHaveSameTypeSibilings(true);
         
         attributeValue.setContent("${"+multiContextVariable+"}");
-        attribute.setValues(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeValue[]{attributeValue}));
+        attribute.setValues(Arrays.asList(attributeValue));
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{attribute}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
+        assertion.setSubjects(Arrays.asList(subject));
         
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -154,10 +155,10 @@ public class ServerXacmlRequestBuilderAssertionTest {
         attributeMap.put("${IDS}", "${VALUES}");
         attributeValue.setAttributes(attributeMap);
 
-        attribute.setValues(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeValue[]{attributeValue}));
+        attribute.setValues(Arrays.asList(attributeValue));
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{attribute}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -197,10 +198,10 @@ public class ServerXacmlRequestBuilderAssertionTest {
         attributeValue.setCanElementHaveSameTypeSibilings(true);
 
         attributeValue.setContent("${"+contextVariable+"}");
-        attribute.setValues(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeValue[]{attributeValue}));
+        attribute.setValues(Arrays.asList(attributeValue));
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{attribute}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
+        assertion.setSubjects(Arrays.asList(subject));
 
         XacmlRequestBuilderAssertion.Resource resource = new XacmlRequestBuilderAssertion.Resource();
         XacmlRequestBuilderAssertion.ResourceContent resourceContent =
@@ -215,7 +216,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         rcAttributeMap.put("name1", "value1");
         resourceContent.setAttributes(rcAttributeMap);
         resource.setResourceContent(resourceContent);
-        assertion.setResources(Arrays.asList(new XacmlRequestBuilderAssertion.Resource[]{resource}));
+        assertion.setResources(Arrays.asList(resource));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -243,8 +244,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -292,29 +293,18 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.setNamespaces(namespaces);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(true);
-        idField.setValue("id/text()");
-        multipleConfig.setIdField(idField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(true);
-        dataTypeField.setValue("datatype/text()");
-        multipleConfig.setDataTypeField(dataTypeField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(true);
-        attributeValueField.setValue("value/a/text()");
-        multipleConfig.setValueField(attributeValueField);
+        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setValue("id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(true);
+        multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
+        multipleConfig.getField(VALUE).setIsRelative(true);
+        multipleConfig.getField(VALUE).setValue("value/a/text()");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -352,29 +342,18 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.setNamespaces(namespaces);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(true);
-        idField.setValue("id/text()");
-        multipleConfig.setIdField(idField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(true);
-        dataTypeField.setValue("datatype/text()");
-        multipleConfig.setDataTypeField(dataTypeField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(true);
-        attributeValueField.setValue("value/a");
-        multipleConfig.setValueField(attributeValueField);
+        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setValue("id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(true);
+        multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
+        multipleConfig.getField(VALUE).setIsRelative(true);
+        multipleConfig.getField(VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -408,29 +387,18 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(true);
-        idField.setValue("donal:id/text()");
-        multipleConfig.setIdField(idField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(true);
-        dataTypeField.setValue("datatype/text()");
-        multipleConfig.setDataTypeField(dataTypeField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(true);
-        attributeValueField.setValue("value/a");
-        multipleConfig.setValueField(attributeValueField);
+        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setValue("donal:id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(true);
+        multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
+        multipleConfig.getField(VALUE).setIsRelative(true);
+        multipleConfig.getField(VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -463,30 +431,19 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(true);
-        idField.setValue("donal:id/text()");
-        multipleConfig.setIdField(idField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(true);
-        dataTypeField.setValue("datatype/text()");
-        multipleConfig.setDataTypeField(dataTypeField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(true);
-        attributeValueField.setValue("value/a");
-        multipleConfig.setValueField(attributeValueField);
+        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setValue("donal:id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(true);
+        multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
+        multipleConfig.getField(VALUE).setIsRelative(true);
+        multipleConfig.getField(VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         assertion.setXacmlVersion(XacmlAssertionEnums.XacmlVersionType.V1_1);
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -519,31 +476,19 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(true);
-        idField.setValue("donal:id/text()");
-        multipleConfig.setIdField(idField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(false);
-        dataTypeField.setIsXpath(true);
-        dataTypeField.setName("datatype");
-        dataTypeField.setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/test/text()");
-        multipleConfig.setDataTypeField(dataTypeField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(true);
-        attributeValueField.setValue("value/a");
-        multipleConfig.setValueField(attributeValueField);
+        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setValue("donal:id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
+        multipleConfig.getField(DATA_TYPE).setIsXpath(true);
+        multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/test/text()");
+        multipleConfig.getField(VALUE).setIsRelative(true);
+        multipleConfig.getField(VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -575,35 +520,21 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(false);
-        idField.setIsXpath(true);
-        idField.setName("id");
-        idField.setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/donal:id/text()");
-        multipleConfig.setIdField(idField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(false);
-        dataTypeField.setIsXpath(true);
-        dataTypeField.setName("datatype");
-        dataTypeField.setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/datatype/text()");
-        multipleConfig.setDataTypeField(dataTypeField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(false);
-        attributeValueField.setIsXpath(true);
-        attributeValueField.setName("value");
-        attributeValueField.setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/value/a");
-        multipleConfig.setValueField(attributeValueField);
+        multipleConfig.getField(ID).setIsRelative(false);
+        multipleConfig.getField(ID).setIsXpath(true);
+        multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/donal:id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
+        multipleConfig.getField(DATA_TYPE).setIsXpath(true);
+        multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/datatype/text()");
+        multipleConfig.getField(VALUE).setIsRelative(false);
+        multipleConfig.getField(VALUE).setIsXpath(true);
+        multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -636,17 +567,13 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(true);
-        idField.setValue("donal:id/text()");
-        multipleConfig.setIdField(idField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(true);
-        dataTypeField.setValue("datatype/text()");
-        multipleConfig.setDataTypeField(dataTypeField);
+        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setValue("donal:id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(true);
+        multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
+        multipleConfig.getField(VALUE).setIsRelative(false);
+        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
@@ -654,19 +581,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         Object [] contextVars = new Object[]{"one", messageVar, "three"};
         context.setVariable("MULTI_VARIABLE", contextVars);
 
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(false);
-        attributeValueField.setIsXpath(false);
-        attributeValueField.setName("value");
-        attributeValueField.setValue("${MULTI_VARIABLE}");
-        multipleConfig.setValueField(attributeValueField);
-
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -702,22 +621,18 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(true);
-        idField.setValue("donal:id/text()");
-        multipleConfig.setIdField(idField);
+        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setValue("donal:id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
+        multipleConfig.getField(DATA_TYPE).setIsXpath(false);
+        multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
+        multipleConfig.getField(VALUE).setIsRelative(false);
+        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
         Object [] dataTypes = new Object[]{"datatype1", "datatype2", "datatype3", "datatype4"};
         context.setVariable("MULTI_DATATYPE", dataTypes);
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(false);
-        dataTypeField.setIsXpath(false);
-        dataTypeField.setName("datatype");
-        dataTypeField.setValue("${MULTI_DATATYPE}");
-        multipleConfig.setDataTypeField(dataTypeField);
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
@@ -725,19 +640,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         Object [] contextVars = new Object[]{"one", messageVar, "three"};
         context.setVariable("MULTI_VARIABLE", contextVars);
 
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(false);
-        attributeValueField.setIsXpath(false);
-        attributeValueField.setName("value");
-        attributeValueField.setValue("${MULTI_VARIABLE}");
-        multipleConfig.setValueField(attributeValueField);
-
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -772,22 +679,18 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(true);
-        idField.setValue("donal:id/text()");
-        multipleConfig.setIdField(idField);
+        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setValue("donal:id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
+        multipleConfig.getField(DATA_TYPE).setIsXpath(false);
+        multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
+        multipleConfig.getField(VALUE).setIsRelative(false);
+        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
         Object [] dataTypes = new Object[]{"datatype1", "datatype2"};
         context.setVariable("MULTI_DATATYPE", dataTypes);
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(false);
-        dataTypeField.setIsXpath(false);
-        dataTypeField.setName("datatype");
-        dataTypeField.setValue("${MULTI_DATATYPE}");
-        multipleConfig.setDataTypeField(dataTypeField);
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
@@ -795,19 +698,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         Object [] contextVars = new Object[]{"one", messageVar, "three"};
         context.setVariable("MULTI_VARIABLE", contextVars);
 
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(false);
-        attributeValueField.setIsXpath(false);
-        attributeValueField.setName("value");
-        attributeValueField.setValue("${MULTI_VARIABLE}");
-        multipleConfig.setValueField(attributeValueField);
-
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -839,24 +734,19 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(false);
-        idField.setIsXpath(true);
-        idField.setName("id");
-        idField.setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/donal:id/text()");
-        multipleConfig.setIdField(idField);
+        multipleConfig.getField(ID).setIsRelative(false);
+        multipleConfig.getField(ID).setIsXpath(true);
+        multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/donal:id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
+        multipleConfig.getField(DATA_TYPE).setIsXpath(false);
+        multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
+        multipleConfig.getField(VALUE).setIsRelative(false);
+        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
         Object [] dataTypes = new Object[]{"datatype1", "datatype2"};
         context.setVariable("MULTI_DATATYPE", dataTypes);
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(false);
-        dataTypeField.setIsXpath(false);
-        dataTypeField.setName("datatype");
-        dataTypeField.setValue("${MULTI_DATATYPE}");
-        multipleConfig.setDataTypeField(dataTypeField);
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
@@ -864,19 +754,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         Object [] contextVars = new Object[]{"one", messageVar, "three"};
         context.setVariable("MULTI_VARIABLE", contextVars);
 
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(false);
-        attributeValueField.setIsXpath(false);
-        attributeValueField.setName("value");
-        attributeValueField.setValue("${MULTI_VARIABLE}");
-        multipleConfig.setValueField(attributeValueField);
-
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -909,42 +791,29 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         context.setVariable("ID", "id1");
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(false);
-        idField.setIsXpath(false);
-        idField.setName("id");
-        idField.setValue("${ID}");
-        multipleConfig.setIdField(idField);
+        multipleConfig.getField(ID).setIsRelative(false);
+        multipleConfig.getField(ID).setIsXpath(false);
+        multipleConfig.getField(ID).setValue("${ID}");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
+        multipleConfig.getField(DATA_TYPE).setIsXpath(false);
+        multipleConfig.getField(DATA_TYPE).setValue("${DATATYPE}");
+        multipleConfig.getField(VALUE).setIsRelative(false);
+        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setValue("${ATTRIBUTE_VALUE}");
 
         //define datatype as a multi valued context variable
         context.setVariable("DATATYPE", "datatype1");
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(false);
-        dataTypeField.setIsXpath(false);
-        dataTypeField.setName("datatype");
-        dataTypeField.setValue("${DATATYPE}");
-        multipleConfig.setDataTypeField(dataTypeField);
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
         Message messageVar = new Message(message);
         context.setVariable("ATTRIBUTE_VALUE", messageVar);
 
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(false);
-        attributeValueField.setIsXpath(false);
-        attributeValueField.setName("value");
-        attributeValueField.setValue("${ATTRIBUTE_VALUE}");
-        multipleConfig.setValueField(attributeValueField);
-
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
@@ -979,11 +848,14 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                idField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        idField.setIsRelative(true);
-        idField.setValue("donal:id/text()");
-        multipleConfig.setIdField(idField);
+        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setValue("donal:id/text()");
+        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
+        multipleConfig.getField(DATA_TYPE).setIsXpath(false);
+        multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}"); //this should be an error - it contains a message
+        multipleConfig.getField(VALUE).setIsRelative(false);
+        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setValue("static string");
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
@@ -992,32 +864,15 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //define datatype as a multi valued context variable
         context.setVariable("MULTI_DATATYPE", contextVars);
 
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                dataTypeField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        dataTypeField.setIsRelative(false);
-        dataTypeField.setIsXpath(false);
-        dataTypeField.setName("datatype");
-        //this should be an error - it contains a message
-        dataTypeField.setValue("${MULTI_DATATYPE}");
-        multipleConfig.setDataTypeField(dataTypeField);
-
-        XacmlRequestBuilderAssertion.MultipleAttributeConfigField
-                attributeValueField = new XacmlRequestBuilderAssertion.MultipleAttributeConfigField();
-        attributeValueField.setIsRelative(false);
-        attributeValueField.setIsXpath(false);
-        attributeValueField.setName("value");
-        attributeValueField.setValue("static string");
-        multipleConfig.setValueField(attributeValueField);
-
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
 
-        subject.setAttributes(Arrays.asList(new XacmlRequestBuilderAssertion.AttributeTreeNodeTag[]{multipleConfig}));
-        assertion.setSubjects(Arrays.asList(new XacmlRequestBuilderAssertion.Subject[]{subject}));
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
-        AssertionStatus status = server.checkRequest(context);
+        server.checkRequest(context);
     }
 
     private void setNameSpaces(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleConfig) {

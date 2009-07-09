@@ -2,7 +2,9 @@ package com.l7tech.external.assertions.xacmlpdp.console;
 
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -14,6 +16,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.Arrays;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -80,15 +84,15 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         namespacesTable.getTableHeader().setReorderingAllowed( false );
 
         xpathBaseField.setText(multipleAttributeConfig.getXpathBase());
-        idField.setText(multipleAttributeConfig.getIdField().getValue());
-        dataTypeField.setText(multipleAttributeConfig.getDataTypeField().getValue());
-        issuerField.setText(multipleAttributeConfig.getIssuerField().getValue());
+        idField.setText(multipleAttributeConfig.getField(ID).getValue());
+        dataTypeField.setText(multipleAttributeConfig.getField(DATA_TYPE).getValue());
+        issuerField.setText(multipleAttributeConfig.getField(ISSUER).getValue());
 
         if(version == XacmlAssertionEnums.XacmlVersionType.V1_0) {
-            issueInstantField.setText(multipleAttributeConfig.getIssueInstantField().getValue());
+            issueInstantField.setText(multipleAttributeConfig.getField(ISSUE_INSTANT).getValue());
         }
 
-        valueField.setText(multipleAttributeConfig.getValueField().getValue());
+        valueField.setText(multipleAttributeConfig.getField(VALUE).getValue());
 
         this.window = window;
 
@@ -191,172 +195,81 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             }
         });
 
-        idField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void changedUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getIdField().setValue(idField.getText().trim());
-            }
-
-            @Override
-            public void insertUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getIdField().setValue(idField.getText().trim());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getIdField().setValue(idField.getText().trim());
-            }
-        });
-
-        dataTypeField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void changedUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getDataTypeField().setValue(dataTypeField.getText().trim());
-            }
-
-            @Override
-            public void insertUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getDataTypeField().setValue(dataTypeField.getText().trim());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getDataTypeField().setValue(dataTypeField.getText().trim());
-            }
-        });
-
-        issuerField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void changedUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getIssuerField().setValue(issuerField.getText().trim());
-            }
-
-            @Override
-            public void insertUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getIssuerField().setValue(issuerField.getText().trim());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getIssuerField().setValue(issuerField.getText().trim());
-            }
-        });
+        addDocumentListener(idField, ID);
+        addDocumentListener(dataTypeField, DATA_TYPE);
+        addDocumentListener(issuerField, ISSUER);
+        addDocumentListener(valueField, VALUE);
 
         if(version != XacmlAssertionEnums.XacmlVersionType.V1_0) {
             issueInstantLabel.setVisible(false);
             issueInstantFieldsPanel.setVisible(false);
         } else {
-            issueInstantField.getDocument().addDocumentListener(new DocumentListener() {
-                @Override
-                public void changedUpdate(DocumentEvent evt) {
-                    multipleAttributeConfig.getIssueInstantField().setValue(issueInstantField.getText().trim());
-                }
-
-                @Override
-                public void insertUpdate(DocumentEvent evt) {
-                    multipleAttributeConfig.getIssueInstantField().setValue(issueInstantField.getText().trim());
-                }
-
-                @Override
-                public void removeUpdate(DocumentEvent evt) {
-                    multipleAttributeConfig.getIssueInstantField().setValue(issueInstantField.getText().trim());
-                }
-            });
-
-            issueInstantOptionsButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent evt) {
-                    XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Issue Instant", multipleAttributeConfig.getIssueInstantField());
-                    Utilities.centerOnScreen(dialog);
-                    dialog.setVisible(true);
-
-                    if(dialog.isConfirmed()) {
-                        multipleAttributeConfig.getIssueInstantField().setIsXpath(dialog.getXpathIsExpression());
-                        multipleAttributeConfig.getIssueInstantField().setIsRelative(dialog.getRelativeToXpath());
-                    }
-                }
-            });
+            addDocumentListener(issueInstantField, ISSUE_INSTANT);
+            addActionListener(issueInstantOptionsButton, ISSUE_INSTANT);
         }
 
-        valueField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void changedUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getValueField().setValue(valueField.getText().trim());
-            }
-
-            @Override
-            public void insertUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getValueField().setValue(valueField.getText().trim());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getValueField().setValue(valueField.getText().trim());
-            }
-        });
-
-        idOptionsButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "ID", multipleAttributeConfig.getIdField());
-                Utilities.centerOnScreen(dialog);
-                dialog.setVisible(true);
-
-                if(dialog.isConfirmed()) {
-                    multipleAttributeConfig.getIdField().setIsXpath(dialog.getXpathIsExpression());
-                    multipleAttributeConfig.getIdField().setIsRelative(dialog.getRelativeToXpath());
-                }
-            }
-        });
-
-        dataTypeOptionsButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Data Type", multipleAttributeConfig.getDataTypeField());
-                Utilities.centerOnScreen(dialog);
-                dialog.setVisible(true);
-
-                if(dialog.isConfirmed()) {
-                    multipleAttributeConfig.getDataTypeField().setIsXpath(dialog.getXpathIsExpression());
-                    multipleAttributeConfig.getDataTypeField().setIsRelative(dialog.getRelativeToXpath());
-                }
-            }
-        });
-
-        issuerOptionsButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Issuer", multipleAttributeConfig.getIssuerField());
-                Utilities.centerOnScreen(dialog);
-                dialog.setVisible(true);
-
-                if(dialog.isConfirmed()) {
-                    multipleAttributeConfig.getIssuerField().setIsXpath(dialog.getXpathIsExpression());
-                    multipleAttributeConfig.getIssuerField().setIsRelative(dialog.getRelativeToXpath());
-                }
-            }
-        });
-
-        valueOptionsButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Value", multipleAttributeConfig.getValueField());
-                Utilities.centerOnScreen(dialog);
-                dialog.setVisible(true);
-
-                if(dialog.isConfirmed()) {
-                    multipleAttributeConfig.getValueField().setIsXpath(dialog.getXpathIsExpression());
-                    multipleAttributeConfig.getValueField().setIsRelative(dialog.getRelativeToXpath());
-                }
-            }
-        });
+        addActionListener(idOptionsButton, ID);
+        addActionListener(dataTypeOptionsButton, DATA_TYPE);
+        addActionListener(issuerOptionsButton, ISSUER);
+        addActionListener(valueOptionsButton, VALUE);
 
         Utilities.setDoubleClickAction( namespacesTable, modifyNamespaceButton );
         enableOrDisableButtons();
     }
 
+    private void addDocumentListener(final JTextField textField, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void changedUpdate(DocumentEvent evt) {
+                multipleAttributeConfig.getField(fieldName).setValue(textField.getText().trim());
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent evt) {
+                multipleAttributeConfig.getField(fieldName).setValue(textField.getText().trim());
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent evt) {
+                multipleAttributeConfig.getField(fieldName).setValue(textField.getText().trim());
+            }
+        });
+
+    }
+
+    private void addActionListener(JButton button, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, fieldName.toString(), multipleAttributeConfig.getField(fieldName));
+                Utilities.centerOnScreen(dialog);
+                dialog.setVisible(true);
+
+                if(dialog.isConfirmed()) {
+                    multipleAttributeConfig.getField(fieldName).setIsXpath(dialog.getXpathIsExpression());
+                    multipleAttributeConfig.getField(fieldName).setIsRelative(dialog.getRelativeToXpath());
+                }
+            }
+        });
+
+    }
+
     @Override
     public boolean handleDispose() {
+        Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName> relativeXpaths = multipleAttributeConfig.getRelativeXPathFieldNames();
+        if( ! relativeXpaths.isEmpty() && xpathBaseField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Attribute(s) " +
+                Functions.map(relativeXpaths, new Functions.Unary<String, XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName>()
+                {
+                    @Override
+                    public String call(XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
+                        return fieldName.toString();
+                    }
+                }) +
+                    " declared as relative XPaths, XPath Base is needed.", "Attribute Validation Error", JOptionPane.ERROR_MESSAGE);
+            xpathBaseField.grabFocus();
+            return false;
+        }
         return true;
     }
 

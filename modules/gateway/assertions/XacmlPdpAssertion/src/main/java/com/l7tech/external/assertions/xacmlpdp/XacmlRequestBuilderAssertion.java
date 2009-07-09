@@ -12,6 +12,7 @@ import com.l7tech.policy.wsp.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
 
 import java.util.*;
 
@@ -118,6 +119,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         public AttributeValue() {
         }
 
+        @Override
         public String toString() {
             return "AttributeValue";
         }
@@ -128,10 +130,12 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
          * so we are ok with this for the moment
          * @return true if this AttributeValue has been configured to be able to have siblings
          */
+        @Override
         public boolean isCanElementHaveSameTypeSibilings() {
             return canElementHaveSameTypeSibilings;
         }
 
+        @Override
         public void setCanElementHaveSameTypeSibilings(boolean canElementHaveSameTypeSibilings) {
             this.canElementHaveSameTypeSibilings = canElementHaveSameTypeSibilings; 
         }
@@ -141,6 +145,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         public ResourceContent() {
         }
 
+        @Override
         public String toString() {
             return "ResourceContent";
         }
@@ -204,58 +209,11 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             this.attributeValues = attributeValues;
         }
 
+        @Override
         public String toString() {
             return "Attribute";
         }
    }
-
-    public static class MultipleAttributeConfigField {
-        private String name; //todo [Donal] this needs to be an enum, so it can be detected from a known set
-        private String value = "";
-        private boolean isXpath;
-        private boolean isRelative;
-
-        public MultipleAttributeConfigField() {
-        }
-
-        public MultipleAttributeConfigField(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
-
-        public boolean getIsXpath() {
-            return isXpath;
-        }
-
-        public void setIsXpath(boolean isXpath) {
-            this.isXpath = isXpath;
-        }
-
-        public boolean getIsRelative() {
-            return isRelative;
-        }
-
-        public void setIsRelative(boolean isRelative) {
-            //just update isxpath, as it has to be too for convenience
-            if(isRelative) this.isXpath = true;
-            this.isRelative = isRelative;
-        }
-    }
 
     /**
      * MultipleAttributeConfig stores the configuration which clients can use to build multiple Attribute elements
@@ -266,18 +224,59 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
      * Attribute only. As a result it needs to be identifiable and processed differently when found in the tree
      */
     public static class MultipleAttributeConfig implements AttributeTreeNodeTag{
-        private XacmlAssertionEnums.MessageLocation messageSource = XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST;
+        public enum FieldName {
+            ID("ID"),
+            DATA_TYPE("Data Type"),
+            ISSUER("Issuer"),
+            ISSUE_INSTANT("Issue Instant"),
+            VALUE("Value");
 
+            private final String displayName;
+
+            FieldName(String displayName) {
+                this.displayName = displayName;
+            }
+
+            @Override
+            public String toString() {
+                return displayName;
+            }
+        }
+
+        private Map<String, Field> fields = new HashMap<String, Field>() {{
+            put(ID.name(), new Field(ID));
+            put(DATA_TYPE.name(), new Field(DATA_TYPE));
+            put(ISSUER.name(), new Field(ISSUER));
+            put(ISSUE_INSTANT.name(), new Field(ISSUE_INSTANT));
+            put(VALUE.name(), new Field(VALUE));
+        }};
+
+        private XacmlAssertionEnums.MessageLocation messageSource = XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST;
         private String messageSourceContextVar = "";
         private String xpathBase = "";
         private Map<String, String> namespaces = new HashMap<String, String>();
-        private MultipleAttributeConfigField idField = new MultipleAttributeConfigField("id");
-        private MultipleAttributeConfigField dataTypeField = new MultipleAttributeConfigField("dataType");
-        private MultipleAttributeConfigField issuerField = new MultipleAttributeConfigField("issuer");
-        private MultipleAttributeConfigField issueInstantField = new MultipleAttributeConfigField("issueInstant");
-        private MultipleAttributeConfigField valueField = new MultipleAttributeConfigField("value");
 
         public MultipleAttributeConfig() {
+        }
+
+        /**
+         * @returns a list of the field names that are marked as relative XPaths
+         */
+        public Set<FieldName> getRelativeXPathFieldNames() {
+            Set<FieldName> result = new HashSet<FieldName>();
+            for(Field field : fields.values()) {
+                if (field.isRelative)
+                    result.add(field.getName());
+            }
+            return result;
+        }
+
+        public Map<String, Field> getFields() {
+            return fields;
+        }
+
+        public void setFields(Map<String, Field> fields) {
+            this.fields = fields;
         }
 
         public XacmlAssertionEnums.MessageLocation getMessageSource() {
@@ -312,58 +311,68 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             this.namespaces = namespaces;
         }
 
-        public MultipleAttributeConfigField getIdField() {
-            return idField;
+        public Field getField(FieldName name) {
+            return fields.get(name.name());
         }
 
-        public void setIdField(MultipleAttributeConfigField idField) {
-            this.idField = idField;
+        public Set<Field> getNonValueFields() {
+            Set<Field> result = new HashSet<Field>(fields.values());
+            result.remove(fields.get(VALUE.name()));
+            return result;
         }
 
-        public MultipleAttributeConfigField getDataTypeField() {
-            return dataTypeField;
+        public Set<Field> getAllFields() {
+            return new HashSet<Field>(fields.values());
         }
 
-        public void setDataTypeField(MultipleAttributeConfigField dataTypeField) {
-            this.dataTypeField = dataTypeField;
-        }
-
-        public MultipleAttributeConfigField getIssuerField() {
-            return issuerField;
-        }
-
-        public void setIssuerField(MultipleAttributeConfigField issuerField) {
-            this.issuerField = issuerField;
-        }
-
-        public MultipleAttributeConfigField getIssueInstantField() {
-            return issueInstantField;
-        }
-
-        public void setIssueInstantField(MultipleAttributeConfigField issueInstantField) {
-            this.issueInstantField = issueInstantField;
-        }
-
-        public MultipleAttributeConfigField getValueField() {
-            return valueField;
-        }
-
-        public void setValueField(MultipleAttributeConfigField valueField) {
-            this.valueField = valueField;
-        }
-
-        public Set<MultipleAttributeConfigField> getAllFields(){
-            Set<MultipleAttributeConfigField> allFields = new HashSet<MultipleAttributeConfigField>();
-            allFields.add(idField);
-            allFields.add(dataTypeField);
-            allFields.add(issuerField);
-            allFields.add(issueInstantField);
-            allFields.add(valueField);
-            return allFields;
-        }
-
+        @Override
         public String toString() {
             return "XPath Multiple Attributes";
+        }
+
+        public static class Field {
+            private FieldName name;
+            private String value = "";
+            private boolean isXpath;
+            private boolean isRelative;
+
+            @Deprecated
+            public Field() {
+            }
+
+            public Field(FieldName name) {
+                this.name = name;
+            }
+
+            public FieldName getName() {
+                return name;
+            }
+
+            public String getValue() {
+                return value;
+            }
+
+            public void setValue(String value) {
+                this.value = value;
+            }
+
+            public boolean getIsXpath() {
+                return isXpath;
+            }
+
+            public void setIsXpath(boolean isXpath) {
+                this.isXpath = isXpath;
+            }
+
+            public boolean getIsRelative() {
+                return isRelative;
+            }
+
+            public void setIsRelative(boolean isRelative) {
+                //just update isxpath, as it has to be too for convenience
+                if(isRelative) this.isXpath = true;
+                this.isRelative = isRelative;
+            }
         }
     }
 
@@ -420,6 +429,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             this.subjectCategory = subjectCategory;
         }
 
+        @Override
         public String toString() {
             return "Subject";
         }
@@ -445,6 +455,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             this.resourceContent = resourceContent;
         }
 
+        @Override
         public String toString() {
             return "Resource";
         }
@@ -459,6 +470,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             super(attributeTreeNodes);
         }
 
+        @Override
         public String toString() {
             return "Action";
         }
@@ -473,6 +485,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             super(attributeTreeNodes);
         }
 
+        @Override
         public String toString() {
             return "Environment";
         }
@@ -495,6 +508,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         environment = new Environment();
     }
 
+    @Override
     public String[] getVariablesUsed() {
         List<String[]> variables = new ArrayList<String[]>();
         for(Subject subject : subjects) {
@@ -601,22 +615,22 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                     variables.add(v);
                 }
 
-                v = Syntax.getReferencedNames(multiAttr.getIdField().getValue());
+                v = Syntax.getReferencedNames(multiAttr.getField(ID).getValue());
                 if(v.length > 0) {
                     variables.add(v);
                 }
 
-                v = Syntax.getReferencedNames(multiAttr.getDataTypeField().getValue());
+                v = Syntax.getReferencedNames(multiAttr.getField(DATA_TYPE).getValue());
                 if(v.length > 0) {
                     variables.add(v);
                 }
 
-                v = Syntax.getReferencedNames(multiAttr.getIssuerField().getValue());
+                v = Syntax.getReferencedNames(multiAttr.getField(ISSUER).getValue());
                 if(v.length > 0) {
                     variables.add(v);
                 }
 
-                v = Syntax.getReferencedNames(multiAttr.getValueField().getValue());
+                v = Syntax.getReferencedNames(multiAttr.getField(VALUE).getValue());
                 if(v.length > 0) {
                     variables.add(v);
                 }
@@ -624,6 +638,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         }
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         if(outputMessageDestination == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             return new VariableMetadata[] {new VariableMetadata(outputMessageVariableName, false, false, null, true, DataType.MESSAGE)};
@@ -696,6 +711,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         this.environment = environment;
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
@@ -727,7 +743,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         othermappings.add(new BeanTypeMapping(Environment.class, "environment"));
         othermappings.add(new BeanTypeMapping(Attribute.class, "attribute"));
         othermappings.add(new BeanTypeMapping(AttributeValue.class, "attributeValue"));
-        othermappings.add(new BeanTypeMapping(MultipleAttributeConfigField.class, "xpathMultipleAttributesField"));
+        othermappings.add(new BeanTypeMapping(MultipleAttributeConfig.Field.class, "xpathMultipleAttributesField"));
         othermappings.add(new BeanTypeMapping(MultipleAttributeConfig.class, "multipleAttributeConfig"));
         othermappings.add(new CollectionTypeMapping(List.class, AttributeTreeNodeTag.class, ArrayList.class, "attributeList"));
         othermappings.add(new CollectionTypeMapping(List.class, AttributeValue.class, ArrayList.class, "valueList"));

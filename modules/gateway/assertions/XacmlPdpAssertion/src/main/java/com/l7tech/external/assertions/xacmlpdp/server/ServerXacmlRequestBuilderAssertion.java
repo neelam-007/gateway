@@ -7,6 +7,7 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
@@ -466,15 +467,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                                        final Map<String, Object> contextVariables,
                                        final PolicyEnforcementContext context){
         //Determine if any multi context var's being used outside of Value
-        Set<XacmlRequestBuilderAssertion.MultipleAttributeConfigField> allFields = multipleAttributeConfig.getAllFields();
-        allFields.remove(multipleAttributeConfig.getValueField());
-        boolean isUsingMultiValuedCtxVariables = areAnyIterableFieldsReferencingMultiValuedVariables(contextVariables, allFields);
+        Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> nonValueFields = multipleAttributeConfig.getNonValueFields();
+        boolean isUsingMultiValuedCtxVariables = areAnyIterableFieldsReferencingMultiValuedVariables(contextVariables, nonValueFields);
 
         int smallestCtxVarSize = 0;
         if(isUsingMultiValuedCtxVariables){
             List<String> allValues = new ArrayList<String>();
-            for(XacmlRequestBuilderAssertion.MultipleAttributeConfigField configField: allFields){
-                if(configField == multipleAttributeConfig.getValueField()) continue;
+            for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField: nonValueFields){
                 allValues.add(configField.getValue());
             }
             smallestCtxVarSize =  getMinMultiValuedCtxVariableReferenced( allValues, contextVariables, false);
@@ -509,11 +508,11 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         //for convenience we will create a local variable for each field being processed
-        final XacmlRequestBuilderAssertion.MultipleAttributeConfigField idField = multipleAttributeConfig.getIdField();
-        final XacmlRequestBuilderAssertion.MultipleAttributeConfigField dataTypeField = multipleAttributeConfig.getDataTypeField();
-        final XacmlRequestBuilderAssertion.MultipleAttributeConfigField issuerField = multipleAttributeConfig.getIssuerField();
-        final XacmlRequestBuilderAssertion.MultipleAttributeConfigField issueInstantField = multipleAttributeConfig.getIssueInstantField();
-        final XacmlRequestBuilderAssertion.MultipleAttributeConfigField valueField = multipleAttributeConfig.getValueField();
+        final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field idField = multipleAttributeConfig.getField(ID);
+        final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field dataTypeField = multipleAttributeConfig.getField(DATA_TYPE);
+        final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field issuerField = multipleAttributeConfig.getField(ISSUER);
+        final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field issueInstantField = multipleAttributeConfig.getField(ISSUE_INSTANT);
+        final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field valueField = multipleAttributeConfig.getField(VALUE);
 
         final Map<String, String> namespaces = multipleAttributeConfig.getNamespaces();
         //now we know everything required to define the iteration
@@ -530,12 +529,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
             //do we have an xpath result? do we have multi valued vars? are we over the minimum value?
             //Do we have more xpath results?
-            boolean xPathHasMore = false;
-            if(xpathResultSetIterator != null){
-                if(xpathResultSetIterator.hasNext()){
-                    xPathHasMore = true;
-                }
-            }
+            boolean xPathHasMore = xpathResultSetIterator != null && xpathResultSetIterator.hasNext();
 
             //at this point we may have xpath results or we may need to execute single absolute xpath expressions
             //or pick out static strings or single context variables
@@ -662,9 +656,9 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         return xpathResultSetIterator;
     }
 
-    private boolean isXpathBaseUsedForIteration(Set<XacmlRequestBuilderAssertion.MultipleAttributeConfigField> allFields) {
+    private boolean isXpathBaseUsedForIteration(Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> fields) {
         boolean iteratingOnBaseXPath = false;
-        for(XacmlRequestBuilderAssertion.MultipleAttributeConfigField configField: allFields){
+        for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField: fields){
             if(configField.getIsXpath() && configField.getIsRelative()){
                 iteratingOnBaseXPath = true;
                 break;
@@ -677,13 +671,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * Iterable fields can contain multi valued context variables. If a field contains one, the contents of the variable
      * cannot include any messages
      * @param contextVariables
-     * @param allFields
+     * @param fields
      * @return
      */
     private boolean areAnyIterableFieldsReferencingMultiValuedVariables(Map<String, Object> contextVariables,
-                                                                Set<XacmlRequestBuilderAssertion.MultipleAttributeConfigField> allFields) {
+                                                                Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> fields) {
         boolean isUsingMultiValuedCtxVariables = false;
-        for(XacmlRequestBuilderAssertion.MultipleAttributeConfigField configField: allFields){
+        for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField: fields){
             if(!configField.getIsXpath()){
                 if(fieldValueContainMultiValuedContextVariable(configField.getValue(), contextVariables)){
                     isUsingMultiValuedCtxVariables = true;
@@ -732,7 +726,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @param multiVarIndex used as the index to extract the correct value from a multi valued context variable
      * @return the resolved String value for this field
      */
-    private String getValueForField(final XacmlRequestBuilderAssertion.MultipleAttributeConfigField configField,
+    private String getValueForField(final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField,
                                     final Document document,
                                     final Map<String, String> namespaces,
                                     final Map<String, Object> contextVariables,
@@ -740,7 +734,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         if(configField.getIsXpath() && configField.getIsRelative())
             throw new IllegalArgumentException("If xpath, field must not be relative");
 
-        if(configField.getName().equalsIgnoreCase("Value"))
+        if(configField.getName() == XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.VALUE)
             throw new UnsupportedOperationException("method cannot be used for value field");
 
         if(configField.getIsXpath()){
@@ -772,7 +766,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @param namespaces
      * @return result of xpath expression. Can be null. Only ever a String value - expects to find a text node
      */
-    private String getAbsoluteXPathResult(final XacmlRequestBuilderAssertion.MultipleAttributeConfigField configField,
+    private String getAbsoluteXPathResult(final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField,
                                           final Document document,
                                           final Map<String, String> namespaces) {
         ElementCursor cursor = new DomElementCursor(document);
@@ -842,7 +836,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @return result of xpath expression. Cannot be null, but can be empty
      */
     private List<XpathResultWrapper> getAbsoluteXPathResultForValue(
-            final XacmlRequestBuilderAssertion.MultipleAttributeConfigField valueField,
+            final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field valueField,
                                           final Document document,
                                           final Map<String, String> namespaces) {
         ElementCursor cursor = new DomElementCursor(document);
@@ -965,7 +959,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     private List<AttributeValue> getAttributeValues(
             Document inputDoc,
             Map<String, String> namespaces,
-            XacmlRequestBuilderAssertion.MultipleAttributeConfigField valueField,
+            XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field valueField,
             Map<String, Object> contextVariables,
             ElementCursor resultCursor){
         List<AttributeValue> returnList = new ArrayList<AttributeValue>();
