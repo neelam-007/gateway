@@ -217,7 +217,7 @@ public class SsgConnectorManagerImpl
         return Functions.sort(collected, new Comparator<InetAddress>() {
             @Override
             public int compare(InetAddress left, InetAddress right) {
-                return ArrayUtils.compareArrays(right.getAddress(), left.getAddress());
+                return ArrayUtils.compareArraysUnsigned(left.getAddress(), right.getAddress());
             }
         });
     }
