@@ -50,6 +50,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
 
@@ -481,7 +482,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         //Now we know if we are using a multi valued context variable
 
         //Will the base xpath, if defined, be part of the iteration?
-        boolean iteratingOnBaseXPath = isXpathBaseUsedForIteration(multipleAttributeConfig, allFields);
+        boolean iteratingOnBaseXPath = isXpathBaseUsedForIteration(multipleAttributeConfig.getAllFields());
         //check the base is not null
         if(iteratingOnBaseXPath &&
                 (multipleAttributeConfig.getXpathBase() == null || multipleAttributeConfig.getXpathBase().isEmpty())){
@@ -661,7 +662,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         return xpathResultSetIterator;
     }
 
-    private boolean isXpathBaseUsedForIteration(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig, Set<XacmlRequestBuilderAssertion.MultipleAttributeConfigField> allFields) {
+    private boolean isXpathBaseUsedForIteration(Set<XacmlRequestBuilderAssertion.MultipleAttributeConfigField> allFields) {
         boolean iteratingOnBaseXPath = false;
         for(XacmlRequestBuilderAssertion.MultipleAttributeConfigField configField: allFields){
             if(configField.getIsXpath() && configField.getIsRelative()){
