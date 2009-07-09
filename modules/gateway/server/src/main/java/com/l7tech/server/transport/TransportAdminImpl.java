@@ -28,6 +28,7 @@ import java.util.List;
 public class TransportAdminImpl implements TransportAdmin {
     private final SsgConnectorManager connectorManager;
     private final DefaultKey defaultKeystore;
+    private SSLContext testSslContext;
 
     public TransportAdminImpl(SsgConnectorManager connectorManager, DefaultKey defaultKeystore) {
         this.connectorManager = connectorManager;
@@ -70,27 +71,28 @@ public class TransportAdminImpl implements TransportAdmin {
         connectorManager.delete(oid);
     }
 
-    private SSLContext getSslContext(){
-        SSLContext context;
+    private synchronized SSLContext getTestSslContext(){
+        if (testSslContext != null)
+            return testSslContext;
         try {
             final KeyManager[] keyManagers;
             keyManagers = defaultKeystore.getSslKeyManagers();
-            context = SSLContext.getInstance("SSL");
-            context.init(keyManagers, null, null);
+            testSslContext = SSLContext.getInstance("SSL");
+            testSslContext.init(keyManagers, null, null);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(ExceptionUtils.getMessage(e));
         } catch (KeyManagementException e) {
             throw new RuntimeException(ExceptionUtils.getMessage(e));
         }
-        return context;
+        return testSslContext;
     }
 
     public String[] getAllCipherSuiteNames() {
-        return getSslContext().getSupportedSSLParameters().getCipherSuites();
+        return getTestSslContext().getSupportedSSLParameters().getCipherSuites();
     }
 
     public String[] getDefaultCipherSuiteNames() {
-        return getSslContext().getDefaultSSLParameters().getCipherSuites();
+        return getTestSslContext().getDefaultSSLParameters().getCipherSuites();
     }
 
     public InetAddress[] getAvailableBindAddresses() {
