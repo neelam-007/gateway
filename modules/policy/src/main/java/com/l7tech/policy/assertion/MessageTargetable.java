@@ -32,7 +32,12 @@ public interface MessageTargetable extends UsesVariables {
     void setOtherTargetMessageVariable(String otherMessageVariable);
 
     /**
-     * A short, descriptive name for the target, i.e. "request", "response" or {@link #getOtherTargetMessageVariable()} 
+     * A short, descriptive name for the target, i.e. "request", "response" or {@link #getOtherTargetMessageVariable()}
+     *
+     * <p>Almost all MessageTargetable implementations will never return null,
+     * in a few null is necessary for backwards compatibility.</p>
+     *
+     * @return the target name or null if no target is set.
      */
     String getTargetName();
 }

@@ -105,17 +105,35 @@ public class MessageTargetableSupport implements MessageTargetable, UsesVariable
 
     //- PROTECTED
 
+    /**
+     * Get the target name for the given MessageTargetable.
+     *
+     * <p>This will be null if the given MessageTargetable is null, or if the
+     * given MessageTargetable has a null target.</p>
+     *
+     * @param targetable The targetable to check
+     * @return The target name or null
+     */
     protected String getTargetName( final MessageTargetable targetable ) {
-        switch(targetable.getTarget()) {
-            case REQUEST:
-                return "Request";
-            case RESPONSE:
-                return "Response";
-            case OTHER:
-                return "${" + targetable.getOtherTargetMessageVariable() + "}";
-            default:
-                throw new IllegalStateException();
+        String target = null;
+
+        if ( targetable != null && targetable.getTarget() != null ) {
+            switch(targetable.getTarget()) {
+                case REQUEST:
+                    target = "Request";
+                    break;
+                case RESPONSE:
+                    target = "Response";
+                    break;
+                case OTHER:
+                    target = "${" + targetable.getOtherTargetMessageVariable() + "}";
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
         }
+
+        return target;
     }
 
     protected void clearTarget() {

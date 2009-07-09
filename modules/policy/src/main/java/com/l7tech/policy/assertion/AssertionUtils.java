@@ -35,7 +35,10 @@ public class AssertionUtils {
         StringBuilder newName = new StringBuilder(name);
 
         if (assertion instanceof MessageTargetable) {
-            newName.insert(0, ((MessageTargetable)assertion).getTargetName() + ": ");
+            String targetName = ((MessageTargetable)assertion).getTargetName();
+            if ( targetName != null ) {
+                newName.insert(0, targetName + ": ");
+            }
         }
 
         if (assertion instanceof SecurityHeaderAddressable)
@@ -137,13 +140,15 @@ public class AssertionUtils {
      * @return The (possibly guessed) target name.
      */
     public static String getTargetName( final Assertion assertion ) {
-        String targetName;
+        String targetName = null;
 
         if ( assertion instanceof MessageTargetable ) {
             targetName = ((MessageTargetable)assertion).getTargetName();
         } else if ( Assertion.isResponse(assertion) ) {
             targetName = "Response";
-        } else {
+        }
+
+        if ( targetName == null ) {
             targetName = "Request";            
         }
 
