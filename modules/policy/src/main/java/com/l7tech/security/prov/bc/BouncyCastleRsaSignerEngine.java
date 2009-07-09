@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.security.*;
 import java.security.cert.Certificate;
@@ -65,7 +66,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             certGenParams = new CertGenParams();
 
         if (certGenParams.getSubjectDn() == null)
-            certGenParams.setSubjectDn(certReqInfo.getSubject().toString());
+            certGenParams.setSubjectDn(new X500Principal(certReqInfo.getSubject().getEncoded()));
 
         logger.info("Signing cert for subject DN = " + certGenParams.getSubjectDn());
 

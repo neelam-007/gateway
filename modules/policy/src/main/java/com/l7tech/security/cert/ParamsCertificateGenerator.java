@@ -14,6 +14,7 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 
+import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
@@ -56,10 +57,10 @@ public class ParamsCertificateGenerator {
      * @throws CertificateGeneratorException if a certificate cannot be generated using the current CertGenParams with the provided arguments.
      */
     public X509Certificate generateCertificate(PublicKey subjectPublicKey, PrivateKey issuerPrivateKey, X509Certificate issuerCertificate) throws CertificateGeneratorException {
-        X509Name subjectDn = new X509Name(true, c.getSubjectDn());
+        X500Principal subjectDn = c.getSubjectDn();
         String sigAlg = c.getSignatureAlgorithm() != null ? c.getSignatureAlgorithm()
                 :  getSigAlg("EC".equals(issuerPrivateKey.getAlgorithm()), null);
-        X509Name issuerDn = issuerCertificate != null ? new X509Name(true, issuerCertificate.getSubjectDN().getName()) : subjectDn;
+        X500Principal issuerDn = issuerCertificate != null ? issuerCertificate.getSubjectX500Principal() : subjectDn;
         PublicKey issuerPublicKey = issuerCertificate != null ? issuerCertificate.getPublicKey() : subjectPublicKey;
         int daysUntilExpiry = c.getDaysUntilExpiry() > 0 ? c.getDaysUntilExpiry() : 5 * 365; // default: five years
         Date notBefore = c.getNotBefore() != null ? c.getNotBefore()

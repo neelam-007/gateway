@@ -390,7 +390,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 }
                 final byte[] csr;
                 try {
-                    csr = admin.generateCSR(subject.getKeystore().getOid(), subject.getAlias(), dn.getName(), null);
+                    csr = admin.generateCSR(subject.getKeystore().getOid(), subject.getAlias(), dn, null);
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get csr from ssg", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error getting CSR " + e.getMessage(),

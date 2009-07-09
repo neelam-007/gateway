@@ -141,7 +141,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     }
 
     private void generateKeyPair(SsgKeyStore sks, String alias) throws IOException {
-        String dn = findDefaultSslKeyDn();
+        X500Principal dn = findDefaultSslKeyDn();
         try {
             Future<X509Certificate> job = sks.generateKeyPair(null, alias, new KeyGenParams(), new CertGenParams(dn, 365 * 10, false, null));
             job.get();
@@ -154,12 +154,12 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         }
     }
 
-    private String findDefaultSslKeyDn() {
+    private X500Principal findDefaultSslKeyDn() {
         String hostname = serverConfig.getProperty( "clusterHost" );
         if ( hostname == null || hostname.trim().length() == 0) {
             hostname = serverConfig.getHostname();
         }
-        return new X500Principal("cn=" + hostname).getName();
+        return new X500Principal("cn=" + hostname);
     }
 
     private SsgKeyStore findFirstMutableKeystore() throws IOException {

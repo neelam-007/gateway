@@ -16,6 +16,7 @@ import com.l7tech.security.cert.TrustedCert;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -250,7 +251,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
+    JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Generate a new ECC key pair and self-signed certificate in the specified keystore with the specified
@@ -272,7 +273,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, String dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
+    JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Generate a new PKCS#10 Certification Request (aka Certificate Signing Request) using the specified private key,
@@ -287,7 +288,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    byte[] generateCSR(long keystoreId, String alias, String dn, String sigAlg) throws FindException;
+    byte[] generateCSR(long keystoreId, String alias, X500Principal dn, String sigAlg) throws FindException;
 
     /**
      * Process a PKCS#10 Certificate Signing Request, producing a new signed certificate from it

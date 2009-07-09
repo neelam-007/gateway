@@ -361,28 +361,27 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         SsgKeyStore keystore = checkBeforeGenerate(keystoreId, alias, dn, expiryDays);
         return registerJob(keystore.generateKeyPair(auditAfterCreate(keystore, alias, "generated"),
                 alias, new KeyGenParams(keybits), new CertGenParams(dn, expiryDays, makeCaCert, sigAlg)), X509Certificate.class);
     }
 
     @Override
-    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, String dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         SsgKeyStore keystore = checkBeforeGenerate(keystoreId, alias, dn, expiryDays);
         return registerJob(keystore.generateKeyPair(auditAfterCreate(keystore, alias, "generated"),
                 alias, new KeyGenParams(curveName), new CertGenParams(dn, expiryDays, makeCaCert, sigAlg)), X509Certificate.class);
     }
 
-    private SsgKeyStore checkBeforeGenerate(long keystoreId, String alias, String dn, int expiryDays) throws FindException, KeyStoreException {
+    private SsgKeyStore checkBeforeGenerate(long keystoreId, String alias, X500Principal dn, int expiryDays) throws FindException, KeyStoreException {
         checkLicenseKeyStore();
         if (alias == null) throw new NullPointerException("alias is null");
         if (alias.length() < 1) throw new IllegalArgumentException("alias is empty");
         if (dn == null) throw new NullPointerException("dn is null");
-        if (dn.length() < 1) throw new IllegalArgumentException("dn is empty");
 
         // Ensure that Sun certificate parser will like this dn
-        new X500Principal(dn).getEncoded();
+        new X500Principal(dn.getName(X500Principal.CANONICAL)).getEncoded();
 
         SsgKeyFinder keyFinder;
         try {
@@ -401,7 +400,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public byte[] generateCSR(long keystoreId, String alias, String dn, String sigAlg) throws FindException {
+    public byte[] generateCSR(long keystoreId, String alias, X500Principal dn, String sigAlg) throws FindException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
         try {

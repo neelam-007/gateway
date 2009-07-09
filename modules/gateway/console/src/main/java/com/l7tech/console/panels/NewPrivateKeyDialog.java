@@ -272,13 +272,13 @@ public class  NewPrivateKeyDialog extends JDialog {
      */
     private boolean createKey() {
         final String alias = aliasField.getText();
-        final String dn = dnField.getText();
         final int expiryDays = Integer.parseInt(expiryDaysField.getText());
         final boolean makeCaCert = caCheckBox.isSelected();
         final KeyType keyType = getSelectedKeyType();
         //noinspection UnusedAssignment
         Throwable ouch = null;
         try {
+            final X500Principal dn = parseDn();
             final JProgressBar bar = new JProgressBar();
             bar.setIndeterminate(true);
             final PleaseWaitDialog waitDlg = new PleaseWaitDialog(this, "Generating key...", bar);
@@ -303,7 +303,6 @@ public class  NewPrivateKeyDialog extends JDialog {
 
             Utilities.doWithDelayedCancelDialog(callable, waitDlg, 500L);
             return true;
-
         } catch (InvocationTargetException e) {
             ouch = e;
         } catch (InterruptedException e) {
@@ -315,6 +314,14 @@ public class  NewPrivateKeyDialog extends JDialog {
         logger.log(Level.WARNING, mess, ouch);
         JOptionPane.showMessageDialog(this, mess, "Key Pair Error", JOptionPane.ERROR_MESSAGE);
         return false;
+    }
+
+    private X500Principal parseDn() throws InvocationTargetException {
+        try {
+            return new X500Principal(dnField.getText());
+        } catch (IllegalArgumentException e) {
+            throw new InvocationTargetException(e);
+        }
     }
 
     private String getSigAlg(boolean useEcc) {

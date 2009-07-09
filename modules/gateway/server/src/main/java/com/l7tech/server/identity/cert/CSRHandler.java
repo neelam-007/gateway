@@ -24,6 +24,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.util.IOUtils;
 
+import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -145,7 +146,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         final byte[] csr = readCSRFromRequest(request);
         final Certificate cert;
 
-        String certSubject = "cn=" + authenticatedUser.getLogin();
+        X500Principal certSubject = new X500Principal("cn=" + authenticatedUser.getLogin());
         // todo: perhaps we should use the real dn in the case of ldap users but then we
         // would need to change our runtime authentication mechanism
 

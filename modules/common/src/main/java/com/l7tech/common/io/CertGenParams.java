@@ -1,5 +1,6 @@
 package com.l7tech.common.io;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Calendar;
@@ -14,7 +15,7 @@ import java.util.List;
  */
 public class CertGenParams implements Serializable {
     // Base fields
-    private String subjectDn;
+    private X500Principal subjectDn;
     private int daysUntilExpiry;
     private Date notBefore;
     private Date notAfter;
@@ -58,7 +59,7 @@ public class CertGenParams implements Serializable {
      * @param expiryDays days from now until the cert shall expire, or 0 to use default.
      * @param ca if true, the cert will be configured as a CA cert
      */
-    public CertGenParams(String subjectDn, int expiryDays, boolean ca, String sigAlg) {
+    public CertGenParams(X500Principal subjectDn, int expiryDays, boolean ca, String sigAlg) {
         setSubjectDn(subjectDn);
 
         setSignatureAlgorithm(sigAlg);
@@ -83,11 +84,11 @@ public class CertGenParams implements Serializable {
         }        
     }
 
-    public String getSubjectDn() {
+    public X500Principal getSubjectDn() {
         return subjectDn;
     }
 
-    public void setSubjectDn(String subjectDn) {
+    public void setSubjectDn(X500Principal subjectDn) {
         this.subjectDn = subjectDn;
     }
 

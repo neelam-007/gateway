@@ -11,6 +11,7 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ResourceUtils;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.*;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -158,7 +159,7 @@ public class BootstrapConfig {
             logger.info("Generating keypair...");
             KeyPair keyPair = JceProvider.getInstance().generateRsaKeyPair();
             CertGenParams cgp = new CertGenParams();
-            cgp.setSubjectDn("cn=localhost");
+            cgp.setSubjectDn(new X500Principal("cn=localhost"));
             cgp.setDaysUntilExpiry(3652);
             X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(cgp, keyPair);
             KeyStore ks = KeyStore.getInstance("PKCS12");

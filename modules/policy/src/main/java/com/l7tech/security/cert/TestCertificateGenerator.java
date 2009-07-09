@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
@@ -71,7 +72,7 @@ public class TestCertificateGenerator {
         c.setDaysUntilExpiry(20 * 365);
         c.setNotAfter(null);
         c.setSignatureAlgorithm(null);
-        c.setSubjectDn("cn=test");
+        c.setSubjectDn(new X500Principal("cn=test"));
         c.setIncludeBasicConstraints(false);
         c.setKeyUsageBits(X509KeyUsage.digitalSignature | X509KeyUsage.keyEncipherment | X509KeyUsage.nonRepudiation);
         c.setIncludeKeyUsage(true);
@@ -145,7 +146,7 @@ public class TestCertificateGenerator {
     }
 
     public TestCertificateGenerator subject(String subject) {
-        c.setSubjectDn(subject);
+        c.setSubjectDn(new X500Principal(subject));
         return this;
     }
 

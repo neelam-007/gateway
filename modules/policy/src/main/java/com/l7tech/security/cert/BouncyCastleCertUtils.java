@@ -5,9 +5,9 @@ import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 
+import javax.security.auth.x500.X500Principal;
 import java.security.*;
 import java.security.cert.X509Certificate;
 
@@ -51,7 +51,7 @@ public class BouncyCastleCertUtils {
         if (certGenParams.getSubjectDn() == null)
             throw new IllegalArgumentException("certGenParams must include a subject DN for the CSR");
         Provider sigProvider = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CSR_SIGNING);
-        X509Name subject = new X509Name(certGenParams.getSubjectDn());
+        X500Principal subject = certGenParams.getSubjectDn();
         ASN1Set attrs = null;
         PublicKey publicKey = keyPair.getPublic();
         PrivateKey privateKey = keyPair.getPrivate();

@@ -39,10 +39,10 @@ public class GenerateCertificateTest {
     @Test
     public void testGenCustom() throws Exception {
         int wantKeySize = 1024 + 256;
-        String got = generate("-keySize", Integer.toString(wantKeySize), "-subject", "cn=2hasdfiuh2", "-noExtKeyUsagE", "-daysUntilExpiry", "17");
+        String got = generate("-keySize", Integer.toString(wantKeySize), "-subject", "cn=2hasdfiuh2,dc=blah,dc=asdf", "-noExtKeyUsagE", "-daysUntilExpiry", "17");
         final X509Certificate cert = CertUtils.decodeFromPEM(got);
         assertNotNull(cert);
-        assertTrue("cn=2hasdfiuh2".equalsIgnoreCase(cert.getSubjectDN().getName()));
+        assertEquals("cn=2hasdfiuh2,dc=blah,dc=asdf", cert.getSubjectX500Principal().getName().toLowerCase());
         int keybits = CertUtils.getRsaKeyBits((RSAPublicKey) cert.getPublicKey());
         assertTrue("Should get at least the number of key bits we asked for", keybits >= wantKeySize);
         assertTrue("Should not get too many key bits", keybits <= wantKeySize);
@@ -162,10 +162,10 @@ public class GenerateCertificateTest {
         final String sslfile = "CertificateGeneratorTest-ssl.p12";
         final String pass = "7layerzz";
         try {
-            String got = generate("-noBase64", "-subject", "cn=theca", "-outfile", cafile, pass);
+            String got = generate("-noBase64", "-subject", "cn=theca,ou=cathing,ou=moreca,o=blah", "-outfile", cafile, pass);
             assertTrue(got.startsWith("Cert chain with private key saved to " + cafile));
 
-            String sslGot = generate("-noBase64", "-subject", "cn=thessl", "-outfile", sslfile, pass, "-issuer", cafile, pass);
+            String sslGot = generate("-noBase64", "-subject", "cn=thessl,ou=sslthing,o=blah", "-outfile", sslfile, pass, "-issuer", cafile, pass);
             assertTrue(sslGot.startsWith("Cert chain with private key saved to " + sslfile));
 
             // Make sure chain makes sense
