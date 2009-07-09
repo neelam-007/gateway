@@ -79,8 +79,6 @@ public final class Importer{
             new CommandLineOption("-p", "Ignored parameter for partition", true, false),
             new CommandLineOption("-mode", "Ignored parameter for mode type", true, false) };
 
-    private String adminDBUsername;
-    private String adminDBPasswd;
     private String suppliedClusterPassphrase;
 
     private final File ssgHome;
@@ -386,14 +384,15 @@ public final class Importer{
      */
     private void initializeDatabaseConfiguration(final Map<String, String> args)
             throws InvalidProgramArgumentException, IOException, ConfigurationException {
-        adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
-        adminDBPasswd = programFlagsAndValues.get(DB_ROOT_PASSWD.getName());
+        final String adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
         if (adminDBUsername == null) {
             throw new BackupRestoreLauncher.InvalidProgramArgumentException("Cannot restore the main database without" +
                     " the root database user name and password. Please provide options: " + DB_ROOT_USER.getName() +
                     " and " + DB_ROOT_PASSWD.getName());
         }
-        if (adminDBPasswd == null) adminDBPasswd = ""; // totally legit
+        final String tempAdminPassword = programFlagsAndValues.get(DB_ROOT_PASSWD.getName());
+        // its ok for password to be empty string
+        final String adminDBPasswd = (tempAdminPassword != null)? tempAdminPassword: "";
 
         //check if the -newdb option was supplied
         canCreateNewDb = args.containsKey(CREATE_NEW_DB.getName());
