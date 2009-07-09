@@ -187,8 +187,9 @@ class DatabaseRestorer {
 
                 // commit at the end if everything updated correctly
                 final String msg1 = "Database audits loaded succesfully, committing now.";
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, verbose, printStream);
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, verbose, printStream, false);
                 c.commit();
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, ". Done", verbose, printStream);
             } catch (SQLException e) {
                 ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
                         "Error loading database audits. Rolling back now. " + e.getMessage(), verbose, printStream);

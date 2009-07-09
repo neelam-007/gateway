@@ -108,11 +108,11 @@ final class RestoreImpl implements Restore{
 
         final File testCADir = new File(testSsgHome, ImportExportUtilities.CA_JAR_DIR);
         if(!testCADir.exists() || !testCADir.isDirectory())
-            throw new IllegalStateException("Custom assertion directory '"+testCADir.getAbsolutePath()+"'is missing");
+            throw new IllegalStateException("Custom assertion directory '"+testCADir.getAbsolutePath()+"' is missing");
 
         final File testMADir = new File(testSsgHome, ImportExportUtilities.MA_AAR_DIR);
         if(!testMADir.exists() || !testMADir.isDirectory())
-            throw new IllegalStateException("Modular assertion directory '"+testMADir.getAbsolutePath()+"'is missing");
+            throw new IllegalStateException("Modular assertion directory '"+testMADir.getAbsolutePath()+"' is missing");
 
     }
 
@@ -234,7 +234,7 @@ final class RestoreImpl implements Restore{
 
     public Result restoreComponentConfig(final boolean isRequired,
                                          final boolean isMigrate,
-                                         final boolean ignoreNodeProperties) throws RestoreException {
+                                         final boolean ignoreNodeIdentity) throws RestoreException {
         final File imageConfigDir = image.getConfigFolder();
         if(imageConfigDir == null){
             final String msg = "No config folder found. No ssg configuration can be restored";
@@ -292,7 +292,8 @@ final class RestoreImpl implements Restore{
                     //this is not necessary, however it a safeguard against copying config files accidently
                     //we are explicitly only copying files we know about
                     for (String ssgFile : ImportExportUtilities.CONFIG_FILES) {
-                        if(ignoreNodeProperties && ssgFile.equals(ImportExportUtilities.NODE_PROPERTIES)) continue;
+                        if(ignoreNodeIdentity && ssgFile.equals(ImportExportUtilities.NODE_PROPERTIES)) continue;
+                        if(ignoreNodeIdentity && ssgFile.equals(ImportExportUtilities.OMP_DAT)) continue;
                         if (ssgFile.equals(name)) return true;
                     }
                     return false;
@@ -493,8 +494,6 @@ final class RestoreImpl implements Restore{
             String msg = "Restoring audits...";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, this.printStream, false);
             dbRestorer.restoreAudits();
-            msg = ". Done";
-            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, this.printStream);
         } catch (DatabaseRestorer.DatabaseRestorerException e) {
             throw new RestoreException("Could not restore database audits: " + e.getMessage());
         } catch (IOException e) {
@@ -510,8 +509,8 @@ final class RestoreImpl implements Restore{
                                          final boolean isMigrate,
                                          final boolean newDatabaseIsRequired,
                                          final String pathToMappingFile,
-                                         final boolean updateNodeProperties,
-                                         final PropertiesConfiguration propertiesConfiguration) throws RestoreException {
+                                         final PropertiesConfiguration propertiesConfiguration,
+                                         final File ompDatFile) throws RestoreException {
         if (this.dbRestorer == null) {
             if (isRequired) {
                 throw new RestoreException("No database backup found in image");
@@ -552,7 +551,7 @@ final class RestoreImpl implements Restore{
         //Only need to check if db exists when newDatabaseIsRequired is false
         final boolean wasNewDbCreated;
         if (isMigrate && newDatabaseIsRequired) {
-            //no check for db existence, we know we want to create a new database
+            //now check for db existence, we know we want to create a new database
             wasNewDbCreated = dbRestorer.createNewDatabaseOrThrow(false);
         } else {
             //only create the database if it doesn't exist
@@ -637,15 +636,15 @@ final class RestoreImpl implements Restore{
             }
         }
         //migrate always requires that node.properties is updated
-        if (isMigrate || updateNodeProperties) writeNewNodeProperties(propertiesConfiguration);
+        if (propertiesConfiguration != null) writeNewNodeProperties(propertiesConfiguration);
+        if(ompDatFile != null) writeNewOmpDat(ompDatFile);
 
         //See if my.cnf needs to be copied
-
         if (image.getImageVersion() == BackupImage.ImageVersion.AFTER_FIVE_O) {
             final File myCnf = image.getDatabaseConfiguration();
             if (!myCnf.exists() || !myCnf.isFile()) {
                 final String msg = "my.cnf is not contained in the backup image";
-                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
             } else {
                 //copy file
                 //FileUtils.copyFile(file, new File(dir.getAbsolutePath() + File.separator + file.getName()));
@@ -656,7 +655,12 @@ final class RestoreImpl implements Restore{
                     ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
                 } else {
                     try {
-                        osConfigManager.copyFileToInternalFolder(myCnf);
+                        if(osConfigManager == null){
+                            final String msg = "my.cnf will not be restored as the Appliance is not installed";
+                            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING , msg, isVerbose, printStream);
+                        }else{
+                            osConfigManager.copyFileToInternalFolder(myCnf);
+                        }
                     } catch (IOException e) {
                         final String msg = "Cannot copy my.cnf: " + e.getMessage();
                         ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
@@ -671,11 +675,26 @@ final class RestoreImpl implements Restore{
     private void writeNewNodeProperties(final PropertiesConfiguration propertiesConfiguration) throws RestoreException {
         try {
             propertiesConfiguration.save(new File(ssgConfigDir, ImportExportUtilities.NODE_PROPERTIES));
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated restore host's node.properties file",
+                    isVerbose, printStream);
         } catch (ConfigurationException e) {
             throw new RestoreException("Could not save node.properties: " + e.getMessage());
         }
     }
 
+    private void writeNewOmpDat(final File ompDatFile) throws RestoreException {
+
+        final File ompOnTarget = new File(ssgConfigDir, ImportExportUtilities.OMP_DAT);
+        if(ompOnTarget.exists() && !ompOnTarget.delete())
+            throw new RestoreException("Could not delete file from target'" + ompOnTarget.getAbsolutePath() +"'");
+        try {
+            FileUtils.copyFile(ompDatFile, ompOnTarget);
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated restore host's omp.dat file", isVerbose,
+                    printStream);
+        } catch (IOException e) {
+            throw new RestoreException("Could not copy omp.dat to host: " + e.getMessage());
+        }
+    }
     /**
      * Only needed to be checked if a new database was not created.
      * @param verbose

@@ -30,7 +30,7 @@ import java.util.zip.ZipEntry;
  * 
  * This class is immutable
  */
-final class BackupImage {
+public final class BackupImage {
 
     /**
      * Image location is an absolute path to where the image file is, locally or on a ftp server
@@ -58,7 +58,7 @@ final class BackupImage {
         }
     }
     
-    BackupImage(final String imageName,
+    public BackupImage(final String imageName,
                         final PrintStream printStream,
                         final boolean isVerbose) throws IOException, InvalidBackupImage {
         if(imageName == null) throw new NullPointerException("image cannot be null");
@@ -78,7 +78,7 @@ final class BackupImage {
         versionFile = new File(tempDirectory, ImportExportUtilities.ComponentType.VERSION.getComponentName());
     }
 
-    BackupImage(final FtpClientConfig ftpConfig,
+    public BackupImage(final FtpClientConfig ftpConfig,
                         final String imageNameAndPath,
                         final PrintStream printStream,
                         final boolean isVerbose)

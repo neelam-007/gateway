@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
 import org.junit.Assert;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import com.l7tech.gateway.config.backuprestore.*;
 import com.l7tech.util.FileUtils;
 
@@ -506,6 +507,177 @@ public class ImporterTestsOffline {
         Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
     }
 
+    //==Testing node.properties and how it's managed==
+
+    /**
+     * Test when the targets node.properties and omp.dat are used because they are not in the backup image
+     * and no db info is supplied on the command line
+     * @throws Exception
+     */
+    @Test
+    public void testDbRestoreNoConfigFolder() throws Exception{
+        setUpEnvironment();
+        final URL buzzCutZipNoConfig = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/buzzcut_db_noconfig.zip");
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+        final String [] args = new String[]{"import",
+                "-image", buzzCutZipNoConfig.getPath(),
+                "-dbu", "root",
+                "-dbp", "7layer",
+                "-v",
+                "-halt"
+        };
+
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        if(result.getException() != null) throw result.getException();
+        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+    }
+
+    /**
+     * Test when the node.properties and omp.dat from the image are used
+     * and no db info is supplied on the command line
+     * @throws Exception
+     */
+    @Test
+    public void testDbRestoreConfigFolder() throws Exception{
+        final URL buzzCutZipNoConfig = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+        final String [] args = new String[]{"import",
+                "-image", buzzCutZipNoConfig.getPath(),
+                "-dbu", "root",
+                "-dbp", "7layer",
+                "-v",
+                "-halt"
+        };
+
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        if(result.getException() != null) throw result.getException();
+        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+    }
+
+    /**
+     * Test when the node.properties and omp.dat from the image are used
+     * and no db info is supplied on the command line
+     * @throws Exception
+     */
+    @Test
+    public void testDbRestoreConfigFolder_NoOmpDat() throws Exception{
+        setUpEnvironment();
+        final URL buzzCutZipNoConfig = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_omp_missing.zip");
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+        final String [] args = new String[]{"import",
+                "-image", buzzCutZipNoConfig.getPath(),
+                "-dbu", "root",
+                "-dbp", "7layer",
+                "-v",
+                "-halt"
+        };
+
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        if(result.getException() != null) throw result.getException();
+        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+    }
+
+    /**
+     * Test when the node.properties and omp.dat from the image are used and updated with command line arguments
+     *
+     * The zip used should have incorrect database configuration so that we know the command line got merged
+     * @throws Exception
+     */
+    @Test
+    public void testDbRestoreConfigFolder_MergeWithCommandLine() throws Exception{
+        setUpEnvironment();
+        final URL buzzCutZipNoConfig = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_invalid_node_prop.zip");
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+        final String [] args = new String[]{"import",
+                "-image", buzzCutZipNoConfig.getPath(),
+                "-dbu", "root",
+                "-dbp", "7layer",
+                "-db", "ssg_buzzcut",
+                "-dbu", "root",
+                "-dbp", "7layer",
+                "-dbh", "localhost",
+                "-cp", "111111",
+                "-gdbu", "gateway",
+                "-gdbp", "7layer",
+                "-v",
+                "-halt"
+        };
+
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        if(result.getException() != null) throw result.getException();
+        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+
+        //Read node.properties from the ssgHome and confirm the database users property has been corrected
+        final PropertiesConfiguration nodeProps = new PropertiesConfiguration();
+        nodeProps.setAutoSave(false);
+        nodeProps.setListDelimiter((char) 0);
+        nodeProps.load(new File(tmpSsgHome + File.separator + ImportExportUtilities.NODE_CONF_DIR, ImportExportUtilities.NODE_PROPERTIES));
+
+        final String databaseUser = nodeProps.getString("node.db.config.main.user");
+        Assert.assertEquals("node.properties was not correctly merged", "gateway", databaseUser);
+    }
+
+    /**
+     * Test that when no config is used (selective restore below, same when image doesn't contain the config folder)
+     * and all params are supplied on the command line
+     * @throws Exception
+     */
+    @Test
+    public void testDbRestoreNoConfigFolder_CommandLine() throws Exception{
+        setUpEnvironment();
+        final URL buzzCutZipNoConfig = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+        final String [] args = new String[]{"import",
+                "-image", buzzCutZipNoConfig.getPath(),
+                "-dbu", "root",
+                "-dbp", "7layer",
+                "-maindb",
+                "-db", "ssg_buzzcut",
+                "-dbu", "root",
+                "-dbp", "7layer",
+                "-dbh", "localhost",
+                "-cp", "111111",
+                "-gdbu", "gateway",
+                "-gdbp", "7layer",
+                "-v",
+                "-halt"
+        };
+
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        if(result.getException() != null) throw result.getException();
+        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+    }
+
+    /**
+     * Test the restore of an image with -migrate and all command line args supplied
+     * @throws Exception
+     */
+    @Test
+    public void testDbRestore_Migrate() throws Exception{
+        setUpEnvironment();
+        final URL imageZip = this.getClass().getClassLoader().getResource("com/l7tech/skunkworks/backuprestore/image_buzzcut_with_audits.zip");
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+        final String [] args = new String[]{"import",
+                "-image", imageZip.getPath(),
+                "-dbu", "root",
+                "-dbp", "7layer",
+                "-db", "ssg_buzzcut",
+                "-dbu", "root",
+                "-dbp", "7layer",
+                "-dbh", "localhost",
+                "-cp", "111111",
+                "-gdbu", "gateway",
+                "-gdbp", "7layer",
+                "-v",
+                "-halt",
+                "-migrate"
+        };
+
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        if(result.getException() != null) throw result.getException();
+        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+    }
+
     private void setUpEnvironment() throws IOException {
         //Copy ssg.sql for test
         final File projectSqlFile = new File("etc/db/mysql/ssg.sql");
@@ -525,5 +697,12 @@ public class ImporterTestsOffline {
         FileUtils.ensurePath(confDir);
         FileUtils.copyFile(new File(ompFile.getPath()), new File(confDir, ImportExportUtilities.OMP_DAT));
         FileUtils.copyFile(new File(nodePropFile.getPath()), new File(confDir, ImportExportUtilities.NODE_PROPERTIES));
+
+        final URL runtimeRes = this.getClass().getClassLoader().getResource("Gateway/runtime");
+        final File runtimeSrc = new File(runtimeRes.getPath());
+        final File runtimeDest = new File(tmpSsgHome, "runtime");
+
+        ImportExportUtilities.copyDir(runtimeSrc, runtimeDest);
+        
     }
 }
