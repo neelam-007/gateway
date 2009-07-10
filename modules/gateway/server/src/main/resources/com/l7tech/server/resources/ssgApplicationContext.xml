@@ -35,6 +35,18 @@
         <constructor-arg><bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/></constructor-arg>
     </bean>
 
+    <!-- Crypto init -->
+    <bean id="initLunaPinFinder" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.security.keystore.luna.GatewayLunaPinFinder"/>
+        <property name="targetMethod" value="setClusterPassphrase"/>
+        <property name="arguments">
+            <bean class="com.l7tech.server.util.PropertiesValueFactoryBean">
+                <constructor-arg ref="nodeProperties"/>
+                <constructor-arg value="node.cluster.pass"/>
+            </bean>
+        </property>
+    </bean>
+
     <!-- SSG boot process -->
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker"><!-- sinkManager -->
         <property name="serverConfig" ref="serverConfig"/>
@@ -902,7 +914,7 @@
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
 
-    <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker">
+    <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker" depends-on="initLunaPinFinder">
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
         <property name="earlyTasks">
