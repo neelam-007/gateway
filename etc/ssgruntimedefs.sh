@@ -2,6 +2,7 @@
 # Defines JAVA_HOME, etc
 
 default_java_opts="-server -Djava.net.preferIPv4Stack=true "
+default_java_opts="$default_java_opts -Djava.security.egd=file:/dev/./urandom"
 default_java_opts="$default_java_opts -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 "
 default_java_opts="$default_java_opts -Djava.awt.headless=true -XX:CompileThreshold=1500 "
 default_java_opts="$default_java_opts -Dcom.l7tech.server.defaultClusterHostname=$(hostname)"
