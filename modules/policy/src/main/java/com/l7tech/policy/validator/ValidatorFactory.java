@@ -150,6 +150,10 @@ class ValidatorFactory {
             decoratedValidator = new SequenceValidator( decoratedValidator, new IdentityTargetableAssertionValidator(assertion) );
         }
 
+        if ( assertion instanceof IdentityTagable ) {
+            decoratedValidator = new SequenceValidator( decoratedValidator, new IdentityTagAssertionValidator(assertion) );
+        }
+
         return decoratedValidator;
     }
 

@@ -25,6 +25,8 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.GroupBean;
 
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.w3c.dom.Element;
 
@@ -32,6 +34,8 @@ import org.w3c.dom.Element;
  * WS-Security Processor utility methods.
  */
 public class WSSecurityProcessorUtils {
+
+    private static final Logger logger = Logger.getLogger( WSSecurityProcessorUtils.class.getName() );
 
     /**
      * Get the processor result for the given message, running the processor if necessary.
@@ -170,60 +174,65 @@ public class WSSecurityProcessorUtils {
                                                   final ParsedElement[] elementsToValidate ) {
         boolean valid = elementsToValidate.length>0;
 
-        // Check for a single signature element (for the identity), not token or certificate (bug 7157)
-        if( context!=null && !new IdentityTarget().equals( new IdentityTarget(identity)) ) {
-            Element signatureElementForIdentity = null;
-            for ( SignedElement signedElement : allSignedElements ) {
-                Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), elementsToValidate );
-                SigningSecurityToken signingSecurityToken = getTokenForIdentityTarget(
-                        context,
-                        signingSecurityTokens,
-                        identity);
-                if ( signingSecurityToken != null ) {
-                    signatureElementForIdentity = signingSecurityToken.getSignedElements()[0].getSignatureElement();
-                    break;
+        try {
+            // Check for a single signature element (for the identity), not token or certificate (bug 7157)
+            if( context!=null && !new IdentityTarget().equals( new IdentityTarget(identity)) ) {
+                Element signatureElementForIdentity = null;
+                for ( SignedElement signedElement : allSignedElements ) {
+                    Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), elementsToValidate );
+                    SigningSecurityToken signingSecurityToken = getTokenForIdentityTarget(
+                            context,
+                            signingSecurityTokens,
+                            identity);
+                    if ( signingSecurityToken != null ) {
+                        signatureElementForIdentity = signingSecurityToken.getSignedElements()[0].getSignatureElement();
+                        break;
+                    }
                 }
-            }
 
-            if ( signatureElementForIdentity == null ) {
-                valid = false;
+                if ( signatureElementForIdentity == null ) {
+                    valid = false;
+                } else {
+                    for (ParsedElement element : elementsToValidate) {
+                        if (element instanceof SignedElement) {
+                            SignedElement signedElement = (SignedElement) element;
+
+                            Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), elementsToValidate );
+                            SigningSecurityToken signingSecurityToken = getTokenForIdentityTarget(
+                                    context,
+                                    signingSecurityTokens,
+                                    identity);
+
+                            if ( signatureElementForIdentity != signingSecurityToken.getSignedElements()[0].getSignatureElement() ) {
+                                valid = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Check that nothing else in the message is signed by this identity using
+                    // a different signature
+                    if ( valid ) {
+                        for ( SignedElement signedElement : allSignedElements ) {
+                            Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), elementsToValidate );
+                            SigningSecurityToken signingSecurityToken = getTokenForIdentityTarget(
+                                    context,
+                                    signingSecurityTokens,
+                                    identity);
+
+                            if ( signingSecurityToken != null &&
+                                 signingSecurityToken.getSignedElements()[0].getSignatureElement() != signatureElementForIdentity ) {
+                                valid = false;
+                                break;
+                            }
+                        }
+                    }
+                }
             } else {
-                for (ParsedElement element : elementsToValidate) {
-                    if (element instanceof SignedElement) {
-                        SignedElement signedElement = (SignedElement) element;
-
-                        Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), elementsToValidate );
-                        SigningSecurityToken signingSecurityToken = getTokenForIdentityTarget(
-                                context,
-                                signingSecurityTokens,
-                                identity);
-
-                        if ( signatureElementForIdentity != signingSecurityToken.getSignedElements()[0].getSignatureElement() ) {
-                            valid = false;
-                            break;
-                        }
-                    }
-                }
-
-                // Check that nothing else in the message is signed by this identity using
-                // a different signature
-                if ( valid ) {
-                    for ( SignedElement signedElement : allSignedElements ) {
-                        Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), elementsToValidate );
-                        SigningSecurityToken signingSecurityToken = getTokenForIdentityTarget(
-                                context,
-                                signingSecurityTokens,
-                                identity);
-
-                        if ( signingSecurityToken != null &&
-                             signingSecurityToken.getSignedElements()[0].getSignatureElement() != signatureElementForIdentity ) {
-                            valid = false;
-                            break;
-                        }
-                    }
-                }
+                valid = false;
             }
-        } else {
+        } catch ( MultipleTokenException e ) {
+            logger.log( Level.WARNING, ExceptionUtils.getMessage(e ));
             valid = false;
         }
 
@@ -255,12 +264,16 @@ public class WSSecurityProcessorUtils {
                 }
             }
         } else {
-            for ( SignedElement signedElement : signedElements ) {
-                Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), signedElements );
-                token = getTokenForIdentityTarget( authContext, signingSecurityTokens, identityTarget );
-                if ( token != null ) {
-                    break;
+            try {
+                for ( SignedElement signedElement : signedElements ) {
+                    Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), signedElements );
+                    token = getTokenForIdentityTarget( authContext, signingSecurityTokens, identityTarget );
+                    if ( token != null ) {
+                        break;
+                    }
                 }
+            } catch ( MultipleTokenException e ) {
+                logger.log( Level.WARNING, ExceptionUtils.getMessage(e ));
             }
         }
 
@@ -301,16 +314,21 @@ public class WSSecurityProcessorUtils {
                 signedElementsForIdentity.addAll( Arrays.asList(signedElements) );
             }
         } else if ( isValidSigningIdentity( authContext, identityTarget, signedElements, new ParsedElement[0] ) ) {
-            for ( SignedElement signedElement : signedElements ) {
-                Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), signedElements );
-                SigningSecurityToken signingSecurityToken = getTokenForIdentityTarget(
-                        authContext,
-                        signingSecurityTokens,
-                        identityTarget );
+            try {
+                for ( SignedElement signedElement : signedElements ) {
+                    Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), signedElements );
+                    SigningSecurityToken signingSecurityToken = getTokenForIdentityTarget(
+                            authContext,
+                            signingSecurityTokens,
+                            identityTarget );
 
-                if ( signingSecurityToken != null ) {
-                    signedElementsForIdentity.add( signedElement );
+                    if ( signingSecurityToken != null ) {
+                        signedElementsForIdentity.add( signedElement );
+                    }
                 }
+            } catch ( MultipleTokenException e ) {
+                logger.log( Level.WARNING, ExceptionUtils.getMessage(e ));
+                signedElementsForIdentity.clear();
             }
         }
 
@@ -420,7 +438,7 @@ public class WSSecurityProcessorUtils {
      */
     private static SigningSecurityToken getTokenForIdentityTarget( final AuthenticationContext context,
                                                                    final Collection<SigningSecurityToken> tokens,
-                                                                   final IdentityTarget target ) {
+                                                                   final IdentityTarget target ) throws MultipleTokenException {
         SigningSecurityToken signingSecurityToken = null;
 
         String tag = null;
@@ -438,7 +456,7 @@ public class WSSecurityProcessorUtils {
                         case USER:
                             if ( target.getIdentityProviderOid() == user.getProviderId() &&
                                  user.getId().equals(target.getIdentityId()) ) {
-                                if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
+                                if ( signingSecurityToken != null ) throw new MultipleTokenException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
                                 signingSecurityToken = token;
                             }
                             break;
@@ -448,18 +466,18 @@ public class WSSecurityProcessorUtils {
                             group.setUniqueIdentifier(target.getIdentityId());
                             Boolean groupMembership = result.getCachedGroupMembership(group);
                             if ( groupMembership != null && groupMembership ) {
-                                if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
+                                if ( signingSecurityToken != null ) throw new MultipleTokenException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
                                 signingSecurityToken = token;
                             }
                             break;
                         case PROVIDER:
                             if ( target.getIdentityProviderOid() == user.getProviderId() ) {
-                                if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
+                                if ( signingSecurityToken != null ) throw new MultipleTokenException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
                                 signingSecurityToken = token;
                             }
                             break;
                         case TAG:
-                            if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
+                            if ( signingSecurityToken != null ) throw new MultipleTokenException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
                             signingSecurityToken = token;
                             break;
                     }
@@ -548,5 +566,11 @@ public class WSSecurityProcessorUtils {
         }
 
         return true;
+    }
+
+    private static class MultipleTokenException extends Exception {
+        public MultipleTokenException( String message ) {
+            super( message );
+        }
     }
 }
