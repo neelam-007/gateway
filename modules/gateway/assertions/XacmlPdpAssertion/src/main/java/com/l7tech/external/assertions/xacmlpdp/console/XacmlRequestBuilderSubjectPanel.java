@@ -1,10 +1,9 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
+import com.l7tech.gui.util.RunOnChangeListener;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -14,15 +13,17 @@ import javax.swing.event.DocumentEvent;
  * To change this template use File | Settings | File Templates.
  */
 public class XacmlRequestBuilderSubjectPanel extends JPanel implements XacmlRequestBuilderNodePanel {
-    private JTextField subjectCategoryField;
     private JPanel mainPanel;
+    private JComboBox subjectCategoryComboBox;
 
     private XacmlRequestBuilderAssertion.Subject subject;
 
-    public XacmlRequestBuilderSubjectPanel(XacmlRequestBuilderAssertion.Subject subject) {
+    public XacmlRequestBuilderSubjectPanel( final XacmlRequestBuilderAssertion.Subject subject ) {
         this.subject = subject;
-        subjectCategoryField.setText(subject.getSubjectCategory());
+        
         init();
+
+        subjectCategoryComboBox.setSelectedItem( subject.getSubjectCategory() );
     }
 
     public JPanel getPanel() {
@@ -30,22 +31,20 @@ public class XacmlRequestBuilderSubjectPanel extends JPanel implements XacmlRequ
     }
 
     public void init() {
-        subjectCategoryField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent evt) {
-                subject.setSubjectCategory(subjectCategoryField.getText().trim());
+        subjectCategoryComboBox.setModel( new DefaultComboBoxModel( XacmlConstants.XACML_10_SUBJECTCATEGORIES.toArray() ) );
+        subjectCategoryComboBox.addActionListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                subject.setSubjectCategory(((String)subjectCategoryComboBox.getSelectedItem()).trim());
             }
-
-            public void insertUpdate(DocumentEvent evt) {
-                subject.setSubjectCategory(subjectCategoryField.getText().trim());
-            }
-
-            public void removeUpdate(DocumentEvent evt) {
-                subject.setSubjectCategory(subjectCategoryField.getText().trim());
-            }
-        });
+        }));
     }
 
+    @Override
     public boolean handleDispose() {
+        // Access editor directly to get the current text
+        subject.setSubjectCategory(((String)subjectCategoryComboBox.getEditor().getItem()).trim());
+
         return true;
     }
 }
