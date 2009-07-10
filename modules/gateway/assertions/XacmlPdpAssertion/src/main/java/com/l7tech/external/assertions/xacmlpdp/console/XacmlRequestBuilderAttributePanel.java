@@ -6,6 +6,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
+import java.util.Set;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -15,28 +16,30 @@ import javax.swing.*;
  * To change this template use File | Settings | File Templates.
  */
 public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRequestBuilderNodePanel {
-    private JTextField idField;
     private JTextField issuerField;
     private JLabel issueInstantLabel;
     private JTextField issueInstantField;
     private JPanel mainPanel;
     private JComboBox dataTypeComboBox;
+    private JComboBox idComboBox;
 
     private XacmlRequestBuilderAssertion.Attribute attribute;
     private XacmlAssertionEnums.XacmlVersionType xacmlVersion;
 
-    public XacmlRequestBuilderAttributePanel(XacmlRequestBuilderAssertion.Attribute attribute, XacmlAssertionEnums.XacmlVersionType version) {
+    public XacmlRequestBuilderAttributePanel( final XacmlRequestBuilderAssertion.Attribute attribute,
+                                              final XacmlAssertionEnums.XacmlVersionType version,
+                                              final Set<String> idOptions ) {
         this.attribute = attribute;
         this.xacmlVersion = version;
-        idField.setText(attribute.getId());
         issuerField.setText(attribute.getIssuer());
 
         if(xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V1_0) {
             issueInstantField.setText(attribute.getIssueInstant());
         }
 
-        init();
+        init( idOptions );
 
+        idComboBox.setSelectedItem(attribute.getId());
         dataTypeComboBox.setSelectedItem(attribute.getDataType());
     }
 
@@ -44,13 +47,14 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
         return mainPanel;
     }
 
-    public void init() {
+    public void init( final Set<String> idOptions ) {
+        idComboBox.setModel( new DefaultComboBoxModel( idOptions.toArray() ) );
         dataTypeComboBox.setModel( new DefaultComboBoxModel( XacmlConstants.XACML_10_DATATYPES.toArray() ) );
 
-        idField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+        idComboBox.addActionListener(new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
-                attribute.setId(idField.getText().trim());
+                attribute.setId( ((String)idComboBox.getSelectedItem()).trim() );
             }
         }));
 
@@ -83,7 +87,9 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
 
     @Override
     public boolean handleDispose() {
-        attribute.setDataType(((String)dataTypeComboBox.getEditor().getItem()).trim()); // Access editor directly to get the current text
+        // Access editors directly to get the current text
+        attribute.setId(((String)idComboBox.getEditor().getItem()).trim());
+        attribute.setDataType(((String)dataTypeComboBox.getEditor().getItem()).trim());
 
         if ( attribute.getDataType()==null ||
              attribute.getDataType().isEmpty() ) {

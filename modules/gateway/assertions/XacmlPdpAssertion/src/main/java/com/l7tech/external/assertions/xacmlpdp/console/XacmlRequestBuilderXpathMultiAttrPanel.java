@@ -28,7 +28,6 @@ import java.util.Set;
 public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements XacmlRequestBuilderNodePanel {
     private JComboBox messageSourceComboBox;
     private JTextField xpathBaseField;
-    private JTextField idField;
     private JButton idOptionsButton;
     private JButton dataTypeOptionsButton;
     private JTextField issuerField;
@@ -45,14 +44,16 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     private JButton removeNamespaceButton;
     private JPanel mainPanel;
     private JComboBox dataTypeComboBox;
+    private JComboBox idComboBox;
 
     private XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig;
     private DefaultTableModel tableModel;
     private JDialog window;
 
-    public XacmlRequestBuilderXpathMultiAttrPanel(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig,
-                                                  XacmlAssertionEnums.XacmlVersionType version,
-                                                  JDialog window)
+    public XacmlRequestBuilderXpathMultiAttrPanel( final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig,
+                                                   final XacmlAssertionEnums.XacmlVersionType version,
+                                                   final Set<String> idOptions,
+                                                   final JDialog window )
     {
         this.multipleAttributeConfig = multipleAttributeConfig;
 
@@ -83,7 +84,6 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         namespacesTable.getTableHeader().setReorderingAllowed( false );
 
         xpathBaseField.setText(multipleAttributeConfig.getXpathBase());
-        idField.setText(multipleAttributeConfig.getField(ID).getValue());
         issuerField.setText(multipleAttributeConfig.getField(ISSUER).getValue());
 
         if(version == XacmlAssertionEnums.XacmlVersionType.V1_0) {
@@ -94,8 +94,9 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
         this.window = window;
 
-        init(version);
+        init(version, idOptions );
 
+        idComboBox.setSelectedItem(multipleAttributeConfig.getField(ID).getValue());
         dataTypeComboBox.setSelectedItem(multipleAttributeConfig.getField(DATA_TYPE).getValue());
     }
 
@@ -103,7 +104,9 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         return mainPanel;
     }
 
-    public void init(XacmlAssertionEnums.XacmlVersionType version) {
+    public void init( final XacmlAssertionEnums.XacmlVersionType version,
+                      final Set<String> idOptions ) {
+        idComboBox.setModel( new DefaultComboBoxModel( idOptions.toArray() ) );
         dataTypeComboBox.setModel( new DefaultComboBoxModel( XacmlConstants.XACML_10_DATATYPES.toArray() ) );
 
         namespacesTable.getSelectionModel().addListSelectionListener( new ListSelectionListener(){
@@ -187,7 +190,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             }
         }));
 
-        addChangeListener(idField, ID);
+        addChangeListener(idComboBox, ID);
         addChangeListener(dataTypeComboBox, DATA_TYPE);
         addChangeListener(issuerField, ISSUER);
         addChangeListener(valueField, VALUE);
@@ -246,7 +249,9 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
     @Override
     public boolean handleDispose() {
-        multipleAttributeConfig.getField(DATA_TYPE).setValue(((String)dataTypeComboBox.getEditor().getItem()).trim()); // Access editor directly to get the current text
+        // Access editor directly to get the current text
+        multipleAttributeConfig.getField(ID).setValue(((String)idComboBox.getEditor().getItem()).trim());
+        multipleAttributeConfig.getField(DATA_TYPE).setValue(((String)dataTypeComboBox.getEditor().getItem()).trim()); 
 
         Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName> relativeXpaths = multipleAttributeConfig.getRelativeXPathFieldNames();
         if( ! relativeXpaths.isEmpty() && xpathBaseField.getText().trim().isEmpty()) {

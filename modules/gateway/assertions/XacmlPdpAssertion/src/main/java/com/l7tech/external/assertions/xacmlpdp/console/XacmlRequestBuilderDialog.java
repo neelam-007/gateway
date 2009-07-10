@@ -17,6 +17,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.Collections;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -89,7 +91,10 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                     lastNodePanel = panel;
                     nodeSettingsPanel.add(panel.getPanel());
                 } else if(item instanceof XacmlRequestBuilderAssertion.Attribute) {
-                    XacmlRequestBuilderAttributePanel panel = new XacmlRequestBuilderAttributePanel((XacmlRequestBuilderAssertion.Attribute)item, assertion.getXacmlVersion());
+                    XacmlRequestBuilderAttributePanel panel = new XacmlRequestBuilderAttributePanel(
+                            (XacmlRequestBuilderAssertion.Attribute)item,
+                            assertion.getXacmlVersion(),
+                            getIdOptions(((DefaultMutableTreeNode)path.getPath()[1]).getUserObject()));
                     lastNodePanel = panel;
                     nodeSettingsPanel.add(panel.getPanel());
                 } else if(item instanceof XacmlRequestBuilderAssertion.GenericXmlElementHolder) {
@@ -105,6 +110,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                             new XacmlRequestBuilderXpathMultiAttrPanel(
                                     (XacmlRequestBuilderAssertion.MultipleAttributeConfig)item,
                                     assertion.getXacmlVersion(),
+                                    getIdOptions(((DefaultMutableTreeNode)path.getPath()[1]).getUserObject()),
                                     XacmlRequestBuilderDialog.this);
                     lastNodePanel = panel;
                     nodeSettingsPanel.add(panel.getPanel());
@@ -193,6 +199,22 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
         setContentPane(mainPanel);
         pack();
+    }
+
+    private Set<String> getIdOptions( final Object object ) {
+        Set<String> values = Collections.emptySet();
+
+        if ( object instanceof XacmlRequestBuilderAssertion.Subject ) {
+            values = XacmlConstants.XACML_10_SUBJECT_IDS;
+        } else if ( object instanceof XacmlRequestBuilderAssertion.Action ) {
+            values = XacmlConstants.XACML_10_ACTION_IDS;
+        } else if ( object instanceof XacmlRequestBuilderAssertion.Resource ) {
+            values = XacmlConstants.XACML_10_RESOURCE_IDS;
+        } else if ( object instanceof XacmlRequestBuilderAssertion.Environment ) {
+            values = XacmlConstants.XACML_10_ENVIRONMENT_IDS;    
+        }
+
+        return values;
     }
 
     private void createPopupMenu() {
