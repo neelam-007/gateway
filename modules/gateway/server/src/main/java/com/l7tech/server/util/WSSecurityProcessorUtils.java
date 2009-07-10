@@ -13,18 +13,21 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.SoapConstants;
+import com.l7tech.util.TimeUnit;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.identity.User;
 import com.l7tech.identity.GroupBean;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -36,6 +39,7 @@ import org.w3c.dom.Element;
 public class WSSecurityProcessorUtils {
 
     private static final Logger logger = Logger.getLogger( WSSecurityProcessorUtils.class.getName() );
+    private static final AtomicReference<WssSettings> wssSettingsReference = new AtomicReference<WssSettings>();
 
     /**
      * Get the processor result for the given message, running the processor if necessary.
@@ -59,6 +63,14 @@ public class WSSecurityProcessorUtils {
         try {
             final WssProcessorImpl impl = new WssProcessorImpl(msg);
             impl.setSecurityTokenResolver(securityTokenResolver);
+
+            WssSettings settings = getWssSettings();
+            impl.setSignedAttachmentSizeLimit(settings.signedAttachmentMaxSize);
+            impl.setRejectOnMustUnderstand(settings.rejectOnMustUnderstand);
+            impl.setPermitMultipleTimestampSignatures(settings.permitMultipleTimestampSignatures);
+            impl.setPermitUnknownBinarySecurityTokens(settings.permitUnknownBinarySecurityTokens);
+            impl.setStrictSignatureConfirmationValidation(settings.strictSignatureConfirmationValidation);
+
             ProcessorResult wssResults = impl.processMessage();
             msg.getSecurityKnob().setProcessorResult(wssResults); // In case someone else needs it later
             return wssResults;
@@ -568,9 +580,49 @@ public class WSSecurityProcessorUtils {
         return true;
     }
 
+    private static WssSettings getWssSettings() {
+        WssSettings wssSettings = wssSettingsReference.get();
+
+        if ( wssSettings == null || ( wssSettings.created + TimeUnit.SECONDS.toMillis(30) < System.currentTimeMillis()) ) {
+            ServerConfig serverConfig = ServerConfig.getInstance();
+            wssSettings = new WssSettings(
+                serverConfig.getLongProperty(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0),
+                serverConfig.getBooleanProperty(ServerConfig.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
+                serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false),
+                serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false),
+                serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
+            );
+
+            wssSettingsReference.set(  wssSettings );
+        }
+
+        return wssSettings;
+    }
+
     private static class MultipleTokenException extends Exception {
         public MultipleTokenException( String message ) {
             super( message );
+        }
+    }
+
+    private static final class WssSettings {
+        private final long created = System.currentTimeMillis();
+        private final long signedAttachmentMaxSize;
+        private final boolean rejectOnMustUnderstand;
+        private final boolean permitMultipleTimestampSignatures;
+        private final boolean permitUnknownBinarySecurityTokens;
+        private final boolean strictSignatureConfirmationValidation;
+
+        private WssSettings( final long signedAttachmentMaxSize,
+                             final boolean rejectOnMustUnderstand,
+                             final boolean permitMultipleTimestampSignatures,
+                             final boolean permitUnknownBinarySecurityTokens,
+                             final boolean strictSignatureConfirmationValidation) {
+            this.signedAttachmentMaxSize = signedAttachmentMaxSize;
+            this.rejectOnMustUnderstand = rejectOnMustUnderstand;
+            this.permitMultipleTimestampSignatures = permitMultipleTimestampSignatures;
+            this.permitUnknownBinarySecurityTokens = permitUnknownBinarySecurityTokens;
+            this.strictSignatureConfirmationValidation = strictSignatureConfirmationValidation;
         }
     }
 }
