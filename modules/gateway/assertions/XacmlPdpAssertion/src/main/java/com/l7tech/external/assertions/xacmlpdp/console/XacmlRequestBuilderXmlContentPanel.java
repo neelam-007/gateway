@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.xacmlpdp.console;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
@@ -91,22 +91,25 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderXmlAttrPanel dialog = new XacmlRequestBuilderXmlAttrPanel(window, "", "");
-                dialog.setVisible(true);
+                boolean done = false;
+                String name = "";
+                String value = "";
+                while ( !done ) {
+                    XacmlRequestBuilderXmlAttrPanel dialog = new XacmlRequestBuilderXmlAttrPanel(window, name, value);
+                    dialog.setVisible(true);
 
-                if(dialog.isConfirmed()) {
-                    String attrName = dialog.getName();
-                    String attrValue = dialog.getValue();
-                    
-                    if (isDuplicateAttributeName(attrName)) {
-                        DialogDisplayer.showMessageDialog(XacmlRequestBuilderXmlContentPanel.this,
-                            "The attribute name '" + attrName + "' already exists.  Please use a new attribute name and try again.",
-                            "Duplicate Attribute Name", JOptionPane.ERROR_MESSAGE, null);
-                        return;
+                    if( dialog.isConfirmed() ) {
+                        name = dialog.getName();
+                        value = dialog.getValue();
+
+                        if ( validateAttributeName( null, name ) ) {
+                            done = true;
+                            tableModel.addRow(new Object[] {name, value});
+                            genericXmlElementHolder.getAttributes().put(name, value);
+                        }
+                    } else {
+                        done = true;
                     }
-
-                    tableModel.addRow(new Object[] {attrName, attrValue});
-                    genericXmlElementHolder.getAttributes().put(attrName, attrValue);
                 }
             }
         });
@@ -119,28 +122,29 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
                     return;
                 }
 
-                String name = (String)xmlAttributesTable.getValueAt(selectedRow, 0);
+                boolean done = false;
+                final String originalName = (String)xmlAttributesTable.getValueAt(selectedRow, 0);
+                String name = originalName;
                 String value = (String)xmlAttributesTable.getValueAt(selectedRow, 1);
+                while ( !done ) {
+                    XacmlRequestBuilderXmlAttrPanel dialog = new XacmlRequestBuilderXmlAttrPanel(window, name, value);
+                    dialog.setVisible(true);
 
-                XacmlRequestBuilderXmlAttrPanel dialog = new XacmlRequestBuilderXmlAttrPanel(window, name, value);
-                dialog.setVisible(true);
+                    if ( dialog.isConfirmed() ) {
+                        name = dialog.getName();
+                        value = dialog.getValue();
 
-                if(dialog.isConfirmed()) {
-                    String newName = dialog.getName();
-                    String newValue = dialog.getValue();
+                        if ( validateAttributeName( originalName, name ) ) {
+                            done = true;
+                            xmlAttributesTable.setValueAt(name, selectedRow, 0);
+                            xmlAttributesTable.setValueAt(value, selectedRow, 1);
 
-                    if (!name.equals(newName) && isDuplicateAttributeName(newName)) {
-                        DialogDisplayer.showMessageDialog(XacmlRequestBuilderXmlContentPanel.this,
-                            "The attribute name '" + newName + "' already exists.  Please use a new attribute name and try again.",
-                            "Duplicate Attribute Name", JOptionPane.ERROR_MESSAGE, null);
-                        return;
+                            genericXmlElementHolder.getAttributes().remove(name);
+                            genericXmlElementHolder.getAttributes().put(name, value);
+                        }
+                    } else {
+                        done = true;
                     }
-
-                    xmlAttributesTable.setValueAt(newName, selectedRow, 0);
-                    xmlAttributesTable.setValueAt(newValue, selectedRow, 1);
-
-                    genericXmlElementHolder.getAttributes().remove(name);
-                    genericXmlElementHolder.getAttributes().put(newName, newValue);
                 }
             }
         });
@@ -202,6 +206,24 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
         boolean enable = xmlAttributesTable.getSelectedRow() > -1;
         modifyButton.setEnabled( enable );
         removeButton.setEnabled( enable );
+    }
+
+    private boolean validateAttributeName( final String originalName, final String name ) {
+        boolean valid = false;
+
+        if ( (originalName==null || !originalName.equals(name)) && isDuplicateAttributeName(name)) {
+            JOptionPane.showMessageDialog(window,
+                "The attribute name '" + name + "' already exists.  Please use a new attribute name and try again.",
+                "Duplicate Attribute Name", JOptionPane.ERROR_MESSAGE, null );
+        } else if ( !ValidationUtils.isProbablyValidXmlName( name )) {
+            JOptionPane.showMessageDialog(window,
+                "The attribute name '" + name + "' is not valid.  Please modify the attribute name and try again.",
+                "Invalid Attribute Name", JOptionPane.ERROR_MESSAGE, null );
+        } else {
+            valid = true;
+        }
+
+        return valid;
     }
 
     private boolean isDuplicateAttributeName(String attrName) {

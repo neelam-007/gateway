@@ -60,16 +60,15 @@ public class ValidationUtils {
      * @return true if valid
      */
     public static boolean isValidDomain(String domain, boolean allowEmpty) {
-        boolean present = false;
+        boolean present;
         boolean ok = false;
 
         present = domain != null && domain.length() > 0;
 
         if (present) {
             boolean validStartAndEnd = true;
-            for(int i=0; i<DOMAIN_INVALID_START_OR_END.length; i++) {
-                String part = DOMAIN_INVALID_START_OR_END[i];
-                if(domain.startsWith(part) || domain.endsWith(part)) {
+            for ( String part : DOMAIN_INVALID_START_OR_END ) {
+                if ( domain.startsWith( part ) || domain.endsWith( part ) ) {
                     validStartAndEnd = false;
                     break;
                 }
@@ -104,7 +103,7 @@ public class ValidationUtils {
      * @return true if the url is valid
      */
     public static boolean isValidUrl(String urlText, boolean allowEmpty) {
-        boolean present = false;
+        boolean present;
         boolean ok = false;
 
         present = urlText != null && urlText.length() > 0;
@@ -115,6 +114,7 @@ public class ValidationUtils {
                 String host = test.getHost();
                 ok = host!=null && host.length()>0;
             } catch (MalformedURLException e) {
+                // so is invalid
             }
         }
         else if (allowEmpty) {
@@ -144,7 +144,7 @@ public class ValidationUtils {
      * @return true if the url is valid
      */
     public static boolean isValidUrl(String urlText, boolean allowEmpty, Collection<String> schemes) {
-        boolean present = false;
+        boolean present;
         boolean ok = false;
 
         present = urlText != null && urlText.length() > 0;
@@ -159,6 +159,7 @@ public class ValidationUtils {
                     } 
                 }
             } catch (URISyntaxException e) {
+                // so is invalid
             }
         }
         else if (allowEmpty) {
@@ -185,6 +186,7 @@ public class ValidationUtils {
                 int value = Integer.parseInt( intText );
                 valid = value >= min && value <= max;                
             } catch ( NumberFormatException nfe ) {
+                // so is invalid
             }
         } else {
             valid = allowEmpty;
@@ -210,6 +212,7 @@ public class ValidationUtils {
                 long value = Long.parseLong( longText );
                 valid = value >= min && value <= max;
             } catch ( NumberFormatException nfe ) {
+                // so is invalid
             }
         } else {
             valid = allowEmpty;
@@ -218,9 +221,92 @@ public class ValidationUtils {
         return valid;
     }
 
+    /**
+     * Check if the given name is probably a valid XML name.
+     *
+     * <p>This method is slightly permissive, since it does not forbid
+     * some of the blocks of higher range unicode characters that are
+     * not permitted (though there are exceptions within those blocks
+     * that are permitted).</p>
+     *
+     * @param name The name to check
+     * @return true if probably valid
+     */
+    public static boolean isProbablyValidXmlName( final String name ) {
+        boolean valid = false;
+
+        if ( name != null ) {
+            char[] nameChars = name.toCharArray();
+            out:
+            if ( nameChars.length > 0 && isValidXmlNameStart(nameChars[0]) ) {
+                for ( char character : nameChars ) {
+                    if ( !isValidXmlNameCharacter( character ) ) {
+                        break out;
+                    }
+                }
+                valid = true;
+            }
+        }
+
+        return valid;
+    }
+
+
     //- PRIVATE
 
     private static final String DOMAIN_ALLOWED_CHARS = LETTERS_LOWER + LETTERS_UPPER + DIGITS + ".-";
     private static final String[] DOMAIN_INVALID_START_OR_END = {"-","."};
     private static final String REGEX_HTTP_URL = "^(?:[hH][tT][tT][pP][sS]?://[a-zA-Z0-9\\._-]{1,255}(?::(?:6(?:[1-4]\\d{3}|(?:5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5]))))|[1-5]\\d{4}|(?!0)\\d{2,4}|[1-9]))?(?:[\\?/][a-zA-Z0-9$\\-_\\.+!\\*\\?'\\(\\),:/\\\\%@=&;*'~#]{0,1024})?)$";
+
+    /**
+     * The XML spec lists these characters as permitted :
+     *   Ll, Lu, Lo, Lm, Lt, or Nl, or else be '_' (#x5F)
+     *
+     * In Java categories:
+     *   LOWERCASE_LETTER
+     *   UPPERCASE_LETTER
+     *   OTHER_LETTER
+     *   MODIFIER_LETTER
+     *   TITLECASE_LETTER
+     *   LETTER_NUMBER
+     */
+    private static boolean isValidXmlNameStart( final char character ) {
+        int type = Character.getType( character );
+
+        return character=='_' ||
+                type==Character.LOWERCASE_LETTER ||
+                type==Character.UPPERCASE_LETTER ||
+                type==Character.OTHER_LETTER ||
+                type==Character.MODIFIER_LETTER ||
+                type==Character.TITLECASE_LETTER ||
+                type==Character.LETTER_NUMBER;
+    }
+
+    /**
+     * The XML spec lists these characters as permitted :
+     *   Mc, Mn, Nd, Pc, or Cf '-' (#x2D), '.' (#x2E), ':' (#x3A) or '·' (#xB7; middle dot)
+     *
+     * This is in addition to those permitted for the name start.
+     *
+     * In Java categories:
+     *   COMBINING_SPACING_MARK
+     *   NON_SPACING_MARK
+     *   DECIMAL_DIGIT_NUMBER
+     *   CONNECTOR_PUNCTUATION
+     *   FORMAT
+     */
+    private static boolean isValidXmlNameCharacter( final char character ) {
+        int type = Character.getType( character );
+
+        return isValidXmlNameStart( character ) ||
+                character==0x2D ||
+                character==0x2E ||
+                character==0x3A ||
+                character==0xB7 ||
+                type==Character.COMBINING_SPACING_MARK ||
+                type==Character.NON_SPACING_MARK ||
+                type==Character.DECIMAL_DIGIT_NUMBER ||
+                type==Character.CONNECTOR_PUNCTUATION ||
+                type==Character.FORMAT;
+    }
 }
