@@ -219,7 +219,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         addChangeListener(issuerField, ISSUER);
         addChangeListener(valueField, VALUE);
 
-        if(version != XacmlAssertionEnums.XacmlVersionType.V1_0) {
+        if(version == XacmlAssertionEnums.XacmlVersionType.V2_0) {
             issueInstantLabel.setVisible(false);
             issueInstantFieldsPanel.setVisible(false);
         } else {
