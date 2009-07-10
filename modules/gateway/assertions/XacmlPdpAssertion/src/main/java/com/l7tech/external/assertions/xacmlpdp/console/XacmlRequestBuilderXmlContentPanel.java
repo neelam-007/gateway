@@ -3,13 +3,12 @@ package com.l7tech.external.assertions.xacmlpdp.console;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.util.ClassUtils;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableModel;
@@ -69,6 +68,7 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
         xmlAttributesTable.getTableHeader().setReorderingAllowed( false );
 
         contentField.setText(genericXmlElementHolder.getContent());
+        contentField.setCaretPosition( 0 );
 
         boolean instanceOfRepeatTag =
                 genericXmlElementHolder instanceof XacmlRequestBuilderAssertion.XmlElementCanRepeatTag;
@@ -175,22 +175,12 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
             }
         });
 
-        contentField.getDocument().addDocumentListener(new DocumentListener() {
+        contentField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
             @Override
-            public void changedUpdate(DocumentEvent evt) {
+            public void run() {
                 genericXmlElementHolder.setContent(contentField.getText().trim());
             }
-
-            @Override
-            public void insertUpdate(DocumentEvent evt) {
-                genericXmlElementHolder.setContent(contentField.getText().trim());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent evt) {
-                genericXmlElementHolder.setContent(contentField.getText().trim());
-            }
-        });
+        }));
 
         repeatCheckBox.addActionListener(new ActionListener() {
             @Override
