@@ -309,7 +309,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     private static final String SUFFIX_CLUSTER_AGE = ".clusterPropertyAge";
     private static final int CLUSTER_DEFAULT_AGE = 30000;
 
-    public static final String PARAM_XACML_POLICY_CACHE_MAX_AGE = "xacmlPolicyMaxCacheAge";
 
     public static ServerConfig getInstance() {
         return InstanceHolder.INSTANCE;

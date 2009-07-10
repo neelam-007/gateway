@@ -288,7 +288,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         httpObjectCache = new HttpObjectCache<PolicyFinder>(
                 1/*A PDP Assertion only has 1 policy*/,
                 /*300000 is the default of 5 minutes*/
-                ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XACML_POLICY_CACHE_MAX_AGE, 300000),
+                ServerConfig.getInstance().getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_AGE, 300000),
                 clientFactory,
                 cacheObjectFactory,
                 HttpObjectCache.WAIT_INITIAL);
