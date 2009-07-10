@@ -420,16 +420,17 @@ public class ImporterTestsOffline {
                 "-db", "ssg_buzzcut",
                 "-dbu", "root",
                 "-dbp", "7layer",
-                "-v",
                 "-dbh", "localhost",
                 "-cp", "111111",
                 "-gdbu", "gateway",
                 "-gdbp", "7layer",
-                "-migrate",
                 "-mapping", mappingFile.getPath()
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final String [] convertedArgs = MigrateToRestoreConvertor.getConvertedArguments(args);
+        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(convertedArgs);
+        if(result.getException() != null) throw result.getException();
+
         Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
     }
 

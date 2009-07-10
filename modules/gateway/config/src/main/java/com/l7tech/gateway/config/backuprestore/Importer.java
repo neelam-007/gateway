@@ -213,12 +213,12 @@ public final class Importer{
 
         //what ever happens we need to delete any unzipped directory no matter what the outcome
         try {
+            programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
+                    validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+
             isVerbose = programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName());
 
             backupImage = new BackupImage(imageFile.getAbsolutePath(), printStream, isVerbose);
-
-            programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                    validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
 
             //backup image is required validateRestoreProgramParameters is called
             initialize(programFlagsAndValues);
@@ -409,7 +409,6 @@ public final class Importer{
 
         final boolean postFiveOImage = backupImage.getImageVersion() == BackupImage.ImageVersion.AFTER_FIVE_O;
         //See bug http://sarek.l7tech.com/bugzilla/show_bug.cgi?id=7469 for more info 
-        //See http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_Backup_Restore_Func_Spec#Restore_and_migrate_node.properties_behaviour
         //for rules regarding how and when we use node.properties and omp.dat from the backup image
 
         final boolean configCanBeUsed = !isSelectiveRestore ||
