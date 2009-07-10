@@ -148,10 +148,10 @@ else
 fi
 
 if grep -q ^ssgconfig: /etc/passwd; then
-    #user ssgconfig already exists, but needs its group membership modified
-    usermod -G '' -g ssgconfig -s /home/ssgconfig/.bash_profile ssgconfig
+    #user ssgconfig already exists, but needs its group membership and shell modified
+    usermod -G '' -g ssgconfig -s /bin/bash ssgconfig
 else
-    useradd -g ssgconfig -s /home/ssgconfig/.bash_profile ssgconfig
+    useradd -g ssgconfig ssgconfig
 fi
 
 # GEN001880
@@ -292,7 +292,7 @@ if [ "$1" = "0" ] ; then
         #remove our users from sudoers
         perl -pi.bak -e 's/^(Defaults:)?(ssgconfig|layer7|gateway)\s.*$//gs' /etc/sudoers
     fi
-    
+
     perl -pi.bak -e 's/^(Defaults.*)(\!)(requiretty.*$)/$1$3/gs' /etc/sudoers
     perl -pi.bak -e 's/^(Defaults.*)(\!)(tty_tickets.*$)/$1$3/gs' /etc/sudoers
 
