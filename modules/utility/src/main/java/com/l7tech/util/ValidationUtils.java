@@ -8,9 +8,6 @@ import java.util.Collection;
 
 /**
  * Input validation methods.
- *
- * @author $Author$
- * @version $Revision$
  */
 public class ValidationUtils {
 
@@ -251,6 +248,35 @@ public class ValidationUtils {
         return valid;
     }
 
+    /**
+     * Check if the given name is probably a valid XML namespace prefix.
+     *
+     * <p>This method is slightly permissive, since it does not forbid
+     * some of the blocks of higher range unicode characters that are
+     * not permitted (though there are exceptions within those blocks
+     * that are permitted).</p>
+     *
+     * @param namespacePrefix The namespace prefix to check
+     * @return true if probably valid
+     */
+    public static boolean isProbablyValidXmlNamespacePrefix( final String namespacePrefix ) {
+        boolean valid = false;
+
+        if ( namespacePrefix != null ) {
+            char[] nameChars = namespacePrefix.toCharArray();
+            out:
+            if ( nameChars.length > 0 && isValidXmlNameStart(nameChars[0]) ) {
+                for ( char character : nameChars ) {
+                    if ( !isValidXmlNamespacePrefixCharacter( character ) ) {
+                        break out;
+                    }
+                }
+                valid = true;
+            }
+        }
+
+        return valid;
+    }
 
     //- PRIVATE
 
@@ -308,5 +334,12 @@ public class ValidationUtils {
                 type==Character.DECIMAL_DIGIT_NUMBER ||
                 type==Character.CONNECTOR_PUNCTUATION ||
                 type==Character.FORMAT;
+    }
+
+    /**
+     * Any valid name character, except ':'.
+     */
+    private static boolean isValidXmlNamespacePrefixCharacter( final char character ) {
+        return character != ':' && isValidXmlNameCharacter( character );    
     }
 }

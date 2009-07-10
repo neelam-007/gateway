@@ -7,6 +7,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -131,16 +132,29 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         addNamespaceButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderNamespaceDialog dialog = new XacmlRequestBuilderNamespaceDialog(window, null, null);
-                Utilities.centerOnScreen(dialog);
-                dialog.setVisible(true);
+                boolean done = false;
+                String prefix = "";
+                String namespace = "";
+                while ( !done ) {
+                    XacmlRequestBuilderNamespaceDialog dialog = new XacmlRequestBuilderNamespaceDialog(window, prefix, namespace);
+                    Utilities.centerOnParentWindow(dialog);
+                    dialog.setVisible(true);
 
-                if(dialog.isConfirmed()) {
-                    tableModel.addRow(new String[] {dialog.getPrefix(), dialog.getUri()});
-                    if(multipleAttributeConfig.getNamespaces() == null) {
-                        multipleAttributeConfig.setNamespaces(new HashMap<String, String>(1));
+                    if( dialog.isConfirmed() ) {
+                        prefix = dialog.getPrefix();
+                        namespace = dialog.getUri();
+
+                        if ( validateNamespacePrefix( null, prefix ) ) {
+                            done = true;
+                            tableModel.addRow(new String[] {prefix, namespace});
+                            if(multipleAttributeConfig.getNamespaces() == null) {
+                                multipleAttributeConfig.setNamespaces(new HashMap<String, String>(1));
+                            }
+                            multipleAttributeConfig.getNamespaces().put(prefix, namespace);
+                        }
+                    } else {
+                        done = true;
                     }
-                    multipleAttributeConfig.getNamespaces().put(dialog.getPrefix(), dialog.getUri());
                 }
             }
         });
@@ -152,20 +166,30 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                     return;
                 }
 
-                String prefix = (String)namespacesTable.getValueAt(namespacesTable.getSelectedRow(), 0);
-                String uri = (String)namespacesTable.getValueAt(namespacesTable.getSelectedRow(), 1);
-                XacmlRequestBuilderNamespaceDialog dialog = new XacmlRequestBuilderNamespaceDialog(window, prefix, uri);
-                Utilities.centerOnScreen(dialog);
-                dialog.setVisible(true);
+                final String originalPrefix = (String)namespacesTable.getValueAt(namespacesTable.getSelectedRow(), 0);
+                String prefix = originalPrefix;
+                String namespace = (String)namespacesTable.getValueAt(namespacesTable.getSelectedRow(), 1);
+                boolean done = false;
+                while ( !done ) {
+                    XacmlRequestBuilderNamespaceDialog dialog = new XacmlRequestBuilderNamespaceDialog(window, prefix, namespace);
+                    Utilities.centerOnParentWindow(dialog);
+                    dialog.setVisible(true);
 
-                if(dialog.isConfirmed()) {
-                    tableModel.setValueAt(dialog.getPrefix(), namespacesTable.getSelectedRow(), 0);
-                    tableModel.setValueAt(dialog.getUri(), namespacesTable.getSelectedRow(), 1);
+                    if( dialog.isConfirmed() ) {
+                        prefix = dialog.getPrefix();
+                        namespace = dialog.getUri();
 
-                    if(!prefix.equals(dialog.getPrefix())) {
-                        multipleAttributeConfig.getNamespaces().remove(prefix);
+                        if ( validateNamespacePrefix( originalPrefix, prefix ) ) {
+                            done = true;
+                            tableModel.setValueAt(prefix, namespacesTable.getSelectedRow(), 0);
+                            tableModel.setValueAt(namespace, namespacesTable.getSelectedRow(), 1);
+
+                            multipleAttributeConfig.getNamespaces().remove(originalPrefix);
+                            multipleAttributeConfig.getNamespaces().put(prefix, namespace);
+                        }
+                    } else {
+                        done = true;
                     }
-                    multipleAttributeConfig.getNamespaces().put(prefix, dialog.getUri());
                 }
             }
         });
@@ -280,4 +304,27 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         modifyNamespaceButton.setEnabled( enable );
         removeNamespaceButton.setEnabled( enable );
     }
+
+    private boolean validateNamespacePrefix( final String originalPrefix, final String prefix ) {
+        boolean valid = false;
+
+        if ( (originalPrefix==null || !originalPrefix.equals( prefix )) && isDuplicateNamespacePrefix( prefix )) {
+            JOptionPane.showMessageDialog(window,
+                "The namespace prefix '" + prefix + "' already exists.  Please use a new namespace prefix and try again.",
+                "Duplicate Namespace Prefix", JOptionPane.ERROR_MESSAGE, null );
+        } else if ( !ValidationUtils.isProbablyValidXmlNamespacePrefix( prefix )) {
+            JOptionPane.showMessageDialog(window,
+                "The namespace prefix '" + prefix + "' is not valid.  Please modify the namespace prefix and try again.",
+                "Invalid Namespace Prefix", JOptionPane.ERROR_MESSAGE, null );
+        } else {
+            valid = true;
+        }
+
+        return valid;
+    }
+
+    private boolean isDuplicateNamespacePrefix( final String prefix ) {
+        return multipleAttributeConfig.getNamespaces().containsKey(prefix);
+    }
+
 }

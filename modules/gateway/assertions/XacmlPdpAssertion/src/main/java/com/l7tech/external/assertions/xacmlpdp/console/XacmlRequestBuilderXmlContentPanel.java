@@ -139,7 +139,7 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
                             xmlAttributesTable.setValueAt(name, selectedRow, 0);
                             xmlAttributesTable.setValueAt(value, selectedRow, 1);
 
-                            genericXmlElementHolder.getAttributes().remove(name);
+                            genericXmlElementHolder.getAttributes().remove(originalName);
                             genericXmlElementHolder.getAttributes().put(name, value);
                         }
                     } else {
