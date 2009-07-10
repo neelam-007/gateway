@@ -523,8 +523,17 @@ public final class Importer{
             nodePropertyConfig = getNodePropertiesFromTarget(args, suppliedClusterPassphrase);
             ompDatToMatchNodePropertyConfig = null;
             mergeCommandLineIntoProperties(args, nodePropertyConfig, getOmpDatFromTarget());
-            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                    "Merged command line db parameters into node.properties from restore host", isVerbose, printStream);
+
+            final boolean performingAMerge = nodePropertiesExistsOnRestoreHost();
+            //we may have merged with node.properties from the host or we may not have, find out if node.properties exists
+            if(performingAMerge){
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                        "Merged command line db parameters into node.properties from restore host", isVerbose, printStream);
+            }else{
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                        "Created a new node.properties with command line db parameters and the new node.id", isVerbose,
+                        printStream);
+            }
 
             databaseConfig = getDatabaseConfig(nodePropertyConfig, getMasterPasswordManagerForOmp(getOmpDatFromTarget()));
         }
@@ -533,6 +542,12 @@ public final class Importer{
         databaseConfig.setDatabaseAdminPassword(adminDBPasswd);
     }
 
+    private boolean nodePropertiesExistsOnRestoreHost(){
+        final File nodePropsFile = new File(ssgHome,
+                ImportExportUtilities.NODE_CONF_DIR + File.separator + ImportExportUtilities.NODE_PROPERTIES);
+
+        return nodePropsFile.exists() && nodePropsFile.isFile();
+    }
     /**
      * Check that the complete set of database options were found
      * @param throwIfNotFound if true, throw an exception if not found or is the empty string
@@ -674,6 +689,9 @@ public final class Importer{
                 final String nodeId = NodeConfigurationManager.loadOrCreateNodeIdentifier("default",
                         new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass), true);
                 returnConfig.setProperty("node.id", nodeId );
+                final String msg = ((isMigrate)?"Migrate":"Restore") + " host does not contain node.properties. " +
+                        "Created a new node.id";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
             } catch (IOException e) {
                 throw new IllegalStateException("Could not generate a node.id: " + e.getMessage());
             }
