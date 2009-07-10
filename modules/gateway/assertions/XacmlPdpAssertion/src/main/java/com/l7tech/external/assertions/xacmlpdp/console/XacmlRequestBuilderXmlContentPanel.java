@@ -4,14 +4,17 @@ import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.ClassUtils;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableModel;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
@@ -23,6 +26,8 @@ import java.awt.event.ActionEvent;
  * To change this template use File | Settings | File Templates.
  */
 public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlRequestBuilderNodePanel {
+    private static final ResourceBundle resources = ResourceBundle.getBundle( XacmlRequestBuilderDialog.class.getName() );
+
     private JTable xmlAttributesTable;
     private JButton addButton;
     private JButton modifyButton;
@@ -31,6 +36,8 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
     private JCheckBox repeatCheckBox;
     private JPanel settingsPanel;
     private JPanel mainPanel;
+    private JPanel attributesPanel;
+    private JPanel contentPanel;
 
     private XacmlRequestBuilderAssertion.GenericXmlElementHolder genericXmlElementHolder;
     private DefaultTableModel tableModel;
@@ -72,14 +79,19 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
         }else{
             repeatCheckBox.setSelected(false);    
         }
-        init(xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V2_0 && instanceOfRepeatTag);
+        init(xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V2_0 && instanceOfRepeatTag,
+                ClassUtils.getInnerClassName(genericXmlElementHolder.getClass()).toLowerCase());
     }
 
     public JPanel getPanel() {
         return mainPanel;
     }
 
-    public void init(boolean showSettings) {
+    public void init( final boolean showSettings,
+                      final String resourcePrefix ) {
+        ((TitledBorder)attributesPanel.getBorder()).setTitle( resources.getString( resourcePrefix+".attributes" ));
+        ((TitledBorder)contentPanel.getBorder()).setTitle( resources.getString( resourcePrefix+".content" ));
+
         xmlAttributesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         xmlAttributesTable.getSelectionModel().addListSelectionListener( new ListSelectionListener(){
             @Override

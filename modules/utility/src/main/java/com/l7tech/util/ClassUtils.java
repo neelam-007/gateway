@@ -49,6 +49,38 @@ public class ClassUtils {
     }
 
     /**
+     * Strips the package name and any enclosing class names from a fully-qualified class name.
+     * For example, if passed "java.lang.String",
+     * would return "String"; if passed "com.example.Foo$Bar", returns "Bar".
+     *
+     * @param fullName the fully-qualified class name.  Must not be null or empty.
+     * @return the class part only of the name.  Never null, but might be empty if fullName is empty or ends in a dot.
+     * @throws NullPointerException if fullName is null
+     */
+    public static String getInnerClassName( final String fullName ) {
+        String name = getClassName( fullName );
+        int pos = name.lastIndexOf( '$' );
+        if ( pos < 0 ) {
+            return name;
+        } else {
+            return name.substring( pos + 1 );
+        }
+    }
+
+    /**
+     * Strips the package name and any enclosing class names from a fully-qualified class name.
+     * For example, if passed "java.lang.String",
+     * would return "String"; if passed "com.example.Foo$Bar", returns "Bar".
+     *
+     * @param clazz the class whose name to extract.  Must not be null.
+     * @return the class part only of the name.  Never null, but might be empty if fullName is empty or ends in a dot.
+     * @throws NullPointerException if fullName is null
+     */
+    public static String getInnerClassName( final Class clazz ) {
+        return getInnerClassName( clazz.getName() );
+    }
+
+    /**
      * Strips the class name and returns just the package name from a fully-qualified class name.
      * For example, if passed "java.lang.String",
      * would return "java.lang"; and if passed "MumbleFrotz$Foofy$2$11", returns "".
