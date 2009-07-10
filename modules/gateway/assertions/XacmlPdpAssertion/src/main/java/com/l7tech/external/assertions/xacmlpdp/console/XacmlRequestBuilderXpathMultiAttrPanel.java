@@ -4,12 +4,12 @@ import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.event.ActionEvent;
@@ -17,7 +17,6 @@ import java.awt.event.ActionListener;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.Arrays;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -31,7 +30,6 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     private JTextField xpathBaseField;
     private JTextField idField;
     private JButton idOptionsButton;
-    private JTextField dataTypeField;
     private JButton dataTypeOptionsButton;
     private JTextField issuerField;
     private JButton issuerOptionsButton;
@@ -46,6 +44,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     private JButton modifyNamespaceButton;
     private JButton removeNamespaceButton;
     private JPanel mainPanel;
+    private JComboBox dataTypeComboBox;
 
     private XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig;
     private DefaultTableModel tableModel;
@@ -85,7 +84,6 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
         xpathBaseField.setText(multipleAttributeConfig.getXpathBase());
         idField.setText(multipleAttributeConfig.getField(ID).getValue());
-        dataTypeField.setText(multipleAttributeConfig.getField(DATA_TYPE).getValue());
         issuerField.setText(multipleAttributeConfig.getField(ISSUER).getValue());
 
         if(version == XacmlAssertionEnums.XacmlVersionType.V1_0) {
@@ -97,6 +95,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         this.window = window;
 
         init(version);
+
+        dataTypeComboBox.setSelectedItem(multipleAttributeConfig.getField(DATA_TYPE).getValue());
     }
 
     public JPanel getPanel() {
@@ -104,6 +104,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     }
 
     public void init(XacmlAssertionEnums.XacmlVersionType version) {
+        dataTypeComboBox.setModel( new DefaultComboBoxModel( XacmlConstants.XACML_10_DATATYPES.toArray() ) );
+
         namespacesTable.getSelectionModel().addListSelectionListener( new ListSelectionListener(){
             @Override
             public void valueChanged( ListSelectionEvent e) {
@@ -178,33 +180,23 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             }
         });
 
-        xpathBaseField.getDocument().addDocumentListener(new DocumentListener() {
+        xpathBaseField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
             @Override
-            public void changedUpdate(DocumentEvent evt) {
+            public void run() {
                 multipleAttributeConfig.setXpathBase(xpathBaseField.getText().trim());
             }
+        }));
 
-            @Override
-            public void insertUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.setXpathBase(xpathBaseField.getText().trim());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.setXpathBase(xpathBaseField.getText().trim());
-            }
-        });
-
-        addDocumentListener(idField, ID);
-        addDocumentListener(dataTypeField, DATA_TYPE);
-        addDocumentListener(issuerField, ISSUER);
-        addDocumentListener(valueField, VALUE);
+        addChangeListener(idField, ID);
+        addChangeListener(dataTypeComboBox, DATA_TYPE);
+        addChangeListener(issuerField, ISSUER);
+        addChangeListener(valueField, VALUE);
 
         if(version != XacmlAssertionEnums.XacmlVersionType.V1_0) {
             issueInstantLabel.setVisible(false);
             issueInstantFieldsPanel.setVisible(false);
         } else {
-            addDocumentListener(issueInstantField, ISSUE_INSTANT);
+            addChangeListener(issueInstantField, ISSUE_INSTANT);
             addActionListener(issueInstantOptionsButton, ISSUE_INSTANT);
         }
 
@@ -217,24 +209,22 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         enableOrDisableButtons();
     }
 
-    private void addDocumentListener(final JTextField textField, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
-        textField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void changedUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getField(fieldName).setValue(textField.getText().trim());
-            }
+    private void addChangeListener(final JTextField textField, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
+        textField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+                @Override
+                public void run() {
+                    multipleAttributeConfig.getField(fieldName).setValue(textField.getText().trim());
+                }
+            }));
+    }
 
+    private void addChangeListener(final JComboBox field, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
+        field.addActionListener(new RunOnChangeListener(new Runnable() {
             @Override
-            public void insertUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getField(fieldName).setValue(textField.getText().trim());
+            public void run() {
+                multipleAttributeConfig.getField(fieldName).setValue(((String)field.getSelectedItem()).trim());
             }
-
-            @Override
-            public void removeUpdate(DocumentEvent evt) {
-                multipleAttributeConfig.getField(fieldName).setValue(textField.getText().trim());
-            }
-        });
-
+        }));
     }
 
     private void addActionListener(JButton button, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
@@ -256,6 +246,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
     @Override
     public boolean handleDispose() {
+        multipleAttributeConfig.getField(DATA_TYPE).setValue(((String)dataTypeComboBox.getEditor().getItem()).trim()); // Access editor directly to get the current text
+
         Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName> relativeXpaths = multipleAttributeConfig.getRelativeXPathFieldNames();
         if( ! relativeXpaths.isEmpty() && xpathBaseField.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Attribute(s) " +
@@ -268,6 +260,11 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                 }) +
                     " declared as relative XPaths, XPath Base is needed.", "Attribute Validation Error", JOptionPane.ERROR_MESSAGE);
             xpathBaseField.grabFocus();
+            return false;
+        }
+        if ( multipleAttributeConfig.getField(DATA_TYPE).getValue()==null ||
+             multipleAttributeConfig.getField(DATA_TYPE).getValue().isEmpty() ) {
+            DialogDisplayer.showMessageDialog( this, "Data Type is required. Please enter a Data Type.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
             return false;
         }
         return true;

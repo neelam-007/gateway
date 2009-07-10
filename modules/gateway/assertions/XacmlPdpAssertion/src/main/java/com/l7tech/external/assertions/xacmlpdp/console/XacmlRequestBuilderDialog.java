@@ -117,7 +117,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                 }
                 //todo [Donal] what about ResourceContent?
                 nodeSettingsPanel.repaint();
-                
+
                 XacmlRequestBuilderDialog.this.pack();
             }
         });
@@ -323,7 +323,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                     }
                 }
 
-                insertAndSelectNode(node, buildAttributeNode(new XacmlRequestBuilderAssertion.Attribute()), index);
+                XacmlRequestBuilderAssertion.Attribute attribute = new XacmlRequestBuilderAssertion.Attribute();
+                attribute.setDataType( XacmlConstants.XACML_10_DATATYPE_STRING );
+                insertAndSelectNode(node, buildAttributeNode(attribute), index);
             }
         });
         popupMenu.add(item);
@@ -332,7 +334,13 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                insertAndSelectNode(node, buildXpathMultiAttrNode(new XacmlRequestBuilderAssertion.MultipleAttributeConfig()), node.getChildCount());
+                XacmlRequestBuilderAssertion.MultipleAttributeConfig multiAttribute = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+                XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field =
+                        multiAttribute.getField( XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.DATA_TYPE);
+                if ( field != null ) {
+                    field.setValue( XacmlConstants.XACML_10_DATATYPE_STRING );
+                }
+                insertAndSelectNode(node, buildXpathMultiAttrNode(multiAttribute), node.getChildCount());
             }
         });
         popupMenu.add(item);

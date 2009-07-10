@@ -2,10 +2,10 @@ package com.l7tech.external.assertions.xacmlpdp.console;
 
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -16,11 +16,11 @@ import javax.swing.event.DocumentEvent;
  */
 public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRequestBuilderNodePanel {
     private JTextField idField;
-    private JTextField dataTypeField;
     private JTextField issuerField;
     private JLabel issueInstantLabel;
     private JTextField issueInstantField;
     private JPanel mainPanel;
+    private JComboBox dataTypeComboBox;
 
     private XacmlRequestBuilderAssertion.Attribute attribute;
     private XacmlAssertionEnums.XacmlVersionType xacmlVersion;
@@ -29,7 +29,6 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
         this.attribute = attribute;
         this.xacmlVersion = version;
         idField.setText(attribute.getId());
-        dataTypeField.setText(attribute.getDataType());
         issuerField.setText(attribute.getIssuer());
 
         if(xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V1_0) {
@@ -37,6 +36,8 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
         }
 
         init();
+
+        dataTypeComboBox.setSelectedItem(attribute.getDataType());
     }
 
     public JPanel getPanel() {
@@ -44,69 +45,51 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
     }
 
     public void init() {
-        idField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent evt) {
+        dataTypeComboBox.setModel( new DefaultComboBoxModel( XacmlConstants.XACML_10_DATATYPES.toArray() ) );
+
+        idField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
                 attribute.setId(idField.getText().trim());
             }
+        }));
 
-            public void insertUpdate(DocumentEvent evt) {
-                attribute.setId(idField.getText().trim());
+        dataTypeComboBox.addActionListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                attribute.setDataType( ((String)dataTypeComboBox.getSelectedItem()).trim() );
             }
+        }));
 
-            public void removeUpdate(DocumentEvent evt) {
-                attribute.setId(idField.getText().trim());
-            }
-        });
-
-        dataTypeField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent evt) {
-                attribute.setDataType(dataTypeField.getText().trim());
-            }
-
-            public void insertUpdate(DocumentEvent evt) {
-                attribute.setDataType(dataTypeField.getText().trim());
-            }
-
-            public void removeUpdate(DocumentEvent evt) {
-                attribute.setDataType(dataTypeField.getText().trim());
-            }
-        });
-
-        issuerField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent evt) {
+        issuerField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
                 attribute.setIssuer(issuerField.getText().trim());
             }
-
-            public void insertUpdate(DocumentEvent evt) {
-                attribute.setIssuer(issuerField.getText().trim());
-            }
-
-            public void removeUpdate(DocumentEvent evt) {
-                attribute.setIssuer(issuerField.getText().trim());
-            }
-        });
+        }));
 
         if(xacmlVersion != XacmlAssertionEnums.XacmlVersionType.V1_0) {
             issueInstantLabel.setVisible(false);
             issueInstantField.setVisible(false);
         } else {
-            issueInstantField.getDocument().addDocumentListener(new DocumentListener() {
-                public void changedUpdate(DocumentEvent evt) {
+            issueInstantField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+                @Override
+                public void run() {
                     attribute.setIssueInstant(issueInstantField.getText().trim());
                 }
-
-                public void insertUpdate(DocumentEvent evt) {
-                    attribute.setIssueInstant(issueInstantField.getText().trim());
-                }
-
-                public void removeUpdate(DocumentEvent evt) {
-                    attribute.setIssueInstant(issueInstantField.getText().trim());
-                }
-            });
+            }));
         }
     }
 
+    @Override
     public boolean handleDispose() {
+        attribute.setDataType(((String)dataTypeComboBox.getEditor().getItem()).trim()); // Access editor directly to get the current text
+
+        if ( attribute.getDataType()==null ||
+             attribute.getDataType().isEmpty() ) {
+            DialogDisplayer.showMessageDialog( this, "Data Type is required. Please enter a Data Type.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+            return false;
+        }
         return true;
     }
 }
