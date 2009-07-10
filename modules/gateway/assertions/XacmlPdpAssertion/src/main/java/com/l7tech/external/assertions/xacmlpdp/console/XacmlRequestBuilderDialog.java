@@ -444,16 +444,20 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void addAttributeMenuItems(final DefaultMutableTreeNode node) {
-        JMenuItem item = new JMenuItem( resources.getString( "add.attribute.value" ) );
-        item.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                insertAndSelectNode(node, buildValueNode(new XacmlRequestBuilderAssertion.AttributeValue()), node.getChildCount());
-            }
-        });
-        popupMenu.add(item);
+        JMenuItem item;
 
-        popupMenu.add(new JPopupMenu.Separator());
+        if (assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0 || countAttributeValues(node) == 0) {
+            item = new JMenuItem( resources.getString( "add.attribute.value" ) );
+            item.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    insertAndSelectNode(node, buildValueNode(new XacmlRequestBuilderAssertion.AttributeValue()), node.getChildCount());
+                }
+            });
+            popupMenu.add(item);
+            popupMenu.add(new JPopupMenu.Separator());
+        }
+
         item = new JMenuItem( resources.getString( "remove.attribute" ) );
         item.addActionListener(new ActionListener() {
             @Override
@@ -729,13 +733,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private boolean containsAttributeValueErrors(DefaultMutableTreeNode attributeNode) {
-        int valueCount = 0;
-        for(int i = 0;i < attributeNode.getChildCount();i++) {
-            DefaultMutableTreeNode child = (DefaultMutableTreeNode)attributeNode.getChildAt(i);
-            if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.AttributeValue) {
-                valueCount++;
-            }
-        }
+        int valueCount = countAttributeValues(attributeNode);
 
         switch(assertion.getXacmlVersion()) {
             case V1_0:
@@ -756,6 +754,17 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         }
 
         return false;
+    }
+
+    private int countAttributeValues(DefaultMutableTreeNode attributeNode) {
+        int count = 0;
+        for (int i = 0; i < attributeNode.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode)attributeNode.getChildAt(i);
+            if (child.getUserObject() instanceof XacmlRequestBuilderAssertion.AttributeValue) {
+                count++;
+            }
+        }
+        return count;
     }
 
     public static void main(String[] args) {
