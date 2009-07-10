@@ -117,7 +117,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     private XacmlPdpAssertion assertion;
     private boolean confirmed;
 
-    public XacmlPdpPropertiesDialog(Frame owner, XacmlPdpAssertion a) {
+    public XacmlPdpPropertiesDialog( final Frame owner, final XacmlPdpAssertion a ) {
         super(owner, resources.getString( "dialog.title" ) );
         assertion = a;
         initComponents();
@@ -213,6 +213,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
+        uiAccessibility.getEditor().setText("");
 
         boolean lastWasSeparator = true; // remove trailing separator
         for (int i=popupModel.size()-1; i>=0; i--) {
@@ -267,9 +268,11 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                getData(assertion);
-                confirmed = true;
-                dispose();
+                if ( validProperties() ) {
+                    getData(assertion);
+                    confirmed = true;
+                    dispose();
+                }
             }
         });
 
@@ -457,18 +460,56 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             outputMessageVariableNameField.setEnabled(false);
         }
 
-        //Check the PDP policy locations
-        boolean enableOkButton;
-        //is a remote url being used?
-        if(monitorUrlPolicyPanel.isVisible()){
-            //we need the url value
-            enableOkButton = ValidationUtils.isValidUrl(urlToMonitorField.getText().trim());
-        }else{
-            //otherwise we need the policy in the xml editor
-            enableOkButton = uiAccessibility.getEditor().getText().trim().length() != 0;            
+        //Check the PDP policy locations if a remote url being used, if not the
+        //policy XML is validated on OK
+        boolean enableOkButton =
+                isProvidedPolicyXML() ||
+                ValidationUtils.isValidUrl( urlToMonitorField.getText().trim() );
+
+        okButton.setEnabled(enableOkButton);        
+    }
+
+    private boolean isProvidedPolicyXML() {
+        return !monitorUrlPolicyPanel.isVisible();
+    }
+
+    private boolean validProperties() {
+        boolean valid = false;
+
+        if ( isProvidedPolicyXML() ) {
+            String policyXml = uiAccessibility.getEditor().getText();
+            if ( policyXml==null || policyXml.trim().isEmpty() ) {
+                JOptionPane.showMessageDialog(this,
+                    "A Policy is required when \"Configured in advance\" is selected.\nPlease supply a Policy, or select an alternative \"Policy Location\".",
+                    "Missing Policy", JOptionPane.ERROR_MESSAGE, null );
+            } else if ( !isXacmlPolicy( policyXml ) ) {
+                JOptionPane.showMessageDialog(this,
+                    "The Policy is not a valid XACML Policy.\nPlease update the Policy, or select an alternative \"Policy Location\".",
+                    "Invalid Policy", JOptionPane.ERROR_MESSAGE, null );
+            } else {
+                valid = true;
+            }
+        } else {
+            valid = true;
         }
-        okButton.setEnabled(enableOkButton);
-        
+
+        return valid;
+    }
+
+    private boolean isXacmlPolicy( final String text ) {
+        boolean isXacmlPolicy = false;
+
+        try {
+            Document policyDoc = XmlUtil.parse( text );
+            isXacmlPolicy =
+                    policyDoc.getDocumentElement().getNamespaceURI() != null &&
+                    XacmlConstants.XACML_POLICY_NAMESPACES.contains( policyDoc.getDocumentElement().getNamespaceURI() ) &&
+                    XacmlConstants.XACML_POLICY_ELEMENT.equals( policyDoc.getDocumentElement().getLocalName() );
+        } catch ( SAXException e ) {
+            // invalid doc
+        }
+
+        return isXacmlPolicy;
     }
 
     @Override
@@ -477,7 +518,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     }
 
     @Override
-    public void setData(XacmlPdpAssertion assertion) {
+    public void setData( final XacmlPdpAssertion assertion ) {
         this.assertion = assertion;
 
         boolean foundItem = false;

@@ -10,6 +10,16 @@ import java.util.Arrays;
  */
 class XacmlConstants {
 
+    public static final String XACML_POLICY_ELEMENT = "Policy";
+
+    public static final String XACML_10_POLICY_NAMESPACE = "urn:oasis:names:tc:xacml:1.0:policy";
+    public static final String XACML_20_POLICY_NAMESPACE = "urn:oasis:names:tc:xacml:2.0:policy:schema:os";
+
+    public static final Set<String> XACML_POLICY_NAMESPACES = Collections.unmodifiableSet( new TreeSet<String>( Arrays.asList(
+            XACML_10_POLICY_NAMESPACE,
+            XACML_20_POLICY_NAMESPACE
+     )) );
+
     public static final String XACML_10_SUBJECT_LOCALITY_DNS = "urn:oasis:names:tc:xacml:1.0:subject:authn-locality:dns-name";
     public static final String XACML_10_SUBJECT_LOCALITY_IP = "urn:oasis:names:tc:xacml:1.0:subject:authn-locality:ip-address";
     public static final String XACML_10_SUBJECT_AUTH_METHOD = "urn:oasis:names:tc:xacml:1.0:subject:authentication-method";
