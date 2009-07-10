@@ -121,7 +121,6 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                 } else {
                     lastNodePanel = null;
                 }
-                //todo [Donal] what about ResourceContent?
                 nodeSettingsPanel.repaint();
 
                 XacmlRequestBuilderDialog.this.pack();
@@ -628,6 +627,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         }
 
         XacmlRequestBuilderAssertion.Resource resource = (XacmlRequestBuilderAssertion.Resource)extractAttributeHolder(node);
+        resource.setResourceContent(null);
         for(int i = 0;i < node.getChildCount();i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode)node.getChildAt(i);
             if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.ResourceContent) {
