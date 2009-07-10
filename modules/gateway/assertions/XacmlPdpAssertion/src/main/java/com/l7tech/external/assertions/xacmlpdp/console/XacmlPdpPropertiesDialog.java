@@ -122,6 +122,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         assertion = a;
         initComponents();
         enableDisableComponents();
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     private void initComponents() {
