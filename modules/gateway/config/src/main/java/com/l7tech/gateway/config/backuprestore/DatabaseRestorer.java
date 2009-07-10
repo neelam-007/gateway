@@ -231,7 +231,7 @@ class DatabaseRestorer {
 
         // create temporary database copy to test the import
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                "Creating copy of target database for testing import ..", verbose, printStream, false);
+                "\tCreating copy of target database for testing import ..", verbose, printStream, false);
         final String testdbname = "TstDB_" + System.currentTimeMillis();
 
         final DatabaseConfig targetConfig = new DatabaseConfig(dbConfig);
@@ -269,7 +269,7 @@ class DatabaseRestorer {
         } finally {
             // delete the temporary database
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                    "Deleting temporary database ..", verbose, printStream, false);
+                    "\tDeleting temporary database ..", verbose, printStream, false);
             final Connection c = dba.getConnection(targetConfig, true);
             try {
                 final Statement stmt = c.createStatement();
@@ -355,12 +355,12 @@ class DatabaseRestorer {
         if(originalLicense.isEmpty()) throw new NullPointerException("originalLicense cannot be empty");
         
         final File originalLicenseIdFile =
-                new File(image.getRootFolder() + File.separator + DBDumpUtil.LICENCEORIGINALID);
+                new File(image.getRootFolder() + File.separator + BackupImage.ORIGINAL_LICENSE_ID_FILENAME);
         if(!originalLicenseIdFile.exists() || !originalLicenseIdFile.isFile())
             throw new IllegalStateException("File '"+originalLicenseIdFile.getAbsolutePath()+"' " +
                     "does not exist or is not a regular file");
 
-        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Restoring license identity from image..",
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "\tRestoring license identity from image..",
                 verbose, printStream, false);
         // get the id to use
         final byte[] buf = new byte[64];
@@ -440,7 +440,7 @@ class DatabaseRestorer {
                 }
 
                 // commit at the end if everything updated correctly
-                final String msg1 = "Database dump import loaded succesfully, committing... ";
+                final String msg1 = "\tDatabase dump import loaded succesfully, committing... ";
                 ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, verbose, printStream, false);
                 c.commit();
             } catch (SQLException e) {
@@ -545,7 +545,7 @@ class DatabaseRestorer {
 
         final List<String> returnList = ImportExportUtilities.processFile(new File(ssgHome, EXCLUDE_TABLES_PATH));
         if(!returnList.isEmpty()){
-            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "The following tables will not be modified: ",
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "\tThe following tables will not be modified: ",
                     verbose, printStream, false);
 
             for(String s: returnList){

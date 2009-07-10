@@ -79,7 +79,6 @@ public class ImportExportUtilities {
     private static final String FTP_PROTOCOL = "ftp://";
 
     public static final String SSG_SQL = "/config/etc/sql/ssg.sql";
-    static final String EXCLUDE_FILES_PATH = "cfg/exclude_files";
 
     static void throwifEsmIsRunning() {
         final File esmPid = new File("/var/run/ssemd.pid");
@@ -1168,6 +1167,14 @@ public class ImportExportUtilities {
                                    final String message,
                                    final boolean verbose,
                                    final PrintStream printStream){
+        logAndPrintMessage(log, level, "\t" + message, verbose, printStream, true);
+    }
+
+    static void logAndPrintMajorMessage(final Logger log,
+                                   final Level level,
+                                   final String message,
+                                   final boolean verbose,
+                                   final PrintStream printStream){
         logAndPrintMessage(log, level, message, verbose, printStream, true);
     }
 
@@ -1220,7 +1227,8 @@ public class ImportExportUtilities {
         final Map<String, Long> availableSsg = new HashMap<String, Long>();
         final List<String> runningSSG = new ArrayList<String>();
 
-        if (verbose && printStream != null) System.out.print("Making sure targets are offline .");
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "\tMaking sure targets are offline .",
+                verbose, printStream, false);
 
         Connection connection = null;
         Statement statement = null;

@@ -185,10 +185,11 @@ final class OSConfigManager {
 
         //Delete the contents of the internal folder
         if(FileUtils.deleteDirContents(internalOsFolder)){
-            final String deleteMsg = "Sucessfully deleted contents of internal folder";
+            final String deleteMsg = "Sucessfully deleted contents of folder for temp os files storage: "
+                    + internalOsFolder.getAbsolutePath();
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, deleteMsg, isVerbose, printStream);
         }else{
-            final String deleteMsg = "Could not delete contents of internal folder: '"
+            final String deleteMsg = "Could not delete contents of folder for temp os files storage: '"
                     + internalOsFolder.getAbsolutePath()+"'";
             ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, deleteMsg, isVerbose, printStream);
         }
@@ -313,14 +314,17 @@ final class OSConfigManager {
             else {
                 //if it exists, then just empty the contents, this will allow this to work as the gateway user
                 //as it doesn't have permissions to delete and recreate the directory
-                final String msg = "Deleting contents of internal folder";
+                final String msg = "Deleting contents of folder for temp os files storage: " +
+                        internalOsFolder.getAbsolutePath();
                 ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 if(deleteIfFound){
                     if(FileUtils.deleteDirContents(internalOsFolder)){
-                        final String msg1="Successfully deleted contents of internal folder";
+                        final String msg1="Successfully deleted contents of folder for temp os files storage: "
+                                + internalOsFolder.getAbsolutePath();
                         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
                     }else{
-                        final String msg1="Could not delete contents of internal folder";
+                        final String msg1="Could not delete contents of folder for temp os files storage: "
+                                + internalOsFolder.getAbsolutePath();
                         ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg1, isVerbose, printStream);
                     }
                 }

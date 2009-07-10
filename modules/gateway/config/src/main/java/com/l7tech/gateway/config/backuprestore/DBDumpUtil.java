@@ -11,8 +11,8 @@ import java.io.*;
 import java.sql.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.ArrayList;
 import java.util.zip.GZIPOutputStream;
+import java.util.List;
 import java.net.NetworkInterface;
 import java.net.InetAddress;
 
@@ -22,39 +22,45 @@ import java.net.InetAddress;
 class DBDumpUtil {
 
     private static final Logger logger = Logger.getLogger(DBDumpUtil.class.getName());
-    public static final String AUDIT_BACKUP_FILENAME = "audit_backup.sql";   //todo [donal] DBDumpUtil should not have this knowledge
-    public static final String LICENCEORIGINALID = "originallicenseobjectid.txt"; //todo [donal] DBDumpUtil should not have this knowledge
-    //private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "message_id", "service_metrics", "service_metrics_details", "service_usage"};
-
-    //configuration files
-    private static final String AUDIT_TABLES_CONFIG = "config/backup/cfg/backup_tables_audit"; //this knowledge is ok as its ssg install specific
 
     /**
      * outputs database dump files. The outputted dump file will never contain audits.
      * An audit table has the prefix 'audit'
      *
      * Note: This will create drop statements for EVERY SINGLE DATABASE TABLE, even if it's not backing it up
-     * @param config          database configuration
+     * @param dbConfig          database configuration
      * @param outputDirectory the directory path where the dump files should go to
-     * @param stdout          stream for verbose output; <code>null</code> for no verbose output
+     * @param backupFileName the name of the database backup file, will be created in outputDirectory
+     * @param licenseStorageFileName the name of the file to store the license in, if it's found. Cannot be null
      * @param verbose if true, then verbose output will be written to stdout, if it's not null
+     * @param stdout          stream for verbose output; <code>null</code> for no verbose output
      * @throws java.sql.SQLException problem getting data out of db
      * @throws java.io.IOException   problem with dump files
      * @throws UnsupportedOperationException if the database is remote
      */
-    public static void dump(final DatabaseConfig config,
+    public static void dump(final DatabaseConfig dbConfig,
                             final String outputDirectory,
-                            final PrintStream stdout,
+                            final String backupFileName,
+                            final String licenseStorageFileName,
                             final boolean verbose,
-                            final String backupFileName) throws SQLException, IOException {
+                            final PrintStream stdout
+    ) throws SQLException, IOException {
+        if(dbConfig == null) throw new NullPointerException("dbConfig cannot be null");
+        if(outputDirectory == null || outputDirectory.trim().isEmpty())
+            throw new IllegalArgumentException("outputDirectory cannot be null and must not be the empty string");
+        if(backupFileName == null || backupFileName.trim().isEmpty())
+            throw new IllegalArgumentException("backupFileName cannot be null and must not be the empty string");
+        if(licenseStorageFileName == null || licenseStorageFileName.trim().isEmpty())
+            throw new IllegalArgumentException("licenseStorageFileName cannot be null and must not be the empty string");
+
         final NetworkInterface networkInterface =
-                NetworkInterface.getByInetAddress( InetAddress.getByName(config.getHost()) );
+                NetworkInterface.getByInetAddress( InetAddress.getByName(dbConfig.getHost()) );
         if ( networkInterface == null ) {
             throw new UnsupportedOperationException("Backup of a remote database is not supported");
         }
 
         final DBActions dba = new DBActions();
-        final Connection conn = dba.getConnection(config, false);
+        final Connection conn = dba.getConnection(dbConfig, false);
         final DatabaseMetaData metadata = conn.getMetaData();
 
         final String[] tableTypes = {
@@ -79,7 +85,8 @@ class DBDumpUtil {
                         // target license. this will avoid clashing object id
                         final long licenseobjectid = resultSet.getLong(1);
                         final File parentFile = (new File(outputDirectory)).getParentFile();
-                        final FileOutputStream licenseFos = new FileOutputStream(new File(parentFile, LICENCEORIGINALID));
+                        final FileOutputStream licenseFos =
+                                new FileOutputStream(new File(parentFile, licenseStorageFileName));
                         licenseFos.write(Long.toString(licenseobjectid).getBytes());
                         licenseFos.close();
                         return true;
@@ -95,7 +102,8 @@ class DBDumpUtil {
             tableNames = metadata.getTables(null, "%", "%", tableTypes);
             mainOutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
 
-            if (stdout != null && verbose) stdout.print("Dumping database to " + outputDirectory + " ..");
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                    "\tDumping database to " + outputDirectory + " ..", verbose, stdout, false);
             while (tableNames.next()) {
                 final String tableName = tableNames.getString("TABLE_NAME");
 
@@ -110,7 +118,7 @@ class DBDumpUtil {
                 backUpTable(tableName, conn, mainOutput, checkForClusterPropTable);
             }
             mainOutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
-            if (stdout != null && verbose) stdout.println(". Done");
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, ". Done", verbose, stdout);
         }finally{
             ResourceUtils.closeQuietly(tableNames);
             ResourceUtils.closeQuietly(conn);
@@ -130,27 +138,32 @@ class DBDumpUtil {
      * In 5.0 this contained the tables message_context_mapping_*. These tables are now backed up by default, but
      * as this code is also used to backup existing 5.0 systems, any table found which does not begin with 'audit_'
      * is ignored
-     * @param ssgHome The installation directory of the SSG, so that the backup_tables_audit file can be located
-     * @param config DatabaseConfig to use for connecting to database
-     * @param outputDirectory The directory to write the audits.gz file to
+     * @param dbConfig DatabaseConfig to use for connecting to database. Cannot be null
+     * @param outputDirectory The directory to write the audits.gz file to. Cannot be null or the emtpy string
+     * @param auditTables the list of audit tables to backup. Cannot be null or empty
      * @param verbose if true, then verbose output will be written to stdout, if it's not null 
      * @param stdout PrintStream to write verbose info messages to. Ok to be null
      * @throws SQLException if any database exceptions occur
      * @throws IOException if any exceptions occur writing to audits.gz
      */
-    public static void auditDump(final File ssgHome,
-                                 final DatabaseConfig config,
+    public static void auditDump(final DatabaseConfig dbConfig,
                                  final String outputDirectory,
+                                 final List<String> auditTables,
                                  final PrintStream stdout,
                                  final boolean verbose) throws SQLException, IOException {
+        if(dbConfig == null) throw new NullPointerException("dbConfig cannot be null");
+        if(outputDirectory == null || outputDirectory.trim().isEmpty())
+            throw new IllegalArgumentException("outputDirectory cannot be null and must not be the empty string");
+
+        if(auditTables == null) throw new NullPointerException("auditTables cannot be null");
+        if(auditTables.isEmpty())
+            throw new IllegalArgumentException("auditTables does not list any audit tables to backup");
+
         final NetworkInterface networkInterface =
-                NetworkInterface.getByInetAddress( InetAddress.getByName(config.getHost()) );
+                NetworkInterface.getByInetAddress( InetAddress.getByName(dbConfig.getHost()) );
         if ( networkInterface == null ) {
             throw new UnsupportedOperationException("Audit backup of a remote database is not supported");
         }
-
-        //read all configuration file data in to arrays
-        final String[] auditTables = parseConfigFile(ssgHome.getAbsolutePath() + File.separator+ AUDIT_TABLES_CONFIG);
 
         Connection conn = null;
         ResultSet tableNames = null;
@@ -161,9 +174,9 @@ class DBDumpUtil {
 
         try{
             final DBActions dba = new DBActions();
-            conn = dba.getConnection(config, false);
+            conn = dba.getConnection(dbConfig, false);
 
-            //todo [Donal] audit heuristic
+            //todo [Donal] audit heuristic - see http://sarek/bugzilla/show_bug.cgi?id=7476
 //            final String sizeSql = "show table status like 'audit%'";
 //            final Statement stmt = conn.createStatement();
 //            final ResultSet rs = stmt.executeQuery(sizeSql);
@@ -334,22 +347,4 @@ class DBDumpUtil {
         return output;
     }
 
-    private static String[] parseConfigFile(final String filename) throws IOException {
-        final ArrayList<String> parsedElements = new ArrayList<String>();
-        final File configFile = new File(filename);
-        if (configFile.isFile()) {
-            final FileReader fr = new FileReader(configFile);
-            final BufferedReader br = new BufferedReader(fr);
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (!line.startsWith("#")) {//ignore comments
-                    final String tableName = line.trim();
-                    if (!parsedElements.contains(tableName)) {//no duplicates
-                        parsedElements.add(tableName);
-                    }
-                }
-            }
-        }
-        return parsedElements.toArray(new String[parsedElements.size()]);
-    }
 }

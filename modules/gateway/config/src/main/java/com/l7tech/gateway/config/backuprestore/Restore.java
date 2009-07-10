@@ -96,7 +96,7 @@ public interface Restore {
      * 5.0 does not back up any files which represent the nodes identity (node.properties or omp.dat)
      *
      * @param isRequired if true, this component must be found in the backup image
-     * @param isMigrate if true, the file /config/backup/cfg/exclude_files.conf will be consulted and any files
+     * @param isMigrate if true, the file /config/backup/cfg/exclude_files will be consulted and any files
      * listed will be ignored during the restore
      * @param ignoreNodeIdentity if true, then node.properties and omp.dat will not be restored. This happens when the
      * restore process creates node.properties due to all database information having been supplied during the restore

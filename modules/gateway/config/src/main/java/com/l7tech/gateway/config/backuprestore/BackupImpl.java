@@ -13,6 +13,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
+import java.util.ArrayList;
+import java.util.List;
 import java.sql.SQLException;
 
 import org.xml.sax.SAXException;
@@ -36,6 +38,8 @@ class BackupImpl implements Backup {
     private final FtpClientConfig ftpConfig;
     private final String pathToImageZipFile;
     private final boolean isPostFiveO;
+    //configuration files
+    static final String AUDIT_TABLES_CONFIG = "config/backup/cfg/backup_tables_audit"; //this knowledge is ok as its ssg install specific
 
     /**
      *
@@ -110,7 +114,8 @@ class BackupImpl implements Backup {
             final File dir =
                     createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.MAINDB.getComponentName());
 
-            DBDumpUtil.dump(config, dir.getAbsolutePath(), printStream, isVerbose, BackupImage.MAINDB_BACKUP_FILENAME);
+            DBDumpUtil.dump(config, dir.getAbsolutePath(), BackupImage.MAINDB_BACKUP_FILENAME,
+                    BackupImage.ORIGINAL_LICENSE_ID_FILENAME, isVerbose, printStream);
 
             // produce template mapping if necessary
             if (mappingFile != null) {
@@ -146,7 +151,15 @@ class BackupImpl implements Backup {
             //Create the database folder
             final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.AUDITS.getComponentName());
             //never include audits with the main db dump
-            DBDumpUtil.auditDump(ssgHome, config, dir.getAbsolutePath(), printStream, isVerbose);
+            final String auditTablesDefFile = ssgHome.getAbsolutePath() + File.separator + AUDIT_TABLES_CONFIG;
+            final List<String> auditTables = parseConfigFile(auditTablesDefFile);
+            if(auditTables.isEmpty()) {
+                final String msg = "The file '" + auditTablesDefFile +
+                        "' lists no audit tables. No audit data will be backed up";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                return;
+            }
+            DBDumpUtil.auditDump(config, dir.getAbsolutePath(), auditTables, printStream, isVerbose);
         } catch (SQLException e) {
             throw new BackupException("Cannot backup audits, please ensure the database is running and the credentials " +
                     "are correct");
@@ -511,5 +524,24 @@ class BackupImpl implements Backup {
         //in case the delete method is not called
         FileUtils.deleteDir(tmpOutputDirectory);
         super.finalize();
+    }
+
+    static List<String> parseConfigFile(final String filename) throws IOException {
+        final ArrayList<String> parsedElements = new ArrayList<String>();
+        final File configFile = new File(filename);
+        if (configFile.isFile()) {
+            final FileReader fr = new FileReader(configFile);
+            final BufferedReader br = new BufferedReader(fr);
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (!line.startsWith("#")) {//ignore comments
+                    final String tableName = line.trim();
+                    if (!parsedElements.contains(tableName)) {//no duplicates
+                        parsedElements.add(tableName);
+                    }
+                }
+            }
+        }
+        return parsedElements;
     }
 }

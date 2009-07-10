@@ -202,7 +202,8 @@ public final class Importer{
 
     private RestoreMigrateResult performMigrate(final String [] args) throws InvalidProgramArgumentException,
             IOException, BackupImage.InvalidBackupImage {
-        //All restore options are valid for migrate. Remember that ssgmigrate.sh gets tranlsated into ssgrestore.sh
+        //All restore options are valid for migrate, apart from ftp options.
+        //Remember that ssgmigrate.sh gets tranlsated into ssgrestore.sh
         //with a migrate capability. Therefore here we are actually validating ssgrestore.sh parameters
         final List<CommandLineOption> validArgList = getRestoreOptionsWithDb();
 
@@ -212,12 +213,12 @@ public final class Importer{
 
         //what ever happens we need to delete any unzipped directory no matter what the outcome
         try {
+            isVerbose = programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName());
+
             backupImage = new BackupImage(imageFile.getAbsolutePath(), printStream, isVerbose);
 
             programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
                     validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
-
-            isVerbose = programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName());
 
             //backup image is required validateRestoreProgramParameters is called
             initialize(programFlagsAndValues);
@@ -308,12 +309,15 @@ public final class Importer{
      * @throws Exception
      */
     private void performRestoreSteps() throws Exception {
+        final String msg = "Performing " + ((isMigrate) ? "migrate" : "restore") + " ...";
+        ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
+        
         final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.getName());
         final List<RestoreComponent<? extends Exception>> allComponents = getComponentsForRestore(mappingFile);
-        for(RestoreComponent<? extends Exception> component: allComponents){
-            try{
+        for (RestoreComponent<? extends Exception> component : allComponents) {
+            try {
                 component.doRestore();
-            }catch (Exception e) {
+            } catch (Exception e) {
                 if (isHaltOnFirstFailure) {
                     logger.log(Level.SEVERE, "Could not restore component " +
                             component.getComponentType().getDescription() + " due to exception: " + e.getMessage());
@@ -321,7 +325,7 @@ public final class Importer{
                     throw e;
                 }
                 logger.log(Level.WARNING, "Could not restore component " +
-                        component.getComponentType().getDescription()+ " due to exception: " + e.getMessage());
+                        component.getComponentType().getDescription() + " due to exception: " + e.getMessage());
                 failedComponents.add(component.getComponentType().getDescription());
             }
         }
@@ -384,6 +388,9 @@ public final class Importer{
      */
     private void initializeDatabaseConfiguration(final Map<String, String> args)
             throws InvalidProgramArgumentException, IOException, ConfigurationException {
+        final String msg1 = "Intitializing database connection properties...";
+        ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg1, isVerbose, printStream);
+        
         final String adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
         if (adminDBUsername == null) {
             throw new BackupRestoreLauncher.InvalidProgramArgumentException("Cannot restore the main database without" +
@@ -639,7 +646,6 @@ public final class Importer{
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
                             "node.properties file was found. Checking database name match", isVerbose, printStream);
                     final String nodePropDbName = returnConfig.getString("node.db.config.main.name");
-                    System.out.println("Found dbname: " + nodePropDbName);
                     if(nodePropDbName != null && !nodePropDbName.isEmpty()){
                         if(!dbName.equals(nodePropDbName)){
                             throw new InvalidProgramArgumentException("Provided database name does not match with database " +
@@ -843,7 +849,7 @@ public final class Importer{
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 //if updateNodeProperties is true, then nodePropertyConfig is not null - this is an invarient
                 restore.restoreComponentMainDb(isSelectiveRestore, isMigrate, canCreateNewDb, mappingFile,
                         nodePropertyConfig, ompDatToMatchNodePropertyConfig);
@@ -857,7 +863,7 @@ public final class Importer{
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 restore.restoreComponentAudits(isSelectiveRestore, isMigrate);
             }
 
@@ -870,7 +876,7 @@ public final class Importer{
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 restore.restoreComponentOS(isSelectiveRestore);
             }
 
@@ -883,7 +889,7 @@ public final class Importer{
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 restore.restoreComponentCA(isSelectiveRestore);
             }
 
@@ -896,7 +902,7 @@ public final class Importer{
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 restore.restoreComponentMA(isSelectiveRestore);
             }
 
@@ -910,7 +916,7 @@ public final class Importer{
             componentList.add(new RestoreComponent<Exception>(){
                 public void doRestore() throws Exception {
                     final String msg = "Restoring component " + getComponentType().getComponentName();
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                    ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     restore.restoreComponentESM(isSelectiveRestore);
                 }
 
@@ -924,7 +930,7 @@ public final class Importer{
         if(isSelectiveRestore){
             if(!isMigrate){
                 //don't tell the user this if they are doing a migrate
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Performing a selective restore",
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, "Performing a selective restore",
                         isVerbose, printStream);
             }
             return ImportExportUtilities.filterComponents(componentList, programFlagsAndValues);

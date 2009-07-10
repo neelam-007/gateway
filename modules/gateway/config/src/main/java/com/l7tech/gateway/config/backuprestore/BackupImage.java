@@ -42,6 +42,7 @@ public final class BackupImage {
     private final boolean isVerbose;
     private static final Logger logger = Logger.getLogger(BackupImage.class.getName());
     static final String MAINDB_BACKUP_FILENAME = "main_backup.sql";
+    static final String ORIGINAL_LICENSE_ID_FILENAME = "originallicenseobjectid.txt";
     static final String AUDIT_BACKUP_FILENAME = "audits.gz";
     private final File versionFile;
 
@@ -99,7 +100,7 @@ public final class BackupImage {
                 FtpUtils.download(ftpToUse, downloadedFile, imageNameAndPath);
                 String msg = "Downloaded image '"+imageNameAndPath+"' from host '"+ftpToUse.getHost() +"' " +
                         "with user: '" + ftpToUse.getUser()+"' to temp directory '"+tempDirectory+"'";
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
             } catch (FtpException e) {
                 String msg = "Cannot download backup image from ftp host: " + e.getMessage();
                 ImportExportUtilities.logAndPrintMessage(logger, Level.SEVERE, msg, isVerbose, printStream);
@@ -134,7 +135,7 @@ public final class BackupImage {
      */
     private ImageVersion unzipAndDetermineVersion() throws IOException, InvalidBackupImage {
         final String msg = "Uncompressing image to temporary directory " + tempDirectory;
-        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+        ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
         unzipToDir(image.getAbsolutePath(), tempDirectory);
 

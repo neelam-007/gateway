@@ -38,6 +38,7 @@ final class RestoreImpl implements Restore{
     private final File ssgConfigDir;
     private final OSConfigManager osConfigManager;
     private final File ssgHome;
+    private static final String EXCLUDE_FILES_PATH = "config/backup/cfg/exclude_files";
 
     /**
      * @param verbose boolean, if true print messages to the supplied printStream
@@ -248,8 +249,7 @@ final class RestoreImpl implements Restore{
         try {
             final List<String> ssgConfigFilesToExclude;
             if(isMigrate){
-                final String excludeFiles = "config/backup/cfg/exclude_files";
-                final File excludeFile = new File(ssgHome, excludeFiles);
+                final File excludeFile = new File(ssgHome, EXCLUDE_FILES_PATH);
                 if(!excludeFile.exists() || !excludeFile.isFile()){
                     final String msg = "File '" + excludeFile.getAbsolutePath()
                             +"' was not found. No ssg configuration files will be excluded";
@@ -259,7 +259,7 @@ final class RestoreImpl implements Restore{
                     ssgConfigFilesToExclude = ImportExportUtilities.processFile(excludeFile);
                     if(!ssgConfigFilesToExclude.isEmpty()){
                         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                                "The following ssg configuration files will not be overwritten: ", isVerbose,
+                                "\tThe following ssg configuration files will not be overwritten: ", isVerbose,
                                 printStream, false);
 
                         for(String s: ssgConfigFilesToExclude){
@@ -487,7 +487,7 @@ final class RestoreImpl implements Restore{
         }
 
         try {
-            String msg = "Restoring audits...";
+            String msg = "\tRestoring audits...";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, this.printStream, false);
             dbRestorer.restoreAudits();
         } catch (DatabaseRestorer.DatabaseRestorerException e) {
