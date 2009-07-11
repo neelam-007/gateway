@@ -86,7 +86,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                 // The request node does not have any properties
                 Object item = node.getUserObject();
 
-                if(item instanceof XacmlRequestBuilderAssertion.Subject) {
+                if ( evt.getNewLeadSelectionPath() == null ) {
+                    lastNodePanel = null;
+                } else if(item instanceof XacmlRequestBuilderAssertion.Subject) {
                     XacmlRequestBuilderSubjectPanel panel = new XacmlRequestBuilderSubjectPanel((XacmlRequestBuilderAssertion.Subject)item);
                     lastNodePanel = panel;
                     nodeSettingsPanel.add(panel.getPanel());
@@ -381,7 +383,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                 popupMenu.add(new JPopupMenu.Separator());
                 String name = node.getUserObject().toString();
 
-                item = new JMenuItem( resources.getString( "remove" ) + name);
+                item = new JMenuItem( "Remove " + name);
                 item.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent evt) {
