@@ -183,7 +183,7 @@ public class DefaultHttpConnectors {
         if ( ipAddress != null ) {
             boolean isOk = false;
             try {
-                isOk = NetworkInterface.getByInetAddress( InetAddress.getByName(ipAddress) ) != null;
+                isOk = "0.0.0.0".equals(ipAddress) || NetworkInterface.getByInetAddress( InetAddress.getByName(ipAddress) ) != null;
             } catch (UnknownHostException uhe) {
                 // not ok
             } catch (SocketException e) {
