@@ -143,7 +143,10 @@ class MappingUtil {
         return output;
     }
 
-    public static void produceTemplateMappingFileFromDB(DatabaseConfig config, String outputTemplatePath) throws SQLException, SAXException, IOException {
+    public static void produceTemplateMappingFileFromDB(final DatabaseConfig config,
+                                                        final String outputTemplatePath,
+                                                        final boolean isVerbose,
+                                                        final PrintStream printStream) throws SQLException, SAXException, IOException {
         Connection conn = null;
         Set<String> ipaddressesInRoutingAssertions = new HashSet<String>();
         HashMap<String, String> mapOfClusterProperties = new HashMap<String, String>();
@@ -209,7 +212,8 @@ class MappingUtil {
             varmapEl.setAttribute(TARGETVALUEATTRNAME, "__add_your_value__");
         }
 
-        System.out.print("Outputing template mapping file at " + outputTemplatePath + " ..");
+        final String msg = "Outputting template mapping file at " + outputTemplatePath + " ..";
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
         FileOutputStream fos = new FileOutputStream(outputTemplatePath);
         fos.write(XmlUtil.nodeToFormattedString(outputdoc).getBytes());
         System.out.println(". Done");

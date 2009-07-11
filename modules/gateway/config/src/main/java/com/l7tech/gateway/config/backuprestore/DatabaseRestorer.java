@@ -360,7 +360,7 @@ class DatabaseRestorer {
             throw new IllegalStateException("File '"+originalLicenseIdFile.getAbsolutePath()+"' " +
                     "does not exist or is not a regular file");
 
-        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "\tRestoring license identity from image..",
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "\tRestoring license from image..",
                 verbose, printStream, false);
         // get the id to use
         final byte[] buf = new byte[64];

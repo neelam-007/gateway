@@ -195,6 +195,8 @@ class DBDumpUtil {
 
             gzipOutputStream.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
 
+            final String msg = "\tDumping database audit tables to " + outputDirectory + " ..";
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, verbose, stdout, false);
             if (stdout != null && verbose) stdout.print("Dumping database audit tables to " + outputDirectory + " ..");
             for(final String tableName: auditTables){
 

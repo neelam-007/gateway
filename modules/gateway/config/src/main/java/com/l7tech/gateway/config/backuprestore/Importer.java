@@ -850,7 +850,7 @@ public final class Importer{
         componentList.add(new RestoreComponent<Exception>(){
             public void doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 //if it's migrate, we don't want to use any found node.properties
                 restore.restoreComponentConfig(isSelectiveRestore, isMigrate, (isMigrate || (nodePropertyConfig != null)));
             }

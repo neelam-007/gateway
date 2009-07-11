@@ -516,7 +516,7 @@ class BackupImpl implements Backup {
             }
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
                     "Successfully tested write permission for file '" + mappingFileName+"'", isVerbose, printStream);
-            MappingUtil.produceTemplateMappingFileFromDB(config, mappingFileName);
+            MappingUtil.produceTemplateMappingFileFromDB(config, mappingFileName, isVerbose, printStream);
         }
     }
 
