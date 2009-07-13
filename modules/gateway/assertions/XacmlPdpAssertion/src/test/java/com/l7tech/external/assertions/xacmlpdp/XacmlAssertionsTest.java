@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.io.IOException;
 
 /**
- * Tests the PDP and PEP Xacml assertions - freeze / thaw
+ * Tests the PDP and PEP Xacml assertions
  */
 public class XacmlAssertionsTest {
     private static final String ACTION_ID = "urn:oasis:names:tc:xacml:1.0:action:action-id";
@@ -304,6 +304,43 @@ public class XacmlAssertionsTest {
         XacmlPdpAssertion.SoapEncapsulationType soapEnc = assertion.getSoapEncapsulation();
         Assert.assertNotNull("Soap encoding should not be null", soapEnc);
         Assert.assertEquals("Incorrect soap encoding", XacmlPdpAssertion.SoapEncapsulationType.REQUEST, soapEnc);
+    }
+
+    @Test
+    public void testRequestBuilderAssertionClone() {
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Attribute sourceAttribute = new XacmlRequestBuilderAssertion.Attribute();
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig sourceMAC = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        assertion.getAction().getAttributes().add( sourceAttribute );
+        assertion.getAction().getAttributes().add( sourceMAC );
+        assertion.getEnvironment().getAttributes().add( sourceAttribute );
+        assertion.getResources().get( 0 ).getAttributes().add( sourceAttribute );
+        assertion.getSubjects().get( 0 ).getAttributes().add( sourceAttribute );
+        assertion.setSoapEncapsulation( XacmlAssertionEnums.SoapVersion.v1_2 );
+
+        XacmlRequestBuilderAssertion clonedAssertion = (XacmlRequestBuilderAssertion) assertion.getCopy();
+        Assert.assertNotSame( "Clone should be copy", assertion, clonedAssertion );
+        Assert.assertNotSame( "Clone should be copy (Action)", assertion.getAction(), clonedAssertion.getAction() );
+        Assert.assertNotSame( "Clone should be copy (Environment)", assertion.getEnvironment(), clonedAssertion.getEnvironment() );
+        Assert.assertNotSame( "Clone should be copy (Resources)", assertion.getResources(), clonedAssertion.getResources() );
+        Assert.assertNotSame( "Clone should be copy (Subject)", assertion.getSubjects(), clonedAssertion.getSubjects() );
+        Assert.assertNotSame( "Clone should be copy (Resources content)", assertion.getResources().get( 0 ), clonedAssertion.getResources().get( 0 ) );
+        Assert.assertNotSame( "Clone should be copy (Subject content)", assertion.getSubjects().get( 0 ), clonedAssertion.getSubjects().get( 0 ) );
+        Assert.assertNotSame( "Clone should be copy (Action, attributes)", assertion.getAction().getAttributes(), clonedAssertion.getAction().getAttributes() );
+        Assert.assertNotSame( "Clone should be copy (Environment, attributes)", assertion.getEnvironment().getAttributes(), clonedAssertion.getEnvironment().getAttributes() );
+        Assert.assertNotSame( "Clone should be copy (Action, attribute content 0)", assertion.getAction().getAttributes().get( 0 ), clonedAssertion.getAction().getAttributes().get( 0 ) );
+        Assert.assertNotSame( "Clone should be copy (Action, attribute content 1)", assertion.getAction().getAttributes().get( 1 ), clonedAssertion.getAction().getAttributes().get( 1 ) );
+    }
+
+    @Test
+    public void testPdpAssertionClone() {
+        XacmlPdpAssertion assertion = new XacmlPdpAssertion();
+        assertion.setFailIfNotPermit( true );
+        assertion.setSoapEncapsulation( XacmlPdpAssertion.SoapEncapsulationType.REQUEST_AND_RESPONSE );
+        assertion.setResourceInfo( new StaticResourceInfo("<Policy/>") );
+
+        XacmlPdpAssertion clonedAssertion = (XacmlPdpAssertion) assertion.getCopy();
+        Assert.assertNotSame( "Clone should be copy", assertion, clonedAssertion );
     }
 
     /**

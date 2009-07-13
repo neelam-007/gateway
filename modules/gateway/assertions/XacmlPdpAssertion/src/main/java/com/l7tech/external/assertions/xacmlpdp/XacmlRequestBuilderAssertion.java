@@ -8,8 +8,10 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
 import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
+import java.io.Serializable;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -25,7 +27,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
      * Every instance of this class representing an xml Element can have a Map<String, String> of attributes and a
      * String content, which may be xml
      */
-    public static class GenericXmlElement{
+    public static class GenericXmlElement implements Cloneable, Serializable {
         private Map<String, String> attributes;
         private String content="";//I might be xml
 
@@ -52,6 +54,20 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             if(content == null) throw new NullPointerException("content cannot be null");
             this.content = content;
         }
+
+        @Override
+        public GenericXmlElement clone() {
+            try {
+                GenericXmlElement copy = (GenericXmlElement) super.clone();
+                if ( attributes != null ) {
+                    copy.attributes = new HashMap<String, String>(attributes);
+                }
+
+                return copy;
+            } catch ( CloneNotSupportedException e ) {
+                throw ExceptionUtils.wrap( e );
+            }
+        }
     }
 
     /**
@@ -64,9 +80,9 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
      * <Resource> can have 1 and only 1 <ResourceContent> children
      */
     public static interface XmlElementCanRepeatTag{
-        public boolean isCanElementHaveSameTypeSibilings();
+        boolean isCanElementHaveSameTypeSibilings();
 
-        public void setCanElementHaveSameTypeSibilings(boolean canElementHaveSameTypeSibilings);
+        void setCanElementHaveSameTypeSibilings(boolean canElementHaveSameTypeSibilings);
     }
 
     /**
@@ -76,8 +92,8 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
      * The 'not limiting' happens as AttributeValue and ResourceContent should not share a type hierarchy, as they
      * are both goverened by different schema types and could change in the future
      */
-    public static abstract class GenericXmlElementHolder {
-        private final GenericXmlElement xmlElement = new GenericXmlElement();
+    public static abstract class GenericXmlElementHolder implements Cloneable, Serializable {
+        private GenericXmlElement xmlElement = new GenericXmlElement();
 
         protected GenericXmlElementHolder() {
         }
@@ -96,6 +112,20 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
         public String getContent(){
             return xmlElement.getContent();
+        }
+
+        @Override
+        public GenericXmlElementHolder clone() {
+            try {
+                GenericXmlElementHolder copy = (GenericXmlElementHolder) super.clone();
+                if ( xmlElement != null ) {
+                    copy.xmlElement = xmlElement.clone();
+                }
+
+                return copy;
+            } catch ( CloneNotSupportedException e ) {
+                throw ExceptionUtils.wrap( e );
+            }
         }
     }
 
@@ -152,9 +182,11 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
      * to exist in the XACML Request Builder tree, as a direct child of either Subject, Request, Action or
      * Environment. The UI can process all these nodes generically with this interface
      */
-    public static interface AttributeTreeNodeTag{}
+    public static interface AttributeTreeNodeTag extends Cloneable, java.io.Serializable {
+        AttributeTreeNodeTag clone();
+    }
 
-    public static class Attribute implements AttributeTreeNodeTag{
+    public static class Attribute implements AttributeTreeNodeTag {
         private String id = "";
         private String dataType = "";
         private String issuer = "";
@@ -208,7 +240,24 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         public String toString() {
             return "Attribute";
         }
-   }
+
+        @Override
+        public Attribute clone() {
+            try {
+                Attribute copy = (Attribute) super.clone();
+                if ( attributeValues != null ) {
+                    copy.attributeValues = new ArrayList<AttributeValue>();
+                    for ( AttributeValue value : attributeValues ) {
+                        copy.attributeValues.add( (AttributeValue) value.clone() );   
+                    }
+                }
+
+                return copy;
+            } catch ( CloneNotSupportedException e ) {
+                throw ExceptionUtils.wrap( e );
+            }
+        }
+    }
 
     /**
      * MultipleAttributeConfig stores the configuration which clients can use to build multiple Attribute elements
@@ -337,7 +386,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             return "Multiple Attributes";
         }
 
-        public static class Field {
+        public static class Field implements Cloneable, Serializable {
             private FieldName name;
             private String value = "";
             private boolean isXpath;
@@ -388,6 +437,35 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                 if(isRelative) this.isXpath = true;
                 this.isRelative = isRelative;
             }
+
+            @Override
+            public Field clone() {
+                try {
+                    return (Field) super.clone();
+                } catch (CloneNotSupportedException e) {
+                    throw ExceptionUtils.wrap( e );
+                }
+            }
+        }
+
+        @Override
+        public MultipleAttributeConfig clone() {
+            try {
+                MultipleAttributeConfig copy = (MultipleAttributeConfig) super.clone();
+                if ( fields != null ) {
+                    copy.fields = new HashMap<String, Field>();
+                    for ( Map.Entry<String,Field> entry : fields.entrySet() ) {
+                        copy.fields.put( entry.getKey(), entry.getValue().clone() );
+                    }
+                }
+                if ( namespaces != null ) {
+                    copy.namespaces =  new HashMap<String, String>( namespaces );
+                }
+
+                return copy;
+            } catch ( CloneNotSupportedException e ) {
+                throw ExceptionUtils.wrap( e );
+            }
         }
     }
 
@@ -405,7 +483,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
      * Attributes. This marker / tag interface allows the difference to be detected
      * </p>
      */
-    public static abstract class RequestChildElement{
+    public static abstract class RequestChildElement implements Cloneable, Serializable {
         private List<AttributeTreeNodeTag> attributeTreeNodes = new ArrayList<AttributeTreeNodeTag>();
 
         public RequestChildElement() {
@@ -421,6 +499,23 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
         public void setAttributes(List<AttributeTreeNodeTag> attributeTreeNodes) {
             this.attributeTreeNodes = attributeTreeNodes;
+        }
+
+        @Override
+        public RequestChildElement clone() {
+            try {
+                RequestChildElement copy = (RequestChildElement) super.clone();
+                if ( attributeTreeNodes != null ) {
+                    copy.attributeTreeNodes = new ArrayList<AttributeTreeNodeTag>();
+                    for ( AttributeTreeNodeTag attributeTreeNodeTag : attributeTreeNodes ) {
+                        copy.attributeTreeNodes.add( attributeTreeNodeTag.clone() );                       
+                    }
+                }
+
+                return copy;
+            } catch ( CloneNotSupportedException e ) {
+                throw ExceptionUtils.wrap( e );
+            }
         }
     }
 
@@ -450,7 +545,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         }
     }
 
-    public static class Resource extends RequestChildElement{
+    public static class Resource extends RequestChildElement {
         private ResourceContent resourceContent;
 
         public Resource() {
@@ -473,6 +568,16 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         @Override
         public String toString() {
             return "Resource";
+        }
+
+        @Override
+        public Resource clone() {
+            Resource copy = (Resource) super.clone();
+            if ( resourceContent != null ) {
+                copy.resourceContent = (ResourceContent) resourceContent.clone();
+            }
+
+            return copy;
         }
     }
 
@@ -770,5 +875,34 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
         meta.put(XacmlRequestBuilderAssertion.class.getName() + ".metadataInitialized", Boolean.TRUE);
         return meta;
+    }
+
+    @Override
+    public XacmlRequestBuilderAssertion clone() {
+        XacmlRequestBuilderAssertion copy = (XacmlRequestBuilderAssertion) super.clone();
+
+        if ( action != null ) {
+            copy.action = (Action) action.clone();
+        }
+
+        if ( environment != null ) {
+            copy.environment = (Environment) environment.clone();
+        }
+
+        if ( subjects != null ) {
+            copy.subjects = new ArrayList<Subject>();
+            for ( Subject subject : subjects ) {
+                copy.subjects.add( (Subject) subject.clone() );
+            }
+        }
+
+        if ( resources != null ) {
+            copy.resources = new ArrayList<Resource>();
+            for ( Resource resource : resources ) {
+                copy.resources.add( resource.clone() );               
+            }
+        }
+
+        return copy;
     }
 }
