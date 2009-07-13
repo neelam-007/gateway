@@ -156,11 +156,9 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
         meta.put(SHORT_NAME, "XACML PDP Assertion");
         meta.put(LONG_NAME, "Evaluate a XACML access request");
 
-        //meta.put(PALETTE_NODE_NAME, "CentraSite Metrics Assertion");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
 
-        meta.put(POLICY_NODE_NAME, "XACML PDP Assertion");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
 
         Map<String, String[]> props = new HashMap<String, String[]>();
@@ -171,10 +169,9 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
         meta.put(CLUSTER_PROPERTIES, props);
 
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.console.XacmlPdpPropertiesDialog");
-        meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.server.ServerXacmlPdpAssertion");
 
         meta.put(FEATURE_SET_NAME, "(fromClass)");
-        meta.put(WSP_EXTERNAL_NAME, "XacmlPdpAssertion"); // keep same WSP name as pre-3.7 (Bug #3605)
+        meta.put(WSP_EXTERNAL_NAME, "XacmlPdpAssertion");
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
         othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.MessageLocation.class, "messageLocation"));

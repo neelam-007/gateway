@@ -8,6 +8,11 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.xml.xpath.XpathVariableFinder;
+import com.l7tech.xml.xpath.NoSuchXpathVariableException;
+import com.l7tech.common.io.XmlUtil;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -18,6 +23,11 @@ import java.awt.event.ActionListener;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.Collections;
+
+import org.jaxen.XPathSyntaxException;
+import org.jaxen.JaxenException;
+import org.w3c.dom.Document;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -47,9 +57,10 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     private JComboBox dataTypeComboBox;
     private JComboBox idComboBox;
 
-    private XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig;
-    private DefaultTableModel tableModel;
-    private JDialog window;
+    private final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig;
+    private final DefaultTableModel tableModel;
+    private final JDialog window;
+    private final Document testDocument;
 
     public XacmlRequestBuilderXpathMultiAttrPanel( final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig,
                                                    final XacmlAssertionEnums.XacmlVersionType version,
@@ -99,6 +110,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
         idComboBox.setSelectedItem(multipleAttributeConfig.getField(ID).getValue());
         dataTypeComboBox.setSelectedItem(multipleAttributeConfig.getField(DATA_TYPE).getValue());
+
+        testDocument = XmlUtil.stringAsDocument("<blah xmlns=\"http://bzzt.com\"/>");
     }
 
     public JPanel getPanel() {
@@ -296,6 +309,33 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             DialogDisplayer.showMessageDialog( this, "Data Type is required. Please enter a Data Type.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
             return false;
         }
+        final Map<String,String> namespaces = multipleAttributeConfig.getNamespaces();
+        if ( !relativeXpaths.isEmpty() ) {
+            String baseErrorMessage = validateXPath( xpathBaseField.getText().trim(), namespaces );
+            if ( baseErrorMessage != null ) {
+                DialogDisplayer.showMessageDialog( this, "Invalid \"XPath Base\" : " + baseErrorMessage, "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+                return false;
+            }
+            for ( XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName field : relativeXpaths ) {
+                String xpath = multipleAttributeConfig.getField(field).getValue();
+                String xpathErrorMessage = validateXPath( xpath, namespaces );
+                if ( xpathErrorMessage != null ) {
+                    DialogDisplayer.showMessageDialog( this, "Invalid XPath for \""+field+"\" : " + xpathErrorMessage, "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+                    return false;
+                }
+            }
+        }
+        Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName> absoluteXpaths = multipleAttributeConfig.getAbsoluteXPathFieldNames();
+        if ( !absoluteXpaths.isEmpty() ) {
+            for ( XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName field : absoluteXpaths ) {
+                String xpath = multipleAttributeConfig.getField(field).getValue();
+                String xpathErrorMessage = validateXPath( xpath, namespaces );
+                if ( xpathErrorMessage != null ) {
+                    DialogDisplayer.showMessageDialog( this, "Invalid XPath for \""+field+"\" : " + xpathErrorMessage, "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+                    return false;
+                }
+            }
+        }
         return true;
     }
 
@@ -321,6 +361,37 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         }
 
         return valid;
+    }
+
+    private String validateXPath( final String xpath, final Map<String,String> namespaces ) {
+        String error = null;
+        try {
+            final Set<String> variables = Collections.emptySet(); //PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+            XpathUtil.compileAndEvaluate(testDocument, xpath, namespaces, buildXpathVariableFinder(variables));
+        } catch ( XPathSyntaxException e) {
+            return ExceptionUtils.getMessage( e );
+        } catch ( JaxenException e) {
+            return ExceptionUtils.getMessage( e );
+        } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
+            return "XPath expression error '" + xpath + "'";
+        }
+        return error;
+    }
+
+    private XpathVariableFinder buildXpathVariableFinder( final Set<String> variables ) {
+        return new XpathVariableFinder(){
+            @Override
+            public Object getVariableValue( final String namespaceUri,
+                                            final String variableName ) throws NoSuchXpathVariableException {
+                if ( namespaceUri != null )
+                    throw new NoSuchXpathVariableException("Unsupported XPath variable namespace '"+namespaceUri+"'.");
+
+                if ( !variables.contains(variableName) )
+                    throw new NoSuchXpathVariableException("Unsupported XPath variable name '"+variableName+"'.");
+
+                return "";
+            }
+        };
     }
 
     private boolean isDuplicateNamespacePrefix( final String prefix ) {

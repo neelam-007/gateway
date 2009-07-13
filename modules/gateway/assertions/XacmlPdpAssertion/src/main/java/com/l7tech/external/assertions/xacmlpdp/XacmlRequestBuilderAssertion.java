@@ -1,13 +1,7 @@
 package com.l7tech.external.assertions.xacmlpdp;
 
 import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.LONG_NAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_ICON;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_FOLDERS;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_ADVICE_CLASSNAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.WSP_EXTERNAL_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.wsp.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -272,6 +266,18 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             return result;
         }
 
+        /**
+         * @returns a list of the field names that are marked as absolute XPaths
+         */
+        public Set<FieldName> getAbsoluteXPathFieldNames() {
+            Set<FieldName> result = new HashSet<FieldName>();
+            for(Field field : fields.values()) {
+                if (field.isXpath && !field.isRelative)
+                    result.add(field.getName());
+            }
+            return result;
+        }
+
         public Map<String, Field> getFields() {
             return fields;
         }
@@ -347,6 +353,14 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
             public FieldName getName() {
                 return name;
+            }
+
+            /**
+             * For persistence only. 
+             */
+            @Deprecated
+            public void setName( final FieldName name ) {
+                this.name = name;
             }
 
             public String getValue() {
@@ -720,18 +734,16 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         meta.put(SHORT_NAME, "XACML Request Builder");
         meta.put(LONG_NAME, "Generate XACML Requests");
 
-        //meta.put(PALETTE_NODE_NAME, "CentraSite Metrics Assertion");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
 
-        meta.put(POLICY_NODE_NAME, "XACML Request Builder");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.console.XacmlRequestBuilderAssertionValidator" );
 
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.console.XacmlRequestBuilderDialog");
-        meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.server.ServerXacmlRequestBuilderAssertion");
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.console.XacmlRequestBuilderDialog");
 
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-        meta.put(WSP_EXTERNAL_NAME, "XacmlRequestBuilderAssertion"); // keep same WSP name as pre-3.7 (Bug #3605)
+        meta.put(FEATURE_SET_NAME, "(fromClass)");
+        meta.put(WSP_EXTERNAL_NAME, "XacmlRequestBuilderAssertion");
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
         othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.XacmlVersionType.class, "xacmlVersion"));
@@ -746,11 +758,12 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         othermappings.add(new BeanTypeMapping(Attribute.class, "attribute"));
         othermappings.add(new BeanTypeMapping(AttributeValue.class, "attributeValue"));
         othermappings.add(new BeanTypeMapping(MultipleAttributeConfig.Field.class, "xpathMultipleAttributesField"));
+        othermappings.add(new Java5EnumTypeMapping(MultipleAttributeConfig.FieldName.class, "xpathMultipleAttributesFieldName"));
         othermappings.add(new BeanTypeMapping(MultipleAttributeConfig.class, "multipleAttributeConfig"));
         othermappings.add(new CollectionTypeMapping(List.class, AttributeTreeNodeTag.class, ArrayList.class, "attributeList"));
         othermappings.add(new CollectionTypeMapping(List.class, AttributeValue.class, ArrayList.class, "valueList"));
         othermappings.add(new BeanTypeMapping(ResourceContent.class, "resourceContent"));
-        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:EchoRouting" rather than "set:modularAssertions"
         //meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
