@@ -74,7 +74,7 @@ public class MigrateToRestoreConvertor {
         //if config - don't add db and audits
         final boolean configOnly = initialValidArgs.containsKey(Importer.CONFIG_ONLY.getName());
 
-        //only add maindb and audits, if the user didn't speicyf -config, which for traditional migrate means
+        //only add maindb and audits, if the user didn't specify -config, which for traditional migrate means
         //"config only, no database"
         if(!configOnly){
             restoreArgs.add(CommonCommandLineOptions.MAINDB_OPTION.getName());

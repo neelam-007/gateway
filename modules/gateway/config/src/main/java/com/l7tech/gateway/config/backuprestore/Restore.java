@@ -138,7 +138,30 @@ public interface Restore {
      * @throws RestoreException
      */
     public Result restoreComponentESM(final boolean isRequired) throws RestoreException;
-    
+
+    /**
+     * Write the supplied propertiesConfiguration to the hosts node.properties, if not null, and write ompDatFile
+     * to the hosts omp.dat, if not null
+     *
+     * Node.properties on the restore host can get updated via restoreComponentMainDb and restoreComponentConfig
+     * This method is supplied for the case when the db component is not restored and restoreComponentConfig is
+     * not used, or is called with ignoreNodeIdentity = true
+     *
+     * Note: Both parameters can be null however ompDatFile cannot be null, unless propertiesConfiguration is also
+     * null
+     * @param propertiesConfiguration the configuration to write to node.properties. If not null, this will overwrite
+     * the hosts node.properties. Any elements in this configuration which should be encrypted, should be encrypted
+     * before calling this method. 
+     * @param ompDatFile if not null, this will be written to the target and will overwrite any existing omp.dat file
+     * Note: this file is not used to encrypt any values of the propertiesConfiguration, but if anything in
+     * propertiesConfiguration is encrypted, then it should have been encrypted with the contents of ompDatFile
+     * @return Result is either success or an exception is thrown.
+     * @throws RestoreException
+     */
+    public Result restoreNodeIdentity(final PropertiesConfiguration propertiesConfiguration,
+                                      final File ompDatFile)
+            throws RestoreException;
+
     public static class RestoreException extends Exception{
         public RestoreException(String message) {
             super(message);

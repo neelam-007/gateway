@@ -218,10 +218,25 @@ public final class Importer{
 
             isVerbose = programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName());
 
+            //migrate always requires all the db params (apart from the root db user and password)
+            wereCompleteDbParamsSupplied(true);
+            
             backupImage = new BackupImage(imageFile.getAbsolutePath(), printStream, isVerbose);
 
-            //backup image is required validateRestoreProgramParameters is called
+            //backup image is required before initialize is called, in case node.properties is required
             initialize(programFlagsAndValues);
+
+            final boolean isDbComponent = programFlagsAndValues.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
+                    || programFlagsAndValues.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
+
+            if(!isDbComponent){
+                //if the db component is not requested, then we must update node.properties
+                //not writing to node.properties here, but creating the instnace variable nodePropertyConfig
+                //this is a corner case specific to the existing 5.0 behaviour of migrate
+                final String msg = "Reading migrate host's node.properties";
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                initializeNodePropsFromTarget(programFlagsAndValues);
+            }
 
             //build list of components and filter appropriately
             performRestoreSteps();
@@ -429,7 +444,6 @@ public final class Importer{
         final boolean completeDb = wereCompleteDbParamsSupplied(isMigrate);
 
         if (!nodePropExists && !completeDb) {
-            logger.log(Level.FINEST, "Debug info: node.properties CASE 1");
             //this is a restore using node.properties and omp.dat from the host - never a migrate
             //no need to update node.properties as were not restoring it and no db command line params
             //were supplied
@@ -449,9 +463,7 @@ public final class Importer{
                     getDatabaseConfig(targetNodeProp, targetOmpDat);
             databaseConfig = dbConfigPhrasePair.left;
             suppliedClusterPassphrase = dbConfigPhrasePair.right;
-            //nodePropertyConfig = getPropertyConfig(targetNodeProp);
         } else if (nodePropExists && !completeDb) {
-            logger.log(Level.FINEST, "Debug info: node.properties CASE 2");
             //this is a restore using node.properties from the image - never a migrate
             if(isMigrate) throw new IllegalStateException("isMigrate is true");
             //the image contains node.properties and no overriding command line db params supplied
@@ -479,7 +491,6 @@ public final class Importer{
             ompDatToMatchNodePropertyConfig = (ompFileExists)? ompFileToUse: null;
             nodePropertyConfig = getPropertyConfig(nodePropertiesFromImage);
         } else if(nodePropExists && completeDb){
-            logger.log(Level.FINEST, "Debug info: node.properties CASE 3");
             //we are going to update the node.properties from the image with the command line arguments
             if(isMigrate) throw new IllegalStateException("isMigrate is true");
 
@@ -512,34 +523,49 @@ public final class Importer{
             //if were using omp.dat from the target, we won't want to overwrite it with itself later
             ompDatToMatchNodePropertyConfig = (ompFileExists)? ompFileToUse: null;
         } else {
-            logger.log(Level.FINEST, "Debug info: node.properties CASE 4");
             //this is a migrate or a restore and no node.properties is included (could be a 5.0 image) but we've got all
             //command line args this will require the node.properties and omp.dat from the target but will override
             //certain db parameters
             final String msg = "Database configuration being retrieved from restore host's local node.properties and " +
                     "omp.dat files";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
-            suppliedClusterPassphrase = programFlagsAndValues.get(CLUSTER_PASSPHRASE.getName());
-            nodePropertyConfig = getNodePropertiesFromTarget(args, suppliedClusterPassphrase);
-            ompDatToMatchNodePropertyConfig = null;
-            mergeCommandLineIntoProperties(args, nodePropertyConfig, getOmpDatFromTarget());
-
-            final boolean performingAMerge = nodePropertiesExistsOnRestoreHost();
-            //we may have merged with node.properties from the host or we may not have, find out if node.properties exists
-            if(performingAMerge){
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                        "Merged command line db parameters into node.properties from restore host", isVerbose, printStream);
-            }else{
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                        "Created a new node.properties with command line db parameters and the new node.id", isVerbose,
-                        printStream);
-            }
-
+            initializeNodePropsFromTarget(args);
+            
             databaseConfig = getDatabaseConfig(nodePropertyConfig, getMasterPasswordManagerForOmp(getOmpDatFromTarget()));
         }
 
         databaseConfig.setDatabaseAdminUsername(adminDBUsername);
         databaseConfig.setDatabaseAdminPassword(adminDBPasswd);
+    }
+
+    /**
+     * This will initialize the following:-
+     * suppliedClusterPassphrase
+     * nodePropertyConfig
+     *
+     * Call this method when isMigrate is true, or a 5.0 image is being used and we are going to retrieve all the
+     * required db parameters from the command line and will update / create the targets node.properties and will
+     * use the targets omp.dat
+     * @param args program parameters and values
+     * @throws InvalidProgramArgumentException any required program param is missing
+     */
+    private void initializeNodePropsFromTarget(final Map<String, String> args)
+            throws InvalidProgramArgumentException {
+        suppliedClusterPassphrase = programFlagsAndValues.get(CLUSTER_PASSPHRASE.getName());
+        nodePropertyConfig = getNodePropertiesFromTarget(args, suppliedClusterPassphrase);
+        ompDatToMatchNodePropertyConfig = null;
+        mergeCommandLineIntoProperties(args, nodePropertyConfig, getOmpDatFromTarget());
+
+        final boolean performingAMerge = nodePropertiesExistsOnRestoreHost();
+        //we may have merged with node.properties from the host or we may not have, find out if node.properties exists
+        if(performingAMerge){
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                    "Merged command line db parameters into node.properties from restore host", isVerbose, printStream);
+        }else{
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                    "Created a new node.properties with command line db parameters and the new node.id", isVerbose,
+                    printStream);
+        }
     }
 
     private boolean nodePropertiesExistsOnRestoreHost(){
@@ -551,8 +577,8 @@ public final class Importer{
     /**
      * Check that the complete set of database options were found
      * @param throwIfNotFound if true, throw an exception if not found or is the empty string
-     * @return
-     * @throws InvalidProgramArgumentException
+     * @return true if all required db params, apart from root db user, were supplied
+     * @throws InvalidProgramArgumentException if a required param is missing and throwIfNotFound is true
      */
     private boolean wereCompleteDbParamsSupplied(final boolean throwIfNotFound) throws InvalidProgramArgumentException {
 
@@ -851,8 +877,9 @@ public final class Importer{
             public void doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                //if it's migrate, we don't want to use any found node.properties
-                restore.restoreComponentConfig(isSelectiveRestore, isMigrate, (isMigrate || (nodePropertyConfig != null)));
+                //Importer will always call restore.restoreNodeIdentity, so the config restore here never
+                //needs to restore node.properties or omp.dat
+                restore.restoreComponentConfig(isSelectiveRestore, isMigrate, true);
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -943,6 +970,7 @@ public final class Importer{
             });
         }
 
+        final List<RestoreComponent<? extends Exception>> returnList;
         //feedback to user
         if(isSelectiveRestore){
             if(!isMigrate){
@@ -950,10 +978,28 @@ public final class Importer{
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, "Performing a selective restore",
                         isVerbose, printStream);
             }
-            return ImportExportUtilities.filterComponents(componentList, programFlagsAndValues);
+            returnList =
+                    ImportExportUtilities.filterComponents(componentList, programFlagsAndValues);
         }else{
-            return componentList;
+            returnList = componentList;
         }
+
+        //any task added after here will not be filtered
+        //restore the node identity
+        returnList.add(new RestoreComponent<Exception>(){
+            public void doRestore() throws Exception {
+                final String msg = "Restoring component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                //both of these can be null or ompDatToMatchNodePropertyConfig can be null
+                restore.restoreNodeIdentity(nodePropertyConfig, ompDatToMatchNodePropertyConfig);
+            }
+
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.NODE_IDENTITY;
+            }
+        });
+
+        return returnList;
     }
 
     public String getDatabaseConfigCommandLineOptions(){

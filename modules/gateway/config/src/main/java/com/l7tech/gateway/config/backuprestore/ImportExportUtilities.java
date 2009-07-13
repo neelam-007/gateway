@@ -243,7 +243,9 @@ public class ImportExportUtilities {
         CA("ca", "Custom Assertions"),
         MA("ma", "Modular Assertions"),
         VERSION("version", "SSG Version Information"),
-        ESM("esm", "Enterprise Service Manager");
+        ESM("esm", "Enterprise Service Manager"),
+        //Only required for migrate when only config is being restored
+        NODE_IDENTITY("node identity", "node.properties & omp.dat");
 
         ComponentType(String componentName, String description) {
             this.componentName = componentName;
@@ -593,7 +595,7 @@ public class ImportExportUtilities {
      * validOptions lists which arguments to expect, each CommandLineOption within it, specifies whether or not it
      * must be followed by a parameter on the command line.
      * ignoredOptions is provided for backwards comapability where an old script may supply a parameter which has been
-     * removed, but for which we will not error out because of //todo [Donal] look at removing this
+     * removed, but for which we will not error out because of 
      * @param args  The command line arguments. Cannot be null
      * @param validOptions list of valid command line argument. Canot be null
      * @param ignoredOptions list of arguments which are allowed, but will be ignored. Cannot be null

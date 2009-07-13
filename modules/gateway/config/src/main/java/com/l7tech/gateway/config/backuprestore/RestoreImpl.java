@@ -631,9 +631,6 @@ final class RestoreImpl implements Restore{
                         isVerbose, this.printStream);
             }
         }
-        //migrate always requires that node.properties is updated
-        if (propertiesConfiguration != null) writeNewNodeProperties(propertiesConfiguration);
-        if(ompDatFile != null) writeNewOmpDat(ompDatFile);
 
         //See if my.cnf needs to be copied
         if (image.getImageVersion() == BackupImage.ImageVersion.AFTER_FIVE_O) {
@@ -668,29 +665,38 @@ final class RestoreImpl implements Restore{
         return Restore.Result.SUCCESS;
     }
 
-    private void writeNewNodeProperties(final PropertiesConfiguration propertiesConfiguration) throws RestoreException {
+    public Result restoreNodeIdentity(PropertiesConfiguration propertiesConfiguration,
+                                        final File ompDatFile) throws RestoreException {
+
+        if(ompDatFile != null && propertiesConfiguration == null)
+            throw new IllegalArgumentException("ompDatFile cannot be null when propertiesConfiguration is not also null");
+
         try {
-            propertiesConfiguration.save(new File(ssgConfigDir, ImportExportUtilities.NODE_PROPERTIES));
-            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated restore host's node.properties file",
-                    isVerbose, printStream);
+            if(propertiesConfiguration != null){
+                propertiesConfiguration.save(new File(ssgConfigDir, ImportExportUtilities.NODE_PROPERTIES));
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated restore host's node.properties file",
+                        isVerbose, printStream);
+            }
+
+            if(ompDatFile != null){
+                final File ompOnTarget = new File(ssgConfigDir, ImportExportUtilities.OMP_DAT);
+                if(ompOnTarget.exists() && !ompOnTarget.delete())
+                    throw new RestoreException("Could not delete file from target'" + ompOnTarget.getAbsolutePath() +"'");
+                try {
+                    FileUtils.copyFile(ompDatFile, ompOnTarget);
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated restore host's omp.dat file", isVerbose,
+                            printStream);
+                } catch (IOException e) {
+                    throw new RestoreException("Could not copy omp.dat to host: " + e.getMessage());
+                }
+            }
+
+            return Result.SUCCESS;
         } catch (ConfigurationException e) {
             throw new RestoreException("Could not save node.properties: " + e.getMessage());
         }
     }
 
-    private void writeNewOmpDat(final File ompDatFile) throws RestoreException {
-
-        final File ompOnTarget = new File(ssgConfigDir, ImportExportUtilities.OMP_DAT);
-        if(ompOnTarget.exists() && !ompOnTarget.delete())
-            throw new RestoreException("Could not delete file from target'" + ompOnTarget.getAbsolutePath() +"'");
-        try {
-            FileUtils.copyFile(ompDatFile, ompOnTarget);
-            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated restore host's omp.dat file", isVerbose,
-                    printStream);
-        } catch (IOException e) {
-            throw new RestoreException("Could not copy omp.dat to host: " + e.getMessage());
-        }
-    }
     /**
      * Only needed to be checked if a new database was not created.
      * @param verbose
