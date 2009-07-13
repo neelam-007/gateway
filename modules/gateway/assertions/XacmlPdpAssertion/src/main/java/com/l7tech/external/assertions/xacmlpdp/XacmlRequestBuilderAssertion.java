@@ -334,7 +334,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
         @Override
         public String toString() {
-            return "XPath Multiple Attributes";
+            return "Multiple Attributes";
         }
 
         public static class Field {
