@@ -95,17 +95,21 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             rootParent.appendChild(root);
         }
 
-        for(XacmlRequestBuilderAssertion.Subject subject : assertion.getSubjects()) {
-            addSubject(context, vars, doc, root, subject);
+        try {
+            for(XacmlRequestBuilderAssertion.Subject subject : assertion.getSubjects()) {
+                addSubject(context, vars, doc, root, subject);
+            }
+
+            for(XacmlRequestBuilderAssertion.Resource resource : assertion.getResources()) {
+                addResource(context, vars, doc, root, resource);
+            }
+
+            addAction(context, vars, doc, root);
+
+            addEnvironment(context, vars, doc, root);
+        } catch (DocumentHolderException e) {
+            return AssertionStatus.FAILED;
         }
-
-        for(XacmlRequestBuilderAssertion.Resource resource : assertion.getResources()) {
-            addResource(context, vars, doc, root, resource);
-        }
-
-        addAction(context, vars, doc, root);
-
-        addEnvironment(context, vars, doc, root);
 
         switch(assertion.getOutputMessageDestination()) {
             case DEFAULT_REQUEST:
@@ -119,13 +123,14 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 context.setVariable(assertion.getOutputMessageVariableName(), message);
                 break;
             default:
-                throw new IllegalStateException("Unsupported message output destination found");//only happen if enum changes
+                // todo: only happen if enum changes, move to enum
+                throw new IllegalStateException("Unsupported message output destination found");
         }
 
         return AssertionStatus.NONE;
     }
 
-    private void addEnvironment(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root) {
+    private void addEnvironment(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root) throws DocumentHolderException {
         Element environmentElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Environment");
         root.appendChild(environmentElement);
 
@@ -138,7 +143,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
     }
 
-    private void addAction(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root) {
+    private void addAction(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root) throws DocumentHolderException {
         Element actionElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Action");
         root.appendChild(actionElement);
         addAttributes(doc,
@@ -149,7 +154,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 assertion.getXacmlVersion());
     }
 
-    private void addResource(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Resource resource) {
+    private void addResource(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Resource resource) throws DocumentHolderException {
         Element resourceElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Resource");
         root.appendChild(resourceElement);
 
@@ -170,7 +175,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         addAttributes(doc, resourceElement, resource.getAttributes(), vars, context, assertion.getXacmlVersion());
     }
 
-    private void addSubject(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Subject subject) {
+    private void addSubject(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Subject subject) throws DocumentHolderException {
         Element subjectElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Subject");
         root.appendChild(subjectElement);
 
@@ -437,8 +442,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                                List<XacmlRequestBuilderAssertion.AttributeTreeNodeTag> attributeTreeNodeTags,
                                Map<String, Object> vars,
                                PolicyEnforcementContext context,
-                               XacmlAssertionEnums.XacmlVersionType xacmlVersion)
-    {
+                               XacmlAssertionEnums.XacmlVersionType xacmlVersion) throws DocumentHolderException {
         for(XacmlRequestBuilderAssertion.AttributeTreeNodeTag attributeTreeNodeTag : attributeTreeNodeTags) {
             if(attributeTreeNodeTag instanceof XacmlRequestBuilderAssertion.Attribute) {
                 XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributeTreeNodeTag;
@@ -465,7 +469,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                                        final Element parent,
                                        final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig,
                                        final Map<String, Object> contextVariables,
-                                       final PolicyEnforcementContext context){
+                                       final PolicyEnforcementContext context) throws DocumentHolderException {
         //Determine if any multi context var's being used outside of Value
         Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> nonValueFields = multipleAttributeConfig.getNonValueFields();
         boolean isUsingMultiValuedCtxVariables = areAnyIterableFieldsReferencingMultiValuedVariables(contextVariables, nonValueFields);
@@ -489,16 +493,15 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
 
-        final Document inputDoc = getDocumentFromSource(multipleAttributeConfig, context);
-        if(inputDoc == null) return;
-        
+        final DocumentHolder documentHolder = new DocumentHolder(multipleAttributeConfig, context);
+
         //Execute the base xpath expression, if any, to get information on iteration
         XpathResultIterator xpathResultSetIterator = null;
 
         if(iteratingOnBaseXPath){
             xpathResultSetIterator =
                     executeXpathExpression(
-                            inputDoc,
+                            documentHolder.getDocument(),
                             multipleAttributeConfig.getXpathBase(),
                             multipleAttributeConfig.getNamespaces());
             if(xpathResultSetIterator == null){
@@ -541,19 +544,19 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
             String id = (xPathHasMore && idField.getIsXpath() && idField.getIsRelative())?
                     getRelativeXpathValueForField(resultCursor, idField.getValue(), namespaces)
-                    : getValueForField(idField, inputDoc, namespaces, contextVariables, iterationCount);
+                    : getValueForField(idField, documentHolder, namespaces, contextVariables, iterationCount);
 
             String dataType = (xPathHasMore && dataTypeField.getIsXpath() && dataTypeField.getIsRelative())?
                     getRelativeXpathValueForField( resultCursor, dataTypeField.getValue(), namespaces)
-                    : getValueForField(dataTypeField, inputDoc, namespaces, contextVariables, iterationCount);
+                    : getValueForField(dataTypeField, documentHolder, namespaces, contextVariables, iterationCount);
 
             String issuer = (xPathHasMore && issuerField.getIsXpath() && issuerField.getIsRelative())?
                     getRelativeXpathValueForField( resultCursor, issuerField.getValue(), namespaces)
-                    : getValueForField(issuerField, inputDoc, namespaces, contextVariables, iterationCount);
+                    : getValueForField(issuerField, documentHolder, namespaces, contextVariables, iterationCount);
 
             String issuerInstant = (xPathHasMore && issueInstantField.getIsXpath() && issueInstantField.getIsRelative())?
                     getRelativeXpathValueForField(resultCursor, issueInstantField.getValue(), namespaces)
-                    : getValueForField(issueInstantField, inputDoc, namespaces, contextVariables, iterationCount);
+                    : getValueForField(issueInstantField, documentHolder, namespaces, contextVariables, iterationCount);
 
             //also work out value - as it cannot change between iterations
 
@@ -565,7 +568,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             //our last requirement is the value field, which has the ability to be an absolute or relative
             //xpath expression, single or multi valued context variable or a string
 
-            List<AttributeValue> attributeValues = getAttributeValues(inputDoc,
+            List<AttributeValue> attributeValues = getAttributeValues(documentHolder,
                     namespaces,
                     valueField,
                     contextVariables,
@@ -599,12 +602,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             exitIteration = true;
 
             //determine state of xpath iteration
-            boolean xpathMoreResults = false;
-            if(xpathResultSetIterator != null){
-                if(xpathResultSetIterator.hasNext()){
-                    xpathMoreResults = true;
-                }
-            }
+            boolean xpathMoreResults = xpathResultSetIterator != null && xpathResultSetIterator.hasNext();
 
             //determine the state of min multi valued context iteration
             //check we are not already past based on smallest multi value context variable
@@ -727,10 +725,10 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @return the resolved String value for this field
      */
     private String getValueForField(final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField,
-                                    final Document document,
+                                    final DocumentHolder documentHolder,
                                     final Map<String, String> namespaces,
                                     final Map<String, Object> contextVariables,
-                                    final int multiVarIndex){
+                                    final int multiVarIndex) throws DocumentHolderException {
         if(configField.getIsXpath() && configField.getIsRelative())
             throw new IllegalArgumentException("If xpath, field must not be relative");
 
@@ -738,7 +736,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             throw new UnsupportedOperationException("method cannot be used for value field");
 
         if(configField.getIsXpath()){
-            return getAbsoluteXPathResult(configField, document, namespaces);
+            return getAbsoluteXPathResult(configField, documentHolder.getDocument(), namespaces);
         }else{
             //Determine if it's a multi valued context variable
             if(fieldValueContainMultiValuedContextVariable(configField.getValue(), contextVariables)){
@@ -957,11 +955,11 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @return list of AttributeValue, never null, but can be empty
      */
     private List<AttributeValue> getAttributeValues(
-            Document inputDoc,
+            DocumentHolder documentHolder,
             Map<String, String> namespaces,
             XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field valueField,
             Map<String, Object> contextVariables,
-            ElementCursor resultCursor){
+            ElementCursor resultCursor) throws DocumentHolderException {
         List<AttributeValue> returnList = new ArrayList<AttributeValue>();
 
         boolean fieldContainsMultiValuedContextVariable =
@@ -987,7 +985,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         if(valueField.getIsXpath()){
             List<XpathResultWrapper> xpathResults;
             if(!valueField.getIsRelative()){
-                xpathResults = getAbsoluteXPathResultForValue(valueField, inputDoc, namespaces);
+                xpathResults = getAbsoluteXPathResultForValue(valueField, documentHolder.getDocument(), namespaces);
             }else{
                 if(resultCursor == null)
                     throw new NullPointerException("resultCursor cannot be null when AttributeValue is using a" +
@@ -1090,33 +1088,6 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
     }
 
-    private Document getDocumentFromSource(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig,
-                                           PolicyEnforcementContext context){
-        Document document = null;
-        try {
-            switch(multipleAttributeConfig.getMessageSource()) {
-                case DEFAULT_REQUEST:
-                    document = context.getRequest().getXmlKnob().getDocumentReadOnly();
-                    break;
-                case DEFAULT_RESPONSE:
-                    document = context.getResponse().getXmlKnob().getDocumentReadOnly();
-                    break;
-                case CONTEXT_VARIABLE:
-                    document = ((Message)context.getVariable(multipleAttributeConfig.getMessageSourceContextVar())).getXmlKnob().getDocumentReadOnly();
-                    break;
-                default:
-                    throw new IllegalStateException("Unsupported message source found");//only happen if enum changes
-            }
-        } catch(SAXException saxe) {
-            return document;
-        } catch(NoSuchVariableException nsve) {
-            return document;
-        } catch(IOException ioe) {
-            return document;
-        }
-        return document;
-    }
-
    private HashSet<String> valueContainsMultiValuedVars(XacmlRequestBuilderAssertion.AttributeValue attributeValue, Map<String, Object> vars) {
         HashSet<String> multiValuedVars = new HashSet<String>();
 
@@ -1150,4 +1121,56 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     private static final Logger logger = Logger.getLogger(ServerXacmlPdpAssertion.class.getName());
     private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
+
+    /**
+     * Document holder for the input message source.
+     */
+    private static class DocumentHolder {
+        private Document document;
+        private Exception thrown;
+
+        public DocumentHolder(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig, PolicyEnforcementContext context) {
+            try {
+                switch(multipleAttributeConfig.getMessageSource()) {
+                    case DEFAULT_REQUEST:
+                        document = context.getRequest().getXmlKnob().getDocumentReadOnly();
+                        break;
+                    case DEFAULT_RESPONSE:
+                        document = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                        break;
+                    case CONTEXT_VARIABLE:
+                        document = ((Message)context.getVariable(multipleAttributeConfig.getMessageSourceContextVar())).getXmlKnob().getDocumentReadOnly();
+                        break;
+                    default:
+                        // todo: only happen if enum changes, move to enum
+                        thrown = new IllegalStateException("Unsupported message source found");
+                }
+            } catch(SAXException saxe) {
+                thrown = saxe;
+            } catch(NoSuchVariableException nsve) {
+                thrown = nsve;
+            } catch(IOException ioe) {
+                thrown = ioe;
+            }
+        }
+
+        public Document getDocument() throws DocumentHolderException {
+            if (document != null)
+                return document;
+            else
+                throw new DocumentHolderException(thrown);
+        }
+    }
+
+    private static class DocumentHolderException extends Exception {
+        private Exception thrown;
+
+        public DocumentHolderException(Exception thrown) {
+            this.thrown = thrown;
+        }
+
+        public Exception getThrown() {
+            return thrown;
+        }
+    }
 }
