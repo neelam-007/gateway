@@ -139,6 +139,7 @@ public final class Importer{
      * from the default obfuscated master password
      */
     private File ompDatToMatchNodePropertyConfig;
+    private boolean isDbComponent;
 
     /**
      * @param secureSpanHome The installation of the SSG e.g. /opt/SecureSpan/Gateway. Must be non null and exist
@@ -361,7 +362,7 @@ public final class Importer{
             ConfigurationException {
         isSelectiveRestore = ImportExportUtilities.isSelective(args);
 
-        final boolean isDbComponent = !isSelectiveRestore
+        isDbComponent = !isSelectiveRestore
                 || args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
                 || args.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
 
@@ -386,9 +387,6 @@ public final class Importer{
     }
 
     /**
-     * Warning: This initialization is complicated. If you change anything, your going to have to test it
-     * extensively
-     *
      * Initialize all required database instance variables
      * After this method, the following are guaranteed to be set
      * canCreateNewDb - true or false
@@ -420,7 +418,6 @@ public final class Importer{
         canCreateNewDb = args.containsKey(CREATE_NEW_DB.getName());
 
         final File configFolder = backupImage.getConfigFolder();//may not exist or be applicable to image
-        //used as part of test for nodePropExists
 
         final boolean postFiveOImage = backupImage.getImageVersion() == BackupImage.ImageVersion.AFTER_FIVE_O;
         //See bug http://sarek.l7tech.com/bugzilla/show_bug.cgi?id=7469 for more info 
@@ -877,9 +874,11 @@ public final class Importer{
             public void doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                //Importer will always call restore.restoreNodeIdentity, so the config restore here never
-                //needs to restore node.properties or omp.dat
-                restore.restoreComponentConfig(isSelectiveRestore, isMigrate, true);
+                //if no db component is being restored, then we need to allow the config restore to restore
+                //the node identity if found - node.properties and omp.dat
+                //if the db is part of the restore, then the restoreNodeIdentity task will ensure that node.properties
+                //is written to the restore host if it's applicable
+                restore.restoreComponentConfig(isSelectiveRestore, isMigrate, isDbComponent);
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -985,19 +984,22 @@ public final class Importer{
         }
 
         //any task added after here will not be filtered
-        //restore the node identity
-        returnList.add(new RestoreComponent<Exception>(){
-            public void doRestore() throws Exception {
-                final String msg = "Restoring component " + getComponentType().getComponentName();
-                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                //both of these can be null or ompDatToMatchNodePropertyConfig can be null
-                restore.restoreNodeIdentity(nodePropertyConfig, ompDatToMatchNodePropertyConfig);
-            }
+        //restore the node identity when we know it has been ignored by config restore
+        if(isDbComponent){
+            returnList.add(new RestoreComponent<Exception>(){
+                public void doRestore() throws Exception {
+                    final String msg = "Restoring component " + getComponentType().getComponentName();
+                    ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
-            public ImportExportUtilities.ComponentType getComponentType() {
-                return ImportExportUtilities.ComponentType.NODE_IDENTITY;
-            }
-        });
+                    //both of these can be null or ompDatToMatchNodePropertyConfig can be null
+                    restore.restoreNodeIdentity(nodePropertyConfig, ompDatToMatchNodePropertyConfig);
+                }
+
+                public ImportExportUtilities.ComponentType getComponentType() {
+                    return ImportExportUtilities.ComponentType.NODE_IDENTITY;
+                }
+            });
+        }
 
         return returnList;
     }
