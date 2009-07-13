@@ -113,6 +113,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     private JCheckBox targetSOAPEncapsulatedCheckBox;
 
     private UIAccessibility uiAccessibility;
+    private String policyXml; // uiAccessibility editor cannot be used after dialog disposal
 
     private XacmlPdpAssertion assertion;
     private boolean confirmed;
@@ -271,6 +272,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             public void actionPerformed(ActionEvent e) {
                 if ( validProperties() ) {
                     getData(assertion);
+                    policyXml = uiAccessibility.getEditor().getText();
                     confirmed = true;
                     dispose();
                 }
@@ -608,7 +610,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     }
 
     @Override
-    public XacmlPdpAssertion getData(XacmlPdpAssertion assertion) {
+    public XacmlPdpAssertion getData( final XacmlPdpAssertion assertion ) {
         MessageSourceEntry messageSourceEntry = (MessageSourceEntry)messageSourceComboBox.getSelectedItem();
         assertion.setInputMessageSource(messageSourceEntry.getMessageSource());
         if(messageSourceEntry.getMessageSource() == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
@@ -636,7 +638,12 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         }
 
         if(CONFIGURED_IN_ADVANCE.equals(policyLocationComboBox.getSelectedItem())) {
-            String policyText = uiAccessibility.getEditor().getText();
+            String policyText;
+            if ( this.isVisible() ) {
+               policyText = uiAccessibility.getEditor().getText();                
+            } else {
+               policyText = policyXml;
+            }
             StaticResourceInfo sri = new StaticResourceInfo(policyText);
             assertion.setResourceInfo(sri);
         } else if(MONITOR_URL.equals(policyLocationComboBox.getSelectedItem())) {
