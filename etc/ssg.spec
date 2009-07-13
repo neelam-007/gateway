@@ -39,9 +39,11 @@ rm -fr %{buildroot}
 %defattr(0640,layer7,gateway,0750)
 %dir /opt/SecureSpan/Gateway/node
 %dir /opt/SecureSpan/Gateway/node/default
+%dir /opt/SecureSpan/Gateway/node/default/etc
+# runtime and runtime/etc must be world-searchable since runtime/etc/profile is underneath it
+%defattr(0644,layer7,gateway,0755)
 %dir /opt/SecureSpan/Gateway/runtime
 %dir /opt/SecureSpan/Gateway/runtime/etc
-%dir /opt/SecureSpan/Gateway/node/default/etc
 # Conf dir must be sgid so config files created by layer7 are readable by gateway group
 %defattr(0640,layer7,gateway,2750)
 %dir /opt/SecureSpan/Gateway/node/default/etc/conf
