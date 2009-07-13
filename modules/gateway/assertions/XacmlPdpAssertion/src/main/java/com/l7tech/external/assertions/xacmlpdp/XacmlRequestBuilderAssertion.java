@@ -13,6 +13,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
+import com.l7tech.xml.xpath.XpathUtil;
 
 import java.util.*;
 
@@ -610,29 +611,30 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             } else if(attributeTreeNodeTag instanceof MultipleAttributeConfig) {
                 MultipleAttributeConfig multiAttr = (MultipleAttributeConfig) attributeTreeNodeTag;
 
-                String[] v = Syntax.getReferencedNames(multiAttr.getXpathBase());
-                if(v.length > 0) {
-                    variables.add(v);
+                boolean baseXpathUsed = false;
+                for ( MultipleAttributeConfig.Field field : multiAttr.getAllFields()) {
+                    String[] vars;
+                    if ( field.isXpath ) {
+                        List<String> xpathVars = XpathUtil.getUnprefixedVariablesUsedInXpath(field.getValue());
+                        vars = xpathVars.toArray( new String[xpathVars.size()] );
+                        if ( field.isRelative ) {
+                            baseXpathUsed = true;
+                        }
+                    } else {
+                        vars = Syntax.getReferencedNames(field.getValue());
+                    }
+
+                    if( vars.length > 0 ) {
+                        variables.add(vars);
+                    }
                 }
 
-                v = Syntax.getReferencedNames(multiAttr.getField(ID).getValue());
-                if(v.length > 0) {
-                    variables.add(v);
-                }
-
-                v = Syntax.getReferencedNames(multiAttr.getField(DATA_TYPE).getValue());
-                if(v.length > 0) {
-                    variables.add(v);
-                }
-
-                v = Syntax.getReferencedNames(multiAttr.getField(ISSUER).getValue());
-                if(v.length > 0) {
-                    variables.add(v);
-                }
-
-                v = Syntax.getReferencedNames(multiAttr.getField(VALUE).getValue());
-                if(v.length > 0) {
-                    variables.add(v);
+                if ( baseXpathUsed ) {
+                    List<String> xpathVars = XpathUtil.getUnprefixedVariablesUsedInXpath(multiAttr.getXpathBase());
+                    String[] vars = xpathVars.toArray( new String[xpathVars.size()] );
+                    if( vars.length > 0 ) {
+                        variables.add(vars);
+                    }
                 }
             }
         }
