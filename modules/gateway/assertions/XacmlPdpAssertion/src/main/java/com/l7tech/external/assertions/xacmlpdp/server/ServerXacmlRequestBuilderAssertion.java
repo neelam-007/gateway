@@ -531,30 +531,26 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             //our minimum information at each iteration is - id, datatype and value - they must exist
 
             //do we have an xpath result? do we have multi valued vars? are we over the minimum value?
-            //Do we have more xpath results?
-            boolean xPathHasMore = xpathResultSetIterator != null && xpathResultSetIterator.hasNext();
 
             //at this point we may have xpath results or we may need to execute single absolute xpath expressions
             //or pick out static strings or single context variables
 
             //Implies xpathResultSetIterator is not null
-            ElementCursor resultCursor = null;
-            if(xPathHasMore) resultCursor = xpathResultSetIterator.nextElementAsCursor();
+            ElementCursor resultCursor = xpathResultSetIterator != null && xpathResultSetIterator.hasNext() ? xpathResultSetIterator.nextElementAsCursor() : null;
 
-
-            String id = (xPathHasMore && idField.getIsXpath() && idField.getIsRelative())?
+            String id = (idField.getIsXpath() && idField.getIsRelative())?
                     getRelativeXpathValueForField(resultCursor, idField.getValue(), namespaces)
                     : getValueForField(idField, documentHolder, namespaces, contextVariables, iterationCount);
 
-            String dataType = (xPathHasMore && dataTypeField.getIsXpath() && dataTypeField.getIsRelative())?
+            String dataType = (dataTypeField.getIsXpath() && dataTypeField.getIsRelative())?
                     getRelativeXpathValueForField( resultCursor, dataTypeField.getValue(), namespaces)
                     : getValueForField(dataTypeField, documentHolder, namespaces, contextVariables, iterationCount);
 
-            String issuer = (xPathHasMore && issuerField.getIsXpath() && issuerField.getIsRelative())?
+            String issuer = (issuerField.getIsXpath() && issuerField.getIsRelative())?
                     getRelativeXpathValueForField( resultCursor, issuerField.getValue(), namespaces)
                     : getValueForField(issuerField, documentHolder, namespaces, contextVariables, iterationCount);
 
-            String issuerInstant = (xPathHasMore && issueInstantField.getIsXpath() && issueInstantField.getIsRelative())?
+            String issuerInstant = (issueInstantField.getIsXpath() && issueInstantField.getIsRelative())?
                     getRelativeXpathValueForField(resultCursor, issueInstantField.getValue(), namespaces)
                     : getValueForField(issueInstantField, documentHolder, namespaces, contextVariables, iterationCount);
 
@@ -799,9 +795,11 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     * @param cursor to evalute relative xpath against
     * @param xpath xpath expression
     * @param namespaces any required namespaces
-    * @return the String value of the xpath expression. Can be the emtpy string, but not null
+    * @return the String value of the xpath expression, or null if the element cursor is null.
     */
      private String getRelativeXpathValueForField(ElementCursor cursor, String xpath, Map<String, String> namespaces) {
+        if (cursor == null)
+            return null;
          try {
              XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(), null, true);
              if(xpathResult.getType() == XpathResult.TYPE_NODESET) {
