@@ -124,8 +124,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                     lastNodePanel = null;
                 }
                 nodeSettingsPanel.repaint();
-
-                XacmlRequestBuilderDialog.this.pack();
+                mainPanel.validate();
             }
         });
 
@@ -568,7 +567,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
     @Override
     public void setData(XacmlRequestBuilderAssertion assertion) {
-        this.assertion = (XacmlRequestBuilderAssertion)assertion.clone();
+        this.assertion = assertion.clone();
 
         DefaultMutableTreeNode root = new DefaultMutableTreeNode(XACML_REQUEST_ELEMENT, true);
         for(XacmlRequestBuilderAssertion.Subject subject : this.assertion.getSubjects()) {
