@@ -84,13 +84,21 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
 
     @Override
     public String[] getVariablesUsed() {
+        List<String> variables = new ArrayList<String>();
+        
         if (resourceInfo instanceof StaticResourceInfo) {
             StaticResourceInfo sri = (StaticResourceInfo) resourceInfo;
             String doc = sri.getDocument();
             if (doc != null)
-                return Syntax.getReferencedNames(doc);
+                variables.addAll( Arrays.asList( Syntax.getReferencedNames(doc) ));
         }
-        return new String[0];
+
+        if ( inputMessageSource == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE &&
+             inputMessageVariableName != null ) {
+            variables.add( inputMessageVariableName );
+        }
+
+        return variables.toArray( new String[variables.size()] );
     }
 
     public XacmlAssertionEnums.MessageLocation getInputMessageSource() {
