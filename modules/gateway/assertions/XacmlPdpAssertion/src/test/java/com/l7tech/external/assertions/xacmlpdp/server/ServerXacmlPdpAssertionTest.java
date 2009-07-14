@@ -279,7 +279,7 @@ import org.springframework.mock.web.MockServletContext;
         String messageVariableName = "CONTEXT_VARIABLE_NAME";
         xacmlPdpAssertion.setInputMessageVariableName(messageVariableName);
 
-        assertEquals(1, xacmlPdpAssertion.getVariablesUsed().length);
+        assertEquals(2, xacmlPdpAssertion.getVariablesUsed().length);
         assertEquals("pdpPolicyXml", xacmlPdpAssertion.getVariablesUsed()[0]);
 
         ServerXacmlPdpAssertion serverPdpAssertion =
