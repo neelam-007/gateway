@@ -9,9 +9,11 @@ import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.Auditor;
@@ -108,9 +110,18 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             }
         };
 
-        //fyi if assertion.getResourceInfo() returns a SingleUrlResourceGetter then the above ResourceObjectFactory
+        //If assertion.getResourceInfo() returns a SingleUrlResourceGetter then the above ResourceObjectFactory
         //will NEVER be used by the ResourceGetter
-        resourceGetter = (variablesUsed != null && variablesUsed.length > 0) ? null : ResourceGetter.createResourceGetter(
+        boolean hasPolicyVariable = false;
+        AssertionResourceInfo resourceInfo = assertion.getResourceInfo();
+        if ( resourceInfo instanceof StaticResourceInfo ) {
+            StaticResourceInfo sri = (StaticResourceInfo) resourceInfo;
+            String doc = sri.getDocument();
+            if (doc != null)
+                hasPolicyVariable = Syntax.getReferencedNames(doc).length > 0;
+        }
+
+        resourceGetter = hasPolicyVariable ? null : ResourceGetter.createResourceGetter(
                 assertion,
                 assertion.getResourceInfo(),
                 resourceObjectfactory,
@@ -260,7 +271,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
 
     private PolicyFinder getPolicyFinder(PolicyEnforcementContext context)
             throws IOException, InvalidMessageException, UrlResourceException, GeneralSecurityException, UrlNotFoundException, SAXException, ParsingException {
-        if (variablesUsed == null || variablesUsed.length < 1)
+        if (resourceGetter != null)
             return resourceGetter.getResource(null, new HashMap<String, String>());
 
         String policy = ((StaticResourceInfo)assertion.getResourceInfo()).getDocument();
@@ -281,8 +292,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
 
         httpObjectCache = new HttpObjectCache<PolicyFinder>(
-                1/*A PDP Assertion only has 1 policy*/,
-                /*300000 is the default of 5 minutes*/
+                ServerConfig.getInstance().getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES, 100),
                 ServerConfig.getInstance().getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_AGE, 300000),
                 clientFactory,
                 cacheObjectFactory,

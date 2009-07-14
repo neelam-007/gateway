@@ -21,7 +21,9 @@ import java.util.*;
  * To change this template use File | Settings | File Templates.
  */
 public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsVariables {
+    public static final String CPROP_XACML_POLICY_CACHE_MAX_ENTRIES = "xacml.pdp.policyCache.maxEntries";
     public static final String CPROP_XACML_POLICY_CACHE_MAX_AGE = "xacml.pdp.policyCache.maxAge";
+    public static final String PARAM_XACML_POLICY_CACHE_MAX_ENTRIES = ClusterProperty.asServerConfigPropertyName(CPROP_XACML_POLICY_CACHE_MAX_ENTRIES);
     public static final String PARAM_XACML_POLICY_CACHE_MAX_AGE = ClusterProperty.asServerConfigPropertyName(CPROP_XACML_POLICY_CACHE_MAX_AGE);
 
     public enum SoapEncapsulationType {
@@ -170,8 +172,12 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
 
         Map<String, String[]> props = new HashMap<String, String[]>();
+        props.put(CPROP_XACML_POLICY_CACHE_MAX_ENTRIES, new String[] {
+                "Maximum number of cached policies loaded from URLs (Integer)",
+                "100"
+        });
         props.put(CPROP_XACML_POLICY_CACHE_MAX_AGE, new String[] {
-                "Maximum age to cache a downloaded policy before checking to see if it has been updated.  (Miliseconds; default=300000)",
+                "Maximum age to cache a downloaded policy before checking to see if it has been updated (Milliseconds)",
                 "300000"
         });
         meta.put(CLUSTER_PROPERTIES, props);
