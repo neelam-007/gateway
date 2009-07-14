@@ -18,6 +18,7 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.decorator.DecoratorException;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SoapConstants;
@@ -91,7 +92,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                     WssDecorator decorator = new WssDecoratorImpl();
                     for (DecorationRequirements decoration : decorations) {
                         // process headers
-                        processSecurityHeaderActor(decoration, assertion.isUseSecureSpanActor(), securityHeaderActors);
+                        processSecurityHeaderActor(context, decoration, assertion.isUseSecureSpanActor(), securityHeaderActors);
                         processSecurityHeader(decoration, document, soapVersion,
                                 assertion.isReplaceSecurityHeader(),
                                 assertion.isUseSecurityHeaderMustUnderstand());
@@ -166,14 +167,22 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
     /**
      * Process the actor/role for the security heder
      */
-    private void processSecurityHeaderActor( final DecorationRequirements decoration,
+    private void processSecurityHeaderActor( final PolicyEnforcementContext context,
+                                             final DecorationRequirements decoration,
                                              final boolean useSecureSpanActor,
                                              final List<String> securityHeaderActors ) {
         if ( SoapConstants.L7_SOAP_ACTOR.equals(decoration.getSecurityHeaderActor()) ||
              decoration.getSecurityHeaderActor() == null ) {
             if ( useSecureSpanActor ) {
-                decoration.setSecurityHeaderActor( SoapConstants.L7_SOAP_ACTOR );
-                securityHeaderActors.add( SoapConstants.L7_SOAP_ACTOR );
+                String actor = SoapConstants.L7_SOAP_ACTOR;
+                if ( isResponse() ) {
+                    ProcessorResult result = context.getRequest().getSecurityKnob().getProcessorResult();
+                    if ( result != null && result.getProcessedActorUri() != null ) {
+                        actor = result.getProcessedActorUri();
+                    }
+                }
+                decoration.setSecurityHeaderActor( actor );
+                securityHeaderActors.add( actor );
             } else {
                 decoration.setSecurityHeaderActor( null );
                 securityHeaderActors.add( null );
