@@ -15,7 +15,6 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -65,10 +64,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         super(ea);
         auditor = new Auditor(this, applicationContext, logger);
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
-        ClusterPropertyCache clusterPropertyCache = (ClusterPropertyCache) applicationContext.getBean("clusterPropertyCache", ClusterPropertyCache.class);
-
         envModule = new CurrentEnvModule();
-        clusterPropertyEnvModule = new ClusterPropertyAttributeFinderModule(clusterPropertyCache);
 
         this.variablesUsed = ea.getVariablesUsed();
 
@@ -130,7 +126,6 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             List<AttributeFinderModule> attrModules = new ArrayList<AttributeFinderModule>();
             attrModules.add(envModule);
             attrModules.add(new ContextVariableAttributeFinderModule(context));
-            attrModules.add(clusterPropertyEnvModule);
             attrFinder.setModules(attrModules);
 
             PolicyFinder policyFinder = getPolicyFinder(context);
@@ -297,7 +292,6 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
     }
 
     private CurrentEnvModule envModule;
-    private ClusterPropertyAttributeFinderModule clusterPropertyEnvModule;
     private final ResourceGetter<PolicyFinder> resourceGetter;
     private final String[] variablesUsed;
 
