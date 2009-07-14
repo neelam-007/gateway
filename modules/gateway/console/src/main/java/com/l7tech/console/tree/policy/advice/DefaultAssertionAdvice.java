@@ -4,6 +4,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.Functions;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.util.TopComponents;
@@ -20,6 +21,7 @@ import java.util.logging.Logger;
 public class DefaultAssertionAdvice<AT extends Assertion> implements Advice {
     protected static final Logger logger = Logger.getLogger(DefaultAssertionAdvice.class.getName());
 
+    @Override
     public void proceed(final PolicyChange pc) {
         //noinspection unchecked
         final AssertionTreeNode<AT> subject = pc.getNewChild();
@@ -38,6 +40,9 @@ public class DefaultAssertionAdvice<AT extends Assertion> implements Advice {
         }
 
         final AssertionPropertiesEditor<AT> ape = apeFactory.call(TopComponents.getInstance().getTopParent(), ass);
+        if ( ape instanceof AssertionPropertiesEditorSupport ) {
+            ((AssertionPropertiesEditorSupport)ape).setPolicyPosition( pc.getParent().asAssertion(), pc.getChildLocation() );            
+        }
         ape.setData(ass);
         final JDialog dlg = ape.getDialog();
         if (Boolean.TRUE.equals(ass.meta().get(AssertionMetadata.PROPERTIES_EDITOR_SUPPRESS_SHEET_DISPLAY)))
@@ -46,6 +51,7 @@ public class DefaultAssertionAdvice<AT extends Assertion> implements Advice {
         Utilities.centerOnScreen(dlg);
         Frame f = TopComponents.getInstance().getTopParent();
         DialogDisplayer.display(dlg, f, new Runnable() {
+            @Override
             public void run() {
                 if (ape.isConfirmed()) {
                     subject.setUserObject(ape.getData(ass));

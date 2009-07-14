@@ -130,28 +130,9 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         Utilities.setEscKeyStrokeDisposes( this );
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
+        messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
+
         DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
-        comboBoxModel.addElement(
-                new MessageSourceEntry(
-                        XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST, null));
-        comboBoxModel.addElement(
-                new MessageSourceEntry(
-                        XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE, null));
-
-        Map<String, VariableMetadata> predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
-        SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
-        for (String variableName: predecessorVariableNames) {
-            if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
-                final MessageSourceEntry item =
-                        new MessageSourceEntry(
-                                XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE,
-                                variableName);
-                comboBoxModel.addElement(item);
-            }
-        }
-        messageSourceComboBox.setModel(comboBoxModel);
-
-        comboBoxModel = new DefaultComboBoxModel();
         comboBoxModel.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE);
         comboBoxModel.addElement(XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE);
         messageOutputComboBox.setModel(comboBoxModel);
@@ -314,8 +295,34 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         policyPanel.add(xmlEditor, BorderLayout.CENTER);
 
         setContentPane(mainPanel);
+    }
 
-        //pack();
+    private ComboBoxModel buildMessageSourceComboBoxModel( final XacmlPdpAssertion assertion ) {
+        final DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
+
+        comboBoxModel.addElement(
+                new MessageSourceEntry(
+                        XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST, null));
+
+        comboBoxModel.addElement(
+                new MessageSourceEntry(
+                        XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE, null));
+
+        final Map<String, VariableMetadata> predecessorVariables = assertion.getParent() != null ?
+                PolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
+                PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() );
+        final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
+        for (String variableName: predecessorVariableNames) {
+            if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
+                final MessageSourceEntry item =
+                        new MessageSourceEntry(
+                                XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE,
+                                variableName);
+                comboBoxModel.addElement(item);
+            }
+        }
+
+        return comboBoxModel;
     }
 
     private void readFromFile() {
@@ -528,6 +535,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     public void setData( final XacmlPdpAssertion assertion ) {
         this.assertion = assertion;
 
+        messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
         boolean foundItem = false;
         for(int i = 0;i < messageSourceComboBox.getItemCount();i++) {
             MessageSourceEntry entry = (MessageSourceEntry)messageSourceComboBox.getItemAt(i);
