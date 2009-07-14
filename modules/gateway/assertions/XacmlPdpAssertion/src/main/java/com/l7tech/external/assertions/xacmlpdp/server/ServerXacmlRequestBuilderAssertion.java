@@ -8,6 +8,8 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_RELATIVE;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_ABSOLUTE;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
@@ -538,19 +540,19 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             //Implies xpathResultSetIterator is not null
             ElementCursor resultCursor = xpathResultSetIterator != null && xpathResultSetIterator.hasNext() ? xpathResultSetIterator.nextElementAsCursor() : null;
 
-            String id = (idField.getIsXpath() && idField.getIsRelative())?
+            String id = XPATH_RELATIVE == idField.getType() ?
                     getRelativeXpathValueForField(resultCursor, idField.getValue(), namespaces)
                     : getValueForField(idField, documentHolder, namespaces, contextVariables, iterationCount);
 
-            String dataType = (dataTypeField.getIsXpath() && dataTypeField.getIsRelative())?
+            String dataType = XPATH_RELATIVE == dataTypeField.getType() ?
                     getRelativeXpathValueForField( resultCursor, dataTypeField.getValue(), namespaces)
                     : getValueForField(dataTypeField, documentHolder, namespaces, contextVariables, iterationCount);
 
-            String issuer = (issuerField.getIsXpath() && issuerField.getIsRelative())?
+            String issuer = XPATH_RELATIVE == issuerField.getType() ?
                     getRelativeXpathValueForField( resultCursor, issuerField.getValue(), namespaces)
                     : getValueForField(issuerField, documentHolder, namespaces, contextVariables, iterationCount);
 
-            String issuerInstant = (issueInstantField.getIsXpath() && issueInstantField.getIsRelative())?
+            String issuerInstant = XPATH_RELATIVE == issueInstantField.getType() ?
                     getRelativeXpathValueForField(resultCursor, issueInstantField.getValue(), namespaces)
                     : getValueForField(issueInstantField, documentHolder, namespaces, contextVariables, iterationCount);
 
@@ -653,7 +655,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     private boolean isXpathBaseUsedForIteration(Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> fields) {
         boolean iteratingOnBaseXPath = false;
         for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField: fields){
-            if(configField.getIsXpath() && configField.getIsRelative()){
+            if ( XPATH_RELATIVE == configField.getType() ) {
                 iteratingOnBaseXPath = true;
                 break;
             }
@@ -672,7 +674,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                                                                 Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> fields) {
         boolean isUsingMultiValuedCtxVariables = false;
         for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField: fields){
-            if(!configField.getIsXpath()){
+            if(! configField.getType().isXpath()){
                 if(fieldValueContainMultiValuedContextVariable(configField.getValue(), contextVariables)){
                     isUsingMultiValuedCtxVariables = true;
                     //check for Message content
@@ -725,15 +727,15 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                                     final Map<String, String> namespaces,
                                     final Map<String, Object> contextVariables,
                                     final int multiVarIndex) throws DocumentHolderException {
-        if(configField.getIsXpath() && configField.getIsRelative())
+        if( XPATH_RELATIVE == configField.getType() )
             throw new IllegalArgumentException("If xpath, field must not be relative");
 
-        if(configField.getName() == XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.VALUE)
+        if( VALUE == configField.getName() )
             throw new UnsupportedOperationException("method cannot be used for value field");
 
-        if(configField.getIsXpath()){
+        if( XPATH_ABSOLUTE == configField.getType() ){
             return getAbsoluteXPathResult(configField, documentHolder.getDocument(), namespaces);
-        }else{
+        } else {
             //Determine if it's a multi valued context variable
             if(fieldValueContainMultiValuedContextVariable(configField.getValue(), contextVariables)){
                 List<Object> multiValuedVariable =
@@ -861,6 +863,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     private List<XpathResultWrapper> getRelativeXPathResult(final ElementCursor cursor,
                                                             final String xpath,
                                                             final Map<String, String> namespaces) {
+        if( cursor == null )
+             throw new NullPointerException("resultCursor cannot be null when AttributeValue is using a relative xpath expression");
         XpathResult xpathResult;
         try {
             xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(), null, true);
@@ -939,7 +943,6 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             
             return false;
         }
-
     }
 
     /**
@@ -980,16 +983,10 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             return returnList;
         }
 
-        if(valueField.getIsXpath()){
-            List<XpathResultWrapper> xpathResults;
-            if(!valueField.getIsRelative()){
-                xpathResults = getAbsoluteXPathResultForValue(valueField, documentHolder.getDocument(), namespaces);
-            }else{
-                if(resultCursor == null)
-                    throw new NullPointerException("resultCursor cannot be null when AttributeValue is using a" +
-                            " relative xpath expression");
-                xpathResults = getRelativeXPathResult(resultCursor, valueField.getValue(), namespaces);
-            }
+        if( valueField.getType().isXpath() ) {
+            List<XpathResultWrapper> xpathResults = XPATH_RELATIVE == valueField.getType() ?
+                getRelativeXPathResult(resultCursor, valueField.getValue(), namespaces) :
+                getAbsoluteXPathResultForValue(valueField, documentHolder.getDocument(), namespaces);
             
             for(XpathResultWrapper wrapper: xpathResults){
                 AttributeValue av = new AttributeValue(wrapper);

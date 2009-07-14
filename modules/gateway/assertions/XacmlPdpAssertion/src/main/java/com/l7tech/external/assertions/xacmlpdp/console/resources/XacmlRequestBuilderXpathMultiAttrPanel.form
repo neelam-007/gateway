@@ -87,14 +87,6 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="2b9b8" class="javax.swing.JButton" binding="idOptionsButton">
-            <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Options"/>
-            </properties>
-          </component>
           <component id="3ae" class="javax.swing.JComboBox" binding="idComboBox">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
@@ -104,6 +96,12 @@
             <properties>
               <editable value="true"/>
             </properties>
+          </component>
+          <component id="bff45" class="javax.swing.JComboBox" binding="idExpressionType">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
           </component>
         </children>
       </grid>
@@ -115,14 +113,6 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="4a078" class="javax.swing.JButton" binding="dataTypeOptionsButton">
-            <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Options"/>
-            </properties>
-          </component>
           <component id="e6749" class="javax.swing.JComboBox" binding="dataTypeComboBox">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false">
@@ -136,6 +126,12 @@
             <clientProperties>
               <html.disable class="java.lang.Boolean" value="true"/>
             </clientProperties>
+          </component>
+          <component id="a831b" class="javax.swing.JComboBox" binding="dataTypeExpressionType">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
           </component>
         </children>
       </grid>
@@ -155,13 +151,11 @@
             </constraints>
             <properties/>
           </component>
-          <component id="518b6" class="javax.swing.JButton" binding="issuerOptionsButton">
+          <component id="cb80d" class="javax.swing.JComboBox" binding="issuerExpressionType">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <text value="Options"/>
-            </properties>
+            <properties/>
           </component>
         </children>
       </grid>
@@ -181,13 +175,11 @@
             </constraints>
             <properties/>
           </component>
-          <component id="a92a8" class="javax.swing.JButton" binding="valueOptionsButton">
+          <component id="458f" class="javax.swing.JComboBox" binding="valueExpressionType">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <text value="Options"/>
-            </properties>
+            <properties/>
           </component>
         </children>
       </grid>
@@ -308,13 +300,11 @@
             </constraints>
             <properties/>
           </component>
-          <component id="5e888" class="javax.swing.JButton" binding="issueInstantOptionsButton">
+          <component id="f30d9" class="javax.swing.JComboBox" binding="issueInstantExpressionType">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <text value="Options"/>
-            </properties>
+            <properties/>
           </component>
         </children>
       </grid>

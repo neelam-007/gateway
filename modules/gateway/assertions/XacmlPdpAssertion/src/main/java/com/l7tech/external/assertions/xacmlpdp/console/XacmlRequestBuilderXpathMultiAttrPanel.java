@@ -20,10 +20,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.Collections;
+import java.util.*;
 
 import org.jaxen.XPathSyntaxException;
 import org.jaxen.JaxenException;
@@ -37,25 +34,31 @@ import org.w3c.dom.Document;
  * To change this template use File | Settings | File Templates.
  */
 public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements XacmlRequestBuilderNodePanel {
+    private JPanel mainPanel;
+
     private JComboBox messageSourceComboBox;
-    private JTextField xpathBaseField;
-    private JButton idOptionsButton;
-    private JButton dataTypeOptionsButton;
-    private JTextField issuerField;
-    private JButton issuerOptionsButton;
-    private JLabel issueInstantLabel;
-    private JTextField issueInstantField;
-    private JButton issueInstantOptionsButton;
-    private JPanel issueInstantFieldsPanel;
-    private JTextField valueField;
-    private JButton valueOptionsButton;
     private JTable namespacesTable;
     private JButton addNamespaceButton;
     private JButton modifyNamespaceButton;
     private JButton removeNamespaceButton;
-    private JPanel mainPanel;
-    private JComboBox dataTypeComboBox;
+    private JTextField xpathBaseField;
+
     private JComboBox idComboBox;
+    private JComboBox idExpressionType;
+
+    private JComboBox dataTypeComboBox;
+    private JComboBox dataTypeExpressionType;
+
+    private JTextField issuerField;
+    private JComboBox issuerExpressionType;
+
+    private JPanel issueInstantFieldsPanel;
+    private JLabel issueInstantLabel;
+    private JTextField issueInstantField;
+    private JComboBox issueInstantExpressionType;
+
+    private JTextField valueField;
+    private JComboBox valueExpressionType;
 
     private final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig;
     private final DefaultTableModel tableModel;
@@ -111,6 +114,12 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         idComboBox.setSelectedItem(multipleAttributeConfig.getField(ID).getValue());
         dataTypeComboBox.setSelectedItem(multipleAttributeConfig.getField(DATA_TYPE).getValue());
 
+        idExpressionType.setSelectedItem(multipleAttributeConfig.getField(ID).getType());
+        dataTypeExpressionType.setSelectedItem(multipleAttributeConfig.getField(DATA_TYPE).getType());
+        issuerExpressionType.setSelectedItem(multipleAttributeConfig.getField(ISSUER).getType());
+        issueInstantExpressionType.setSelectedItem(multipleAttributeConfig.getField(ISSUE_INSTANT).getType());
+        valueExpressionType.setSelectedItem(multipleAttributeConfig.getField(VALUE).getType());
+
         testDocument = XmlUtil.stringAsDocument("<blah xmlns=\"http://bzzt.com\"/>");
     }
 
@@ -122,6 +131,12 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                       final Set<String> idOptions ) {
         idComboBox.setModel( new DefaultComboBoxModel( idOptions.toArray() ) );
         dataTypeComboBox.setModel( new DefaultComboBoxModel( XacmlConstants.XACML_10_DATATYPES.toArray() ) );
+
+        idExpressionType.setModel( new DefaultComboBoxModel( EnumSet.allOf(XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.class).toArray()) );
+        dataTypeExpressionType.setModel( new DefaultComboBoxModel( EnumSet.allOf(XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.class).toArray()) );
+        issuerExpressionType.setModel( new DefaultComboBoxModel( EnumSet.allOf(XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.class).toArray()) );
+        issueInstantExpressionType.setModel( new DefaultComboBoxModel( EnumSet.allOf(XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.class).toArray()) );
+        valueExpressionType.setModel( new DefaultComboBoxModel( EnumSet.allOf(XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.class).toArray()) );
 
         namespacesTable.getSelectionModel().addListSelectionListener( new ListSelectionListener(){
             @Override
@@ -237,13 +252,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             issueInstantFieldsPanel.setVisible(false);
         } else {
             addChangeListener(issueInstantField, ISSUE_INSTANT);
-            addActionListener(issueInstantOptionsButton, ISSUE_INSTANT);
         }
-
-        addActionListener(idOptionsButton, ID);
-        addActionListener(dataTypeOptionsButton, DATA_TYPE);
-        addActionListener(issuerOptionsButton, ISSUER);
-        addActionListener(valueOptionsButton, VALUE);
 
         Utilities.setDoubleClickAction( namespacesTable, modifyNamespaceButton );
         enableOrDisableButtons();
@@ -267,28 +276,17 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         }));
     }
 
-    private void addActionListener(JButton button, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, fieldName.toString(), multipleAttributeConfig.getField(fieldName));
-                Utilities.centerOnScreen(dialog);
-                dialog.setVisible(true);
-
-                if(dialog.isConfirmed()) {
-                    multipleAttributeConfig.getField(fieldName).setIsXpath(dialog.getXpathIsExpression());
-                    multipleAttributeConfig.getField(fieldName).setIsRelative(dialog.getRelativeToXpath());
-                }
-            }
-        });
-
-    }
-
     @Override
     public boolean handleDispose() {
         // Access editor directly to get the current text
         multipleAttributeConfig.getField(ID).setValue(((String)idComboBox.getEditor().getItem()).trim());
-        multipleAttributeConfig.getField(DATA_TYPE).setValue(((String)dataTypeComboBox.getEditor().getItem()).trim()); 
+        multipleAttributeConfig.getField(DATA_TYPE).setValue(((String)dataTypeComboBox.getEditor().getItem()).trim());
+
+        multipleAttributeConfig.getField(ID).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) idExpressionType.getSelectedItem());
+        multipleAttributeConfig.getField(DATA_TYPE).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) dataTypeExpressionType.getSelectedItem());
+        multipleAttributeConfig.getField(ISSUER).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) issuerExpressionType.getSelectedItem());
+        multipleAttributeConfig.getField(ISSUE_INSTANT).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) issueInstantExpressionType.getSelectedItem());
+        multipleAttributeConfig.getField(VALUE).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) valueExpressionType.getSelectedItem());
 
         Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName> relativeXpaths = multipleAttributeConfig.getRelativeXPathFieldNames();
         if( ! relativeXpaths.isEmpty() && xpathBaseField.getText().trim().isEmpty()) {

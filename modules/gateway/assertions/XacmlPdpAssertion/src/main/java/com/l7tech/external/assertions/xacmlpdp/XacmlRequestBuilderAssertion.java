@@ -287,6 +287,33 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             }
         }
 
+        public enum FieldType {
+            REGULAR("Regular", false),
+            XPATH_ABSOLUTE("Absolute XPath", true),
+            XPATH_RELATIVE("Relative XPath", true),
+            CONTEXT_VARIABLE("Context Variable", false);
+
+            private final String displayName;
+            private boolean isXpath;
+
+            FieldType(String displayName, boolean isXpath) {
+                this.displayName = displayName;
+                this.isXpath = isXpath;
+            }
+
+            @Override
+            public String toString() {
+                return displayName;
+            }
+
+            /**
+             * @return true if the field is an XPath-type (either absolute or relative), false otherwise
+             */
+            public boolean isXpath() {
+                return isXpath;
+            }
+        }
+
         private Map<String, Field> fields = new HashMap<String, Field>() {{
             put(ID.name(), new Field(ID));
             put(DATA_TYPE.name(), new Field(DATA_TYPE));
@@ -309,7 +336,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         public Set<FieldName> getRelativeXPathFieldNames() {
             Set<FieldName> result = new HashSet<FieldName>();
             for(Field field : fields.values()) {
-                if (field.isRelative)
+                if (FieldType.XPATH_RELATIVE == field.getType())
                     result.add(field.getName());
             }
             return result;
@@ -321,7 +348,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         public Set<FieldName> getAbsoluteXPathFieldNames() {
             Set<FieldName> result = new HashSet<FieldName>();
             for(Field field : fields.values()) {
-                if (field.isXpath && !field.isRelative)
+                if (FieldType.XPATH_ABSOLUTE == field.getType())
                     result.add(field.getName());
             }
             return result;
@@ -331,6 +358,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             return fields;
         }
 
+        @Deprecated // persistence only
         public void setFields(Map<String, Field> fields) {
             this.fields = fields;
         }
@@ -388,9 +416,8 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
         public static class Field implements Cloneable, Serializable {
             private FieldName name;
+            private FieldType type = FieldType.REGULAR;
             private String value = "";
-            private boolean isXpath;
-            private boolean isRelative;
 
             @Deprecated
             public Field() {
@@ -416,26 +443,16 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                 return value;
             }
 
+            public void setType(FieldType type) {
+                this.type = type;
+            }
+
+            public FieldType getType() {
+                return type;
+            }
+
             public void setValue(String value) {
                 this.value = value;
-            }
-
-            public boolean getIsXpath() {
-                return isXpath;
-            }
-
-            public void setIsXpath(boolean isXpath) {
-                this.isXpath = isXpath;
-            }
-
-            public boolean getIsRelative() {
-                return isRelative;
-            }
-
-            public void setIsRelative(boolean isRelative) {
-                //just update isxpath, as it has to be too for convenience
-                if(isRelative) this.isXpath = true;
-                this.isRelative = isRelative;
             }
 
             @Override
@@ -733,14 +750,15 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                 boolean baseXpathUsed = false;
                 for ( MultipleAttributeConfig.Field field : multiAttr.getAllFields()) {
                     String[] vars;
-                    if ( field.isXpath ) {
+                    if ( field.getType().isXpath() ) {
                         List<String> xpathVars = XpathUtil.getUnprefixedVariablesUsedInXpath(field.getValue());
                         vars = xpathVars.toArray( new String[xpathVars.size()] );
-                        if ( field.isRelative ) {
-                            baseXpathUsed = true;
-                        }
                     } else {
                         vars = Syntax.getReferencedNames(field.getValue());
+                    }
+
+                    if ( MultipleAttributeConfig.FieldType.XPATH_RELATIVE == field.getType() ) {
+                        baseXpathUsed = true;
                     }
 
                     if( vars.length > 0 ) {
@@ -864,6 +882,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         othermappings.add(new BeanTypeMapping(AttributeValue.class, "attributeValue"));
         othermappings.add(new BeanTypeMapping(MultipleAttributeConfig.Field.class, "xpathMultipleAttributesField"));
         othermappings.add(new Java5EnumTypeMapping(MultipleAttributeConfig.FieldName.class, "xpathMultipleAttributesFieldName"));
+        othermappings.add(new Java5EnumTypeMapping(MultipleAttributeConfig.FieldType.class, "xpathMultipleAttributesFieldType"));
         othermappings.add(new BeanTypeMapping(MultipleAttributeConfig.class, "multipleAttributeConfig"));
         othermappings.add(new CollectionTypeMapping(List.class, AttributeTreeNodeTag.class, ArrayList.class, "attributeList"));
         othermappings.add(new CollectionTypeMapping(List.class, AttributeValue.class, ArrayList.class, "valueList"));

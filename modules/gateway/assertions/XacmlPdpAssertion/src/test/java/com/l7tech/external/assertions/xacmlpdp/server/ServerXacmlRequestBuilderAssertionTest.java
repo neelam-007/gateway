@@ -15,6 +15,9 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_RELATIVE;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_ABSOLUTE;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.REGULAR;
 import com.l7tech.policy.assertion.AssertionStatus;
 import org.xml.sax.SAXException;
 import org.springframework.mock.web.MockServletContext;
@@ -293,11 +296,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.setNamespaces(namespaces);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(true);
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setIsRelative(true);
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
         multipleConfig.getField(VALUE).setValue("value/a/text()");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -342,11 +345,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.setNamespaces(namespaces);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(true);
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setIsRelative(true);
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
         multipleConfig.getField(VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -387,11 +390,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(true);
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setIsRelative(true);
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
         multipleConfig.getField(VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -431,11 +434,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(true);
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setIsRelative(true);
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
         multipleConfig.getField(VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -476,12 +479,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
-        multipleConfig.getField(DATA_TYPE).setIsXpath(true);
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
         multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/test/text()");
-        multipleConfig.getField(VALUE).setIsRelative(true);
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
         multipleConfig.getField(VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -520,14 +522,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(false);
-        multipleConfig.getField(ID).setIsXpath(true);
+        multipleConfig.getField(ID).setType(XPATH_ABSOLUTE);
         multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
-        multipleConfig.getField(DATA_TYPE).setIsXpath(true);
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
         multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/datatype/text()");
-        multipleConfig.getField(VALUE).setIsRelative(false);
-        multipleConfig.getField(VALUE).setIsXpath(true);
+        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
         multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -567,12 +566,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(true);
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setIsRelative(false);
-        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setType(REGULAR);
         multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         String xml = "<donal>value</donal>";
@@ -621,13 +619,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
-        multipleConfig.getField(DATA_TYPE).setIsXpath(false);
+        multipleConfig.getField(DATA_TYPE).setType(REGULAR);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
-        multipleConfig.getField(VALUE).setIsRelative(false);
-        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setType(REGULAR);
         multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
@@ -679,13 +675,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
-        multipleConfig.getField(DATA_TYPE).setIsXpath(false);
+        multipleConfig.getField(DATA_TYPE).setType(REGULAR);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
-        multipleConfig.getField(VALUE).setIsRelative(false);
-        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setType(REGULAR);
         multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
@@ -734,14 +728,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(false);
-        multipleConfig.getField(ID).setIsXpath(true);
+        multipleConfig.getField(ID).setType(XPATH_ABSOLUTE);
         multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
-        multipleConfig.getField(DATA_TYPE).setIsXpath(false);
+        multipleConfig.getField(DATA_TYPE).setType(REGULAR);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
-        multipleConfig.getField(VALUE).setIsRelative(false);
-        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setType(REGULAR);
         multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
@@ -791,14 +782,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         context.setVariable("ID", "id1");
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(false);
-        multipleConfig.getField(ID).setIsXpath(false);
+        multipleConfig.getField(ID).setType(REGULAR);
         multipleConfig.getField(ID).setValue("${ID}");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
-        multipleConfig.getField(DATA_TYPE).setIsXpath(false);
+        multipleConfig.getField(DATA_TYPE).setType(REGULAR);
         multipleConfig.getField(DATA_TYPE).setValue("${DATATYPE}");
-        multipleConfig.getField(VALUE).setIsRelative(false);
-        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setType(REGULAR);
         multipleConfig.getField(VALUE).setValue("${ATTRIBUTE_VALUE}");
 
         //define datatype as a multi valued context variable
@@ -848,13 +836,11 @@ public class ServerXacmlRequestBuilderAssertionTest {
         setNameSpaces(multipleConfig);
 
         //Just set up the minimum - id, datatype and value
-        multipleConfig.getField(ID).setIsRelative(true);
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setIsRelative(false);
-        multipleConfig.getField(DATA_TYPE).setIsXpath(false);
+        multipleConfig.getField(DATA_TYPE).setType(REGULAR);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}"); //this should be an error - it contains a message
-        multipleConfig.getField(VALUE).setIsRelative(false);
-        multipleConfig.getField(VALUE).setIsXpath(false);
+        multipleConfig.getField(VALUE).setType(REGULAR);
         multipleConfig.getField(VALUE).setValue("static string");
 
         String xml = "<donal>value</donal>";
