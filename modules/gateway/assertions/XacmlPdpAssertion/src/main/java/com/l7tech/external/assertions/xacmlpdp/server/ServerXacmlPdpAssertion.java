@@ -185,7 +185,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                 } else {
                     Result result = (Result)results.iterator().next();
                     if(result.getDecision() != Result.DECISION_PERMIT) {
-                        status = AssertionStatus.FAILED;
+                        status = AssertionStatus.FALSIFIED;
                     }
                 }
             }
