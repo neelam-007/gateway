@@ -84,7 +84,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                 return messageSource.getLocationName();
             }else{
                 return "Context Variable: " +
-                        Syntax.SYNTAX_PREFIX + messageSource.getLocationName() + Syntax.SYNTAX_SUFFIX;    
+                        Syntax.SYNTAX_PREFIX + messageVariableName + Syntax.SYNTAX_SUFFIX;    
             }
         }
     }
