@@ -24,9 +24,9 @@ import java.util.logging.Logger;
 public class JdkLoggerConfigurator {
     private static Probe probe;
     private static AtomicBoolean serviceNameAppenderState =
-            new AtomicBoolean(Boolean.getBoolean("com.l7tech.logging.appendservicename"));
+            new AtomicBoolean(SyspropUtil.getBoolean("com.l7tech.logging.appendservicename"));
     private static AtomicBoolean debugState =
-            new AtomicBoolean(Boolean.getBoolean("com.l7tech.logging.debug"));
+            new AtomicBoolean(SyspropUtil.getBoolean("com.l7tech.logging.debug"));
     private static AtomicReference<Properties> nonDefaultProperties =
             new AtomicReference<Properties>();
 
