@@ -502,14 +502,18 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     private boolean isXacmlPolicy( final String text ) {
         boolean isXacmlPolicy = false;
 
-        try {
-            Document policyDoc = XmlUtil.parse( text );
-            isXacmlPolicy =
-                    policyDoc.getDocumentElement().getNamespaceURI() != null &&
-                    XacmlConstants.XACML_POLICY_NAMESPACES.contains( policyDoc.getDocumentElement().getNamespaceURI() ) &&
-                    XacmlConstants.XACML_POLICY_ELEMENT.equals( policyDoc.getDocumentElement().getLocalName() );
-        } catch ( SAXException e ) {
-            // invalid doc
+        if ( Syntax.getReferencedNames( text ).length > 0 ) {
+            isXacmlPolicy = true;
+        } else {
+            try {
+                Document policyDoc = XmlUtil.parse( text );
+                isXacmlPolicy =
+                        policyDoc.getDocumentElement().getNamespaceURI() != null &&
+                        XacmlConstants.XACML_POLICY_NAMESPACES.contains( policyDoc.getDocumentElement().getNamespaceURI() ) &&
+                        XacmlConstants.XACML_POLICY_ELEMENT.equals( policyDoc.getDocumentElement().getLocalName() );
+            } catch ( SAXException e ) {
+                // invalid doc
+            }
         }
 
         return isXacmlPolicy;
