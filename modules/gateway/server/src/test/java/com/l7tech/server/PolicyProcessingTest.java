@@ -768,6 +768,13 @@ public class PolicyProcessingTest extends TestCase {
     }
 
     /**
+     * Test X.509 signature with invalid signature algorithm is rejected
+     */
+    public void testHmacSha1X509TokenRejected() throws Exception {
+        processMessage("/x509token", new String(loadResource("REQUEST_signed_hmac_sha1_certificate.xml")), 0);
+    }
+
+    /**
      * Test success on applying a signature to the request message using the WssDecoration assertion.
      */
     public void testDecorationCommitOnRequest() throws Exception {
