@@ -1288,9 +1288,9 @@ public class WssProcessorImpl implements WssProcessor {
             if (encryptedDataElement == null) // TODO can omit this second search if encrypted sections never overlap
                 encryptedDataElement = SoapUtil.getElementByWsuId(refList.getOwnerDocument(), dataRefUri);
             if (encryptedDataElement == null) {
-                String msg = "cannot resolve encrypted data element " + dataRefUri;
+                String msg = "Cannot resolve encrypted data element " + dataRefUri;
                 logger.warning(msg);
-                throw new ProcessorException(msg);
+                throw new ProcessorValidationException(msg);
             }
 
             decryptElement(encryptedDataElement, key);
