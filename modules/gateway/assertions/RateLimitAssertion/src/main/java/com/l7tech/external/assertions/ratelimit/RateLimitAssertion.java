@@ -126,19 +126,19 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<String, String[]>();
         props.put("ratelimit.maxQueuedThreads", new String[] {
-                "Maximum number of requests that can be delayed for traffic shaping purposes on a single node (default 70).  When this limit is reached, rate limiters will start failing requests that hit the limit.",
+                "Maximum number of requests that can be delayed for traffic shaping purposes on a single node.  When this limit is reached, rate limiters will start failing requests that hit the limit.",
                 "70"
         });
         props.put("ratelimit.cleanerPeriod", new String[] {
-                "Time interval for removing rate limit counters that have not been used recently (Milliseconds; default 13613)",
+                "Time interval for removing rate limit counters that have not been used recently (Milliseconds)",
                 "13613"
         });
         props.put("ratelimit.maxNapTime", new String[] {
-                "Maximum time a request subject to traffic shaping will wait before awakening to check its status (Milliseconds; default 4703)",
+                "Maximum time a request subject to traffic shaping will wait before awakening to check its status (Milliseconds)",
                 "4703"
         });
         props.put("ratelimit.maxTotalSleepTime", new String[] {
-                "Maximum total time a request subject to traffic shaping will wait before giving up and failing (Milliseconds; default 18371)",
+                "Maximum total time a request subject to traffic shaping will wait before giving up and failing (Milliseconds)",
                 "18371"
         });
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
