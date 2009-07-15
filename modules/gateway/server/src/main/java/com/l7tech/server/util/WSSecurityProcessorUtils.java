@@ -25,6 +25,7 @@ import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.identity.User;
 import com.l7tech.identity.GroupBean;
+import com.l7tech.xml.InvalidDocumentSignatureException;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -75,6 +76,11 @@ public class WSSecurityProcessorUtils {
             msg.getSecurityKnob().setProcessorResult(wssResults); // In case someone else needs it later
             return wssResults;
         } catch (ProcessorValidationException e) {
+            if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
+                    new String[] { what, ExceptionUtils.getMessage(e) },
+                    ExceptionUtils.getDebugException( e ));
+            return null;
+        } catch (InvalidDocumentSignatureException e) {
             if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
                     new String[] { what, ExceptionUtils.getMessage(e) },
                     ExceptionUtils.getDebugException( e ));
