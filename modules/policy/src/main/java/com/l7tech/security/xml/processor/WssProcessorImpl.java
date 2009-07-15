@@ -1451,7 +1451,7 @@ public class WssProcessorImpl implements WssProcessor {
                 throw new ProcessorValidationException("BinarySecurityToken has unsupported ValueType " + valueType);
             }
         }
-        if (!encodingType.endsWith("Base64Binary"))
+        if (encodingType != null && encodingType.length() > 0 && !encodingType.endsWith("Base64Binary"))
             throw new ProcessorException("BinarySecurityToken has unsupported EncodingType " + encodingType);
 
         String value = DomUtils.getTextValue(binarySecurityTokenElement);
@@ -2048,8 +2048,8 @@ public class WssProcessorImpl implements WssProcessor {
             }
         });
         sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strToTarget));
-        KeyUsageChecker.requireActivityForKey(KeyUsageActivity.verifyXml, signingCert, signingKey);
-        Validity validity = sigContext.verify(sigElement, signingKey);
+        KeyUsageChecker.requireActivityForKey(KeyUsageActivity.verifyXml, signingCert, signingKey);        
+        Validity validity = DsigUtil.verify(sigContext, sigElement, signingKey);
 
         if (!validity.getCoreValidity()) {
             // if the signature does not match but an encrypted key was previously ignored,

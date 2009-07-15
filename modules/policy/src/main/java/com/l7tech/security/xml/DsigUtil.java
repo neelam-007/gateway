@@ -13,15 +13,15 @@ import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import org.jaxen.JaxenException;
+import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.crypto.SecretKey;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
@@ -243,7 +243,7 @@ public class DsigUtil {
             }
         });
 
-        Validity validity = sigContext.verify(sigElement, signingKey);
+        Validity validity = DsigUtil.verify(sigContext, sigElement, signingKey);
 
         if (!validity.getCoreValidity()) {
             StringBuffer msg = new StringBuffer("Signature not valid. " + validity.getSignedInfoMessage());
@@ -274,6 +274,54 @@ public class DsigUtil {
 
         // Success.  Signature looks good.
         return signingCert;
+    }
+
+    /**
+     * Wraps XSS4J SignatureContext.verify() with a version that does some extra sanity checks on the context and key.
+     * <p/>
+     * Specifically this will throw a SignatureException if an HMACOutputLength element is present anywhere within
+     * the Signature element.
+     *
+     * @param sigContext  the signature context.  Required.
+     * @param signatureElement  the ds:Signature DOM Element.  Required.
+     * @param verificationKey   the key to use to verify the signature.  Required.
+     * @return the result of SignatureContext.verify().
+     * @throws SignatureException
+     */
+    public static Validity verify(SignatureContext sigContext, Element signatureElement, Key verificationKey) throws SignatureException {
+        precheckSigElement(signatureElement);
+        return sigContext.verify(signatureElement, verificationKey);
+    }
+
+    /**
+     * Perform sanity checks on a Signature element before verification.
+     * <p/>
+     * The primary purpose of this method is to check for and reject HMACOutputLength elements
+     * in order to prevent vulnerability to CVE-2009-0217 (Bug #7526)
+     *
+     * @param sigElement the ds:Signature element to precheck
+     */
+    public static void precheckSigElement(Element sigElement) throws SignatureException {
+        checkForHmacOutputLength(sigElement);
+    }
+
+    private static final DOMXPath hmacOutputLengthFinder;
+    static {
+        try {
+            hmacOutputLengthFinder = new DOMXPath("descendant-or-self::node()/*[local-name() = \"HMACOutputLength\"]");
+        } catch (JaxenException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
+    private static void checkForHmacOutputLength(Element sigElement) throws SignatureException {
+        try {
+            List results = hmacOutputLengthFinder.selectNodes(sigElement);
+            if (results != null && results.size() > 0)
+                throw new SignatureException("Unsupported Signature: Signature contains HMACOutputLength parameter");
+        } catch (JaxenException e) {
+            throw new SignatureException("Unable to check for HMACOutputLength elements within Signature: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     /**

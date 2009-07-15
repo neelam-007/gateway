@@ -11,10 +11,11 @@ import com.ibm.xml.dsig.KeyInfo;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.*;
-import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.xml.soap.SoapUtil;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Document;
@@ -532,7 +533,7 @@ public class Xss4jWrapper {
 
         // validate signature
         PublicKey pubKey = cert.getPublicKey();
-        Validity validity = sigContext.verify(sigElement, pubKey);
+        Validity validity = DsigUtil.verify(sigContext, sigElement, pubKey);
 
         if (!validity.getCoreValidity()) { // *** boom ***
             throw new Exception("Validity not achieved: " + validity.getSignedInfoMessage() +

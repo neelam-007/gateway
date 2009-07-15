@@ -9,6 +9,7 @@ import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.KeyInfoElement;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityTokenResolver;
@@ -317,7 +318,7 @@ public class SamlAssertionV1 extends SamlAssertion {
             sigContext.setAlgorithmFactory(algFactory);
 
             KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, signingCert);
-            Validity validity = sigContext.verify(signature, signingKey);
+            Validity validity = DsigUtil.verify(sigContext, signature, signingKey);
 
             if (!validity.getCoreValidity()) {
                 StringBuffer msg = new StringBuffer("Unable to verify signature of SAML assertion: Validity not achieved. " + validity.getSignedInfoMessage());
