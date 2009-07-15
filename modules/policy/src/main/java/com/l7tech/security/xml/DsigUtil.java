@@ -15,6 +15,7 @@ import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.xml.soap.SoapUtil;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Document;
@@ -289,7 +290,7 @@ public class DsigUtil {
      * @throws SignatureException
      */
     public static Validity verify(SignatureContext sigContext, Element signatureElement, Key verificationKey) throws SignatureException {
-        precheckSigElement(signatureElement);
+        precheckSigElement(signatureElement, verificationKey);
         return sigContext.verify(signatureElement, verificationKey);
     }
 
@@ -300,15 +301,21 @@ public class DsigUtil {
      * in order to prevent vulnerability to CVE-2009-0217 (Bug #7526)
      *
      * @param sigElement the ds:Signature element to precheck
+     * @param verificationKey the key that will be used to verify it
      */
-    public static void precheckSigElement(Element sigElement) throws SignatureException {
+    public static void precheckSigElement(Element sigElement, Key verificationKey) throws SignatureException {
         checkForHmacOutputLength(sigElement);
+        checkForHmacWithNonSecretKey(sigElement, verificationKey);
     }
 
     private static final DOMXPath hmacOutputLengthFinder;
+    private static final DOMXPath hmacSigMethodFinder;
     static {
         try {
-            hmacOutputLengthFinder = new DOMXPath("descendant-or-self::node()/*[local-name() = \"HMACOutputLength\"]");
+            hmacOutputLengthFinder = new DOMXPath("ds:SignedInfo/ds:SignatureMethod/ds:HMACOutputLength");
+            hmacOutputLengthFinder.addNamespace("ds", SoapUtil.DIGSIG_URI);
+            hmacSigMethodFinder = new DOMXPath("ds:SignedInfo/ds:SignatureMethod[contains(string(@Algorithm), \"#hmac-\")]");
+            hmacSigMethodFinder.addNamespace("ds", SoapUtil.DIGSIG_URI);
         } catch (JaxenException e) {
             throw new RuntimeException(e); // can't happen
         }
@@ -321,6 +328,20 @@ public class DsigUtil {
                 throw new SignatureException("Unsupported Signature: Signature contains HMACOutputLength parameter");
         } catch (JaxenException e) {
             throw new SignatureException("Unable to check for HMACOutputLength elements within Signature: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    private static void checkForHmacWithNonSecretKey(Element sigElement, Key verificationKey) throws SignatureException {
+        if (usesHmacSignatureMethod(sigElement) && !(verificationKey instanceof SecretKey))
+            throw new SignatureException("Unable to verify HMAC signature with key of type " + verificationKey.getAlgorithm() + " (" + verificationKey.getClass() + ")");
+    }
+
+    private static boolean usesHmacSignatureMethod(Element sigElement) throws SignatureException {
+        try {
+            List results = hmacSigMethodFinder.selectNodes(sigElement);
+            return results != null && results.size() > 0;
+        } catch (JaxenException e) {
+            throw new SignatureException("Unable to check for HMAC signature method: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

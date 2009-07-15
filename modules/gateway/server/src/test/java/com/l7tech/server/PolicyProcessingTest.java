@@ -41,11 +41,8 @@ import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.GlobalTarariContext;
 import com.l7tech.test.BugNumber;
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.framework.Assert;
+import org.junit.*;
+import static org.junit.Assert.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -72,7 +69,7 @@ import java.lang.reflect.Constructor;
  *
  * @author Steve Jones
  */
-public class PolicyProcessingTest extends TestCase {
+public class PolicyProcessingTest {
     private static final Logger logger = Logger.getLogger(TokenServiceTest.class.getName());
     private static final String POLICY_RES_PATH = "policy/resources/";
 
@@ -144,60 +141,41 @@ public class PolicyProcessingTest extends TestCase {
         {"/addusernametoken3", "POLICY_response_encrypted_usernametoken.xml"}
     };
 
-    /**
-     *
-     */
-    public PolicyProcessingTest(String name) {
-        super(name);
+    @Before
+    public void setUpTest() throws Exception {
         System.setProperty("com.l7tech.server.serviceResolution.strictSoap", "false");
     }
 
-    @Override
-    protected void setUp() throws Exception {
+    /**
+     *
+     */
+    @BeforeClass
+    public static void setUpSuite() throws Exception {
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
-    }
 
-    /**
-     *
-     */
-    public static Test suite() {
-         final TestSuite suite = new TestSuite(PolicyProcessingTest.class);
-         return new TestSetup(suite) {
+        // Ordinarily, the application context would take care of configuring the registry,
+        // but it has to be done before buildServices() is called, and buildServices() has
+        // to be done before the application context is created (at least for this test).
+        final AssertionRegistry tmf = new AssertionRegistry();
+        tmf.setApplicationContext(null);
+        tmf.afterPropertiesSet();
+        WspConstants.setTypeMappingFinder(tmf);
 
-             @Override
-             protected void setUp() throws Exception {
-                 // Ordinarily, the application context would take care of configuring the registry,
-                 // but it has to be done before buildServices() is called, and buildServices() has
-                 // to be done before the application context is created (at least for this test).
-                 final AssertionRegistry tmf = new AssertionRegistry();
-                 tmf.setApplicationContext(null);
-                 tmf.afterPropertiesSet();
-                 WspConstants.setTypeMappingFinder(tmf);
+        buildServices();
+        buildUsers();
 
-                 buildServices();
-                 buildUsers();
+        applicationContext = ApplicationContexts.getTestApplicationContext();
+        messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
+        auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
+        soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
+        clusterPropertyCache = (ClusterPropertyCache) applicationContext.getBean("clusterPropertyCache", ClusterPropertyCache.class);
+        testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
-                 applicationContext = ApplicationContexts.getTestApplicationContext();
-                 messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
-                 auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
-                 soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
-                 clusterPropertyCache = (ClusterPropertyCache) applicationContext.getBean("clusterPropertyCache", ClusterPropertyCache.class);
-                 testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
+        cache.initializeServiceCache();
 
-                 ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
-                 cache.initializeServiceCache();
-
-                 auditContext.flush(); // ensure clear
-             }
-         };
-    }
-
-    /**
-     *
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
+        auditContext.flush(); // ensure clear
     }
 
     private long getServiceOid( String resolutionUri ) {
@@ -288,7 +266,8 @@ public class PolicyProcessingTest extends TestCase {
       * @throws Exception
      */
     @SuppressWarnings({"unchecked"})
-    public void testTwoHttpDigestAuth() throws Exception {
+    @Test
+	public void testTwoHttpDigestAuth() throws Exception {
         String requestMessage = new String(loadResource("REQUEST_general.xml"));
 
         //need to register the nonce so that we'll always be using the same nonce = 70ec76c747e23906120eec731341660f
@@ -319,7 +298,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test rejection of message with SQL injection.
      */
-    public void testSQLAttack() throws Exception  {
+    @Test
+	public void testSQLAttack() throws Exception  {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_sqlattack_fail.xml"));
 
@@ -330,7 +310,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test large message rejection.
      */
-    public void testRequestSizeLimit() throws Exception {
+    @Test
+	public void testRequestSizeLimit() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_requestsizelimit_fail.xml"));
 
@@ -341,7 +322,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test rejection of messages with dubious structure
      */
-    public void testDocumentStructure() throws Exception {
+    @Test
+	public void testDocumentStructure() throws Exception {
         GlobalTarariContext tgc = TarariLoader.getGlobalContext();
         if (tgc != null) {
             // Make sure document statistics collection is initialized
@@ -358,7 +340,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test stealth fault (upgraded to fault level assertion)
      */
-    public void testStealthFault() throws Exception {
+    @Test
+	public void testStealthFault() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         Result result = processMessage("/stealthfault", requestMessage1, AssertionStatus.FALSIFIED.getNumeric());
@@ -368,7 +351,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test fault level
      */
-    public void testFaultLevel() throws Exception {
+    @Test
+	public void testFaultLevel() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         Result result = processMessage("/faultlevel", requestMessage1, AssertionStatus.FALSIFIED.getNumeric());
@@ -378,7 +362,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test rejection of requests from bad IP address
      */
-    public void testIPAddressRange() throws Exception {
+    @Test
+	public void testIPAddressRange() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         processMessage("/ipaddressrange", requestMessage1, 0);
@@ -388,7 +373,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test xpath credentials are found
      */
-    public void testXPathCredentials() throws Exception {
+    @Test
+	public void testXPathCredentials() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_xpathcreds_success.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_general.xml"));
 
@@ -399,7 +385,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test username token messages (incl without password)
      */
-    public void testUsernameToken() throws Exception {
+    @Test
+	public void testUsernameToken() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_usernametoken_success_1.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_usernametoken_success_2.xml"));
         String requestMessage3 = new String(loadResource("REQUEST_general.xml"));
@@ -412,7 +399,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test encrypted username token
      */
-    public void testEncryptedUsernameToken() throws Exception {
+    @Test
+	public void testEncryptedUsernameToken() throws Exception {
         String requestMessage = new String(loadResource("REQUEST_encryptedusernametoken.xml"));
         processMessage("/encusernametoken", requestMessage, 0);
     }
@@ -420,7 +408,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test encrypted username token with idtags
      */
-    public void testEncryptedUsernameTokenIdentityTag() throws Exception {
+    @Test
+	public void testEncryptedUsernameTokenIdentityTag() throws Exception {
         String requestMessage = new String(loadResource("REQUEST_encryptedusernametoken.xml"));
         processMessage("/encusernametokentags", requestMessage, 0);
     }
@@ -428,7 +417,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test http basic auth with latin-1 charset
      */
-    public void testHttpBasic() throws Exception {
+    @Test
+	public void testHttpBasic() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         String username = "\u00e9\u00e2\u00e4\u00e5";
@@ -442,7 +432,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test cookie pass-thru (or not)
      */
-    public void testHttpRoutingCookie() throws Exception {
+    @Test
+	public void testHttpRoutingCookie() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
@@ -471,7 +462,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test that TAI info is routed
      */
-    public void testHttpRoutingTAI() throws Exception {
+    @Test
+	public void testHttpRoutingTAI() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
@@ -487,7 +479,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test connection id propagation
      */
-    public void testHttpRoutingSticky() throws Exception {
+    @Test
+	public void testHttpRoutingSticky() throws Exception {
         //This just tests that the context info gets to the CommonsHttpClient
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
@@ -503,7 +496,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test HTTP routing for JMS message
      */
-    public void testHttpRoutingJmsIn() throws Exception {
+    @Test
+	public void testHttpRoutingJmsIn() throws Exception {
         //This just tests that the context info gets to the CommonsHttpClient
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
@@ -517,7 +511,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test WSS header handling
      */
-    public void testHttpRoutingWssHeader() throws Exception {
+    @Test
+	public void testHttpRoutingWssHeader() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_usernametoken_success_1.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_httpwssheaderpromote_success.xml"));
 
@@ -542,7 +537,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test WSS Signed Attachment processing
      */
-    public void testWssSignedAttachment() throws Exception {
+    @Test
+	public void testWssSignedAttachment() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_signed_attachment.txt"));
 
         processMessage("/attachment", requestMessage1, 0);
@@ -551,7 +547,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test WSS Signed Attachment processing failure
      */
-    public void testWssSignedAttachmentFailure() throws Exception {
+    @Test
+	public void testWssSignedAttachmentFailure() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_unsigned_attachment.txt"));
 
         processMessage("/attachment", requestMessage1, 600);
@@ -563,7 +560,8 @@ public class PolicyProcessingTest extends TestCase {
      * - all policies return success
      * - respnse is SOAP and needs to be decorated
      */
-    public void testRequestNonXmlOk() throws Exception
+    @Test
+	public void testRequestNonXmlOk() throws Exception
     {
         processMessage("/requestnonxmlok", new String(loadResource("REQUEST_general.xml")), 0);
     }
@@ -571,7 +569,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test multiple request/response signatures
      */
-    public void testMultipleSignatures() throws Exception {
+    @Test
+	public void testMultipleSignatures() throws Exception {
         byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -580,7 +579,8 @@ public class PolicyProcessingTest extends TestCase {
         processMessage("/multiplesignatures", new String(loadResource("REQUEST_multiplesignatures.xml")), 0);
     }
 
-    public void testWssMessageAttributes() throws Exception {
+    @Test
+	public void testWssMessageAttributes() throws Exception {
         // build test request and run WSS processor on it
         String message = new String(loadResource("REQUEST_multiplesignatures.xml"));
         final Message request = new Message();
@@ -631,7 +631,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test failure with wrong signing identities in request message
      */
-    public void testMultipleSignaturesWrongIdentitiesRequest() throws Exception {
+    @Test
+	public void testMultipleSignaturesWrongIdentitiesRequest() throws Exception {
         byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -643,7 +644,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test multiple request/response signatures with identity tags
      */
-    public void testMultipleSignaturesWithIdTags() throws Exception {
+    @Test
+	public void testMultipleSignaturesWithIdTags() throws Exception {
         byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -655,7 +657,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test failure with wrong signing identities in response message
      */
-    public void testMultipleSignaturesWrongIdentitiesResponse() throws Exception {
+    @Test
+	public void testMultipleSignaturesWrongIdentitiesResponse() throws Exception {
         byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures2.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -667,7 +670,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test policy failure on missing response signatures
      */
-    public void testMultipleSignaturesMissingResponseSignatures() throws Exception {
+    @Test
+	public void testMultipleSignaturesMissingResponseSignatures() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -679,14 +683,16 @@ public class PolicyProcessingTest extends TestCase {
      * Test policy failure when there are multiple request signatures and
      * the identity is not specified for a Require Signed Element assertion.
      */
-    public void testMultipleSignaturesNoIdentity() throws Exception {
+    @Test
+	public void testMultipleSignaturesNoIdentity() throws Exception {
         processMessage("/multiplesignaturesnoid", new String(loadResource("REQUEST_multiplesignatures.xml")), 600);
     }
 
     /**
      * Test multiple request signatures are rejected by WSS X.509 assertion when not enabled.
      */
-    public void testMultipleSignaturesRejected() throws Exception {
+    @Test
+	public void testMultipleSignaturesRejected() throws Exception {
         processMessage("/x509token", new String(loadResource("REQUEST_multiplesignatures.xml")), 400);
     }
 
@@ -694,14 +700,16 @@ public class PolicyProcessingTest extends TestCase {
      * Test multiple request signatures with X.509 and SAML credential with both tokens signing the same elements.
      * This test also has a group identity target.
      */
-    public void testMultipleSignaturesX509AndSAML() throws Exception {
+    @Test
+	public void testMultipleSignaturesX509AndSAML() throws Exception {
         processMessage("/multiplesignaturesx509SAML", new String(loadResource("REQUEST_wss_x509_and_SAML.xml")), 0);
     }
 
     /**
      * Test multiple request signatures with message variables and new context variables in template response.
      */
-    public void testMultipleSignaturesVariables() throws Exception {
+    @Test
+	public void testMultipleSignaturesVariables() throws Exception {
         processMessage("/multiplesignaturesvars", new String(loadResource("REQUEST_multiplesignatures3.xml")), "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
             public void call(final PolicyEnforcementContext context) {
@@ -762,7 +770,8 @@ public class PolicyProcessingTest extends TestCase {
      * Test multiple request signatures are rejected by WSS X.509 assertion when not enabled.
      */
     @BugNumber(7285)
-    public void testEncryptedKeyWithX509TokenRejected() throws Exception {
+    @Test
+	public void testEncryptedKeyWithX509TokenRejected() throws Exception {
         // Test with com.l7tech.server.policy.requireSigningTokenCredential=false for old behaviour
         processMessage("/x509token", new String(loadResource("REQUEST_signed_x509_and_encryptedkey.xml")), 600);
     }
@@ -770,14 +779,17 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test X.509 signature with invalid signature algorithm is rejected
      */
-    public void testHmacSha1X509TokenRejected() throws Exception {
-        processMessage("/x509token", new String(loadResource("REQUEST_signed_hmac_sha1_certificate.xml")), 0);
+    @BugNumber(7528)
+    @Test
+	public void testHmacSha1X509TokenRejected() throws Exception {
+        processMessage("/x509token", new String(loadResource("REQUEST_signed_hmac_sha1_certificate.xml")), 500);
     }
 
     /**
      * Test success on applying a signature to the request message using the WssDecoration assertion.
      */
-    public void testDecorationCommitOnRequest() throws Exception {
+    @Test
+	public void testDecorationCommitOnRequest() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -787,7 +799,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test success on adding a signature that endorses an existing signature from the request
      */
-    public void testEndorsingRequest() throws Exception {
+    @Test
+	public void testEndorsingRequest() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -797,7 +810,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test running threat protections for request, variable and response messages
      */
-    public void testThreatProtectionsRequestResponseAndMessageTarget() throws Exception {
+    @Test
+	public void testThreatProtectionsRequestResponseAndMessageTarget() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -807,7 +821,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test removal of an XML element with XPath selection 
      */
-    public void testRemoveElement() throws Exception {
+    @Test
+	public void testRemoveElement() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -828,7 +843,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test addition of a username token to the response with creds from xpathcredsource
      */
-    public void testAddSecurityToken() throws Exception {
+    @Test
+	public void testAddSecurityToken() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -858,7 +874,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test addition of a signed timestamp to the response
      */
-    public void testAddTimestamp() throws Exception {
+    @Test
+	public void testAddTimestamp() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -884,7 +901,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test addition of a signature to the response
      */
-    public void testAddSignature() throws Exception {
+    @Test
+	public void testAddSignature() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -911,7 +929,8 @@ public class PolicyProcessingTest extends TestCase {
     /**
      * Test removal of the security header from request and response messages.
      */
-    public void testRemoveSecurityHeaders() throws Exception {
+    @Test
+	public void testRemoveSecurityHeaders() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -951,7 +970,8 @@ public class PolicyProcessingTest extends TestCase {
      * The second policy validates the signature and sends a signed
      * response with signature confirmation.
      */
-    public void testSignatureConfirmation() throws Exception {
+    @Test
+	public void testSignatureConfirmation() throws Exception {
         MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Unary<byte[], byte[]>(){
             @Override
             public byte[] call( final byte[] requestBytes ) {
@@ -1010,7 +1030,8 @@ public class PolicyProcessingTest extends TestCase {
      * This is similar to the basic signature confirmation test but has
      * signature confirmation for the inbound and outbound messages.
      */
-    public void testSignatureConfirmationInOut() throws Exception {
+    @Test
+	public void testSignatureConfirmationInOut() throws Exception {
         MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Unary<byte[], byte[]>(){
             @Override
             public byte[] call( final byte[] requestBytes ) {
@@ -1087,7 +1108,8 @@ public class PolicyProcessingTest extends TestCase {
     }
 
     @BugNumber(7253)
-    public void testHardcodedResolution() throws Exception {
+    @Test
+	public void testHardcodedResolution() throws Exception {
         // Test a SOAP message resolves to an XML service
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         processJmsMessage(requestMessage1, 0, getServiceOid("/sqlattack")); // 1 is /sqlattack
@@ -1102,7 +1124,8 @@ public class PolicyProcessingTest extends TestCase {
         processJmsMessage(requestMessage2, 0, getServiceOid("/documentstructure"));
     }
 
-    public void testAddWssUsernameToken() throws Exception {        
+    @Test
+	public void testAddWssUsernameToken() throws Exception {        
         final String requestMessage = new String(loadResource("REQUEST_general.xml"));
         processMessage("/addusernametoken2", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
@@ -1127,7 +1150,8 @@ public class PolicyProcessingTest extends TestCase {
         });
     }
 
-    public void testAddEncryptedWssUsernameToken() throws Exception {
+    @Test
+	public void testAddEncryptedWssUsernameToken() throws Exception {
         final String requestMessage = new String(loadResource("REQUEST_general.xml"));
         processMessage("/addusernametoken3", requestMessage, 0);
     }
