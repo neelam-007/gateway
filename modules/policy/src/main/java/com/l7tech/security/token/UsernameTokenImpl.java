@@ -80,7 +80,7 @@ public class UsernameTokenImpl implements UsernameToken {
      * Create a UsernameTokenImpl from the given Element.  The Element will be parsed during the construction.
      * @param utok the UsernameToken element to examine. Required.
      * @throws com.l7tech.util.InvalidDocumentFormatException if a required element is missing, or if an optional element contains an invalid value.
-     * @throws com.l7tech.xml.UnsupportedDocumentFormatException if a Password is present with Type other than ...#PasswordText or ...#PasswordDigest
+     * @throws com.l7tech.xml.UnsupportedDocumentFormatException if the Username is empty or the Password is present with Type other than ...#PasswordText or ...#PasswordDigest
      */
     public UsernameTokenImpl(final Element utok)
                                         throws InvalidDocumentFormatException, UnsupportedDocumentFormatException
@@ -97,12 +97,12 @@ public class UsernameTokenImpl implements UsernameToken {
         extractPassword(utok, wsseUri);
     }
 
-    private static String extractUsername(Element utok, String wsseUri) throws InvalidDocumentFormatException {
+    private static String extractUsername(Element utok, String wsseUri) throws InvalidDocumentFormatException, UnsupportedDocumentFormatException {
         // Get the Username child element
         Element usernameEl = DomUtils.findOnlyOneChildElementByName(utok, wsseUri, SoapConstants.UNTOK_USERNAME_EL_NAME);
         if (usernameEl == null) throw new InvalidDocumentFormatException("The usernametoken element does not contain a username element");
         String username = DomUtils.getTextValue(usernameEl).trim();
-        if (username.length() < 1)throw new InvalidDocumentFormatException("The usernametoken has an empty username element");
+        if (username.length() < 1)throw new UnsupportedDocumentFormatException("The usernametoken has an empty username element");
         return username;
     }
 

@@ -1242,7 +1242,9 @@ public class WssProcessorImpl implements WssProcessor {
             securityTokens.add(rememberedSecToken);
         } catch (UnsupportedDocumentFormatException e) {
             // if the format is not supported, we should ignore it completly
-            logger.log(Level.INFO, "A usernametoken element was encountered but we dont support the format.", e);
+            logger.log( Level.WARNING,
+                    "A usernametoken element was encountered but we dont support the format: '"+ExceptionUtils.getMessage( e )+"'",
+                    ExceptionUtils.getDebugException( e ) );
         }
     }
 
