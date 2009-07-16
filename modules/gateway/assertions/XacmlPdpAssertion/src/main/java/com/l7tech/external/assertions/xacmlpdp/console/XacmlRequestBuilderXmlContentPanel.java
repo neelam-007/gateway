@@ -6,6 +6,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.util.ClassUtils;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -217,7 +218,7 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
             JOptionPane.showMessageDialog(window,
                 "The attribute name '" + name + "' already exists.  Please use a new attribute name and try again.",
                 "Duplicate Attribute Name", JOptionPane.ERROR_MESSAGE, null );
-        } else if ( !ValidationUtils.isProbablyValidXmlName( name )) {
+        } else if ( !isProbablyValidXmlNameOrVariable( name )) {
             JOptionPane.showMessageDialog(window,
                 "The attribute name '" + name + "' is not valid.  Please modify the attribute name and try again.",
                 "Invalid Attribute Name", JOptionPane.ERROR_MESSAGE, null );
@@ -226,6 +227,13 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
         }
 
         return valid;
+    }
+
+    private boolean isProbablyValidXmlNameOrVariable( final String name ) {
+        // Replace variables with a valid name character so we can validate
+        // assuming that the runtime value will be good.
+        String nameWithoutVariables = Syntax.regexPattern.matcher( name ).replaceAll( "a" );        
+        return  ValidationUtils.isProbablyValidXmlName( nameWithoutVariables );
     }
 
     private boolean isDuplicateAttributeName(String attrName) {

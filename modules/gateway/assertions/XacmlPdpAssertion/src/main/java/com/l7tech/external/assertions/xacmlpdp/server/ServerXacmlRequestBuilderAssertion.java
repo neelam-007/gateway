@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.xacmlpdp.server;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
@@ -23,10 +22,13 @@ import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResultIterator;
 import com.l7tech.xml.xpath.XpathResultNode;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.DOMException;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -50,7 +52,6 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         variablesUsed = ea.getVariablesUsed();
 
         auditor = new Auditor(this, applicationContext, logger);
-        stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
     @Override
@@ -110,6 +111,10 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
             addEnvironment(context, vars, doc, root);
         } catch (DocumentHolderException e) {
+            auditor.logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, new String[]{ExceptionUtils.getMessage(e)}, e);
+            return AssertionStatus.FAILED;
+        } catch (DOMException de) {
+            auditor.logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, ExceptionUtils.getMessage(de));
             return AssertionStatus.FAILED;
         }
 
@@ -226,7 +231,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @return multi valued context variable as a list. May be null if variableName is not a multi valued context
      * variable
      */
-    private List<Object> getMultiValuedContextVariable(String variableName, Map<String, Object> contextVariables,
+    private List getMultiValuedContextVariable(String variableName, Map<String, Object> contextVariables,
                                                        boolean valueAlreadyProcessed){
         Object o;
         if(!valueAlreadyProcessed){
@@ -238,7 +243,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 throw new IllegalStateException("Context variable '"+variableName+"' not found");
             o  = contextVariables.get(variableName);
         }
-        List<Object> multiCtxVarValues = null;
+        List multiCtxVarValues = null;
 
         if(o instanceof Object[]){
             Object [] oArray = (Object[]) o;
@@ -678,7 +683,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 if(fieldValueContainMultiValuedContextVariable(configField.getValue(), contextVariables)){
                     isUsingMultiValuedCtxVariables = true;
                     //check for Message content
-                    List<Object> ctxValues =
+                    List ctxValues =
                             getMultiValuedContextVariable(configField.getValue(), contextVariables, false);
                     for(Object o: ctxValues){
                         if(o instanceof Message){
@@ -738,7 +743,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         } else {
             //Determine if it's a multi valued context variable
             if(fieldValueContainMultiValuedContextVariable(configField.getValue(), contextVariables)){
-                List<Object> multiValuedVariable =
+                List multiValuedVariable =
                         getMultiValuedContextVariable(configField.getValue(), contextVariables, false);
                 if(multiValuedVariable.size() < multiVarIndex){
                     //if this happens its a coding error
@@ -799,10 +804,12 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     * @param namespaces any required namespaces
     * @return the String value of the xpath expression, or null if the element cursor is null.
     */
-     private String getRelativeXpathValueForField(ElementCursor cursor, String xpath, Map<String, String> namespaces) {
-        if (cursor == null)
+    private String getRelativeXpathValueForField(ElementCursor cursor, String xpath, Map<String, String> namespaces) {
+        if (cursor == null) {
             return null;
-         try {
+        }
+
+        try {
              XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(), null, true);
              if(xpathResult.getType() == XpathResult.TYPE_NODESET) {
                  if (xpathResult.getNodeSet().size() < 1 || xpathResult.getNodeSet().getType(0) == XpathResult.TYPE_NODESET) {
@@ -948,7 +955,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     /**
      * From all possible inputs used to create AttributeValues, create a list of all <AttributeValue>s which
      * should be added to the <Attribute> element being created.
-     * @param inputDoc - required if valueField contains an absolute xpath expression
+     * @param documentHolder - required if valueField contains an absolute xpath expression
      * @param namespaces any referenced namespaces from any xpath expression
      * @param valueField the field representing the AttributeValue
      * @param contextVariables all available context variables
@@ -967,7 +974,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 fieldValueContainMultiValuedContextVariable(valueField.getValue(), contextVariables);
 
         if(fieldContainsMultiValuedContextVariable){
-            List<Object> contextVars = getMultiValuedContextVariable(valueField.getValue(), contextVariables, false);
+            List contextVars = getMultiValuedContextVariable(valueField.getValue(), contextVariables, false);
             //contextVars contains String and or Messages
             for(Object o: contextVars){
                 AttributeValue av;
@@ -1115,7 +1122,6 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     private String[] variablesUsed;
     private static final Logger logger = Logger.getLogger(ServerXacmlPdpAssertion.class.getName());
     private final Auditor auditor;
-    private final StashManagerFactory stashManagerFactory;
 
     /**
      * Document holder for the input message source.
@@ -1123,17 +1129,22 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     private static class DocumentHolder {
         private Document document;
         private Exception thrown;
+        private String what;
 
         public DocumentHolder(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig, PolicyEnforcementContext context) {
+            what = "Unknown";
             try {
                 switch(multipleAttributeConfig.getMessageSource()) {
                     case DEFAULT_REQUEST:
+                        what = "Request";
                         document = context.getRequest().getXmlKnob().getDocumentReadOnly();
                         break;
                     case DEFAULT_RESPONSE:
+                        what = "Response";
                         document = context.getResponse().getXmlKnob().getDocumentReadOnly();
                         break;
                     case CONTEXT_VARIABLE:
+                        what = "${" + multipleAttributeConfig.getMessageSourceContextVar() + "}";
                         document = ((Message)context.getVariable(multipleAttributeConfig.getMessageSourceContextVar())).getXmlKnob().getDocumentReadOnly();
                         break;
                     default:
@@ -1153,19 +1164,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             if (document != null)
                 return document;
             else
-                throw new DocumentHolderException(thrown);
+                throw new DocumentHolderException("Error accessing " + what + " message.", thrown);
         }
     }
 
     private static class DocumentHolderException extends Exception {
-        private Exception thrown;
-
-        public DocumentHolderException(Exception thrown) {
-            this.thrown = thrown;
-        }
-
-        public Exception getThrown() {
-            return thrown;
+        public DocumentHolderException(String message, Exception thrown) {
+            super( message, thrown );
         }
     }
 }
