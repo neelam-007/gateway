@@ -66,8 +66,6 @@ import java.lang.reflect.Constructor;
 
 /**
  * Functional tests for message processing.
- *
- * @author Steve Jones
  */
 public class PolicyProcessingTest {
     private static final Logger logger = Logger.getLogger(TokenServiceTest.class.getName());
@@ -124,6 +122,7 @@ public class PolicyProcessingTest {
         {"/multiplesignatures", "POLICY_multiplesignatures.xml"},
         {"/multiplesignaturesnoid", "POLICY_multiplesignature_noidentity.xml"},
         {"/multiplesignaturestags", "POLICY_multiplesignatures_idtags.xml"},
+        {"/multiplesignaturestags2", "POLICY_multiplesignatures_idtags2.xml"},
         {"/multiplesignaturesx509SAML", "POLICY_wss_x509_and_SAML.xml"},
         {"/multiplesignaturesvars", "POLICY_wss_multiplesigners_variables.xml"},
         {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
@@ -642,7 +641,7 @@ public class PolicyProcessingTest {
     }
 
     /**
-     * Test multiple request/response signatures with identity tags
+     * Test multiple request/response signatures with identity tags (WssSignature selection by signature)
      */
     @Test
 	public void testMultipleSignaturesWithIdTags() throws Exception {
@@ -652,6 +651,19 @@ public class PolicyProcessingTest {
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
         processMessage("/multiplesignaturestags", new String(loadResource("REQUEST_multiplesignatures.xml")), 0);
+    }
+
+    /**
+     * Test multiple request/response signatures with identity tags (WssSignature selection by signature reference)
+     */
+    @Test
+	public void testMultipleSignaturesWithIdTags2() throws Exception {
+        byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
+
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        processMessage("/multiplesignaturestags2", new String(loadResource("REQUEST_multiplesignatures.xml")), 0);
     }
 
     /**

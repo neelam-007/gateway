@@ -32,8 +32,16 @@ public class WssX509CertPropertiesDialog extends AssertionPropertiesOkCancelSupp
             } else {
                 assertion.setSignatureElementVariable( null );
             }
+
+            String referenceVariable = VariablePrefixUtil.fixVariableName(signatureReferenceTextField.getText());
+            if ( referenceVariable.length() > 0 ) {
+                assertion.setSignatureReferenceElementVariable( referenceVariable );
+            } else {
+                assertion.setSignatureReferenceElementVariable( null );
+            }
         } else {
             assertion.setSignatureElementVariable( null );
+            assertion.setSignatureReferenceElementVariable( null );
         }
         return assertion;
     }
@@ -42,6 +50,7 @@ public class WssX509CertPropertiesDialog extends AssertionPropertiesOkCancelSupp
     public void setData( final RequireWssX509Cert assertion ) {
         allowMultipleSignatures.setSelected( assertion.isAllowMultipleSignatures() );
         signatureElementVariableTextField.setText( assertion.getSignatureElementVariable() );
+        signatureReferenceTextField.setText( assertion.getSignatureReferenceElementVariable() );
         doValidation();
         doUpdateEnabledState();
     }
@@ -72,6 +81,8 @@ public class WssX509CertPropertiesDialog extends AssertionPropertiesOkCancelSupp
     private JCheckBox allowMultipleSignatures;
     private JTextField signatureElementVariableTextField;
     private JLabel signatureElementVariableLabel;
+    private JTextField signatureReferenceTextField;
+    private JLabel signatureReferenceLabel;
 
     private void doValidation() {
         getOkButton().setEnabled( !isReadOnly() );
@@ -81,5 +92,7 @@ public class WssX509CertPropertiesDialog extends AssertionPropertiesOkCancelSupp
         boolean enabled = allowMultipleSignatures.isSelected();
         signatureElementVariableTextField.setEnabled( enabled );
         signatureElementVariableLabel.setEnabled( enabled );
+        signatureReferenceTextField.setEnabled( enabled );
+        signatureReferenceLabel.setEnabled( enabled );
     }
 }

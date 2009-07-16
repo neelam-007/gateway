@@ -12,6 +12,10 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
+import java.util.List;
+import java.util.Arrays;
+import java.util.ArrayList;
+
 /**
  * This assertion verifies that the soap message contained
  * an xml digital signature but does not care about which
@@ -23,7 +27,6 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jul 14, 2004<br/>
- * $Id$<br/>
  */
 @RequiresSOAP(wss=true)
 public class RequireWssX509Cert extends SecurityHeaderAddressableSupport implements MessageTargetable, UsesVariables {
@@ -71,6 +74,14 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
         this.signatureElementVariable = signatureElementVariable;
     }
 
+    public String getSignatureReferenceElementVariable() {
+        return signatureReferenceElementVariable;
+    }
+
+    public void setSignatureReferenceElementVariable( final String signatureReferenceElementVariable ) {
+        this.signatureReferenceElementVariable = signatureReferenceElementVariable;
+    }
+
     @Override
     public TargetMessageType getTarget() {
         return messageTargetableSupport.getTarget();
@@ -99,14 +110,14 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        String[] used = messageTargetableSupport.getVariablesUsed();
+        List<String> used = new ArrayList<String>( Arrays.asList( messageTargetableSupport.getVariablesUsed() ) );
         if ( signatureElementVariable != null ) {
-            String[] allUsed = new String[used.length+1];
-            System.arraycopy( used, 0, allUsed, 0, used.length );
-            allUsed[used.length] = signatureElementVariable;
-            used = allUsed;
+            used.add( signatureElementVariable );
         }
-        return used;
+        if ( signatureReferenceElementVariable != null ) {
+            used.add( signatureReferenceElementVariable );
+        }
+        return used.toArray( new String[used.size()] );
     }
 
     @Override
@@ -120,6 +131,7 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
 
     private boolean allowMultipleSignatures = false;
     private String signatureElementVariable;
+    private String signatureReferenceElementVariable;
     private MessageTargetableSupport messageTargetableSupport
             = new MessageTargetableSupport(TargetMessageType.REQUEST);
 }

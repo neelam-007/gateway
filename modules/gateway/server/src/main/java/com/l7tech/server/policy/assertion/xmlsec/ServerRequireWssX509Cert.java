@@ -21,6 +21,7 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.message.Message;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.springframework.beans.factory.BeanFactory;
 import org.xml.sax.SAXException;
@@ -116,11 +117,27 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
             }
         }
 
+        Element[] requiredSignatureReferenceElements = null;
+        if ( assertion.getSignatureReferenceElementVariable() != null ) {
+            requiredSignatureReferenceElements = new Element[0]; // fail if we don't match anything
+            try {
+                Object variable = context.getVariable( assertion.getSignatureReferenceElementVariable() );
+                if ( variable instanceof Element ) {
+                    requiredSignatureReferenceElements = new Element[]{ (Element) variable };
+                } else if ( variable instanceof Element[] ) {
+                    requiredSignatureReferenceElements = (Element[]) variable;
+                }
+            } catch (NoSuchVariableException e) {
+                // so we won't find any creds
+            }
+        }
+
         Element processedSignatureElement = null;
         for (XmlSecurityToken tok : tokens) {
             if (tok instanceof X509SigningSecurityToken) {
                 X509SigningSecurityToken x509Tok = (X509SigningSecurityToken)tok;
-                if (x509Tok.isPossessionProved() && isTargetSignature(requiredSignatureElements,x509Tok)) {
+                if ( x509Tok.isPossessionProved() &&
+                     isTargetSignature(requiredSignatureElements,requiredSignatureReferenceElements,x509Tok)) {
 
                     // Check for a single signature element, not token or certificate (bug 7157)
                     final X509Certificate signingCertificate = x509Tok.getMessageSigningCertificate();
@@ -176,25 +193,34 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
     /**
      * If particular signature(s) are desired, check that the token matches.
      */
-    private boolean isTargetSignature( final Element[] targets, final X509SigningSecurityToken token ) {
+    private boolean isTargetSignature( final Element[] targets,
+                                       final Element[] referenceTargets,
+                                       final X509SigningSecurityToken token ) {
         boolean match = false;
 
-        if ( targets == null ) {
+        if ( targets == null && referenceTargets == null ) {
             match = true;
         } else {
             final SignedElement[] signedElements = token.getSignedElements();
             if ( signedElements.length > 0 ) {
                 final Element signatureElement = signedElements[0].getSignatureElement();
                 if ( signatureElement != null ) {
-                    if ( ArrayUtils.contains( targets, signatureElement )) {
-                        match = true;
-                    } else {
-                        // we'll have to try a slower DOM comparison
-                        for ( Element targetElement : targets ) {
-                            if ( signatureElement.isEqualNode( targetElement ) ) {
+                    // Check signature matches
+                    if ( isReferenceMatch( referenceTargets, signedElements ) ) {
+                        if ( targets != null ) {
+                            if ( ArrayUtils.contains( targets, signatureElement )) {
                                 match = true;
-                                break;
+                            } else {
+                                // we'll have to try a slower DOM comparison
+                                for ( Element targetElement : targets ) {
+                                    if ( signatureElement.isEqualNode( targetElement ) ) {
+                                        match = true;
+                                        break;
+                                    }
+                                }
                             }
+                        } else {
+                            match = true;
                         }
                     }
                 }
@@ -202,5 +228,54 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
         }
 
         return match;
+    }
+
+    /**
+     * Check that either referenceTargets is null, or that the signed
+     * elements match.
+     */
+    private boolean isReferenceMatch( final Element[] referenceTargets,
+                                      final SignedElement[] signedElements ) {
+        boolean referenceMatches;
+
+        if ( referenceTargets != null ) {
+            boolean match = referenceTargets.length > 0;
+
+            for ( Element element : referenceTargets ) {
+                final String elementWsuId = SoapUtil.getElementWsuId( element );
+                if ( elementWsuId == null ||
+                     !containsElementByWsuId( signedElements, elementWsuId ) ) {
+                    match = false;
+                    break;
+                }
+            }
+
+            referenceMatches = match;
+        } else {
+            referenceMatches = true;
+        }
+        
+        return referenceMatches;
+    }
+
+    /**
+     * Check that the given signed elements contains a element with the given wsu:Id 
+     */
+    private boolean containsElementByWsuId( final SignedElement[] signedElements,
+                                            final String elementWsuId ) {
+        boolean found = false;
+
+        for ( SignedElement signedElement : signedElements ) {
+            Element signed = signedElement.asElement();
+            if ( signed != null ) {
+                String signedEleWsuId = SoapUtil.getElementWsuId( signed );
+                if ( elementWsuId.equals( signedEleWsuId ) ) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        return found;
     }
 }
