@@ -197,7 +197,6 @@ class DBDumpUtil {
 
             final String msg = "\tDumping database audit tables to " + outputDirectory + " ..";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, verbose, stdout, false);
-            if (stdout != null && verbose) stdout.print("Dumping database audit tables to " + outputDirectory + " ..");
             for(final String tableName: auditTables){
 
                 if(!tableName.startsWith("audit")){
@@ -251,11 +250,20 @@ class DBDumpUtil {
     private static void backUpTable(final String tableName, final Connection conn, final OutputStream mainOutput,
                                     final Functions.BinaryThrows<Boolean, String, ResultSet, Exception> rowFilter)
             throws SQLException, IOException {
-        final Statement tdata = conn.createStatement();
+        //set explicity parameters on the statement, although these are the default values
+        final Statement stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+                      java.sql.ResultSet.CONCUR_READ_ONLY);
+        //force the result set to stream
+        //if you print the fetch size with and without this statement you will get 0, but this actually has
+        //the side affect of causing the result set to stream
+        //see http://dev.mysql.com/doc/refman/5.0/en/connector-j-reference-implementation-notes.html
+        //go to the section ResultSet
+        stmt.setFetchSize(Integer.MIN_VALUE);
+
         ResultSet resultSet = null;
 
         try{
-            resultSet = tdata.executeQuery("select * from " + tableName);
+            resultSet = stmt.executeQuery("select * from " + tableName);
             while (resultSet.next()) {
                 if(rowFilter != null){
                     boolean isRowExcluded;
@@ -267,7 +275,7 @@ class DBDumpUtil {
                         }else if(ExceptionUtils.causedBy(e, SQLException.class)){
                             throw new SQLException(e);
                         }else{
-                            //log strange behaviour
+                            //something unexpected happened
                             throw new IllegalStateException("Unexpected exception occured", e);
                         }
                     }
