@@ -13,11 +13,14 @@ import com.l7tech.identity.GroupBean;
 import com.l7tech.message.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.SignatureConfirmation;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.prov.JceProvider;
@@ -35,6 +38,8 @@ import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
@@ -71,7 +76,6 @@ public class PolicyProcessingTest {
     private static final Logger logger = Logger.getLogger(TokenServiceTest.class.getName());
     private static final String POLICY_RES_PATH = "policy/resources/";
 
-    private static ApplicationContext applicationContext = null;
     private static MessageProcessor messageProcessor = null;
     private static AuditContext auditContext = null;
     private static SoapFaultManager soapFaultManager = null;
@@ -137,7 +141,8 @@ public class PolicyProcessingTest {
         {"/signatureconfirmation2", "POLICY_signatureconfirmation2.xml"},
         {"/signatureconfirmation3", "POLICY_signatureconfirmation3.xml"},
         {"/addusernametoken2", "POLICY_response_wss_usernametoken_digest.xml"},
-        {"/addusernametoken3", "POLICY_response_encrypted_usernametoken.xml"}
+        {"/addusernametoken3", "POLICY_response_encrypted_usernametoken.xml"},
+        {"/secureconversation", "POLICY_secure_conversation.xml"}
     };
 
     @Before
@@ -164,7 +169,7 @@ public class PolicyProcessingTest {
         buildServices();
         buildUsers();
 
-        applicationContext = ApplicationContexts.getTestApplicationContext();
+        ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
@@ -173,6 +178,8 @@ public class PolicyProcessingTest {
 
         ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
         cache.initializeServiceCache();
+
+        createSecureConversationSession(); // session used in testing
 
         auditContext.flush(); // ensure clear
     }
@@ -240,6 +247,21 @@ public class PolicyProcessingTest {
         GroupBean gb1 = new GroupBean(9898, "BobGroup");
         gb1.setUniqueIdentifier( "4718594" );
         TestIdentityProvider.addGroup(gb1, ub2);
+    }
+
+    private static void createSecureConversationSession() throws DuplicateSessionException {
+        // Create a well known test session for secure conversation testing
+        SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
+        UserBean ub1 = new UserBean(9898, "Alice");
+        ub1.setUniqueIdentifier( "4718592" );
+        if (sccm.getSession("http://www.layer7tech.com/uuid/00000001") == null) {
+            sccm.createContextForUser(
+                    "http://www.layer7tech.com/uuid/00000001",
+                    System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
+                    ub1,
+                    LoginCredentials.makeLoginCredentials(new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class),
+                    new byte[16]);
+        }
     }
 
     /**
@@ -1166,6 +1188,22 @@ public class PolicyProcessingTest {
 	public void testAddEncryptedWssUsernameToken() throws Exception {
         final String requestMessage = new String(loadResource("REQUEST_general.xml"));
         processMessage("/addusernametoken3", requestMessage, 0);
+    }
+
+    @Test
+    public void testSecureConversation() throws Exception {
+        final String requestMessage = new String(loadResource("REQUEST_secure_conversation.xml"));
+        processMessage("/secureconversation", requestMessage, 0);
+    }
+
+    /**
+     * Test that processing of a signature with HMACOutputLength of 1 bit fails. 
+     */
+    @BugNumber(7526)
+    @Test
+    public void testSecureConversationHMACOutputLength() throws Exception {
+        final String requestMessage = new String(loadResource("REQUEST_secure_conversation_hmacoutputlength.xml"));
+        processMessage("/secureconversation", requestMessage, 500);
     }
 
     /**
