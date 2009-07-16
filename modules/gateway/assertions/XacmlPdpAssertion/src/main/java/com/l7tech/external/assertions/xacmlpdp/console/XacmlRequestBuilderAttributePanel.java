@@ -33,7 +33,7 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
         this.xacmlVersion = version;
         issuerField.setText(attribute.getIssuer());
 
-        if(xacmlVersion != XacmlAssertionEnums.XacmlVersionType.V2_0) {
+        if(xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V1_0) {
             issueInstantField.setText(attribute.getIssueInstant());
         }
 
@@ -72,7 +72,7 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
             }
         }));
 
-        if(xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V2_0) {
+        if(xacmlVersion != XacmlAssertionEnums.XacmlVersionType.V1_0) {
             issueInstantLabel.setVisible(false);
             issueInstantField.setVisible(false);
         } else {
