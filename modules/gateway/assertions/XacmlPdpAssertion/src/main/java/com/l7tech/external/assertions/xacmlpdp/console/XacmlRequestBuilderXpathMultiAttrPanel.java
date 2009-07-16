@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.xacmlpdp.console;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.CONTEXT_VARIABLE;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -13,6 +14,7 @@ import com.l7tech.xml.xpath.XpathUtil;
 import com.l7tech.xml.xpath.XpathVariableFinder;
 import com.l7tech.xml.xpath.NoSuchXpathVariableException;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -243,15 +245,20 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         }));
 
         addChangeListener(idComboBox, ID);
+        addTypeChangeListener(idExpressionType, ID);
         addChangeListener(dataTypeComboBox, DATA_TYPE);
+        addTypeChangeListener(dataTypeExpressionType, DATA_TYPE);
         addChangeListener(issuerField, ISSUER);
+        addTypeChangeListener(issuerExpressionType, ISSUER);
         addChangeListener(valueField, VALUE);
+        addTypeChangeListener(valueExpressionType, VALUE);
 
         if(version == XacmlAssertionEnums.XacmlVersionType.V2_0) {
             issueInstantLabel.setVisible(false);
             issueInstantFieldsPanel.setVisible(false);
         } else {
             addChangeListener(issueInstantField, ISSUE_INSTANT);
+            addTypeChangeListener(issueInstantExpressionType, ISSUE_INSTANT);
         }
 
         Utilities.setDoubleClickAction( namespacesTable, modifyNamespaceButton );
@@ -276,17 +283,27 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         }));
     }
 
+    private void addTypeChangeListener(final JComboBox field, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
+        field.addActionListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                multipleAttributeConfig.getField(fieldName).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) field.getSelectedItem());
+            }
+        }));
+    }
+
+
     @Override
     public boolean handleDispose() {
-        // Access editor directly to get the current text
-        multipleAttributeConfig.getField(ID).setValue(((String)idComboBox.getEditor().getItem()).trim());
-        multipleAttributeConfig.getField(DATA_TYPE).setValue(((String)dataTypeComboBox.getEditor().getItem()).trim());
-
-        multipleAttributeConfig.getField(ID).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) idExpressionType.getSelectedItem());
-        multipleAttributeConfig.getField(DATA_TYPE).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) dataTypeExpressionType.getSelectedItem());
-        multipleAttributeConfig.getField(ISSUER).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) issuerExpressionType.getSelectedItem());
-        multipleAttributeConfig.getField(ISSUE_INSTANT).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) issueInstantExpressionType.getSelectedItem());
-        multipleAttributeConfig.getField(VALUE).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) valueExpressionType.getSelectedItem());
+        for (XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field : multipleAttributeConfig.getFields().values()) {
+            if (CONTEXT_VARIABLE == field.getType()) {
+                String[] varStrings = Syntax.getReferencedNames(field.getValue());
+                if (varStrings.length != 1 || ! field.getValue().equals("${" + varStrings[0] + "}")) {
+                    JOptionPane.showMessageDialog(this, "Field '" + field.getName() + "' must be a reference to exactly one context variable.");
+                    return false;
+                }
+            }
+        }
 
         Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName> relativeXpaths = multipleAttributeConfig.getRelativeXPathFieldNames();
         if( ! relativeXpaths.isEmpty() && xpathBaseField.getText().trim().isEmpty()) {

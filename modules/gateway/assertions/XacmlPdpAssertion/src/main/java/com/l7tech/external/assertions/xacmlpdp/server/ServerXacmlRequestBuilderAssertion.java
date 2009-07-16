@@ -9,6 +9,7 @@ import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_RELATIVE;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_ABSOLUTE;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.CONTEXT_VARIABLE;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
@@ -25,10 +26,7 @@ import com.l7tech.xml.xpath.XpathResultNode;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.DOMException;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -435,6 +433,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @throws SAXException
      */
     private void addXmlMessageVariableAsAttributeValue(Message m, Element element) throws IOException, SAXException {
+        // todo: mixed content is allowed in AttributeValue, should be able to add non-xml messages
         if(m.isXml()){
             XmlKnob xmlKnob = m.getXmlKnob();
             Document doc = xmlKnob.getDocumentReadOnly();
@@ -455,7 +454,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributeTreeNodeTag;
                 addAttribute(doc, parent, attribute, vars, xacmlVersion);
             } else if(attributeTreeNodeTag instanceof XacmlRequestBuilderAssertion.MultipleAttributeConfig) {
-                addXpathAttributes(doc, parent, (XacmlRequestBuilderAssertion.MultipleAttributeConfig) attributeTreeNodeTag, vars, context);
+                addMultipleAttributes(doc, parent, (XacmlRequestBuilderAssertion.MultipleAttributeConfig) attributeTreeNodeTag, vars, context);
             }
         }
     }
@@ -472,7 +471,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         return false;
     }
 
-    private void addXpathAttributes(final Document doc,
+    private void addMultipleAttributes(final Document doc,
                                        final Element parent,
                                        final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig,
                                        final Map<String, Object> contextVariables,
@@ -481,48 +480,40 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> nonValueFields = multipleAttributeConfig.getNonValueFields();
         boolean isUsingMultiValuedCtxVariables = areAnyIterableFieldsReferencingMultiValuedVariables(contextVariables, nonValueFields);
 
-        int smallestCtxVarSize = 0;
-        if(isUsingMultiValuedCtxVariables){
-            List<String> allValues = new ArrayList<String>();
-            for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField: nonValueFields){
-                allValues.add(configField.getValue());
-            }
-            smallestCtxVarSize =  getMinMultiValuedCtxVariableReferenced( allValues, contextVariables, false);
+        boolean iteratingOnBaseXPath = false;
+        List<String> iterableValues = new ArrayList<String>();
+        for (XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField : nonValueFields) {
+            if (XPATH_RELATIVE == configField.getType())
+                iteratingOnBaseXPath = true;
+            if (isUsingMultiValuedCtxVariables && CONTEXT_VARIABLE == configField.getType())
+                iterableValues.add(configField.getValue());
         }
+        int smallestCtxVarSize = getMinMultiValuedCtxVariableReferenced(iterableValues, contextVariables, false);
+        
         //Now we know if we are using a multi valued context variable
 
-        //Will the base xpath, if defined, be part of the iteration?
-        boolean iteratingOnBaseXPath = isXpathBaseUsedForIteration(multipleAttributeConfig.getAllFields());
         //check the base is not null
         if(iteratingOnBaseXPath &&
                 (multipleAttributeConfig.getXpathBase() == null || multipleAttributeConfig.getXpathBase().isEmpty())){
             throw new IllegalStateException("If any fields are relative xpath, then xpath base must be supplied");
         }
 
-
         final DocumentHolder documentHolder = new DocumentHolder(multipleAttributeConfig, context);
 
         //Execute the base xpath expression, if any, to get information on iteration
-        XpathResultIterator xpathResultSetIterator = null;
+        XpathResultIterator xpathResultSetIterator = multipleAttributeConfig.getRelativeXPathFieldNames().isEmpty() ? null :
+            executeXpathExpression(
+                    documentHolder.getDocument(),
+                    multipleAttributeConfig.getXpathBase(),
+                    multipleAttributeConfig.getNamespaces());
 
-        if(iteratingOnBaseXPath){
-            xpathResultSetIterator =
-                    executeXpathExpression(
-                            documentHolder.getDocument(),
-                            multipleAttributeConfig.getXpathBase(),
-                            multipleAttributeConfig.getNamespaces());
-            if(xpathResultSetIterator == null){
-                //log
-                return;
-            }
+        ElementCursor resultCursor = xpathResultSetIterator != null && xpathResultSetIterator.hasNext() ? xpathResultSetIterator.nextElementAsCursor() : null;
+
+        if (iteratingOnBaseXPath && xpathResultSetIterator == null) {
+            //log
+            return;
         }
 
-        //for convenience we will create a local variable for each field being processed
-        final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field idField = multipleAttributeConfig.getField(ID);
-        final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field dataTypeField = multipleAttributeConfig.getField(DATA_TYPE);
-        final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field issuerField = multipleAttributeConfig.getField(ISSUER);
-        final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field issueInstantField = multipleAttributeConfig.getField(ISSUE_INSTANT);
-        final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field valueField = multipleAttributeConfig.getField(VALUE);
 
         final Map<String, String> namespaces = multipleAttributeConfig.getNamespaces();
         //now we know everything required to define the iteration
@@ -542,52 +533,41 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             //at this point we may have xpath results or we may need to execute single absolute xpath expressions
             //or pick out static strings or single context variables
 
-            //Implies xpathResultSetIterator is not null
-            ElementCursor resultCursor = xpathResultSetIterator != null && xpathResultSetIterator.hasNext() ? xpathResultSetIterator.nextElementAsCursor() : null;
-
-            String id = XPATH_RELATIVE == idField.getType() ?
-                    getRelativeXpathValueForField(resultCursor, idField.getValue(), namespaces)
-                    : getValueForField(idField, documentHolder, namespaces, contextVariables, iterationCount);
-
-            String dataType = XPATH_RELATIVE == dataTypeField.getType() ?
-                    getRelativeXpathValueForField( resultCursor, dataTypeField.getValue(), namespaces)
-                    : getValueForField(dataTypeField, documentHolder, namespaces, contextVariables, iterationCount);
-
-            String issuer = XPATH_RELATIVE == issuerField.getType() ?
-                    getRelativeXpathValueForField( resultCursor, issuerField.getValue(), namespaces)
-                    : getValueForField(issuerField, documentHolder, namespaces, contextVariables, iterationCount);
-
-            String issuerInstant = XPATH_RELATIVE == issueInstantField.getType() ?
-                    getRelativeXpathValueForField(resultCursor, issueInstantField.getValue(), namespaces)
-                    : getValueForField(issueInstantField, documentHolder, namespaces, contextVariables, iterationCount);
+            Map<XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName,String> fieldCurrentValues =
+                new HashMap<XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName, String>();
+            for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field : nonValueFields) {
+                fieldCurrentValues.put(field.getName(), XPATH_RELATIVE == field.getType() ?
+                    getRelativeXpathValueForField(resultCursor, field.getValue(), namespaces)
+                    : getValueForField(field, documentHolder, namespaces, contextVariables, iterationCount));
+            }
 
             //also work out value - as it cannot change between iterations
 
             //check our minimum requirements
             //id, datatype and value not having a value means no more <Attribute>s can be created
-            if(id == null || id.isEmpty()) return;
-            if(dataType == null || dataType.isEmpty()) return;
+            if(fieldCurrentValues.get(ID) == null || fieldCurrentValues.get(ID).isEmpty()) return;
+            if(fieldCurrentValues.get(DATA_TYPE) == null || fieldCurrentValues.get(DATA_TYPE).isEmpty()) return;
 
             //our last requirement is the value field, which has the ability to be an absolute or relative
             //xpath expression, single or multi valued context variable or a string
 
             List<AttributeValue> attributeValues = getAttributeValues(documentHolder,
                     namespaces,
-                    valueField,
+                    multipleAttributeConfig.getField(VALUE),
                     contextVariables,
                     resultCursor);
 
             if(attributeValues.isEmpty()) return;
 
             //Create the Attribute
-            Element attributeElement = addAttributeElement(doc, id, dataType, issuer, issuerInstant);
+            Element attributeElement = addAttributeElement(doc, fieldCurrentValues);
 
             //Add all applicable AttributeValues
             for(AttributeValue av: attributeValues){
                 Element attributeValueElement = doc.createElementNS(
                         assertion.getXacmlVersion().getNamespace(), "AttributeValue");
                 
-                boolean successfullyAdded = av.addMeToAnElement(attributeValueElement, contextVariables);
+                boolean successfullyAdded = av.addMeToAnElement(attributeValueElement);
 
                 if(successfullyAdded){
                     //this is the only place where the parent get's an <Attribute> added to it
@@ -602,10 +582,12 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             //we will attempt to create an Attribute once only, after that we need to find a reason to continue
             iterationCount++;
 
-            exitIteration = true;
-
             //determine state of xpath iteration
             boolean xpathMoreResults = xpathResultSetIterator != null && xpathResultSetIterator.hasNext();
+
+            // advance XPath iteration, if used
+            if (iteratingOnBaseXPath && xpathMoreResults)
+                resultCursor = xpathResultSetIterator.nextElementAsCursor();
 
             //determine the state of min multi valued context iteration
             //check we are not already past based on smallest multi value context variable
@@ -619,20 +601,22 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             //when do we exit? Well xpath may or may not be part of the iteration. a multi valuex context variable
             //may not be part of the iteration
             //cannot iterate more the minumum of both
-            boolean bothIterateMethodsBeingUsed = xpathResultSetIterator != null && isUsingMultiValuedCtxVariables;
+            boolean bothIterateMethodsBeingUsed = iteratingOnBaseXPath && isUsingMultiValuedCtxVariables;
 
+            exitIteration = true;
             if(bothIterateMethodsBeingUsed){
                 //when both methods are being used, then both must say it's ok to continue
                 exitIteration = !(multiValueMoreResults && xpathMoreResults); 
             }else{
                 //check xpath
-                if(xpathResultSetIterator != null){
+                if(iteratingOnBaseXPath){
                     exitIteration = !xpathMoreResults;
                 }else if(isUsingMultiValuedCtxVariables){
                     exitIteration = !multiValueMoreResults;
                 }
             }
         } while(!exitIteration);
+//        while (iteratingOnBaseXPath && resultCursor != null || isUsingMultiValuedCtxVariables && iterationCount < smallestCtxVarSize)
 
     }
 
@@ -657,17 +641,6 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         return xpathResultSetIterator;
     }
 
-    private boolean isXpathBaseUsedForIteration(Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> fields) {
-        boolean iteratingOnBaseXPath = false;
-        for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField: fields){
-            if ( XPATH_RELATIVE == configField.getType() ) {
-                iteratingOnBaseXPath = true;
-                break;
-            }
-        }
-        return iteratingOnBaseXPath;
-    }
-
     /**
      * Iterable fields can contain multi valued context variables. If a field contains one, the contents of the variable
      * cannot include any messages
@@ -679,7 +652,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                                                                 Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> fields) {
         boolean isUsingMultiValuedCtxVariables = false;
         for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField: fields){
-            if(! configField.getType().isXpath()){
+            if(CONTEXT_VARIABLE == configField.getType()){
                 if(fieldValueContainMultiValuedContextVariable(configField.getValue(), contextVariables)){
                     isUsingMultiValuedCtxVariables = true;
                     //check for Message content
@@ -698,17 +671,17 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         return isUsingMultiValuedCtxVariables;
     }
 
-    private Element addAttributeElement(Document doc, String id, String dataType, String issuer, String issuerInstant) {
+    private Element addAttributeElement(Document doc, Map<XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName,String> fieldCurrentValues) {
         Element attributeElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Attribute");
-        attributeElement.setAttribute("AttributeID", id);
-        attributeElement.setAttribute("DataType", dataType);
-        if(issuer != null && !issuer.isEmpty()) {
-            attributeElement.setAttribute("Issuer", issuer);
+        attributeElement.setAttribute("AttributeID", fieldCurrentValues.get(ID));
+        attributeElement.setAttribute("DataType", fieldCurrentValues.get(DATA_TYPE));
+        if(fieldCurrentValues.get(ISSUER) != null && !fieldCurrentValues.get(ISSUER).isEmpty()) {
+            attributeElement.setAttribute("Issuer", fieldCurrentValues.get(ISSUER));
         }
 
         if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
-            if(issuerInstant != null && issuerInstant.isEmpty()) {
-                attributeElement.setAttribute("IssueInstant", issuerInstant);
+            if(fieldCurrentValues.get(ISSUE_INSTANT) != null && fieldCurrentValues.get(ISSUE_INSTANT).isEmpty()) {
+                attributeElement.setAttribute("IssueInstant", fieldCurrentValues.get(ISSUE_INSTANT));
             }
         }
 
@@ -738,24 +711,24 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         if( VALUE == configField.getName() )
             throw new UnsupportedOperationException("method cannot be used for value field");
 
-        if( XPATH_ABSOLUTE == configField.getType() ){
+        if( XPATH_ABSOLUTE == configField.getType() ) {
             return getAbsoluteXPathResult(configField, documentHolder.getDocument(), namespaces);
-        } else {
+        } else if ( CONTEXT_VARIABLE == configField.getType()) {
             //Determine if it's a multi valued context variable
             if(fieldValueContainMultiValuedContextVariable(configField.getValue(), contextVariables)){
                 List multiValuedVariable =
                         getMultiValuedContextVariable(configField.getValue(), contextVariables, false);
                 if(multiValuedVariable.size() < multiVarIndex){
                     //if this happens its a coding error
-                    throw new IllegalStateException("" +
-                            "Multi valued context variable found does not contain enough elements");                    
+                    throw new IllegalStateException("Multi valued context variable found does not contain enough elements");
                 }
 
                 String value = multiValuedVariable.get(multiVarIndex).toString();
                 return ExpandVariables.process(value, contextVariables, auditor, true);
+            } else { // single-value context variable, expand
+                return ExpandVariables.process(configField.getValue(), contextVariables, auditor, true);
             }
-            //it might be a single valued context variable
-            //or just a string
+        } else { // REGULAR, expand all variables in the field value
             return ExpandVariables.process(configField.getValue(), contextVariables, auditor, true);
         }
     }
@@ -888,16 +861,21 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * AttributeValue knows how to add itself to a Element representing an <AttributeValue>
      */
     private class AttributeValue{
-        private Message message;
-        private String content;//can be a string containing content variable references
+        private String processedContent;     // simple content or already toString()'ed
+        private Message message;             // content from one (XML) message
+        private List<Object> mixedContent;   // mixed content (strings and (xml) messages)
         private XpathResultWrapper wrapper;
+
+        public AttributeValue(String processedContent) {
+            this.processedContent = processedContent;
+        }
 
         public AttributeValue(Message message) {
             this.message = message;
         }
 
-        public AttributeValue(String content) {
-            this.content = content;
+        public AttributeValue(List<Object> mixedContent) {
+            this.mixedContent = mixedContent;
         }
 
         public AttributeValue(XpathResultWrapper wrapper) {
@@ -910,12 +888,11 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
          * @param element
          * @return true if successfully added, false otherwise
          */
-        public boolean addMeToAnElement(Element element, Map<String, Object> contextVariables){
+        public boolean addMeToAnElement(Element element){
 
             //am I a String?
-            if(content != null){
-                element.appendChild(element.getOwnerDocument().createTextNode(
-                        ExpandVariables.process(content, contextVariables, auditor, true)));
+            if(processedContent != null){
+                element.appendChild(element.getOwnerDocument().createTextNode(processedContent));
                 return true;
             }
 
@@ -947,6 +924,22 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 element.appendChild(importedNode);
                 return true;
             }
+
+            if (mixedContent != null) {
+                for (Object part : mixedContent) {
+                    if (part instanceof String) {
+                        element.appendChild(element.getOwnerDocument().createTextNode((String) part));
+                    } else if (part instanceof Message) {
+                        try {
+                            addXmlMessageVariableAsAttributeValue((Message)part, element);
+                        } catch (Exception e) {
+                            //log
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
             
             return false;
         }
@@ -968,54 +961,40 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field valueField,
             Map<String, Object> contextVariables,
             ElementCursor resultCursor) throws DocumentHolderException {
+
         List<AttributeValue> returnList = new ArrayList<AttributeValue>();
 
-        boolean fieldContainsMultiValuedContextVariable =
-                fieldValueContainMultiValuedContextVariable(valueField.getValue(), contextVariables);
-
-        if(fieldContainsMultiValuedContextVariable){
-            List contextVars = getMultiValuedContextVariable(valueField.getValue(), contextVariables, false);
-            //contextVars contains String and or Messages
-            for(Object o: contextVars){
-                AttributeValue av;
-                if(o instanceof Message){
-                    Message m = (Message) o;
-                    av = new AttributeValue(m);
-                }else{
-                    String value = ExpandVariables.process(o.toString(), contextVariables, auditor, true);
-                    av = new AttributeValue(value);
+        if (CONTEXT_VARIABLE == valueField.getType()) { // there's only one variable, but possibly multi-value
+            if (fieldValueContainMultiValuedContextVariable(valueField.getValue(), contextVariables)) {
+                List varValues = getMultiValuedContextVariable(valueField.getValue(), contextVariables, false);
+                //contextVars contains String and or Messages
+                for(Object varValue : varValues){
+                    returnList.add(varValue instanceof Message ?
+                        new AttributeValue((Message)varValue) :
+                        new AttributeValue(ExpandVariables.process(varValue.toString(), contextVariables, auditor, true)));
                 }
-                returnList.add(av);
+            } else { // single-value context variable, may contain a Message reference
+                String [] varNames = Syntax.getReferencedNames(valueField.getValue());
+                if(varNames.length != 0) {
+                    Object contextVarValue = contextVariables.get(varNames[0]);
+                    returnList.add(contextVarValue instanceof Message ?
+                        new AttributeValue((Message)contextVarValue) :
+                        new AttributeValue(ExpandVariables.process(contextVarValue.toString(), contextVariables, auditor, true)));
+                }
             }
-            return returnList;
-        }
-
-        if( valueField.getType().isXpath() ) {
+        } else if( valueField.getType().isXpath() ) { // XPATH_RELATIVE or XPATH_ABSOLUTE
             List<XpathResultWrapper> xpathResults = XPATH_RELATIVE == valueField.getType() ?
                 getRelativeXPathResult(resultCursor, valueField.getValue(), namespaces) :
                 getAbsoluteXPathResultForValue(valueField, documentHolder.getDocument(), namespaces);
             
             for(XpathResultWrapper wrapper: xpathResults){
-                AttributeValue av = new AttributeValue(wrapper);
-                returnList.add(av);
+                returnList.add(new AttributeValue(wrapper));
             }
 
-            return returnList;
+        } else { // REGULAR, expand all context variables, including multi-valued, into one AttributeValue element
+            returnList.add(new AttributeValue(ExpandVariables.processNoFormat(valueField.getValue(), contextVariables, auditor, true)));
         }
 
-        //is it a string referencing a message variable?
-        String [] v = Syntax.getReferencedNames(valueField.getValue());
-        if(v.length != 0){
-            Object o = contextVariables.get(v[0]);
-            if(o instanceof Message){
-                AttributeValue av = new AttributeValue((Message)o);
-                returnList.add(av);
-                return returnList;
-            }
-        }
-        //it's just a string or a single valued context variable of type string
-        AttributeValue av = new AttributeValue(valueField.getValue());
-        returnList.add(av);
         return returnList;
     }
 

@@ -354,6 +354,20 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             return result;
         }
 
+        public Field getField(FieldName name) {
+            return fields.get(name.name());
+        }
+
+        public Set<Field> getNonValueFields() {
+            Set<Field> result = new HashSet<Field>(fields.values());
+            result.remove(fields.get(VALUE.name()));
+            return result;
+        }
+
+        public Set<Field> getAllFields() {
+            return new HashSet<Field>(fields.values());
+        }
+
         public Map<String, Field> getFields() {
             return fields;
         }
@@ -395,20 +409,6 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             this.namespaces = namespaces;
         }
 
-        public Field getField(FieldName name) {
-            return fields.get(name.name());
-        }
-
-        public Set<Field> getNonValueFields() {
-            Set<Field> result = new HashSet<Field>(fields.values());
-            result.remove(fields.get(VALUE.name()));
-            return result;
-        }
-
-        public Set<Field> getAllFields() {
-            return new HashSet<Field>(fields.values());
-        }
-
         @Override
         public String toString() {
             return "Multiple Attributes";
@@ -445,6 +445,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
             public void setType(FieldType type) {
                 this.type = type;
+                setValue(this.value); // make sure ${} is added when the type is changed
             }
 
             public FieldType getType() {
@@ -452,7 +453,12 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             }
 
             public void setValue(String value) {
-                this.value = value;
+                if ( type == FieldType.CONTEXT_VARIABLE && ! value.isEmpty() &&
+                     ! value.startsWith("${") && !value.endsWith("}")) {
+                    this.value = "${" + value + "}";
+                } else {
+                    this.value = value;
+                }
             }
 
             @Override

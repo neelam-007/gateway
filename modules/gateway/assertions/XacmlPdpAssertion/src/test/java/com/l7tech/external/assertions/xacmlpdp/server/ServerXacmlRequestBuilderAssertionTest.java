@@ -18,6 +18,7 @@ import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAsserti
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_RELATIVE;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_ABSOLUTE;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.REGULAR;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.CONTEXT_VARIABLE;
 import com.l7tech.policy.assertion.AssertionStatus;
 import org.xml.sax.SAXException;
 import org.springframework.mock.web.MockServletContext;
@@ -570,7 +571,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("donal:id/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setType(REGULAR);
+        multipleConfig.getField(VALUE).setType(CONTEXT_VARIABLE);
         multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         String xml = "<donal>value</donal>";
@@ -621,9 +622,9 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //Just set up the minimum - id, datatype and value
         multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setType(REGULAR);
+        multipleConfig.getField(DATA_TYPE).setType(CONTEXT_VARIABLE);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
-        multipleConfig.getField(VALUE).setType(REGULAR);
+        multipleConfig.getField(VALUE).setType(CONTEXT_VARIABLE);
         multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
@@ -677,9 +678,9 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //Just set up the minimum - id, datatype and value
         multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         multipleConfig.getField(ID).setValue("donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setType(REGULAR);
+        multipleConfig.getField(DATA_TYPE).setType(CONTEXT_VARIABLE);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
-        multipleConfig.getField(VALUE).setType(REGULAR);
+        multipleConfig.getField(VALUE).setType(CONTEXT_VARIABLE);
         multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
@@ -730,9 +731,9 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //Just set up the minimum - id, datatype and value
         multipleConfig.getField(ID).setType(XPATH_ABSOLUTE);
         multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/donal:id/text()");
-        multipleConfig.getField(DATA_TYPE).setType(REGULAR);
+        multipleConfig.getField(DATA_TYPE).setType(CONTEXT_VARIABLE);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
-        multipleConfig.getField(VALUE).setType(REGULAR);
+        multipleConfig.getField(VALUE).setType(CONTEXT_VARIABLE);
         multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable

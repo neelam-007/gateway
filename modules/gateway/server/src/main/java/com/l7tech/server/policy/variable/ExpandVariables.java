@@ -10,9 +10,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ServerConfig;
 
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 
 /**
@@ -311,6 +309,33 @@ public final class ExpandVariables {
         matcher.appendTail(sb);
 
         return sb.toString();
+    }
+
+    /**
+     * Expands variables found in the input String similar to the process() methods,
+     * but does not format the resolved values to String.
+     *
+     * @return a list of Objects containing String parts from the input that do not reference variables
+     *         and the resolved variable values
+     * @see #process(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)
+     */
+    public static List<Object> processNoFormat(String s, Map vars, Audit audit, boolean strict) {
+        if (s == null) throw new IllegalArgumentException();
+
+        Matcher matcher = Syntax.regexPattern.matcher(s);
+        List<Object> result = new ArrayList<Object>();
+
+        int previousMatchEndIndex = 0;
+        while (matcher.find()) {
+            int matchingCount = matcher.groupCount();
+            if (matchingCount != 1) {
+                throw new IllegalStateException("Expecting 1 matching group, received: "+matchingCount);
+            }
+            result.add(s.substring(previousMatchEndIndex, matcher.start()));
+            Collections.addAll(result, getAndFilter(vars, Syntax.parse(matcher.group(1), defaultDelimiter()), audit, strict));
+            previousMatchEndIndex = matcher.end();
+        }
+        return result;
     }
 
     private ExpandVariables() {
