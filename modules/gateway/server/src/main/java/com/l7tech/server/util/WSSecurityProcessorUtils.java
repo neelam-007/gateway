@@ -320,7 +320,7 @@ public class WSSecurityProcessorUtils {
                                                                   final ProcessorResult wssResults,
                                                                   final IdentityTarget identityTarget,
                                                                   final boolean checkSigningTokenIsCredential ) {
-        List<SignedElement> signedElementsForIdentity = new ArrayList<SignedElement>();
+        final List<SignedElement> signedElementsForIdentity = new ArrayList<SignedElement>();
 
         final SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
         if ( new IdentityTarget().equals( new IdentityTarget(identityTarget)) ) {
@@ -331,8 +331,9 @@ public class WSSecurityProcessorUtils {
                     checkSigningTokenIsCredential ) ) {
                 signedElementsForIdentity.addAll( Arrays.asList(signedElements) );
             }
-        } else if ( isValidSigningIdentity( authContext, identityTarget, signedElements, new ParsedElement[0] ) ) {
+        } else {
             try {
+                List<SignedElement> foundSignedElementsForIdentity = new ArrayList<SignedElement>();
                 for ( SignedElement signedElement : signedElements ) {
                     Set<SigningSecurityToken> signingSecurityTokens = getSigningSecurityTokens( signedElement.asElement(), signedElements );
                     SigningSecurityToken signingSecurityToken = getTokenForIdentityTarget(
@@ -341,12 +342,16 @@ public class WSSecurityProcessorUtils {
                             identityTarget );
 
                     if ( signingSecurityToken != null ) {
-                        signedElementsForIdentity.add( signedElement );
+                        foundSignedElementsForIdentity.add( signedElement );
                     }
+                }
+
+                if ( isValidSigningIdentity( authContext, identityTarget, signedElements,
+                        foundSignedElementsForIdentity.toArray( new ParsedElement[foundSignedElementsForIdentity.size()] )) ) {
+                    signedElementsForIdentity.addAll( foundSignedElementsForIdentity );   
                 }
             } catch ( MultipleTokenException e ) {
                 logger.log( Level.WARNING, ExceptionUtils.getMessage(e ));
-                signedElementsForIdentity.clear();
             }
         }
 
