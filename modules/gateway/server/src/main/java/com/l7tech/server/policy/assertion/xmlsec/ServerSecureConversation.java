@@ -11,7 +11,6 @@ import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.identity.User;
-import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -105,7 +104,6 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                 User authenticatedUser = session.getUsedBy();
                 AuthenticationContext authContext = context.getAuthenticationContext(context.getRequest());
                 LoginCredentials loginCreds = LoginCredentials.makeLoginCredentials(session.getCredentials().getSecurityToken(), SecureConversation.class, secConTok);
-                authContext.addAuthenticationResult(new AuthenticationResult(authenticatedUser, loginCreds.getSecurityTokens(), session.getCredentials().getClientCert(), false));
                 authContext.addCredentials(loginCreds);
                 context.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
                 auditor.logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, authenticatedUser.getLogin());
