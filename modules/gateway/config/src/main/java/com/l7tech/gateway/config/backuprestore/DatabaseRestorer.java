@@ -78,17 +78,6 @@ class DatabaseRestorer {
         this.image = image;
     }
 
-    /**
-     * If system property com.l7tech.config.backup.localDbOnly is set to false, then any host is ok, otherwise
-     * the host must be local
-     * @param host string host to see if its ok to restore to
-     * @return true if can restore to the host, false otherwise
-     */
-    static boolean canDatabaseBeRestored(final String host){
-        return !SyspropUtil.getBoolean("com.l7tech.config.backup.localDbOnly", true)
-                || ImportExportUtilities.isHostLocal(host);
-    }
-
     boolean doesDatabaseExist(){
         final DBActions.DBActionsResult result = dbAction.checkExistingDb(dbConfig);
         if(result.getStatus() != DBActions.StatusType.SUCCESS){

@@ -352,18 +352,19 @@ public final class Exporter{
             try{
                 component.doBackup();
             }catch (Exception e) {
+                final String msg = "Component '" + component.getComponentType().getDescription()+ "' could not be " +
+                        "backed up due to: " + e.getMessage();
                 if (isHaltOnFirstFailure) {
-                    logger.log(Level.SEVERE, "Could not back up component " + component.getComponentType().getDescription());
-                    logger.log(Level.SEVERE, "Halting backup as -halt option was supplied");
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.SEVERE, msg, isVerbose, printStream);
+                    final String msg1 = "Halting backup as -halt option was supplied";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.SEVERE, msg1, isVerbose, printStream);
                     throw e;
                 }
-                logger.log(Level.WARNING, "Could not back up component " + component.getComponentType().getDescription());
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
                 failedComponents.add(component.getComponentType().getDescription());
             }
         }
 
-        //todo [Donal] make sure that when an exception is thrown it communicated that it's a big fail to the user
-        //as not image was created / ftp'ed
         backup.createBackupImage();
     }
 
@@ -424,7 +425,7 @@ public final class Exporter{
         final DatabaseConfig config = ImportExportUtilities.getNodeConfig(nodePropsFile, ompFile);
 
         //Backup database info if the db is local
-        if(ImportExportUtilities.isHostLocal(config.getHost())){
+        if(ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())){
 
             final BackupComponent<Backup.BackupException> dbComp = new BackupComponent<Backup.BackupException>() {
                 public void doBackup() throws Backup.BackupException {
@@ -457,7 +458,8 @@ public final class Exporter{
                 componentList.add(auditComp);
             }
         }else{
-            logger.log(Level.INFO,  "Database is not local so no backup of database being created");
+            final String msg = "Database is not local so no backup of database being created";
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
         }
 
         final BackupComponent<Backup.BackupException> configComp = new BackupComponent<Backup.BackupException>() {
@@ -578,7 +580,7 @@ public final class Exporter{
 
         //check if we can connect to the database
         //we only need to do this if the db is local, as otherwise a db connection is not required to perform the backup
-        if(ImportExportUtilities.isHostLocal(config.getHost())){
+        if(ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())){
             try {
                 ImportExportUtilities.verifyDatabaseConnection(config, false);
             } catch (SQLException e) {

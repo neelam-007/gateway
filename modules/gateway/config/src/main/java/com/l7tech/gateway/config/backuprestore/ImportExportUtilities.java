@@ -29,6 +29,7 @@ import com.l7tech.util.*;
  */
 public class ImportExportUtilities {
     private static final Logger logger = Logger.getLogger(ImportExportUtilities.class.getName());
+    public static final String LOCAL_DB_ONLY = "com.l7tech.config.backup.localDbOnly";
 
     private static enum ARGUMENT_TYPE {VALID_OPTION, IGNORED_OPTION, INVALID_OPTION, VALUE}
 
@@ -80,6 +81,17 @@ public class ImportExportUtilities {
 
     public static final String SSG_SQL = "/config/etc/sql/ssg.sql";
 
+    /**
+     * If system property com.l7tech.config.backup.localDbOnly is set to false, then any host is ok, otherwise
+     * the host must be local
+     * @param host string host to see if its ok to restore to
+     * @return true if can restore to the host, false otherwise
+     */
+    static boolean isDatabaseAvailableForBackupRestore(final String host){
+        return !SyspropUtil.getBoolean(LOCAL_DB_ONLY, true)
+                || isHostLocal(host);
+    }
+    
     static void throwifEsmIsRunning() {
         final File esmPid = new File("/var/run/ssemd.pid");
         if(esmPid.exists())
@@ -440,7 +452,7 @@ public class ImportExportUtilities {
      * @param host String name of the host to check if it is local or not
      * @return true if host is local. False otherwise. False if any exception occurs when looking up the host.
      */
-    public static boolean isHostLocal(final String host) {
+    static boolean isHostLocal(final String host) {
         try{
             final NetworkInterface networkInterface = NetworkInterface.getByInetAddress( InetAddress.getByName(host) );
             if ( networkInterface != null ) return true;

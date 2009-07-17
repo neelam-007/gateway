@@ -24,8 +24,11 @@ class DBDumpUtil {
     private static final Logger logger = Logger.getLogger(DBDumpUtil.class.getName());
 
     /**
-     * outputs database dump files. The outputted dump file will never contain audits.
-     * An audit table has the prefix 'audit'
+     * Downloads all database info, apart from audits, to the file backupFileName
+     * An audit table has the prefix 'audit' and will never be included in this file
+     *
+     * The caller should decide if a database backup is applicable for the host in dbConfig before calling this
+     * method. This method does not care whether the database is local or remote
      *
      * Note: This will create drop statements for EVERY SINGLE DATABASE TABLE, even if it's not backing it up
      * @param dbConfig          database configuration
@@ -36,7 +39,6 @@ class DBDumpUtil {
      * @param stdout          stream for verbose output; <code>null</code> for no verbose output
      * @throws java.sql.SQLException problem getting data out of db
      * @throws java.io.IOException   problem with dump files
-     * @throws UnsupportedOperationException if the database is remote
      */
     public static void dump(final DatabaseConfig dbConfig,
                             final String outputDirectory,
@@ -52,12 +54,6 @@ class DBDumpUtil {
             throw new IllegalArgumentException("backupFileName cannot be null and must not be the empty string");
         if(licenseStorageFileName == null || licenseStorageFileName.trim().isEmpty())
             throw new IllegalArgumentException("licenseStorageFileName cannot be null and must not be the empty string");
-
-        final NetworkInterface networkInterface =
-                NetworkInterface.getByInetAddress( InetAddress.getByName(dbConfig.getHost()) );
-        if ( networkInterface == null ) {
-            throw new UnsupportedOperationException("Backup of a remote database is not supported");
-        }
 
         final DBActions dba = new DBActions();
         final Connection conn = dba.getConnection(dbConfig, false);

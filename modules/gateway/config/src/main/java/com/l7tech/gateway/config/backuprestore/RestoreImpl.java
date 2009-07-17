@@ -69,7 +69,7 @@ final class RestoreImpl implements Restore{
             
             //validate the dbConfig
             final DatabaseConfig testConfig = new DatabaseConfig(dbConfig);
-            boolean localDb = DatabaseRestorer.canDatabaseBeRestored(dbConfig.getHost());
+            boolean localDb = ImportExportUtilities.isDatabaseAvailableForBackupRestore(dbConfig.getHost());
             this.dbRestorer = (localDb)? new DatabaseRestorer(ssgHome,
                     clusterPassphrase, testConfig, image, printStream, verbose): null;
         }else{

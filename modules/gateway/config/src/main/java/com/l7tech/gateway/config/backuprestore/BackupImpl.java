@@ -105,7 +105,7 @@ class BackupImpl implements Backup {
     public void backUpComponentMainDb(final String mappingFile, final DatabaseConfig config)
             throws BackupException {
 
-        if (!ImportExportUtilities.isHostLocal(config.getHost())) {
+        if (!ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())) {
             logger.log(Level.WARNING, "Cannot backup database as it is not local");
             throw new IllegalStateException("Cannot back up database as it is not local");
         }
@@ -143,7 +143,7 @@ class BackupImpl implements Backup {
     }
 
     public void backUpComponentAudits(final DatabaseConfig config) throws BackupException {
-        if (!ImportExportUtilities.isHostLocal(config.getHost())) {
+        if (!ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())) {
             logger.log(Level.WARNING, "Cannot backup database as it is not local");
             throw new IllegalStateException("Cannot back up database as it is not local");
         }
@@ -505,7 +505,7 @@ class BackupImpl implements Backup {
      */
     private void createMappingFile(final String mappingFileName, final DatabaseConfig config) throws IOException,
             SQLException, SAXException {
-        if (!ImportExportUtilities.isHostLocal(config.getHost())) {
+        if (!ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())) {
             logger.log(Level.WARNING, "Cannot create maping file as database is not local");
             throw new IllegalStateException("Cannot create maping file as database is not local");
         }
