@@ -81,7 +81,7 @@ class DatabaseRestorer {
     boolean doesDatabaseExist(){
         final DBActions.DBActionsResult result = dbAction.checkExistingDb(dbConfig);
         if(result.getStatus() != DBActions.StatusType.SUCCESS){
-            String msg = "Database: '" + dbConfig.getName()+" does not exist";
+            String msg = "Database: '" + dbConfig.getName()+"' does not exist";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, verbose, printStream);
         }
         return result.getStatus() == DBActions.StatusType.SUCCESS;
