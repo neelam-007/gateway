@@ -16,7 +16,7 @@ import java.io.File;
 public interface Restore {
 
     /**
-     * Any restore method can result in success, failure or not aplicable, if the component does not apply for the
+     * Any restore method can result in success, failure or not applicable, if the component does not apply for the
      * given back up image
      * There is no FAILURE case, as when a failure happens, a RestoreException is thrown
      */

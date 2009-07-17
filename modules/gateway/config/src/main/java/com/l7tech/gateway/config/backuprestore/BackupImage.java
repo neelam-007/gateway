@@ -32,6 +32,8 @@ import java.util.zip.ZipEntry;
  */
 public final class BackupImage {
 
+    public enum ImageVersion{FIVE_O, AFTER_FIVE_O}
+
     /**
      * Image location is an absolute path to where the image file is, locally or on a ftp server
      */
@@ -174,7 +176,8 @@ public final class BackupImage {
     }
 
     /**
-     * Remove the temp directory this backup image created when it unzipped the image
+     * Remove the temp directory this backup image created when it unzipped the image. Do not call until you
+     * are finished using the BackupImage instance
      */
     void removeTempDirectory(){
         final String msg = "Deleting temp directory " + tempDirectory;
@@ -187,6 +190,20 @@ public final class BackupImage {
         }else{
             final String msg1 = "Successfully deleted temp directory '"+tempDirectory+"'";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
+        }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        //in case the removeTempDirectory method is not called
+        try {
+            final File testFile = new File(tempDirectory);
+            if(!testFile.exists()) return;
+            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING,
+                    "removeTempDirectory was not called on BackupImage instance", isVerbose, printStream);
+            removeTempDirectory();
+        } finally {
+            super.finalize();
         }
     }
 
@@ -332,5 +349,4 @@ public final class BackupImage {
         }
     }
 
-    public enum ImageVersion{FIVE_O, AFTER_FIVE_O}
 }

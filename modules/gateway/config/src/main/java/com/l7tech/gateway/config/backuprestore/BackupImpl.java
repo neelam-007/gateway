@@ -24,7 +24,7 @@ import org.xml.sax.SAXException;
  * <p/>
  * This class is immutable
  */
-class BackupImpl implements Backup {
+final class BackupImpl implements Backup {
 
     private static final Logger logger = Logger.getLogger(BackupImpl.class.getName());
 
@@ -152,7 +152,7 @@ class BackupImpl implements Backup {
             final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.AUDITS.getComponentName());
             //never include audits with the main db dump
             final String auditTablesDefFile = ssgHome.getAbsolutePath() + File.separator + AUDIT_TABLES_CONFIG;
-            final List<String> auditTables = parseConfigFile(auditTablesDefFile);
+            final List<String> auditTables = ImportExportUtilities.processFile(new File(auditTablesDefFile));
             if(auditTables.isEmpty()) {
                 final String msg = "The file '" + auditTablesDefFile +
                         "' lists no audit tables. No audit data will be backed up";
@@ -337,6 +337,19 @@ class BackupImpl implements Backup {
         FileUtils.deleteDir(tmpOutputDirectory);
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+        //in case the deleteTemporaryDirectory method is not called
+        try {
+            if(!tmpOutputDirectory.exists()) return;
+            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING,
+                    "deleteTemporaryDirectory was not called on Backup instance", isVerbose, printStream);
+            deleteTemporaryDirectory();
+        } finally {
+            super.finalize();
+        }
+    }
+    
     /**
      * Ftp a local image zip file to a ftp server
      * @param localZipFile The local image zip file. This String includes the path and the file name. Cannot be null or
@@ -518,30 +531,5 @@ class BackupImpl implements Backup {
                     "Successfully tested write permission for file '" + mappingFileName+"'", isVerbose, printStream);
             MappingUtil.produceTemplateMappingFileFromDB(config, mappingFileName, isVerbose, printStream);
         }
-    }
-
-    protected void finalize() throws Throwable {
-        //in case the delete method is not called
-        FileUtils.deleteDir(tmpOutputDirectory);
-        super.finalize();
-    }
-
-    static List<String> parseConfigFile(final String filename) throws IOException {
-        final ArrayList<String> parsedElements = new ArrayList<String>();
-        final File configFile = new File(filename);
-        if (configFile.isFile()) {
-            final FileReader fr = new FileReader(configFile);
-            final BufferedReader br = new BufferedReader(fr);
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (!line.startsWith("#")) {//ignore comments
-                    final String tableName = line.trim();
-                    if (!parsedElements.contains(tableName)) {//no duplicates
-                        parsedElements.add(tableName);
-                    }
-                }
-            }
-        }
-        return parsedElements;
     }
 }

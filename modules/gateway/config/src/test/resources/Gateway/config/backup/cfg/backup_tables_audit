@@ -1,0 +1,11 @@
+# -----------------------------------------------------------------------------
+# File used to test the parsing of backup / restore configuration files
+# -----------------------------------------------------------------------------
+audit_table_1
+audit_table_2
+#I'm a comment
+audit_table_3
+audit_table_4
+#me too
+audit_table_5
+audit_table_6

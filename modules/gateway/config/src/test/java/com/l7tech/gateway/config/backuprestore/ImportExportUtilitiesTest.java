@@ -364,4 +364,21 @@ public class ImportExportUtilitiesTest {
         final String image = "image1.zip";
         Assert.assertNull("Dir part should be null", ImportExportUtilities.getDirPart(image));
     }
+
+    @Test
+    public void testParseConfigFile() throws IOException {
+
+        final URL auditRes = this.getClass().getClassLoader().getResource("Gateway/config/backup/cfg/backup_tables_audit");
+        File auditTableFile = new File(auditRes.getPath());
+        List<String> auditTables = ImportExportUtilities.processFile(auditTableFile);
+        Assert.assertNotNull("auditTables should not be null", auditTables);
+        Assert.assertFalse("auditTables should not be empty", auditTables.isEmpty());
+
+        Assert.assertTrue("6 lines should have been found", auditTables.size() == 6);
+
+        for(int i =0; i < auditTables.size(); i++){
+            Assert.assertEquals("Invalid line found", "audit_table_" + (i+1), auditTables.get(i));
+        }
+    }
+
 }
