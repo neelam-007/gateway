@@ -16,9 +16,8 @@ import java.net.URI;
  * User: njordan
  * Date: 17-Mar-2009
  * Time: 9:00:10 PM
- * To change this template use File | Settings | File Templates.
  */
-public class ContextVariableAttributeFinderModule extends AttributeFinderModule {
+class ContextVariableAttributeFinderModule extends AttributeFinderModule {
     public static final String PREFIX = "urn:layer7tech.com:contextVariable:";
     private PolicyEnforcementContext policyContext;
 
@@ -26,16 +25,19 @@ public class ContextVariableAttributeFinderModule extends AttributeFinderModule 
         this.policyContext = policyContext;
     }
 
+    @Override
     public boolean isDesignatorSupported() {
         return true;
     }
 
+    @Override
     public Set getSupportedDesignatorTypes() {
-        HashSet set = new HashSet();
-        set.add(new Integer(AttributeDesignator.ENVIRONMENT_TARGET));
+        HashSet<Integer> set = new HashSet<Integer>();
+        set.add(AttributeDesignator.ENVIRONMENT_TARGET);
         return set;
     }
 
+    @Override
     public EvaluationResult findAttribute(URI attributeType, URI attributeId,
                                           URI issuer, URI subjectCategory,
                                           EvaluationCtx context,

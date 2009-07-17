@@ -14,22 +14,21 @@ import java.util.HashSet;
  * User: njordan
  * Date: 18-Mar-2009
  * Time: 9:27:09 PM
- * To change this template use File | Settings | File Templates.
  */
-public class AttributeFinderModuleUtils {
+class AttributeFinderModuleUtils {
     public static EvaluationResult createEmptyEvaluationResult(URI attributeType) {
         return new EvaluationResult(BagAttribute.createEmptyBag(attributeType));
     }
 
     public static BagAttribute createSingleStringBag(String value) {
-        HashSet set = new HashSet();
+        HashSet<StringAttribute> set = new HashSet<StringAttribute>();
         StringAttribute attribute = new StringAttribute(value);
         set.add(attribute);
         return new BagAttribute(attribute.getType(), set);
     }
 
     public static BagAttribute createMultipleStringBag(String[] values) {
-        HashSet set = new HashSet();
+        HashSet<StringAttribute> set = new HashSet<StringAttribute>();
 
         for(String value : values) {
             set.add(new StringAttribute(value));
@@ -39,14 +38,14 @@ public class AttributeFinderModuleUtils {
     }
 
     public static BagAttribute createSingleIntegerBag(int value) {
-        HashSet set = new HashSet();
+        HashSet<IntegerAttribute> set = new HashSet<IntegerAttribute>();
         IntegerAttribute attribute = new IntegerAttribute(value);
         set.add(attribute);
         return new BagAttribute(attribute.getType(), set);
     }
 
     public static BagAttribute createSingleBooleanBag(boolean value) {
-        HashSet set = new HashSet();
+        HashSet<BooleanAttribute> set = new HashSet<BooleanAttribute>();
         BooleanAttribute attribute = BooleanAttribute.getInstance(value);
         set.add(attribute);
         return new BagAttribute(attribute.getType(), set);

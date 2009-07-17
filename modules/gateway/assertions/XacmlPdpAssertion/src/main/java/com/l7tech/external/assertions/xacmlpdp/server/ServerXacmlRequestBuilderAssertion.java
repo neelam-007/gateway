@@ -6,7 +6,6 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
-import com.l7tech.external.assertions.xacmlpdp.RequiredFieldNotFoundException;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_RELATIVE;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_ABSOLUTE;
@@ -643,7 +642,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      *        and Data Type, because ID or Data Type is not Issue Instant, so directly move to the next notFound checking.
      *        This flag is evaluated as true if Issue Instant is specified and the XACML version is pre 2.0.
      * @return true if the attribute is not found and "Falsify Policy Option" is off.  Otherwise, false if the field is found.
-     * @throws com.l7tech.external.assertions.xacmlpdp.RequiredFieldNotFoundException thown if a required field is not found
+     * @throws RequiredFieldNotFoundException thown if a required field is not found
      *         with the extra condition under "Falsify Policy Option" on.
      */
     private boolean ignoreCreatingAttributeElement(String fieldName,

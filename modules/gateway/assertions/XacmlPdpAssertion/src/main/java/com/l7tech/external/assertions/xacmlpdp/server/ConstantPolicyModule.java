@@ -19,7 +19,7 @@ import org.xml.sax.SAXException;
  * Date: 16-Mar-2009
  * Time: 4:57:22 PM
  */
-public class ConstantPolicyModule extends PolicyFinderModule {
+class ConstantPolicyModule extends PolicyFinderModule {
     private Policy policy;
     private final boolean policyMatchesAllRequests;
 
@@ -42,9 +42,11 @@ public class ConstantPolicyModule extends PolicyFinderModule {
         return allEmpty;
     }
     
+    @Override
     public void init(PolicyFinder policyFinder) {
     }
 
+    @Override
     public PolicyFinderResult findPolicy(EvaluationCtx context) {
         //if this policy matches everything, return it
         if(policyMatchesAllRequests) return new PolicyFinderResult(policy);
@@ -58,6 +60,7 @@ public class ConstantPolicyModule extends PolicyFinderModule {
         }
     }
 
+    @Override
     public boolean isRequestSupported() {
         return true;
     }
