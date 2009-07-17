@@ -1,5 +1,7 @@
 package com.l7tech.gui.util;
 
+import com.l7tech.util.ArrayUtils;
+
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
@@ -1077,6 +1079,30 @@ public class Utilities {
                 Component subComp = components[c];
                 if(subComp instanceof JComponent) {
                     setEnabled((JComponent) subComp, enabled);
+                }
+            }
+        }
+    }
+
+    /**
+     * Set focusable state for a component and its children.
+     *
+     * @param component the component to be updated
+     * @param focusable true to be focusable
+     * @param exceptions Components to ignore
+     */
+    public static void setFocusable( JComponent component, boolean focusable, JComponent... exceptions ) {
+        if(component != null) {
+            // this component
+            if ( !ArrayUtils.contains( exceptions, component ))
+                component.setFocusable(focusable);
+
+            // children
+            Component[] components = component.getComponents();
+            for(int c=0; c<components.length; c++) {
+                Component subComp = components[c];
+                if(subComp instanceof JComponent) {
+                    setFocusable((JComponent) subComp, focusable, exceptions);
                 }
             }
         }

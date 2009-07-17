@@ -77,6 +77,7 @@ public class LicenseDialog extends JDialog {
     private void findLicenseStream(final Functions.BinaryVoid<InputStream, Throwable> result) {
         try {
             AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                @Override
                 public InputStream run() {
                     try {
                         result.call(getLicenseStreamFromFile(), null);
@@ -112,6 +113,7 @@ public class LicenseDialog extends JDialog {
         Utilities.centerOnScreen(textDlg);
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 result.call(new ByteArrayInputStream(HexUtils.encodeUtf8(licenseTextArea.getText())), null);
                 dispose();
@@ -119,6 +121,7 @@ public class LicenseDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
@@ -138,10 +141,12 @@ public class LicenseDialog extends JDialog {
     private InputStream getLicenseStreamFromFile() throws AccessControlException, IOException {
         JFileChooser fc = FileChooserUtil.createJFileChooser();
         fc.setFileFilter(new FileFilter() {
+            @Override
             public String getDescription() {
                 return "License files (*.xml)";
             }
 
+            @Override
             public boolean accept(File f) {
                 final String name = f.getName().toLowerCase();
                 return f.isDirectory() || name.endsWith(".xml");
@@ -178,18 +183,21 @@ public class LicenseDialog extends JDialog {
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
         leftPanel.add(licensePanel);
         closeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onClose();
             }
         });
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 onClose();
             }
         });
 
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 String confirmationDialogTitle = "Confirm License Removal";
                 String confirmationDialogMessage =
@@ -204,6 +212,7 @@ public class LicenseDialog extends JDialog {
                     JOptionPane.OK_CANCEL_OPTION,
                     JOptionPane.WARNING_MESSAGE,
                     new DialogDisplayer.OptionListener() {
+                        @Override
                         public void reportResult(int option) {
                             if (option == JOptionPane.CANCEL_OPTION) {
                                 return;
@@ -248,6 +257,9 @@ public class LicenseDialog extends JDialog {
             showingLicenseOrError = true;
             pack();
         }
+
+        getRootPane().setDefaultButton( closeButton );
+        Utilities.setFocusable( rootPanel, false, installButton, closeButton, removeButton );
     }
 
     /**
@@ -305,6 +317,7 @@ public class LicenseDialog extends JDialog {
     private ActionListener createInstallButtonAction() {
 
         return new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
 
                 // if the user chooses change the license, perform clear the workspace
@@ -345,6 +358,7 @@ public class LicenseDialog extends JDialog {
         success.add(Boolean.FALSE);
 
         findLicenseStream(new Functions.BinaryVoid<InputStream, Throwable>() {
+            @Override
             public void call(InputStream is, Throwable ioe) {
                 try {
                     if (ioe != null) throw new CausedIOException(ioe);
