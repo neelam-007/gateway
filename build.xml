@@ -1214,7 +1214,7 @@
             depends="package.gateway.all, package.manager, package.client, package.installclients, package.installgateway.work"/>
 
 
-    <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, package.gateway, package.modules, pack.manager, package.api, package.em, package.em.config, package.ssgbackup.zip"/>
+    <target name="package.gateway.all" depends="package.configwiz.all, package.backuprestore, package.gateway, package.modules, pack.manager, package.api, package.em, package.em.config, package.ssgbackup.zip"/>
 
     <!--
       Build the windows installers without any dependencies.
@@ -1533,7 +1533,7 @@
     <!--
       Package the SSG if it looks like something changed
     -->
-    <target name="package.gateway.ifrequired" depends="package.gateway.checkrequired, package.gateway, package.readversion, pack.manager, package.modules, package.configwiz, package.ssgflasher, package.em, package.em.config, package.ssgbackup.zip" unless="package.gateway.notrequired">
+    <target name="package.gateway.ifrequired" depends="package.gateway.checkrequired, package.gateway, package.readversion, pack.manager, package.modules, package.configwiz, package.backuprestore, package.em, package.em.config, package.ssgbackup.zip" unless="package.gateway.notrequired">
     </target>
 
     <!--
@@ -2178,7 +2178,7 @@
     </target>
 
     <!-- Package the ssg backuprestore utility -->
-    <target name="package.ssgflasher" unless="ssg.only" depends="package.jars">
+    <target name="package.backuprestore" unless="ssg.only" depends="package.jars">
         <mkdir dir="${build.dir}/backup"/>
         <mkdir dir="${build.dir}/backup/lib"/>
         <mkdir dir="${build.dir}/backup/cfg"/>
