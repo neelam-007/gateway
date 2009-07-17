@@ -1,5 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.util.ValidationUtils;
+import com.l7tech.gui.util.DialogDisplayer;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -80,6 +83,11 @@ public class NamespacePrefixQueryForm extends JDialog {
     }
 
     private void ok() {
+        if (! ValidationUtils.isProbablyValidXmlNamespacePrefix(prefixtxt.getText())) {
+            DialogDisplayer.showMessageDialog(this, "'" + prefixtxt.getText() + "' is an invalid namespace prefix.  Please correct it and try again.",
+                "Invalid Prefix", JOptionPane.ERROR_MESSAGE, null);
+            return;
+        }
         nsuri = uritxt.getText();
         prefix = prefixtxt.getText();
         NamespacePrefixQueryForm.this.dispose();
