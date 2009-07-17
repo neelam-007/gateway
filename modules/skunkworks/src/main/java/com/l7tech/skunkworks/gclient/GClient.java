@@ -82,7 +82,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        frame = new JFrame("GClient v0.8");
+        frame = new JFrame("GClient v0.9.0");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -203,56 +203,67 @@ public class GClient {
 
     private void buildListeners(final JFrame frame) {
         serviceComboBox.addItemListener(new ItemListener(){
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 updateServiceSelection();
             }
         });
         portComboBox.addItemListener(new ItemListener(){
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 updatePortSelection();
             }
         });
         operationComboBox.addItemListener(new ItemListener(){
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 updateOperationSelection();
             }
         });
         certButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 loadCert(frame);
             }
         });
         serverCertButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 loadServerCert(frame);
             }
         });
         sendButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 sendMessage();
             }
         });
         requestTextArea.addFocusListener(new FocusAdapter() {
+            @Override
             public void focusLost(FocusEvent e) {
                 updateRequest();
             }
         });
         reformatRequestMessageCheckbox.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 updateRequest();
             }
          });
         reformatResponseMessageCheckBox.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 updateResponse();
             }
         });
         decorationButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 decorateMessage();
             }
         });
         stripDecorationButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 stripDecorations();
             }
@@ -292,32 +303,38 @@ public class GClient {
         JMenuBar mb = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
         fileMenu.add(new AbstractAction("Open Location ..."){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 openLocation(frame);
             }
         });
         fileMenu.add(new AbstractAction("Open File ..."){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 openFile(frame);
             }
         });
         fileMenu.add(new AbstractAction("Open Configuration...") {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 openConfiguration(frame);
             }
         });
         fileMenu.add(new AbstractAction("Save Configuration...") {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 saveConfiguration(frame);
             }
         });
         fileMenu.add(new AbstractAction("Load Request Message ...") {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 loadRequestMessage(frame);
             }
         });
         fileMenu.addSeparator();
         fileMenu.add(new AbstractAction("Exit"){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 frame.dispose();
             }
@@ -450,6 +467,7 @@ public class GClient {
                 Ssg ssg = new Ssg(new Random().nextLong());
                 ssg.getRuntime().setSsgKeyStoreManager(new MySsgKeyStoreManager());
                 ssg.getRuntime().setCredentialManager(new CredentialManagerImpl() {
+                    @Override
                     public PasswordAuthentication getCredentials(Ssg ssg) {
                         return new PasswordAuthentication(loginField.getText(), passwordField.getPassword());
                     }
@@ -613,10 +631,12 @@ public class GClient {
         JFileChooser fileChooser = new JFileChooser();
 
         FileFilter filter = new FileFilter(){
+            @Override
             public boolean accept(File f) {
                 return f.isDirectory() || f.getName().toLowerCase().endsWith(".gclient");
             }
 
+            @Override
             public String getDescription() {
                 return "GClient configuration files (*.gclient)";
             }
@@ -644,10 +664,12 @@ public class GClient {
         JFileChooser fileChooser = new JFileChooser();
 
         FileFilter filter = new FileFilter(){
+            @Override
             public boolean accept(File f) {
                 return f.isDirectory() || f.getName().toLowerCase().endsWith(".gclient");
             }
 
+            @Override
             public String getDescription() {
                 return "GClient configuration files (*.gclient)";
             }
@@ -704,10 +726,12 @@ public class GClient {
         JFileChooser fileChooser = new JFileChooser();
 
         FileFilter filter = new FileFilter(){
+            @Override
             public boolean accept(File f) {
                 return f.isDirectory() || f.getName().toLowerCase().endsWith(".wsdl");
             }
 
+            @Override
             public String getDescription() {
                 return "WSDL files (*.wsdl)";
             }
@@ -747,26 +771,32 @@ public class GClient {
 
     private KeyManager getKeyManager(final PrivateKey privateKey, final X509Certificate certificate) {
         return new X509KeyManager() {
+            @Override
             public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
                 return "alias";
             }
 
+            @Override
             public String chooseServerAlias(String string, Principal[] principals, Socket socket) {
                 throw new RuntimeException("This key manager is for clients only.");
             }
 
+            @Override
             public X509Certificate[] getCertificateChain(String string) {
                 return new X509Certificate[]{certificate};
             }
 
+            @Override
             public String[] getClientAliases(String string, Principal[] principals) {
                 return new String[]{"alias"};
             }
 
+            @Override
             public PrivateKey getPrivateKey(String string) {
                 return privateKey;
             }
 
+            @Override
             public String[] getServerAliases(String string, Principal[] principals) {
                 throw new RuntimeException("This key manager is for clients only.");
             }
@@ -857,14 +887,21 @@ public class GClient {
             final int requests = (Integer)requestSpinner.getValue();
 
             boolean isJms = targetUrl.startsWith("jms:/");
+            boolean isFtp = targetUrl.startsWith("ftp:/");
 
             if(threads==1) {
                 if (isJms && requests > 1) throw new Exception("JMS not supported for multiple requests.");
+                if (isFtp && requests > 1) throw new Exception("FTP not supported for multiple requests.");
                 final long startTime = System.currentTimeMillis();
                 for(int i=0; i<requests; i++) {
-                    String[] responseData = !isJms ?
-                            doMessage(soapAction, targetUrl, cookies, requestBytes, gzip) :
-                            doJmsMessage(targetUrl, requestBytes);
+                    String[] responseData;
+                    if ( isJms ) {
+                        responseData = doJmsMessage(targetUrl, requestBytes);
+                    } else if ( isFtp ) {
+                        responseData = doFtpMessage(targetUrl, requestBytes);
+                    } else {
+                        responseData = doMessage(soapAction, targetUrl, cookies, requestBytes, gzip);
+                    }
                     if(responseData!=null) {
                         statusLabel.setText(responseData[0]);
                         lengthLabel.setText(responseData[1]);
@@ -890,12 +927,14 @@ public class GClient {
             }
             else {
                 if (isJms) throw new Exception("JMS not supported for multiple threads.");
+                if (isFtp) throw new Exception("FTP not supported for multiple threads.");
                 final ThreadGroup requestGroup = new ThreadGroup("GClientRequests");
                 final Thread[] requestThreads = new Thread[threads];
                 final byte[] requestData = requestBytes;
                 final long startTime = System.currentTimeMillis();
                 for(int t=0; t<threads; t++) {
                     requestThreads[t] = new Thread(requestGroup, new Runnable(){
+                        @Override
                         public void run() {
                             for(int i=0; i<requests; i++) {
                                 String[] responseData = doMessage(soapAction, targetUrl, null, requestData, gzip);
@@ -948,6 +987,41 @@ public class GClient {
         catch(Exception e) {
             e.printStackTrace();
             displayThrowable(e);
+        }
+
+        return null;
+    }
+
+    private String[] doFtpMessage(String targetUrl, byte[] requestBytes) {
+        OutputStream os = null;
+        try {
+            String ftpUrl = targetUrl;
+            PasswordAuthentication credentials = null;
+            if (loginField.getText() != null && loginField.getText().length() > 0) {
+                credentials = new PasswordAuthentication(loginField.getText(), passwordField.getPassword());
+            }
+
+            boolean isBytes = bytesMessageRadioButton.isSelected();
+
+            if ( credentials != null ) {
+                ftpUrl = ftpUrl.replaceAll( "ftp://", "ftp://" + credentials.getUserName() + ":" + new String(credentials.getPassword()) + "@" );
+            }
+
+            URL url = new URL(ftpUrl);
+            URLConnection urlc = url.openConnection();
+            urlc.setConnectTimeout( 30000 );
+            urlc.setReadTimeout( 60000 );
+            urlc.setRequestProperty( "type", isBytes ? "i" : "a" );
+            os = urlc.getOutputStream();
+            os.write( requestBytes );
+            os.flush();
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            displayThrowable(e);
+        }
+        finally {
+            ResourceUtils.closeQuietly( os );
         }
 
         return null;
@@ -1012,10 +1086,11 @@ public class GClient {
                 headers.add(new GenericHttpHeader("Content-Encoding", "gzip"));
             }
             if (!headers.isEmpty())
-                params.setExtraHeaders(headers.toArray(new GenericHttpHeader[0]));
+                params.setExtraHeaders(headers.toArray(new GenericHttpHeader[headers.size()]));
 
             if(params.getTargetUrl().getProtocol().equals("https")) {
                 params.setHostnameVerifier(new HostnameVerifier() {
+                    @Override
                     public boolean verify(String s, SSLSession sslSession) {
                         return true;
                     }
@@ -1029,6 +1104,7 @@ public class GClient {
             if (request instanceof RerunnableHttpRequest) {
                 RerunnableHttpRequest reRequest = (RerunnableHttpRequest) request;
                 reRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory(){
+                    @Override
                     public InputStream getInputStream() {
                         return new ByteArrayInputStream(requestBytes);
                     }
@@ -1093,62 +1169,77 @@ public class GClient {
     }
 
     private class MySsgKeyStoreManager extends SsgKeyStoreManager {
+        @Override
         public boolean isClientCertUnlocked() throws KeyStoreCorruptException {
             return true;
         }
 
+        @Override
         public void deleteClientCert() throws IOException, KeyStoreException, KeyStoreCorruptException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public boolean deleteStores() {
             return false;
         }
 
+        @Override
         public void saveSsgCertificate(X509Certificate cert) throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void saveClientCertificate(PrivateKey privateKey, X509Certificate cert, char[] privateKeyPassword) throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void obtainClientCertificate(PasswordAuthentication credentials) throws BadCredentialsException, GeneralSecurityException, KeyStoreCorruptException, CertificateAlreadyIssuedException, IOException, ServerFeatureUnavailableException {
             throw new UnsupportedOperationException("A client certificate must be configured to use this decoration policy.");
         }
 
+        @Override
         public String lookupClientCertUsername() {
             return null;
         }
 
+        @Override
         protected X509Certificate getServerCert() throws KeyStoreCorruptException {
             return serverCertificate;
         }
 
+        @Override
         protected X509Certificate getClientCert() throws KeyStoreCorruptException {
             return clientCertificate;
         }
 
+        @Override
         public PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication) throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, HttpChallengeRequiredException {
             return clientPrivateKey;
         }
 
+        @Override
         protected boolean isClientCertAvailabile() throws KeyStoreCorruptException {
             return true;
         }
 
+        @Override
         protected KeyStore getKeyStore(char[] password) throws KeyStoreCorruptException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         protected KeyStore getTrustStore() throws KeyStoreCorruptException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void importServerCertificate(File file) throws IOException, CertificateException, KeyStoreCorruptException, KeyStoreException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void importClientCertificate(File certFile, char[] pass, CertUtils.AliasPicker aliasPicker, char[] ssgPassword) throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException {
             throw new UnsupportedOperationException();
         }
