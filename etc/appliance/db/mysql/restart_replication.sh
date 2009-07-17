@@ -48,7 +48,7 @@ mysql_fail() {
 
 		Message: `cat /tmp/mb_error.$$`
 
-		Refer to http://dev.mysql.com/doc/refman/4.1/en/error-messages-client.html
+		Refer to http://dev.mysql.com/doc/refman/5.0/en/error-messages-client.html
 		for more information.
 
 	EOM
