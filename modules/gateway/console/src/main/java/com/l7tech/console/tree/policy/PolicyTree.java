@@ -288,6 +288,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
         AssertionTreeNode targetTreeNode = (AssertionTreeNode)path.getLastPathComponent();
         AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(ass);
+        if ( policyEditorPanel != null ) policyEditorPanel.updateAssertions( assertionTreeNodeCopy );
         PolicyTreeModel model = (PolicyTreeModel)getModel();
 
         AssertionTreeNode insertAfter = null;

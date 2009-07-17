@@ -478,6 +478,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         getSplitPane().setName(displayName);
     }
 
+    public void updateAssertions( final AssertionTreeNode atn ) {
+        updateAssertions( atn, new HashMap<Long,String>() );
+    }
+
     /**
      * Update any info that is not stored in the policy but is useful
      * for display.
@@ -544,7 +548,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         AssertionTreeNode newRootAssertion = (AssertionTreeNode)policyTreeModel.getRoot();
         ((AbstractTreeNode) newRootAssertion.getRoot()).addCookie(new AbstractTreeNode.NodeCookie(subject.getPolicyNode()));
         //rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(subject.getEntityWithPolicyNode()));
-        updateAssertions(newRootAssertion, new HashMap<Long,String>());
+        updateAssertions(newRootAssertion);
 
         policyTree.setModel(policyTreeModel);
         rootAssertion = newRootAssertion;
