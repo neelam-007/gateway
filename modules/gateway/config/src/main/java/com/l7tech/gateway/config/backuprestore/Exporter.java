@@ -37,23 +37,18 @@ public final class Exporter{
 
     // exporter options
     static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image",
-                                                                             "location of image file to export",
-                                                                             true,
-                                                                             false);
-    static final CommandLineOption AUDIT = new CommandLineOption("-ia",
-                                                                        "to include audit tables",
-                                                                        false,
-                                                                        true);
+            "name of image file to create locally or on ftp host if -ftp* options are used", true, false);
+    static final CommandLineOption AUDIT = new CommandLineOption("-ia", "include audit data with a default backup", false, true);
+
     static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it",
-                                                                               "path of the output mapping template file",
-                                                                               true, false);
+            "populate supplied file with template mapping information", true, false);
 
 //    static final CommandLineOption ESM =
     private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH,
             CommonCommandLineOptions.VERBOSE, CommonCommandLineOptions.HALT_ON_FIRST_FAILURE};
 
     private static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
-            new CommandLineOption("-p", "Ignored parameter for partition", true, false) };
+            new CommandLineOption("-p", "ignored parameter for backup", true, false) };
 
     /** Home directory of the SSG installation. This will always be /opt/SecureSpan/Gateway however maintaining
      * the ability for this to be theoritically installed into other directories*/
@@ -654,16 +649,21 @@ public final class Exporter{
         allOptList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
         allOptList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
 
+        final List<CommandLineOption> prependOptions = new ArrayList<CommandLineOption>();
+                prependOptions.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+                prependOptions.add(CommonCommandLineOptions.ESM_OPTION);
+
         int largestNameStringSize;
         largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(allOptList);
         for (final CommandLineOption option : allOptList) {
+            final String description = (prependOptions.contains(option))?
+                    "backup " + option.getDescription(): option.getDescription();
+
             output.append("\t")
                     .append(option.getName())
                     .append(ImportExportUtilities.createSpace(largestNameStringSize-option.getName().length() + 1))
-                    .append(option.getDescription())
+                    .append(description)
                     .append(BackupRestoreLauncher.EOL_CHAR);
         }
-
-        output.append("FTP options are optional. If FTP is requested, then all ftp parameters must be supplied");
     }
 }

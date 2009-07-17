@@ -36,7 +36,7 @@ public final class Importer{
     private static final Logger logger = Logger.getLogger(Importer.class.getName());
     // importer options
     static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image",
-            "location of image file to import",
+            "location of image file locally to restore, or on ftp host if -ftp* options are used",
             true, false);
     static final CommandLineOption MAPPING_PATH = new CommandLineOption("-mapping",
             "location of the mapping template file",
@@ -49,10 +49,9 @@ public final class Importer{
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.OS.getComponentName(),
             "overwrite os level config files",
             false, true);
-    static final CommandLineOption CREATE_NEW_DB = new CommandLineOption("-newdb" ,"create new database");
+    static final CommandLineOption CREATE_NEW_DB = new CommandLineOption("-newdb" ,"create a new database when migrating");
     static final CommandLineOption MIGRATE = new CommandLineOption("-migrate",
-            "Apply migrate capability to the restore, by using the file exclusion and table exclusion configuration " +
-                    "files", false, true);
+            "apply migrate behavior instead of restore", false, true);
 
     static final CommandLineOption CONFIG_ONLY =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
@@ -69,8 +68,9 @@ public final class Importer{
             CREATE_NEW_DB};
 
     static final CommandLineOption[] ALL_RESTORE_OPTIONS = {IMAGE_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
-            CommonCommandLineOptions.HALT_ON_FIRST_FAILURE, CommonCommandLineOptions.VERBOSE, MIGRATE, MAPPING_PATH,
-    CREATE_NEW_DB};
+            CommonCommandLineOptions.HALT_ON_FIRST_FAILURE, CommonCommandLineOptions.VERBOSE};
+
+    static final CommandLineOption [] MIGRATE_OPTIONS = {MIGRATE, MAPPING_PATH, CREATE_NEW_DB};
 
     static final CommandLineOption [] COMMAND_LINE_DB_ARGS = {DB_HOST_NAME, DB_NAME, CLUSTER_PASSPHRASE,
                 GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD};
@@ -1028,11 +1028,16 @@ public final class Importer{
     static void getImporterUsage(final StringBuilder output) {
         final List<CommandLineOption> restoreArgList = getRestoreOptionsWithDb();
         final int largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(restoreArgList);
+        final List<CommandLineOption> prependOptions = new ArrayList<CommandLineOption>();
+        prependOptions.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+        prependOptions.add(CommonCommandLineOptions.ESM_OPTION);
         for (CommandLineOption option : restoreArgList) {
+            final String description = (prependOptions.contains(option))?
+                    "restore " + option.getDescription(): option.getDescription();
             output.append("\t")
                     .append(option.getName())
                     .append(ImportExportUtilities.createSpace(largestNameStringSize-option.getName().length() + 1))
-                    .append(option.getDescription() )
+                    .append(description )
                     .append(BackupRestoreLauncher.EOL_CHAR);
         }
         output.append(BackupRestoreLauncher.EOL_CHAR);
@@ -1109,16 +1114,18 @@ public final class Importer{
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
+        validArgList.addAll(Arrays.asList(MIGRATE_OPTIONS));
         return validArgList;
     }
 
     private static List<CommandLineOption> getRestoreOptionsWithDb(){
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
-        validArgList.addAll(Arrays.asList(COMMAND_LINE_DB_ARGS));
         validArgList.addAll(Arrays.asList(ALL_RESTORE_OPTIONS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
+        validArgList.addAll(Arrays.asList(COMMAND_LINE_DB_ARGS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
+        validArgList.addAll(Arrays.asList(MIGRATE_OPTIONS));
         return validArgList;
     }
 
