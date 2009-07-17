@@ -46,7 +46,7 @@ public final class LoginCredentials {
      */
     public static LoginCredentials makeLoginCredentials( final SecurityToken securityToken,
                                                          final Class<? extends Assertion> credentialSource ) {
-        return makeLoginCredentials(securityToken, credentialSource, new SecurityToken[]{});   
+        return makeLoginCredentials(securityToken, true, credentialSource);
     }
 
     /**
@@ -60,6 +60,22 @@ public final class LoginCredentials {
     public static LoginCredentials makeLoginCredentials( final SecurityToken securityToken,
                                                          final Class<? extends Assertion> credentialSource,
                                                          final SecurityToken... supportingSecurityTokens ) {
+        return makeLoginCredentials(securityToken, true, credentialSource, supportingSecurityTokens);
+    }
+
+    /**
+     * Create a LoginCredentials for the given SecurityToken.
+     *
+     * @param securityToken The token for the credentials.
+     * @param isTokenPresent Is the token from the the message/transport.
+     * @param credentialSource The source assertion
+     * @param supportingSecurityTokens The supporting security tokens (if any)
+     * @return The LoginCredentials or null.
+     */
+    public static LoginCredentials makeLoginCredentials( final SecurityToken securityToken,
+                                                         final boolean isTokenPresent,
+                                                         final Class<? extends Assertion> credentialSource,
+                                                         final SecurityToken... supportingSecurityTokens ) {
         LoginCredentials loginCredentials;
 
         if ( securityToken instanceof HasUsernameAndPassword ) {
@@ -70,6 +86,7 @@ public final class LoginCredentials {
                     huap.getUsername(),
                     password,
                     securityToken,
+                    isTokenPresent,
                     supportingSecurityTokens,
                     credentialSource );
         } else if ( securityToken instanceof HttpClientCertToken ) {
@@ -79,6 +96,7 @@ public final class LoginCredentials {
                     null,
                     CredentialFormat.CLIENTCERT,
                     securityToken,
+                    isTokenPresent,
                     supportingSecurityTokens,
                     credentialSource,
                     null,
@@ -87,6 +105,7 @@ public final class LoginCredentials {
             SamlAssertion samlAssertion = (SamlAssertion) securityToken;
             loginCredentials = makeSamlCredentials(
                     samlAssertion,
+                    isTokenPresent,
                     supportingSecurityTokens,
                     credentialSource );
         } else if ( securityToken instanceof X509SigningSecurityToken ) {
@@ -98,6 +117,7 @@ public final class LoginCredentials {
                     null,
                     CredentialFormat.CLIENTCERT,
                     securityToken,
+                    isTokenPresent,
                     supportingSecurityTokens,
                     credentialSource,
                     null,
@@ -109,6 +129,7 @@ public final class LoginCredentials {
                     ost.getCredential(),
                     CredentialFormat.OPAQUETOKEN,
                     securityToken,
+                    isTokenPresent,
                     supportingSecurityTokens,
                     credentialSource, null, null );
         } else if ( securityToken instanceof HttpDigestToken ) {
@@ -118,6 +139,7 @@ public final class LoginCredentials {
                     hdt.getHa1Hex().toCharArray(),
                     CredentialFormat.DIGEST,
                     securityToken,
+                    isTokenPresent,
                     supportingSecurityTokens,
                     credentialSource,
                     hdt.getRealm(),
@@ -129,6 +151,7 @@ public final class LoginCredentials {
                     null,
                     CredentialFormat.KERBEROSTICKET,
                     securityToken,
+                    isTokenPresent,
                     supportingSecurityTokens,
                     credentialSource,
                     null,
@@ -151,6 +174,7 @@ public final class LoginCredentials {
      * @return The new LoginCredentials
      */
     private static LoginCredentials makeSamlCredentials( final SamlAssertion samlAssertion,
+                                                         final boolean isTokenPresent,
                                                          final SecurityToken[] supportingSecurityTokens,
                                                          final Class<? extends Assertion> credentialSource ) {
         String login;
@@ -163,7 +187,7 @@ public final class LoginCredentials {
             login = samlAssertion.getNameIdentifierValue();
         }
 
-        return new LoginCredentials(login, null, CredentialFormat.SAML, samlAssertion, supportingSecurityTokens, credentialSource, null, samlAssertion);
+        return new LoginCredentials(login, null, CredentialFormat.SAML, samlAssertion, isTokenPresent, supportingSecurityTokens, credentialSource, null, samlAssertion);
     }
 
     /**
@@ -177,9 +201,10 @@ public final class LoginCredentials {
     private static LoginCredentials makePasswordCredentials( final String login,
                                                              final char[] credentials,
                                                              final SecurityToken securityToken,
+                                                             final boolean isTokenPresent,
                                                              final SecurityToken[] supportingSecurityTokens,
                                                              final Class<? extends Assertion> credentialSource ) {
-        return new LoginCredentials(login, credentials, CredentialFormat.CLEARTEXT, securityToken, supportingSecurityTokens, credentialSource, null, null);
+        return new LoginCredentials(login, credentials, CredentialFormat.CLEARTEXT, securityToken, isTokenPresent, supportingSecurityTokens, credentialSource, null, null);
     }
 
     /**
@@ -196,6 +221,7 @@ public final class LoginCredentials {
                               final char[] credentials,
                               final CredentialFormat format,
                               final SecurityToken securityToken,
+                              final boolean isTokenPresent,
                               final SecurityToken[] supportingSecurityTokens,
                               final Class<? extends Assertion> credentialSource,
                               final String realm,
@@ -205,6 +231,7 @@ public final class LoginCredentials {
         this.realm = realm;
         this.format = format;
         this.securityToken = securityToken;
+        this.securityTokenIsPresent = isTokenPresent;
         this.supportingSecurityTokens = supportingSecurityTokens;
         this.credentialSourceAssertion = credentialSource;
         this.payload = payload;
@@ -272,6 +299,22 @@ public final class LoginCredentials {
         }
 
         return tokens;
+    }
+
+    /**
+     * Is the given security token present.
+     *
+     * @param securityToken The security token to check
+     * @return true if present, false if not presented
+     */
+    public boolean isSecurityTokenPresent( final SecurityToken securityToken ) {
+        boolean requestToken = true;
+
+        if ( securityToken == this.securityToken ) {
+            requestToken = securityTokenIsPresent;
+        }
+
+        return requestToken;
     }
 
     /**
@@ -423,6 +466,7 @@ public final class LoginCredentials {
     private final Object payload;
 
     private transient final SecurityToken securityToken; // Not part of equality since that would break auth caching
+    private transient final boolean securityTokenIsPresent;
     private transient final SecurityToken[] supportingSecurityTokens; // Not part of equality since that would break auth caching
     private transient final char[] credentials;
     private transient final Class<? extends Assertion> credentialSourceAssertion;

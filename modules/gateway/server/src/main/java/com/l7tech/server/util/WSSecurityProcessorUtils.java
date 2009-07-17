@@ -370,7 +370,8 @@ public class WSSecurityProcessorUtils {
         if ( loginCredentials != null ) {
             for ( LoginCredentials loginCredential : loginCredentials ) {
                 for ( SecurityToken securityToken : loginCredential.getSecurityTokens() ) {
-                    if ( securityToken instanceof SigningSecurityToken ) {
+                    if ( loginCredential.isSecurityTokenPresent( securityToken ) &&
+                         securityToken instanceof SigningSecurityToken ) {
                         signingSecurityTokens.add( (SigningSecurityToken) securityToken );
                     }
                 }
