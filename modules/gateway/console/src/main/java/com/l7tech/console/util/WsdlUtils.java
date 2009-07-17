@@ -1,6 +1,7 @@
 package com.l7tech.console.util;
 
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.FilterClassLoader;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.wsdl.Wsdl;
 
@@ -19,9 +20,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.PropertyPermission;
+import java.util.Collections;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -44,6 +44,7 @@ public class WsdlUtils {
      */
     public static Wsdl.WSDLFactoryBuilder getWSDLFactoryBuilder() {
         return new Wsdl.WSDLFactoryBuilder() {
+            @Override
             public WSDLFactory getWSDLFactory(final boolean writeEnabled) throws WSDLException {
                 try {
                     return WsdlUtils.getWSDLFactory();
@@ -82,6 +83,7 @@ public class WsdlUtils {
             // See if we are trusted
             try {
                 AccessController.doPrivileged(new PrivilegedAction(){
+                    @Override
                     public Object run() {
                         AccessController.checkPermission(new PropertyPermission("file.encoding", "read"));
                         AccessController.checkPermission(new PropertyPermission("line.separator", "read"));
@@ -95,6 +97,7 @@ public class WsdlUtils {
 
             // Load classes with permission to access required property
             Object result = AccessController.doPrivileged(new PrivilegedAction(){
+                @Override
                 public Object run() {
                     try {
                         final ClassLoader resourceLoader = WSDLFactory.class.getClassLoader();
@@ -103,8 +106,9 @@ public class WsdlUtils {
                         permissions.add(new PropertyPermission("file.encoding", "read"));
                         permissions.add(new PropertyPermission("line.separator", "read"));
 
-                        final ClassLoader classLoader = new SecureClassLoader(new FilterClassLoader(resourceLoader, "com.ibm.wsdl")){
+                        final ClassLoader classLoader = new SecureClassLoader(new FilterClassLoader(resourceLoader, null, Collections.singleton("com.ibm.wsdl"), true)){
                             private ProtectionDomain pd;
+                            @Override
                             public Class<?> findClass(final String name) throws ClassNotFoundException {
                                 try {
                                     String resName = name.replace(".", "/").concat(".class");
@@ -194,14 +198,17 @@ public class WsdlUtils {
             this.delegate = delegate;
         }
 
+        @Override
         public Definition newDefinition() {
             return delegate.newDefinition();
         }
 
+        @Override
         public WSDLReader newWSDLReader() {
             return delegate.newWSDLReader();
         }
 
+        @Override
         public WSDLWriter newWSDLWriter() {
             return delegate.newWSDLWriter();
         }
@@ -212,6 +219,7 @@ public class WsdlUtils {
          * @return an extension registry that's safe for use in the applet.
          *
          */
+        @Override
         public ExtensionRegistry newPopulatedExtensionRegistry() {
             ExtensionRegistry reg = delegate.newPopulatedExtensionRegistry();
 
@@ -252,8 +260,9 @@ public class WsdlUtils {
                 permissions.add(new PropertyPermission("file.encoding", "read"));
                 permissions.add(new PropertyPermission("line.separator", "read"));
 
-                final ClassLoader classLoader = new SecureClassLoader(new FilterClassLoader(resourceLoader, "javax.wsdl.extensions.UnknownExtensionSerializer")){
+                final ClassLoader classLoader = new SecureClassLoader(new FilterClassLoader(resourceLoader, null, Collections.singleton("javax.wsdl.extensions.UnknownExtensionSerializer"), true)){
                     private ProtectionDomain pd;
+                    @Override
                     public Class<?> findClass(final String name) throws ClassNotFoundException {
                         try {
                             String resName = name.replace(".", "/").concat(".class");
@@ -318,8 +327,9 @@ public class WsdlUtils {
                 permissions.add(new PropertyPermission("file.encoding", "read"));
                 permissions.add(new PropertyPermission("line.separator", "read"));
 
-                final ClassLoader classLoader = new SecureClassLoader(new FilterClassLoader(resourceLoader, "javax.wsdl.extensions.UnknownExtensionSerializer")){
+                final ClassLoader classLoader = new SecureClassLoader(new FilterClassLoader(resourceLoader, null, Collections.singleton( "javax.wsdl.extensions.UnknownExtensionSerializer"), true)){
                     private ProtectionDomain pd;
+                    @Override
                     public Class<?> findClass(final String name) throws ClassNotFoundException {
                         try {
                             String resName = name.replace(".", "/").concat(".class");
@@ -359,96 +369,6 @@ public class WsdlUtils {
             }
 
             return serializer;
-        }
-    }
-
-    /**
-     * Filtering class loader that will delegate to its parent for all but one
-     * package prefix.
-     */
-    private static class FilterClassLoader extends ClassLoader {
-
-        /**
-         * Create a filter classloader with the given parent and filter.
-         *
-         * <p>The parent is not delegated to in the usual manner. Only requests to
-         * load classes / resources that are not "under" the filter prefix are delegated
-         * to the parent.</p>
-         *
-         * @param parent the classloader to delegate to for matching classes/resources
-         * @param filter the package/resource prefix for non delegated classes/resources
-         */
-        public FilterClassLoader(ClassLoader parent, String filter) {
-            super();
-            if (parent == null) throw new IllegalArgumentException("parent must not be null.");
-            resourcePrefix = asResource(filter);
-            filteredParent = parent;
-        }
-
-        //- PROTECTED
-
-        /**
-         *
-         */
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            if (propagate(asResource(name))) {
-                return filteredParent.loadClass(name);
-            }
-            throw new ClassNotFoundException(name);
-        }
-
-        /**
-         *
-         */
-        protected URL findResource(String name) {
-            if (propagate(asResource(name))) {
-                return filteredParent.getResource(name);
-            }
-            return null;
-        }
-
-        /**
-         *
-         */
-        protected Enumeration<URL> findResources(String name) throws IOException {
-            if (propagate(asResource(name))) {
-                return filteredParent.getResources(name);
-            }
-            return Collections.enumeration(Collections.<URL>emptyList());
-        }
-
-        //- PRIVATE
-
-        private final ClassLoader filteredParent;
-        private final String resourcePrefix;
-
-        /**
-         * Convert a classes binary name to a resource path
-         *
-         * @return the /resource/path
-         */
-        private String asResource(String pathOrClassName) {
-            String resource = null;
-
-            if (pathOrClassName != null) {
-                String res = pathOrClassName.replace('.', '/');
-                if (!res.startsWith("/")) {
-                    res = "/" + res;
-                }
-                resource = res;
-            }
-
-            return resource;
-        }
-
-        /**
-         * Check if the request should be passed to the parent.
-         *
-         * @param resourcePath The path to check
-         * @return true to delegate
-         */
-        private boolean propagate(String resourcePath) {
-            return resourcePrefix != null && !resourcePath.startsWith(resourcePrefix);
         }
     }
 }

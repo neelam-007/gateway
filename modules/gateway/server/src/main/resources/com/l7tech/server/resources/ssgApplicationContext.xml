@@ -1324,7 +1324,7 @@
               Filtering classloader that will load bootstrap and extension classes, plus
               the listed gateway packages and classes.
             -->
-            <bean class="com.l7tech.server.util.FilterClassLoader">
+            <bean class="com.l7tech.util.FilterClassLoader">
                 <constructor-arg index="0" ref="extensionClassLoader"/>
                 <constructor-arg index="1" ref="systemClassLoader"/>
                 <constructor-arg index="2">
@@ -1337,6 +1337,7 @@
                         <value>org.apache.xalan</value>
                     </list>
                 </constructor-arg>
+                <constructor-arg index="3" value="true"/>
             </bean>
         </constructor-arg>
         <constructor-arg index="1">

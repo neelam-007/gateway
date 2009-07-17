@@ -52,9 +52,6 @@ import java.util.regex.Pattern;
  *
  * <p>This panel manages the UDDI browser and File selection dialogs and also
  * resolution of a WSDL from a WSIL.</p>
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class WsdlLocationPanel extends JPanel {
 
@@ -228,7 +225,7 @@ public class WsdlLocationPanel extends JPanel {
      */
     private String addDefaultDirectoryIntoPath(String filePath) {
         String newFilePath = filePath;
-        if (newFilePath == null || newFilePath.trim().length() == 0) return newFilePath;
+        if (newFilePath == null || newFilePath.trim().length() == 0) return "";
 
         File wsdlFile = new File(filePath);
         try {
@@ -240,12 +237,11 @@ public class WsdlLocationPanel extends JPanel {
                 String separator = System.getProperty("file.separator");
                 newFilePath = defaultDirectory + separator + newFilePath;
             }
-
-            return newFilePath;
         } catch (AccessControlException e) {
             // We're probably running as an unsigned applet
-            return null;
         }
+
+        return newFilePath;
     }
 
     /**
@@ -409,14 +405,16 @@ public class WsdlLocationPanel extends JPanel {
      * The precondition of the method is that filePath is an absolution file path if filePath refers a file.
      */
     private boolean isFileOk(String filePath) {
-        boolean isFileExisting;
+        boolean isFileExisting = false;
 
-        File wsdlFile = new File(filePath);
-        try {
-            isFileExisting = wsdlFile.isFile() && wsdlFile.exists();
-        } catch (AccessControlException e) {
-            // We're probably running as an unsigned applet
-            return false;
+        if ( filePath!=null && filePath.length() > 0 ) {
+            File wsdlFile = new File(filePath);
+            try {
+                isFileExisting = wsdlFile.isFile() && wsdlFile.exists();
+            } catch (AccessControlException e) {
+                // We're probably running as an unsigned applet
+                return false;
+            }
         }
 
         return isFileExisting;

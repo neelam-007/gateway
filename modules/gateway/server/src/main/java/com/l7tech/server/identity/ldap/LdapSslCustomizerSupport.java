@@ -2,7 +2,7 @@ package com.l7tech.server.identity.ldap;
 
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
-import com.l7tech.server.util.FilterClassLoader;
+import com.l7tech.util.FilterClassLoader;
 import com.l7tech.util.Pair;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.io.SingleCertX509KeyManager;
@@ -158,7 +158,7 @@ public class LdapSslCustomizerSupport {
                 throw (NamingException)new NamingException( "Error in SSL initialization.").initCause(e);
             }
 
-            classLoader = new FilterClassLoader( LdapIdentityProviderImpl.class.getClassLoader(), loader, Collections.singleton(LdapSSLSocketFactory.class.getPackage().getName() + ".generated.SSLSocketFactory") );
+            classLoader = new FilterClassLoader( LdapIdentityProviderImpl.class.getClassLoader(), loader, Collections.singleton(LdapSSLSocketFactory.class.getPackage().getName() + ".generated.SSLSocketFactory"), true );
         }
 
         return classLoader;

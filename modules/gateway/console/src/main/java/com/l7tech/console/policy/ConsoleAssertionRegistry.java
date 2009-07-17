@@ -4,6 +4,9 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.util.ConstructorInvocation;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ClassUtils;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.console.action.DefaultAssertionPropertiesAction;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
@@ -17,6 +20,7 @@ import com.l7tech.console.tree.policy.advice.DefaultAssertionAdvice;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi;
+import com.l7tech.util.FilterClassLoader;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
@@ -30,10 +34,20 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.CodeSource;
+import java.security.Permissions;
+import java.security.SecureClassLoader;
+import java.security.ProtectionDomain;
+import java.security.AllPermission;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * The AssertionRegistry for the SecureSpan Manager.  Extends the basic registry by adding functionality
@@ -48,6 +62,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     /** Base packages of every modular assertion, for recognizing NoClassDefFoundErrors due to module unload. */
     private final Map<String, String> moduleNameByBasePackage = new ConcurrentHashMap<String, String>();
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
 
@@ -69,6 +84,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                 return meta.getAssertionClass().getSimpleName();
             }
 
+            @Override
             public Object get(final AssertionMetadata meta, String key) {
                 return cache(meta, key, getDefaultName(meta));
             }
@@ -111,9 +127,10 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         final String moduleFilename = module.moduleFilename;
 
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            @Override
             public Object run() {
                 ClassLoader assloader = TopComponents.getInstance().isApplet()
-                                        ? getClass().getClassLoader()
+                                        ? getAppletModularAssertionClassLoader(getRootPackage(assertionClassnames))
                                         : null;
                 if (assloader == null)
                     assloader = ClassLoaderUtil.getClassLoader();
@@ -150,6 +167,90 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     }
 
     /**
+     * Get the shared parent package for the given assertoin classes.
+     *
+     *   com.l7tech.external.assertions.myass.MyAssertion
+     *   com.l7tech.external.assertions.myass.MyAssertion2
+     *
+     * parent is "com.l7tech.external.assertions.myass"
+     *
+     *   com.l7tech.external.assertions.myass1.MyAssertion
+     *   com.l7tech.external.assertions.myass2.MyAssertion2
+     *
+     * parent is "com.l7tech.external.assertions"
+     */
+    private String getRootPackage( final Collection<String> assertionClassnames ) {
+        String packageName = "com.l7tech.external.assertions";
+
+        if ( assertionClassnames != null && !assertionClassnames.isEmpty() ) {
+            packageName = ClassUtils.getPackageName( assertionClassnames.iterator().next() );
+
+            for ( String className : assertionClassnames ) {
+                String classPackageName = ClassUtils.getPackageName( className );
+                if ( !classPackageName.equals(packageName) &&
+                     ClassUtils.getPackageName(packageName).equals( ClassUtils.getPackageName(classPackageName) ) ) {
+                    packageName = ClassUtils.getPackageName(packageName);
+                    break; // Only allow one package up, so any assertions in packages must have common parent package
+                }
+            }
+        }
+
+        return packageName;
+    }
+
+    /**
+     * Get the classloader to use for the modular assertion.
+     *
+     * If untrusted, this is the regular classloader. If trusted a
+     * classloader is created to load only the modular assertion classes
+     * as trusted classes.
+     */
+    private ClassLoader getAppletModularAssertionClassLoader( final String assertionPackage ) {
+        ClassLoader loader = getClass().getClassLoader();
+
+        // Load classes with permission to access required property
+        try {
+            final ClassLoader resourceLoader = loader;
+            final CodeSource cs = new CodeSource(new URL("file:/opt/SecureSpan/Manager/lib/assertions/" + assertionPackage), (Certificate[])null);
+            final Permissions permissions = new Permissions();
+            permissions.add(new AllPermission()); 
+            final ProtectionDomain protectionDomain = new ProtectionDomain(cs, permissions);
+
+            loader = new SecureClassLoader( new FilterClassLoader(resourceLoader, null, Collections.singleton(assertionPackage), false) ) {
+                @Override
+                public Class<?> findClass(final String name) throws ClassNotFoundException {
+                    InputStream resIn = null;
+                    try {
+                        URL resUrl = null;
+                        if ( name.startsWith( assertionPackage )) {
+                            String resName = name.replace(".", "/").concat(".class");
+                            resUrl = resourceLoader.getResource(resName);
+                        }
+                        if (resUrl == null)
+                            throw new ClassNotFoundException("Resource not found for class '" + name + "'.");
+
+                        resIn = resUrl.openStream();
+                        byte[] classData = IOUtils.slurpStream(resIn, 102400);
+                        return defineClass(name, classData, 0, classData.length, protectionDomain);
+                    } catch(IOException ioe) {
+                        throw new ClassNotFoundException("Error loading resource for class '" + name + "'.", ioe);
+                    } finally {
+                        ResourceUtils.closeQuietly( resIn );
+                    }
+                }
+            };
+        }
+        catch( MalformedURLException mue ) {
+            logger.log( Level.WARNING, "Error creating modular assertion class loader", mue );
+        }
+        catch(SecurityException se) {
+            logger.log( Level.INFO, "Not able to create modular assertion class loader, assertion will be untrusted.", ExceptionUtils.getDebugException(se));
+        }
+
+        return loader;
+    }
+
+    /**
      * Examines the provided path to see if it looks like it might be referring to a loaded module.
      * If so, returns the name of the possibly-matching module.
      *
@@ -176,6 +277,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     }
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {
+        @Override
         public Object get(AssertionMetadata meta, String key) {
             String classname = (String)meta.get(PALETTE_NODE_CLASSNAME);
             //noinspection unchecked
@@ -187,6 +289,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
             // Try to use the default
             factory = new Functions.Unary<AbstractAssertionPaletteNode, AT>() {
+                @Override
                 public AbstractAssertionPaletteNode call(AT assertion) {
                     return new DefaultAssertionPaletteNode<AT>(assertion);
                 }
@@ -196,6 +299,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     }
 
     private static class PolicyNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {
+        @Override
         public Object get(AssertionMetadata meta, String key) {
             String classname = (String)meta.get(POLICY_NODE_CLASSNAME);
             //noinspection unchecked
@@ -207,6 +311,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
             // Try to use the default
             factory = new Functions.Unary< AssertionTreeNode, AT >() {
+                @Override
                 public AssertionTreeNode call(AT assertion) {
                     return new DefaultAssertionPolicyNode<AT>(assertion);
                 }
@@ -216,6 +321,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     }
 
     private static class PolicyAdviceInstanceMetadataFinder implements MetadataFinder {
+        @Override
         public Object get(AssertionMetadata meta, String key) {
             String assname = meta.getAssertionClass().getName();
             String classname = (String)meta.get(POLICY_ADVICE_CLASSNAME);
@@ -251,6 +357,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     }
 
     private static class PropertiesActionMetadataFinder<AT extends Assertion> implements MetadataFinder {
+        @Override
         public Object get(AssertionMetadata meta, String key) {
             String classname = (String)meta.get(PROPERTIES_ACTION_CLASSNAME);
             //noinspection unchecked
@@ -270,6 +377,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             }
 
             factory = new Functions.Unary<Action, AssertionTreeNode>() {
+                @Override
                 public Action call(AssertionTreeNode assertionTreeNode) {
                     //noinspection unchecked
                     return new DefaultAssertionPropertiesAction<AT, AssertionTreeNode<AT>>(assertionTreeNode, apeFactory);
@@ -280,6 +388,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     }
 
     private static class PropertiesEditorFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {
+        @Override
         public Object get(AssertionMetadata meta, String key) {
             //noinspection unchecked
             final Class<AT> assclass = meta.getAssertionClass();
@@ -293,6 +402,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             if (DefaultAssertionPropertiesEditor.hasEditableProperties(assclass)) {
                 // Yep -- use the default
                 return cache(meta, key, new Functions.Binary<AssertionPropertiesEditor<AT>, Frame, AT>() {
+                    @Override
                     public AssertionPropertiesEditor<AT> call(Frame frame, AT at) {
                         return new DefaultAssertionPropertiesEditor<AT>(frame, at);
                     }
@@ -328,6 +438,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                     ConstructorInvocation.findMatchingConstructor(loader, classname, AbstractAssertionPaletteNode.class, new Class[0]);
 
             return nullary == null ? null : new Functions.Unary<AbstractAssertionPaletteNode, AT>() {
+                @Override
                 public AbstractAssertionPaletteNode call(AT prototype) {
                     try {
                         return nullary.newInstance();
@@ -441,6 +552,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                                                                       AssertionPropertiesEditor.class,
                                                                       new Class[] { Frame.class, assertionClass });
                 if (ctorFrameAss != null) return new Functions.Binary<AssertionPropertiesEditor<AT>, Frame, AT>() {
+                    @Override
                     public AssertionPropertiesEditor<AT> call(Frame parent, AT assertion) {
                         try {
                             //noinspection unchecked
@@ -466,6 +578,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                                                                       AssertionPropertiesEditor.class,
                                                                       new Class[] { Frame.class });
                 if (ctorFrame != null) return new Functions.Binary<AssertionPropertiesEditor<AT>, Frame, AT>() {
+                    @Override
                     public AssertionPropertiesEditor<AT> call(Frame parent, AT assertion) {
                         try {
                             //noinspection unchecked
@@ -493,6 +606,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                                                                       AssertionPropertiesEditor.class,
                                                                       new Class[] { assertionClass });
                 if (ctorAss != null) return new Functions.Binary<AssertionPropertiesEditor<AT>, Frame, AT>() {
+                    @Override
                     public AssertionPropertiesEditor<AT> call(Frame parent, AT assertion) {
                         try {
                             //noinspection unchecked
@@ -518,6 +632,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                                                                       AssertionPropertiesEditor.class,
                                                                       new Class[] { });
                 if (ctorNullary != null) return new Functions.Binary<AssertionPropertiesEditor<AT>, Frame, AT>() {
+                    @Override
                     public AssertionPropertiesEditor<AT> call(Frame parent, AT assertion) {
                         try {
                             //noinspection unchecked
