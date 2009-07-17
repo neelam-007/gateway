@@ -660,7 +660,9 @@ public class AssertionMessages extends Messages {
     public static final M ADD_WSS_USERNAME_NOT_SOAP            = m(8880, Level.WARNING, "{0} message is not SOAP, cannot add WSS UsernameToken");
     public static final M ADD_WSS_USERNAME_MORE_THAN_ONE_TOKEN = m(8881, Level.WARNING, "Request included more than one X509 security token whose key ownership was proven");
 
-    public static final M XACML_REQUEST_ERROR = m(8900, Level.WARNING, "Error generating request: {0}");
+    public static final M XACML_REQUEST_ERROR        = m(8900, Level.WARNING, "Error generating request: {0}");
+    public static final M XACML_NOT_FOUND_OPTION_OFF = m(8901, Level.INFO, "A value for {0} was not found. Cannot add <Attribute> element to the {1} element");
+    public static final M XACML_NOT_FOUND_OPTION_ON  = m(8902, Level.INFO, "Policy falsified: a value for {0} was not found");
 
     public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");

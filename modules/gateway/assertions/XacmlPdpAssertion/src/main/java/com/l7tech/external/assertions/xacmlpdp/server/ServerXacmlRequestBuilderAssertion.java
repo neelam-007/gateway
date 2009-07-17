@@ -6,6 +6,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import com.l7tech.external.assertions.xacmlpdp.RequiredFieldNotFoundException;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_RELATIVE;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_ABSOLUTE;
@@ -62,6 +63,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         try {
             builder = factory.newDocumentBuilder();
         } catch(ParserConfigurationException pce) {
+            auditor.logAndAudit(AssertionMessages.XACML_REQUEST_ERROR, ExceptionUtils.getMessage(pce));
             return AssertionStatus.FAILED;
         }
 
@@ -108,11 +110,14 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             addAction(context, vars, doc, root);
 
             addEnvironment(context, vars, doc, root);
-        } catch (DocumentHolderException e) {
-            auditor.logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, new String[]{ExceptionUtils.getMessage(e)}, e);
+        } catch (DocumentHolderException dhe) {
+            auditor.logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, new String[]{ExceptionUtils.getMessage(dhe)}, dhe);
             return AssertionStatus.FAILED;
         } catch (DOMException de) {
             auditor.logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, ExceptionUtils.getMessage(de));
+            return AssertionStatus.FAILED;
+        } catch (RequiredFieldNotFoundException ranfe) {
+            auditor.logAndAudit(AssertionMessages.XACML_NOT_FOUND_OPTION_ON, ranfe.getMessage());
             return AssertionStatus.FAILED;
         }
 
@@ -135,7 +140,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         return AssertionStatus.NONE;
     }
 
-    private void addEnvironment(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root) throws DocumentHolderException {
+    private void addEnvironment(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root) throws DocumentHolderException, RequiredFieldNotFoundException {
         Element environmentElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Environment");
         root.appendChild(environmentElement);
 
@@ -148,7 +153,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
     }
 
-    private void addAction(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root) throws DocumentHolderException {
+    private void addAction(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root) throws DocumentHolderException, RequiredFieldNotFoundException {
         Element actionElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Action");
         root.appendChild(actionElement);
         addAttributes(doc,
@@ -159,7 +164,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 assertion.getXacmlVersion());
     }
 
-    private void addResource(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Resource resource) throws DocumentHolderException {
+    private void addResource(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Resource resource) throws DocumentHolderException, RequiredFieldNotFoundException {
         Element resourceElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Resource");
         root.appendChild(resourceElement);
 
@@ -180,7 +185,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         addAttributes(doc, resourceElement, resource.getAttributes(), vars, context, assertion.getXacmlVersion());
     }
 
-    private void addSubject(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Subject subject) throws DocumentHolderException {
+    private void addSubject(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Subject subject) throws DocumentHolderException, RequiredFieldNotFoundException {
         Element subjectElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Subject");
         root.appendChild(subjectElement);
 
@@ -268,7 +273,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             attributeElement.setAttribute("Issuer", ExpandVariables.process(attribute.getIssuer(), vars, auditor, true));
         }
 
-        if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
+        if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0) {
             if(attribute.getIssueInstant().length() > 0) {
                 attributeElement.setAttribute("IssueInstant",
                         ExpandVariables.process(attribute.getIssueInstant(), vars, auditor, true));
@@ -298,7 +303,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 //created above is used in place of the multi valued context variable entered by the user
                 HashMap<String, String> updatedAttributes =
                         new HashMap<String, String>(attributeValue.getAttributes().size());
-                
+
                 for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
                     String k = entry.getKey(); //name
                     String v = entry.getValue();     //value
@@ -364,7 +369,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * Check if any referenced variable is a Message. If thre is a message there can only be one
      * @param contextVariables all available contet variables
      * @param referencedVariables was obtained from a call to Syntax.getReferencedNames(content), where the value
-     * of content is the same value being passed in here 
+     * of content is the same value being passed in here
      * @return true if 1 and only 1 messgae is referenced from referencedVariables
      */
     private boolean doesContentIncludeAMessage(Map<String, Object> contextVariables,
@@ -448,7 +453,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                                List<XacmlRequestBuilderAssertion.AttributeTreeNodeTag> attributeTreeNodeTags,
                                Map<String, Object> vars,
                                PolicyEnforcementContext context,
-                               XacmlAssertionEnums.XacmlVersionType xacmlVersion) throws DocumentHolderException {
+                               XacmlAssertionEnums.XacmlVersionType xacmlVersion) throws DocumentHolderException, RequiredFieldNotFoundException {
         for(XacmlRequestBuilderAssertion.AttributeTreeNodeTag attributeTreeNodeTag : attributeTreeNodeTags) {
             if(attributeTreeNodeTag instanceof XacmlRequestBuilderAssertion.Attribute) {
                 XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributeTreeNodeTag;
@@ -475,7 +480,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                                        final Element parent,
                                        final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig,
                                        final Map<String, Object> contextVariables,
-                                       final PolicyEnforcementContext context) throws DocumentHolderException {
+                                       final PolicyEnforcementContext context) throws DocumentHolderException, RequiredFieldNotFoundException {
         //Determine if any multi context var's being used outside of Value
         Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> nonValueFields = multipleAttributeConfig.getNonValueFields();
         boolean isUsingMultiValuedCtxVariables = areAnyIterableFieldsReferencingMultiValuedVariables(contextVariables, nonValueFields);
@@ -519,7 +524,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         //now we know everything required to define the iteration
         int iterationCount = 0;
         boolean exitIteration;
-        do{
+
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field issueInstantField = multipleAttributeConfig.getField(ISSUE_INSTANT);
+        final Boolean ignoreIssueInstant = (assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0) ||  (issueInstantField.getValue() == null || issueInstantField.getValue().isEmpty());
+        final boolean isFalsifyPolicyEnabled = multipleAttributeConfig.isFalsifyPolicyEnabled();
+        final String elementName = parent.getLocalName();
+
+        do {
             //it's possible that all the values are single valued context variables
             //it's also possible that all the values are absolute xpaths - there is no iteration on absolute xpaths
             //it's also possible that all values are empty that is the only case in which we do nothing
@@ -545,8 +556,9 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
             //check our minimum requirements
             //id, datatype and value not having a value means no more <Attribute>s can be created
-            if(fieldCurrentValues.get(ID) == null || fieldCurrentValues.get(ID).isEmpty()) return;
-            if(fieldCurrentValues.get(DATA_TYPE) == null || fieldCurrentValues.get(DATA_TYPE).isEmpty()) return;
+            if (ignoreCreatingAttributeElement(ID.getDisplayName(), fieldCurrentValues.get(ID), elementName, isFalsifyPolicyEnabled, null)) return;
+            if (ignoreCreatingAttributeElement(DATA_TYPE.getDisplayName(), fieldCurrentValues.get(DATA_TYPE), elementName, isFalsifyPolicyEnabled, null)) return;
+            if (ignoreCreatingAttributeElement(ISSUE_INSTANT.getDisplayName(), fieldCurrentValues.get(ISSUE_INSTANT), elementName, isFalsifyPolicyEnabled, ignoreIssueInstant)) return;
 
             //our last requirement is the value field, which has the ability to be an absolute or relative
             //xpath expression, single or multi valued context variable or a string
@@ -556,8 +568,6 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     multipleAttributeConfig.getField(VALUE),
                     contextVariables,
                     resultCursor);
-
-            if(attributeValues.isEmpty()) return;
 
             //Create the Attribute
             Element attributeElement = addAttributeElement(doc, fieldCurrentValues);
@@ -606,7 +616,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             exitIteration = true;
             if(bothIterateMethodsBeingUsed){
                 //when both methods are being used, then both must say it's ok to continue
-                exitIteration = !(multiValueMoreResults && xpathMoreResults); 
+                exitIteration = !(multiValueMoreResults && xpathMoreResults);
             }else{
                 //check xpath
                 if(iteratingOnBaseXPath){
@@ -618,6 +628,44 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         } while(!exitIteration);
 //        while (iteratingOnBaseXPath && resultCursor != null || isUsingMultiValuedCtxVariables && iterationCount < smallestCtxVarSize)
 
+    }
+
+    /**
+     * By given a falsify-policy option and ignoreIssueInstant, check if ignoring to create Attribute elements in XACML
+     * Multiple Attributes. If a required field not found, throw a RequiredAttributeNotFoundException to falsify policy
+     * consumption. In this method, also log and audit the field not found, even Falsify Policy Option is set to off.
+     *
+     * @param fieldName: the field display name such as "ID", "Data Type", "Issue Instant", etc.
+     * @param fieldValue: the field value.
+     * @param elementName: the name of an element such as Subject, Resource, Action, or Environment.
+     * @param isFalsifyPolicyEnabled: a boolean value indicates if Falsify Policy Option is set to on/off.
+     * @param ignoreIssueInstant: this is only applied to Issue Instant.  it will set to null immediately for ID
+     *        and Data Type, because ID or Data Type is not Issue Instant, so directly move to the next notFound checking.
+     *        This flag is evaluated as true if Issue Instant is specified and the XACML version is pre 2.0.
+     * @return true if the attribute is not found and "Falsify Policy Option" is off.  Otherwise, false if the field is found.
+     * @throws com.l7tech.external.assertions.xacmlpdp.RequiredFieldNotFoundException thown if a required field is not found
+     *         with the extra condition under "Falsify Policy Option" on.
+     */
+    private boolean ignoreCreatingAttributeElement(String fieldName,
+                                                   String fieldValue,
+                                                   String elementName,
+                                                   boolean isFalsifyPolicyEnabled,
+                                                   Boolean ignoreIssueInstant) throws RequiredFieldNotFoundException {
+        if (fieldName == null) throw new IllegalArgumentException("Attribute display name must not be null.");
+
+        // ignoreIssueInstant setting to null means that the field is ID or Data Type, so go to the next notFound checking.
+        if (ignoreIssueInstant == null || !ignoreIssueInstant) {
+            boolean notFound = fieldValue == null || fieldValue.isEmpty();
+            if (notFound) {
+                if (isFalsifyPolicyEnabled) {
+                    throw new RequiredFieldNotFoundException(fieldName);
+                } else {
+                    auditor.logAndAudit(AssertionMessages.XACML_NOT_FOUND_OPTION_OFF, fieldName, elementName);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private XpathResultIterator executeXpathExpression(Document inputDoc, String xpath, Map<String, String> namespaces){
@@ -679,8 +727,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             attributeElement.setAttribute("Issuer", fieldCurrentValues.get(ISSUER));
         }
 
-        if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
-            if(fieldCurrentValues.get(ISSUE_INSTANT) != null && fieldCurrentValues.get(ISSUE_INSTANT).isEmpty()) {
+        if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0) {
+            if(fieldCurrentValues.get(ISSUE_INSTANT) != null && !fieldCurrentValues.get(ISSUE_INSTANT).isEmpty()) {
                 attributeElement.setAttribute("IssueInstant", fieldCurrentValues.get(ISSUE_INSTANT));
             }
         }
@@ -986,9 +1034,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             List<XpathResultWrapper> xpathResults = XPATH_RELATIVE == valueField.getType() ?
                 getRelativeXPathResult(resultCursor, valueField.getValue(), namespaces) :
                 getAbsoluteXPathResultForValue(valueField, documentHolder.getDocument(), namespaces);
-            
-            for(XpathResultWrapper wrapper: xpathResults){
-                returnList.add(new AttributeValue(wrapper));
+
+            if (xpathResults.isEmpty()) {
+                returnList.add(new AttributeValue(""));
+            } else {
+                for(XpathResultWrapper wrapper: xpathResults){
+                    returnList.add(new AttributeValue(wrapper));
+                }
             }
 
         } else { // REGULAR, expand all context variables, including multi-valued, into one AttributeValue element
@@ -1016,7 +1068,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     //that means we've found text and not an Element
                     XpathResultNode resultNode = new XpathResultNode();
                     resultIterator.next(resultNode);
-                    wrapper = new XpathResultWrapper(resultNode.getNodeValue());    
+                    wrapper = new XpathResultWrapper(resultNode.getNodeValue());
                 }else{
                     Element element = cursor.asDomElement();
                     wrapper = new XpathResultWrapper(element);

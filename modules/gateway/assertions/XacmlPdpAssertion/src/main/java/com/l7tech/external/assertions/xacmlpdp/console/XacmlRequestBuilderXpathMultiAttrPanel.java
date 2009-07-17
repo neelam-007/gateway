@@ -61,6 +61,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
     private JTextField valueField;
     private JComboBox valueExpressionType;
+    private JCheckBox falsifyPolicyCheckBox;
 
     private final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig;
     private final DefaultTableModel tableModel;
@@ -103,7 +104,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         xpathBaseField.setText(multipleAttributeConfig.getXpathBase());
         issuerField.setText(multipleAttributeConfig.getField(ISSUER).getValue());
 
-        if(version == XacmlAssertionEnums.XacmlVersionType.V1_0) {
+        if(version != XacmlAssertionEnums.XacmlVersionType.V2_0) {
             issueInstantField.setText(multipleAttributeConfig.getField(ISSUE_INSTANT).getValue());
         }
 
@@ -295,6 +296,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
     @Override
     public boolean handleDispose() {
+        multipleAttributeConfig.setFalsifyPolicyEnabled(falsifyPolicyCheckBox.isSelected());
+        
         for (XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field : multipleAttributeConfig.getFields().values()) {
             if (CONTEXT_VARIABLE == field.getType()) {
                 String[] varStrings = Syntax.getReferencedNames(field.getValue());
@@ -412,5 +415,4 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     private boolean isDuplicateNamespacePrefix( final String prefix ) {
         return multipleAttributeConfig.getNamespaces().containsKey(prefix);
     }
-
 }

@@ -281,6 +281,10 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                 this.displayName = displayName;
             }
 
+            public String getDisplayName() {
+                return displayName;
+            }
+
             @Override
             public String toString() {
                 return displayName;
@@ -326,6 +330,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         private String messageSourceContextVar = "";
         private String xpathBase = "";
         private Map<String, String> namespaces = new HashMap<String, String>();
+        private boolean falsifyPolicyEnabled;  // this is corresponding to the checkbox in XPath Mulitiple Attributes panel.
 
         public MultipleAttributeConfig() {
         }
@@ -407,6 +412,14 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
         public void setNamespaces(Map<String, String> namespaces) {
             this.namespaces = namespaces;
+        }
+
+        public boolean isFalsifyPolicyEnabled() {
+            return falsifyPolicyEnabled;
+        }
+
+        public void setFalsifyPolicyEnabled(boolean falsifyPolicyEnabled) {
+            this.falsifyPolicyEnabled = falsifyPolicyEnabled;
         }
 
         @Override
