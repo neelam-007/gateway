@@ -335,6 +335,8 @@ public final class ExpandVariables {
             Collections.addAll(result, getAndFilter(vars, Syntax.parse(matcher.group(1), defaultDelimiter()), audit, strict));
             previousMatchEndIndex = matcher.end();
         }
+        if (previousMatchEndIndex < s.length()) 
+            result.add(s.substring(previousMatchEndIndex, s.length()));
         return result;
     }
 

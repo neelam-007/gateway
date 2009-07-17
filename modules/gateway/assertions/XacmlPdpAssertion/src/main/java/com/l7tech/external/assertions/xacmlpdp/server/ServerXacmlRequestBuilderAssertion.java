@@ -909,6 +909,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * AttributeValue knows how to add itself to a Element representing an <AttributeValue>
      */
     private class AttributeValue{
+        final static String MULTI_VAL_STRING_SEPARATOR = ", "; // todo: handle this better
         private String processedContent;     // simple content or already toString()'ed
         private Message message;             // content from one (XML) message
         private List<Object> mixedContent;   // mixed content (strings and (xml) messages)
@@ -974,10 +975,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             }
 
             if (mixedContent != null) {
+                boolean isPreviousString = false;
                 for (Object part : mixedContent) {
                     if (part instanceof String) {
-                        element.appendChild(element.getOwnerDocument().createTextNode((String) part));
+                        element.appendChild(element.getOwnerDocument().createTextNode((isPreviousString ? MULTI_VAL_STRING_SEPARATOR : "") + part ));
+                        isPreviousString = true;
                     } else if (part instanceof Message) {
+                        isPreviousString = false;
                         try {
                             addXmlMessageVariableAsAttributeValue((Message)part, element);
                         } catch (Exception e) {
