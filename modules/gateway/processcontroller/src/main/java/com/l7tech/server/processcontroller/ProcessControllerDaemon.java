@@ -7,6 +7,7 @@ import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.UncaughtExceptionLogger;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.BuildInfo;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.beans.factory.BeanCreationException;
 
@@ -106,7 +107,7 @@ public final class ProcessControllerDaemon {
     }
 
     private void start() throws IOException {
-        logger.info("Starting Process Controller...");
+        logger.info("Starting Process Controller " + BuildInfo.getLongBuildString());
 
         final ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext(DAEMON_CONTEXTS);
         this.ctx = ctx;

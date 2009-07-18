@@ -37,10 +37,10 @@ cd "${SSPC_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSPC_HOME}"
 
 # Run the config bootstrapper if it looks like this is the first time we've run
 if [ -z "${PC_USER}" ] ; then
-    "${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig
+    "${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig
 else
     export JAVA_HOME SSPC_HOME PC_JAR
-    runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig'
+    runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig'
 fi
 
 if [ ${?} -ne 0 ]; then

@@ -10,6 +10,9 @@ import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.BuildInfo;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
@@ -23,6 +26,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.ConsoleHandler;
 
 /** @author alex */
 public class BootstrapConfig {
@@ -53,15 +57,25 @@ public class BootstrapConfig {
         }
     }
 
+    private static void initLogging() {
+        // configure logging if the logs directory is found, else leave console output
+        final File logsDir = new File("var/logs");
+        if ( logsDir.exists() && logsDir.canWrite() ) {
+            JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller", "com/l7tech/server/processcontroller/resources/logging.properties", "etc/conf/logging.properties", false, true);
+        }
+        if ( SyspropUtil.getBoolean("com.l7tech.server.log.console") ) {
+            Logger.getLogger("").addHandler( new ConsoleHandler() );
+        }
+    }
+
     private static int realMain() {
-        final String pcHomeDirName = System.getProperty("com.l7tech.server.processcontroller.homeDirectory");
-        if (pcHomeDirName == null) throw new DieDieDie("com.l7tech.server.processcontroller.homeDirectory is required", 1);
-
-        final File pcDir = checkFile(new File(pcHomeDirName), true);
-        final File etcDir = checkFile(new File(pcDir,"etc"), true);
-
+        final File etcDir = checkFile(new File("etc"), true);
         final File hostPropertiesFile = new File(etcDir, "host.properties");
         final File overrideProperties = new File(etcDir, "override.properties");
+
+        initLogging();
+        logger.info( "Starting configuration bootstrap " + BuildInfo.getLongBuildString());
+
         if (hostPropertiesFile.exists()) {
             logger.fine("Found existing " + hostPropertiesFile.getAbsolutePath());
             logger.fine("Checking for overrides");
@@ -73,6 +87,7 @@ public class BootstrapConfig {
         }
 
         doOverideProperties(hostPropertiesFile, overrideProperties);
+        logger.info( "Configuration bootstrap complete." );
         return 0;
     }
 
@@ -134,7 +149,9 @@ public class BootstrapConfig {
             }
         }
 
-        overridePropertiesFile.delete();
+        if ( !overridePropertiesFile.delete() ) {
+            logger.warning( "Unable to delete override properties file '"+overridePropertiesFile.getAbsolutePath()+"'." );
+        }
     }
 
     private static String generatePassword() {
