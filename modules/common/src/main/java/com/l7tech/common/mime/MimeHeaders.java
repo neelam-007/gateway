@@ -110,7 +110,7 @@ public class MimeHeaders {
         if (clen == null)
             throw new IllegalStateException("No Content-Length header.");
         try {
-            return Long.parseLong(clen.getMainValue());
+            return MimeHeader.parseNumericValue(clen.getMainValue());
         } catch (NumberFormatException nfe) {
             throw new CausedIOException("Content-Length is not a valid number", nfe);
         }

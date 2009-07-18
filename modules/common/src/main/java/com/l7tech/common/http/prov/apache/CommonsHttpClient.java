@@ -6,13 +6,10 @@ package com.l7tech.common.http.prov.apache;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
@@ -380,7 +377,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     Header cth = method.getResponseHeader(MimeUtil.CONTENT_TYPE);
                     contentType = cth == null || cth.getValue() == null ? null : ContentTypeHeader.parseValue(cth.getValue());
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
-                    contentLength = clh == null || clh.getValue() == null ? null : new Long(Long.parseLong(clh.getValue()));
+                    contentLength = clh == null || clh.getValue() == null ? null : MimeHeader.parseNumericValue(clh.getValue());
                 } catch (IOException e) {
                     String target = null;
                     try {

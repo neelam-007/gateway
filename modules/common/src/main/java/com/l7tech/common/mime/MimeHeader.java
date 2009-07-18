@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Encapsulates a MIME header and main value, and optional extra parameters after the main value.
@@ -89,12 +90,44 @@ public class MimeHeader implements HttpHeader {
             return ContentTypeHeader.parseValue(value);
         if (MimeUtil.CONTENT_LENGTH.equalsIgnoreCase(name)) {
             try {
-                Long.parseLong(value);
+                value = String.valueOf(parseNumericValue(value));
             } catch (NumberFormatException e) {
                 throw new IOException("Invalid MIME Content-Length header value: " + value);
             }
         }
         return new MimeHeader(name, value, null);
+    }
+
+    private static final Pattern COMMAPAT = Pattern.compile("\\s*,\\s*");
+
+    /**
+     * Attempt to parse an HTTP header value as a number, permitting a multi-valued header (such as "23, 23, 23")
+     * as long as all values are the same number.
+     *
+     * @param possiblyMultivaluedValue the value to parse.  Required.
+     * @return the numeric value of the header value.
+     * @throws NullPointerException if the value is null.
+     * @throws NumberFormatException if the value is empty or non-numeric, or if there are multiple values that don't all agree.
+     */
+    public static long parseNumericValue(String possiblyMultivaluedValue) {
+        if (possiblyMultivaluedValue == null)
+            throw new NullPointerException();
+        try {
+            return Long.parseLong(possiblyMultivaluedValue);
+        } catch (NumberFormatException nfe) {
+            // See if it has multiple identical values (Bug #7353)
+            String[] vals = COMMAPAT.split(possiblyMultivaluedValue.trim());
+            if (vals.length < 1)
+                throw nfe;
+            long val = Long.parseLong(vals[0]);
+            if (vals.length > 1) {
+                for (int i = 1; i < vals.length; ++i) {
+                    if (val != Long.parseLong(vals[i]))
+                        throw new NumberFormatException("Multiple disagreeing header values: " + val + " / " + vals[i]);
+                }
+            }
+            return val;
+        }
     }
 
     public String getName() {
