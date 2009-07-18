@@ -291,6 +291,8 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             }
         });
 
+        Utilities.equalizeComponentSizes( messageSourceComboBox, messageOutputComboBox );
+
         policyPanel.setLayout(new BorderLayout());
         policyPanel.add(xmlEditor, BorderLayout.CENTER);
 
@@ -536,6 +538,8 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         this.assertion = assertion;
 
         messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
+        Utilities.equalizeComponentSizes( messageSourceComboBox, messageOutputComboBox );
+
         boolean foundItem = false;
         for(int i = 0;i < messageSourceComboBox.getItemCount();i++) {
             MessageSourceEntry entry = (MessageSourceEntry)messageSourceComboBox.getItemAt(i);
