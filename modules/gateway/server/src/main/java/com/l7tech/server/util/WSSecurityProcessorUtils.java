@@ -581,6 +581,7 @@ public class WSSecurityProcessorUtils {
                     decoration.addSignatureConfirmation(sig);
             }
         }
+        request.getSecurityKnob().setNeedsSignatureConfirmations(false);
     }
 
     public static boolean isValidSignatureConfirmations(SignatureConfirmation signatureConfirmation, Auditor auditor) {
