@@ -10,6 +10,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -35,6 +36,8 @@ public class IpListPanel extends JPanel {
     private JComboBox cbStrategy;
     private JRadioButton useDifferentURLsRadioButton;
     private JButton editButton;
+
+    private Functions.Unary<Boolean, String> contextVariableValidator; // to check if a URL contains context variable
 
     public IpListPanel() {
         init();
@@ -93,6 +96,8 @@ public class IpListPanel extends JPanel {
                 else
                     dlg = new GetIpDialog((Frame)null);
 
+                dlg.setContextVariableValidator(IpListPanel.this.getContextVariableValidator());
+
                 //update 'Edit' title
                 if (!rbSpecify.isSelected()) {
                     dlg.noValidateFormat();
@@ -136,6 +141,8 @@ public class IpListPanel extends JPanel {
                     dlg = new GetIpDialog((Dialog)rootPane);
                 else
                     dlg = new GetIpDialog((Frame)null);
+
+                dlg.setContextVariableValidator(IpListPanel.this.getContextVariableValidator());
 
                 if (!rbSpecify.isSelected()) {
                     dlg.noValidateFormat();
@@ -268,4 +275,11 @@ public class IpListPanel extends JPanel {
         }
     }
 
+    public Functions.Unary<Boolean, String> getContextVariableValidator() {
+        return contextVariableValidator;
+    }
+
+    public void setContextVariableValidator(Functions.Unary<Boolean, String> contextVariableValidator) {
+        this.contextVariableValidator = contextVariableValidator;
+    }
 }

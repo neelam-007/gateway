@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.variable.*;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -181,6 +182,15 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 } else {
                     urlPanel.setEnabled(true);
                 }
+            }
+        });
+
+        // Set a validator to check if a URL contains context variable
+        ipListPanel.setContextVariableValidator(new Functions.Unary<Boolean, String>() {
+            @Override
+            public Boolean call(String s) {
+                String[] res = Syntax.getReferencedNames(s);
+                return res != null && res.length > 0;
             }
         });
 

@@ -6,6 +6,8 @@
 package com.l7tech.gui.widgets;
 
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.UndoableEditEvent;
@@ -25,6 +27,7 @@ public class GetIpDialog extends JDialog {
     private JButton okButton;
     private boolean validateIPFormat = true;
     private JLabel mainLabel;
+    private Functions.Unary<Boolean, String> contextVariableValidator; // to check if a URL contains context variable
 
     /** Create modal dialog using the specified title. */
     public GetIpDialog(Frame owner, String title) {
@@ -110,8 +113,14 @@ public class GetIpDialog extends JDialog {
     /** Check for valid IP, attempting to narrow in on the invalid portion if it isn't valid. */
     private boolean isValidIp(String s) {
         if (!validateIPFormat) {
-            getIpRangeTextField().setNone();
-            return true;// we dont care
+            // Check if it is a valid URL.
+            boolean isValidURL = validateUrl(s);
+            if (isValidURL) {
+                getIpRangeTextField().setNone();
+            } else {
+                getIpRangeTextField().setAll();
+            }
+            return isValidURL; 
         }
         boolean ret = false;
         int pos = -1;
@@ -147,12 +156,34 @@ public class GetIpDialog extends JDialog {
         }
     }
 
-    private void checkValid() {
-        if (validateIPFormat) {
-            okButton.setEnabled(isValidIp(getIpRangeTextField().getText()));
-        } else {
-            okButton.setEnabled(getIpRangeTextField().getText() != null && getIpRangeTextField().getText().length() > 0);
+    public Functions.Unary<Boolean, String> getContextVariableValidator() {
+        return contextVariableValidator;
+    }
+
+    public void setContextVariableValidator(Functions.Unary<Boolean, String> contextVariableValidator) {
+        this.contextVariableValidator = contextVariableValidator;
+    }
+
+    /**
+     * Check if a URL is valid or not.
+     * @param s: the string of the URL
+     * @return true if the URL contains context variable or is a valid URL.
+     */
+    private boolean validateUrl(String s) {
+        if (s == null || s.isEmpty()) return false;
+
+        // If the URL contains context variable, we just can't check semantic
+        if (contextVariableValidator != null) {
+            boolean hasContextVariable = contextVariableValidator.call(s);
+            if (hasContextVariable) return true;
         }
+
+        // The URL doesn't contain any context variables and check if the url is valid or not.
+        return ValidationUtils.isValidUrl(s);
+    }
+
+    private void checkValid() {
+        okButton.setEnabled(isValidIp(getIpRangeTextField().getText()));
     }
 
     private SquigglyTextField getIpRangeTextField() {
