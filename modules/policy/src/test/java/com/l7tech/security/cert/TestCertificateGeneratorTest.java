@@ -131,6 +131,22 @@ public class TestCertificateGeneratorTest {
     }
 
     @Test
+    public void testSha256WithRSAEncryption() throws Exception {
+        String OID = "1.2.840.113549.1.1.11";  // sha256WithRSAEncryption
+
+        TestCertificateGenerator gen = new TestCertificateGenerator();
+        gen.signatureAlgorithm(OID);
+        X509Certificate got = gen.generate();
+
+        final X509Certificate jdkGot = CertUtils.decodeCert(got.getEncoded());
+        assertEquals(OID, jdkGot.getSigAlgOID());
+        got.verify(got.getPublicKey());
+        jdkGot.verify(jdkGot.getPublicKey());
+        got.verify(jdkGot.getPublicKey());
+        jdkGot.verify(got.getPublicKey());
+    }
+
+    @Test
     public void testDecodeKeystore() throws Exception {
         Pair<X509Certificate, PrivateKey> got = TestCertificateGenerator.convertFromBase64Pkcs12(
                 "MIIEJQIBAzCCA98GCSqGSIb3DQEHAaCCA9AEggPMMIIDyDCB7gYJKoZIhvcNAQcBoIHgBIHdMIHa\n" +
