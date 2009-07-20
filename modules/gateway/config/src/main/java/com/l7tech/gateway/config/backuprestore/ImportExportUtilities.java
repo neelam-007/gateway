@@ -175,7 +175,7 @@ public class ImportExportUtilities {
     }
 
     /**
-     * Classloader designed to ONLY to load BuildInfo from Gateway jar from the standard install directory of
+     * Classloader designed to ONLY load BuildInfo from Gateway jar from the standard install directory of
      * /opt/SecureSpan/Gateway/runtime/Gateway.jar
      */
     private static class GatewayJarClassLoader extends ClassLoader{
@@ -607,18 +607,24 @@ public class ImportExportUtilities {
      * validOptions lists which arguments to expect, each CommandLineOption within it, specifies whether or not it
      * must be followed by a parameter on the command line.
      * ignoredOptions is provided for backwards comapability where an old script may supply a parameter which has been
-     * removed, but for which we will not error out because of 
+     * removed, but for which we will not error out because of
+     *
+     * If the value of a parameter represnts a file, this method does not validate that the file exists
+     * 
      * @param args  The command line arguments. Cannot be null
      * @param validOptions list of valid command line argument. Canot be null
      * @param ignoredOptions list of arguments which are allowed, but will be ignored. Cannot be null
+     * @param isVerbose if true and printStream is not null, any ignore options will be written to the printStream
+     * @param printStream, if not null, any info messages will be written to this stream, only required to advise
+     * of ignored options
      * @return  A map of the command line argumetents to their values, if any
-     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException
-     * If an unexpected arguments is found, or an argument is missing it's value, or the value of an argument represents
-     * a file, and that file does not exist or cannot be written to
+     * @throws InvalidProgramArgumentException if an unexpected arguments is found, or an argument is missing it's value
      */
     public static Map<String, String> getAndValidateCommandLineOptions(final String[] args,
                                                                        final List<CommandLineOption> validOptions,
-                                                                       final List<CommandLineOption> ignoredOptions)
+                                                                       final List<CommandLineOption> ignoredOptions,
+                                                                       final boolean isVerbose,
+                                                                       final PrintStream printStream)
             throws BackupRestoreLauncher.InvalidProgramArgumentException {
         if(args == null) throw new NullPointerException("args cannot be null");
         if(validOptions == null) throw new NullPointerException("validOptions cannot be null");
@@ -627,64 +633,41 @@ public class ImportExportUtilities {
         final Map<String, String> arguments = new HashMap<String, String>();
         int index = 1;  //skip the first argument, because it's already used to determine the utility type (export/import)
 
-        //todo [Donal] refactor loop
         while (index < args.length) {
             final String argument = args[index];
-
+            index++;//move index along to either next param or param value
             switch (determineArgumentType(argument, validOptions, ignoredOptions)) {
                 case VALID_OPTION:
                     if (optionHasNoValue(argument, validOptions)) {
                         arguments.put(argument, "");
+                    }else if(index < args.length  && ARGUMENT_TYPE.VALUE.equals(
+                            determineArgumentType(args[index], validOptions, ignoredOptions))){
+                        arguments.put(argument, args[index]);
                         index++;
-                    } else if (!optionIsValuePath(argument, validOptions)) {
-                        if (index+1 < args.length && ARGUMENT_TYPE.VALUE.equals(determineArgumentType(args[index+1], validOptions, ignoredOptions))) {
-                            arguments.put(argument, args[index+1]);
-                            index = index + 2;  //already processed one, so we'll need to advance to the next after the processed
-                        } else {
-                            //expecting a value for this parameter but there was none
-                            throw new InvalidProgramArgumentException("option " + argument + " expects value");
-                        }
-                    } else {
-                        int nextOptionIndex = findIndexOfNextOption(index, args, validOptions, ignoredOptions);
-                        if (index+1 < args.length && ARGUMENT_TYPE.VALUE.equals(determineArgumentType(args[index+1], validOptions, ignoredOptions)) && index+1 < nextOptionIndex) {
-                            String fullValue = getFullValue(args, index+1, nextOptionIndex);
-                            arguments.put(argument, fullValue);
-                            index = nextOptionIndex;
-                        } else {
-                            throw new InvalidProgramArgumentException("option " + argument + " expects value");
-                        }
+                    }else{
+                        throw new InvalidProgramArgumentException("option " + argument + " expects value");
                     }
                     break;
                 case IGNORED_OPTION:
                     if (optionHasNoValue(argument, ignoredOptions)) {
-                        logger.info("Option '" + argument + "' is ignored.");
+                        final String msg ="Option '" + argument + "' is ignored";
+                        logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                    }else if(index < args.length && ARGUMENT_TYPE.VALUE.equals(
+                            determineArgumentType(args[index], validOptions, ignoredOptions))){
+                        final String msg = "Option '" + argument + " " + args[index] + "' is ignored";
+                        logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                         index++;
-                    } else if (!optionIsValuePath(argument, ignoredOptions)) {
-                        if (index+1 < args.length && ARGUMENT_TYPE.VALUE.equals(determineArgumentType(args[index+1], validOptions, ignoredOptions))) {
-                            index = index + 2;
-                        } else {
-                            //we dont care, just continue to process
-                            index++;
-                        }
-                        logger.info("Option '" + argument + " " + args[index] + "' is ignored.");
-                    } else {
-                        int nextOptionIndex = findIndexOfNextOption(index, args, validOptions, ignoredOptions);
-                        if (index+1 < args.length && ARGUMENT_TYPE.VALUE.equals(determineArgumentType(args[index+1], validOptions, ignoredOptions)) && index+1 < nextOptionIndex) {
-                            String fullValue = getFullValue(args, index+1, nextOptionIndex);
-                            index = nextOptionIndex;
-                            logger.info("Option '" + argument + " " + fullValue + "' is ignored.");
-                        } else {
-                            //we dont care, just continue to process
-                            index++;
-                            logger.info("Option '" + argument + "' is ignored.");
-                        }
+                    }else{
+                        //it was supposed to have a value, but doesn't, but we still want the user to know
+                        //the supplied option is ignored
+                        final String msg ="Option '" + argument + "' is ignored";
+                        logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     }
                     break;
                 default:
                     throw new BackupRestoreLauncher.InvalidProgramArgumentException("option " + argument + " is invalid");
             }
         }
-
         return arguments;
     }
 
@@ -725,17 +708,6 @@ public class ImportExportUtilities {
     }
 
     /**
-     * Confirm that the file fileName, does not exists
-     * @param fileName the file name to confirm does not exists
-     * @throws IllegalArgumentException if the file fileName does exist
-     */
-    public static void throwIfFileDoesNotExist(final String fileName){
-        if (fileName == null) throw new NullPointerException("fileName cannot be null");
-        final File file = new File(fileName);
-        if(!file.exists()) throw new IllegalArgumentException("file '" + fileName + "' should exist");
-    }
-
-    /**
      * Test if can write and create the file.
      *
      * @param fileName  The file to be created
@@ -758,57 +730,6 @@ public class ImportExportUtilities {
             ResourceUtils.closeQuietly(fos);
             file.delete();
         }
-    }
-
-    /**
-     * When migrating and a pre existing database is being used, then the version of the database must match
-     * the version of the installed SSG.
-     *
-     * @param version   The database version to be compared to the installed SSG version
-     * @throws UnsupportedOperationException if the version do not match
-     */
-    public static void throwIfDbVersionDoesNotMatchSSG(final String version){
-        final String ssgVersion = BuildInfo.getProductVersion();
-        if (!ssgVersion.equals(version)) {
-             throw new UnsupportedOperationException("Database version '"+version+"' does not match the SSG version " +
-                     "'"+ssgVersion+"'. Values must match to Import using -migrate");
-        }
-    }
-
-    /**
-     * Verify if the database exists.
-     *
-     * @param host  The database host
-     * @param dbName    The database name
-     * @param port  The port
-     * @param username  The username to be used for login
-     * @param password  The password for the specified username
-     * @return
-     */
-    public static boolean verifyDatabaseExists(final String host,
-                                               final String dbName,
-                                               final int port,
-                                               final String username,
-                                               final String password) {
-        Connection c = null;
-        Statement s = null;
-        ResultSet rs = null;
-        try {
-            DatabaseConfig config = new DatabaseConfig(host, port, dbName, username, password);
-            c = new DBActions().getConnection(config, false);
-            s = c.createStatement();
-            rs = s.executeQuery("select * from hibernate_unique_key");
-            if (rs.next()) {
-                return true;
-            }
-        } catch (SQLException e) {
-            return false;
-        } finally {
-            ResourceUtils.closeQuietly(rs);
-            ResourceUtils.closeQuietly(s);
-            ResourceUtils.closeQuietly(c);
-        }
-        return false;
     }
 
     /**
@@ -856,30 +777,12 @@ public class ImportExportUtilities {
     }
 
     /**
-     * Verify that a directory exists
-     * @param directoryName name of the directory to check if it exists or not. Cannot be null
-     * @throws IllegalArgumentException if the directoryName is null, directoryName does not exist or does not represent a directory
-     * @throws NullPointerException if directory name is null
-     */
-    public static void verifyDirExistence(final String directoryName){
-        if (directoryName == null) throw new NullPointerException("directoryName cannot be null");
-
-        // non empty check allows the utility to work with backup servlet temporary files
-        final File file = new File(directoryName);
-        if(!file.exists()){
-            throw new IllegalArgumentException("Directory '" + directoryName + "' does not exist");
-        }
-
-        if(!file.isDirectory()){
-            throw new IllegalArgumentException("File '" + directoryName + "' is not a directory");
-        }
-    }
-
-    /**
      * Copy the files from destinationDir to sourceDir. Does not copy directories
-     * @param destinationDir The directory containing the files to copy
      * @param sourceDir The directory to copy the files to
+     * @param destinationDir The directory containing the files to copy
      * @param fileFilter FilenameFilter can be null. Use to filter the files in sourceDir
+     * @param isVerbose if true, verbose output will be written to the console
+     * @param printStream if not null and isVerbose is true, each file copied will be written to the print stream
      * @throws IOException if any exception occurs while copying the files
      */
     public static void copyFiles(final File sourceDir,
@@ -919,11 +822,6 @@ public class ImportExportUtilities {
 
     public static void copyDir(final File sourceDir, final File destDir) throws IOException {
         copyDir(sourceDir,  destDir, null, false, null);
-    }
-
-    public static void copyDir(final File sourceDir, final File destDir, final FilenameFilter sourceFilter)
-            throws IOException {
-        copyDir(sourceDir,  destDir, sourceFilter, false, null);
     }
 
     public static void copyDir(final File sourceDir,
@@ -1021,26 +919,6 @@ public class ImportExportUtilities {
     }
 
     /**
-     * Determines if the provided option has path as an option
-     *
-     * @param optionName    The option name
-     * @param options       The list of options used to find the option if in the list
-     * @return  TRUE if the option name has path as option, otherwise FALSE.
-     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException     The option name is not found in the available option list
-     */
-    private static boolean optionIsValuePath(String optionName,
-                                             final List<CommandLineOption> options)
-            throws BackupRestoreLauncher.InvalidProgramArgumentException {
-        for (CommandLineOption commandLineOption : options) {
-            if (commandLineOption.getName().equals(optionName)) {
-                return commandLineOption.isValuePath();
-            }
-        }
-        //this is a programming error
-        throw new IllegalArgumentException("option " + optionName + " does not exist in options");
-    }
-
-    /**
      * Determines if the provided option expects a value
      *
      * @param optionName    The option name
@@ -1079,6 +957,9 @@ public class ImportExportUtilities {
     /**
      * Determine the argument type as either an option or a value to a particular option
      *
+     * @param validOptions the list of allowed values
+     * @param ignoredOptions options which are not valid, but will be ignored, and their values if aplicable, if
+     * supplied
      * @param argument  argument for comparison
      * @return  The ARGUMENT_TYPE of the parse argument.
      */
@@ -1098,51 +979,15 @@ public class ImportExportUtilities {
     }
 
     /**
-     * Finds the index location of the next option if available
-     *
-     * @param startIndex    The starting index of the location to start searching.  DO NOT start at the index of the
-     *                      previous option index location.
-     *                      eg. if parameter were "-p1 val1 -p2 val2 -p3 ...   If p1 was the previous option, then the
-     *                      start index should be at val1
-     * @param args          The list of arguments
-     * @return              The index location of the next available option found, if reached to end of argument list, then
-     *                      it'll return the size of the argument list
-     */
-    private static int findIndexOfNextOption(final int startIndex,
-                                             final String[] args,
-                                             final List<CommandLineOption> validOptions,
-                                             final List<CommandLineOption> ignoredOptions) {
-        int nextOptionIndex = startIndex;
-        while (args != null && nextOptionIndex+1 < args.length) {
-            if (!ARGUMENT_TYPE.VALUE.equals(determineArgumentType(args[++nextOptionIndex], validOptions, ignoredOptions))) {
-                return nextOptionIndex;
-            }
-        }
-        return args != null ? args.length : nextOptionIndex+1;
-    }
-
-    /**
-     * Parses the values given by the provided boundaries.
-     *
-     * @param args  The list of arguments
-     * @param startIndex    The starting index
-     * @param endIndex      The ending index, does not include this index
-     * @return      The parsed value withing the boundaries.
-     */
-    private static String getFullValue(final String[] args, final int startIndex, final int endIndex) {
-        final StringBuffer buffer = new StringBuffer();
-        for (int i=startIndex; i < args.length && i < endIndex; i++) {
-            buffer.append(args[i] + " ");
-        }
-        return buffer.toString() != null ? buffer.toString().trim() : buffer.toString();
-    }
-
-    /**
      * Filter a list of components based on the presence of component names as keys in programFlagsAndValues
-     * @param allComponents
-     * @param programFlagsAndValues
-     * @param <UT>
-     * @return
+     *
+     * This should only be called if you know a selective backup / restore is required as the return list will
+     * only contain components from allComponents which are explicitly supplied on the copmmand line
+     * @param allComponents the list of components to filter
+     * @param programFlagsAndValues the map of command line arguments, which may contain selective component flags
+     * e.g. -maindb or -audits etc.
+     * @param <UT> implementation of SsgComponent
+     * @return a list of SsgComponent s which were explicitly asked for on the command line
      */
     static <UT extends SsgComponent> List<UT> filterComponents( final List<UT> allComponents,
                                                  final Map<String, String> programFlagsAndValues){
@@ -1210,8 +1055,8 @@ public class ImportExportUtilities {
                                    final PrintStream printStream,
                                    final boolean newLine){
         if(verbose && printStream != null){
-            if(newLine) System.out.println(message);
-            else System.out.print(message); 
+            if(newLine) printStream.println(message);
+            else printStream.print(message); 
         }
         log.log(level, message);
     }

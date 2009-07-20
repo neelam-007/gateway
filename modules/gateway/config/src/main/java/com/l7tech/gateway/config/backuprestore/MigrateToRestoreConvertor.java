@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
+import java.io.PrintStream;
 
 /**
  * Buzzcut separates migrate and restore. A migrate in restore is simply a restore with 'migrate' capabilities
@@ -22,7 +23,7 @@ public class MigrateToRestoreConvertor {
      * @param args cannot be null or empty
      * @return String [] args with the new args for Importer
      */
-    public static String [] getConvertedArguments(String [] args)
+    public static String [] getConvertedArguments(final String [] args, final PrintStream printStream)
             throws BackupRestoreLauncher.InvalidProgramArgumentException {
 
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
@@ -37,7 +38,7 @@ public class MigrateToRestoreConvertor {
         //validate that we only get allowed options, and that any options requiring a value recieve one
         final Map<String, String> initialValidArgs =
                 ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                        validArgList, ignoredOptions);
+                        validArgList, ignoredOptions, true, printStream);
 
         //Now going to build up the translation between what was supplied to migrate and what
         //was is required to achieve the same results with a selective restore
@@ -104,7 +105,7 @@ public class MigrateToRestoreConvertor {
             restoreArgs.add(Importer.DB_NAME.getName());
             restoreArgs.add(initialValidArgs.get(Importer.DB_NAME.getName()));
         }
-        
+
         return restoreArgs.toArray(new String[restoreArgs.size()]);
     }
 }

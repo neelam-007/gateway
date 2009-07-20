@@ -427,7 +427,7 @@ public class ImporterTestsOffline {
                 "-mapping", mappingFile.getPath()
         };
 
-        final String [] convertedArgs = MigrateToRestoreConvertor.getConvertedArguments(args);
+        final String [] convertedArgs = MigrateToRestoreConvertor.getConvertedArguments(args, null);
         final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(convertedArgs);
         if(result.getException() != null) throw result.getException();
 

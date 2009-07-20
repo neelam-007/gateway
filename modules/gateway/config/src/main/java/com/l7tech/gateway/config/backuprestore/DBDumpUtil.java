@@ -172,7 +172,7 @@ class DBDumpUtil {
             final DBActions dba = new DBActions();
             conn = dba.getConnection(dbConfig, false);
 
-            //todo [Donal] audit heuristic - see http://sarek/bugzilla/show_bug.cgi?id=7476
+            //audit heuristic - see http://sarek/bugzilla/show_bug.cgi?id=7476
 //            final String sizeSql = "show table status like 'audit%'";
 //            final Statement stmt = conn.createStatement();
 //            final ResultSet rs = stmt.executeQuery(sizeSql);

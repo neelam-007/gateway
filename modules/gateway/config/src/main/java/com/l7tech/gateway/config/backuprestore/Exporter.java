@@ -37,18 +37,19 @@ public final class Exporter{
 
     // exporter options
     static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image",
-            "name of image file to create locally or on ftp host if -ftp* options are used", true, false);
-    static final CommandLineOption AUDIT = new CommandLineOption("-ia", "include audit data with a default backup", false, true);
+            "name of image file to create locally or on ftp host if -ftp* options are used", false);
+
+    static final CommandLineOption AUDIT = new CommandLineOption("-ia", "include audit data with a default backup", true);
 
     static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it",
-            "populate supplied file with template mapping information", true, false);
+            "populate supplied file with template mapping information", false);
 
 //    static final CommandLineOption ESM =
     private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH,
             CommonCommandLineOptions.VERBOSE, CommonCommandLineOptions.HALT_ON_FIRST_FAILURE};
 
     private static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
-            new CommandLineOption("-p", "ignored parameter for backup", true, false) };
+            new CommandLineOption("-p", "ignored parameter for backup", true) };
 
     /** Home directory of the SSG installation. This will always be /opt/SecureSpan/Gateway however maintaining
      * the ability for this to be theoritically installed into other directories*/
@@ -215,7 +216,7 @@ public final class Exporter{
 
         programFlagsAndValues =
                 ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                        validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+                        validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), true, printStream);
 
         validateProgramParameters(programFlagsAndValues);
         final boolean usingFtp = ImportExportUtilities.checkAndValidateFtpParams(programFlagsAndValues);

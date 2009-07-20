@@ -50,7 +50,7 @@ public class BackupRestoreLauncher {
             if (args[0].equalsIgnoreCase(IMPORT_TYPE) || args[0].equalsIgnoreCase(MIGRATE_TYPE)) {
                 final String [] argsToUse;
                 if(args[0].equalsIgnoreCase(MIGRATE_TYPE)){
-                    argsToUse = MigrateToRestoreConvertor.getConvertedArguments(args);
+                    argsToUse = MigrateToRestoreConvertor.getConvertedArguments(args, System.out);
                 }else{
                     argsToUse = args;
                 }

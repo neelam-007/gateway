@@ -24,7 +24,7 @@ import com.l7tech.util.BuildInfo;
 import com.l7tech.util.FileUtils;
 
 /**
- * Tests the ImportExportUtilitiesTest unility functions.
+ * Tests the ImportExportUtilitiesTest utility functions.
  * Any test which sets a system property should unset it in a finally block, so that it doesn't cause other tests
  * to fail
  */
@@ -116,7 +116,7 @@ public class ImportExportUtilitiesTest {
         validOptions.add(Exporter.MAPPING_PATH);
 
         final Map<String, String> params = ImportExportUtilities.getAndValidateCommandLineOptions(
-                args, validOptions, Collections.<CommandLineOption>emptyList());
+                args, validOptions, Collections.<CommandLineOption>emptyList(), false, null);
         Assert.assertEquals("-image option has an incorrect value", "image.zip", params.get(Exporter.IMAGE_PATH.getName()));
     }
 
@@ -144,7 +144,7 @@ public class ImportExportUtilitiesTest {
         validOptions.add(Exporter.MAPPING_PATH);
 
         ImportExportUtilities.getAndValidateCommandLineOptions(args, validOptions,
-                Collections.<CommandLineOption>emptyList());
+                Collections.<CommandLineOption>emptyList(), false, null);
     }
 
     /**
@@ -160,7 +160,7 @@ public class ImportExportUtilitiesTest {
         validOptions.add(Exporter.MAPPING_PATH);
 
         ImportExportUtilities.getAndValidateCommandLineOptions(args, validOptions,
-                Collections.<CommandLineOption>emptyList());
+                Collections.<CommandLineOption>emptyList(), false, null);
     }
 
     /**
@@ -171,15 +171,16 @@ public class ImportExportUtilitiesTest {
      */
     @Test
     public void testGetAndValidateCommandLineOptions_IgnoreOptions() throws BackupRestoreLauncher.InvalidProgramArgumentException {
-        final String [] args = new String[]{"export","-image", "image.zip", "-ia", "-it", "mapping.xml"};
+        final String [] args = new String[]{"export","-image", "image.zip", "-ia", "-it", "mapping.xml", "-p"};
         final List<CommandLineOption> validOptions = new ArrayList<CommandLineOption>();
         validOptions.add(Exporter.IMAGE_PATH);
         validOptions.add(Exporter.AUDIT);
 
         final List<CommandLineOption> ignoreOptions = new ArrayList<CommandLineOption>();
         ignoreOptions.add(Exporter.MAPPING_PATH);
+        ignoreOptions.add(new CommandLineOption("-p", "desc", true));
 
-        ImportExportUtilities.getAndValidateCommandLineOptions(args, validOptions, ignoreOptions);
+        ImportExportUtilities.getAndValidateCommandLineOptions(args, validOptions, ignoreOptions, false, null);
     }
 
     /**
@@ -209,32 +210,6 @@ public class ImportExportUtilitiesTest {
     }
 
     /**
-     * Validate the method throwIfFileDoesNotExist() which throws exceptions when a file exists
-     */
-    @Test
-    public void testThrowIfFileDoesNotExist() throws IOException {
-        String tmpDir = System.getProperty("java.io.tmpdir");
-        File testFile = new File(tmpDir + File.separator + "noexist.txt");
-        try{
-            testFile.createNewFile();
-            ImportExportUtilities.throwIfFileDoesNotExist(testFile.getAbsolutePath());
-        }finally{
-            testFile.delete();
-        }
-    }
-
-    /**
-     * Validate the method throwIfFileDoesNotExist() which throws exceptions when a file exists
-     * Validates that IllegalArgumentException is thrown as the file does not exist
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void testThrowIfFileDoesNotExist_DoesNotExist() throws IOException {
-        String tmpDir = System.getProperty("java.io.tmpdir");
-        File testFile = new File(tmpDir + File.separator + "noexist.txt");
-        ImportExportUtilities.throwIfFileDoesNotExist(testFile.getAbsolutePath());
-    }
-
-    /**
      * Tests verifyCanWriteFile correctly validates that we can write to a file
      * @throws IOException
      */
@@ -256,23 +231,6 @@ public class ImportExportUtilitiesTest {
     }
 
     /**
-     * Tests that the version from BuildInfo is correctly matched in throwIfDbVersionDoesNotMatchSSG
-     */
-    @Test
-    public void testThrowIfDbVersionDoesNotMatchSSG(){
-        String version = BuildInfo.getProductVersion();
-        ImportExportUtilities.throwIfDbVersionDoesNotMatchSSG(version);
-    }
-
-    /**
-     * Validates that throwIfDbVersionDoesNotMatchSSG throws when the wrong version is found
-     */
-    @Test(expected = UnsupportedOperationException.class)
-    public void testThrowIfDbVersionDoesNotMatchSSG_WrongVersion(){
-        ImportExportUtilities.throwIfDbVersionDoesNotMatchSSG("made up version");
-    }
-
-    /**
      * Test that temp directories are created correctly
      */
     @Test
@@ -286,22 +244,6 @@ public class ImportExportUtilitiesTest {
         } finally{
             if(tmpDir != null) new File(tmpDir).delete();            
         }
-    }
-
-    /**
-     * Test verifyDirExistence
-     * @throws IOException
-     */
-    @Test
-    public void testVerifyDirExistence() throws IOException{
-        String tmpDir = null;
-        try {
-            tmpDir = ImportExportUtilities.createTmpDirectory();
-            ImportExportUtilities.verifyDirExistence(tmpDir);
-        } finally{
-            if(tmpDir != null) new File(tmpDir).delete();
-        }
-
     }
 
     /**

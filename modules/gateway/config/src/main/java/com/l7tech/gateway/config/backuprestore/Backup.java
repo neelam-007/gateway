@@ -51,9 +51,6 @@ public interface Backup {
      * Back up database audits. Audits are written directly from memory into a gzip file to
      * conserve space. The file created is called "audits.gz" and is contained inside the "audits" folder
      *
-     * //todo [Donal] implement heuristic for determine backup space for audits here
-     * //todo [Donal] make audits interruptable - error depending on -halt status
-     *
      * Note: The sql created in the file "audits.gz" will NOT contain create and drop statements. The drop and
      * create statments are created by addDatabaseToBackupFolder. When restoring or migrating the audits tables must
      * always be dropped and recreated. As a result the "audits.gz" file cannot be loaded into a database until
