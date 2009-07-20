@@ -155,14 +155,14 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
         } catch (BadCredentialsException e) {
             // Authentication failed (bug #4338)
-            logger.log(Level.INFO, "WSDL proxy request authentication failed: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.INFO, "WSDL proxy request authentication failed: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
             res.getOutputStream().print("Authentication failed");
             res.flushBuffer();
             return;
         } catch (IssuedCertNotPresentedException e) {
             // Authentication failed (bug #4338)
-            logger.log(Level.INFO, "WSDL proxy request authentication failed: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.INFO, "WSDL proxy request authentication failed: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
             res.getOutputStream().print("Authentication failed");
             res.flushBuffer();

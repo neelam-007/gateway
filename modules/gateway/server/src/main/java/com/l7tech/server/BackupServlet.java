@@ -29,6 +29,7 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -109,15 +110,15 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         try {
             results = authenticateRequestBasic(request);
         } catch (BadCredentialsException e) {
-            logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_BAD_CREDENTIALS, e);
+            logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_BAD_CREDENTIALS, ExceptionUtils.getDebugException(e));
             respondError(response, HttpServletResponse.SC_FORBIDDEN, "Bad credentials");
             return;
         } catch (MissingCredentialsException e) {
-            logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_BAD_CREDENTIALS, e);
+            logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_BAD_CREDENTIALS, ExceptionUtils.getDebugException(e));
             respondError(response, HttpServletResponse.SC_FORBIDDEN, "Missing credentials");
             return;
         } catch (IssuedCertNotPresentedException e) {
-            logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_NO_CLIENT_CERT, e);
+            logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_NO_CLIENT_CERT, ExceptionUtils.getDebugException(e));
             respondError(response, HttpServletResponse.SC_FORBIDDEN, "No client certificate");
             return;
         } catch ( LicenseException e) {
