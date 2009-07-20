@@ -36,30 +36,30 @@ public final class Importer{
     private static final Logger logger = Logger.getLogger(Importer.class.getName());
     // importer options
     static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image",
-            "location of image file locally to restore, or on ftp host if -ftp* options are used", false);
+            "location of image file locally to restore, or on ftp host if -ftp* options are used", true);
     static final CommandLineOption MAPPING_PATH = new CommandLineOption("-mapping",
-            "location of the mapping template file", false);
-    static final CommandLineOption DB_HOST_NAME = new CommandLineOption("-dbh", "database host name", false);
-    static final CommandLineOption DB_NAME = new CommandLineOption("-db", "database name", false);
-    static final CommandLineOption DB_ROOT_PASSWD = new CommandLineOption("-dbp", "database root password", false);
-    static final CommandLineOption DB_ROOT_USER = new CommandLineOption("-dbu", "database root username", false);
+            "location of the mapping template file", true);
+    static final CommandLineOption DB_HOST_NAME = new CommandLineOption("-dbh", "database host name", true);
+    static final CommandLineOption DB_NAME = new CommandLineOption("-db", "database name", true);
+    static final CommandLineOption DB_ROOT_PASSWD = new CommandLineOption("-dbp", "database root password", true);
+    static final CommandLineOption DB_ROOT_USER = new CommandLineOption("-dbu", "database root username", true);
     static final CommandLineOption OS_OVERWRITE =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.OS.getComponentName(),
-            "overwrite os level config files", true);
+            "overwrite os level config files", false);
     static final CommandLineOption CREATE_NEW_DB = new CommandLineOption("-newdb"
-            ,"create a new database when migrating", false);
+            ,"create a new database when migrating", true);
     static final CommandLineOption MIGRATE = new CommandLineOption("-migrate",
-            "apply migrate behavior instead of restore", true);
+            "apply migrate behavior instead of restore", false);
 
     static final CommandLineOption CONFIG_ONLY =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
-                    "only restore configuration files, no database restore", true);
+                    "only restore configuration files, no database restore", false);
     static final CommandLineOption CLUSTER_PASSPHRASE =
-            new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database", false);
+            new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database", true);
     static final CommandLineOption GATEWAY_DB_USERNAME =
-            new CommandLineOption("-gdbu", "gateway database username", false);
+            new CommandLineOption("-gdbu", "gateway database username", true);
     static final CommandLineOption GATEWAY_DB_PASSWORD =
-            new CommandLineOption("-gdbp", "gateway database password", false);
+            new CommandLineOption("-gdbp", "gateway database password", true);
 
     /**
      * Note this doesn't list MIGRATE. for ssgmigrate.sh, MIGRATE is an ignored option
@@ -77,8 +77,8 @@ public final class Importer{
                 GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD};
 
     static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
-            new CommandLineOption("-p", "Ignored parameter for partition", true),
-            new CommandLineOption("-mode", "Ignored parameter for mode type", false) };
+            new CommandLineOption("-p", "Ignored parameter for partition", false),
+            new CommandLineOption("-mode", "Ignored parameter for mode type", true) };
 
     private String suppliedClusterPassphrase;
 

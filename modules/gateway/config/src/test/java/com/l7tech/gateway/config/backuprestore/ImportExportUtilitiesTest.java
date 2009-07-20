@@ -178,7 +178,7 @@ public class ImportExportUtilitiesTest {
 
         final List<CommandLineOption> ignoreOptions = new ArrayList<CommandLineOption>();
         ignoreOptions.add(Exporter.MAPPING_PATH);
-        ignoreOptions.add(new CommandLineOption("-p", "desc", true));
+        ignoreOptions.add(new CommandLineOption("-p", "desc", false));
 
         ImportExportUtilities.getAndValidateCommandLineOptions(args, validOptions, ignoreOptions, false, null);
     }

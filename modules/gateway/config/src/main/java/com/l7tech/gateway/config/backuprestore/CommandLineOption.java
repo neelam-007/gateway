@@ -11,20 +11,20 @@ package com.l7tech.gateway.config.backuprestore;
 final class CommandLineOption {
     private final String name;
     private final String description;
-    private final boolean hasNoValue;
+    private final boolean hasValue;
 
-    CommandLineOption(final String name, final String desc, final boolean hasNoValue) {
+    CommandLineOption(final String name, final String desc, final boolean hasValue) {
         this.name = name;
         this.description = desc;
-        this.hasNoValue = hasNoValue;
+        this.hasValue = hasValue;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public boolean isHasNoValue() {
-        return hasNoValue;
+    public boolean isHasValue() {
+        return hasValue;
     }
 
     public String getName() {

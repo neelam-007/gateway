@@ -565,7 +565,7 @@ public class ImportExportUtilities {
         if(args == null) throw new NullPointerException("args cannot be null");
         if(args.length == 0) throw new IllegalArgumentException("args contains no values");
         if(requiredOption == null) throw new NullPointerException("requiredOption cannot be null");
-        if(requiredOption.isHasNoValue()) throw new IllegalArgumentException("requiredOption must require a value");
+        if(!requiredOption.isHasValue()) throw new IllegalArgumentException("requiredOption must require a value");
         if(validOptions == null) throw new NullPointerException("validOptions cannot be null");
         if(ignoredOptions == null) throw new NullPointerException("ignoredOptions cannot be null");
 
@@ -638,7 +638,7 @@ public class ImportExportUtilities {
             index++;//move index along to either next param or param value
             switch (determineArgumentType(argument, validOptions, ignoredOptions)) {
                 case VALID_OPTION:
-                    if (optionHasNoValue(argument, validOptions)) {
+                    if (!optionHasValue(argument, validOptions)) {
                         arguments.put(argument, "");
                     }else if(index < args.length  && ARGUMENT_TYPE.VALUE.equals(
                             determineArgumentType(args[index], validOptions, ignoredOptions))){
@@ -649,7 +649,7 @@ public class ImportExportUtilities {
                     }
                     break;
                 case IGNORED_OPTION:
-                    if (optionHasNoValue(argument, ignoredOptions)) {
+                    if (!optionHasValue(argument, ignoredOptions)) {
                         final String msg ="Option '" + argument + "' is ignored";
                         logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     }else if(index < args.length && ARGUMENT_TYPE.VALUE.equals(
@@ -919,19 +919,19 @@ public class ImportExportUtilities {
     }
 
     /**
-     * Determines if the provided option expects a value
+     * Determines if the provided CommandLineOption expects a value
      *
-     * @param optionName    The option name
+     * @param optionName    The name of the CommandLineOPtions
      * @param options       The list of options used to find the option if in the list
-     * @return  TRUE if the option name expects a value, otherwise FALSE.
-     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException     The option name is not found in the available option list
+     * @return true, if the option name expects a value, false otherwise
+     * @throws InvalidProgramArgumentException if the option name is not found in options
      */
-    private static boolean optionHasNoValue(final String optionName,
+    private static boolean optionHasValue(final String optionName,
                                             final List<CommandLineOption> options)
             throws InvalidProgramArgumentException {
         for (CommandLineOption commandLineOption : options) {
             if (commandLineOption.getName().equals(optionName)) {
-                return commandLineOption.isHasNoValue();
+                return commandLineOption.isHasValue();
             }
         }
         //this is a programming error
