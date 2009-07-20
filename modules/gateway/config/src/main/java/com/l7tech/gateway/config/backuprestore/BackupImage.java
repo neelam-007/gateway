@@ -22,8 +22,7 @@ import java.util.zip.ZipEntry;
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
  * 
- * BackupImageVersion knows what version of a backup image it is and when asked, it can tell you
- * where to find the component your looking for
+ * BackupImageVersion knows what version of a backup image it is and where each component is stored
  *
  * When constructed it will unzip the backup image. Call removeTempDirectory when finished to delete this temp
  * directory
@@ -65,7 +64,7 @@ public final class BackupImage {
                         final PrintStream printStream,
                         final boolean isVerbose) throws IOException, InvalidBackupImage {
         if(imageName == null) throw new NullPointerException("image cannot be null");
-        if(imageName.isEmpty()) throw new IllegalArgumentException("image cannot be the emtpy string");
+        if(imageName.trim().isEmpty()) throw new IllegalArgumentException("image cannot be the emtpy string");
 
         image = new File(imageName);
         if(!image.exists())
@@ -88,7 +87,7 @@ public final class BackupImage {
             throws IOException, InvalidBackupImage, BackupImageException {
         if(ftpConfig == null) throw new NullPointerException("ftpConfig cannot be null");
         if(imageNameAndPath == null) throw new NullPointerException("image cannot be null");
-        if(imageNameAndPath.isEmpty()) throw new IllegalArgumentException("image cannot be the emtpy string");
+        if(imageNameAndPath.trim().isEmpty()) throw new IllegalArgumentException("image cannot be the emtpy string");
 
         tempDirectory = ImportExportUtilities.createTmpDirectory();
         this.printStream = printStream;

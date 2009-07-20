@@ -580,7 +580,7 @@ public class ImportExportUtilities {
                         if ((i + 1) > args.length)
                             throw new InvalidProgramArgumentException("option " + argument + " expects a value");
                         String value = args[i + 1];
-                        if (value == null || value.isEmpty()) {
+                        if (value == null || value.trim().isEmpty()) {
                             throw new InvalidProgramArgumentException("option " + argument + " expects a value");
                         }
                         //do a sanity check that it's actually a value and not an option
@@ -878,7 +878,7 @@ public class ImportExportUtilities {
      */
     public static String getDirPart(final String imageName){
         if(imageName == null) throw new NullPointerException("imageName cannot be null");
-        if(imageName.isEmpty()) throw new IllegalArgumentException("imageName cannot be empty");
+        if(imageName.trim().isEmpty()) throw new IllegalArgumentException("imageName cannot be empty");
 
         if(imageName.equals("/")) return imageName;
         if(imageName.equals("\\")) throw new IllegalArgumentException("\\ is an invalid imageName");
@@ -905,7 +905,7 @@ public class ImportExportUtilities {
      */
     public static String getFilePart(final String imageName){
         if(imageName == null) throw new NullPointerException("imageName cannot be null");
-        if(imageName.isEmpty()) throw new IllegalArgumentException("imageName cannot be empty");
+        if(imageName.trim().isEmpty()) throw new IllegalArgumentException("imageName cannot be empty");
 
         if(imageName.equals("/")) throw new IllegalArgumentException("/ is an invalid imageName");
         if(imageName.equals("\\")) throw new IllegalArgumentException("\\ is an invalid imageName");

@@ -65,7 +65,7 @@ final class RestoreImpl implements Restore{
 
         if(dbConfig != null){
             if(clusterPassphrase == null) throw new NullPointerException("clusterPassphrase cannot be null");
-            if(clusterPassphrase.isEmpty()) throw new IllegalArgumentException("clusterPassphrase cannot be empty");
+            if(clusterPassphrase.trim().isEmpty()) throw new IllegalArgumentException("clusterPassphrase cannot be empty");
             
             //validate the dbConfig
             final DatabaseConfig testConfig = new DatabaseConfig(dbConfig);

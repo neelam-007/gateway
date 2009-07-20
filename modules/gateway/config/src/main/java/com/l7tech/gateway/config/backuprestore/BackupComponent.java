@@ -8,7 +8,7 @@ package com.l7tech.gateway.config.backuprestore;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
- * This interface is a work in progress.
+ * Simple interface for backup / restore components
  */
 interface SsgComponent{
     public ImportExportUtilities.ComponentType getComponentType();

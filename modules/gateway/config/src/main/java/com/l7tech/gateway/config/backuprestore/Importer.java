@@ -581,7 +581,7 @@ public final class Importer{
     private boolean wereCompleteDbParamsSupplied(final boolean throwIfNotFound) throws InvalidProgramArgumentException {
 
         final String dbHost = programFlagsAndValues.get(DB_HOST_NAME.getName());
-        if(dbHost == null || dbHost.isEmpty())
+        if(dbHost == null || dbHost.trim().isEmpty())
             if(throwIfNotFound){
                 throw new InvalidProgramArgumentException("missing option "
                     + DB_HOST_NAME.getName()
@@ -589,10 +589,10 @@ public final class Importer{
             }else{ return false; }
 
         final String dbName = programFlagsAndValues.get(DB_NAME.getName());
-        if(dbName == null || dbName.isEmpty()) {
+        if(dbName == null || dbName.trim().isEmpty()) {
             //the dbname can come from -newdb instead
             final String newDb = programFlagsAndValues.get(CREATE_NEW_DB.getName());
-            if(newDb == null || newDb.isEmpty()){
+            if(newDb == null || newDb.trim().isEmpty()){
                 if(throwIfNotFound){
                     throw new InvalidProgramArgumentException("missing option "
                             + DB_NAME.getName()
@@ -602,7 +602,7 @@ public final class Importer{
         }
 
         final String dbUser = programFlagsAndValues.get(GATEWAY_DB_USERNAME.getName());
-        if(dbUser == null || dbUser.isEmpty()){
+        if(dbUser == null || dbUser.trim().isEmpty()){
             if(throwIfNotFound){
                 throw new InvalidProgramArgumentException("missing option "
                         + GATEWAY_DB_USERNAME.getName()
@@ -611,7 +611,7 @@ public final class Importer{
         }
 
         final String dbPass = programFlagsAndValues.get(GATEWAY_DB_PASSWORD.getName());
-        if(dbPass == null || dbPass.isEmpty())
+        if(dbPass == null || dbPass.trim().isEmpty())
             if(throwIfNotFound){
                 throw new InvalidProgramArgumentException("missing option "
                         + GATEWAY_DB_PASSWORD.getName()
@@ -619,7 +619,7 @@ public final class Importer{
             }else{ return false; }
 
         final String clusterPassphrase = programFlagsAndValues.get(CLUSTER_PASSPHRASE.getName());
-        if(clusterPassphrase == null || clusterPassphrase.isEmpty())
+        if(clusterPassphrase == null || clusterPassphrase.trim().isEmpty())
             if(throwIfNotFound){
                 throw new InvalidProgramArgumentException("missing option "
                         + CLUSTER_PASSPHRASE.getName()
@@ -684,7 +684,7 @@ public final class Importer{
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
                             "node.properties file was found. Checking database name match", isVerbose, printStream);
                     final String nodePropDbName = returnConfig.getString("node.db.config.main.name");
-                    if(nodePropDbName != null && !nodePropDbName.isEmpty()){
+                    if(nodePropDbName != null && !nodePropDbName.trim().isEmpty()){
                         if(!dbName.equals(nodePropDbName)){
                             throw new InvalidProgramArgumentException("Provided database name does not match with database " +
                                     "name in node.properties file. If you wish to create a new database, use the " +
@@ -694,7 +694,7 @@ public final class Importer{
                 }
                 //valildity check on node.properties
                 final String nodeId = returnConfig.getString("node.id");
-                if(nodeId == null || nodeId.isEmpty()){
+                if(nodeId == null || nodeId.trim().isEmpty()){
                     throw new IllegalStateException("node.id does not exist in SSG node.properties. SSG is not" +
                             " correctly configured");
                 }
@@ -703,7 +703,7 @@ public final class Importer{
             }
 
             final String nodeId = returnConfig.getString("node.id");
-            if(nodeId == null || nodeId.isEmpty()){
+            if(nodeId == null || nodeId.trim().isEmpty()){
                 throw new IllegalStateException("node.id does not exist in SSG node.properties. SSG is not" +
                         " correctly configured");
             }

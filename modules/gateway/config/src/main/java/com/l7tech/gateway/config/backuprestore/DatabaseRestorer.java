@@ -65,7 +65,7 @@ class DatabaseRestorer {
         if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
 
         if(clusterPassphrase == null) throw new NullPointerException("clusterPassphrase cannot be null");
-        if(clusterPassphrase.isEmpty()) throw new IllegalArgumentException("clusterPassphrase cannot be empty");
+        if(clusterPassphrase.trim().isEmpty()) throw new IllegalArgumentException("clusterPassphrase cannot be empty");
         if(dbConfig == null) throw new NullPointerException("dbConfig cannot be null");
 
         if(image == null) throw new NullPointerException("image cannot be null");
@@ -341,7 +341,7 @@ class DatabaseRestorer {
      */
     void reloadLicense(final String originalLicense) throws IOException, SQLException {
         if(originalLicense == null) throw new NullPointerException("originalLicense cannot be null");
-        if(originalLicense.isEmpty()) throw new NullPointerException("originalLicense cannot be empty");
+        if(originalLicense.trim().isEmpty()) throw new NullPointerException("originalLicense cannot be empty");
         
         final File originalLicenseIdFile =
                 new File(image.getRootFolder() + File.separator + BackupImage.ORIGINAL_LICENSE_ID_FILENAME);
