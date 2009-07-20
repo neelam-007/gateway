@@ -11,11 +11,9 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.message.*;
-import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
@@ -31,6 +29,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.service.ServiceCacheStub;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
@@ -158,17 +157,6 @@ public class PolicyProcessingTest {
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
 
-        // Ordinarily, the application context would take care of configuring the registry,
-        // but it has to be done before buildServices() is called, and buildServices() has
-        // to be done before the application context is created (at least for this test).
-        final AssertionRegistry tmf = new AssertionRegistry();
-        tmf.setApplicationContext(null);
-        tmf.afterPropertiesSet();
-        WspConstants.setTypeMappingFinder(tmf);
-
-        buildServices();
-        buildUsers();
-
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
@@ -178,6 +166,9 @@ public class PolicyProcessingTest {
 
         ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
         cache.initializeServiceCache();
+
+        buildServices( (ServiceManager) applicationContext.getBean("serviceManager", ServiceManager.class) );
+        buildUsers();
 
         createSecureConversationSession(); // session used in testing
 
@@ -202,10 +193,9 @@ public class PolicyProcessingTest {
     /**
      * Populate the service cache with the test services.
      */
-    private static void buildServices() throws Exception {
+    private static void buildServices( final ServiceManager serviceManager ) throws Exception {
         long oid = 1;
 
-        Map<Long, PublishedService> services = StubDataStore.defaultStore().getPublishedServices();
         for (String[] serviceInfo : TEST_SERVICES) {
             PublishedService ps = new PublishedService();
             ps.setOid(oid++);
@@ -231,7 +221,7 @@ public class PolicyProcessingTest {
                 ps.setLaxResolution(true);
             }
 
-            services.put(ps.getOid(), ps);
+            serviceManager.update( ps );
         }
     }
 

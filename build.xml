@@ -1064,7 +1064,7 @@
                   outputFile="${build.reports}/findbugs/index.html"
                   jvmargs="-Xmx512m"
                   projectFile="${build.etc}/findbugs.fbp"
-                  timeout="900000">
+                  timeout="1800000">
         </findbugs>
 
         <zip destfile="${build.reports}/teamcity/findbugs.zip" basedir="${build.reports}/findbugs" />

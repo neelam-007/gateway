@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
 /**
  *
  */
-public class XHttpRoutingAssertionMultipleContentLengthHeadersTest {
+public class HttpRoutingAssertionMultipleContentLengthHeadersTest {
     private static TestingHttpClientFactory testingHttpClientFactory;
 
     @BeforeClass

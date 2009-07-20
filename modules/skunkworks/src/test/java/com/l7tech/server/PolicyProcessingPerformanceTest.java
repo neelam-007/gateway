@@ -10,11 +10,9 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
-import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.token.OpaqueSecurityToken;
@@ -24,6 +22,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceCacheStub;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
@@ -45,7 +44,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -131,26 +129,18 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     public static Test suite() {
          final TestSuite suite = new TestSuite(PolicyProcessingPerformanceTest.class);
          return new TestSetup(suite) {
+             @Override
              protected void setUp() throws Exception {
                  PolicyProcessingPerformanceTest.setUpClass();
              }
 
+             @Override
              protected void tearDown() throws Exception {
              }
          };
     }
 
     public static void setUpClass() throws Exception {
-        // Ordinarily, the application context would take care of configuring the registry,
-        // but it has to be done before buildServices() is called, and buildServices() has
-        // to be done before the application context is created (at least for this test).
-        final AssertionRegistry tmf = new AssertionRegistry();
-        tmf.setApplicationContext(null);
-        tmf.afterPropertiesSet();
-        WspConstants.setTypeMappingFinder(tmf);
-
-        buildServices();
-
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
 
         // well known test session
@@ -169,6 +159,8 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
         clusterPropertyCache = (ClusterPropertyCache) applicationContext.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+
+        buildServices( (ServiceManager) applicationContext.getBean("serviceManager", ServiceManager.class) );
 
         ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
         cache.initializeServiceCache();
@@ -220,10 +212,9 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     /**
      * Populate the service cache with the test services.
      */
-    private static void buildServices() throws Exception {
+    private static void buildServices( final ServiceManager serviceManager ) throws Exception {
         long oid = 1;
 
-        Map<Long, PublishedService> services = StubDataStore.defaultStore().getPublishedServices();
         for (String[] serviceInfo : TEST_SERVICES) {
             PublishedService ps = new PublishedService();
             ps.setOid(oid++);
@@ -240,7 +231,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
                 ps.setLaxResolution(true);
             }
 
-            services.put(ps.getOid(), ps);
+            serviceManager.update( ps );
         }
     }
 
