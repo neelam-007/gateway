@@ -67,7 +67,7 @@ public class LunaJceProviderEngine extends JceProvider {
     @Override
     public Provider getProviderFor(String service) {
         // Must override PBE since the Luna impl is not compatible with the Sun impl and so can't decrypt the cluster shared key
-        if (JceProvider.SERVICE_PBE_WITH_SHA1_AND_DESEDE.equals(service))
+        if (JceProvider.SERVICE_PBE_WITH_SHA1_AND_DESEDE.equalsIgnoreCase(service))
             return PBE_PROVIDER;
         return null;
     }
