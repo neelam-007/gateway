@@ -26,10 +26,8 @@ import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.util.res.ResourceGetter;
 import static com.l7tech.server.util.res.ResourceGetter.*;
 import com.l7tech.server.util.res.ResourceObjectFactory;
-import com.l7tech.server.util.res.UrlFinder;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.ElementCursor;
 import com.sun.xacml.Indenter;
 import com.sun.xacml.PDP;
 import com.sun.xacml.PDPConfig;
@@ -103,13 +101,6 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                 }
             };
 
-        UrlFinder urlFinder = new UrlFinder() {
-            @Override
-            public String findUrl(ElementCursor message) throws ResourceGetter.InvalidMessageException {
-                return null;
-            }
-        };
-
         //If assertion.getResourceInfo() returns a SingleUrlResourceGetter then the above ResourceObjectFactory
         //will NEVER be used by the ResourceGetter
         boolean hasPolicyVariable = false;
@@ -121,13 +112,25 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                 hasPolicyVariable = Syntax.getReferencedNames(doc).length > 0;
         }
 
-        resourceGetter = hasPolicyVariable ? null : ResourceGetter.createResourceGetter(
-                assertion,
-                assertion.getResourceInfo(),
-                resourceObjectfactory,
-                urlFinder,
-                getCache(applicationContext),
-                auditor);
+        ResourceGetter<PolicyFinder> resourceGetter;
+        try {
+            resourceGetter = hasPolicyVariable ? null : ResourceGetter.createResourceGetter(
+                    assertion,
+                    assertion.getResourceInfo(),
+                    resourceObjectfactory,
+                    null,
+                    getCache(applicationContext),
+                    auditor);
+        } catch ( ServerPolicyException spe ) {
+            ParsingException pe = ExceptionUtils.getCauseIfCausedBy( spe, ParsingException.class );
+            if ( pe == null ) {
+                throw spe;
+            } else {
+                logger.warning( "Error parsing XACML policy '"+ExceptionUtils.getMessage( pe )+"'." );
+                resourceGetter = ResourceGetter.createErrorResourceGetter( new ResourceParseException(pe, "static") );
+            }
+        }
+        this.resourceGetter = resourceGetter;
     }
 
     @Override
@@ -254,33 +257,53 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             return AssertionStatus.FAILED;
         } catch(ParsingException pe) {
             return AssertionStatus.FAILED;
-        } catch(InvalidMessageException ime) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_NOT_SOAP);
-            return AssertionStatus.BAD_REQUEST;
-        } catch(UrlResourceException unfe) {
-            return AssertionStatus.BAD_REQUEST;
-        } catch(GeneralSecurityException gse) {
-            return AssertionStatus.BAD_REQUEST;
-        } catch (UrlNotFoundException e) {
-            return AssertionStatus.BAD_REQUEST;
-        } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Invalid XACML policy after variable expansion: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+        } catch (InvalidPolicyException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         }
     }
 
-    private PolicyFinder getPolicyFinder(PolicyEnforcementContext context)
-            throws IOException, InvalidMessageException, UrlResourceException, GeneralSecurityException, UrlNotFoundException, SAXException, ParsingException {
-        if (resourceGetter != null)
-            return resourceGetter.getResource(null, new HashMap<String, String>());
-
-        String policy = ((StaticResourceInfo)assertion.getResourceInfo()).getDocument();
-        String expandedPolicy = ExpandVariables.process(policy, context.getVariableMap(variablesUsed, auditor), auditor, false);
-        ConstantPolicyModule policyModule = new ConstantPolicyModule(expandedPolicy);
+    /**
+     * Access the PolicyFinder
+     *
+     * @throws IOException If there is an IO issue for the request message
+     * @throws InvalidMessageException If the request is not valid
+     * @throws InvalidPolicyException If there is a problem with the XACML policy
+     */
+    private PolicyFinder getPolicyFinder( final PolicyEnforcementContext context ) throws IOException, InvalidPolicyException {
+        if (resourceGetter != null) {
+            try {
+                return resourceGetter.getResource(null, new HashMap<String, String>());
+            } catch (ResourceIOException e) {
+                throw new InvalidPolicyException("Error accessing XACML policy resource '" + ExceptionUtils.getMessage(e) + "'.", e);
+            } catch (GeneralSecurityException e) {
+                throw new InvalidPolicyException("Error accessing XACML policy resource '" + ExceptionUtils.getMessage(e) + "'.", e);
+            } catch (ResourceParseException e) {
+                throw new InvalidPolicyException("Invalid XACML policy '" + ExceptionUtils.getMessage(e) + "'.", e );
+            } catch (UrlResourceException e) { // should not happen since we are not examining the message
+                throw new InvalidPolicyException("URL error accessing XACML policy resource '" + ExceptionUtils.getMessage(e) + "'.", e);
+            } catch (UrlNotFoundException e) { // should not happen since we are not examining the message
+                throw new InvalidPolicyException("URL error accessing XACML policy resource '" + ExceptionUtils.getMessage(e) + "'.", e);
+            } catch (InvalidMessageException e) { // should not happen since we are not examining the message
+                throw new InvalidPolicyException("URL error accessing XACML policy resource '" + ExceptionUtils.getMessage(e) + "'.", e);
+            }
+        }
         PolicyFinder policyFinder = new PolicyFinder();
-        Set<ConstantPolicyModule> policyModules = new HashSet<ConstantPolicyModule>();
-        policyModules.add(policyModule);
-        policyFinder.setModules(policyModules);
+        try {
+            String policy = ((StaticResourceInfo)assertion.getResourceInfo()).getDocument();
+            String expandedPolicy = ExpandVariables.process(policy, context.getVariableMap(variablesUsed, auditor), auditor, false);
+            ConstantPolicyModule policyModule = new ConstantPolicyModule(expandedPolicy);
+            Set<ConstantPolicyModule> policyModules = new HashSet<ConstantPolicyModule>();
+            policyModules.add(policyModule);
+            policyFinder.setModules(policyModules);
+        } catch (IOException e) {
+            throw new InvalidPolicyException("Error processing XACML policy after variable expansion '" + ExceptionUtils.getMessage(e) + "'.", e);
+        } catch (SAXException e) {
+            throw new InvalidPolicyException("Invalid XACML policy after variable expansion '" + ExceptionUtils.getMessage(e) + "'.", e);
+        } catch (ParsingException e) {
+            throw new InvalidPolicyException("Invalid XACML policy after variable expansion '" + ExceptionUtils.getMessage(e) + "'.", e);
+        }
+
         return policyFinder;
     }
 
@@ -310,6 +333,12 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
 
     private final StashManagerFactory stashManagerFactory;
     private static HttpObjectCache<PolicyFinder> httpObjectCache = null;
+
+    private static final class InvalidPolicyException extends Exception {
+        public InvalidPolicyException( String message, Throwable cause ) {
+            super( message, cause );
+        }
+    }
 
     private static final HttpObjectCache.UserObjectFactory<PolicyFinder> cacheObjectFactory =
                 new HttpObjectCache.UserObjectFactory<PolicyFinder>() {

@@ -13,6 +13,8 @@ import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.CausedIOException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -179,6 +181,46 @@ public abstract class ResourceGetter<R> {
         } catch (PatternSyntaxException e) {
             throw new ServerPolicyException(assertion, "Couldn't compile regular expression '" + e.getPattern() + "'", e);
         }
+    }
+
+    /**
+     * Create a ResourceGetter that will throw the given exception whenever the resource is accessed.
+     *
+     * <p>The given exception will be wrapped in an "IOException" if it is not one of the
+     * permitted exceptions for the "getResource" method..</p>
+     *
+     * @param exception The exception to throw.
+     * @return The resource getter, never null
+     */
+    public static <R> ResourceGetter<R> createErrorResourceGetter( final Exception exception ) {
+        return new ResourceGetter<R>(null){
+            @Override
+            public void close() {
+            }
+
+            @Override
+            public R getResource( ElementCursor message, Map vars ) throws IOException, InvalidMessageException, UrlNotFoundException, MalformedResourceUrlException, UrlNotPermittedException, ResourceIOException, ResourceParseException, GeneralSecurityException {
+                if ( exception instanceof IOException ) {
+                    throw (IOException) exception;
+                } else if ( exception instanceof InvalidMessageException ) {
+                    throw (InvalidMessageException) exception;
+                } else if ( exception instanceof UrlNotFoundException ) {
+                    throw (UrlNotFoundException) exception;
+                } else if ( exception instanceof MalformedResourceUrlException ) {
+                    throw (MalformedResourceUrlException) exception;
+                } else if ( exception instanceof UrlNotPermittedException ) {
+                    throw (UrlNotPermittedException) exception;
+                } else if ( exception instanceof ResourceIOException ) {
+                    throw (ResourceIOException) exception;
+                } else if ( exception instanceof ResourceParseException ) {
+                    throw (ResourceParseException) exception;
+                } else if ( exception instanceof GeneralSecurityException ) {
+                    throw (GeneralSecurityException) exception;
+                } else {
+                    throw new CausedIOException( ExceptionUtils.getMessage( exception ), exception );
+                }
+            }
+        };
     }
 
     // ---------- END STATIC FACTORY METHOD ----------
