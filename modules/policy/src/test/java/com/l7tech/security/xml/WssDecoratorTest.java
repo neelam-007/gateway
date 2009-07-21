@@ -158,7 +158,7 @@ public class WssDecoratorTest {
                             KeyInfoInclusionType keyInfoInclusionType,
                             boolean encryptUsernameToken,
                             String encryptedKeySha1,
-                            String signatureConfirmation,
+                            String[] signatureConfirmations,
                             String actor,
                             UsernameToken senderUsernameToken,
                             boolean useDerivedKeys,
@@ -184,7 +184,10 @@ public class WssDecoratorTest {
 
             req.setKeyInfoInclusionType(keyInfoInclusionType);
             req.setEncryptedKeySha1(encryptedKeySha1);
-            if (signatureConfirmation != null) req.addSignatureConfirmation(signatureConfirmation);
+            if (signatureConfirmations != null) {
+                for(String confirmedSignature : signatureConfirmations)
+                req.addSignatureConfirmation(confirmedSignature);
+            }
             if (actor != null) req.setSecurityHeaderActor(actor.length() < 1 ? null : actor);
             req.setUseDerivedKeys(useDerivedKeys);
         }
@@ -801,7 +804,7 @@ public class WssDecoratorTest {
                                 new Element[]{c.body},
                                 null, false,
                                 KeyInfoInclusionType.STR_SKI,
-                                true, null, null, null,
+                                true, null, new String[] {null}, null,
                                 new UsernameTokenImpl("testuser", "password".toCharArray()),
                                 false,
                                 true);
@@ -821,7 +824,7 @@ public class WssDecoratorTest {
                                 new Element[]{c.body},
                                 null, false,
                                 KeyInfoInclusionType.STR_SKI,
-                                true, null, null, null,
+                                true, null, new String[]{null}, null,
                                 new UsernameTokenImpl("testuser", "password".toCharArray()),
                                 false, true);
     }
@@ -848,7 +851,7 @@ public class WssDecoratorTest {
                                 KeyInfoInclusionType.CERT,
                                 false,
                                 null,
-                                null,
+                                new String[]{null},
                                 null,
                                 new UsernameTokenImpl("testuser", null),
                                 false,
@@ -907,7 +910,7 @@ public class WssDecoratorTest {
                                  false,
                                  KeyInfoInclusionType.CERT,
                                  false, "abc11EncryptedKeySHA1Value11blahblahblah11==",
-                                 "abc11SignatureConfirmationValue11blahblahblah11==",
+                                 new String[] {"abc11SignatureConfirmationValue11blahblahblah11=="},
                                  ACTOR_NONE, null, false, false);
 
         testDocument.req.setEncryptionAlgorithm(XencAlgorithm.AES_256_CBC.getXEncName());
@@ -917,11 +920,27 @@ public class WssDecoratorTest {
 
     public TestDocument getOaepKeyEncryptionTestDocument() throws Exception {
         final Context c = new Context();
-        TestDocument td = new TestDocument(c, null, null,
-                                           TestDocuments.getDotNetServerCertificate(),
-                                           TestDocuments.getDotNetServerPrivateKey(),
-                                           true, null,
-                                           new Element[]{c.body});
+        TestDocument td =
+            new TestDocument(c,
+                            (Element)null,
+                            (X509Certificate)null,
+                            (PrivateKey)null,
+                            TestDocuments.getDotNetServerCertificate(),
+                            TestDocuments.getDotNetServerPrivateKey(),
+                            true,
+                            (Element[])null,
+                            (String)null,
+                            new Element[]{c.body},
+                            (byte[])null,
+                            false,
+                            KeyInfoInclusionType.CERT,
+                            false,
+                            (String)null,
+                            new String[]{null},
+                            (String)null,
+                            (UsernameToken)null,
+                            false,
+                            false);
         td.req.setKeyEncryptionAlgorithm(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
         return td;
     }

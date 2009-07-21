@@ -1043,6 +1043,9 @@ public class WssProcessorImpl implements WssProcessor {
             value = DomUtils.getTextValue(keyIdentifierElement).trim();
             valueType = keyIdentifierElement.getAttribute("ValueType");
             encodingType = keyIdentifierElement.getAttribute("EncodingType");
+            if ( SoapConstants.VALUETYPE_ENCRYPTED_KEY_SHA1.equals(valueType) || SoapConstants.VALUETYPE_X509_THUMB_SHA1.equals(valueType) ) {
+                isWsse11Seen = true;
+            }
         } else if (referenceElement != null) {
             value = referenceElement.getAttribute("URI");
             if (value != null && value.length() == 0) {
@@ -1052,10 +1055,18 @@ public class WssProcessorImpl implements WssProcessor {
                 value = value.substring(1);
             }
             valueType = referenceElement.getAttribute("ValueType");
+            if ( SoapConstants.VALUETYPE_ENCRYPTED_KEY.equals(valueType)) {
+                isWsse11Seen = true;
+            }
         } else {
             if (logIfNothingFound)
                 logger.warning(MessageFormat.format("Ignoring SecurityTokenReference ID={0} with no KeyIdentifier or Reference", logId));
             return;
+        }
+
+        String tokenType = str.getAttributeNS(SoapConstants.SECURITY11_NAMESPACE, "TokenType");
+        if ( SoapConstants.VALUETYPE_ENCRYPTED_KEY.equals(tokenType) ) {
+            isWsse11Seen = true;
         }
 
         if (value == null) {

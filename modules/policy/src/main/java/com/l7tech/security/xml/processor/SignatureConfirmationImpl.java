@@ -34,7 +34,7 @@ class SignatureConfirmationImpl implements SignatureConfirmation {
             }
             hasNullValue = true;
         }
-        confirmationElements.put(e.getAttribute(VALUE_ATTRIBUTE_NAME), new ParsedElementImpl(e));
+        confirmationElements.put(e.hasAttribute(VALUE_ATTRIBUTE_NAME) ? e.getAttribute(VALUE_ATTRIBUTE_NAME) : null, new ParsedElementImpl(e));
     }
 
     @Override

@@ -75,7 +75,7 @@ public class WssRoundTripTest {
 
     @Test
     public void testSignedUsernameToken() throws Exception {
-        runRoundTripTest(new NamedTestDocument("signedUsernameToken", wssDecoratorTest.getSignedUsernameTokenTestDocument()));
+        runRoundTripTest(new NamedTestDocument("signedUsernameToken", wssDecoratorTest.getSignedUsernameTokenTestDocument()), false);
     }
 
     public void doTestSignedAndEncryptedUsernameToken( SecurityTokenResolver securityTokenResolver) throws Exception {
@@ -83,7 +83,7 @@ public class WssRoundTripTest {
                                                       wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument());
         ntd.td.securityTokenResolver = securityTokenResolver;
         EncryptedKey[] ekh = new EncryptedKey[1];
-        runRoundTripTest(ntd, true, ekh);
+        runRoundTripTest(ntd, false, ekh);
         EncryptedKey encryptedKey = ekh[0];
         assertNotNull(encryptedKey);
 
@@ -341,7 +341,8 @@ public class WssRoundTripTest {
     @Test
     public void testOaepEncryptedKey() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedKeyAlgorithm",
-                                               wssDecoratorTest.getOaepKeyEncryptionTestDocument()));
+                                               wssDecoratorTest.getOaepKeyEncryptionTestDocument()),
+                         false);
     }
 
     @Test
@@ -427,8 +428,9 @@ public class WssRoundTripTest {
             @Override
             public Map<String, Boolean> getSignatures() {
                 Map<String, Boolean> signatures = new HashMap<String, Boolean>();
-                for(String sig : td.req.getSignatureConfirmations())
-                    signatures.put(sig, false);
+                for(String fakeSignature : td.req.getSignatureConfirmations())
+                    if (fakeSignature != null) // null means "no signatures confirmed"
+                        signatures.put(fakeSignature, false);
                 return signatures;
             }
         });
