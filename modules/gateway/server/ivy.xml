@@ -29,7 +29,7 @@
     <dependencies>
         <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core->default,optional"/>
         <dependency name="layer7-uddi" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core; test->default,test"/>
         <dependency name="layer7-common" rev="latest.integration" force="true" conf="core; test->default,test"/>
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core; test->default,test"/>
         <dependency name="layer7-proxy" rev="latest.integration" force="true" conf="core; test->default,test"/>

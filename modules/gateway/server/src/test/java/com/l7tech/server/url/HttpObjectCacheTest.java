@@ -7,7 +7,7 @@ package com.l7tech.server.url;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.util.TestTimeSource;
+import com.l7tech.util.TestTimeSource;
 import com.l7tech.security.MockGenericHttpClient;
 import static com.l7tech.server.url.AbstractUrlObjectCache.WAIT_LATEST;
 import static com.l7tech.server.url.AbstractUrlObjectCache.WAIT_NEVER;

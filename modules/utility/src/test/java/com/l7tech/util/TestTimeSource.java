@@ -1,6 +1,4 @@
-package com.l7tech.common.util;
-
-import com.l7tech.util.TimeSource;
+package com.l7tech.util;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -33,10 +31,12 @@ public class TestTimeSource extends TimeSource {
         setNanoTime(nanoTime);
     }
 
+    @Override
     public long currentTimeMillis() {
         return getCurrentTimeMillis();
     }
 
+    @Override
     public long nanoTime() {
         return getNanoTime();
     }
@@ -95,6 +95,7 @@ public class TestTimeSource extends TimeSource {
         currentTimeMillis.addAndGet(millis);
     }
 
+    @Override
     public void sleep(long sleepMillis, int nanos) throws InterruptedException {
         advanceByMillis(sleepMillis);
         advanceByNanos(nanos);

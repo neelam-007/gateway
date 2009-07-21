@@ -55,7 +55,7 @@ public class SoapUtilTest extends TestCase {
 
     public void testGetOperationDOC() throws Exception {
         Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "dotNetSignedSoapRequest.xml");
-        Document wsdldoc = TestDocuments.getTestDocument("com/l7tech/server/policy/assertion/xml/warehouse.wsdl");
+        Document wsdldoc = TestDocuments.getTestDocument( "com/l7tech/policy/resources/warehouse.wsdl" );
         Message msg = makeMessage(soapdoc, "http://warehouse.acme.com/ws/listProducts");
         Wsdl wsdl = Wsdl.newInstance(null, wsdldoc);
         Operation op = SoapUtil.getOperation(wsdl, msg);

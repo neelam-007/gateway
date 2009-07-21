@@ -12,7 +12,7 @@ import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.spring.util.SimpleSingletonBeanFactory;
+import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import static org.junit.Assert.*;
 import org.junit.*;
 import org.xml.sax.SAXException;

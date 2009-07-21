@@ -3,21 +3,16 @@
  *
  */
 
-package com.l7tech.common.io;
+package com.l7tech.util;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.logging.Logger;
-
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-
 /**
  * @author mike
  */
 public class BufferPoolByteArrayOutputStreamTest extends TestCase {
-    private static Logger log = Logger.getLogger(BufferPoolByteArrayOutputStreamTest.class.getName());
 
     public BufferPoolByteArrayOutputStreamTest(String name) {
         super(name);

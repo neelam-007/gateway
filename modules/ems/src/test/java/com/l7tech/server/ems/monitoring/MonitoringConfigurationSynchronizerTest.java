@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.monitoring;
 
-import com.l7tech.common.util.TestTimeSource;
+import com.l7tech.util.TestTimeSource;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.ServerConfig;

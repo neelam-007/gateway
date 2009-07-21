@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.ratelimit.server;
 
-import com.l7tech.common.util.TestTimeSource;
+import com.l7tech.util.TestTimeSource;
 import com.l7tech.util.TimeSource;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;

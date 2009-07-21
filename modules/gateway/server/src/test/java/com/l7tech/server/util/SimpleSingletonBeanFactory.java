@@ -1,4 +1,4 @@
-package com.l7tech.spring.util;
+package com.l7tech.server.util;
 
 import com.l7tech.util.Pair;
 import org.springframework.beans.BeansException;
@@ -47,16 +47,19 @@ public class SimpleSingletonBeanFactory extends AbstractBeanFactory {
         return ret;
     }
 
+    @Override
     protected boolean containsBeanDefinition(String beanName) {
         return beans.containsKey(beanName);
     }
 
+    @Override
     protected BeanDefinition getBeanDefinition(String beanName) throws BeansException {
         Pair<BeanDefinition, Object> bean = beans.get(beanName);
         if (bean == null) throw new NoSuchBeanDefinitionException(beanName, "no such bean " + beanName);
         return bean.left;
     }
 
+    @Override
     protected Object createBean(String beanName, RootBeanDefinition mbd, Object[] args) throws BeanCreationException {
         Pair<BeanDefinition, Object> bean = beans.get(beanName);
         if (bean == null) throw new NoSuchBeanDefinitionException(beanName, "no such bean " + beanName);

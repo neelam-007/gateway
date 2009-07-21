@@ -51,7 +51,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 3, 2004<br/>
- * $Id$<br/>
  *
  */
 public class SchemaValidationTest {
@@ -283,7 +282,7 @@ public class SchemaValidationTest {
                 new Message());
     }*/
     private static final String RESOURCE_PATH = "com/l7tech/server/policy/assertion/xml/";
-    private static final String WAREHOUSE_WSDL_PATH = RESOURCE_PATH + "warehouse.wsdl";
+    private static final String WAREHOUSE_WSDL_PATH = "com/l7tech/policy/resources/warehouse.wsdl";
     private static final String LISTREQ_PATH = RESOURCE_PATH + "listProductsRequest.xml";
     private static final String BAD_LISTREQ_PATH = RESOURCE_PATH + "listProductsRequestIncorrect.xml";
     private static final String LISTRES_PATH = RESOURCE_PATH + "listProductResponse.xml";
