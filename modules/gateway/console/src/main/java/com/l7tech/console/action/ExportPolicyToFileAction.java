@@ -7,6 +7,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.util.ExceptionUtils;
 
 import org.xml.sax.SAXException;
 
@@ -18,6 +20,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.AccessController;
@@ -135,6 +138,14 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
         if (!name.endsWith(".xml") && !name.endsWith(".XML")) {
             name = name + ".xml";
         }
+        // This try block is only to check if a file name contains invalid characters ':' or '|' in Windows.
+        try {
+            chooser.getSelectedFile().getCanonicalPath();
+        } catch (IOException e) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Cannot export policy to file " + name,
+ 		                "Invalid File Name", JOptionPane.ERROR_MESSAGE, null);
+            return null;
+        }
         int overwrite = JOptionPane.YES_OPTION;
         File policyFile = new File(name);
         final boolean policyFileExists = policyFile.exists();
@@ -153,7 +164,12 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
             }
             return policyFile;
         } catch (IOException e) {
-            ErrorManager.getDefault().notify(Level.WARNING, e, "Cannot export policy to file " + name);
+            if (ExceptionUtils.causedBy(e, FileNotFoundException.class)) {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Cannot export policy to file " + name,
+ 		                "Invalid File Name", JOptionPane.ERROR_MESSAGE, null);
+            } else {
+                ErrorManager.getDefault().notify(Level.WARNING, e, "Cannot export policy to file " + name);
+            }
         } catch (SAXException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Cannot export policy to file " + name);
         }
