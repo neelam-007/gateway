@@ -20,13 +20,13 @@ import org.xml.sax.SAXException;
  * Time: 4:57:22 PM
  */
 class ConstantPolicyModule extends PolicyFinderModule {
-    private Policy policy;
+    private final Policy policy;
     private final boolean policyMatchesAllRequests;
 
     public ConstantPolicyModule(String policyString) throws ParsingException, IOException, SAXException {
         policy = Policy.getInstance(XmlUtil.parse(new ByteArrayInputStream(policyString.getBytes())).getDocumentElement());
         Target t = policy.getTarget();
-        policyMatchesAllRequests = t.getActions() == null && t.getSubjects() == null && areResourcesEmtpy(t.getResources());
+        policyMatchesAllRequests = t==null || (t.getActions() == null && t.getSubjects() == null && areResourcesEmtpy(t.getResources()));
     }
 
     private boolean areResourcesEmtpy(List resources){
