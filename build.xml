@@ -1017,14 +1017,21 @@
         <mkdir dir="${build.reports}/teamcity"/>
 
         <mkdir dir="${build.dir}/layer7libs"/>
+        
+        <!-- Get production modular assertions -->
+        <ivy:resolve file="modules/gateway/production/ivy.xml" showprogress="false" transitive="false" conf="module,module-client" log="quiet"/>
+        <ivy:retrieve conf="module,module-client" pattern="${build.dir}/layer7libs/[artifact]-[revision].[ext]"/>
+
         <copy todir="${build.dir}/layer7libs" flatten="true">
             <fileset dir="${build.dir}">
                 <include name="client/Client*.jar"/>
                 <include name="gateway/Gateway*.jar"/>
                 <include name="manager/Manager*.jar"/>
-                <include name="client/lib/layer7-*"/>
-                <include name="gateway/lib/layer7-*"/>
-                <include name="manager/lib/layer7-*"/>
+                <include name="processcontroller/Controller*.jar"/>
+                <include name="client/lib/layer7-*.jar"/>
+                <include name="gateway/lib/layer7-*.jar"/>
+                <include name="manager/lib/layer7-*.jar"/>
+                <include name="processcontroller/lib/layer7-*.jar"/>
             </fileset>
         </copy>
 
@@ -1032,16 +1039,19 @@
           Write project file for FindBugs
         -->
         <path id="findbugs.source.path">
-            <fileset dir="${src.root}/modules" includes="**/src/main/java"/>
+            <dirset dir="${src.root}/modules" includes="**/src/main/java"/>
         </path>
         <path id="findbugs.target.class.path">
             <fileset dir="${build.dir}/layer7libs"/>
         </path>
         <path id="findbugs.aux.class.path">
-            <fileset dir="${build.dir}/layer7libs">
-                <include name="client/lib/*"/>
-                <include name="gateway/lib/*"/>
-                <include name="manager/lib/*"/>
+            <fileset dir="${build.dir}">
+                <exclude name="client/Client*.jar"/>
+                <exclude name="processcontroller/Controller*.jar"/>
+                <exclude name="gateway/Gateway*.jar"/>
+                <exclude name="manager/Manager*.jar"/>
+                <exclude name="*/lib/layer7-*.jar"/>
+                <include name="*/lib/*.jar"/>
             </fileset>
         </path>
         <pathconvert property="findbugs.target.class.xml" pathsep="${line.separator}    " dirsep="/" refid="findbugs.target.class.path">
@@ -1062,7 +1072,7 @@
         <findbugs home="${findbugs.home}"
                   output="html"
                   outputFile="${build.reports}/findbugs/index.html"
-                  jvmargs="-Xmx512m"
+                  jvmargs="-Xmx768m -XX:MaxPermSize=512m"
                   projectFile="${build.etc}/findbugs.fbp"
                   timeout="1800000">
         </findbugs>
