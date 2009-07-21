@@ -741,6 +741,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
         // decide which ones make the cut
         for (PublishedService svc : allServices) {
+            if ( svc.isDisabled() ) {
+                continue;
+            }
+
             if (policyAllowAnonymous(svc.getPolicy())) {
                 output.add(svc);
             } else if (results != null) {
