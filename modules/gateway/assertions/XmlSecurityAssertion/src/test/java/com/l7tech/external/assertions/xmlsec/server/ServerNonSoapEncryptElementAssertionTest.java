@@ -76,7 +76,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         final PolicyEnforcementContext context = new PolicyEnforcementContext(req, new Message());
         context.setVariable("somevariable", "passwordd");
         AssertionStatus result = sass.checkRequest(context);
-        assertEquals(AssertionStatus.NONE, result);
+        assertEquals(AssertionStatus.FALSIFIED, result);
         checkResult(req, 0);
     }
 
@@ -136,7 +136,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         ass.setXpathExpression(new XpathExpression("/nonexistent"));
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
         AssertionStatus result = sass.checkRequest(new PolicyEnforcementContext(req, new Message()));
-        assertEquals(AssertionStatus.NONE, result);
+        assertEquals(AssertionStatus.FALSIFIED, result);
         checkResult(req, 0);
     }
 

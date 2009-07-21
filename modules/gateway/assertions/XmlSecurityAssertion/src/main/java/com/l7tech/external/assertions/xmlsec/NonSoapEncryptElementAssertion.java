@@ -7,7 +7,7 @@ import com.l7tech.security.xml.XencUtil;
 import java.util.logging.Logger;
 
 /**
- * 
+ * Immediately encrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
  */
 public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase {
     protected static final Logger logger = Logger.getLogger(NonSoapEncryptElementAssertion.class.getName());
@@ -52,14 +52,14 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, NonSoapEncryptElementAssertion>() {
             @Override
-            public String call( final NonSoapEncryptElementAssertion responseWssConfidentiality ) {
+            public String call( final NonSoapEncryptElementAssertion ass ) {
                 StringBuilder name = new StringBuilder("Immediately Encrypt (Non-SOAP) XML Element ");
-                if (responseWssConfidentiality.getXpathExpression() == null) {
-                    name .append("[XPath expression not set]");
+                if (ass.getXpathExpression() == null) {
+                    name.append("[XPath expression not set]");
                 } else {
-                    name.append(responseWssConfidentiality.getXpathExpression().getExpression());
+                    name.append(ass.getXpathExpression().getExpression());
                 }
-                return AssertionUtils.decorateName(responseWssConfidentiality, name);
+                return AssertionUtils.decorateName(ass, name);
             }
         });
 

@@ -99,6 +99,11 @@ public class ServerNonSoapEncryptElementAssertion extends AbstractServerAssertio
                 @Override
                 public List<Element> call() throws Exception {
                     List nodes = xpath.selectNodes(doc);
+                    if (nodes == null || nodes.isEmpty()) {
+                        final String msg = "XPath evaluation did not match any elements.";
+                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
+                        throw new AssertionStatusException(AssertionStatus.FALSIFIED, msg);
+                    }
                     List<Element> elementsToEncrypt = new ArrayList<Element>();
                     for (Object node : nodes) {
                         if (node instanceof Element) {
