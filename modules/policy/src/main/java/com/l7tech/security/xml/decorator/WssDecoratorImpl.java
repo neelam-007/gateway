@@ -158,6 +158,23 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         Element xencDesiredNextSibling = null;
+        if ( dreq.isSecurityHeaderReusable() ) {
+            // Add before any signatures or encrypted keys that are already in the header
+            Element firstEncKeyElement =
+                    DomUtils.findFirstChildElementByName( securityHeader, SoapUtil.XMLENC_NS, "EncryptedKey" );
+            Element firstReferenceListElement =
+                    DomUtils.findFirstChildElementByName( securityHeader, SoapUtil.XMLENC_NS, "ReferenceList" );
+            Element firstSignatureElement =
+                    DomUtils.findFirstChildElementByName( securityHeader, SoapUtil.DIGSIG_URI, "Signature" );
+
+            if ( firstEncKeyElement != null )
+                xencDesiredNextSibling = firstEncKeyElement;
+            if ( firstReferenceListElement != null && (xencDesiredNextSibling==null || DomUtils.isAfter(firstReferenceListElement,xencDesiredNextSibling)))
+                xencDesiredNextSibling = firstReferenceListElement;
+            if ( firstSignatureElement != null && (xencDesiredNextSibling==null || DomUtils.isAfter(firstSignatureElement,xencDesiredNextSibling)))
+                xencDesiredNextSibling = firstSignatureElement;
+        }
+
         if (!dreq.getSignatureConfirmations().isEmpty()) {
             for (String conf : dreq.getSignatureConfirmations()) {
                 Element sc = addSignatureConfirmation(securityHeader, conf);

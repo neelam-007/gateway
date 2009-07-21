@@ -772,6 +772,23 @@ public class DomUtils {
         }
     }
 
+    /**
+     * Check if the target node is after the reference node in document order.
+     * 
+     * @param reference The reference node.
+     * @param target The target node.
+     * @return True if the reference node is after the target node
+     */
+    public static boolean isAfter( final Node reference, final Node target ) {
+        boolean isAfter = false;
+
+        if ( reference != null && target != null ) {
+            isAfter = reference.compareDocumentPosition(target)==Node.DOCUMENT_POSITION_FOLLOWING;
+        }
+
+        return isAfter;
+    }
+
     public static Map<String,String> findAllNamespaces(Element element) {
         Map<String,String> entries = new HashMap<String,String>();
         NamedNodeMap foo = element.getAttributes();

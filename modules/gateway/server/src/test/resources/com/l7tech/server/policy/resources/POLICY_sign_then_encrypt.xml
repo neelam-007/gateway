@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  This policy signs the message and decorates then encrypts and decorates. This
+  tests that the encryption is placed correctly in the security header to allow
+  processing.
+
+  This policy then processes the WS-Security header and validates the signature.
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PHNvYXBlbnY6RW52ZWxvcGUKICAgIHhtbG5zOnNvYXBlbnY9Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3NvYXAvZW52ZWxvcGUvIgogICAgeG1sbnM6eHNkPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSIgeG1sbnM6eHNpPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSI+CiAgICA8c29hcGVudjpIZWFkZXIvPgogICAgPHNvYXBlbnY6Qm9keT4KICAgICAgICA8dG5zOmxpc3RQcm9kdWN0cyB4bWxuczp0bnM9Imh0dHA6Ly93YXJlaG91c2UuYWNtZS5jb20vd3MiPgogICAgICAgICAgICA8dG5zOmRlbGF5PjA8L3RuczpkZWxheT4KICAgICAgICA8L3RuczpsaXN0UHJvZHVjdHM+CiAgICA8L3NvYXBlbnY6Qm9keT4KPC9zb2FwZW52OkVudmVsb3BlPgo="/>
+        </L7p:HardcodedResponse>
+        <L7p:WssSignElement>
+            <L7p:KeyAlias stringValue="alice"/>
+            <L7p:NonDefaultKeystoreId longValue="2"/>
+            <L7p:UsesDefaultKeyStore booleanValue="false"/>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body/tns:listProducts"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="tns"/>
+                        <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:WssSignElement>
+        <L7p:WsSecurity>
+            <L7p:RecipientTrustedCertificateName stringValue="defaultkey"/>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:WsSecurity>
+        <L7p:WssEncryptElement/>
+        <L7p:WsSecurity>
+            <L7p:RecipientTrustedCertificateName stringValue="defaultkey"/>
+            <L7p:ReplaceSecurityHeader booleanValue="false"/>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:WsSecurity>
+        <L7p:WssEncryptElement/>
+        <L7p:WsSecurity>
+            <L7p:RecipientTrustedCertificateName stringValue="defaultkey"/>
+            <L7p:ReplaceSecurityHeader booleanValue="false"/>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:WsSecurity>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties>
+                <L7p:Target target="RESPONSE"/>
+            </L7p:Properties>
+        </wsse:SecurityToken>
+        <L7p:SpecificUser>
+            <L7p:Target target="RESPONSE"/>
+            <L7p:IdentityProviderOid longValue="9898"/>
+            <L7p:UserLogin stringValue="Alice"/>
+            <L7p:UserName stringValue="Alice"/>
+            <L7p:UserUid stringValue="4718592"/>
+        </L7p:SpecificUser>
+        <L7p:RequireWssSignedElement>
+            <L7p:Target target="RESPONSE"/>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body/tns:listProducts"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="tns"/>
+                        <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:RequireWssSignedElement>
+    </wsp:All>
+</wsp:Policy>

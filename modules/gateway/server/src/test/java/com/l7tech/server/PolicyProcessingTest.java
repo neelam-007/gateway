@@ -130,6 +130,7 @@ public class PolicyProcessingTest {
         {"/multiplesignaturesvars", "POLICY_wss_multiplesigners_variables.xml"},
         {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
         {"/wssDecoration2", "POLICY_requestdecoration2.xml"},
+        {"/wssDecoration3", "POLICY_sign_then_encrypt.xml"},
         {"/threatprotections", "POLICY_threatprotections.xml"},
         {"/removeelement", "POLICY_removeelement.xml"},
         {"/addusernametoken", "POLICY_responsesecuritytoken.xml"},
@@ -829,6 +830,14 @@ public class PolicyProcessingTest {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         processMessage("/wssDecoration2", new String(loadResource("REQUEST_decoration2.xml")), 0);
+    }
+
+    /**
+     * Test that using signing, apply, encrypt, apply creates a (BSP) valid security header.
+     */
+    @Test
+	public void testDecorationSignThenEncrypt() throws Exception {
+        processMessage("/wssDecoration3", new String(loadResource("REQUEST_general.xml")), 0);
     }
 
     /**

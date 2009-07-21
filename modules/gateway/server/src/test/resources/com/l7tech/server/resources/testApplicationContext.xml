@@ -299,4 +299,6 @@
         </property>
     </bean>
 
+    <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerStub"/>
+
 </beans>
