@@ -83,6 +83,15 @@ public interface SecurityTokenResolver {
     SignerInfo lookupPrivateKeyByKeyName(String keyName);
 
     /**
+     * Look up a private key by its certificate Issuer and Serial.
+     *
+     * @param issuer The certificate issuing authority
+     * @param serial The certificate serial number
+     * @return the private key that was found, or null if one was not found.
+     */
+    SignerInfo lookupPrivateKeyByIssuerAndSerial( X500Principal issuer, BigInteger serial );
+
+    /**
      * Look up an EncryptedKey by its EncryptedKeySHA1.
      *
      * @param encryptedKeySha1 the identifier to look up.  Never null or empty.

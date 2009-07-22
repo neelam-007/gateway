@@ -54,6 +54,11 @@ public class SecurityTokenResolverSupport implements SecurityTokenResolver {
     }
 
     @Override
+    public SignerInfo lookupPrivateKeyByIssuerAndSerial(X500Principal issuer, BigInteger serial) {
+        return null;
+    }
+
+    @Override
     public SignerInfo lookupPrivateKeyBySki(String ski) {
         return null;
     }

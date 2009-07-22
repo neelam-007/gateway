@@ -166,7 +166,7 @@ public class KeyInfoElement implements ParsedElement {
         } else if (x509IssuerSerialEl != null) {
             if (securityTokenResolver == null) throw new MissingResolverException("KeyInfo uses X509Data/X509IssuerSerial but no certificate resolver is available");
             final Element issuerEl = DomUtils.findExactlyOneChildElementByName(x509IssuerSerialEl, SoapConstants.DIGSIG_URI, "X509IssuerName");
-            final Element serialEl = DomUtils.findExactlyOneChildElementByName(x509IssuerSerialEl, SoapConstants.DIGSIG_URI, "X509Serial");
+            final Element serialEl = DomUtils.findExactlyOneChildElementByName(x509IssuerSerialEl, SoapConstants.DIGSIG_URI, "X509SerialNumber");
 
             final String issuerVal = DomUtils.getTextValue(issuerEl);
             if (issuerVal.length() == 0) throw new SAXException("X509IssuerName was empty");

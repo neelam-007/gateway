@@ -52,6 +52,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
             this.signerInfo = info;
         }
 
+        @Override
         public Object getPayload() {
             return signerInfo;
         }
@@ -131,6 +132,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         if (privateKey != null && privateKey.getCertificate() != null) keys.add(new MyKey(privateKey));
     }
 
+    @Override
     public X509Certificate lookup(String thumbprint) {
         X509Certificate found = (X509Certificate)doLookupByX09Thumbprint(certs, thumbprint);
         if (found != null) return found;
@@ -148,6 +150,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public X509Certificate lookupBySki(String targetSki) {
         X509Certificate found = (X509Certificate)doLookupBySki(certs, targetSki);
         if (found != null) return found;
@@ -165,6 +168,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public X509Certificate lookupByKeyName(final String keyName) {
         X509Certificate found = (X509Certificate)doLookupByKeyName(certs, keyName);
         if (found != null) return found;
@@ -182,6 +186,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public X509Certificate lookupByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
         X509Certificate found = (X509Certificate)doLookupByIssuerAndSerial(certs, issuer, serial);
         if (found != null) return found;
@@ -199,6 +204,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyByCert(X509Certificate cert) {
         try {
             String thumb = CertUtils.getThumbprintSHA1(cert);
@@ -210,16 +216,24 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         }
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyByX509Thumbprint(String thumbprint) {
         return (SignerInfo)doLookupByX09Thumbprint(keys, thumbprint);
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyBySki(String ski) {
         return (SignerInfo)doLookupBySki(keys, ski);
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyByKeyName(String keyName) {
         return (SignerInfo)doLookupByKeyName(keys, keyName);
+    }
+
+    @Override
+    public SignerInfo lookupPrivateKeyByIssuerAndSerial(X500Principal issuer, BigInteger serial) {
+        return (SignerInfo)doLookupByIssuerAndSerial(keys, issuer, serial);
     }
 
     public Map getEncryptedKeys() {
@@ -240,14 +254,17 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         this.kerberosTokens = kerberosTokens;
     }
 
+    @Override
     public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
         return encryptedKeys.get(encryptedKeySha1);
     }
 
+    @Override
     public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey) {
         encryptedKeys.put(encryptedKeySha1, secretKey);
     }
 
+    @Override
     public KerberosSigningSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         return kerberosTokens.get(kerberosSha1);
     }

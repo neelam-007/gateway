@@ -26,6 +26,7 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         }
     }
 
+    @Override
     public X509Certificate lookup(String thumbprint) {
         for (SecurityTokenResolver delegate : delegates) {
             X509Certificate result = delegate.lookup(thumbprint);
@@ -34,6 +35,7 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public X509Certificate lookupBySki(String ski) {
         for (SecurityTokenResolver delegate : delegates) {
             X509Certificate result = delegate.lookupBySki(ski);
@@ -42,6 +44,7 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public X509Certificate lookupByKeyName(String keyName) {
         for (SecurityTokenResolver delegate : delegates) {
             X509Certificate result = delegate.lookupByKeyName(keyName);
@@ -50,6 +53,7 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public X509Certificate lookupByIssuerAndSerial( X500Principal issuer, BigInteger serial ) {
         for (SecurityTokenResolver delegate : delegates) {
             X509Certificate result = delegate.lookupByIssuerAndSerial( issuer, serial );
@@ -58,6 +62,7 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyByCert(X509Certificate cert) {
         for (SecurityTokenResolver delegate : delegates) {
             SignerInfo result = delegate.lookupPrivateKeyByCert(cert);
@@ -66,6 +71,7 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyByX509Thumbprint(String thumbprint) {
         for (SecurityTokenResolver delegate : delegates) {
             SignerInfo result = delegate.lookupPrivateKeyByX509Thumbprint(thumbprint);
@@ -74,6 +80,7 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyBySki(String ski) {
         for (SecurityTokenResolver delegate : delegates) {
             SignerInfo result = delegate.lookupPrivateKeyBySki(ski);
@@ -82,6 +89,7 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyByKeyName(String keyName) {
         for (SecurityTokenResolver delegate : delegates) {
             SignerInfo result = delegate.lookupPrivateKeyByKeyName(keyName);
@@ -90,6 +98,16 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
+    public SignerInfo lookupPrivateKeyByIssuerAndSerial(X500Principal issuer, BigInteger serial) {
+        for (SecurityTokenResolver delegate : delegates) {
+            SignerInfo result = delegate.lookupPrivateKeyByIssuerAndSerial(issuer, serial);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    @Override
     public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
         for (SecurityTokenResolver delegate : delegates) {
             byte[] result = delegate.getSecretKeyByEncryptedKeySha1(encryptedKeySha1);
@@ -98,12 +116,14 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
     public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey) {
         // Hmm, what do we do here?
         for (SecurityTokenResolver delegate : delegates)
             delegate.putSecretKeyByEncryptedKeySha1(encryptedKeySha1, secretKey);
     }
 
+    @Override
     public KerberosSigningSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         for (SecurityTokenResolver delegate : delegates) {
             KerberosSigningSecurityToken result = delegate.getKerberosTokenBySha1(kerberosSha1);

@@ -101,6 +101,16 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
     }
 
     @Override
+    public SignerInfo lookupPrivateKeyByIssuerAndSerial(X500Principal issuer, BigInteger serial) {
+        SignerInfo signerInfo = null;
+        for ( SecurityTokenResolver resolver : resolvers ) {
+            signerInfo = resolver.lookupPrivateKeyByIssuerAndSerial( issuer, serial );
+            if ( signerInfo != null ) break;
+        }
+        return signerInfo;
+    }
+
+    @Override
     public SignerInfo lookupPrivateKeyBySki( final String ski ) {
         SignerInfo signerInfo = null;
         for ( SecurityTokenResolver resolver : resolvers ) {

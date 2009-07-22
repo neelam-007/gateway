@@ -206,6 +206,11 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
     }
 
     @Override
+    public SignerInfo lookupPrivateKeyByIssuerAndSerial(X500Principal issuer, BigInteger serial) {
+        return getKeyCache().lookupPrivateKeyByIssuerAndSerial(issuer, serial);
+    }
+
+    @Override
     public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
         if (!encryptedKeyCacheEnabled.get()) return null;
         return (byte[])encryptedKeyCache.retrieve(encryptedKeySha1);
