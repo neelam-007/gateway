@@ -154,7 +154,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 PolicyService service = getPolicyService();
 
                 try {
-                    service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(true));
+                    boolean allowDisabled = systemAllowsDisabledServiceDownloads(servletRequest);
+                    service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(true, allowDisabled));
                 }
                 catch (IllegalStateException ise) { // throw by policy getter on policy not found
                     sendExceptionFault(context, ise, servletResponse);
@@ -207,13 +208,14 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         return (PolicyService)getApplicationContext().getBean("policyService");
     }
 
-    protected PolicyService.PolicyGetter normalPolicyGetter(final boolean inlineIncludes) {
+    protected PolicyService.PolicyGetter normalPolicyGetter(final boolean inlineIncludes, final boolean allowDisabled ) {
         return new PolicyService.PolicyGetter() {
             @Override
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
                 try {
                     final PublishedService targetService = resolveService(Long.parseLong(serviceId));
-                    if (targetService == null) throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
+                    if (targetService == null || (targetService.isDisabled() && !allowDisabled)) 
+                        throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
 
                     final Assertion servicePolicy = targetService.getPolicy().getAssertion();
                     final String servicePolicyVersion = policyCache.getUniquePolicyVersionIdentifer( targetService.getPolicy().getOid() );
@@ -317,16 +319,17 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
 
         boolean isFullDocAndInlined = isFullDoc && isInline;
+        boolean allowDisabled = systemAllowsDisabledServiceDownloads(req);
         // pass over to the service
         PolicyService service = getPolicyService();
         Document response;
         try {
             switch (results.length) {
                 case 0:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, null, this.normalPolicyGetter(isFullDocAndInlined), isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, null, this.normalPolicyGetter(isFullDocAndInlined, allowDisabled), isFullDoc);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, results[0].getUser(), this.normalPolicyGetter(isFullDocAndInlined), isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, results[0].getUser(), this.normalPolicyGetter(isFullDocAndInlined, allowDisabled), isFullDoc);
                     break;
                 default:
                     // todo use the best response (?)
@@ -378,6 +381,19 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
         logger.finest("remote ip " + remote + " was not authorized by any passthrough in " + allPassthroughs);
         return false;
+    }
+
+    private boolean systemAllowsDisabledServiceDownloads(final HttpServletRequest req) {
+        boolean permitted = false;
+
+        String disabledDownloads = serverConfig.getPropertyCached("service.disabledServiceDownloads");
+        if ( "all".equalsIgnoreCase( disabledDownloads ) ) {
+            permitted = true;
+        } else if ( "passthrough".equalsIgnoreCase(disabledDownloads)) {
+            permitted = systemAllowsAnonymousDownloads( req );
+        }
+
+        return permitted;
     }
 
     /**
