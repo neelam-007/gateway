@@ -1399,6 +1399,16 @@
       Deploy SSG for development
     -->
     <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="package.gateway.ifrequired, deployconfig">
+        <!-- Remove any pack200 files if present, otherwise these can be out of date and cause problems running the SSM applet -->
+        <delete>
+            <fileset dir="${build.dir}/managerapplet/lib" includes="*.pack.gz"/>
+        </delete>
+
+        <!-- Deploy application -->
+        <install-ssg-software dir="${dev.deploy.ssg.dir}"/>
+    </target>
+
+    <target name="deploy-nocheck" description="Deploy a development SSG, skipping the build (useful to deploy partial rebuild)" depends="deployconfig, package.manager.work, package.gateway.work, package.modules.work">
         <install-ssg-software dir="${dev.deploy.ssg.dir}"/>
     </target>
 
@@ -1549,7 +1559,8 @@
     <!--
       Package the SSG (JAR).
     -->
-    <target name="package.gateway" depends="package.jars" unless="package.gateway.notrequired">
+    <target name="package.gateway" depends="package.jars, package.gateway.work"/>
+    <target name="package.gateway.work" unless="package.gateway.notrequired">
         <!-- packaging process controller libs -->
         <mkdir dir="${build.dir}/processcontroller/lib"/>
         <delete>
@@ -1592,7 +1603,8 @@
         <copy file="modules/ems/build/layer7-ems.jar" tofile="${build.dir}/enterprisemanager/EnterpriseManager.jar"/>
     </target>
 
-    <target name="package.modules" depends="package.jars" unless="package.jars.notrequired">
+    <target name="package.modules" depends="package.jars, package.modules.work"/>
+    <target name="package.modules.work" unless="package.jars.notrequired">
         <ivy:resolve file="modules/gateway/production/ivy.xml" showprogress="false" transitive="false" conf="module,module-client,module-optional" log="quiet"/>
 
         <delete dir="${build.dir}/modules"/>
@@ -1652,7 +1664,8 @@
     <!--
       Package the SSM (JAR)
     -->
-    <target name="package.manager.jar" depends="package.jars" unless="manager.notrequired">
+    <target name="package.manager.jar" depends="package.jars, package.manager.work"/>
+    <target name="package.manager.work" unless="manager.notrequired"> 
         <mkdir dir="${build.dir}/manager/lib"/>
         <delete>
             <fileset dir="${build.dir}/manager/lib" includes="layer7-*"/>
