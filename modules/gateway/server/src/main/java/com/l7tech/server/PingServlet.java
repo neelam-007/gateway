@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.util.TextUtils;
+import com.l7tech.util.SudoUtils;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -365,12 +366,29 @@ public class PingServlet extends AuthenticatableHttpServlet {
             //
             final File scriptFile = new File(_ssgApplianceLibexecDir, SYSTEM_INFO_SCRIPT_NAME);
             if (scriptFile.exists()) {
+                File sudo = null;
+                try {
+                    sudo = SudoUtils.findSudo();
+                } catch (IOException e) {
+                    /* FALLTHROUGH and do without */
+                }
+
+                File procFile;
+                String[] procArgs;
+                if (sudo == null) {
+                    procFile = scriptFile;
+                    procArgs = new String[0];
+                } else {
+                    procFile = sudo;
+                    procArgs = new String[]{ scriptFile.getAbsolutePath() };
+                }
+
                 String scriptOutput;
                 try {
                     if (_logger.isLoggable(Level.FINE)) {
                         _logger.fine("Running system info script: " + scriptFile.getAbsolutePath());
                     }
-                    final ProcResult result = ProcUtils.exec(scriptFile.getParentFile(), scriptFile);
+                    final ProcResult result = ProcUtils.exec(scriptFile.getParentFile(), procFile, procArgs);
                     if (result.getExitStatus() == 0) {
                         scriptOutput = new String(result.getOutput());
                     } else {
