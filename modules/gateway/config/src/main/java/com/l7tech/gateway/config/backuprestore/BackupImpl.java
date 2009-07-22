@@ -83,7 +83,7 @@ final class BackupImpl implements Backup {
         applianceHome = new File(secureSpanHome, ImportExportUtilities.APPLIANCE);//may not exist, thats ok
         esmHome = new File(secureSpanHome, ImportExportUtilities.ENTERPRISE_SERVICE_MANAGER);//may not exist, thats ok
 
-        this.ftpConfig = ftpConfig;//I might be null and thats ok
+        this.ftpConfig = ftpConfig;//ok if null
         this.pathToImageZipFile = pathToImageZipFile;
         this.printStream = printStream;
         isVerbose = verbose;
@@ -329,6 +329,8 @@ final class BackupImpl implements Backup {
             }
         }else{
             createImageZip(pathToImageZipFile);
+            final String msg2 = "Successfully created backup image file: " + pathToImageZipFile;
+            ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg2, isVerbose, printStream);
         }
 
     }
@@ -373,12 +375,14 @@ final class BackupImpl implements Backup {
         InputStream is = null;
         try {
             is = new FileInputStream(new File(localZipFile));
-            if (printStream != null && isVerbose)
-                printStream.println("Ftp file '" + localZipFile+"' to host '" + ftpConfig.getHost()+"' into directory '"
-                        + destPathAndFileName+"'");
+            final String msg = "Ftp file '" + localZipFile+"' to host '" + ftpConfig.getHost()+"' into directory '"
+                        + destPathAndFileName+"'";
+            ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
             final String filePart = ImportExportUtilities.getFilePart(destPathAndFileName);
             FtpUtils.upload(ftpConfig, is, filePart, true);
+            final String msg1 = "Successfully uploaded backup image to ftp server";
+            ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg1, isVerbose, printStream);
         } catch (FtpException e) {
             throw new BackupException("Could not ftp image to ftp host '"+ftpConfig.getHost()+"' " +
                     "with user '"+ftpConfig.getUser()+"' :" + e.getMessage());
@@ -395,7 +399,8 @@ final class BackupImpl implements Backup {
      * @throws BackupException if any exception occurs while creating the zip
      */
     public void createImageZip(final String zipFileName) throws BackupException {
-        logger.info("compressing image into " + zipFileName);
+        final String msg1 = "compressing image into " + zipFileName;
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
 
         ZipOutputStream out = null;
         try {
@@ -423,8 +428,6 @@ final class BackupImpl implements Backup {
             fos.close();
 
             addZipFileToArchive(out, manifest, sb);
-
-
         } catch (IOException e) {
             throw new BackupException("Problem creating image file: " + e.getMessage());
         } finally {

@@ -117,9 +117,10 @@ public class ImportExportUtilities {
         try {
             final FileOutputStream fos = new FileOutputStream(path);
             fos.close();
-            (new File(path)).delete();
         } catch (Exception e) {
             return false;
+        } finally {
+            (new File(path)).delete();
         }
         return true;
     }

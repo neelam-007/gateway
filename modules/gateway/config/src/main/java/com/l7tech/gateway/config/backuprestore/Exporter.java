@@ -223,8 +223,6 @@ public final class Exporter{
 
         //overwrite the supplied image name with a unique name based on it
         String pathToUniqueImageFile = getUniqueImageFileName(programFlagsAndValues.get(IMAGE_PATH.getName()), usingFtp);
-        ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO,
-                "Creating image: " + pathToUniqueImageFile, isVerbose, printStream);
         
         programFlagsAndValues.put(IMAGE_PATH.getName(), pathToUniqueImageFile);
         //We only want to validate the image file when we are not using ftp
