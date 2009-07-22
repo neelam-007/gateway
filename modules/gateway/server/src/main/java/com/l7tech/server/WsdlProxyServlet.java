@@ -215,6 +215,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
      * @throws com.l7tech.objectmodel.FindException when nothing resolves
      */
     private PublishedService getRequestedService(HttpServletRequest req) throws AmbiguousServiceException, FindException {
+        final boolean permitDisabledService = systemAllowsDisabledServiceDownloads(req);
+
         // resolution using traditional serviceoid param
         String serviceStr = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
         if (serviceStr != null) {
@@ -223,7 +225,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             try {
                 serviceId = Long.parseLong(serviceStr);
                 ps = resolveService(serviceId);
-                if (ps == null) {
+                if ( ps == null || (ps.isDisabled() && !permitDisabledService) ) {
                     throw new FindException("Service id " + serviceStr + " did not resolve any service.");
                 }
             } catch (NumberFormatException e) {
@@ -242,6 +244,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
         // get all current services
         Collection<PublishedService> services = serviceManager.findAll();
+        if ( !permitDisabledService ) {
+            services = removeDisabledServices( services );
+        }
+
         // if uri param provided, narrow down list using it
         if (uriparam != null) {
             Set<PublishedService> serviceSubset = new HashSet<PublishedService>();
@@ -311,6 +317,18 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
         logger.info("service query too wide: " + names.toString());
         throw new AmbiguousServiceException("Too many services fit the mold: " + names.toString());
+    }
+
+    private Collection<PublishedService> removeDisabledServices( final Collection<PublishedService> services ) {
+        List<PublishedService> filteredServices = new ArrayList<PublishedService>();
+
+        for ( PublishedService service : services ) {
+            if ( !service.isDisabled() ) {
+                filteredServices.add( service );                   
+            }
+        }
+
+        return filteredServices;
     }
 
     private void doAnonymous(HttpServletRequest req, HttpServletResponse res, PublishedService ps) throws IOException {
@@ -391,7 +409,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private boolean systemAllowsAnonymousDownloads(HttpServletRequest req) {
+    private boolean systemAllowsAnonymousDownloads(final HttpServletRequest req) {
         // split strings into seperate values
         // check whether any of those can match start of
         String allPassthroughs = serverConfig.getPropertyCached("passthroughDownloads");
@@ -406,6 +424,19 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
         logger.finest("remote ip " + remote + " was not authorized by any passthrough in " + allPassthroughs);
         return false;
+    }
+
+    private boolean systemAllowsDisabledServiceDownloads(final HttpServletRequest req) {
+        boolean permitted = false;
+
+        String disabledDownloads = serverConfig.getPropertyCached("service.disabledServiceDownloads");
+        if ( "all".equalsIgnoreCase( disabledDownloads ) ) {
+            permitted = true;
+        } else if ( "passthrough".equalsIgnoreCase(disabledDownloads)) {
+            permitted = systemAllowsAnonymousDownloads( req );    
+        }
+
+        return permitted;
     }
 
     private void sendAuthChallenge(HttpServletResponse res) throws IOException {
