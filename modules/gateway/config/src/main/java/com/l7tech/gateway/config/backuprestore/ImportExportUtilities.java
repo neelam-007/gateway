@@ -30,6 +30,7 @@ import com.l7tech.util.*;
 public class ImportExportUtilities {
     private static final Logger logger = Logger.getLogger(ImportExportUtilities.class.getName());
     public static final String LOCAL_DB_ONLY = "com.l7tech.config.backup.localDbOnly";
+    private static final String SSEM_PID_FILE = "/var/run/ssemd.pid";
 
     private static enum ARGUMENT_TYPE {VALID_OPTION, IGNORED_OPTION, INVALID_OPTION, VALUE}
 
@@ -43,12 +44,12 @@ public class ImportExportUtilities {
      * These configuration files are expected in ssg_home/node/default/etc/conf/ and constitute
      * the complete backing up of SSG configuration files
      */
-    public static final String[] CONFIG_FILES = new String[]{
+    public static final List<String> CONFIG_FILES = Collections.unmodifiableList(Arrays.asList(
             SSGLOG_PROPERTIES,
             SYSTEM_PROPERTIES,
             NODE_PROPERTIES,
-            OMP_DAT
-    };
+            OMP_DAT));
+
     public static final String VERSION = "version";
     public static final String MANIFEST_LOG = "manifest.log";
     /**
@@ -93,7 +94,7 @@ public class ImportExportUtilities {
     }
     
     static void throwifEsmIsRunning() {
-        final File esmPid = new File("/var/run/ssemd.pid");
+        final File esmPid = new File(SSEM_PID_FILE);
         if(esmPid.exists())
                 throw new IllegalStateException("Enterprise Service Manager is running");
     }

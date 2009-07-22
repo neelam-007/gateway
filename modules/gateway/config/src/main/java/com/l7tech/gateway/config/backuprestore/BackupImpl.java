@@ -47,9 +47,11 @@ final class BackupImpl implements Backup {
      * @param ftpConfig if not null, where the backup image will be ftp'd to
      * @param pathToImageZipFile can be to a local file, or relative to a log on directory on a ftp server. Cannnot
      * be null
-     * @param verbose
-     * @param printStream
-     * @throws BackupException
+     * @param isPostFiveO if true and pathToImageZipFile contains no path info, then the image will be placed into the
+     * images folder in /opt/SecureSpan/Gateway/config/backup
+     * @param verbose if true verbose output will be sent to the printStream, if it's not null
+     * @param printStream the PrintStream to send verbose output to. Can be null
+     * @throws BackupException if the BackupImpl cannot be instantiated
      */
     BackupImpl(final File secureSpanHome,
                final FtpClientConfig ftpConfig,
@@ -94,7 +96,7 @@ final class BackupImpl implements Backup {
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(tmpOutputDirectory + File.separator + ImportExportUtilities.VERSION);
-            fos.write(BuildInfo.getProductVersion().getBytes());
+            fos.write(BuildInfo.getFormalProductVersion().getBytes());
         } catch (IOException e) {
             throw new BackupException("Could not write version file: " + e.getMessage());
         } finally {
@@ -390,7 +392,7 @@ final class BackupImpl implements Backup {
     /**
      * Create an image zip archive from all the files and folders in tmpOutputDirectory.
      * @param zipFileName The name of the zip file to create
-     * @throws IOException if any exception occurs while creating the zip
+     * @throws BackupException if any exception occurs while creating the zip
      */
     public void createImageZip(final String zipFileName) throws BackupException {
         logger.info("compressing image into " + zipFileName);

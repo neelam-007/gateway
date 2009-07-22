@@ -570,8 +570,12 @@ public final class Exporter{
         }
 
         final File ompFile = new File(configDir, ImportExportUtilities.OMP_DAT);
+        if(!ompFile.exists() || !ompFile.isFile()){
+            throw new IllegalStateException("omp.dat was not found at '"+ ompFile.getAbsolutePath()+"'");
+        }
+
         final MasterPasswordManager decryptor =
-                ompFile.exists() ? new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) : null;
+                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
         config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
 
         //check if we can connect to the database

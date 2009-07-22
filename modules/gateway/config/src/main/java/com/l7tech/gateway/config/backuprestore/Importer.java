@@ -835,7 +835,8 @@ public final class Importer{
         }
 
         final MasterPasswordManager decryptor =
-                ompFile.exists() ? new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) : null;
+                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+        
         config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
 
         String clusterPassPhrase = new String(decryptor.decryptPasswordIfEncrypted(nodeConfig.getClusterPassphrase()));

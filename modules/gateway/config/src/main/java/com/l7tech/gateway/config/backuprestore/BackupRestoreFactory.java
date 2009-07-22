@@ -17,6 +17,17 @@ import java.io.PrintStream;
  */
 public class BackupRestoreFactory {
 
+    /**
+     * Get an instance of a Restore
+     * @param secureSpanHome base instalation of Secure Span products e.g. /opt/SecureSpan
+     * @param backupImage the BackupImage to restore
+     * @param dbConfig if not null, will be used to restore database components if requested
+     * @param clusterPassphrase the cluster passphrase of the system being restored
+     * @param verbose print progress information
+     * @param printStream where to send verbose output to, can be null
+     * @return Restore an instance of Restore
+     * @throws Restore.RestoreException
+     */
     public static Restore getRestoreInstance(final File secureSpanHome,
                                              final BackupImage backupImage,
                                              final DatabaseConfig dbConfig,
@@ -26,7 +37,7 @@ public class BackupRestoreFactory {
 
         return new RestoreImpl(secureSpanHome,
                 backupImage,
-                dbConfig,/*I might be null and that's ok*/
+                dbConfig,
                 clusterPassphrase,
                 verbose,
                 printStream);
@@ -34,12 +45,16 @@ public class BackupRestoreFactory {
 
     /**
      * Get an instance of a Backup
-     * @param secureSpanHome base instalation of Secure Span products e.g. /opt/SecureSpan
+     * @param secureSpanHome c
      * @param ftpConfig can be null, where and how to download the image, if required
+     * @param pathToImageZipFile can be to a local file, or relative to a log on directory on a ftp server. Cannnot
+     * be null
+     * @param isPostFiveO if true and pathToImageZipFile contains no path info, then the image will be placed into the
+     * images folder in /opt/SecureSpan/Gateway/config/backup
      * @param verbose print progress information
-     * @param printStream where to send verbose output to
-     * @return Backup instance
-     * @throws Backup.BackupException
+     * @param printStream where to send verbose output to, can be null
+     * @return Backup an instance of Backup
+     * @throws Backup.BackupException if the instance of Backup cannot be created
      */
     public static Backup getBackupInstance(final File secureSpanHome,
                                            final FtpClientConfig ftpConfig,
