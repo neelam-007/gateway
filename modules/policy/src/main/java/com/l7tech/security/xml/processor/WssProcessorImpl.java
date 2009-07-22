@@ -1343,35 +1343,8 @@ public class WssProcessorImpl implements WssProcessor {
             throw new InvalidDocumentFormatException("Root of document is encrypted"); // sanity check, can't happen
         Element parentElement = (Element)encryptedDataElement.getParentNode();
 
-        // See if the parent element contains nothing else except attributes and this EncryptedData element
-        // (and possibly a whitespace node before and after it)
-        // TODO trim() throws out all CTRL characters along with whitespace.  Need to think about this.
         setDocumentModified();
-        Node nextWhitespace = null;
-        Node nextSib = encryptedDataElement.getNextSibling();
-        if (nextSib != null && nextSib.getNodeType() == Node.TEXT_NODE && nextSib.getNodeValue().trim().length() < 1)
-            nextWhitespace = nextSib;
-        Node prevWhitespace = null;
-        Node prevSib = encryptedDataElement.getPreviousSibling();
-        if (prevSib != null && prevSib.getNodeType() == Node.TEXT_NODE && prevSib.getNodeValue().trim().length() < 1)
-            prevWhitespace = prevSib;
-
-        boolean onlyChild = true;
-        NodeList sibNodes = parentElement.getChildNodes();
-        for (int i = 0; i < sibNodes.getLength(); ++i) {
-            Node node = sibNodes.item(i);
-            if (node == null || node.getNodeType() == Node.ATTRIBUTE_NODE)
-                continue; // not relevant
-            if (node == nextWhitespace || node == prevWhitespace)
-                continue; // ignore
-            if (node == encryptedDataElement)
-                continue; // this is the encrypteddata element itself
-
-            // we've found a relevant sibling, proving that not all of parentElement's non-attribute content
-            // is encrypted within this EncryptedData
-            onlyChild = false;
-            break;
-        }
+        boolean onlyChild = isOnlyChild(encryptedDataElement);
 
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
         // soapMsg document
@@ -1459,6 +1432,47 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             }
         }
+    }
+
+    /**
+     * See if the parent element contains nothing else except attributes and this EncryptedData element
+     * (and possibly a whitespace node before and after it)
+     *
+     * @param mightBeOnlyChildElement  the child element that should be checked to see if it the only child element of its parent.  Required.
+     * @return true iff. the specified element has no siblings except attributes and text nodes containing nothing but whitespace.
+     */
+    private static boolean isOnlyChild(Element mightBeOnlyChildElement) throws InvalidDocumentFormatException {
+        Node parentNode = mightBeOnlyChildElement.getParentNode();
+        if (parentNode == null)
+            throw new InvalidDocumentFormatException("Element has no parent: " + mightBeOnlyChildElement.getNodeName());
+
+        // TODO trim() throws out all CTRL characters along with whitespace.  Need to think about this.
+        Node nextWhitespace = null;
+        Node nextSib = mightBeOnlyChildElement.getNextSibling();
+        if (nextSib != null && nextSib.getNodeType() == Node.TEXT_NODE && nextSib.getNodeValue().trim().length() < 1)
+            nextWhitespace = nextSib;
+        Node prevWhitespace = null;
+        Node prevSib = mightBeOnlyChildElement.getPreviousSibling();
+        if (prevSib != null && prevSib.getNodeType() == Node.TEXT_NODE && prevSib.getNodeValue().trim().length() < 1)
+            prevWhitespace = prevSib;
+
+        boolean onlyChild = true;
+        NodeList sibNodes = parentNode.getChildNodes();
+        for (int i = 0; i < sibNodes.getLength(); ++i) {
+            Node node = sibNodes.item(i);
+            if (node == null || node.getNodeType() == Node.ATTRIBUTE_NODE)
+                continue; // not relevant
+            if (node == nextWhitespace || node == prevWhitespace)
+                continue; // ignore
+            if (node == mightBeOnlyChildElement)
+                continue; // this is the encrypteddata element itself
+
+            // we've found a relevant sibling, proving that not all of parentElement's non-attribute content
+            // is encrypted within this EncryptedData
+            onlyChild = false;
+            break;
+        }
+        return onlyChild;
     }
 
     private void processBinarySecurityToken(final Element binarySecurityTokenElement)
