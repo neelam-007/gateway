@@ -31,7 +31,7 @@ fi
 SSG_JAVA_HOME="/opt/SecureSpan/JDK"
 
 # Setting larger permsize for java 1.6
-NODE_OPTS="-Xmx${java_ram}k -XX:MaxPermSize=128M -Xss256k"
+NODE_OPTS="-Xmx${java_ram}k -Xss256k"
 
 export SSG_JAVA_HOME
 export NODE_OPTS

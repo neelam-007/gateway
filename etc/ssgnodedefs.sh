@@ -12,6 +12,8 @@ function extractProperty() {
 
 if [ ! -z "${SSGNODE}" ] ; then
     NODE_PROPS_PATH="${SSG_HOME}/node/${SSGNODE}/etc/conf/node.properties"
+    NODE_DEFAULT_MAX_PERM_SIZE="128M"
+
     if [ -f "${NODE_PROPS_PATH}" ] ; then
         extractProperty "node.java.path" NODE_JAVA_HOME "${NODE_PROPS_PATH}"
         extractProperty "node.java.heap" NODE_JAVA_HEAP "${NODE_PROPS_PATH}"
@@ -45,6 +47,12 @@ if [ ! -z "${SSGNODE}" ] ; then
                 NODE_OPTS="${NODE_OPTS} -Dcom.l7tech.server.listener.initport=${NODE_INIT_LISTEN_PORT}"
             fi
         fi
+
+        echo "${NODE_OPTS}" | grep -q "\-XX:MaxPermSize"
+        if [ ${?} -ne 0 ] ; then
+            NODE_OPTS="${NODE_OPTS} -XX:MaxPermSize=${NODE_DEFAULT_MAX_PERM_SIZE}"
+        fi
+
         export NODE_OPTS
 
         unset NODE_JAVA_HOME
@@ -52,4 +60,5 @@ if [ ! -z "${SSGNODE}" ] ; then
         unset NODE_JAVA_OPTS
     fi
     unset NODE_PROPS_PATH
+    unset NODE_DEFAULT_MAX_PERM_SIZE
 fi
