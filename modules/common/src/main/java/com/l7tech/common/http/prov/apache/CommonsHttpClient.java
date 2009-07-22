@@ -11,6 +11,7 @@ import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.*;
 import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.*;
@@ -50,6 +51,11 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
     private static HttpParams httpParams;
     private static final Map protoBySockFac = Collections.synchronizedMap(new WeakHashMap());
+
+    /**
+     * TODO remove this once all clients use 5.1 if there are no issues
+     */
+    private static final boolean encodePath = SyspropUtil.getBoolean(CommonsHttpClient.class.getName() + ".encodePath", true);
 
     static {
         DefaultHttpParams.setHttpParamsFactory(new CachingHttpParamsFactory(new DefaultHttpParamsFactory()));
@@ -163,16 +169,16 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         final org.apache.commons.httpclient.HttpMethod httpMethod;
         switch (method) {
             case POST:
-                httpMethod = new PostMethod(targetUrl.getFile());
+                httpMethod = new PostMethod(encodePathAndQuery(targetUrl.getFile()));
                 break;
             case GET:
-                httpMethod = new GetMethod(targetUrl.getFile());
+                httpMethod = new GetMethod(encodePathAndQuery(targetUrl.getFile()));
                 break;
             case PUT:
-                httpMethod = new PutMethod(targetUrl.getFile());
+                httpMethod = new PutMethod(encodePathAndQuery(targetUrl.getFile()));
                 break;
             case DELETE:
-                httpMethod = new DeleteMethod(targetUrl.getFile());
+                httpMethod = new DeleteMethod(encodePathAndQuery(targetUrl.getFile()));
                 break;
             default:
                 throw new IllegalStateException("Method " + method + " not supported");
@@ -443,6 +449,21 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 }
             }
         };
+    }
+
+    private String encodePathAndQuery( final String unencoded ) {
+        String encoded = unencoded;
+
+        if ( encodePath ) {
+            try {
+                encoded = URIUtil.encodePathQuery( unencoded );
+            } catch ( URIException e ) {
+                // if this occurs it means the default character set is not supported
+                logger.log( Level.WARNING, "Error encoding URL path.", e );
+            }
+        }
+
+        return encoded;
     }
 
     private void stampBindingIdentity() {
