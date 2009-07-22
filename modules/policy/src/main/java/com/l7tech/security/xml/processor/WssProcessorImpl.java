@@ -1043,9 +1043,6 @@ public class WssProcessorImpl implements WssProcessor {
             value = DomUtils.getTextValue(keyIdentifierElement).trim();
             valueType = keyIdentifierElement.getAttribute("ValueType");
             encodingType = keyIdentifierElement.getAttribute("EncodingType");
-            if ( SoapConstants.VALUETYPE_ENCRYPTED_KEY_SHA1.equals(valueType) || SoapConstants.VALUETYPE_X509_THUMB_SHA1.equals(valueType) ) {
-                isWsse11Seen = true;
-            }
         } else if (referenceElement != null) {
             value = referenceElement.getAttribute("URI");
             if (value != null && value.length() == 0) {
@@ -1055,19 +1052,13 @@ public class WssProcessorImpl implements WssProcessor {
                 value = value.substring(1);
             }
             valueType = referenceElement.getAttribute("ValueType");
-            if ( SoapConstants.VALUETYPE_ENCRYPTED_KEY.equals(valueType)) {
-                isWsse11Seen = true;
-            }
         } else {
             if (logIfNothingFound)
                 logger.warning(MessageFormat.format("Ignoring SecurityTokenReference ID={0} with no KeyIdentifier or Reference", logId));
             return;
         }
 
-        String tokenType = str.getAttributeNS(SoapConstants.SECURITY11_NAMESPACE, "TokenType");
-        if ( SoapConstants.VALUETYPE_ENCRYPTED_KEY.equals(tokenType) ) {
-            isWsse11Seen = true;
-        }
+        processSecurityTokenReferenceWSS11(str);
 
         if (value == null) {
             String msg = "Rejecting SecurityTokenReference ID=" + logId
@@ -1136,6 +1127,27 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
+    private void processSecurityTokenReferenceWSS11(Element str) {
+        if (str == null)
+            return;
+
+        Element keyIdentifierElement = DomUtils.findFirstChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
+        Element referenceElement = DomUtils.findFirstChildElementByName(str, str.getNamespaceURI(), "Reference");
+        if (keyIdentifierElement != null) {
+            String valueType = keyIdentifierElement.getAttribute("ValueType");
+            if ( SoapConstants.VALUETYPE_ENCRYPTED_KEY_SHA1.equals(valueType) || SoapConstants.VALUETYPE_X509_THUMB_SHA1.equals(valueType) ) {
+                isWsse11Seen = true;
+            }
+        } else if (referenceElement != null) {
+            if ( SoapConstants.VALUETYPE_ENCRYPTED_KEY.equals(referenceElement.getAttribute("ValueType"))) {
+                isWsse11Seen = true;
+            }
+        }
+        if ( SoapConstants.VALUETYPE_ENCRYPTED_KEY.equals(str.getAttributeNS(SoapConstants.SECURITY11_NAMESPACE, "TokenType")) ) {
+            isWsse11Seen = true;
+        }
+    }
+
     private void processDerivedKey(Element derivedKeyEl)
             throws InvalidDocumentFormatException, ProcessorException, GeneralSecurityException {
         // get corresponding shared secret reference wsse:SecurityTokenReference
@@ -1186,6 +1198,8 @@ public class WssProcessorImpl implements WssProcessor {
             else
                 derivationSource = findSecurityContextTokenBySessionId(ref);
         }
+
+        processSecurityTokenReferenceWSS11(sTokrefEl);
 
         if(derivationSource==null) {
             logger.info("Invalid DerivedKeyToken reference target '" + ref + "', ignoring this derived key.");

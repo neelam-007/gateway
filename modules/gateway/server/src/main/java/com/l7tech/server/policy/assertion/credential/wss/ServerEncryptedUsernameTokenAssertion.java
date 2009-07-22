@@ -73,6 +73,9 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
             }
             if ( isRequest() ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
+                if (context.isResponseWss11()) {
+                    message.getSecurityKnob().setNeedsSignatureConfirmations(true);
+                }
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, auditor);
             }
