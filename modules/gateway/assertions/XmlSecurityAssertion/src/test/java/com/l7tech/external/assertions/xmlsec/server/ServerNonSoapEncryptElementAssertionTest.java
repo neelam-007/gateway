@@ -152,7 +152,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         checkResult(req, 0);
     }
 
-    private static NonSoapEncryptElementAssertion makeAss() {
+    public static NonSoapEncryptElementAssertion makeAss() {
         NonSoapEncryptElementAssertion ass = new NonSoapEncryptElementAssertion();
         ass.setTarget(TargetMessageType.REQUEST);
         ass.setEncryptContentsOnly(false);
@@ -162,7 +162,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         return ass;
     }
 
-    private static Message makeReq() {
+    public static Message makeReq() {
         return new Message(XmlUtil.stringAsDocument(
                 "<par:GetNoaParties xmlns:par=\"urn:noapar\">\n" +
                 "  <par:username>brian</par:username> \n" +
