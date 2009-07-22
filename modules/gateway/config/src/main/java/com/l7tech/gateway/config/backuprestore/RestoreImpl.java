@@ -127,19 +127,31 @@ final class RestoreImpl implements Restore{
 
         try {
             //restore all .property files found in the ca folder to the node/default/etc/conf folder
-            ImportExportUtilities.copyFiles(imageCADir, ssgConfigDir, new FilenameFilter() {
+            final boolean propFilesCopied = ImportExportUtilities.copyFiles(
+                    imageCADir, ssgConfigDir, new FilenameFilter() {
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".properties");
                 }
             }, isVerbose, printStream);
 
+            if(!propFilesCopied){
+                final String msg = "No Custom Assertion property files were restored";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            }
+
             final File ssgCaFolder = new File(ssgHome, ImportExportUtilities.CA_JAR_DIR);
             //restore all jar files found to /opt/SecureSpan/Gateway/runtime/modules/lib
-            ImportExportUtilities.copyFiles(imageCADir, ssgCaFolder, new FilenameFilter() {
+            final boolean jarFilesCopied = ImportExportUtilities.copyFiles(
+                    imageCADir, ssgCaFolder, new FilenameFilter() {
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".jar");
                 }
             }, isVerbose, printStream);
+
+            if(!jarFilesCopied){
+                final String msg = "No Custom Assertion jar files were restored";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            }
 
         } catch (IOException e) {
             throw new RestoreException("Problem restoring custom assertion component: " + e.getMessage());
@@ -187,7 +199,7 @@ final class RestoreImpl implements Restore{
             }
 
             //restore all aar files found to /opt/SecureSpan/Gateway/runtime/modules/assertions
-            ImportExportUtilities.copyFiles(imageMADir, ssgMaFolder, new FilenameFilter() {
+            final boolean aarFilesCopied = ImportExportUtilities.copyFiles(imageMADir, ssgMaFolder, new FilenameFilter() {
                 public boolean accept(File dir, String name) {
                     //if it's not .aar, ignore it completely
                     if(!name.endsWith(".aar")){
@@ -217,6 +229,11 @@ final class RestoreImpl implements Restore{
                     return true;
                 }
             }, isVerbose, printStream);
+
+            if(!aarFilesCopied){
+                final String msg = "No modular assertion aar files were restored";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            }
 
         } catch (IOException e) {
             throw new RestoreException("Problem restoring modular assertion component: " + e.getMessage());

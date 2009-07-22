@@ -14,12 +14,12 @@ interface SsgComponent{
     public ImportExportUtilities.ComponentType getComponentType();
 }
 
-interface BackupComponent<E extends Exception> extends SsgComponent{
-    public void doBackup() throws E;
+interface BackupComponent extends SsgComponent{
+    public ComponentResult doBackup() throws Backup.BackupException;
 }
 
-interface RestoreComponent<E extends Exception> extends SsgComponent{
-    public ComponentResult doRestore() throws E;
+interface RestoreComponent extends SsgComponent{
+    public ComponentResult doRestore() throws Restore.RestoreException;
 }
 
 

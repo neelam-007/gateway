@@ -150,6 +150,8 @@ public class ExporterTest {
      * Selectively backs a test environment with no database or os files included.
      * After the backup image is created, it is tested for existence and is checked that it is a file and not
      * a directory.
+     * This is a selective backup and as the os files cannot be backed up, as the appliance for this test is not
+     * installed, the result should be PARTIAL_SUCCESS
      */
     @Test
     public void testSelectiveBackupImageCreated() throws Exception {
@@ -169,7 +171,7 @@ public class ExporterTest {
             final String[] args = programArgs.toArray(new String[]{});
             final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
             final Exporter.BackupResult result = exporter.createBackupImage(args);
-            Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
+            Assert.assertEquals("Status should be partial success", result.getStatus(), Exporter.BackupResult.Status.PARTIAL_SUCCESS);
             final String uniqueImageZipFile = result.getBackUpImageName();
 
             //Check image.zip exists

@@ -39,13 +39,13 @@ public final class Exporter{
     static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image",
             "name of image file to create locally or on ftp host if -ftp* options are used", true);
 
-    static final CommandLineOption AUDIT = new CommandLineOption("-ia", "include audit data with a default backup", false);
+    static final CommandLineOption IA_AUDIT_FLAG = new CommandLineOption("-ia", "include audit data with a default backup", false);
 
     static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it",
             "populate supplied file with template mapping information", true);
 
 //    static final CommandLineOption ESM =
-    private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH,
+    private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, IA_AUDIT_FLAG, MAPPING_PATH,
             CommonCommandLineOptions.VERBOSE, CommonCommandLineOptions.HALT_ON_FIRST_FAILURE};
 
     private static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
@@ -339,12 +339,18 @@ public final class Exporter{
     private void performBackupSteps(final String mappingFile, final Backup backup)
             throws Exception {
 
-        final List<BackupComponent<? extends Exception>> compsToBackup =
+        final List<BackupComponent> compsToBackup =
                 getComponentsForBackup(mappingFile, backup);
 
-        for(BackupComponent<? extends Exception> component: compsToBackup){
+        for(BackupComponent component: compsToBackup){
             try{
-                component.doBackup();
+                final ComponentResult result = component.doBackup();
+                if(isSelectiveBackup && result.getResult() == ComponentResult.Result.NOT_APPLICABLE){
+                    throw new Restore.RestoreException(result.getNotApplicableMessage());
+                }else if (result.getResult() == ComponentResult.Result.NOT_APPLICABLE) {
+                    final String msg1 = "Not applicable for this host";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
+                }
             }catch (Exception e) {
                 final String msg = "Component '" + component.getComponentType().getComponentName()+ "' could not be " +
                         "backed up: " + e.getMessage();
@@ -393,18 +399,17 @@ public final class Exporter{
      * @return A List of BackupComponent. Clients can iterate over this list and call doBackup() to back up the component
      * its wrapping
      */
-    private List<BackupComponent<? extends Exception>> getComponentsForBackup(
+    private List<BackupComponent> getComponentsForBackup(
             final String mappingFile, final Backup backup) throws IOException {
 
-        final List<BackupComponent<? extends Exception>>
-                componentList = new ArrayList<BackupComponent<? extends Exception>>();
+        final List<BackupComponent> componentList = new ArrayList<BackupComponent>();
 
-        final BackupComponent<Backup.BackupException> versionComp = new BackupComponent<Backup.BackupException>() {
-            public void doBackup() throws Backup.BackupException {
+        final BackupComponent versionComp = new BackupComponent() {
+            public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 // record version of this image
-                backup.backUpVersion();
+                return backup.backUpVersion();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -418,50 +423,45 @@ public final class Exporter{
         // Read database connection settings
         final DatabaseConfig config = ImportExportUtilities.getNodeConfig(nodePropsFile, ompFile);
 
-        //Backup database info if the db is local
-        if(ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())){
-
-            final BackupComponent<Backup.BackupException> dbComp = new BackupComponent<Backup.BackupException>() {
-                public void doBackup() throws Backup.BackupException {
-                    final String msg = "Backing up component " + getComponentType().getComponentName();
-                    ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-
-                    //this will also create the mapping file if it was requested
-                    backup.backUpComponentMainDb(mappingFile, config);
-                }
-
-                public ImportExportUtilities.ComponentType getComponentType() {
-                    return ImportExportUtilities.ComponentType.MAINDB;
-                }
-            };
-            componentList.add(dbComp);
-            // check whether or not we are expected to include audit in export
-            if (includeAudits) {
-                final BackupComponent<Backup.BackupException> auditComp = new BackupComponent<Backup.BackupException>() {
-                    public void doBackup() throws Backup.BackupException {
-                        final String msg = "Backing up component " + getComponentType().getComponentName();
-                        ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-
-                        backup.backUpComponentAudits(config);
-                    }
-
-                    public ImportExportUtilities.ComponentType getComponentType() {
-                        return ImportExportUtilities.ComponentType.AUDITS;
-                    }
-                };
-                componentList.add(auditComp);
-            }
-        }else{
-            final String msg = "Database is not local so no backup of database being created";
-            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
-        }
-
-        final BackupComponent<Backup.BackupException> configComp = new BackupComponent<Backup.BackupException>() {
-            public void doBackup() throws Backup.BackupException {
+        final BackupComponent dbComp = new BackupComponent() {
+            public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
-                backup.backUpComponentConfig();
+                //this will also create the mapping file if it was requested
+                return backup.backUpComponentMainDb(mappingFile, config);
+            }
+
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.MAINDB;
+            }
+        };
+        componentList.add(dbComp);
+        // check whether or not we are expected to include audit in export
+        //other components are just added, and they decide themselves if they are applicable or not
+        //audits are different as the user has to always explicitly say they want audits
+        if (includeAudits) {
+            final BackupComponent auditComp = new BackupComponent() {
+                public ComponentResult doBackup() throws Backup.BackupException {
+                    final String msg = "Backing up component " + getComponentType().getComponentName();
+                    ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
+                    return backup.backUpComponentAudits(config);
+                }
+
+                public ImportExportUtilities.ComponentType getComponentType() {
+                    return ImportExportUtilities.ComponentType.AUDITS;
+                }
+            };
+            componentList.add(auditComp);
+        }
+
+        final BackupComponent configComp = new BackupComponent() {
+            public ComponentResult doBackup() throws Backup.BackupException {
+                final String msg = "Backing up component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
+                return backup.backUpComponentConfig();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -470,13 +470,13 @@ public final class Exporter{
         };
         componentList.add(configComp);
 
-        final BackupComponent<Backup.BackupException> osComp = new BackupComponent<Backup.BackupException>() {
-            public void doBackup() throws Backup.BackupException {
+        final BackupComponent osComp = new BackupComponent() {
+            public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
                 //restore OS files if this is an appliance
-                backup.backUpComponentOS();
+                return backup.backUpComponentOS();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -485,12 +485,12 @@ public final class Exporter{
         };
         componentList.add(osComp);
 
-        final BackupComponent<Backup.BackupException> caComp = new BackupComponent<Backup.BackupException>() {
-            public void doBackup() throws Backup.BackupException {
+        final BackupComponent caComp = new BackupComponent() {
+            public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
-                backup.backUpComponentCA();
+                return backup.backUpComponentCA();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -500,12 +500,12 @@ public final class Exporter{
 
         componentList.add(caComp);
 
-        final BackupComponent<Backup.BackupException> maComp = new BackupComponent<Backup.BackupException>() {
-            public void doBackup() throws Backup.BackupException {
+        final BackupComponent maComp = new BackupComponent() {
+            public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
-                backup.backUpComponentMA();
+                return backup.backUpComponentMA();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -516,12 +516,12 @@ public final class Exporter{
 
         //Check for -esm, we don't add this by default, only when it's explicitly asked for
         if(programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())){
-            final BackupComponent<Backup.BackupException> emComp = new BackupComponent<Backup.BackupException>() {
-                public void doBackup() throws Backup.BackupException {
+            final BackupComponent emComp = new BackupComponent() {
+                public ComponentResult doBackup() throws Backup.BackupException {
                     final String msg = "Backing up component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
-                    backup.backUpComponentESM();
+                    return backup.backUpComponentESM();
                 }
 
                 public ImportExportUtilities.ComponentType getComponentType() {
@@ -596,8 +596,8 @@ public final class Exporter{
 
         //the decision to back up audits can come from the -ia flag or from the audits flag
         //-ia means backup audits with a full backup
-        //-audits means only audits, or if other components are selected then it meas 'also audits'
-        final String auditVal = programFlagsAndValues.get(AUDIT.getName());
+        //this code is only concerned about whether we are including audits by any means
+        final String auditVal = programFlagsAndValues.get(IA_AUDIT_FLAG.getName());
         if (auditVal != null && !auditVal.toLowerCase().equals("no") && !auditVal.toLowerCase().equals("false")) {
             includeAudits = true;
         }else {

@@ -330,8 +330,8 @@ public final class Importer{
         ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
         
         final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.getName());
-        final List<RestoreComponent<? extends Exception>> allComponents = getComponentsForRestore(mappingFile);
-        for (RestoreComponent<? extends Exception> component : allComponents) {
+        final List<RestoreComponent> allComponents = getComponentsForRestore(mappingFile);
+        for (RestoreComponent component : allComponents) {
             try {
                 final ComponentResult result = component.doRestore();
                 if(isSelectiveRestore && result.getResult() == ComponentResult.Result.NOT_APPLICABLE){
@@ -863,7 +863,7 @@ public final class Importer{
      * @return list of applicable RestoreComponent's. Filtered for selective restore if applicable
      * @throws RestoreImpl.RestoreException
      */
-    private List<RestoreComponent<? extends Exception>> getComponentsForRestore(final String mappingFile)
+    private List<RestoreComponent> getComponentsForRestore(final String mappingFile)
             throws Restore.RestoreException {
 
         final Restore restore = BackupRestoreFactory.getRestoreInstance(this.secureSpanHome,
@@ -874,14 +874,13 @@ public final class Importer{
                 this.printStream);
 
 
-        final List<RestoreComponent<? extends Exception>>
-                componentList = new ArrayList<RestoreComponent<? extends Exception>>();
+        final List<RestoreComponent> componentList = new ArrayList<RestoreComponent>();
 
         //isSelectiveRestore represents isRequired in all methods to Restore interface
         //at the end the list of components is filtered, so if isSelectiveRestore is true, then the components
         //are filtered, and the remaining components are 'required'
-        componentList.add(new RestoreComponent<Exception>(){
-            public ComponentResult doRestore() throws Exception {
+        componentList.add(new RestoreComponent(){
+            public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 //if no db component is being restored, then we need to allow the config restore to restore
@@ -899,8 +898,8 @@ public final class Importer{
         //Allowing the actual restoreComponentMainDb method to decide whether to back up or not
         //by doing this we can easily log when a backup included a db, but we decided to leave it alone, because
         //it was not local for example
-        componentList.add(new RestoreComponent<Exception>(){
-            public ComponentResult doRestore() throws Exception {
+        componentList.add(new RestoreComponent(){
+            public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentMainDb(isMigrate, canCreateNewDb, mappingFile);
@@ -911,8 +910,8 @@ public final class Importer{
             }
         });
 
-        componentList.add(new RestoreComponent<Exception>(){
-            public ComponentResult doRestore() throws Exception {
+        componentList.add(new RestoreComponent(){
+            public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentAudits(isMigrate);
@@ -924,8 +923,8 @@ public final class Importer{
         });
 
         //os files
-        componentList.add(new RestoreComponent<Exception>(){
-            public ComponentResult doRestore() throws Exception {
+        componentList.add(new RestoreComponent(){
+            public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentOS();
@@ -937,8 +936,8 @@ public final class Importer{
         });
 
         //custom assertion files and jars
-        componentList.add(new RestoreComponent<Exception>(){
-            public ComponentResult doRestore() throws Exception {
+        componentList.add(new RestoreComponent(){
+            public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentCA();
@@ -950,8 +949,8 @@ public final class Importer{
         });
 
         //modular assertion aar files
-        componentList.add(new RestoreComponent<Exception>(){
-            public ComponentResult doRestore() throws Exception {
+        componentList.add(new RestoreComponent(){
+            public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentMA();
@@ -964,8 +963,8 @@ public final class Importer{
 
         //Check for -esm, we don't add this by default, only when it's explicitly asked for
         if(programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())){
-            componentList.add(new RestoreComponent<Exception>(){
-                public ComponentResult doRestore() throws Exception {
+            componentList.add(new RestoreComponent(){
+                public ComponentResult doRestore() throws Restore.RestoreException {
                     final String msg = "Restoring component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     return restore.restoreComponentESM();
@@ -977,7 +976,7 @@ public final class Importer{
             });
         }
 
-        final List<RestoreComponent<? extends Exception>> returnList;
+        final List<RestoreComponent> returnList;
         //feedback to user
         if(isSelectiveRestore){
             if(!isMigrate){
@@ -994,8 +993,8 @@ public final class Importer{
         //any task added after here will not be filtered
         //restore the node identity when we know it has been ignored by config restore
         if(isDbComponent){
-            returnList.add(new RestoreComponent<Exception>(){
-                public ComponentResult doRestore() throws Exception {
+            returnList.add(new RestoreComponent(){
+                public ComponentResult doRestore() throws Restore.RestoreException {
                     final String msg = "Restoring component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 

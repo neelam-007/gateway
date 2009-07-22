@@ -92,11 +92,12 @@ final class BackupImpl implements Backup {
         this.isPostFiveO = isPostFiveO;
     }
 
-    public void backUpVersion() throws BackupException {
+    public ComponentResult backUpVersion() throws BackupException {
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(tmpOutputDirectory + File.separator + ImportExportUtilities.VERSION);
             fos.write(BuildInfo.getFormalProductVersion().getBytes());
+            return new ComponentResult(ComponentResult.Result.SUCCESS);
         } catch (IOException e) {
             throw new BackupException("Could not write version file: " + e.getMessage());
         } finally {
@@ -104,12 +105,12 @@ final class BackupImpl implements Backup {
         }
     }
 
-    public void backUpComponentMainDb(final String mappingFile, final DatabaseConfig config)
+    public ComponentResult backUpComponentMainDb(final String mappingFile, final DatabaseConfig config)
             throws BackupException {
 
         if (!ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())) {
-            logger.log(Level.WARNING, "Cannot backup database as it is not local");
-            throw new IllegalStateException("Cannot back up database as it is not local");
+            final String msg = "Cannot backup database as it is not local";
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
 
         try {
@@ -134,6 +135,7 @@ final class BackupImpl implements Backup {
                         file.getAbsolutePath()+" does not exist on the host, ignoring", isVerbose, printStream);
             }
 
+            return new ComponentResult(ComponentResult.Result.SUCCESS);            
         } catch (SQLException e) {
             throw new BackupException("Cannot dump the database, please ensure the database is running and the " +
                     "credentials are correct");
@@ -144,11 +146,12 @@ final class BackupImpl implements Backup {
         }
     }
 
-    public void backUpComponentAudits(final DatabaseConfig config) throws BackupException {
+    public ComponentResult backUpComponentAudits(final DatabaseConfig config) throws BackupException {
         if (!ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())) {
-            logger.log(Level.WARNING, "Cannot backup database as it is not local");
-            throw new IllegalStateException("Cannot back up database as it is not local");
+            final String msg = "Cannot backup database as it is not local";
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
+        
         try {
             //Create the database folder
             final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.AUDITS.getComponentName());
@@ -159,9 +162,11 @@ final class BackupImpl implements Backup {
                 final String msg = "The file '" + auditTablesDefFile +
                         "' lists no audit tables. No audit data will be backed up";
                 ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                return;
+                return new ComponentResult(ComponentResult.Result.SUCCESS);
             }
             DBDumpUtil.auditDump(config, dir.getAbsolutePath(), auditTables, printStream, isVerbose);
+
+            return new ComponentResult(ComponentResult.Result.SUCCESS);
         } catch (SQLException e) {
             throw new BackupException("Cannot backup audits, please ensure the database is running and the credentials " +
                     "are correct");
@@ -170,7 +175,7 @@ final class BackupImpl implements Backup {
         }
     }
 
-    public void backUpComponentConfig() throws BackupException {
+    public ComponentResult backUpComponentConfig() throws BackupException {
         try {
             final File dir = createComponentDir(
                     tmpOutputDirectory, ImportExportUtilities.ComponentType.CONFIG.getComponentName());
@@ -184,43 +189,46 @@ final class BackupImpl implements Backup {
                 }
             }, isVerbose, printStream);
 
+            return new ComponentResult(ComponentResult.Result.SUCCESS);
+
         } catch (IOException e) {
             throw new BackupException("Cannot back up ssg configuration: " + e.getMessage());
         }
-
     }
 
-    public void backUpComponentOS() throws BackupException {
-        if (applianceHome.exists()) {
-            try {
-                // copy system config files
-                final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
-                final File backupManifest = new File(ssgHome, OSConfigManager.BACKUP_MANIFEST);
-                if (!(backupManifest.exists())) {
-                    final String msg = "File '"+backupManifest.getAbsolutePath()
-                            +"' does not exist. Cannot back up os files";
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                    return;
-                }
-
-                OSConfigManager osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
-                osConfigManager.backUpOSConfigFilesToFolder(dir);
-            } catch (OSConfigManager.OSConfigManagerException e) {
-                throw new BackupException(e.getMessage());
-            } catch (IOException e) {
-                throw new BackupException(e.getMessage());
-            }
+    public ComponentResult backUpComponentOS() throws BackupException {
+        if(!applianceHome.exists()){
+            final String msg = "Appliance is not installed";
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
-        //no appliance -> no os files backed up
+
+        try {
+            // copy system config files
+            final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
+            final File backupManifest = new File(ssgHome, OSConfigManager.BACKUP_MANIFEST);
+            if (!(backupManifest.exists())) {
+                final String msg = "File '"+backupManifest.getAbsolutePath()
+                        +"' does not exist. Cannot back up os files";
+                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
+            }
+
+            OSConfigManager osConfigManager = new OSConfigManager(ssgHome, false, isVerbose, printStream);
+            osConfigManager.backUpOSConfigFilesToFolder(dir);
+            return new ComponentResult(ComponentResult.Result.SUCCESS);
+        } catch (OSConfigManager.OSConfigManagerException e) {
+            throw new BackupException(e.getMessage());
+        } catch (IOException e) {
+            throw new BackupException(e.getMessage());
+        }
     }
 
-    public void backUpComponentCA() throws BackupException {
+    public ComponentResult backUpComponentCA() throws BackupException {
         try {
             final File dir =
                     createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.CA.getComponentName());
 
             //backup all .property files in the conf folder which are not in CONFIG_FILES
-            ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter() {
+            final boolean propFilesCopied = ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter() {
                 public boolean accept(File dir, String name) {
                     if (!name.endsWith(".properties")) return false;
 
@@ -231,45 +239,66 @@ final class BackupImpl implements Backup {
                 }
             }, isVerbose, printStream);
 
+            if(!propFilesCopied){
+                final String msg = "No Custom Assertion property files needed to be backed up";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            }
+
             //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/lib
-            ImportExportUtilities.copyFiles(new File(ssgHome, ImportExportUtilities.CA_JAR_DIR), dir, new FilenameFilter() {
+            final boolean jarFilesCopied = ImportExportUtilities.copyFiles(
+                    new File(ssgHome, ImportExportUtilities.CA_JAR_DIR), dir, new FilenameFilter() {
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".jar");
                 }
             }, isVerbose, printStream);
+
+            if(!jarFilesCopied){
+                final String msg = "No Custom Assertion jar files needed to be backed up";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            }
+
+            return new ComponentResult(ComponentResult.Result.SUCCESS);
         } catch (IOException e) {
             throw new BackupException("Cannot back up custom assertions: " + e.getMessage());
         }
     }
 
-    public void backUpComponentMA() throws BackupException {
+    public ComponentResult backUpComponentMA() throws BackupException {
         try {
             final File dir =
                     createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.MA.getComponentName());
 
             //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/assertions
-            ImportExportUtilities.copyFiles(new File(ssgHome, ImportExportUtilities.MA_AAR_DIR), dir, new FilenameFilter(){
+            final boolean aarFilesCopied = ImportExportUtilities.copyFiles(
+                    new File(ssgHome, ImportExportUtilities.MA_AAR_DIR), dir, new FilenameFilter() {
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".aar");
                 }
             }, isVerbose, printStream);
+
+            if(!aarFilesCopied){
+                final String msg = "No modular assertion aar files needed to be backed up";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            }
+
+            return new ComponentResult(ComponentResult.Result.SUCCESS);
         } catch (IOException e) {
             throw new BackupException("Cannot back up modular assertions: " + e.getMessage());
         }
     }
 
-    public void backUpComponentESM() throws BackupException {
+    public ComponentResult backUpComponentESM() throws BackupException {
 
         try {
             //validate the esm looks ok - just a basic check
             ImportExportUtilities.throwIfEsmNotPresent(esmHome);
         } catch (Exception e) {
-            throw new IllegalStateException(e.getMessage());
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, e.getMessage());
         }
 
         try {
-            //this is a BackupException as opposed to an Illegal state. The above throw if esm not present
-            //is an illegal state as this component shuoldn't be called if the esm is not installed
+            //this is a BackupException as the ESM is applicable for backup, but as it's running it cannot be
+            //backed up
             ImportExportUtilities.throwifEsmIsRunning();
         } catch (IllegalStateException e) {
             throw new BackupException(e.getMessage());
@@ -301,6 +330,7 @@ final class BackupImpl implements Backup {
                     + targetFile.getAbsolutePath()+"'";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
+            return new ComponentResult(ComponentResult.Result.SUCCESS);
         } catch (IOException e) {
             throw new BackupException("Cannot back up modular assertions: " + e.getMessage());
         }

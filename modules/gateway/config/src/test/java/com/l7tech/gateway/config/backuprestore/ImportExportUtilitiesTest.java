@@ -20,8 +20,6 @@ import java.util.Map;
 import java.util.Collections;
 
 import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.FileUtils;
 
 /**
  * Tests the ImportExportUtilitiesTest utility functions.
@@ -112,7 +110,7 @@ public class ImportExportUtilitiesTest {
         final String [] args = new String[]{"export","-image", "image.zip", "-ia", "-it", "mapping.xml"};
         final List<CommandLineOption> validOptions = new ArrayList<CommandLineOption>();
         validOptions.add(Exporter.IMAGE_PATH);
-        validOptions.add(Exporter.AUDIT);
+        validOptions.add(Exporter.IA_AUDIT_FLAG);
         validOptions.add(Exporter.MAPPING_PATH);
 
         final Map<String, String> params = ImportExportUtilities.getAndValidateCommandLineOptions(
@@ -140,7 +138,7 @@ public class ImportExportUtilitiesTest {
         final String [] args = new String[]{"export","-image", "-ia", "-it", "mapping.xml"};
         final List<CommandLineOption> validOptions = new ArrayList<CommandLineOption>();
         validOptions.add(Exporter.IMAGE_PATH);
-        validOptions.add(Exporter.AUDIT);
+        validOptions.add(Exporter.IA_AUDIT_FLAG);
         validOptions.add(Exporter.MAPPING_PATH);
 
         ImportExportUtilities.getAndValidateCommandLineOptions(args, validOptions,
@@ -156,7 +154,7 @@ public class ImportExportUtilitiesTest {
         final String [] args = new String[]{"export","-image", "image.zip", "-ia", "-it", "mapping.xml", "-unknown"};
         final List<CommandLineOption> validOptions = new ArrayList<CommandLineOption>();
         validOptions.add(Exporter.IMAGE_PATH);
-        validOptions.add(Exporter.AUDIT);
+        validOptions.add(Exporter.IA_AUDIT_FLAG);
         validOptions.add(Exporter.MAPPING_PATH);
 
         ImportExportUtilities.getAndValidateCommandLineOptions(args, validOptions,
@@ -174,7 +172,7 @@ public class ImportExportUtilitiesTest {
         final String [] args = new String[]{"export","-image", "image.zip", "-ia", "-it", "mapping.xml", "-p"};
         final List<CommandLineOption> validOptions = new ArrayList<CommandLineOption>();
         validOptions.add(Exporter.IMAGE_PATH);
-        validOptions.add(Exporter.AUDIT);
+        validOptions.add(Exporter.IA_AUDIT_FLAG);
 
         final List<CommandLineOption> ignoreOptions = new ArrayList<CommandLineOption>();
         ignoreOptions.add(Exporter.MAPPING_PATH);

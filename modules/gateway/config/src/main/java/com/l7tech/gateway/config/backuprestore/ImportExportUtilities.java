@@ -786,8 +786,9 @@ public class ImportExportUtilities {
      * @param isVerbose if true, verbose output will be written to the console
      * @param printStream if not null and isVerbose is true, each file copied will be written to the print stream
      * @throws IOException if any exception occurs while copying the files
+     * @return true if any files were copied
      */
-    public static void copyFiles(final File sourceDir,
+    public static boolean copyFiles(final File sourceDir,
                                  final File destinationDir,
                                  final FilenameFilter fileFilter,
                                  final boolean isVerbose,
@@ -805,6 +806,7 @@ public class ImportExportUtilities {
 
         final String [] filesToCopy = sourceDir.list(fileFilter);
 
+        boolean filesCopied = false;
         for ( final String filename : filesToCopy ) {
             final File file = new File(sourceDir, filename);
             if ( file.exists() && !file.isDirectory()) {
@@ -816,10 +818,13 @@ public class ImportExportUtilities {
                     logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 }
                 FileUtils.copyFile(file, destFile);
+                filesCopied = true;
                 final String msg = "File '" + file.getAbsolutePath()+"' copied to '" + destFile.getAbsolutePath()+"'";
                 logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
             }
         }
+
+        return filesCopied;
     }
 
     public static void copyDir(final File sourceDir, final File destDir) throws IOException {
