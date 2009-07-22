@@ -37,10 +37,11 @@ public class ServerNonSoapEncryptElementAssertionTest {
 
     @BeforeClass
     public static void setUpCert() throws Exception {
-        Pair<X509Certificate, PrivateKey> got = new TestCertificateGenerator().generateWithKey();
+        Pair<X509Certificate, PrivateKey> got = new TestCertificateGenerator().daysUntilExpiry(5000).generateWithKey();
         recipCert = got.left;
         recipPrivateKey = got.right;
         recipb64 = HexUtils.encodeBase64(recipCert.getEncoded());
+        logger.info("Recipient certificate PKCS#12 keystore: \n" + TestCertificateGenerator.convertToBase64Pkcs12(got.left, got.right));
     }
         
     @Test
@@ -177,5 +178,16 @@ public class ServerNonSoapEncryptElementAssertionTest {
         assertTrue(nodeList.getLength() == expectedLength);
         for (int i = 0; i < expectedLength; ++i)
             assertEquals("EncryptedData", nodeList.item(i).getLocalName());
+        assertWellFormed(doc);
+    }
+
+    private void assertWellFormed(Document doc) {
+        try {
+            XmlUtil.stringToDocument(XmlUtil.nodeToString(doc));
+        } catch (IOException e) {
+            throw (AssertionError)new AssertionError("IOException serializing and reparsing XML document: " + e.getMessage()).initCause(e);
+        } catch (SAXException e) {
+            throw (AssertionError)new AssertionError("XML document is not well-formed: " + e.getMessage()).initCause(e);
+        }
     }
 }

@@ -62,7 +62,6 @@ public class ServerNonSoapEncryptElementAssertion extends AbstractServerAssertio
     private static final SecureRandom random = new SecureRandom();
 
     private final Auditor auditor;
-    private final String[] variablesUsed;
     private final DOMXPath xpath;
     private final X509Certificate recipientCert;
 
@@ -72,7 +71,6 @@ public class ServerNonSoapEncryptElementAssertion extends AbstractServerAssertio
         super(assertion);
 
         this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
-        this.variablesUsed = assertion.getVariablesUsed();
         XpathExpression xpe = assertion.getXpathExpression();
         if (xpe == null || xpe.getExpression() == null)
             throw new InvalidXpathException("XPath expression not set");
@@ -215,6 +213,7 @@ public class ServerNonSoapEncryptElementAssertion extends AbstractServerAssertio
         final String xencNs = SoapUtil.XMLENC_NS;
         final String xenc = "xenc";
         Element encryptedData = ibmEncData.getOwnerDocument().createElementNS(xencNs, xenc + ":EncryptedData");
+        encryptedData.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:xenc", xencNs);
         ibmEncData.getParentNode().replaceChild(encryptedData, ibmEncData);
         Element encryptionMethod = XmlUtil.createAndAppendElementNS(encryptedData, "EncryptionMethod", xencNs, xenc);
         encryptionMethod.setAttribute("Algorithm", assertion.getXencAlgorithm());
