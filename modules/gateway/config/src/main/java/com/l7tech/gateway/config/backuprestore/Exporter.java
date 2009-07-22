@@ -348,8 +348,8 @@ public final class Exporter{
             try{
                 component.doBackup();
             }catch (Exception e) {
-                final String msg = "Component '" + component.getComponentType().getDescription()+ "' could not be " +
-                        "backed up due to: " + e.getMessage();
+                final String msg = "Component '" + component.getComponentType().getComponentName()+ "' could not be " +
+                        "backed up: " + e.getMessage();
                 if (isHaltOnFirstFailure) {
                     ImportExportUtilities.logAndPrintMessage(logger, Level.SEVERE, msg, isVerbose, printStream);
                     final String msg1 = "Halting backup as -halt option was supplied";
@@ -357,7 +357,7 @@ public final class Exporter{
                     throw e;
                 }
                 ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                failedComponents.add(component.getComponentType().getDescription());
+                failedComponents.add(component.getComponentType().getComponentName());
             }
         }
 

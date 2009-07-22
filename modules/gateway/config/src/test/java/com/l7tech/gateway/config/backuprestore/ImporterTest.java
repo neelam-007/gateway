@@ -414,7 +414,7 @@ public class ImporterTest {
             configFile.delete();
         }
 
-        restore.restoreComponentConfig(true, false, false);
+        restore.restoreComponentConfig(false, false);
 
         for(String fileName: ImportExportUtilities.CONFIG_FILES){
             final File configFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + fileName);
@@ -449,7 +449,7 @@ public class ImporterTest {
         }
 
         //true for migrate
-        restore.restoreComponentConfig(true, true, false);
+        restore.restoreComponentConfig(true, false);
 
         //node.properties should not exist
 
@@ -474,8 +474,8 @@ public class ImporterTest {
         final Restore restore =
                 BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out);
 
-        final Restore.Result result = restore.restoreComponentESM(true);
-        Assert.assertEquals("Incorrect result found", Restore.Result.SUCCESS, result);
+        final ComponentResult result = restore.restoreComponentESM();
+        Assert.assertEquals("Incorrect result found", ComponentResult.Result.SUCCESS, result.getResult());
 
     }
 }

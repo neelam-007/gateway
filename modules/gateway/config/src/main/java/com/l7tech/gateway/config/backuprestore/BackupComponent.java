@@ -19,5 +19,7 @@ interface BackupComponent<E extends Exception> extends SsgComponent{
 }
 
 interface RestoreComponent<E extends Exception> extends SsgComponent{
-    public void doRestore() throws E;
+    public ComponentResult doRestore() throws E;
 }
+
+

@@ -40,8 +40,8 @@ final class CommonCommandLineOptions {
             "modular assertion jars", false);
 
     /**
-     * The EM_OPTION should never go into ALL_COMPONENTS. This variable is used to determine if a selective
-     * backup or restore is being done. The -em never causes a selective backup / restore
+     * The ESM_OPTION should never go into ALL_COMPONENTS. This variable is used to determine if a selective
+     * backup or restore is being done. The -esm never causes a selective backup / restore
      */
     public static final CommandLineOption [] ALL_COMPONENTS = new CommandLineOption[]{OS_OPTION, CONFIG_OPTION,
             MAINDB_OPTION, AUDITS_OPTION, CA_OPTION, MA_OPTION};

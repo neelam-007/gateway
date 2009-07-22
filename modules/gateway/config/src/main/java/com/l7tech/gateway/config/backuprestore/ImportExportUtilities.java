@@ -251,8 +251,8 @@ public class ImportExportUtilities {
     protected enum ComponentType{
         OS("os", "Operating System files"),
         CONFIG("config", "SSG Config"),
-        MAINDB("maindb", "Main database backup sql (no audits)"),
-        AUDITS("audits", "Database audits"),
+        MAINDB("maindb", "Database backup and data excluding audit data"),
+        AUDITS("audits", "Database audit data"),
         CA("ca", "Custom Assertions"),
         MA("ma", "Modular Assertions"),
         VERSION("version", "SSG Version Information"),
@@ -705,7 +705,7 @@ public class ImportExportUtilities {
     public static void throwIfFileExists(final String fileName){
         if (fileName == null) throw new NullPointerException("fileName cannot be null");
         final File file = new File(fileName);
-        if(file.exists()) throw new IllegalArgumentException("file '" + fileName + "' should not exist");
+        if(file.exists()) throw new IllegalArgumentException("file '" + fileName + "' already exists");
     }
 
     /**

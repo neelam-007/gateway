@@ -45,6 +45,8 @@ public class BackupRestoreLauncher {
         //when noOutput is true, no System.out.println calls should happen, regardless of error conditions
         //this is for when cfgdaemon target is ran on system reboot, errors should still be logged
         final boolean noConsoleOutput = args[0].equalsIgnoreCase(CFGDAEMON_TYPE);
+        final String taskName = args[0].equalsIgnoreCase(IMPORT_TYPE) ?
+                "Restore" : args[0].equalsIgnoreCase(MIGRATE_TYPE) ? "Migrate" : "Backup";
         
         try {
             if (args[0].equalsIgnoreCase(IMPORT_TYPE) || args[0].equalsIgnoreCase(MIGRATE_TYPE)) {
@@ -60,20 +62,13 @@ public class BackupRestoreLauncher {
                 Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(argsToUse);
                 switch (result.getStatus()){
                     case SUCCESS:
-                        if(result.isWasMigrate()){
-                            System.out.println("\nMigrate of SecureSpan Gateway image completed with no errors");
-                        }else{
-                            System.out.println("\nRestore of SecureSpan Gateway image completed with no errors");
-                        }
+                        final String msg = "\n" + taskName+" completed with no errors";
+                        ImportExportUtilities.logAndPrintMajorMessage( logger, Level.INFO, msg, true, System.out);
                         break;
                     case FAILURE:
-                        if(result.isWasMigrate()){
-                            System.out.println("\nMigrate of SecureSpan Gateway image failed");
-                        }else{
-                            System.out.println("\nRestore of SecureSpan Gateway image failed");
-                        }
                         Exception e = result.getException();
-                        if(e != null) System.out.println(e.getMessage());
+                        final String msg1 = "\n" + taskName+" failed" + ((e != null) ? ": " + e.getMessage() : "");
+                        ImportExportUtilities.logAndPrintMajorMessage( logger, Level.SEVERE, msg1, true, System.out);
                         System.exit(1);
                         break;
                     case PARTIAL_SUCCESS:
@@ -97,16 +92,17 @@ public class BackupRestoreLauncher {
                 Exporter.BackupResult result = exporter.createBackupImage(args);
                 switch (result.getStatus()){
                     case SUCCESS:
-                        System.out.println("\nExport of SecureSpan Gateway image completed with no errors.");
+                        final String msg = "\nBackup completed with no errors";
+                        ImportExportUtilities.logAndPrintMajorMessage( logger, Level.INFO, msg, true, System.out);
                         break;
                     case FAILURE:
-                        System.out.println("\nExport of SecureSpan Gateway image failed.");
                         Exception e = result.getException();
-                        if(e != null) System.out.println(e.getMessage());
+                        final String msg1 = "\nBackup failed" + ((e != null) ? ": " + e.getMessage() : "");
+                        ImportExportUtilities.logAndPrintMajorMessage( logger, Level.SEVERE, msg1, true, System.out);
                         System.exit(1);
                         break;
                     case PARTIAL_SUCCESS:
-                        System.out.println("\nExport of SecureSpan Gateway image partially succeeded");
+                        System.out.println("\nBackup partially succeeded");
                         List<String> failedComponents = result.getFailedComponents();
                         for(String s: failedComponents ){
                             System.out.println("Failed component: " + s);
@@ -114,7 +110,7 @@ public class BackupRestoreLauncher {
                         System.exit(2);
                         break;
                     default:
-                        throw new RuntimeException("Unexpected response from export");
+                        throw new RuntimeException("Unexpected response from backup");
 
                 }
             } else if (args[0].equalsIgnoreCase(CFGDAEMON_TYPE)) {
@@ -131,24 +127,13 @@ public class BackupRestoreLauncher {
                 System.out.println(getUsage(args[0]));
             }
         } catch (InvalidProgramArgumentException e) {
-            String message = "Invalid argument due to '" + e.getMessage() + "'.";
+            String message = taskName+" invalid argument: " + e.getMessage() + "'";
             if (!noConsoleOutput) System.out.println(message);
             logger.log(Level.WARNING, message);
             if (!noConsoleOutput) System.out.println(getUsage(args[0]));
             System.exit(1);
-        } catch (IOException e) {
-            String message = "Error occurred due to '" + e.getMessage() + "'.";
-            if (!noConsoleOutput) System.out.println(message);
-            logger.log(Level.WARNING, message);
-            System.exit(1);
-        } catch (FatalException e) {
-            String message = "Import failed due to '" + e.getMessage() + "'.";
-            if (!noConsoleOutput) System.out.println(message);
-            logger.log(Level.WARNING, message);
-            System.exit(1);
         } catch (Exception e) {
-            //this catches all runtime Exceptions which can be thrown for Null pointers, Illegal States and Unsupported Ops
-            String message = "Import / Export failed due to '" + ExceptionUtils.getMessage(e,"Unknown error") + "'.";
+            String message = taskName+ " failed: " + ExceptionUtils.getMessage(e, "Unknown error");
             if (!noConsoleOutput) System.out.println(message);
             logger.log(Level.WARNING, message);
             System.exit(1);

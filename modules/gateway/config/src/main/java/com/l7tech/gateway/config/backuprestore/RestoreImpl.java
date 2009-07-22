@@ -117,16 +117,12 @@ final class RestoreImpl implements Restore{
 
     }
 
-    public Result restoreComponentCA(boolean isRequired) throws RestoreException {
+    public ComponentResult restoreComponentCA() throws RestoreException {
 
         final File imageCADir = image.getCAFolder();
         if(imageCADir == null){
             final String msg = "No ca folder found. No custom assertions or property files can be restored";
-            if(isRequired){
-                throw new RestoreException(msg);
-            }
-            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-            return Result.NOT_APPLICABLE;
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
 
         try {
@@ -149,18 +145,14 @@ final class RestoreImpl implements Restore{
             throw new RestoreException("Problem restoring custom assertion component: " + e.getMessage());
         }
 
-        return Result.SUCCESS;
+        return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
-    public Result restoreComponentMA(boolean isRequired) throws RestoreException {
+    public ComponentResult restoreComponentMA() throws RestoreException {
         final File imageMADir = image.getMAFolder();
         if(imageMADir == null){
             final String msg = "No ma folder found. No modular assertions can be restored";
-            if(isRequired){
-                throw new RestoreException(msg);
-            }
-            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-            return Result.NOT_APPLICABLE;
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
 
         try {
@@ -230,20 +222,15 @@ final class RestoreImpl implements Restore{
             throw new RestoreException("Problem restoring modular assertion component: " + e.getMessage());
         }
 
-        return Result.SUCCESS;
+        return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
-    public Result restoreComponentConfig(final boolean isRequired,
-                                         final boolean isMigrate,
-                                         final boolean ignoreNodeIdentity) throws RestoreException {
+    public ComponentResult restoreComponentConfig(final boolean isMigrate,
+                                                  final boolean ignoreNodeIdentity) throws RestoreException {
         final File imageConfigDir = image.getConfigFolder();
         if(imageConfigDir == null){
             final String msg = "No config folder found. No ssg configuration can be restored";
-            if(isRequired){
-                throw new RestoreException(msg);
-            }
-            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-            return Result.NOT_APPLICABLE;
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
 
         try {
@@ -304,42 +291,31 @@ final class RestoreImpl implements Restore{
             throw new RestoreException("Problem restoring config component: " + e.getMessage());
         }
         
-        return Result.SUCCESS;        
+        return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
-    public Result restoreComponentOS(boolean isRequired) throws RestoreException {
+    public ComponentResult restoreComponentOS() throws RestoreException {
 
         if (applianceHome.exists()) {
             //need to use the exclude file
             final File osFolder = image.getOSFolder();
             if(osConfigManager == null){
                 final String msg = "Operating System restore is not applicable for this host";
-                if(isRequired){
-                    throw new RestoreException(msg);
-                }
-                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                return Result.NOT_APPLICABLE;
-
+                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
             }else if(osFolder == null){
                 //no os backup in image
                 final String msg = "No Operating System backup found in image";
-                if(isRequired){
-                    throw new RestoreException(msg);
-                }
-                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                return Result.NOT_APPLICABLE;
+                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
             }
             osConfigManager.copyFilesToInternalFolderPriorToReboot(osFolder);
-            return Result.SUCCESS;
+            return new ComponentResult(ComponentResult.Result.SUCCESS);
         }else{
-            if(isRequired){
-                throw new RestoreException("No Operation System backup found in image");
-            }
-            return Result.NOT_APPLICABLE;
+            final String msg = "No Operating System backup found in image";
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
     }
 
-    public Result restoreComponentESM(boolean isRequired) throws RestoreException {
+    public ComponentResult restoreComponentESM() throws RestoreException {
         try {
             //validate the esm looks ok - just a basic check
             ImportExportUtilities.throwIfEsmNotPresent(esmHome);
@@ -358,11 +334,7 @@ final class RestoreImpl implements Restore{
         final File esmFolder = image.getESMFolder();
         if(esmFolder == null){
             final String msg = "No ESM backup found in image";
-            if(isRequired){
-                throw new RestoreException(msg);
-            }
-            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-            return Result.NOT_APPLICABLE;
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
 
         try {
@@ -401,50 +373,46 @@ final class RestoreImpl implements Restore{
             throw new RestoreException("Could not restore the ESM component: " + e.getMessage());
         }
         
-        return Result.SUCCESS;
+        return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
-    public Result restoreComponentAudits(final boolean isRequired, final boolean isMigate)
+    public ComponentResult restoreComponentAudits(final boolean isMigate)
             throws RestoreException {
         final File auditsFile = image.getAuditsBackupFile();
 
         //case when no db is configured
         if(this.dbRestorer== null) {
             //We have been asked to restore the audit database component. We cannot as no db is configured
+            String msg;
             if (auditsFile != null && image.getImageVersion() == BackupImage.ImageVersion.AFTER_FIVE_O &&
                     auditsFile.exists() && auditsFile.isFile()) {
                 //after 5.0 we can tell if the image contained audit data or not
-                String msg = "Ignoring audits backup as either the target database is remote " +
+                msg = "Ignoring audits backup as either the target database is remote " +
                         "or the configuration is invalid";
-                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, this.printStream);
             } else {
                 //5.0 or post 5.0 and audit data does not exist
-                String msg = "Cannot restore audits as no database is configured";
+                msg = "Cannot restore audits as no database is configured";
                 if (image.getImageVersion() == BackupImage.ImageVersion.FIVE_O) {
                     msg = msg + ". Image is 5.0 and may contain audit data, which has been ignored";
                 }
-                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
             }
-            return Result.NOT_APPLICABLE;
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
 
-        if(auditsFile == null || !auditsFile.exists() || !auditsFile.isFile()){
-            if(image.getImageVersion() == BackupImage.ImageVersion.AFTER_FIVE_O){
-                if(isRequired && !isMigate){
-                    throw new RestoreException("No audit backup found in image");
-                }
-            }else{
+        if (auditsFile == null || !auditsFile.exists() || !auditsFile.isFile()) {
+            if(isMigate){
+                //if it's a migrate, then it's ok that we don't have an audits file file
+                //this is a success case, as migrate will always specify -audits, but it may not be applicable
+                final String msg = "No audit data found in image";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                return new ComponentResult(ComponentResult.Result.SUCCESS);
+            } else if (image.getImageVersion() == BackupImage.ImageVersion.AFTER_FIVE_O) {
+                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, "No audit backup found in image");
+            } else {
                 //if this is 5.0 and there is no audit file, then there is also no db file!
                 //5.0 does not allow this
-                throw new RestoreException("No database backup found in the image");
+                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, "No database backup found in the image");
             }
-
-            //so this case is -> after 5.0 and isRequired is false
-            String msg = "No audit backup found in image";
-            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream );
-            //this is success, as we found no data and as it was not required, the component does not apply
-            //to the back up image
-            return Result.SUCCESS;
         }
 
         if(image.getImageVersion() == BackupImage.ImageVersion.FIVE_O){
@@ -464,13 +432,14 @@ final class RestoreImpl implements Restore{
                 final int index = startOfFile.indexOf("INSERT INTO audit_");
                 if(index == -1){
                     //see http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_Backup_Restore_Func_Spec#ssgmigrate.sh
-                    //to understand this requirement
-                    if(isRequired && !isMigate){
-                        throw new RestoreException("No audit backup found in image");
+                    //to understand this requirement - when isMigrate is true, missing audit data is ok
+                    final String msg = "No audit data found in image";
+                    if (isMigate) {
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                        return new ComponentResult(ComponentResult.Result.SUCCESS, msg);
+                    } else {
+                        return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
                     }
-                    final String msg = "No audit backup in image";
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, this.printStream);
-                    return Result.SUCCESS;
                 }
             } catch (UnsupportedEncodingException e) {
                 throw new RestoreException("Could not check the 5.0 backup for audits due to data problem: "
@@ -498,46 +467,30 @@ final class RestoreImpl implements Restore{
             throw new RestoreException("Could not restore database audits: " + e.getMessage());
         }
 
-        return Result.SUCCESS;
+        return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
-    public Result restoreComponentMainDb(final boolean isRequired,
-                                         final boolean isMigrate,
-                                         final boolean newDatabaseIsRequired,
-                                         final String pathToMappingFile,
-                                         final PropertiesConfiguration propertiesConfiguration,
-                                         final File ompDatFile) throws RestoreException {
+    public ComponentResult restoreComponentMainDb(final boolean isMigrate,
+                                                  final boolean newDatabaseIsRequired,
+                                                  final String pathToMappingFile) throws RestoreException {
         if (this.dbRestorer == null) {
-            if (isRequired) {
-                throw new RestoreException("No database backup found in image");
-            }
             //We have been asked to restore the main database component. We cannot as it is not local
             //or the system property to bypass this has not been set
             final File backupFile = new File(image.getMainDbBackupFolder(), BackupImage.MAINDB_BACKUP_FILENAME);
             if (backupFile.exists() && !backupFile.isDirectory()) {
                 final String msg = "Ignoring main database backup as either the target database is remote " +
                         "or the configuration is invalid";
-                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
             } else {
-                //this is a warning as this code should not have been called knowing the backup is not applicable
-                String msg = "Image contains no audit information and this instance is not configured to restore " +
-                        "any database components";
-                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                String msg = "No database backup found in image";
+                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
             }
-            return Result.NOT_APPLICABLE;
         }
 
         final File dbFolder = image.getMainDbBackupFolder();
         if (dbFolder == null || !dbFolder.exists() || !dbFolder.isDirectory()) {
-            if (isRequired) {
-                throw new RestoreException("No database backup found in image");
-            } else {
-                String msg = "No database backup found in image";
-                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                //this is success, as we found no data and as it was not required, the component does not apply
-                //to the back up image
-                return Result.SUCCESS;
-            }
+            final String msg = "No database backup found in image";
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
 
         final File dbSql = new File(dbFolder, BackupImage.MAINDB_BACKUP_FILENAME);
@@ -648,10 +601,10 @@ final class RestoreImpl implements Restore{
                     ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
                 } else {
                     try {
-                        if(osConfigManager == null){
+                        if (osConfigManager == null) {
                             final String msg = "my.cnf will not be restored as the Appliance is not installed";
-                            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING , msg, isVerbose, printStream);
-                        }else{
+                            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                        } else {
                             osConfigManager.copyFileToInternalFolder(myCnf);
                         }
                     } catch (IOException e) {
@@ -662,26 +615,26 @@ final class RestoreImpl implements Restore{
             }
         }
 
-        return Restore.Result.SUCCESS;
+        return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
-    public Result restoreNodeIdentity(PropertiesConfiguration propertiesConfiguration,
+    public ComponentResult restoreNodeIdentity(PropertiesConfiguration propertiesConfiguration,
                                         final File ompDatFile) throws RestoreException {
 
         if(ompDatFile != null && propertiesConfiguration == null)
             throw new IllegalArgumentException("ompDatFile cannot be null when propertiesConfiguration is not also null");
 
         try {
-            if(propertiesConfiguration != null){
+            if (propertiesConfiguration != null) {
                 propertiesConfiguration.save(new File(ssgConfigDir, ImportExportUtilities.NODE_PROPERTIES));
                 ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated restore host's node.properties file",
                         isVerbose, printStream);
             }
 
-            if(ompDatFile != null){
+            if (ompDatFile != null) {
                 final File ompOnTarget = new File(ssgConfigDir, ImportExportUtilities.OMP_DAT);
-                if(ompOnTarget.exists() && !ompOnTarget.delete())
-                    throw new RestoreException("Could not delete file from target'" + ompOnTarget.getAbsolutePath() +"'");
+                if (ompOnTarget.exists() && !ompOnTarget.delete())
+                    throw new RestoreException("Could not delete file from target'" + ompOnTarget.getAbsolutePath() + "'");
                 try {
                     FileUtils.copyFile(ompDatFile, ompOnTarget);
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated restore host's omp.dat file", isVerbose,
@@ -691,7 +644,7 @@ final class RestoreImpl implements Restore{
                 }
             }
 
-            return Result.SUCCESS;
+            return new ComponentResult(ComponentResult.Result.SUCCESS);
         } catch (ConfigurationException e) {
             throw new RestoreException("Could not save node.properties: " + e.getMessage());
         }

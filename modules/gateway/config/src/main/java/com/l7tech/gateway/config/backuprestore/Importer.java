@@ -333,17 +333,25 @@ public final class Importer{
         final List<RestoreComponent<? extends Exception>> allComponents = getComponentsForRestore(mappingFile);
         for (RestoreComponent<? extends Exception> component : allComponents) {
             try {
-                component.doRestore();
+                final ComponentResult result = component.doRestore();
+                if(isSelectiveRestore && result.getResult() == ComponentResult.Result.NOT_APPLICABLE){
+                    throw new Restore.RestoreException(result.getNotApplicableMessage());
+                }else if (result.getResult() == ComponentResult.Result.NOT_APPLICABLE) {
+                    final String msg1 = "Not applicable for this backup image";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
+                }
             } catch (Exception e) {
+                final String msg1 =  "Could not restore component '" +
+                        component.getComponentType().getComponentName() + "': " + e.getMessage();
+
                 if (isHaltOnFirstFailure) {
-                    logger.log(Level.SEVERE, "Could not restore component " +
-                            component.getComponentType().getDescription() + " due to exception: " + e.getMessage());
-                    logger.log(Level.SEVERE, "Halting restore as -halt option was supplied");
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.SEVERE, msg1, isVerbose, printStream);
+                    final String haltMsg = "Halting restore as -halt option was supplied";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.SEVERE, haltMsg, isVerbose, printStream);
                     throw e;
                 }
-                logger.log(Level.WARNING, "Could not restore component " +
-                        component.getComponentType().getDescription() + " due to exception: " + e.getMessage());
-                failedComponents.add(component.getComponentType().getDescription());
+                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg1, isVerbose, printStream);
+                failedComponents.add(component.getComponentType().getComponentName());
             }
         }
     }
@@ -873,14 +881,14 @@ public final class Importer{
         //at the end the list of components is filtered, so if isSelectiveRestore is true, then the components
         //are filtered, and the remaining components are 'required'
         componentList.add(new RestoreComponent<Exception>(){
-            public void doRestore() throws Exception {
+            public ComponentResult doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 //if no db component is being restored, then we need to allow the config restore to restore
                 //the node identity if found - node.properties and omp.dat
                 //if the db is part of the restore, then the restoreNodeIdentity task will ensure that node.properties
                 //is written to the restore host if it's applicable
-                restore.restoreComponentConfig(isSelectiveRestore, isMigrate, isDbComponent);
+                return restore.restoreComponentConfig(isMigrate, isDbComponent);
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -892,12 +900,10 @@ public final class Importer{
         //by doing this we can easily log when a backup included a db, but we decided to leave it alone, because
         //it was not local for example
         componentList.add(new RestoreComponent<Exception>(){
-            public void doRestore() throws Exception {
+            public ComponentResult doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                //if updateNodeProperties is true, then nodePropertyConfig is not null - this is an invarient
-                restore.restoreComponentMainDb(isSelectiveRestore, isMigrate, canCreateNewDb, mappingFile,
-                        nodePropertyConfig, ompDatToMatchNodePropertyConfig);
+                return restore.restoreComponentMainDb(isMigrate, canCreateNewDb, mappingFile);
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -906,10 +912,10 @@ public final class Importer{
         });
 
         componentList.add(new RestoreComponent<Exception>(){
-            public void doRestore() throws Exception {
+            public ComponentResult doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                restore.restoreComponentAudits(isSelectiveRestore, isMigrate);
+                return restore.restoreComponentAudits(isMigrate);
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -919,10 +925,10 @@ public final class Importer{
 
         //os files
         componentList.add(new RestoreComponent<Exception>(){
-            public void doRestore() throws Exception {
+            public ComponentResult doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                restore.restoreComponentOS(isSelectiveRestore);
+                return restore.restoreComponentOS();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -932,10 +938,10 @@ public final class Importer{
 
         //custom assertion files and jars
         componentList.add(new RestoreComponent<Exception>(){
-            public void doRestore() throws Exception {
+            public ComponentResult doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                restore.restoreComponentCA(isSelectiveRestore);
+                return restore.restoreComponentCA();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -945,10 +951,10 @@ public final class Importer{
 
         //modular assertion aar files
         componentList.add(new RestoreComponent<Exception>(){
-            public void doRestore() throws Exception {
+            public ComponentResult doRestore() throws Exception {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                restore.restoreComponentMA(isSelectiveRestore);
+                return restore.restoreComponentMA();
             }
 
             public ImportExportUtilities.ComponentType getComponentType() {
@@ -959,10 +965,10 @@ public final class Importer{
         //Check for -esm, we don't add this by default, only when it's explicitly asked for
         if(programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())){
             componentList.add(new RestoreComponent<Exception>(){
-                public void doRestore() throws Exception {
+                public ComponentResult doRestore() throws Exception {
                     final String msg = "Restoring component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                    restore.restoreComponentESM(isSelectiveRestore);
+                    return restore.restoreComponentESM();
                 }
 
                 public ImportExportUtilities.ComponentType getComponentType() {
@@ -989,12 +995,12 @@ public final class Importer{
         //restore the node identity when we know it has been ignored by config restore
         if(isDbComponent){
             returnList.add(new RestoreComponent<Exception>(){
-                public void doRestore() throws Exception {
+                public ComponentResult doRestore() throws Exception {
                     final String msg = "Restoring component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
                     //both of these can be null or ompDatToMatchNodePropertyConfig can be null
-                    restore.restoreNodeIdentity(nodePropertyConfig, ompDatToMatchNodePropertyConfig);
+                    return restore.restoreNodeIdentity(nodePropertyConfig, ompDatToMatchNodePropertyConfig);
                 }
 
                 public ImportExportUtilities.ComponentType getComponentType() {
