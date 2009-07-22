@@ -296,8 +296,6 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             Set<ConstantPolicyModule> policyModules = new HashSet<ConstantPolicyModule>();
             policyModules.add(policyModule);
             policyFinder.setModules(policyModules);
-        } catch (IOException e) {
-            throw new InvalidPolicyException("Error processing XACML policy after variable expansion '" + ExceptionUtils.getMessage(e) + "'.", e);
         } catch (SAXException e) {
             throw new InvalidPolicyException("Invalid XACML policy after variable expansion '" + ExceptionUtils.getMessage(e) + "'.", e);
         } catch (ParsingException e) {

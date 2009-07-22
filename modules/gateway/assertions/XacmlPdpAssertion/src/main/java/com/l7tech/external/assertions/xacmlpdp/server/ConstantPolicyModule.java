@@ -5,6 +5,7 @@ import com.sun.xacml.finder.PolicyFinder;
 import com.sun.xacml.finder.PolicyFinderResult;
 import com.sun.xacml.*;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.ExceptionUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -23,10 +24,18 @@ class ConstantPolicyModule extends PolicyFinderModule {
     private final Policy policy;
     private final boolean policyMatchesAllRequests;
 
-    public ConstantPolicyModule(String policyString) throws ParsingException, IOException, SAXException {
-        policy = Policy.getInstance(XmlUtil.parse(new ByteArrayInputStream(policyString.getBytes())).getDocumentElement());
+    public ConstantPolicyModule( final String policyString ) throws ParsingException, SAXException {
+        policy = buildPolicy( policyString );
         Target t = policy.getTarget();
         policyMatchesAllRequests = t==null || (t.getActions() == null && t.getSubjects() == null && areResourcesEmtpy(t.getResources()));
+    }
+
+    private Policy buildPolicy( final String policyString ) throws ParsingException, SAXException {
+        try {
+            return Policy.getInstance(XmlUtil.parse(policyString).getDocumentElement());
+        } catch ( IllegalArgumentException iae ) {
+            throw new ParsingException(ExceptionUtils.getMessage(iae), iae);    
+        }
     }
 
     private boolean areResourcesEmtpy(List resources){
