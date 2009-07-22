@@ -332,7 +332,7 @@ final class BackupImpl implements Backup {
 
             return new ComponentResult(ComponentResult.Result.SUCCESS);
         } catch (IOException e) {
-            throw new BackupException("Cannot back up modular assertions: " + e.getMessage());
+            throw new BackupException("Cannot back up the ESM: " + e.getMessage());
         }
     }
 

@@ -370,27 +370,18 @@ public final class Exporter{
 
     /**
      * <p>
-     * createBackupImage() promises to do a non fail fast backup. This means that we will try and back up each applicable
-     * component individually and independently of others. As each method in the Backup interface , this is a
-     * convenience method to wrap each component to be backed up in a BackupComponent<? extends Exception> and to
-     * return them in a List, which can then simply be iterated over with a very simple and clean try / catch structure.
+     * createBackupImage() does a non fail fast backup by default, unless -halt is supplied.
+     * This means that we will try and back up each applicable
+     * component individually and independently of others.
      * </p>
      *
      * <p>
      * The returned data structure is a List containing BackupComponent. A BackupComponent can tell you what component
-     * it represents, as it's nice to be able to report in the logs at a higher level, which
-     * component failed to back up. Each component can define any Exception it needs to throw
+     * it represents
      * </p>
      *
      * <p>
-     * When this function is used from performBackupSteps we will not take action based on specific subclasses of
-     * Exception. All we care about from providing a non fail fast backup is that we can catch any exception that happens
-     * when backing up a component, and then be able to proceed onto the next.
-     * </p>
-     *
-     * <p>
-     * The components returned are either all applicable for a full backup (e.g. if appliance then os, if local db, then
-     * db) however if any selective components were requrested via the program parameters, then the returned Map ONLY
+     * If any selective components were requested via the program parameters, then the returned Map only
      * contains the requested components 
      * </p>
      * @param mappingFile should the db compoment backup create a mapping file? Can be null if not required
