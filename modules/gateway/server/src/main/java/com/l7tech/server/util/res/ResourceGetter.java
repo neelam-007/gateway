@@ -82,6 +82,7 @@ public abstract class ResourceGetter<R> {
     /** Thrown if there is an error while parsing an external resource. */
     public static class ResourceParseException extends UrlResourceException {
         public ResourceParseException(Throwable cause, String url) { super(cause, url); }
+        public ResourceParseException(String message, Throwable cause, String url) { super(message, cause, url); }
     }
 
     public static class UrlNotFoundException extends Exception {

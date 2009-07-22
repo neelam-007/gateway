@@ -34,7 +34,9 @@ class ConstantPolicyModule extends PolicyFinderModule {
         try {
             return Policy.getInstance(XmlUtil.parse(policyString).getDocumentElement());
         } catch ( IllegalArgumentException iae ) {
-            throw new ParsingException(ExceptionUtils.getMessage(iae), iae);    
+            throw new ParsingException("Invalid XACML policy '"+ ExceptionUtils.getMessage(iae) + "'", iae);    
+        } catch ( NullPointerException npe ) {
+            throw new ParsingException("Invalid XACML policy", npe);
         }
     }
 

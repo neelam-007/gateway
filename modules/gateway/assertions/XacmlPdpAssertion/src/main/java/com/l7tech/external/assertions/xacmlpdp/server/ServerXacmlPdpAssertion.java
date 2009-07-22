@@ -127,7 +127,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                 throw spe;
             } else {
                 logger.warning( "Error parsing XACML policy '"+ExceptionUtils.getMessage( pe )+"'." );
-                resourceGetter = ResourceGetter.createErrorResourceGetter( new ResourceParseException(pe, "static") );
+                resourceGetter = ResourceGetter.createErrorResourceGetter( new ResourceParseException(ExceptionUtils.getMessage( pe ), pe, "static") );
             }
         }
         this.resourceGetter = resourceGetter;
