@@ -45,16 +45,20 @@ class SingleUrlResourceGetter<R> extends UrlResourceGetter<R> {
         }
     }
 
+    @Override
     public void close() {
         // Nothing we can do -- userObject(s) may be in use
     }
 
+    @Override
     public R getResource(ElementCursor message, Map vars) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
         String actualUrl = vars == null ? url : ExpandVariables.process(url, vars, audit);
         try {
             return fetchObject(actualUrl);
         } catch (ParseException e) {
             throw new ResourceParseException(e, actualUrl);
+        } catch (IOException e) {
+            throw new ResourceIOException(e, actualUrl);
         }
     }
 }

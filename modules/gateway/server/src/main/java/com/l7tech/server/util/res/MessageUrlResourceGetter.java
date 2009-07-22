@@ -41,10 +41,12 @@ class MessageUrlResourceGetter<R> extends UrlResourceGetter<R> {
         this.urlWhitelist = ri.makeUrlPatterns();
     }
 
+    @Override
     public void close() {
         // Nothing we can do -- userObject(s) may be in use
     }
 
+    @Override
     public R getResource(ElementCursor message, Map vars)
             throws IOException, MalformedResourceUrlException, UrlNotPermittedException,
             ResourceIOException, InvalidMessageException, ResourceParseException, GeneralSecurityException, UrlNotFoundException
@@ -67,6 +69,8 @@ class MessageUrlResourceGetter<R> extends UrlResourceGetter<R> {
             return fetchObject(url);
         } catch (ParseException e) {
             throw new ResourceParseException(e, url);
+        } catch (IOException e) {
+            throw new ResourceIOException(e, url);
         }
     }
 }
