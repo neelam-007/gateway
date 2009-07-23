@@ -180,13 +180,13 @@ public final class Importer{
      * @throws InvalidProgramArgumentException
      * @throws BackupRestoreLauncher.FatalException
      * @throws IOException
-     * @throws BackupImage.InvalidBackupImage
+     * @throws BackupImage.InvalidBackupImageException
      */
     public RestoreMigrateResult restoreOrMigrateBackupImage(final String [] args)
             throws InvalidProgramArgumentException,
             BackupRestoreLauncher.FatalException,
             IOException,
-            BackupImage.InvalidBackupImage, BackupImage.BackupImageException {
+            BackupImage.InvalidBackupImageException, BackupImage.BackupImageException {
 
         //determine what we are doing - restore or migrate?
         //do this by validating the args with all possible options
@@ -209,7 +209,7 @@ public final class Importer{
     }
 
     private RestoreMigrateResult performMigrate(final String [] args) throws InvalidProgramArgumentException,
-            IOException, BackupImage.InvalidBackupImage {
+            IOException, BackupImage.InvalidBackupImageException {
         //All restore options are valid for migrate, apart from ftp options.
         //Remember that ssgmigrate.sh gets translated into ssgrestore.sh
         //with a migrate capability. Therefore here we are actually validating ssgrestore.sh parameters
@@ -263,7 +263,7 @@ public final class Importer{
     }
 
     private RestoreMigrateResult performRestore(final String [] args) throws InvalidProgramArgumentException,
-            IOException, FatalException, BackupImage.InvalidBackupImage, BackupImage.BackupImageException {
+            IOException, FatalException, BackupImage.InvalidBackupImageException, BackupImage.BackupImageException {
         final List<CommandLineOption> validArgList = getRestoreOptionsWithDb();
         //make sure no unexpected arguments were supplied
         ImportExportUtilities.softArgumentValidation(args, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));

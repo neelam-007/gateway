@@ -54,15 +54,15 @@ public final class BackupImage {
      */
     static final String PATH_TO_MY_CNF = "/etc/"+ MY_CNF;
 
-    public static class InvalidBackupImage extends Exception{
-        public InvalidBackupImage(String message) {
+    public static class InvalidBackupImageException extends Exception{
+        public InvalidBackupImageException(String message) {
             super(message);
         }
     }
     
     public BackupImage(final String imageName,
                         final PrintStream printStream,
-                        final boolean isVerbose) throws IOException, InvalidBackupImage {
+                        final boolean isVerbose) throws IOException, InvalidBackupImageException {
         if(imageName == null) throw new NullPointerException("image cannot be null");
         if(imageName.trim().isEmpty()) throw new IllegalArgumentException("image cannot be the emtpy string");
 
@@ -84,7 +84,7 @@ public final class BackupImage {
                         final String imageNameAndPath,
                         final PrintStream printStream,
                         final boolean isVerbose)
-            throws IOException, InvalidBackupImage, BackupImageException {
+            throws IOException, InvalidBackupImageException, BackupImageException {
         if(ftpConfig == null) throw new NullPointerException("ftpConfig cannot be null");
         if(imageNameAndPath == null) throw new NullPointerException("image cannot be null");
         if(imageNameAndPath.trim().isEmpty()) throw new IllegalArgumentException("image cannot be the emtpy string");
@@ -134,7 +134,7 @@ public final class BackupImage {
     /**
      * What type of image file is it?
      */
-    private ImageVersion unzipAndDetermineVersion() throws IOException, InvalidBackupImage {
+    private ImageVersion unzipAndDetermineVersion() throws IOException, InvalidBackupImageException {
         final String msg = "Uncompressing image to temporary directory " + tempDirectory;
         ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
@@ -148,28 +148,33 @@ public final class BackupImage {
         final File versionFile = new File(tempDirectory, ImportExportUtilities.ComponentType.VERSION.getComponentName());
         if(!versionFile.exists() || !versionFile.isFile()){
             //version file can never be missing - invalid backup image
-            throw new InvalidBackupImage("Invalid backup image. Version file '"+
+            throw new InvalidBackupImageException("Invalid backup image. Version file '"+
                     versionFile.getAbsolutePath()+"' not found");
         }
 
         FileInputStream versionStream = null;
-        try{
+        String version = null;
+        try {
             versionStream = new FileInputStream(versionFile);
-            final byte [] bytes = IOUtils.slurpStream(new FileInputStream(versionFile), 50);//should just contain 5.0 or 5.1
-            final String version = new String(bytes);
-            final String [] parts = version.split("\\.");//need to escape the . so it's treated literally
-            if(parts.length < 2)
-                throw new InvalidBackupImage("Invalid version number '"+version+"' found in version file ");
+            final byte[] bytes = IOUtils.slurpStream(new FileInputStream(versionFile), 50);//should just contain 5.0 or 5.1
+            version = new String(bytes);
+            final String[] parts = version.split("\\.");//need to escape the . so it's treated literally
+            if (parts.length < 2)
+                throw new InvalidBackupImageException("Invalid version number '" + version + "' found in version file ");
 
-            if(Integer.parseInt(parts[0]) < 5) throw new InvalidBackupImage("Unsupported version found '"+version+"'"); 
+            if (Integer.parseInt(parts[0]) < 5)
+                throw new InvalidBackupImageException("Unsupported version found '" + version + "'");
 
-            if(Integer.parseInt(parts[1]) > 0){
+            if (Integer.parseInt(parts[1]) > 0) {
                 return ImageVersion.AFTER_FIVE_O;
-            }else{
+            } else {
                 return ImageVersion.FIVE_O;
             }
+        } catch (NumberFormatException nfe) {
+            throw new InvalidBackupImageException("Version number found in image is invalid" +
+                    ((version != null)? ": '" + version.trim() + "'" : "" ));
 
-        }finally{
+        } finally {
             ResourceUtils.closeQuietly(versionStream);
         }
     }
