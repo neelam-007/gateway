@@ -30,7 +30,7 @@ final class CommonCommandLineOptions {
 
     public static final CommandLineOption AUDITS_OPTION =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.AUDITS.getComponentName(),
-            "database audits", false);
+            "database audits (requires " + MAINDB_OPTION.getName()+")", false);
 
     public static final CommandLineOption CA_OPTION = new CommandLineOption("-"+ ImportExportUtilities.ComponentType.CA.getComponentName(),
             "custom assertion jars and property files", false);

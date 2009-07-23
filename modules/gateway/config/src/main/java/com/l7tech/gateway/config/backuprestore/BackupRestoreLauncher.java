@@ -127,7 +127,7 @@ public class BackupRestoreLauncher {
                 System.out.println(getUsage(args[0]));
             }
         } catch (InvalidProgramArgumentException e) {
-            String message = taskName+" invalid argument: " + e.getMessage() + "'";
+            String message = taskName + " invalid argument: " + e.getMessage();
             if (!noConsoleOutput) System.out.println(message);
             logger.log(Level.WARNING, message);
             if (!noConsoleOutput) System.out.println(getUsage(args[0]));
@@ -166,7 +166,7 @@ public class BackupRestoreLauncher {
                 try {
                     if (in != null) in.close();
                 } catch (IOException e) { // should not happen
-                    System.err.println("cannot close logging properties input stream " + e.getMessage());
+                    System.err.println("Cannot close logging properties input stream " + e.getMessage());
                 }
             }
         } else {

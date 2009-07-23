@@ -218,7 +218,7 @@ public final class Exporter{
                 ImportExportUtilities.getAndValidateCommandLineOptions(args,
                         validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), true, printStream);
 
-        validateProgramParameters(programFlagsAndValues);
+        validateProgramParameters();
         final boolean usingFtp = ImportExportUtilities.checkAndValidateFtpParams(programFlagsAndValues);
 
         //overwrite the supplied image name with a unique name based on it
@@ -255,7 +255,7 @@ public final class Exporter{
         try {
             final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.getName());
             performBackupSteps(mappingFile, backup);
-        } catch(Exception e){
+        } catch(Backup.BackupException e){
             return new BackupResult(null, BackupResult.Status.FAILURE, null, e);
         } finally {
             backup.deleteTemporaryDirectory();
@@ -337,7 +337,7 @@ public final class Exporter{
      * its not possible to ftp the newly created image
      */
     private void performBackupSteps(final String mappingFile, final Backup backup)
-            throws Exception {
+            throws Backup.BackupException, IOException {
 
         final List<BackupComponent> compsToBackup =
                 getComponentsForBackup(mappingFile, backup);
@@ -345,13 +345,13 @@ public final class Exporter{
         for(BackupComponent component: compsToBackup){
             try{
                 final ComponentResult result = component.doBackup();
-                if(isSelectiveBackup && result.getResult() == ComponentResult.Result.NOT_APPLICABLE){
-                    throw new Restore.RestoreException(result.getNotApplicableMessage());
+                if(isSelectiveBackup && result.getResult() == ComponentResult.Result.NOT_APPLICABLE) {
+                    throw new Backup.BackupException(result.getNotApplicableMessage());
                 }else if (result.getResult() == ComponentResult.Result.NOT_APPLICABLE) {
                     final String msg1 = "Not applicable for this host";
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
                 }
-            }catch (Exception e) {
+            }catch (Backup.BackupException e) {
                 final String msg = "Component '" + component.getComponentType().getComponentName()+ "' could not be " +
                         "backed up: " + e.getMessage();
                 if (isHaltOnFirstFailure) {
@@ -535,19 +535,18 @@ public final class Exporter{
      * Validate all program arguments. This method will validate all required params are met, and that any which expect
      * a value recieve it.
      * Checks for -v parameter, if found sets verbose = true
-     * @param args The name value pair map of each argument to it's value, if a vaule exists
      * @throws IOException for arguments which are files, they are checked to see if the exist, which may cause an IOException
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException if any program params are invalid
      */
-    private void validateProgramParameters(final Map<String, String> args)
+    private void validateProgramParameters()
             throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
         //image option must be specified
-        if (!args.containsKey(IMAGE_PATH.getName())) {
+        if (!programFlagsAndValues.containsKey(IMAGE_PATH.getName())) {
             throw new InvalidProgramArgumentException("missing option " + IMAGE_PATH.getName() + ", required for exporting image");
         } 
 
         //check if ftp requested
-        ImportExportUtilities.checkAndValidateFtpParams(args);
+        ImportExportUtilities.checkAndValidateFtpParams(programFlagsAndValues);
 
         //check if node.properties file exists
         final File configDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
@@ -578,12 +577,21 @@ public final class Exporter{
         }
 
         //will we use isVerbose output?
-        if(args.containsKey(CommonCommandLineOptions.VERBOSE.getName())) isVerbose = true;
+        if(programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName())) isVerbose = true;
 
-        if(args.containsKey(CommonCommandLineOptions.HALT_ON_FIRST_FAILURE.getName())) isHaltOnFirstFailure = true;
+        if(programFlagsAndValues.containsKey(CommonCommandLineOptions.HALT_ON_FIRST_FAILURE.getName())) isHaltOnFirstFailure = true;
 
         //determine if we are doing a selective backup
-        isSelectiveBackup = ImportExportUtilities.isSelective(args);
+        isSelectiveBackup = ImportExportUtilities.isSelective(programFlagsAndValues);
+
+        if(isSelectiveBackup){
+            //ensure that we are not being asked to backup audits without the maindb
+            final boolean auditsOnly = !programFlagsAndValues.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
+                    && programFlagsAndValues.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
+            if(auditsOnly){
+                throw new InvalidProgramArgumentException("Cannot backup -audits without -maindb");
+            }
+        }
 
         //the decision to back up audits can come from the -ia flag or from the audits flag
         //-ia means backup audits with a full backup

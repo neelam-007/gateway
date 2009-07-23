@@ -186,7 +186,7 @@ public final class Importer{
             throws InvalidProgramArgumentException,
             BackupRestoreLauncher.FatalException,
             IOException,
-            BackupImage.InvalidBackupImageException, BackupImage.BackupImageException {
+            BackupImage.InvalidBackupImageException, BackupImage.BackupImageException, ConfigurationException {
 
         //determine what we are doing - restore or migrate?
         //do this by validating the args with all possible options
@@ -263,7 +263,7 @@ public final class Importer{
     }
 
     private RestoreMigrateResult performRestore(final String [] args) throws InvalidProgramArgumentException,
-            IOException, FatalException, BackupImage.InvalidBackupImageException, BackupImage.BackupImageException {
+            IOException, FatalException, BackupImage.InvalidBackupImageException, BackupImage.BackupImageException, ConfigurationException {
         final List<CommandLineOption> validArgList = getRestoreOptionsWithDb();
         //make sure no unexpected arguments were supplied
         ImportExportUtilities.softArgumentValidation(args, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
@@ -313,7 +313,7 @@ public final class Importer{
             //build list of components and filter appropriately
             performRestoreSteps();
 
-        } catch (Exception e) {
+        } catch (Restore.RestoreException e) {
             return new RestoreMigrateResult(false, RestoreMigrateResult.Status.FAILURE, null, e);
         } finally {
             if(backupImage != null) backupImage.removeTempDirectory();
@@ -330,7 +330,7 @@ public final class Importer{
      * Carry out all restore / migrate steps. Manages the -halt option
      * @throws Exception
      */
-    private void performRestoreSteps() throws Exception {
+    private void performRestoreSteps() throws Restore.RestoreException {
         final String msg = "Performing " + ((isMigrate) ? "migrate" : "restore") + " ...";
         ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
         
@@ -345,7 +345,7 @@ public final class Importer{
                     final String msg1 = "Not applicable for this backup image";
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
                 }
-            } catch (Exception e) {
+            } catch (Restore.RestoreException e) {
                 final String msg1 =  "Could not restore component '" +
                         component.getComponentType().getComponentName() + "': " + e.getMessage();
 
