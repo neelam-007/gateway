@@ -37,6 +37,8 @@ public final class Importer{
     // importer options
     static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image",
             "location of image file locally to restore, or on ftp host if -ftp* options are used", true);
+    static final CommandLineOption IMAGE_PATH_MIGRATE = new CommandLineOption("-image",
+            "location of image file to migrate", true);
     static final CommandLineOption MAPPING_PATH = new CommandLineOption("-mapping",
             "location of the mapping template file", true);
     static final CommandLineOption DB_HOST_NAME = new CommandLineOption("-dbh", "database host name", true);
@@ -53,7 +55,7 @@ public final class Importer{
 
     static final CommandLineOption CONFIG_ONLY =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
-                    "only restore configuration files, no database restore", false);
+                    "only migrate configuration files, no database migrate", false);
     static final CommandLineOption CLUSTER_PASSPHRASE =
             new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database", true);
     static final CommandLineOption GATEWAY_DB_USERNAME =
@@ -64,7 +66,7 @@ public final class Importer{
     /**
      * Note this doesn't list MIGRATE. for ssgmigrate.sh, MIGRATE is an ignored option
      */
-    static final CommandLineOption[] ALL_MIGRATE_OPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
+    static final CommandLineOption[] ALL_MIGRATE_OPTIONS = {IMAGE_PATH_MIGRATE, MAPPING_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
             DB_HOST_NAME, DB_NAME, CONFIG_ONLY, OS_OVERWRITE, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD,
             CREATE_NEW_DB};
 
@@ -209,7 +211,7 @@ public final class Importer{
     }
 
     private RestoreMigrateResult performMigrate(final String [] args) throws InvalidProgramArgumentException,
-            IOException, BackupImage.InvalidBackupImageException {
+            IOException, BackupImage.InvalidBackupImageException, ConfigurationException {
         //All restore options are valid for migrate, apart from ftp options.
         //Remember that ssgmigrate.sh gets translated into ssgrestore.sh
         //with a migrate capability. Therefore here we are actually validating ssgrestore.sh parameters
@@ -249,7 +251,7 @@ public final class Importer{
             //build list of components and filter appropriately
             performRestoreSteps();
 
-        } catch (Exception e) {
+        } catch (Restore.RestoreException e) {
             return new RestoreMigrateResult(false, RestoreMigrateResult.Status.FAILURE, null, e);
         } finally {
             if (backupImage != null) backupImage.removeTempDirectory();
@@ -544,8 +546,10 @@ public final class Importer{
             //this is a migrate or a restore and no node.properties is included (could be a 5.0 image) but we've got all
             //command line args this will require the node.properties and omp.dat from the target but will override
             //certain db parameters
-            final String msg = "Database configuration being retrieved from restore host's local node.properties and " +
-                    "omp.dat files";
+
+            final String taskVerb = (isMigrate) ? "migrate" : "restore";
+            final String msg = "Database configuration being retrieved from " + taskVerb + " host's local " +
+                    "node.properties and omp.dat files";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
             initializeNodePropsFromTarget(args);
             
@@ -576,9 +580,11 @@ public final class Importer{
 
         final boolean performingAMerge = nodePropertiesExistsOnRestoreHost();
         //we may have merged with node.properties from the host or we may not have, find out if node.properties exists
-        if(performingAMerge){
+        final String taskVerb = (isMigrate) ? "migrating" : "restoring";
+        if(performingAMerge) {
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                    "Merged command line db parameters into node.properties from restore host", isVerbose, printStream);
+                    "Merged command line db parameters into node.properties from " + taskVerb + " host", isVerbose,
+                    printStream);
         }else{
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
                     "Created a new node.properties with command line db parameters and the new node.id", isVerbose,
@@ -600,51 +606,63 @@ public final class Importer{
      */
     private boolean wereCompleteDbParamsSupplied(final boolean throwIfNotFound) throws InvalidProgramArgumentException {
 
+        final String taskVerb = (isMigrate) ? "migrating" : "restoring";
+
         final String dbHost = programFlagsAndValues.get(DB_HOST_NAME.getName());
-        if(dbHost == null || dbHost.trim().isEmpty())
-            if(throwIfNotFound){
+        if (dbHost == null || dbHost.trim().isEmpty())
+            if (throwIfNotFound) {
                 throw new InvalidProgramArgumentException("missing option "
-                    + DB_HOST_NAME.getName()
-                    + ", required for exporting this image");
-            }else{ return false; }
+                        + DB_HOST_NAME.getName()
+                        + ", required for " + taskVerb + " this image");
+            } else {
+                return false;
+            }
 
         final String dbName = programFlagsAndValues.get(DB_NAME.getName());
-        if(dbName == null || dbName.trim().isEmpty()) {
+        if (dbName == null || dbName.trim().isEmpty()) {
             //the dbname can come from -newdb instead
             final String newDb = programFlagsAndValues.get(CREATE_NEW_DB.getName());
-            if(newDb == null || newDb.trim().isEmpty()){
-                if(throwIfNotFound){
+            if (newDb == null || newDb.trim().isEmpty()) {
+                if (throwIfNotFound) {
                     throw new InvalidProgramArgumentException("missing option "
                             + DB_NAME.getName()
-                            + " or "+CREATE_NEW_DB.getName()+", required for exporting this image");
-                }else {return false;}
+                            + " or " + CREATE_NEW_DB.getName() + ", required for " + taskVerb + " this image");
+                } else {
+                    return false;
+                }
             }
         }
 
         final String dbUser = programFlagsAndValues.get(GATEWAY_DB_USERNAME.getName());
-        if(dbUser == null || dbUser.trim().isEmpty()){
-            if(throwIfNotFound){
+        if (dbUser == null || dbUser.trim().isEmpty()) {
+            if (throwIfNotFound) {
                 throw new InvalidProgramArgumentException("missing option "
                         + GATEWAY_DB_USERNAME.getName()
-                        + ", required for exporting this image");
-            }else{ return false;}
+                        + ", required for " + taskVerb + " this image");
+            } else {
+                return false;
+            }
         }
 
         final String dbPass = programFlagsAndValues.get(GATEWAY_DB_PASSWORD.getName());
-        if(dbPass == null || dbPass.trim().isEmpty())
-            if(throwIfNotFound){
+        if (dbPass == null || dbPass.trim().isEmpty())
+            if (throwIfNotFound) {
                 throw new InvalidProgramArgumentException("missing option "
                         + GATEWAY_DB_PASSWORD.getName()
-                        + ", required for exporting this image");
-            }else{ return false; }
+                        + ", required for " + taskVerb + " this image");
+            } else {
+                return false;
+            }
 
         final String clusterPassphrase = programFlagsAndValues.get(CLUSTER_PASSPHRASE.getName());
-        if(clusterPassphrase == null || clusterPassphrase.trim().isEmpty())
-            if(throwIfNotFound){
+        if (clusterPassphrase == null || clusterPassphrase.trim().isEmpty())
+            if (throwIfNotFound) {
                 throw new InvalidProgramArgumentException("missing option "
                         + CLUSTER_PASSPHRASE.getName()
-                        + ", required for exporting this image");
-            }else{ return false; }
+                        + ", required for " + taskVerb + " this image");
+            } else {
+                return false;
+            }
 
         return true;
     }
@@ -1014,7 +1032,7 @@ public final class Importer{
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
                     //both of these can be null or ompDatToMatchNodePropertyConfig can be null
-                    return restore.restoreNodeIdentity(nodePropertyConfig, ompDatToMatchNodePropertyConfig);
+                    return restore.restoreNodeIdentity(isMigrate, nodePropertyConfig, ompDatToMatchNodePropertyConfig);
                 }
 
                 public ImportExportUtilities.ComponentType getComponentType() {

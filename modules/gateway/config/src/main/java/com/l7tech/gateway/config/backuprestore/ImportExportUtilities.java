@@ -598,9 +598,7 @@ public class ImportExportUtilities {
             }
         }
 
-        throw new InvalidProgramArgumentException("missing option "
-                + requiredOption.getName()
-                + ", required for exporting this image");
+        throw new InvalidProgramArgumentException("missing option " + requiredOption.getName());
     }
     
     /**

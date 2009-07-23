@@ -134,6 +134,7 @@ public interface Restore {
      * Note: Both parameters can be null however ompDatFile cannot be null, unless propertiesConfiguration is also
      * null
      *
+     * @param isMigrate               simply used for log messages
      * @param propertiesConfiguration the configuration to write to node.properties. If not null, this will overwrite
      *                                the hosts node.properties. Any elements in this configuration which should be
      *                                encrypted, should be encrypted
@@ -147,7 +148,8 @@ public interface Restore {
      * @return ComponentResult whos getResult will be Success or else an exception will be thrown
      * @throws RestoreException
      */
-    public ComponentResult restoreNodeIdentity(final PropertiesConfiguration propertiesConfiguration,
+    public ComponentResult restoreNodeIdentity(final boolean isMigrate,
+                                               final PropertiesConfiguration propertiesConfiguration,
                                                final File ompDatFile)
             throws RestoreException;
 

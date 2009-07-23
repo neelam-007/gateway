@@ -635,16 +635,19 @@ final class RestoreImpl implements Restore{
         return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
-    public ComponentResult restoreNodeIdentity(PropertiesConfiguration propertiesConfiguration,
-                                        final File ompDatFile) throws RestoreException {
+    public ComponentResult restoreNodeIdentity(final boolean isMigrate,                                               
+                                               final PropertiesConfiguration propertiesConfiguration,
+                                               final File ompDatFile) throws RestoreException {
 
-        if(ompDatFile != null && propertiesConfiguration == null)
+        if (ompDatFile != null && propertiesConfiguration == null)
             throw new IllegalArgumentException("ompDatFile cannot be null when propertiesConfiguration is not also null");
 
+        final String taskVerb = (isMigrate) ? "migrating" : "restoring";
         try {
             if (propertiesConfiguration != null) {
                 propertiesConfiguration.save(new File(ssgConfigDir, ImportExportUtilities.NODE_PROPERTIES));
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated restore host's node.properties file",
+
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated " + taskVerb + " host's node.properties file",
                         isVerbose, printStream);
             }
 
@@ -654,8 +657,8 @@ final class RestoreImpl implements Restore{
                     throw new RestoreException("Could not delete file from target'" + ompOnTarget.getAbsolutePath() + "'");
                 try {
                     FileUtils.copyFile(ompDatFile, ompOnTarget);
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Updated restore host's omp.dat file", isVerbose,
-                            printStream);
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                            "Updated " + taskVerb + " host's omp.dat file", isVerbose, printStream);
                 } catch (IOException e) {
                     throw new RestoreException("Could not copy omp.dat to host: " + e.getMessage());
                 }
