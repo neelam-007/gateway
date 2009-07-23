@@ -549,12 +549,7 @@ public class WSSecurityProcessorUtils {
 
         SecurityKnob securityKnob = message.getSecurityKnob();
         SecurityKnob requestSecurityKnob = request.getSecurityKnob();
-        ProcessorResult requestWssResult = requestSecurityKnob.getProcessorResult();
-        if (requestWssResult == null) {
-            auditor.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_NO_WSS, "Request");
-        }
 
-        // todo: is this needed, or does it need to take into account the actor?
         boolean wss11seen = securityKnob.getProcessorResult() != null && securityKnob.getProcessorResult().isWsse11Seen();
         
         if ( ! requestSecurityKnob.isNeedsSignatureConfirmations() && ! wss11seen && ! securityKnob.hasWss11Decorations())
@@ -571,6 +566,10 @@ public class WSSecurityProcessorUtils {
                                             actors.size() == 1 ? decorations.values().toArray(new DecorationRequirements[1])[0] :
                                             null;
 
+        ProcessorResult requestWssResult = requestSecurityKnob.getProcessorResult();
+        if (requestWssResult == null) {
+            auditor.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_NO_WSS, "Request");
+        }
         List<String> signatureValues = requestWssResult == null ? null : requestWssResult.getValidatedSignatureValues();
         if (decoration == null) {
             // todo: bug 7277 - add signature confirmations only if the response already has decoration requirements?

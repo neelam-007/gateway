@@ -336,7 +336,7 @@ public class DecorationRequirements {
 
     public boolean isWss11() {
         return ! signatureConfirmations.isEmpty() || encryptUsernameToken;
-        // todo: check for other WSS11 decorations -- encrypted headers! 
+        // todo: check for other WSS11 decorations -- encrypted headers, when they will be supported 
     }
 
     public interface SecureConversationSession {
