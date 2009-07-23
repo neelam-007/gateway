@@ -41,6 +41,8 @@ public class IdentityRule implements Filter {
             throw new IllegalArgumentException("Identity Provider Config Manager is required");
         }
     }
+
+    @Override
     public Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException {
         requestor = policyRequestor;
         if (assertionTree == null) return null;
@@ -62,16 +64,13 @@ public class IdentityRule implements Filter {
      */
     private int applyRules(Assertion arg, Iterator parentIterator, CompositeAssertion parent) throws FilteringException {
         // apply rules on this one
-        if (arg instanceof IdentityAssertion) {
+        if (arg instanceof IdentityAssertion && Assertion.isRequest(arg)) {
             if (parent == null || parentIterator == null) {
                 throw new RuntimeException("ID assertions must have a parent. This is not a valid policy.");
             }
             anIdentityAssertionWasFound = true;
             if (validateIdAssertion((IdentityAssertion)arg)) {
                 userPassedAtLeastOneIdentityAssertion = true;
-                if (parentIterator == null) {
-                    throw new RuntimeException("Invalid policy, all policies must have a composite assertion at the root");
-                }
                 parentIterator.remove();
                 return AN_ID_WAS_PASSED;
             } else {
@@ -137,17 +136,17 @@ public class IdentityRule implements Filter {
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
             SpecificUser userass = (SpecificUser)idassertion;
-                if (userass.getUserLogin() != null && userass.getUserLogin().length() > 0) {
-                    if (userass.getUserLogin().equals(user.getLogin())) {
-                        return true;
-                    }
-                } else if (userass.getUserName() != null && userass.getUserName().length() > 0) {
-                   if (userass.getUserName().equals(user.getName())) {
-                       return true;
-                   }
-                } else {
-                    logger.warning("The assertion " + userass.toString() + " has no login nor name to compare with");
+            if (userass.getUserLogin() != null && userass.getUserLogin().length() > 0) {
+                if (userass.getUserLogin().equals(user.getLogin())) {
+                    return true;
                 }
+            } else if (userass.getUserName() != null && userass.getUserName().length() > 0) {
+               if (userass.getUserName().equals(user.getName())) {
+                   return true;
+               }
+            } else {
+                logger.warning("The assertion " + userass.toString() + " has no login nor name to compare with");
+            }
             return false;
         } else if (idassertion instanceof MemberOfGroup) {
             MemberOfGroup grpmemship = (MemberOfGroup)idassertion;

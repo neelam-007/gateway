@@ -525,10 +525,15 @@ public class PolicyService extends ApplicationObjectSupport {
     }
 
     private void addIdAssertionToList(Assertion assertion, List<Assertion> receptacle) {
-        if (assertion instanceof IdentityAssertion)
+        if (!assertion.isEnabled())
+            return;
+
+        if ( assertion instanceof IdentityAssertion && Assertion.isRequest( assertion ) )
             receptacle.add(assertion);
+
         if (!(assertion instanceof CompositeAssertion))
             return;
+
         CompositeAssertion composite = (CompositeAssertion)assertion;
         for (Object o : composite.getChildren()) {
             Assertion a = (Assertion) o;
@@ -536,16 +541,15 @@ public class PolicyService extends ApplicationObjectSupport {
         }
     }
 
-    private boolean atLeastOnePathIsAnonymous(Assertion rootAssertion) throws InterruptedException, PolicyAssertionException {
+    private boolean atLeastOnePathIsAnonymous( Assertion rootAssertion ) throws InterruptedException, PolicyAssertionException {
         rootAssertion = new HideDisabledAssertions().filter(null, rootAssertion);
         if (rootAssertion == null) return false; // normally can't happen
         PolicyPathResult paths = policyPathBuilderFactory.makePathBuilder().generate(rootAssertion);
-        for (Object o : paths.paths()) {
-            AssertionPath assertionPath = (AssertionPath) o;
+        for (AssertionPath assertionPath : paths.paths()) {
             Assertion[] path = assertionPath.getPath();
             boolean pathContainsIdAssertion = false;
-            for (Assertion a : path) {
-                if (a instanceof IdentityAssertion) {
+            for ( Assertion a : path ) {
+                if ( a instanceof IdentityAssertion && Assertion.isRequest( a ) ) {
                     pathContainsIdAssertion = true;
                 }
             }
