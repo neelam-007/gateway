@@ -16,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Dialog allowing SSM administrator to set the keystore used by a particular assertion.
@@ -128,7 +129,7 @@ public class AssertionKeyAliasEditor extends JDialog {
         return wasOKed;
     }
 
-    class ComboEntry {
+    class ComboEntry implements Comparable {
         public ComboEntry(long keystoreid, String keystorename, String alias) {
             this.keystoreid = keystoreid;
             this.keystorename = keystorename;
@@ -140,6 +141,11 @@ public class AssertionKeyAliasEditor extends JDialog {
         public String alias;
         public String toString() {
             return "'" + alias + "'" + " in " + keystorename;
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            return alias.compareTo(((ComboEntry)o).alias);
         }
     }
 
@@ -164,6 +170,7 @@ public class AssertionKeyAliasEditor extends JDialog {
                     toSelect = new ComboEntry(wantId, "UNRECOGNIZED", assertion.getKeyAlias());
                     comboEntries.add(0, toSelect);
                 }
+                Collections.sort(comboEntries);
                 aliasCombo.setModel(new DefaultComboBoxModel(comboEntries.toArray()));
                 if (toSelect != null) {
                     aliasCombo.setSelectedItem(toSelect);
