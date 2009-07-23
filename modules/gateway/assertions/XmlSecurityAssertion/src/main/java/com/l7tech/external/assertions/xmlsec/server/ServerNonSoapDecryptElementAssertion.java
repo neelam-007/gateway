@@ -35,6 +35,8 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.crypto.NoSuchPaddingException;
@@ -116,8 +118,26 @@ public class ServerNonSoapDecryptElementAssertion extends AbstractServerAssertio
             });
 
 
-            for (Element element : elementsToDecrypt)
-                decryptAndReplaceElement(element);
+            List<String> algorithms = new ArrayList<String>();
+            List<Element> elements = new ArrayList<Element>();
+
+            for (Element encryptedDataEl : elementsToDecrypt) {
+                Pair<String, NodeList> result = decryptAndReplaceElement(encryptedDataEl);
+                String algorithm = result.left;
+                int numNodes = result.right.getLength();
+                for (int i = 0; i < numNodes; i++) {
+                    Node got = result.right.item(i);
+                    if (got instanceof Element) {
+                        Element decryptedElement = (Element) got;
+                        elements.add(decryptedElement);
+                        algorithms.add(algorithm);
+                    }
+                }
+            }
+
+            context.setVariable(NonSoapDecryptElementAssertion.VAR_ELEMENTS_DECRYPTED, elements.toArray(new Element[elements.size()]));
+            context.setVariable(NonSoapDecryptElementAssertion.VAR_ENCRYPTION_METHOD_URIS, algorithms.toArray(new String[algorithms.size()]));
+
             return AssertionStatus.NONE;
 
         } catch (NoSuchVariableException e) {
@@ -127,11 +147,11 @@ public class ServerNonSoapDecryptElementAssertion extends AbstractServerAssertio
             auditor.logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, assertion.getTargetName());
             return ASSERTION_STATUS_BAD_MESSAGE;
         } catch (JaxenException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to evaluate XPath expression: " + ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to evaluate XPath expression: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to decrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.SERVER_ERROR;
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to decrypt element(s): " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            return ASSERTION_STATUS_BAD_MESSAGE;
         } catch (GeneralSecurityException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to decrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.SERVER_ERROR;
@@ -152,7 +172,7 @@ public class ServerNonSoapDecryptElementAssertion extends AbstractServerAssertio
         }
     }
 
-    private String decryptAndReplaceElement(Element encryptedDataEl)
+    private Pair<String, NodeList> decryptAndReplaceElement(Element encryptedDataEl)
             throws StructureException, GeneralSecurityException, IOException, KeyInfoResolvingException, InvalidDocumentFormatException,
                    UnexpectedKeyInfoException, XSignatureException, SAXException, ParserConfigurationException
     {
@@ -188,6 +208,7 @@ public class ServerNonSoapDecryptElementAssertion extends AbstractServerAssertio
         dc.setKey(flexKey);
 
         dc.decrypt();
+        NodeList decryptedNodes = dc.getDataAsNodeList();
         dc.replace();
 
         // determine algorithm
@@ -198,7 +219,7 @@ public class ServerNonSoapDecryptElementAssertion extends AbstractServerAssertio
             algorithmName = algorithm.iterator().next();
         }
 
-        return algorithmName;
+        return new Pair<String, NodeList>(algorithmName, decryptedNodes);
     }
 
     /**
@@ -220,7 +241,7 @@ public class ServerNonSoapDecryptElementAssertion extends AbstractServerAssertio
      * @throws GeneralSecurityException if there is a problem with a certificate or key, or a required algorithm is unavailable,
      *                                  or there is an error performing the actual decryption.
      */
-    private static FlexKey unwrapSecretKey(Element outerEncryptedDataEl, SecurityTokenResolver securityTokenResolver)
+    private FlexKey unwrapSecretKey(Element outerEncryptedDataEl, SecurityTokenResolver securityTokenResolver)
             throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
     {
         Element keyInfo = XmlUtil.findExactlyOneChildElementByName(outerEncryptedDataEl, SoapUtil.DIGSIG_URI, "KeyInfo");
@@ -234,24 +255,36 @@ public class ServerNonSoapDecryptElementAssertion extends AbstractServerAssertio
         return new FlexKey(secretKeyBytes);
     }
 
-    private static SignerInfo findSignerInfoForEncryptedType(Element encryptedType, SecurityTokenResolver securityTokenResolver)
+    private SignerInfo findSignerInfoForEncryptedType(Element encryptedType, SecurityTokenResolver securityTokenResolver)
             throws InvalidDocumentFormatException, CertificateException
     {
         List<Element> keyInfos = DomUtils.findChildElementsByName(encryptedType, SoapConstants.DIGSIG_URI, SoapConstants.KINFO_EL_NAME);
         if (keyInfos == null || keyInfos.size() < 1)
             throw new InvalidDocumentFormatException(encryptedType.getLocalName() + " includes no KeyInfo element");
+        boolean sawSupportedFormat = false;
         for (Element keyInfo : keyInfos) {
-            // Finally try the rare but appropriate KeyInfo/X509Data
-            Element x509Data = DomUtils.findOnlyOneChildElementByName(keyInfo, SoapConstants.DIGSIG_URI, "X509Data");
-            if (x509Data == null)
-                throw new KeyInfoElement.UnsupportedKeyInfoFormatException("KeyInfo did not contain any recognized certificate reference format");
+            try {
+                // Finally try the rare but appropriate KeyInfo/X509Data
+                Element x509Data = DomUtils.findOnlyOneChildElementByName(keyInfo, SoapConstants.DIGSIG_URI, "X509Data");
+                if (x509Data == null)
+                    throw new KeyInfoElement.UnsupportedKeyInfoFormatException("KeyInfo did not contain any recognized certificate reference format");
 
-            SignerInfo signerInfo = handleX509Data(x509Data, securityTokenResolver);
-            if (signerInfo != null)
-                return signerInfo;
+                SignerInfo signerInfo = handleX509Data(x509Data, securityTokenResolver);
+                if (signerInfo != null)
+                    return signerInfo;
 
+                sawSupportedFormat = true;
+
+            } catch (KeyInfoElement.UnsupportedKeyInfoFormatException e) {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unrecognized KeyInfo format: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            } catch (InvalidDocumentFormatException e) {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unable to parse KeyInfo: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            }
         }
-        throw new InvalidDocumentFormatException("EncryptedType did not contain a KeyInfo in a supported format");
+        if (sawSupportedFormat)
+            throw new InvalidDocumentFormatException("Encryption recipient was not recognized as addressed to a private key possessed by this Gateway");
+        else
+            throw new InvalidDocumentFormatException("EncryptedType did not contain a KeyInfo in a supported format"); 
     }
 
     private static SignerInfo handleX509Data(Element x509Data, SecurityTokenResolver securityTokenResolver) throws CertificateException, InvalidDocumentFormatException {

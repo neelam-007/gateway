@@ -3,22 +3,21 @@ package com.l7tech.external.assertions.xmlsec.server;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
-import com.l7tech.util.Pair;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.policy.assertion.AssertionStatus;
 import static org.junit.Assert.*;
 import org.junit.*;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
 
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -33,8 +32,9 @@ public class ServerNonSoapDecryptElementAssertionTest {
 
     @BeforeClass
     public static void setupKeys() throws Exception {
-        Pair<X509Certificate,PrivateKey> ks = TestCertificateGenerator.convertFromBase64Pkcs12(TEST_KEYSTORE);
-        securityTokenResolver = new SimpleSecurityTokenResolver(ks.left, ks.right);
+        SignerInfo testks = new SignerInfo(TestCertificateGenerator.convertFromBase64Pkcs12(TEST_KEYSTORE));
+        SignerInfo otherks = new SignerInfo(TestCertificateGenerator.convertFromBase64Pkcs12(DATA_KEYSTORE));
+        securityTokenResolver = new SimpleSecurityTokenResolver(null, new SignerInfo[] { testks, otherks });
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("securityTokenResolver", securityTokenResolver);
         }});
@@ -52,6 +52,51 @@ public class ServerNonSoapDecryptElementAssertionTest {
         final Document doc = request.getXmlKnob().getDocumentReadOnly();
         logger.info("Decrypted XML:\n" + XmlUtil.nodeToString(doc));
         assertEquals(0, doc.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedData").getLength());
+        assertEquals(1, ((Object[])context.getVariable("elementsDecrypted")).length);
+        assertEquals(1, ((Object[])context.getVariable("encryptionMethodUris")).length);
+        assertEquals("http://www.w3.org/2001/04/xmlenc#aes256-cbc", ((String[])context.getVariable("encryptionMethodUris"))[0]);
+    }
+
+    @Test
+    public void testDecryptElement_encryptedForSomeoneElse() throws Exception {
+        logger.info("Attempting to decrypt:\n" + TEST_ENCRYPTED_FOR_SOMEONE_ELSE);
+        NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
+        ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
+        Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_FOR_SOMEONE_ELSE));
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
+        assertEquals(AssertionStatus.BAD_REQUEST, result);
+        final Document doc = request.getXmlKnob().getDocumentReadOnly();
+        logger.info("After decryption attempt:\n" + XmlUtil.nodeToString(doc));
+        assertEquals(1, doc.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedData").getLength());
+        assertNoVariable(context, "elementsDecrypted");
+        assertNoVariable(context, "encryptionMethodUris");
+    }
+
+    @Test
+    public void testDecryptElement_encryptedForData() throws Exception {
+        logger.info("Attempting to decrypt:\n" + TEST_ENCRYPTED_FOR_DATA);
+        NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
+        ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
+        Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_FOR_DATA));
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        final Document doc = request.getXmlKnob().getDocumentReadOnly();
+        logger.info("Decrypted XML:\n" + XmlUtil.nodeToString(doc));
+        assertEquals(0, doc.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedData").getLength());
+        assertEquals(1, ((Object[])context.getVariable("elementsDecrypted")).length);
+        assertEquals(1, ((Object[])context.getVariable("encryptionMethodUris")).length);
+        assertEquals("http://www.w3.org/2001/04/xmlenc#aes256-cbc", ((String[])context.getVariable("encryptionMethodUris"))[0]);
+    }
+
+    private void assertNoVariable(PolicyEnforcementContext context, String variableName) {
+        try {
+            context.getVariable(variableName);
+            fail("Should have thrown NoSuchVariableException for " + variableName);
+        } catch (NoSuchVariableException e) {
+            // Ok
+        }
     }
 
     public static final String TEST_KEYSTORE =
@@ -90,6 +135,94 @@ public class ServerNonSoapDecryptElementAssertionTest {
             "  <par:username>brian</par:username> \n" +
             "  <xenc:EncryptedData xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/><dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\"><xenc:EncryptedKey xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\"/><dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\"><dsig:X509Data><dsig:X509IssuerSerial><dsig:X509IssuerName>CN=test</dsig:X509IssuerName><dsig:X509SerialNumber>7730273685284174799</dsig:X509SerialNumber></dsig:X509IssuerSerial></dsig:X509Data></dsig:KeyInfo><xenc:CipherData><xenc:CipherValue>O0xs2VQa0p3d9tzUvy+2ljjgef/RX2zDMo8FIQ9rjYCCRKDFEsLb5XOFQWK5MtnTl+bC68khTfJq6FeKh+3NBI9D41BJipZAWAI+HZrnyU0iUPSJL936AAWsq9bgL+RkaGkXjsWAjb/XCluDMlQ+9pK2CiLoyIMRSHirES72vSM=</xenc:CipherValue></xenc:CipherData></xenc:EncryptedKey></dsig:KeyInfo><xenc:CipherData><xenc:CipherValue>B3fvKCstaZwlTxSvsFBHZnoEobEjqbIy0P+hRxhotFy9vxacIfbpQRMrYbpRh4lJEUdgiDoD6JVeNT1xWJmakQ==</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData> \n" +
             "  <par:notice_id>12345</par:notice_id> \n" +
+            "</par:GetNoaParties>";
+
+    public static final String DATA_KEYSTORE =
+            "MIACAQMwgAYJKoZIhvcNAQcBoIAkgASCA+gwgDCABgkqhkiG9w0BBwGggCSABIIDCTCCAwUwggMB\n" +
+            "BgsqhkiG9w0BDAoBAqCCArIwggKuMCgGCiqGSIb3DQEMAQMwGgQUg/8v7fUN0dEZxeU8zekx+evu\n" +
+            "rfMCAgQABIICgBmDuRvh05wdJ93ia4jBe0UlwDtx7PzJRl5bGY3HuekP7ScwEItKPULNAkCSAaWe\n" +
+            "V4PfsptD/isgKOjxbzN0fdHSPedmqdSL51X/XlMl37v7lCJ+8FAf5BBxgxa53ffyJUMtXYxNr484\n" +
+            "6qKcwdMX8osUyeTLBqkB0VAbgHzFm2Z40Q675wlZ+N3afvbybFM9tBzODym/T/SBe1DHNSRy729U\n" +
+            "5mVpwgPhoD44T2vhPE4NNMY2oRPjzlWvnj+s7mMOqR4ZPY6tEeiy6YA/5Y6+KsGCosbOFemUMEHD\n" +
+            "vXwoXviKwbZD9Ldia3RDc6mzsttYBaoA2vBwHAgDY3iqay2k8+B+fael924s4BrirMfWoslcH8ME\n" +
+            "CI/yEqPvq/BhNz0VshYQIo2ClYlICrPeBxG/eS2QuaOhEHr843fFjg9u6oXhNHaMDHmP0uS1eLpm\n" +
+            "chbCf8QxbhznoSrqr4R3/92/eWb5zRIiIUxpzuj/sbSOiikDw/N1zgLCqwMgKsuZwHfdiN2/v5Eh\n" +
+            "clAPLy1N1Xhjn/NNU1fILCsXBcTJ5pSAiiBfjGUKelb4cahvZoUMrVxt/9kEM5JqWqzQI3cEqgWW\n" +
+            "NL44cNMiEpRVrwJSlHgxAFfGA1CrJbAFMazdzjuLx9SpocYYJtJiCBTiZz6oxD0UsEQTjWUp6w/5\n" +
+            "YL3JoAMehQbtcQU0sLauJWXJERKCWs9/6qkb7fLiyPTdo0VRnKpArbJ2u33MMy8117VX0yDPLDN8\n" +
+            "SK/R0MITd1CgRhBi3iGOT/re9Dhfo0brWXnRi6ytuqg+CiM29Mu+uPeae0weE5lGHNT5XyWU/leO\n" +
+            "7WI61aEIE4umddeXCZciZ99u4eIJOU8xPDAVBgkqhkiG9w0BCRQxCB4GAHMAcwBsMCMGCSqGSIb3\n" +
+            "DQEJFTEWBBRCSBdXGhmyJ33I3tjg158bM57PsgAAAAAAADCABgkqhkiG9w0BBwaggDCAAgEAMIAG\n" +
+            "CSqGSIb3DQEHATAoBgoqhkiG9w0BDAEGMBoEFANSVdxVsXfz2+DmmHbMUsbpQ5dXAgIEAKCABIIC\n" +
+            "aOQs9S/QyR0bqIcj5UaFhGzZp+OvpH3NTy8K3xQr/b3kDEYw9h5suLmq7v9uHI6r/lkifXGuOnAr\n" +
+            "ot6WJvz04tgzJrWAB/k2R/rrZrnua2eIhBJ3yYqj57CZvFjcsnd8GTqbl2bnMqdmeQh48wYM/fOk\n" +
+            "BIICA+LSXy2XkRoi7yiJXcsEAgIdHT6IF9qeFGwn0BFI3GKkCtGsGVCSYohCFvG6hCH/deskSxp6\n" +
+            "NerYrenOs+97MVImMBewiwJ5g7CV176yhuWWCG8A4rkCqJLbTLLMMO2oiLfdLsysQ0C0sPWB6Mzs\n" +
+            "EtBW4CasSdQD14UDVR/xIjdXNO44YwqyXqoRnGyQWNgXQNwusGZHsCJ70VpVar61wcaAGQ+HVjim\n" +
+            "h7j7+nE03wj4ZuymKqq375gALgmq3Sr0CrT4bF9578GMp7ENcuYi32mhuiqSMJuxfuLYRGz/9sRt\n" +
+            "5vZr1kOFXrx1ckgkxVrASHP7UERxVg8VJix9yldBjYiQA3/tg7RhtWzYcS3iSh4VC2sGGtvtR/K2\n" +
+            "AE8vga8yAP4QY5XachMyr1BwTy/fgM/3X4hT3sziS2nqDnJz/zoPRbN2e+IRaaH9MQzyfzKikzoW\n" +
+            "UubzoqJ0SYNqmZsgwitPbSMNfLB/qMQ5UqjXqoabljAdhSgyRzcQFtY0uCvYTHzTpF5uX0xqNxQ8\n" +
+            "LG+Oy4/Dl0PKCG6Q9WXjgc4qtQ1nkSFp+EKbXEjlqjxuFqm9vlVGbMIYV8hSQkp4Zvf/Z7tubbNE\n" +
+            "AeZ8iutWsWGrl+L74sec9bVuOrUBihLtxe2Hl9ukn8VYbDVOmrqu2Y26Npiw8fzP/zRXAAAAAAAA\n" +
+            "AAAAAAAAAAAAAAAAMD0wITAJBgUrDgMCGgUABBQ3T/1UECawLciqzMgBw4qafQrElAQUiqH1WtTr\n" +
+            "OSLH0cErDr/i3Gx8Wq4CAgQAAAA=";
+
+    public static String TEST_ENCRYPTED_FOR_DATA =
+            "<par:GetNoaParties xmlns:par=\"urn:noapar\">\n" +
+            "\t<par:username>brian</par:username>\n" +
+            "\t<xenc:EncryptedData xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\">\n" +
+            "\t\t<xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/>\n" +
+            "\t\t<dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+            "\t\t\t<xenc:EncryptedKey xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\">\n" +
+            "\t\t\t\t<xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\"/>\n" +
+            "\t\t\t\t<dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+            "\t\t\t\t\t<dsig:X509Data>\n" +
+            "\t\t\t\t\t\t<dsig:X509IssuerSerial>\n" +
+            "\t\t\t\t\t\t\t<dsig:X509IssuerName>CN=data.l7tech.com</dsig:X509IssuerName>\n" +
+            "\t\t\t\t\t\t\t<dsig:X509SerialNumber>2750606400783968375</dsig:X509SerialNumber>\n" +
+            "\t\t\t\t\t\t</dsig:X509IssuerSerial>\n" +
+            "\t\t\t\t\t</dsig:X509Data>\n" +
+            "\t\t\t\t</dsig:KeyInfo>\n" +
+            "\t\t\t\t<xenc:CipherData>\n" +
+            "\t\t\t\t\t<xenc:CipherValue>In+E+fH8yet5hEkxSLuF6c9XN1eI1E8xT/WLw67MkrCuwky9eB+bECWOt911CwzLUzwxDSEOpEv4RMlstZWBHwMxrEYFMJmmbtYNLqXd3DK067jZETX1MT7mWr+E8kXBBCThxeEEAzT6Is120A94E2yecKI2BjEdLDflT4K7Xb4=</xenc:CipherValue>\n" +
+            "\t\t\t\t</xenc:CipherData>\n" +
+            "\t\t\t</xenc:EncryptedKey>\n" +
+            "\t\t</dsig:KeyInfo>\n" +
+            "\t\t<xenc:CipherData>\n" +
+            "\t\t\t<xenc:CipherValue>hTmUhapmXukxslLlOQMYARey3v9Pj1mmRGkjDKqKYwAFBaWJfS9usMnV7ClTSmy6JAmMa2ymkc3Pxnq98g7cwQ==</xenc:CipherValue>\n" +
+            "\t\t</xenc:CipherData>\n" +
+            "\t</xenc:EncryptedData>\n" +
+            "\t<par:notice_id>12345</par:notice_id>\n" +
+            "</par:GetNoaParties>";
+
+    // Test message encrypted for an earlier instance of the CN=data.l7tech.com key (different cert serial number)
+    public static final String TEST_ENCRYPTED_FOR_SOMEONE_ELSE =
+            "<par:GetNoaParties xmlns:par=\"urn:noapar\">\n" +
+            "\t<par:username>brian</par:username>\n" +
+            "\t<xenc:EncryptedData xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\">\n" +
+            "\t\t<xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/>\n" +
+            "\t\t<dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+            "\t\t\t<xenc:EncryptedKey xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\">\n" +
+            "\t\t\t\t<xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\"/>\n" +
+            "\t\t\t\t<dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+            "\t\t\t\t\t<dsig:X509Data>\n" +
+            "\t\t\t\t\t\t<dsig:X509IssuerSerial>\n" +
+            "\t\t\t\t\t\t\t<dsig:X509IssuerName>CN=data.l7tech.com</dsig:X509IssuerName>\n" +
+            "\t\t\t\t\t\t\t<dsig:X509SerialNumber>480673818902921845</dsig:X509SerialNumber>\n" +
+            "\t\t\t\t\t\t</dsig:X509IssuerSerial>\n" +
+            "\t\t\t\t\t</dsig:X509Data>\n" +
+            "\t\t\t\t</dsig:KeyInfo>\n" +
+            "\t\t\t\t<xenc:CipherData>\n" +
+            "\t\t\t\t\t<xenc:CipherValue>GWCLzipub89lXg6e9SBu5xHfUyD3Wm8i2muo5muHBlhk07FDzlhJBASoX/LpNto9mjcOUJezXrRat9LhUTE9GHsFFn4FQl66o5fvqigOvj7h+IsUPuNXC0xo0zVnQANTb99t/AyNx7fZAahPbhwne0U/BLwex8MuKzLWbLmfabA=</xenc:CipherValue>\n" +
+            "\t\t\t\t</xenc:CipherData>\n" +
+            "\t\t\t</xenc:EncryptedKey>\n" +
+            "\t\t</dsig:KeyInfo>\n" +
+            "\t\t<xenc:CipherData>\n" +
+            "\t\t\t<xenc:CipherValue>NqbcmF3u4Vj34h7J9Y7uk5gVvqguLHIHeFAzKfab+o4AhBHXXzSK9eO8xIfQiPBgXJnoJpTZvVnFE0Z3AHh+yQ==</xenc:CipherValue>\n" +
+            "\t\t</xenc:CipherData>\n" +
+            "\t</xenc:EncryptedData>\n" +
+            "\t<par:notice_id>12345</par:notice_id>\n" +
             "</par:GetNoaParties>";
 
 }
