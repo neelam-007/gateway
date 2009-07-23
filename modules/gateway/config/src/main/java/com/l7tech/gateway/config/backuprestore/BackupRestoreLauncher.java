@@ -30,7 +30,7 @@ public class BackupRestoreLauncher {
     private static final String SECURE_SPAN_HOME = "/opt/SecureSpan";
 
     /**
-     * If the Backup / Import fails, then the VM will exist with status 1. If there is a partially successfull
+     * If the Backup / Restore fails, then the VM will exist with status 1. If there is a partially successfull
      * backup, then the VM will exist with status 2
      * @param args
      */
@@ -42,7 +42,7 @@ public class BackupRestoreLauncher {
 
         initializeLogging(args[0]);
 
-        //when noOutput is true, no System.out.println calls should happen, regardless of error conditions
+        //when noConsoleOutput is true, no System.out.println calls should happen, regardless of error conditions
         //this is for when cfgdaemon target is ran on system reboot, errors should still be logged
         final boolean noConsoleOutput = args[0].equalsIgnoreCase(CFGDAEMON_TYPE);
         final String taskName = args[0].equalsIgnoreCase(IMPORT_TYPE) ?
@@ -190,13 +190,13 @@ public class BackupRestoreLauncher {
             //otherwise the ssgbackup.sh will always use export and ssgrestore.sh will always use import
             output.append("usage: [import | export] [OPTIONS]").append(EOL_CHAR);
             output.append("\tIMPORT OPTIONS:").append(EOL_CHAR);
-            Importer.getImporterUsage(output);
+            Importer.getRestoreUsage(output);
             output.append("\tEXPORT OPTIONS:").append(EOL_CHAR);
             Exporter.getExporterUsage(output);
         } else if (utilityType.equals(IMPORT_TYPE)) {
             output.append("usage: " + SSGRESTORE_SH + " [OPTIONS]").append(EOL_CHAR);
             output.append("\tOPTIONS:").append(EOL_CHAR);
-            Importer.getImporterUsage(output);
+            Importer.getRestoreUsage(output);
         }else if (utilityType.equals(MIGRATE_TYPE)) {
             output.append("usage: " + SSGMIGRATE_SH + " [OPTIONS]").append(EOL_CHAR);
             output.append("\tOPTIONS:").append(EOL_CHAR);

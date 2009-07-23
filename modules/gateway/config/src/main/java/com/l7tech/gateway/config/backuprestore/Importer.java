@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  *
  * <p>
  * The utility that restores or migrates an SSG image
- * Importer is responsible for accecpting parameters, validating them then calling the appropriate methods of
+ * Importer is responsible for accecpting parameters, validating them, then calling the appropriate methods of
  * the Restore interface
  * </p>
  *
@@ -90,15 +90,15 @@ public final class Importer{
     private final File secureSpanHome;
 
     /**
-     * Only to be used when code path starts at restoreOrMigrateBackupImage. Do not access from public methods
+     * If -v is supplied, where to print verbose output to
      */
     private final PrintStream printStream;
 
     private Map<String, String> programFlagsAndValues;
     private boolean isMigrate;
+
     /**
-     * Cannot be used by any public method. Only to be used when code path originates in performMigrateOrRestore..
-     * isVerbose only applies when command line arguments are passed in
+     * if true, send verbose output to the printStream, if it's not null
      */
     private boolean isVerbose;
 
@@ -110,21 +110,21 @@ public final class Importer{
     private boolean isHaltOnFirstFailure;
 
     private BackupImage backupImage;
+
     /**
-     * This field should only be used by the performRestore method. All other methods should accept a DatabaseConfig
-     * object and use it. The public restoreXXX() methods may accept a DatabseConfig, and when it does this should
-     * be used and not the instance variable
+     * If a default restore is being done, or a selective restore with db components, this represents our db
+     * configuration to use when restoring db components
      */
     private DatabaseConfig databaseConfig;
 
     /**
-     * Backup is not fail fast. As a result we will allow clients access to this list of error message so that they
-     * can be printed to the screen, when in -v mode
+     * Backup is not fail fast. This stores the names of the components which failed
      */
     private final List<String> failedComponents = new ArrayList<String>();
 
     /**
-     * Maybe set to true when migrate is ran, if the -newdb option is supplied
+     * When -migrate is supplied and the -newdb value is supplied, this will be true and allows migrate to create a new
+     * db instead of only working with an existing db
      */
     private boolean canCreateNewDb;
 
@@ -140,6 +140,11 @@ public final class Importer{
      * from the default obfuscated master password
      */
     private File ompDatToMatchNodePropertyConfig;
+
+    /**
+     * If true it means we might be restoring db components, so we need to validate db parameters and that we can
+     * correctly configure databaseConfig
+     */
     private boolean isDbComponent;
 
     /**
@@ -167,10 +172,11 @@ public final class Importer{
     }
 
     /**
-     * Restore or migrate a backup image. See getImporterUsage() for expected parameters
+     * Restore or migrate a backup image. See Importer.getRestoreUsage for expected parameters
      *
-     * @param args
-     * @return
+     * @param args program parameters
+     * @return RestoreMigrateResult which contains the success / failure, any exceptions thrown and the list of failed
+     * components if applicable
      * @throws InvalidProgramArgumentException
      * @throws BackupRestoreLauncher.FatalException
      * @throws IOException
@@ -192,7 +198,7 @@ public final class Importer{
                 ImportExportUtilities.getAndValidateCommandLineOptions(args,
                         validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), true, printStream);
 
-        //is migrate being used?
+        //are we doing a restore with migrate behaviour?
         isMigrate = initialValidArgs.get(MIGRATE.getName()) != null;
 
         if(isMigrate){
@@ -205,7 +211,7 @@ public final class Importer{
     private RestoreMigrateResult performMigrate(final String [] args) throws InvalidProgramArgumentException,
             IOException, BackupImage.InvalidBackupImage {
         //All restore options are valid for migrate, apart from ftp options.
-        //Remember that ssgmigrate.sh gets tranlsated into ssgrestore.sh
+        //Remember that ssgmigrate.sh gets translated into ssgrestore.sh
         //with a migrate capability. Therefore here we are actually validating ssgrestore.sh parameters
         final List<CommandLineOption> validArgList = getRestoreOptionsWithDb();
 
@@ -262,14 +268,13 @@ public final class Importer{
         //make sure no unexpected arguments were supplied
         ImportExportUtilities.softArgumentValidation(args, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
 
-        //Cannot valide the command line arguments until the state of the backup image is known,
-        //this is mainly a database issue, but we want to provide an api to these methods, so after
-        //the Importer is initialized, it should be possible to call any of the restore***() methods
-        //as doing this as you could be half way through a backup and then get an invalid program argument
-        //clients would not appreciate this, and would appreciate being told, before they perform any restore,
-        //that there is a problem with their command line arguments
-        //Get the image param
+        //Cannot validate the command line arguments until the state of the backup image is known,
+        //this is because of the database parameters.
+        //We do not want to embark on a restore with the possibility that it will throw an exception due to an invalid
+        //program parameter. Users would appreciate being told before anything is restored, that there is a problem
+        //with the parameters and values they supplied
 
+        //Get the image param
         final String imageValue = ImportExportUtilities.getAndValidateSingleArgument(args,
                 IMAGE_PATH, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
 
@@ -371,6 +376,13 @@ public final class Importer{
             ConfigurationException {
         isSelectiveRestore = ImportExportUtilities.isSelective(args);
 
+        //ensure that we are not being asked to restore audits without the maindb
+        final boolean auditsOnly = !args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
+                && args.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
+        if(auditsOnly){
+            throw new InvalidProgramArgumentException("Cannot restore -audits without -maindb");
+        }
+
         isDbComponent = !isSelectiveRestore
                 || args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
                 || args.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
@@ -385,7 +397,7 @@ public final class Importer{
         final boolean esmRequested = args.containsKey("-"
                 + ImportExportUtilities.ComponentType.ESM.getComponentName());
         //if the esm is requested, then it's required
-        //check if it's running, lets not start any backup if the esm is running
+        //check if it's running, lets not start any restore if the esm is running
         if(esmRequested){
             ImportExportUtilities.throwifEsmIsRunning();
             //validate the esm looks ok - just a basic check
@@ -746,10 +758,10 @@ public final class Importer{
     }
 
     /**
-     * Never use with migrate
-     * @param args
-     * @param properties
-     * @throws InvalidProgramArgumentException
+     * Merge all db params applicable to node.properties into properties, using the ompFile for encryption
+     * @param args command line arguments
+     * @param properties the PropertiesConfiguration which will be written to the restore host
+     * @throws InvalidProgramArgumentException, if any required db params are missing from args
      */
     private void mergeCommandLineIntoProperties(final Map<String, String> args,
                                                 final PropertiesConfiguration properties,
@@ -782,24 +794,26 @@ public final class Importer{
     }
 
     /**
-     * Only call when updateNodeProperties is true.
+     * Get the omp.dat file from the restore host
+     *
      * @return the omp.dat file from the host. Never null. Always exists. Exception if this cannot be achieved
      * @throws InvalidProgramArgumentException
+     *
      */
     private File getOmpDatFromTarget() throws InvalidProgramArgumentException {
-        //sanity check - invarient - we must have all db params if we are using node.properties from the host
+        //sanity check, we must have all db params if we are using node.properties from the host
         wereCompleteDbParamsSupplied(true);
 
         final File confDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
         final File ompFile = new File(confDir, ImportExportUtilities.OMP_DAT);
-        if(!ompFile.exists() || !ompFile.isFile())
-            throw new IllegalStateException("File '"+ompFile.getAbsolutePath()+"' not found");
+        if (!ompFile.exists() || !ompFile.isFile())
+            throw new IllegalStateException("File '" + ompFile.getAbsolutePath() + "' not found");
 
         return ompFile;
     }
 
     private DatabaseConfig getDatabaseConfig(final PropertiesConfiguration propConfig,
-                                                   final MasterPasswordManager mpm){
+                                             final MasterPasswordManager mpm) {
 
         final String dbHost = propConfig.getString("node.db.config.main.host");
         final String dbPort = propConfig.getString("node.db.config.main.port");
@@ -813,39 +827,40 @@ public final class Importer{
 
     /**
      * Get a correctly configured DatabaseConfig from the files node.properties and omp.dat
+     *
      * @param nodeProperties node.properties file. Must exist and be readable
-     * @param ompFile omp.dat. Must exist and be readable
+     * @param ompFile        omp.dat. Must exist and be readable
      * @return a Pair of a correctly configured DatabaseConfig based on the supplied confiuration files with its
-     * associated cluster passphrase
+     *         associated cluster passphrase
      * @throws java.io.IOException if problem reading the files
-     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException if the
-     * suplied files contain invalid data / settings
+     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException
+     *                             if the suplied files contain invalid data / settings
      */
     private Pair<DatabaseConfig, String> getDatabaseConfig(final File nodeProperties, final File ompFile)
             throws IOException, InvalidProgramArgumentException {
-        if(nodeProperties == null) throw new NullPointerException("nodeProperties cannot be null");
-        if(!nodeProperties.exists())
-            throw new InvalidProgramArgumentException("File '"+nodeProperties.getAbsolutePath()+"' does not exist");
-        if(nodeProperties.isDirectory())
-            throw new InvalidProgramArgumentException("File '"+nodeProperties.getAbsolutePath()+"' is not a regular file");
+        if (nodeProperties == null) throw new NullPointerException("nodeProperties cannot be null");
+        if (!nodeProperties.exists())
+            throw new InvalidProgramArgumentException("File '" + nodeProperties.getAbsolutePath() + "' does not exist");
+        if (nodeProperties.isDirectory())
+            throw new InvalidProgramArgumentException("File '" + nodeProperties.getAbsolutePath() + "' is not a regular file");
 
-        if(ompFile == null) throw new NullPointerException("ompFile cannot be null");
-        if(!ompFile.exists())
-            throw new InvalidProgramArgumentException("File '"+ompFile.getAbsolutePath()+"' does not exist");
-        if(ompFile.isDirectory())
-            throw new InvalidProgramArgumentException("File '"+ompFile.getAbsolutePath()+"' is not a regular file");
+        if (ompFile == null) throw new NullPointerException("ompFile cannot be null");
+        if (!ompFile.exists())
+            throw new InvalidProgramArgumentException("File '" + ompFile.getAbsolutePath() + "' does not exist");
+        if (ompFile.isDirectory())
+            throw new InvalidProgramArgumentException("File '" + ompFile.getAbsolutePath() + "' is not a regular file");
 
         final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodeProperties, true);
-        final DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL,
-                NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
-        if ( config == null ) {
+        final DatabaseConfig config = nodeConfig.getDatabase(DatabaseType.NODE_ALL,
+                NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER);
+        if (config == null) {
             throw new InvalidProgramArgumentException("DatabaseConfig could not be configured with node.properties and omp.dat");
         }
 
         final MasterPasswordManager decryptor =
                 new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
-        
-        config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
+
+        config.setNodePassword(new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())));
 
         String clusterPassPhrase = new String(decryptor.decryptPasswordIfEncrypted(nodeConfig.getClusterPassphrase()));
 
@@ -853,13 +868,22 @@ public final class Importer{
     }
 
     /**
-     * Note: below there is no filtering of what components are added when isMigrate is true. Migrate is a capability
+     * All components configured are candidates to be returned. If the user supplied any explicit components, then
+     * the returned list is filtered to only include components the user requested. Some components are not selective
+     * : the node identity task, which ensures that the restore hosts node.properties and omp.dat file are correctly
+     * updated.
+     *
+     * The list of RestoreComponent s returned may not all be applicable. For example, the database component may
+     * return NOT_APPLICABLE as it's Result, if the db is remote, or the OS may do the same if the Appliance is
+     * not installed. This method is not concerned with ensuring that all the components returned are applicable.
+     *
+     * There is no additional filtering of what components are returned when isMigrate is true. Migrate is a capability
      * added to the restore of certain components - db, os and config files.
-     * ssgmigrate.sh ensuqres that the Importer class is provided with the correct command line arguments, and it
-     * should always produce a selective restote, in which cases components like ca, ma won't be included, but they
+     * ssgmigrate.sh ensures that the Importer class is provided with the correct command line arguments, and it
+     * should always produce a selective restore, in which cases components like ca, ma won't be included, but they
      * can be part of a selective restore with migrate capabilities if desired
      *
-     * @param mappingFile can be null
+     * @param mappingFile can be null 
      * @return list of applicable RestoreComponent's. Filtered for selective restore if applicable
      * @throws RestoreImpl.RestoreException
      */
@@ -868,7 +892,7 @@ public final class Importer{
 
         final Restore restore = BackupRestoreFactory.getRestoreInstance(this.secureSpanHome,
                 this.backupImage,
-                databaseConfig,/*I might be null and that's ok*/
+                databaseConfig,
                 suppliedClusterPassphrase,
                 this.isVerbose,
                 this.printStream);
@@ -876,17 +900,14 @@ public final class Importer{
 
         final List<RestoreComponent> componentList = new ArrayList<RestoreComponent>();
 
-        //isSelectiveRestore represents isRequired in all methods to Restore interface
-        //at the end the list of components is filtered, so if isSelectiveRestore is true, then the components
-        //are filtered, and the remaining components are 'required'
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                //if no db component is being restored, then we need to allow the config restore to restore
+                //if no db component is being restored, then we need to allow the config component to restore
                 //the node identity if found - node.properties and omp.dat
                 //if the db is part of the restore, then the restoreNodeIdentity task will ensure that node.properties
-                //is written to the restore host if it's applicable
+                //and omp.dat are correctly written / updated on the restore host
                 return restore.restoreComponentConfig(isMigrate, isDbComponent);
             }
 
@@ -895,9 +916,6 @@ public final class Importer{
             }
         });
 
-        //Allowing the actual restoreComponentMainDb method to decide whether to back up or not
-        //by doing this we can easily log when a backup included a db, but we decided to leave it alone, because
-        //it was not local for example
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
@@ -922,7 +940,6 @@ public final class Importer{
             }
         });
 
-        //os files
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
@@ -935,7 +952,6 @@ public final class Importer{
             }
         });
 
-        //custom assertion files and jars
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
@@ -948,7 +964,6 @@ public final class Importer{
             }
         });
 
-        //modular assertion aar files
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = "Restoring component " + getComponentType().getComponentName();
@@ -1029,10 +1044,10 @@ public final class Importer{
     }
 
     /**
-     * Get the usage for the Importer utility. Usage information is written to the StringBuilder output
+     * Get the usage for the Restore. Usage information is written to the StringBuilder output
      * @param output StringBuilder to write the usage information to
      */
-    static void getImporterUsage(final StringBuilder output) {
+    static void getRestoreUsage(final StringBuilder output) {
         final List<CommandLineOption> restoreArgList = getRestoreOptionsWithDb();
         final int largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(restoreArgList);
         final List<CommandLineOption> prependOptions = new ArrayList<CommandLineOption>();
