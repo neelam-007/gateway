@@ -351,10 +351,10 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                             policyFinder.setModules(policyModules);
 
                             return policyFinder;
-                        } catch(SAXException saxe) {
-                            throw new CausedIOException(saxe);
-                        } catch(ParsingException pe) {
-                            throw new CausedIOException(pe);
+                        } catch( SAXException saxe ) {
+                            throw new CausedIOException(ExceptionUtils.getMessage( saxe ), saxe);
+                        } catch( ParsingException pe ) {
+                            throw new CausedIOException(ExceptionUtils.getMessage( pe ), pe);
                         }
                     }
                 };

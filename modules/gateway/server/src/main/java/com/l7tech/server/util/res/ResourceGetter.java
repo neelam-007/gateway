@@ -98,7 +98,7 @@ public abstract class ResourceGetter<R> {
      */
     public static class ResourceIOException extends UrlResourceException {
         public ResourceIOException(IOException cause, String url) { super(cause, url); }
-
+        public ResourceIOException(String message, IOException cause, String url) { super(message, cause, url); }
         public ResourceIOException(String message, String url) { super(message, url); }
 
         /** @return the wrapped IOException */

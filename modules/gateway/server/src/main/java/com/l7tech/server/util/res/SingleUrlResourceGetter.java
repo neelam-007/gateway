@@ -11,6 +11,7 @@ import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.util.ExceptionUtils;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -56,9 +57,9 @@ class SingleUrlResourceGetter<R> extends UrlResourceGetter<R> {
         try {
             return fetchObject(actualUrl);
         } catch (ParseException e) {
-            throw new ResourceParseException(e, actualUrl);
+            throw new ResourceParseException(ExceptionUtils.getMessage(e), e, actualUrl);
         } catch (IOException e) {
-            throw new ResourceIOException(e, actualUrl);
+            throw new ResourceIOException(ExceptionUtils.getMessage(e), e, actualUrl);
         }
     }
 }
