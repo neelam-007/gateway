@@ -16,6 +16,7 @@ import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.message.Message;
+import com.l7tech.message.MessageRole;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -73,11 +74,12 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
             }
             if ( isRequest() ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
-                if (context.isResponseWss11()) {
-                    message.getSecurityKnob().setNeedsSignatureConfirmations(true);
-                }
+                message.getSecurityKnob().setNeedsSignatureConfirmations(true);
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, auditor);
+                if (message.getRelated(MessageRole.REQUEST) != null) {
+                    message.getRelated(MessageRole.REQUEST).getSecurityKnob().setNeedsSignatureConfirmations(true);
+                }
             }
         } catch (SAXException e) {
             throw new CausedIOException("Request declared as XML but is not well-formed", e);

@@ -1185,7 +1185,7 @@ public class PolicyProcessingTest {
 
     @Test
 	public void testAddEncryptedWssUsernameToken() throws Exception {
-        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        final String requestMessage = new String(loadResource("REQUEST_signed.xml"));
         processMessage("/addusernametoken3", requestMessage, 0);
     }
 

@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Pair;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
@@ -14,6 +15,8 @@ import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
 import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.Arrays;
 
 /**
  * Enforces that a specific element in a message is signed.
@@ -76,8 +79,8 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         // the assertion.
         if( elements.length>0 &&
            new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
-            WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, elements);
-            valid = WSSecurityProcessorUtils.isValidSignatureConfirmations(wssResults.getSignatureConfirmation(), auditor) &&
+            Pair<Boolean,Collection<ParsedElement>> signatureConfirmationValidation = WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, auditor);
+            valid = (isRequest() || signatureConfirmationValidation.getKey()) &&
                     WSSecurityProcessorUtils.isValidSingleSigner(
                         context.getAuthenticationContext(message),
                         wssResults,
@@ -101,14 +104,19 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         // the assertion.
         if ( !new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
 
-            ParsedElement[] elementsToCheck = WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, elements);
+            Pair<Boolean,Collection<ParsedElement>> signatureConfirmationValidation = WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, auditor);
 
-            return WSSecurityProcessorUtils.isValidSignatureConfirmations(wssResults.getSignatureConfirmation(), auditor) &&
+            Collection<ParsedElement> elementsToCheck = Arrays.asList(elements);
+            if (signatureConfirmationValidation.getValue() != null) {
+                elementsToCheck.addAll(signatureConfirmationValidation.getValue());
+            }
+
+            return (isRequest() || signatureConfirmationValidation.getKey()) &&
                    WSSecurityProcessorUtils.isValidSigningIdentity(
                        context.getAuthenticationContext(message),
                        assertion.getIdentityTarget(),
                        wssResults,
-                       elementsToCheck
+                       elementsToCheck.toArray(new ParsedElement[elementsToCheck.size()])
                    );
         }
 

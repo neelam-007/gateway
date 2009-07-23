@@ -9,11 +9,7 @@ import com.l7tech.security.token.*;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.MessageRole;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.util.*;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -514,28 +510,29 @@ public class WSSecurityProcessorUtils {
 
     /**
      * If the signature confirmations were processed successfully by the (identity unaware) WSS Processor,
-     * the elements containing them are added to the list of elements for which the signature and signer
-     * identity need to be checked.
+     * the elements containing them are returned so that the identity-aware assertions can check
+     * if they are covered by a signature.
      *
-     * If applicable, the check needs to be performed only once (by the first WSS assertion targeted at a message), 
-     * and the result of the validation is recorded in the message's security knob.
+     * SignatureConfirmation processing has to be performed at most once, by the first WSS assertion targeted at a message.
+     * Subsequent calls will return <True,null>. 
      *
-     * @return the full list of elements, including the signature confirmations, for which the signature must be checked
+     * @return a Pair with the fail/pass flag, and a collection of elements for which the signature must be checked
      */
-    public static ParsedElement[] processSignatureConfirmations(SecurityKnob securityKnob, ProcessorResult wssResults, ParsedElement[] elements) {
-        ParsedElement[] elementsToCheck = elements;
-        SignatureConfirmation.Status status = wssResults.getSignatureConfirmation().getStatus();
-
+    public static Pair<Boolean, Collection<ParsedElement>> processSignatureConfirmations(SecurityKnob securityKnob, ProcessorResult wssResults, Auditor auditor) {
         if (! securityKnob.isSignatureConfirmationValidated()) {
             securityKnob.setSignatureConfirmationValidated(true);
-            if (status == SignatureConfirmation.Status.CONFIRMED) {
-                List<ParsedElement> newElements = new ArrayList<ParsedElement>(Arrays.asList(elementsToCheck));
-                newElements.addAll(wssResults.getSignatureConfirmation().getConfirmationElements().values());
-                elementsToCheck = newElements.toArray(new ParsedElement[newElements.size()]);
+            Collection<ParsedElement> elementsToCheck = null;
+            SignatureConfirmation.Status status = wssResults.getSignatureConfirmation().getStatus();
+            if (SignatureConfirmation.Status.CONFIRMED == status) {
+                elementsToCheck = wssResults.getSignatureConfirmation().getConfirmationElements().values();
             }
+            if (SignatureConfirmation.Status.INVALID == status) {
+                auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_SIGNATURE_CONFIRMATION_FAILED, Arrays.toString(wssResults.getSignatureConfirmation().getErrors().toArray()));
+            }
+            return new Pair<Boolean, Collection<ParsedElement>>(SignatureConfirmation.Status.INVALID != status, elementsToCheck);
+        } else {
+            return new Pair<Boolean, Collection<ParsedElement>>(true, null);
         }
-
-        return elementsToCheck;
     }
 
     /**
@@ -549,17 +546,22 @@ public class WSSecurityProcessorUtils {
         Message request = message.getRelated(MessageRole.REQUEST);
         if (request == null)
             return; // not a response
-        if (request.getSecurityKnob().getProcessorResult() == null) {
+
+        SecurityKnob securityKnob = message.getSecurityKnob();
+        SecurityKnob requestSecurityKnob = request.getSecurityKnob();
+        ProcessorResult requestWssResult = requestSecurityKnob.getProcessorResult();
+        if (requestWssResult == null) {
             auditor.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_NO_WSS, "Request");
-            return;
         }
-        if ( ! request.getSecurityKnob().isNeedsSignatureConfirmations() )
+
+        // todo: is this needed, or does it need to take into account the actor?
+        boolean wss11seen = securityKnob.getProcessorResult() != null && securityKnob.getProcessorResult().isWsse11Seen();
+        
+        if ( ! requestSecurityKnob.isNeedsSignatureConfirmations() && ! wss11seen && ! securityKnob.hasWss11Decorations())
             return;
-        List<String> signatureValues = request.getSecurityKnob().getProcessorResult().getValidatedSignatureValues();
 
         // get the decoration where signature confirmation should go
         Map<String, DecorationRequirements> decorations = new HashMap<String, DecorationRequirements>();
-        SecurityKnob securityKnob = message.getSecurityKnob();
         for (DecorationRequirements decoration : securityKnob.getDecorationRequirements()) {
             decorations.put(decoration.getSecurityHeaderActor(), decoration);
         }
@@ -568,12 +570,14 @@ public class WSSecurityProcessorUtils {
                                             actors.contains(null) ? decorations.get(null) :
                                             actors.size() == 1 ? decorations.values().toArray(new DecorationRequirements[1])[0] :
                                             null;
+
+        List<String> signatureValues = requestWssResult == null ? null : requestWssResult.getValidatedSignatureValues();
         if (decoration == null) {
             // todo: bug 7277 - add signature confirmations only if the response already has decoration requirements?
             auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NO_SIG_CONFIRMATION);
         } else {
             // add signature confirmations
-            if (signatureValues.isEmpty()) {
+            if (signatureValues == null || signatureValues.isEmpty()) {
                 // no signatures but confirmation needed -> value-less <SignatureConfirmation>
                 decoration.addSignatureConfirmation(null);
             } else {
@@ -581,16 +585,8 @@ public class WSSecurityProcessorUtils {
                     decoration.addSignatureConfirmation(sig);
             }
         }
-        request.getSecurityKnob().setNeedsSignatureConfirmations(false);
-    }
-
-    public static boolean isValidSignatureConfirmations(SignatureConfirmation signatureConfirmation, Auditor auditor) {
-        if (signatureConfirmation.getStatus() == SignatureConfirmation.Status.INVALID) {
-            auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_SIGNATURE_CONFIRMATION_FAILED, Arrays.toString(signatureConfirmation.getErrors().toArray()));
-            return false;
-        }
-
-        return true;
+        requestSecurityKnob.setNeedsSignatureConfirmations(false);
+        securityKnob.setSignatureConfirmationValidated(true); // don't attempt validation on responses with our own signature confirmations
     }
 
     private static WssSettings getWssSettings() {

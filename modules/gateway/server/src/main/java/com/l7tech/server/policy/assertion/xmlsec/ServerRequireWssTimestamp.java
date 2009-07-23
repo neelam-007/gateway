@@ -25,6 +25,7 @@ import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAsserti
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Pair;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -96,16 +97,20 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             return getBadMessageStatus();
         }
 
+        Pair<Boolean,Collection<ParsedElement>> signatureConfirmationValidation = WSSecurityProcessorUtils.processSignatureConfirmations(msg.getSecurityKnob(), processorResult, auditor);
+
         if ( assertion.isSignatureRequired() ) {
             final Collection<ParsedElement> elements = ProcessorResultUtil.getParsedElementsForNode( wssTimestamp.asElement(), processorResult.getElementsThatWereSigned() );
-            ParsedElement[] elementsToCheck = WSSecurityProcessorUtils.processSignatureConfirmations(msg.getSecurityKnob(), processorResult, elements.toArray(new ParsedElement[elements.size()]));
+            if (signatureConfirmationValidation.getValue() != null)
+                elements.addAll(signatureConfirmationValidation.getValue());
+
             if ( new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
                 if ( elements.isEmpty() ||
-                    ! WSSecurityProcessorUtils.isValidSignatureConfirmations(processorResult.getSignatureConfirmation(), auditor) ||
+                    (isResponse() && ! signatureConfirmationValidation.getKey()) ||
                     ! WSSecurityProcessorUtils.isValidSingleSigner(
                         authContext,
                         processorResult,
-                        elementsToCheck,
+                        elements.toArray(new ParsedElement[elements.size()]),
                         requireCredentialSigningToken ) ) {
                     auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
                     return getBadMessageStatus();
@@ -113,12 +118,12 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             } else {
                 // Ensure signed with the required identity
                 if ( elements.isEmpty() ||
-                     ! WSSecurityProcessorUtils.isValidSignatureConfirmations(processorResult.getSignatureConfirmation(), auditor) ||
+                     (isResponse() && ! signatureConfirmationValidation.getKey()) ||
                      ! WSSecurityProcessorUtils.isValidSigningIdentity(
                              authContext,
                              assertion.getIdentityTarget(),
                              processorResult,
-                             elementsToCheck )) {
+                             elements.toArray(new ParsedElement[elements.size()]))) {
                     auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
                     return getBadMessageStatus();
                 }
@@ -169,7 +174,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             }
         }
 
-        if (! WSSecurityProcessorUtils.isValidSignatureConfirmations(processorResult.getSignatureConfirmation(), auditor)) {
+        if (isResponse() && ! signatureConfirmationValidation.getKey()) {
             return AssertionStatus.FALSIFIED;
         }
 

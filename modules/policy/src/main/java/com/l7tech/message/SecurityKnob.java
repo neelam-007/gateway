@@ -137,4 +137,9 @@ public interface SecurityKnob extends MessageKnob {
      * Marks a (request) message as requiring signature confirmations in the related response.
      */
     public void setNeedsSignatureConfirmations(boolean needsConfirmations);
+
+    /**
+     * @return true if there are any (pending) WSS 11 decorations, or false otherwise.
+     */
+    boolean hasWss11Decorations();
 }

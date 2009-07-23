@@ -334,6 +334,11 @@ public class DecorationRequirements {
         this.suppressSamlStrTransform = suppressSamlStrTransform;
     }
 
+    public boolean isWss11() {
+        return ! signatureConfirmations.isEmpty() || encryptUsernameToken;
+        // todo: check for other WSS11 decorations -- encrypted headers! 
+    }
+
     public interface SecureConversationSession {
         String getId();
         byte[] getSecretKey();

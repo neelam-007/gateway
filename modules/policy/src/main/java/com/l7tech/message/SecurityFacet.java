@@ -180,6 +180,16 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     }
 
     @Override
+    public boolean hasWss11Decorations() {
+        for (DecorationRequirements decoration : getDecorationRequirements()) {
+            if (decoration.isWss11()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public MessageKnob getKnob(Class c) {
         if (c == SecurityKnob.class) {
             return this;

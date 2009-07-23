@@ -872,7 +872,7 @@ public class WssDecoratorTest {
                                 new Element[]{c.body},
                                 null, false,
                                 KeyInfoInclusionType.STR_SKI,
-                                true, null, null, null,
+                                true, null, new String[]{null}, null,
                                 new UsernameTokenImpl("testuser", "password".toCharArray()),
                                 true,
                                 true);

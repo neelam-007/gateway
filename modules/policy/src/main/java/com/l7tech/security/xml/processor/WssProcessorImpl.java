@@ -597,7 +597,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         if (reqSignatures == null) { // we're ok only if the message is using WSS 1.0 as far as we can tell
             if (isWsse11Seen) {
-                signatureConfirmation.addError("Message has WSS 1.1 elements, but related request signatures are not available.");
+                signatureConfirmation.addError("Message has WSS 1.1 elements, but no decorations applied to the related request; signature validation will fail if enforced.");
             }
         } else { // there is a decorated request to validate against : inbound response validation
             boolean configuredWss11;
@@ -1199,7 +1199,7 @@ public class WssProcessorImpl implements WssProcessor {
                 derivationSource = findSecurityContextTokenBySessionId(ref);
         }
 
-        // todo : fix tests for processSecurityTokenReferenceWSS11(sTokrefEl);
+        processSecurityTokenReferenceWSS11(sTokrefEl);
 
         if(derivationSource==null) {
             logger.info("Invalid DerivedKeyToken reference target '" + ref + "', ignoring this derived key.");
