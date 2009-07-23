@@ -313,12 +313,14 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 logger.finest("Will passthrough and return inlined policy document");
         }
 
-        // if user asking for full doc, make sure it's allowed
-        if (isFullDoc) {
-            isFullDoc = systemAllowsAnonymousDownloads(req);
+        // if user asking for full doc, or non-inlined, make sure it's allowed
+        if ( !systemAllowsAnonymousDownloads(req) ) {
+            isFullDoc = false;
+        }
+        if ( !isFullDoc ) {
+            isInline = true; // inline option only available when full doc 
         }
 
-        boolean isFullDocAndInlined = isFullDoc && isInline;
         boolean allowDisabled = systemAllowsDisabledServiceDownloads(req);
         // pass over to the service
         PolicyService service = getPolicyService();
@@ -326,10 +328,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         try {
             switch (results.length) {
                 case 0:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, null, this.normalPolicyGetter(isFullDocAndInlined, allowDisabled), isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, null, this.normalPolicyGetter(isInline, allowDisabled), isFullDoc);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, results[0].getUser(), this.normalPolicyGetter(isFullDocAndInlined, allowDisabled), isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, results[0].getUser(), this.normalPolicyGetter(isInline, allowDisabled), isFullDoc);
                     break;
                 default:
                     // todo use the best response (?)
