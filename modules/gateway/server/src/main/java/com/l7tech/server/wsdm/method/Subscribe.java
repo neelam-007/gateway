@@ -90,7 +90,7 @@ public class Subscribe extends ESMMethod {
             }
 
             // extract reference parameters
-            Element refParams = XmlUtil.findOnlyOneChildElementByName(getSoapHeader(), Namespaces.WSA, "ReferenceParameters");
+            Element refParams = XmlUtil.findOnlyOneChildElementByName(consumerReferenceEl, Namespaces.WSA, "ReferenceParameters");
             if(refParams != null) {
                 checkUnallowedNamespaces(refParams);
                 final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
