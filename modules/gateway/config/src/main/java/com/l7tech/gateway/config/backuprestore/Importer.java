@@ -291,7 +291,7 @@ public final class Importer{
         try {
             validArgList.clear();
             if(ftpCheck){
-                validArgList.addAll(getStandardRestoreOptions());
+                validArgList.addAll(getRestoreOptionsWithDb());
                 //get the ftp config
                 final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(args,
                         validArgList,
@@ -1048,7 +1048,7 @@ public final class Importer{
      * @param output StringBuilder to write the usage information to
      */
     static void getRestoreUsage(final StringBuilder output) {
-        final List<CommandLineOption> restoreArgList = getRestoreOptionsWithDb();
+        final List<CommandLineOption> restoreArgList = getStandardRestoreOptions();
         final int largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(restoreArgList);
         final List<CommandLineOption> prependOptions = new ArrayList<CommandLineOption>();
         prependOptions.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
@@ -1136,7 +1136,6 @@ public final class Importer{
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
-        validArgList.addAll(Arrays.asList(MIGRATE_OPTIONS));
         return validArgList;
     }
 
