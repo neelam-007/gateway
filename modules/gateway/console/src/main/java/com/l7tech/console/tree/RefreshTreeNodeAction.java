@@ -1,6 +1,8 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.RefreshAction;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
+import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -37,17 +39,28 @@ public class RefreshTreeNodeAction extends RefreshAction {
             logger.warning("No tree assigned, ignoring the refresh action");
             return;
         }
+        boolean isMultipleSelection  = tree.getSelectionCount() > 1;
         try {
             logger.finest("refreshing tree node type " + node.getClass());
             SwingUtilities.getWindowAncestor(tree);
             tree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            TreePath treePath = new TreePath(node.getPath());
-            if (tree.isExpanded(treePath)) {
-                node.hasLoadedChildren = false;
-                model.reload(node);
-                setInitialSelection(getInitialSelectedNode());
+            AbstractTreeNode rootNode = (AbstractTreeNode) model.getRoot();
+
+            TreeNode parent = node.getParent();
+            int index = model.getIndexOfChild(parent, node);
+
+            rootNode.hasLoadedChildren = false;
+            model.reload();
+
+            if (parent != null && index >= 0) {
+                TreeNode updatedNode = (TreeNode)model.getChild(parent, index);
+                TreeNode newParent = updatedNode.getParent();
+
+                if (parent == newParent && !isMultipleSelection) {
+                    setInitialSelection(updatedNode);
+                }
             }
         } finally {
             tree.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
