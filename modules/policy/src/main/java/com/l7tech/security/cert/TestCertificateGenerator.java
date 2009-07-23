@@ -382,18 +382,24 @@ public class TestCertificateGenerator {
 
     /**
      * Reverse the conversion performed by {@link #convertToBase64Pkcs12(java.security.cert.X509Certificate, java.security.PrivateKey)}.
-     * Converts a Base-64 encoded PKCS#12 file with a single entry with alias "entry", with passphrase "password", back into
-     * a PrivateKey and an X509Certificate.
+     * Converts the first key entry from a Base-64 encoded PKCS#12 file with passphrase "password" back into a PrivateKey and an X509Certificate.
      *
-     * @param base64pkcs12 a base-64 encoded PKCS#12 file, expected to have a single entry alias "entry", and expected to use the passphrase "password".  Required.
+     * @param base64pkcs12 a base-64 encoded PKCS#12 file, expected to have at least one key entry and expected to use the passphrase "password".  Required.
      * @return the private key and certificate from this entry.  Never null and never contains a null cert or private key.
      */
     public static Pair<X509Certificate, PrivateKey> convertFromBase64Pkcs12(String base64pkcs12) throws GeneralSecurityException, IOException {
         char[] pass = "password".toCharArray();
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(new ByteArrayInputStream(HexUtils.decodeBase64(base64pkcs12)), pass);
-        PrivateKey privateKey = (PrivateKey)ks.getKey("entry", pass);
-        Certificate[] chain = ks.getCertificateChain("entry");
-        return new Pair<X509Certificate, PrivateKey>((X509Certificate)chain[0], privateKey);
+        Enumeration<String> aliases = ks.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            if (ks.isKeyEntry(alias)) {
+                PrivateKey privateKey = (PrivateKey)ks.getKey(alias, pass);
+                Certificate[] chain = ks.getCertificateChain(alias);
+                return new Pair<X509Certificate, PrivateKey>((X509Certificate)chain[0], privateKey);
+            }
+        }
+        throw new IOException("Keystore contains no key entry");
     }
 }
