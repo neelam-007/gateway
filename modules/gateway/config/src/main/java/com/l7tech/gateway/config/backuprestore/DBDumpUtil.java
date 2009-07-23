@@ -155,12 +155,6 @@ class DBDumpUtil {
         if(auditTables.isEmpty())
             throw new IllegalArgumentException("auditTables does not list any audit tables to backup");
 
-        final NetworkInterface networkInterface =
-                NetworkInterface.getByInetAddress( InetAddress.getByName(dbConfig.getHost()) );
-        if ( networkInterface == null ) {
-            throw new UnsupportedOperationException("Audit backup of a remote database is not supported");
-        }
-
         Connection conn = null;
         ResultSet tableNames = null;
         final OutputStream outputStream = new BufferedOutputStream(
