@@ -448,7 +448,7 @@ public class WssDecoratorImpl implements WssDecorator {
                             addDerivedKeyToken(c,
                                                securityHeader,
                                                null,
-                                               KeyInfoDetails.makeUriReference(encKeyId, SoapConstants.VALUETYPE_ENCRYPTED_KEY_SHA1),
+                                               KeyInfoDetails.makeUriReference(encKeyId, SoapConstants.VALUETYPE_ENCRYPTED_KEY),
                                                getKeyLengthInBytesForAlgorithm(dreq.getEncryptionAlgorithm()),
                                                addedEncKeyXmlEncKey.getSecretKey().getEncoded(),
                                                "DerivedKey");
