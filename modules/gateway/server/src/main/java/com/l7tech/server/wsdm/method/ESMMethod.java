@@ -64,25 +64,8 @@ public abstract class ESMMethod {
         messageId = DomUtils.getTextValue(validateExactlyOneElement(soapHeader, Namespaces.WSA, "MessageID", null));
         // todo: should also check that the message id is a valid IRI
 
-        // ReplyTo address checks
-        Element replyTo = validateNoMoreThanOne(soapHeader, Namespaces.WSA, "ReplyTo");
-        if (replyTo != null) {
-            Element address = validateExactlyOneElement(replyTo, Namespaces.WSA, "Address", InvalidWsAddressingHeaderFault.FaultCode.MISSING_ADDRESS_IN_EPR);
-            String replyToAddress = DomUtils.getTextValue(address);
-            if (!WSA_ANONYMOUS_ADDRESS.equals(replyToAddress))
-                throw new InvalidWsAddressingHeaderFault("Unsupported wsa:ReplyTo endpoint reference address " + replyToAddress,
-                    InvalidWsAddressingHeaderFault.FaultCode.ONLY_ANNONYMOUS_ADDRESS_SUPPORTED, address);
-        }
-
-        // WSA action checks
-        Element wsaAction = validateExactlyOneElement(soapHeader, Namespaces.WSA, "Action", null);
-        try {
-            if (!DomUtils.getTextValue(wsaAction).equals(requestMessage.getHttpRequestKnob().getHeaderSingleValue(SoapConstants.SOAPACTION)))
-                throw new InvalidWsAddressingHeaderFault("wsa:Action does not match the HTTP request SOAPAction header",
-                    InvalidWsAddressingHeaderFault.FaultCode.ACTION_MISMATCH, wsaAction);
-        } catch (IOException e) {
-            throw new InvalidWsAddressingHeaderFault("More than one SOAPAction HTTP header found in the request", InvalidWsAddressingHeaderFault.FaultCode.ACTION_MISMATCH, wsaAction);
-        }
+        validateReplyTo(soapHeader);
+        validateAction(soapHeader);
     }
 
     /**
@@ -117,6 +100,43 @@ public abstract class ESMMethod {
             throw new InvalidWsAddressingHeaderFault("More than one " + namespace + " : " + localName + " property found for " + parent.getPrefix() + ":" + parent.getLocalName(),
                 InvalidWsAddressingHeaderFault.FaultCode.INVALID_CARDINALITY, DomUtils.findFirstChildElementByName(parent, namespace, localName));
         }
+    }
+
+    private void validateReplyTo(Element soapHeader) throws InvalidWsAddressingHeaderFault {
+        // ReplyTo address checks
+        Element replyTo = validateNoMoreThanOne(soapHeader, Namespaces.WSA, "ReplyTo");
+        if (replyTo != null) {
+            Element address = validateExactlyOneElement(replyTo, Namespaces.WSA, "Address", InvalidWsAddressingHeaderFault.FaultCode.MISSING_ADDRESS_IN_EPR);
+            String replyToAddress = DomUtils.getTextValue(address);
+            if (!WSA_ANONYMOUS_ADDRESS.equals(replyToAddress))
+                throw new InvalidWsAddressingHeaderFault("Unsupported wsa:ReplyTo endpoint reference address " + replyToAddress,
+                    InvalidWsAddressingHeaderFault.FaultCode.ONLY_ANNONYMOUS_ADDRESS_SUPPORTED, address);
+        }
+    }
+
+    private void validateAction(Element soapHeader) throws InvalidWsAddressingHeaderFault {
+        // WSA action checks
+        String actionErrorMsg = null;
+
+        Element wsaAction = validateExactlyOneElement(soapHeader, Namespaces.WSA, "Action", null);
+        try {
+            String actionHttpHeader = requestMessage.getHttpRequestKnob().getHeaderSingleValue(SoapConstants.SOAPACTION);
+            if (actionHttpHeader == null ) {
+                actionErrorMsg = "No HTTP SOAPAction header found, required when using WS-Addressing.";
+            } else if (actionHttpHeader.length() < 2 || !actionHttpHeader.startsWith("\"") || !actionHttpHeader.endsWith("\"")) {
+                actionErrorMsg = "HTTP SOAPAction header must be enclosed in double quotes when used with WS-Addressing, found: " + actionHttpHeader;
+            } else if (!"\"\"".equals(actionHttpHeader)) { // "" is always valid, regardless of the WSA property value
+                String wsaActionValue = DomUtils.getTextValue(wsaAction);
+                if (!wsaActionValue.equals(actionHttpHeader.substring(1, actionHttpHeader.length() - 2))) {
+                    actionErrorMsg = "HTTP SOAPAction header does not match the WS-Addressing Action property: " + wsaActionValue + " : " + actionHttpHeader;
+                }
+            }
+        } catch (IOException e) {
+            actionErrorMsg = "More than one SOAPAction HTTP header found in the request";
+        }
+
+        if (actionErrorMsg != null)
+            throw new InvalidWsAddressingHeaderFault(actionErrorMsg, InvalidWsAddressingHeaderFault.FaultCode.ACTION_MISMATCH, wsaAction);
     }
 
     protected Element getSoapHeader() throws InvalidWsAddressingHeaderFault {
