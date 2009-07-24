@@ -616,9 +616,9 @@ public class WssProcessorImpl implements WssProcessor {
                 case 0:
                     if (usesWss11) {
                         if (strictSignatureConfirmationValidation)
-                            signatureConfirmation.addError("No SignatureConfirmation element found, expected at least one in a WSS 1.1 nessage.");
+                            signatureConfirmation.addError("No SignatureConfirmation element found, expected at least one in a WSS 1.1 message.");
                         else if (configuredWss11 && !reqSignatures.isEmpty()) // don't fail if not strict and WSS 1.1 not configured
-                            signatureConfirmation.addError("No signatures from the request are confirmed.");
+                            signatureConfirmation.addError("No signatures from the outbound request are confirmed.");
                     }
                     break;
 
