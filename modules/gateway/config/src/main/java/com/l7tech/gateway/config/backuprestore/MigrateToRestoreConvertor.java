@@ -27,10 +27,10 @@ public class MigrateToRestoreConvertor {
             throws BackupRestoreLauncher.InvalidProgramArgumentException {
 
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
-        validArgList.addAll(Arrays.asList(Importer.ALL_MIGRATE_OPTIONS));
+        validArgList.addAll(Importer.ALL_MIGRATE_OPTIONS);
 
         final List<CommandLineOption> ignoredOptions = new ArrayList<CommandLineOption>();
-        ignoredOptions.addAll(Arrays.asList(Importer.ALL_IGNORED_OPTIONS));
+        ignoredOptions.addAll(Importer.ALL_IGNORED_OPTIONS);
         //this is ignored as its not needed for anything in ssgmigrate.sh, as just calling this script
         //tells us that you want to do a migrate
         ignoredOptions.add(Importer.MIGRATE);

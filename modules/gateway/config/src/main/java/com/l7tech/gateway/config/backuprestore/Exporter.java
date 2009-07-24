@@ -44,12 +44,12 @@ public final class Exporter{
     static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it",
             "populate supplied file with template mapping information", true);
 
-//    static final CommandLineOption ESM =
-    private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, IA_AUDIT_FLAG, MAPPING_PATH,
-            CommonCommandLineOptions.VERBOSE, CommonCommandLineOptions.HALT_ON_FIRST_FAILURE};
+    private static final List<CommandLineOption> ALLOPTIONS = Collections.unmodifiableList(Arrays.asList(
+            IMAGE_PATH, IA_AUDIT_FLAG, MAPPING_PATH, CommonCommandLineOptions.VERBOSE,
+            CommonCommandLineOptions.HALT_ON_FIRST_FAILURE));
 
-    private static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
-            new CommandLineOption("-p", "ignored parameter for backup", false) };
+    private static final List<CommandLineOption> ALL_IGNORED_OPTIONS = Collections.unmodifiableList(Arrays.asList(
+            new CommandLineOption("-p", "ignored parameter for backup", false) ));
 
     /** Home directory of the SSG installation. This will always be /opt/SecureSpan/Gateway however maintaining
      * the ability for this to be theoritically installed into other directories*/
@@ -178,14 +178,14 @@ public final class Exporter{
     BackupResult createBackupImage(final String [] args) throws InvalidProgramArgumentException {
 
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
-        validArgList.addAll(Arrays.asList(ALLOPTIONS));
-        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
-        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+        validArgList.addAll(ALLOPTIONS);
+        validArgList.addAll(CommonCommandLineOptions.ALL_FTP_OPTIONS);
+        validArgList.addAll(CommonCommandLineOptions.ALL_COMPONENTS);
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
 
         programFlagsAndValues =
-                ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                        validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), true, printStream);
+                ImportExportUtilities.getAndValidateCommandLineOptions(
+                        args, validArgList, ALL_IGNORED_OPTIONS, true, printStream);
 
         validateProgramParameters();
         final boolean usingFtp = ImportExportUtilities.checkAndValidateFtpParams(programFlagsAndValues);
@@ -619,13 +619,13 @@ public final class Exporter{
     public static void getExporterUsage(final StringBuilder output) {
 
         final List<CommandLineOption> allOptList = new ArrayList<CommandLineOption>();
-        allOptList.addAll(Arrays.asList(ALLOPTIONS));
-        allOptList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
-        allOptList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+        allOptList.addAll(ALLOPTIONS);
+        allOptList.addAll(CommonCommandLineOptions.ALL_FTP_OPTIONS);
+        allOptList.addAll(CommonCommandLineOptions.ALL_COMPONENTS);
         allOptList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
 
         final List<CommandLineOption> prependOptions = new ArrayList<CommandLineOption>();
-                prependOptions.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+                prependOptions.addAll(CommonCommandLineOptions.ALL_COMPONENTS);
                 prependOptions.add(CommonCommandLineOptions.ESM_OPTION);
 
         int largestNameStringSize;

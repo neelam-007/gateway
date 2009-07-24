@@ -68,21 +68,23 @@ public final class Importer{
     /**
      * Note this doesn't list MIGRATE. for ssgmigrate.sh, MIGRATE is an ignored option
      */
-    static final CommandLineOption[] ALL_MIGRATE_OPTIONS = {IMAGE_PATH_MIGRATE, MAPPING_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
-            DB_HOST_NAME, DB_NAME, CONFIG_ONLY, OS_OVERWRITE, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD,
-            CREATE_NEW_DB};
+    static final List<CommandLineOption> ALL_MIGRATE_OPTIONS = Collections.unmodifiableList(Arrays.asList(
+            IMAGE_PATH_MIGRATE, MAPPING_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,DB_HOST_NAME, DB_NAME, CONFIG_ONLY,
+            OS_OVERWRITE, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD, CREATE_NEW_DB));
 
-    static final CommandLineOption[] ALL_RESTORE_OPTIONS = {IMAGE_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,
-            CommonCommandLineOptions.HALT_ON_FIRST_FAILURE, CommonCommandLineOptions.VERBOSE};
+    static final List<CommandLineOption> ALL_RESTORE_OPTIONS = Collections.unmodifiableList(Arrays.asList(
+            IMAGE_PATH, DB_ROOT_USER, DB_ROOT_PASSWD, CommonCommandLineOptions.HALT_ON_FIRST_FAILURE,
+            CommonCommandLineOptions.VERBOSE));
 
-    static final CommandLineOption [] MIGRATE_OPTIONS = {MIGRATE, MAPPING_PATH, CREATE_NEW_DB};
+    static final List<CommandLineOption> MIGRATE_OPTIONS = Collections.unmodifiableList(Arrays.asList(
+            MIGRATE, MAPPING_PATH, CREATE_NEW_DB));
 
-    static final CommandLineOption [] COMMAND_LINE_DB_ARGS = {DB_HOST_NAME, DB_NAME, CLUSTER_PASSPHRASE,
-                GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD};
+    static final List<CommandLineOption> COMMAND_LINE_DB_ARGS = Collections.unmodifiableList(Arrays.asList(
+            DB_HOST_NAME, DB_NAME, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD));
 
-    static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
+    static final List<CommandLineOption> ALL_IGNORED_OPTIONS = Collections.unmodifiableList(Arrays.asList(
             new CommandLineOption("-p", "Ignored parameter for partition", false),
-            new CommandLineOption("-mode", "Ignored parameter for mode type", true) };
+            new CommandLineOption("-mode", "Ignored parameter for mode type", true)));
 
     private String suppliedClusterPassphrase;
 
@@ -195,8 +197,8 @@ public final class Importer{
         final List<CommandLineOption> validArgList = getRestoreOptionsWithDb();
         validArgList.addAll(getAllMigrateOptions());
         final Map<String, String> initialValidArgs =
-                ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                        validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), true, printStream);
+                ImportExportUtilities.getAndValidateCommandLineOptions(
+                        args, validArgList, ALL_IGNORED_OPTIONS, true, printStream);
 
         //are we doing a restore with migrate behaviour?
         isMigrate = initialValidArgs.get(MIGRATE.getName()) != null;
@@ -215,12 +217,12 @@ public final class Importer{
         //with a migrate capability. Therefore here we are actually validating ssgrestore.sh parameters
         final List<CommandLineOption> validArgList = getRestoreOptionsWithDb();
 
-        final String imageValue = ImportExportUtilities.getAndValidateSingleArgument(args,
-                IMAGE_PATH, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+        final String imageValue = ImportExportUtilities.getAndValidateSingleArgument(
+                args, IMAGE_PATH, validArgList, ALL_IGNORED_OPTIONS);
         final File imageFile = getAndValidateImageExists(imageValue);
 
-        programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), false, printStream);
+        programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(
+                args, validArgList, ALL_IGNORED_OPTIONS, false, printStream);
 
         preBackupImageInitialization(programFlagsAndValues);
 
@@ -270,7 +272,7 @@ public final class Importer{
             throws InvalidProgramArgumentException {
         final List<CommandLineOption> validArgList = getRestoreOptionsWithDb();
         //make sure no unexpected arguments were supplied
-        ImportExportUtilities.softArgumentValidation(args, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+        ImportExportUtilities.softArgumentValidation(args, validArgList, ALL_IGNORED_OPTIONS);
 
         //Cannot validate the command line arguments until the state of the backup image is known,
         //this is because of the database parameters.
@@ -279,20 +281,20 @@ public final class Importer{
         //with the parameters and values they supplied
 
         //Get the image param
-        final String imageValue = ImportExportUtilities.getAndValidateSingleArgument(args,
-                IMAGE_PATH, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+        final String imageValue = ImportExportUtilities.getAndValidateSingleArgument(
+                args, IMAGE_PATH, validArgList, ALL_IGNORED_OPTIONS);
 
         //are we using ftp?
         //Can use any ftp param to validate if ftp is requested, this is further validated below, but first
         //we need to know if ftp has been specified
-        final boolean ftpCheck = ImportExportUtilities.checkArgumentExistence(args,
-                CommonCommandLineOptions.FTP_HOST.getName(), validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+        final boolean ftpCheck = ImportExportUtilities.checkArgumentExistence(
+                args, CommonCommandLineOptions.FTP_HOST.getName(), validArgList, ALL_IGNORED_OPTIONS);
 
-        isVerbose = ImportExportUtilities.checkArgumentExistence(args,
-                CommonCommandLineOptions.VERBOSE.getName(), validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
+        isVerbose = ImportExportUtilities.checkArgumentExistence(
+                args, CommonCommandLineOptions.VERBOSE.getName(), validArgList, ALL_IGNORED_OPTIONS);
 
-        programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), false, printStream);
+        programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(
+                args, validArgList, ALL_IGNORED_OPTIONS, false, printStream);
 
         preBackupImageInitialization(programFlagsAndValues);
         //what ever happens we need to delete any unzipped directory no matter what the outcome
@@ -301,10 +303,8 @@ public final class Importer{
             if(ftpCheck){
                 validArgList.addAll(getRestoreOptionsWithDb());
                 //get the ftp config
-                final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(args,
-                        validArgList,
-                        Arrays.asList(ALL_IGNORED_OPTIONS),
-                        imageValue);
+                final FtpClientConfig ftpConfig = ImportExportUtilities.getFtpConfig(
+                        args, validArgList, ALL_IGNORED_OPTIONS, imageValue);
 
                 backupImage = new BackupImage(ftpConfig, imageValue, printStream, isVerbose);
             }else{
@@ -1093,7 +1093,7 @@ public final class Importer{
         final List<CommandLineOption> restoreArgList = getStandardRestoreOptions();
         final int largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(restoreArgList);
         final List<CommandLineOption> prependOptions = new ArrayList<CommandLineOption>();
-        prependOptions.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+        prependOptions.addAll(CommonCommandLineOptions.ALL_COMPONENTS);
         prependOptions.add(CommonCommandLineOptions.ESM_OPTION);
         for (CommandLineOption option : restoreArgList) {
             final String description = (prependOptions.contains(option))?
@@ -1128,21 +1128,21 @@ public final class Importer{
 
     private static List<CommandLineOption> getStandardRestoreOptions(){
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
-        validArgList.addAll(Arrays.asList(ALL_RESTORE_OPTIONS));
-        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
-        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+        validArgList.addAll(ALL_RESTORE_OPTIONS);
+        validArgList.addAll(CommonCommandLineOptions.ALL_FTP_OPTIONS);
+        validArgList.addAll(CommonCommandLineOptions.ALL_COMPONENTS);
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
         return validArgList;
     }
 
     private static List<CommandLineOption> getRestoreOptionsWithDb(){
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
-        validArgList.addAll(Arrays.asList(ALL_RESTORE_OPTIONS));
-        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_FTP_OPTIONS));
-        validArgList.addAll(Arrays.asList(COMMAND_LINE_DB_ARGS));
-        validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ALL_COMPONENTS));
+        validArgList.addAll(ALL_RESTORE_OPTIONS);
+        validArgList.addAll(CommonCommandLineOptions.ALL_FTP_OPTIONS);
+        validArgList.addAll(COMMAND_LINE_DB_ARGS);
+        validArgList.addAll(CommonCommandLineOptions.ALL_COMPONENTS);
         validArgList.addAll(Arrays.asList(CommonCommandLineOptions.ESM_OPTION));
-        validArgList.addAll(Arrays.asList(MIGRATE_OPTIONS));
+        validArgList.addAll(MIGRATE_OPTIONS);
         return validArgList;
     }
 
@@ -1154,7 +1154,7 @@ public final class Importer{
      */
     private static List<CommandLineOption> getAllMigrateOptions(){
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
-        validArgList.addAll(Arrays.asList(ALL_MIGRATE_OPTIONS));
+        validArgList.addAll(ALL_MIGRATE_OPTIONS);
         return validArgList;
     }
 }
