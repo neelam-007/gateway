@@ -1,6 +1,7 @@
 package com.l7tech.server.wsdm.method;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.server.wsdm.faults.FaultMappableException;
 import com.l7tech.server.wsdm.faults.InvalidWsAddressingHeaderFault;
 import com.l7tech.server.wsdm.subscription.Subscription;
@@ -15,6 +16,8 @@ import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.io.IOException;
 
 /**
@@ -120,17 +123,36 @@ public abstract class ESMMethod {
 
         Element wsaAction = validateExactlyOneElement(soapHeader, Namespaces.WSA, "Action", null);
         try {
-            String actionHttpHeader = requestMessage.getHttpRequestKnob().getHeaderSingleValue(SoapConstants.SOAPACTION);
-            if (actionHttpHeader == null ) {
-                actionErrorMsg = "No HTTP SOAPAction header found, required when using WS-Addressing.";
-            } else if (actionHttpHeader.length() < 2 || !actionHttpHeader.startsWith("\"") || !actionHttpHeader.endsWith("\"")) {
-                actionErrorMsg = "HTTP SOAPAction header must be enclosed in double quotes when used with WS-Addressing, found: " + actionHttpHeader;
-            } else if (!"\"\"".equals(actionHttpHeader)) { // "" is always valid, regardless of the WSA property value
-                String wsaActionValue = DomUtils.getTextValue(wsaAction);
-                if (!wsaActionValue.equals(actionHttpHeader.substring(1, actionHttpHeader.length() - 2))) {
-                    actionErrorMsg = "HTTP SOAPAction header does not match the WS-Addressing Action property: " + wsaActionValue + " : " + actionHttpHeader;
+            String soapAction = null;
+            if (SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE.equals(soapHeader.getNamespaceURI())) {
+                String actionHttpHeader = requestMessage.getHttpRequestKnob().getHeaderSingleValue(SoapConstants.SOAPACTION);
+                if (actionHttpHeader == null) {
+                    actionErrorMsg = "No HTTP SOAPAction header found, required when using WS-Addressing with SOAP 1.1.";
+                } else if (actionHttpHeader.length() < 2 || !actionHttpHeader.startsWith("\"") || !actionHttpHeader.endsWith("\"")) {
+                    actionErrorMsg = "HTTP SOAPAction header must be enclosed in double quotes when used with WS-Addressing, found: " + actionHttpHeader;
+                } else
+                if ("\"\"".equals(actionHttpHeader)) {
+                    return; // "" is always valid, regardless of the WSA property value
+                } else {
+                    soapAction = actionHttpHeader.substring(1, actionHttpHeader.length() - 1);
+                }
+            } else {
+                String contentType = requestMessage.getHttpRequestKnob().getHeaderSingleValue(HttpConstants.HEADER_CONTENT_TYPE);
+                Pattern SOAP_1_2_ACTION_PATTERN = Pattern.compile(";\\s*action=([^;]+)(?:;|$)");
+                if(contentType != null) {
+                    Matcher m = SOAP_1_2_ACTION_PATTERN.matcher(contentType);
+                    if(m.find()) {
+                        soapAction = m.group(1);
+                    }
                 }
             }
+
+            // if we have a soapAction value from the HTTP headers, validate against the WSA value
+            String wsaActionValue = DomUtils.getTextValue(wsaAction);
+            if ( soapAction != null && ! soapAction.equals(wsaActionValue)) {
+                actionErrorMsg = "HTTP SOAPAction header does not match the WS-Addressing Action property: " + soapAction + " : " + wsaActionValue;
+            }
+
         } catch (IOException e) {
             actionErrorMsg = "More than one SOAPAction HTTP header found in the request";
         }
@@ -142,9 +164,12 @@ public abstract class ESMMethod {
     protected Element getSoapHeader() throws InvalidWsAddressingHeaderFault {
         try {
             if (soapHeader == null)
-                soapHeader = DomUtils.findExactlyOneChildElementByName(reqestDoc.getDocumentElement(), SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SoapConstants.HEADER_EL_NAME);
+                soapHeader = SoapUtil.getHeaderElement(reqestDoc); 
         } catch (InvalidDocumentFormatException e) {
-            throw new InvalidWsAddressingHeaderFault("Soap header not found", reqestDoc.getDocumentElement()); // unlikely
+            throw new InvalidWsAddressingHeaderFault("Request is not SOAP or has more than one SOAP Header", reqestDoc.getDocumentElement());
+        }
+        if (soapHeader == null) {
+            throw new InvalidWsAddressingHeaderFault("Soap header not found", reqestDoc.getDocumentElement());
         }
         return soapHeader;
     }
