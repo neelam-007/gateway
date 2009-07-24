@@ -254,7 +254,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
 
             try {
                 final String includeAuditsParam = request.getParameter("audits");
-                final boolean includeAudits = includeAuditsParam != null;
+                final boolean includeAudits = (includeAuditsParam != null && includeAuditsParam.equalsIgnoreCase("true"));
                 final List<String> paramList = new ArrayList<String>();
                 paramList.add("-image");
                 paramList.add((new File(tmpDirectory, imageName)).getCanonicalPath());
