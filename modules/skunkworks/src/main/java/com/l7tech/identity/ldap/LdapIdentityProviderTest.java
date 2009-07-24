@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Hashtable;
 
 /**
  * A test class for the ldap providers
@@ -28,7 +29,6 @@ import java.util.Set;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
- * $Id$<br/>
  */
 public class LdapIdentityProviderTest {
     private LdapIdentityProviderConfig getConfigForSpock() throws IOException {
@@ -245,13 +245,13 @@ public class LdapIdentityProviderTest {
 
     private void checkSasl(String url) throws Exception {
 
-        UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
+        Hashtable<? super String, ? super String> env = LdapUtils.newEnvironment();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, url);
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL, "cn=Manager,dc=layer7-tech,dc=com");
         env.put(Context.SECURITY_CREDENTIALS, "7layer");
-        env.lock();
+        LdapUtils.lock( env );
         DirContext cntx = new InitialDirContext(env);
         Attributes attrs = cntx.getAttributes(url, new String[]{"supportedSASLMechanisms"});
         System.out.println(attrs);

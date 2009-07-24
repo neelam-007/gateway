@@ -303,11 +303,11 @@ public class LdapIdentityProviderImpl
 
     public class CertCacheEntry {
         public CertCacheEntry(X509Certificate cert) {
-            entryCreation = System.currentTimeMillis();
+            this.entryCreation = System.currentTimeMillis();
             this.cert = cert;
         }
-        public X509Certificate cert;
-        public long entryCreation;
+        public final X509Certificate cert;
+        public final long entryCreation;
     }
 
     private void cleanupCertCache() {
@@ -481,9 +481,13 @@ public class LdapIdentityProviderImpl
      */
     @Override
     public String markCurrentUrlFailureAndGetFirstAvailableOne(String urlThatFailed) {
-        Sync write = fallbackLock.writeLock();
+        final Sync write = fallbackLock.writeLock();
         try {
             write.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        try {
             //noinspection StringEquality
             if (urlThatFailed != lastSuccessfulLdapUrl) return lastSuccessfulLdapUrl;
             if (urlThatFailed != null) {
@@ -524,10 +528,8 @@ public class LdapIdentityProviderImpl
             logger.fine("All ldap urls are blacklisted.");
             lastSuccessfulLdapUrl = null;
             return null;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         } finally {
-            if (write != null) write.release();
+            write.release();
         }
     }
 
@@ -801,11 +803,7 @@ public class LdapIdentityProviderImpl
             } catch (Exception e) {
                 logger.log(Level.WARNING, "error looking up user in directory " + dnforcert, e);
             } finally {
-                try {
-                    if (context != null) context.close();
-                } catch (NamingException e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
-                }
+                ResourceUtils.closeQuietly( context );
             }
 
             if (lookedupCert == null) {
@@ -982,12 +980,9 @@ public class LdapIdentityProviderImpl
             ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
         }
         while (ldapurl != null) {
-            UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
-            // fla note: this is weird. new BrowseContext objects are created at every operation so they
-            // should not cross threads.
+            Hashtable<? super String, ? super String> env = LdapUtils.newEnvironment();
             env.put("java.naming.ldap.version", "3");
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-            // when getting javax.naming.CommunicationException at
             env.put(Context.PROVIDER_URL, ldapurl);
             env.put("com.sun.jndi.ldap.connect.pool", "true");
             env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(ldapConnectionTimeout));
@@ -1017,7 +1012,7 @@ public class LdapIdentityProviderImpl
                 continue;
             }
 
-            env.lock();
+            LdapUtils.lock( env );
 
             try {
                 // Create the initial directory context.

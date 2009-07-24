@@ -281,14 +281,12 @@ public class LdapUserManagerImpl implements LdapUserManager {
             ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
         }
         while (ldapurl != null) {
-            DirContext userCtx;
+            DirContext userCtx = null;
             try {
                 boolean clientAuth = ldapIdentityProviderConfig.isClientAuthEnabled();
                 Long keystoreId = ldapIdentityProviderConfig.getKeystoreId();
                 String keyAlias = ldapIdentityProviderConfig.getKeyAlias();
                 userCtx = LdapUtils.getLdapContext(ldapurl, clientAuth, keystoreId, keyAlias, dn, passwd, identityProvider.getLdapConnectionTimeout(), identityProvider.getLdapReadTimeout(), false );
-                // Close the context when we're done
-                userCtx.close();
                 logger.info("User: " + dn + " authenticated successfully in provider " + ldapIdentityProviderConfig.getName());
                 return true;
             } catch (CommunicationException e) {
@@ -301,6 +299,8 @@ public class LdapUserManagerImpl implements LdapUserManager {
             } catch (NamingException e) {
                 logger.log(Level.WARNING, "General naming failure for user: " + dn + " in provider " + ldapIdentityProviderConfig.getName(), e);
                 return false;
+            } finally {
+                ResourceUtils.closeQuietly( userCtx );
             }
         }
         logger.warning("Could not establish context on any of the ldap urls.");

@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.identity.ldap;
@@ -20,9 +18,8 @@ import java.util.logging.Logger;
  * Based on org.jnp.interfaces.FastNamingProperties (LGPL)
  *
  * @author alex
- * @version $Revision$
  */
-public class UnsynchronizedNamingProperties extends Properties {
+class UnsynchronizedNamingProperties extends Properties {
     private Map properties = new HashMap();
     private volatile boolean locked = false;
 

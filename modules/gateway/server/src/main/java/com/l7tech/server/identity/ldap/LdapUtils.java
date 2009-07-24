@@ -5,6 +5,7 @@ package com.l7tech.server.identity.ldap;
 
 import com.sun.jndi.ldap.LdapURL;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.util.SyspropUtil;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
@@ -13,6 +14,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.NamingException;
 import javax.naming.Context;
 import java.util.regex.Pattern;
+import java.util.Hashtable;
 
 /**
  * @author alex
@@ -28,6 +30,7 @@ public final class LdapUtils {
      */
     public static final Pattern LDAP_URL_QUERY_PATTERN = Pattern.compile("^\\?([^\\?]+).*$");
     public static final String LDAP_ATTRIBUTE_BINARY_SUFFIX = ";binary";
+    public static final boolean LDAP_USES_UNSYNC_NAMING = SyspropUtil.getBoolean( "com.l7tech.server.ldap.unsyncNaming", false );
 
     private LdapUtils() { }
 
@@ -62,6 +65,21 @@ public final class LdapUtils {
             return valuesWereLookingFor.get(0);
         }
         return null;
+    }
+
+    public static Hashtable<? super String,? super String> newEnvironment() {
+        if ( LDAP_USES_UNSYNC_NAMING ) {
+            return new UnsynchronizedNamingProperties();
+        } else {
+            return new Hashtable<String,String>();
+        }
+    }
+
+    public static void lock( final Hashtable environment ) {
+        if ( environment instanceof UnsynchronizedNamingProperties ) {
+            UnsynchronizedNamingProperties unsynchronizedNamingProperties = (UnsynchronizedNamingProperties) environment;
+            unsynchronizedNamingProperties.lock();
+        }
     }
 
     /**
@@ -116,7 +134,7 @@ public final class LdapUtils {
             Thread.currentThread().setContextClassLoader( LdapSslCustomizerSupport.getSSLSocketFactoryClassLoader() );
 
             LdapURL lurl = new LdapURL(url);
-            UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
+            Hashtable<? super String,? super String> env = newEnvironment();
             env.put("java.naming.ldap.version", "3");
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
             env.put(Context.PROVIDER_URL, url);
@@ -137,7 +155,7 @@ public final class LdapUtils {
                 env.put(Context.SECURITY_PRINCIPAL, login);
                 env.put(Context.SECURITY_CREDENTIALS, pass);
             }
-            env.lock();
+            lock( env );
             return new InitialDirContext(env);
         } finally {
             Thread.currentThread().setContextClassLoader( originalContextClassLoader );
