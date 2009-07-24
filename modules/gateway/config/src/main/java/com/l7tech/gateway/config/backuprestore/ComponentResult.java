@@ -11,7 +11,7 @@ public class ComponentResult {
     /**
      * Any restore method can result in success, failure or not applicable, if the component does not apply for the
      * given back up image
-     * There is no FAILURE case, as when a failure happens, a RestoreException is thrown
+     * There is no FAILURE case, as when a failure happens, an Exception is thrown
      */
     public static enum Result{SUCCESS, NOT_APPLICABLE}
 

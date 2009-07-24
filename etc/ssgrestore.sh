@@ -70,12 +70,12 @@ if [ $UID -eq 0 ]; then
     su layer7 -c "${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.home=${SSG_HOME} \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
-        -jar ${RESTORE_HOME}/SSGBackupUtility.jar import $*"
+        -jar ${RESTORE_HOME}/SSGBackupUtility.jar restore $*"
 elif [ "$USER" == "layer7" ]; then
     ${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.home=${SSG_HOME} \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
-        -jar ${RESTORE_HOME}/SSGBackupUtility.jar import $*
+        -jar ${RESTORE_HOME}/SSGBackupUtility.jar restore $*
 else
     echo "Must be layer7 to invoke ssgrestore.sh"
 fi

@@ -175,10 +175,11 @@ class DatabaseRestorer {
                 }
 
                 // commit at the end if everything updated correctly
-                final String msg1 = "Database audits loaded succesfully, committing now.";
+                final String msg1 = "Database audits loaded succesfully, committing...";
                 ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, verbose, printStream, false);
                 c.commit();
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, ". Done", verbose, printStream);
+                //don't want a tab
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, " Done", verbose, printStream);
             } catch (SQLException e) {
                 ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
                         "Error loading database audits. Rolling back now. " + e.getMessage(), verbose, printStream);
@@ -220,7 +221,7 @@ class DatabaseRestorer {
 
         // create temporary database copy to test the import
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                "\tCreating copy of target database for testing import ..", verbose, printStream, false);
+                "\tCreating copy of target database for testing import...", verbose, printStream, false);
         final String testdbname = "TstDB_" + System.currentTimeMillis();
 
         final DatabaseConfig targetConfig = new DatabaseConfig(dbConfig);
@@ -228,7 +229,7 @@ class DatabaseRestorer {
 
         final DBActions dba = new DBActions();
         dba.copyDatabase(dbConfig, targetConfig, true, null);
-        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, ". Done", verbose, printStream);
+        ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, " Done", verbose, printStream);
 
         try {
             // load that image on the temp database
@@ -258,15 +259,15 @@ class DatabaseRestorer {
         } finally {
             // delete the temporary database
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                    "\tDeleting temporary database ..", verbose, printStream, false);
+                    "\tDeleting temporary database...", verbose, printStream, false);
             final Connection c = dba.getConnection(targetConfig, true);
             try {
                 final Statement stmt = c.createStatement();
                 boolean success = false;
                 try {
                     stmt.executeUpdate("drop database " + testdbname + ";");
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                            ". Done", verbose, printStream, true);
+                    ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO,
+                            " Done", verbose, printStream);
                     success = true;
                 } finally {
                     //purly for formatting
@@ -382,7 +383,7 @@ class DatabaseRestorer {
      */
     private boolean loadMainDbOnly(final Connection c, final String msg, final boolean isMigrate)
             throws IOException, SQLException {
-        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg + " [please wait] ..", verbose, printStream);
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg + " [please wait]...", verbose, printStream);
 
         final File dbFolder = image.getMainDbBackupFolder();
         final File mainDbDumpFile = new File(dbFolder, BackupImage.MAINDB_BACKUP_FILENAME);

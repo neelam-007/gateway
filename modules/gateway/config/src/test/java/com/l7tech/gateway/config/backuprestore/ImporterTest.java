@@ -133,10 +133,10 @@ public class ImporterTest {
                 "-gdbp", "7layer"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
-        Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        Assert.assertEquals("result should be success", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -157,10 +157,10 @@ public class ImporterTest {
         final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
         applianceFolder.mkdir();
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
-        Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        Assert.assertEquals("result should be success", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -183,10 +183,10 @@ public class ImporterTest {
         final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
         applianceFolder.mkdir();
         
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
-        Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        Assert.assertEquals("result should be success", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
 
         final OSConfigManager osConfigManager =
                 new OSConfigManager(tmpSsgHome, true, true, System.out);
@@ -217,10 +217,10 @@ public class ImporterTest {
                 "-os"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
-        Assert.assertEquals("result should be partial success", Importer.RestoreMigrateResult.Status.PARTIAL_SUCCESS,
+        Assert.assertEquals("result should be partial success", ImportExportUtilities.UtilityResult.Status.PARTIAL_SUCCESS,
                 result.getStatus());
     }
 
@@ -239,10 +239,10 @@ public class ImporterTest {
                 "-halt"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
-        Assert.assertEquals("result should be failure", Importer.RestoreMigrateResult.Status.FAILURE,
+        Assert.assertEquals("result should be failure", ImportExportUtilities.UtilityResult.Status.FAILURE,
                 result.getStatus());
     }
 
@@ -263,10 +263,10 @@ public class ImporterTest {
                 "-dbp", "notused"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
-        Assert.assertEquals("result should be failure", Importer.RestoreMigrateResult.Status.SUCCESS,
+        Assert.assertEquals("result should be failure", ImportExportUtilities.UtilityResult.Status.SUCCESS,
                 result.getStatus());
     }
 
@@ -285,10 +285,10 @@ public class ImporterTest {
                 "-v"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
-        Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS,
+        Assert.assertEquals("result should be success", ImportExportUtilities.UtilityResult.Status.SUCCESS,
                 result.getStatus());
 
         //confirm the symantext jar and properties file were correctly copied
@@ -327,10 +327,10 @@ public class ImporterTest {
                 "-v"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
-        Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS,
+        Assert.assertEquals("result should be success", ImportExportUtilities.UtilityResult.Status.SUCCESS,
                 result.getStatus());
 
         //test the following jars were created
@@ -380,10 +380,10 @@ public class ImporterTest {
                 "-v"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         Assert.assertNotNull("result should not be null", result);
 
-        Assert.assertEquals("result should be success", Importer.RestoreMigrateResult.Status.SUCCESS,
+        Assert.assertEquals("result should be success", ImportExportUtilities.UtilityResult.Status.SUCCESS,
                 result.getStatus());
 
         for(String fileName: ImportExportUtilities.CONFIG_FILES){

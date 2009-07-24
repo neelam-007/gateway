@@ -1158,4 +1158,42 @@ public class ImportExportUtilities {
 
         return runningSSG;
     }
+
+    public static class UtilityResult {
+        private final Status status;
+        private final List<String> failedComponents;
+        private final Exception exception;
+
+        public enum Status{
+            SUCCESS(),
+            FAILURE(),
+            PARTIAL_SUCCESS()
+        }
+
+        UtilityResult(final Status status,
+                                     final List<String> failedComponents,
+                                     final Exception exception){
+            this.status = status;
+            this.failedComponents = failedComponents;
+            this.exception = exception;
+        }
+
+        UtilityResult(final Status status){
+            this.status = status;
+            this.failedComponents = null;
+            this.exception = null;
+        }
+
+        public List<String> getFailedComponents() {
+            return failedComponents;
+        }
+
+        public Status getStatus() {
+            return status;
+        }
+
+        public Exception getException() {
+            return exception;
+        }
+    }
 }

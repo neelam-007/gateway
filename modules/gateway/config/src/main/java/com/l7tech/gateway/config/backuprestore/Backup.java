@@ -122,9 +122,9 @@ public interface Backup {
     /**
      * Delete the temporary folder that was used by the back up methods to collect the back up data
      * Caller should call this when finished with an instance of Backup
-     * @throws IOException if the temp directory cannot be deleted
+     * @return boolean true if successful, false otherwise
      */
-    public void deleteTemporaryDirectory() throws IOException;
+    public boolean deleteTemporaryDirectory();
 
     /**
      * Get the folder which all the back up methods copy data to

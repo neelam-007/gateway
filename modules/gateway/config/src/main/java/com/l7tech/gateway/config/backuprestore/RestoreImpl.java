@@ -473,7 +473,7 @@ final class RestoreImpl implements Restore{
         }
 
         try {
-            String msg = "\tRestoring audits...";
+            String msg = "\tRestoring audits... ";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, this.printStream, false);
             dbRestorer.restoreAudits();
         } catch (DatabaseRestorer.DatabaseRestorerException e) {

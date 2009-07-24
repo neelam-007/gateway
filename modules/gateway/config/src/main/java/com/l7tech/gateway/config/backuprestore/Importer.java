@@ -1,7 +1,9 @@
 package com.l7tech.gateway.config.backuprestore;
 
-import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.FatalException;
 import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException;
+import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.Status.FAILURE;
+import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.Status.PARTIAL_SUCCESS;
+import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.Status.SUCCESS;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
 import com.l7tech.server.management.config.node.DatabaseConfig;
@@ -178,17 +180,13 @@ public final class Importer{
      *
      * @param args program parameters
      * @return RestoreMigrateResult which contains the success / failure, any exceptions thrown and the list of failed
-     * components if applicable
+     *         components if applicable
      * @throws InvalidProgramArgumentException
-     * @throws BackupRestoreLauncher.FatalException
-     * @throws IOException
-     * @throws BackupImage.InvalidBackupImageException
+     *          if any of the supplied parameters is invalid or is missing a required
+     *          value
      */
-    public RestoreMigrateResult restoreOrMigrateBackupImage(final String [] args)
-            throws InvalidProgramArgumentException,
-            BackupRestoreLauncher.FatalException,
-            IOException,
-            BackupImage.InvalidBackupImageException, BackupImage.BackupImageException, ConfigurationException {
+    public ImportExportUtilities.UtilityResult restoreOrMigrateBackupImage(final String[] args)
+            throws InvalidProgramArgumentException {
 
         //determine what we are doing - restore or migrate?
         //do this by validating the args with all possible options
@@ -203,15 +201,15 @@ public final class Importer{
         //are we doing a restore with migrate behaviour?
         isMigrate = initialValidArgs.get(MIGRATE.getName()) != null;
 
-        if(isMigrate){
+        if (isMigrate) {
             return performMigrate(args);
-        }else{
+        } else {
             return performRestore(args);
         }
     }
 
-    private RestoreMigrateResult performMigrate(final String [] args) throws InvalidProgramArgumentException,
-            IOException, BackupImage.InvalidBackupImageException, ConfigurationException {
+    private ImportExportUtilities.UtilityResult performMigrate(final String [] args)
+            throws InvalidProgramArgumentException {
         //All restore options are valid for migrate, apart from ftp options.
         //Remember that ssgmigrate.sh gets translated into ssgrestore.sh
         //with a migrate capability. Therefore here we are actually validating ssgrestore.sh parameters
@@ -221,16 +219,18 @@ public final class Importer{
                 IMAGE_PATH, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
         final File imageFile = getAndValidateImageExists(imageValue);
 
+        programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
+                validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), false, printStream);
+
+        preBackupImageInitialization(programFlagsAndValues);
+
+        isVerbose = programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName());
+
+        //migrate always requires all the db params (apart from the root db user and password)
+        wereCompleteDbParamsSupplied(true);
+
         //what ever happens we need to delete any unzipped directory no matter what the outcome
         try {
-            programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                    validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), false, printStream);
-
-            isVerbose = programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName());
-
-            //migrate always requires all the db params (apart from the root db user and password)
-            wereCompleteDbParamsSupplied(true);
-            
             backupImage = new BackupImage(imageFile.getAbsolutePath(), printStream, isVerbose);
 
             //backup image is required before initialize is called, in case node.properties is required
@@ -252,20 +252,22 @@ public final class Importer{
             performRestoreSteps();
 
         } catch (Restore.RestoreException e) {
-            return new RestoreMigrateResult(false, RestoreMigrateResult.Status.FAILURE, null, e);
+            return new ImportExportUtilities.UtilityResult(FAILURE, null, e);
+        } catch(Exception e){
+            throw new RuntimeException(e);                        
         } finally {
             if (backupImage != null) backupImage.removeTempDirectory();
         }
 
         if(!failedComponents.isEmpty()){
-            return new RestoreMigrateResult(false, RestoreMigrateResult.Status.PARTIAL_SUCCESS, failedComponents, null);
+            return new ImportExportUtilities.UtilityResult(PARTIAL_SUCCESS, failedComponents, null);
         }
 
-        return new RestoreMigrateResult(false, RestoreMigrateResult.Status.SUCCESS);
+        return new ImportExportUtilities.UtilityResult(SUCCESS);
     }
 
-    private RestoreMigrateResult performRestore(final String [] args) throws InvalidProgramArgumentException,
-            IOException, FatalException, BackupImage.InvalidBackupImageException, BackupImage.BackupImageException, ConfigurationException {
+    private ImportExportUtilities.UtilityResult performRestore(final String [] args)
+            throws InvalidProgramArgumentException {
         final List<CommandLineOption> validArgList = getRestoreOptionsWithDb();
         //make sure no unexpected arguments were supplied
         ImportExportUtilities.softArgumentValidation(args, validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
@@ -289,6 +291,10 @@ public final class Importer{
         isVerbose = ImportExportUtilities.checkArgumentExistence(args,
                 CommonCommandLineOptions.VERBOSE.getName(), validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
 
+        programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
+                validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), false, printStream);
+
+        preBackupImageInitialization(programFlagsAndValues);
         //what ever happens we need to delete any unzipped directory no matter what the outcome
         try {
             validArgList.clear();
@@ -307,25 +313,24 @@ public final class Importer{
                 validArgList.addAll(getRestoreOptionsWithDb());
             }
 
-            programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args,
-                    validArgList, Arrays.asList(ALL_IGNORED_OPTIONS), false, printStream);
-
             initialize(programFlagsAndValues);
 
             //build list of components and filter appropriately
             performRestoreSteps();
 
         } catch (Restore.RestoreException e) {
-            return new RestoreMigrateResult(false, RestoreMigrateResult.Status.FAILURE, null, e);
+            return new ImportExportUtilities.UtilityResult(FAILURE, null, e);
+        } catch (Exception e){
+            throw new RuntimeException(e);  
         } finally {
             if(backupImage != null) backupImage.removeTempDirectory();
         }
 
         if(!failedComponents.isEmpty()){
-            return new RestoreMigrateResult(false, RestoreMigrateResult.Status.PARTIAL_SUCCESS, failedComponents, null);
+            return new ImportExportUtilities.UtilityResult(PARTIAL_SUCCESS, failedComponents, null);
         }
 
-        return new RestoreMigrateResult(false, RestoreMigrateResult.Status.SUCCESS);
+        return new ImportExportUtilities.UtilityResult(SUCCESS);
     }
 
     /**
@@ -374,10 +379,17 @@ public final class Importer{
         return imageFile;
     }
 
-    private void initialize(final Map<String, String> args) throws InvalidProgramArgumentException, IOException,
-            ConfigurationException {
+    /**
+     * Call before the BackupImage is downloaded / unzipped. This ensures that required db params have been supplied
+     * and the time spend downloading / unzipping is not wasted.
+     * 
+     * Sets isSelective and isDbComponent
+     * Validates that if any db component is requested, that the user supplied the -dbu param
+     * @param args map of command ilne args
+     * @throws InvalidProgramArgumentException if any required db param is missing or invalid
+     */
+    private void preBackupImageInitialization(final Map<String, String> args) throws InvalidProgramArgumentException{
         isSelectiveRestore = ImportExportUtilities.isSelective(args);
-
         //ensure that we are not being asked to restore audits without the maindb
         final boolean auditsOnly = !args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
                 && args.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
@@ -389,6 +401,18 @@ public final class Importer{
                 || args.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName())
                 || args.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
 
+        if(isDbComponent){
+            final String adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
+            if (adminDBUsername == null) {
+                throw new InvalidProgramArgumentException("Cannot restore the main database without" +
+                        " the root database user name and password. Please provide options: " + DB_ROOT_USER.getName() +
+                        " and " + DB_ROOT_PASSWD.getName());
+            }
+        }
+    }
+
+    private void initialize(final Map<String, String> args) throws InvalidProgramArgumentException, IOException,
+            ConfigurationException {
         if(isDbComponent){
             initializeDatabaseConfiguration(args);
         }
@@ -428,11 +452,9 @@ public final class Importer{
         ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg1, isVerbose, printStream);
         
         final String adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
-        if (adminDBUsername == null) {
-            throw new BackupRestoreLauncher.InvalidProgramArgumentException("Cannot restore the main database without" +
-                    " the root database user name and password. Please provide options: " + DB_ROOT_USER.getName() +
-                    " and " + DB_ROOT_PASSWD.getName());
-        }
+        if(adminDBUsername == null)
+            throw new IllegalStateException("No admin database user supplied with -dbu option");
+        
         final String tempAdminPassword = programFlagsAndValues.get(DB_ROOT_PASSWD.getName());
         // its ok for password to be empty string
         final String adminDBPasswd = (tempAdminPassword != null)? tempAdminPassword: "";
@@ -918,9 +940,11 @@ public final class Importer{
 
         final List<RestoreComponent> componentList = new ArrayList<RestoreComponent>();
 
+        final String taskVerb = (isMigrate) ? "Migrating" : "Restoring";
+
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
-                final String msg = "Restoring component " + getComponentType().getComponentName();
+                final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 //if no db component is being restored, then we need to allow the config component to restore
                 //the node identity if found - node.properties and omp.dat
@@ -936,7 +960,7 @@ public final class Importer{
 
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
-                final String msg = "Restoring component " + getComponentType().getComponentName();
+                final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentMainDb(isMigrate, canCreateNewDb, mappingFile);
             }
@@ -948,7 +972,7 @@ public final class Importer{
 
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
-                final String msg = "Restoring component " + getComponentType().getComponentName();
+                final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentAudits(isMigrate);
             }
@@ -960,7 +984,7 @@ public final class Importer{
 
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
-                final String msg = "Restoring component " + getComponentType().getComponentName();
+                final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentOS();
             }
@@ -972,7 +996,7 @@ public final class Importer{
 
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
-                final String msg = "Restoring component " + getComponentType().getComponentName();
+                final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentCA();
             }
@@ -984,7 +1008,7 @@ public final class Importer{
 
         componentList.add(new RestoreComponent(){
             public ComponentResult doRestore() throws Restore.RestoreException {
-                final String msg = "Restoring component " + getComponentType().getComponentName();
+                final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentMA();
             }
@@ -998,7 +1022,7 @@ public final class Importer{
         if(programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())){
             componentList.add(new RestoreComponent(){
                 public ComponentResult doRestore() throws Restore.RestoreException {
-                    final String msg = "Restoring component " + getComponentType().getComponentName();
+                    final String msg = taskVerb + " component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     return restore.restoreComponentESM();
                 }
@@ -1028,7 +1052,7 @@ public final class Importer{
         if(isDbComponent){
             returnList.add(new RestoreComponent(){
                 public ComponentResult doRestore() throws Restore.RestoreException {
-                    final String msg = "Restoring component " + getComponentType().getComponentName();
+                    final String msg = taskVerb + " component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
                     //both of these can be null or ompDatToMatchNodePropertyConfig can be null
@@ -1100,52 +1124,6 @@ public final class Importer{
                     .append(BackupRestoreLauncher.EOL_CHAR);
         }
         output.append(BackupRestoreLauncher.EOL_CHAR);
-    }
-
-    public static final class RestoreMigrateResult {
-        private final Status status;
-        private final List<String> failedComponents;
-        private final Exception exception;
-        private boolean wasMigrate;
-
-        public enum Status{
-            SUCCESS(),
-            FAILURE(),
-            PARTIAL_SUCCESS()
-        }
-
-        private RestoreMigrateResult(final boolean wasMigrate,
-                                     final Status status,
-                                     final List<String> failedComponents,
-                                     final Exception exception){
-            this.status = status;
-            this.failedComponents = failedComponents;
-            this.exception = exception;
-            this.wasMigrate = wasMigrate;
-        }
-
-        private RestoreMigrateResult(final boolean wasMigrate, final Status status){
-            this.status = status;
-            this.failedComponents = null;
-            this.exception = null;
-            this.wasMigrate = wasMigrate;
-        }
-
-        public List<String> getFailedComponents() {
-            return failedComponents;
-        }
-
-        public Status getStatus() {
-            return status;
-        }
-
-        public Exception getException() {
-            return exception;
-        }
-
-        public boolean isWasMigrate() {
-            return wasMigrate;
-        }
     }
 
     private static List<CommandLineOption> getStandardRestoreOptions(){

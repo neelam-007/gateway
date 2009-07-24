@@ -104,68 +104,43 @@ public final class Exporter{
 
     private Map<String, String> programFlagsAndValues;
 
-    static final class BackupResult{
+    static final class BackupResult extends ImportExportUtilities.UtilityResult{
 
         private final String backUpImageName;
-        private final Status status;
-        private final List<String> failedComponents;
-        private final Exception exception;
-
-        public enum Status{
-            SUCCESS(),
-            FAILURE(),
-            PARTIAL_SUCCESS()
-        }
 
         private BackupResult(final String backUpImageName,
                              final Status status,
                              final List<String> failedComponents,
                              final Exception exception){
+            super(status, failedComponents, exception);
             this.backUpImageName = backUpImageName;
-            this.status = status;
-            this.failedComponents = failedComponents;
-            this.exception = exception;
         }
 
         private BackupResult(final String backUpImageName, final Status status){
+            super(status);
             this.backUpImageName = backUpImageName;
-            this.status = status;
-            this.failedComponents = null;
-            this.exception = null;
         }
 
         public String getBackUpImageName() {
             return backUpImageName;
         }
-
-        public List<String> getFailedComponents() {
-            return failedComponents;
-        }
-
-        public Status getStatus() {
-            return status;
-        }
-
-        public Exception getException() {
-            return exception;
-        }
     }
-    
+
     /**
-     * @param secureSpanHome   home directory where the SSG is installed. Should equal /opt/SecureSpan/Gateway. Cannot be null
-     * @param printStream        stream for verbose output; <code>null</code> for no verbose output
-     * @throws NullPointerException if ssgHome or ssgAppliance are null
+     * @param secureSpanHome home directory where the SSG is installed. Should equal /opt/SecureSpan/Gateway. Cannot be null
+     * @param printStream    stream for verbose output. Can be null
+     * @throws NullPointerException     if ssgHome or ssgAppliance are null
      * @throws IllegalArgumentException if ssgHome does not exsit or is not a directory, or if applianceHome is the
-     * empty string
+     *                                  empty string
      */
     Exporter(final File secureSpanHome, final PrintStream printStream) throws Backup.BackupException {
-        if(secureSpanHome == null) throw new NullPointerException("ssgHome cannot be null");
-        if(!secureSpanHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
-        if(!secureSpanHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
+        if (secureSpanHome == null) throw new NullPointerException("ssgHome cannot be null");
+        if (!secureSpanHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
+        if (!secureSpanHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
 
         final File testSsgHome = new File(secureSpanHome, ImportExportUtilities.GATEWAY);
-        if(!testSsgHome.exists()) throw new IllegalArgumentException("Gateway installation not found");
-        if(!testSsgHome.isDirectory()) throw new IllegalArgumentException("Gateway incorrectly installed");
+        if (!testSsgHome.exists()) throw new IllegalArgumentException("Gateway installation not found");
+        if (!testSsgHome.isDirectory()) throw new IllegalArgumentException("Gateway incorrectly installed");
 
         ssgHome = testSsgHome;
         this.secureSpanHome = secureSpanHome;
@@ -173,10 +148,10 @@ public final class Exporter{
         //this class is not usable without an installed SSG >= 5.0
         final boolean checkVersion =
                 SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.checkversion", true);
-        if (checkVersion){
-            int [] versionInfo = ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
+        if (checkVersion) {
+            int[] versionInfo = ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
             isPostFiveO = versionInfo[1] > 0;
-        }else{
+        } else {
             //we won't have the /opt/SecureSpan/Gateway/Backup folder, set false by default, system prop is for testing
             isPostFiveO = SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.setpostfiveo", false);
         }
@@ -196,17 +171,11 @@ public final class Exporter{
      * </p>
      * @param args array of all command line arguments
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException if any of the required program parameters are not supplied
-     * @throws IOException Any IOException which occurs while creating the image zip file
-     * @throws IllegalStateException if node.properties is not found. This must exist as we only back up a
-     * correctly configured SSG node
-     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.FatalException if ftp is requested and
-     * its not possible to ftp the newly created image
      * @return BackupResult This contains the name of the image file created. This will be based on the value supplied with
      * the -image parameter. A timestamp will have been added to the file name. It also contains the status. The status
      * can be SUCCESS, FAILURE or PARTIAL_SUCCESS.
      */
-    BackupResult createBackupImage(final String [] args)
-            throws InvalidProgramArgumentException, IOException, BackupRestoreLauncher.FatalException, Backup.BackupException {
+    BackupResult createBackupImage(final String [] args) throws InvalidProgramArgumentException {
 
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALLOPTIONS));
@@ -221,50 +190,59 @@ public final class Exporter{
         validateProgramParameters();
         final boolean usingFtp = ImportExportUtilities.checkAndValidateFtpParams(programFlagsAndValues);
 
-        //overwrite the supplied image name with a unique name based on it
-        String pathToUniqueImageFile = getUniqueImageFileName(programFlagsAndValues.get(IMAGE_PATH.getName()), usingFtp);
-        
-        programFlagsAndValues.put(IMAGE_PATH.getName(), pathToUniqueImageFile);
-        //We only want to validate the image file when we are not using ftp
-        validateFiles(programFlagsAndValues, !usingFtp);
-
-        if(!usingFtp){
-            // check that we can write output at location asked for
-            pathToUniqueImageFile = ImportExportUtilities.getAbsolutePath(pathToUniqueImageFile);
-            ImportExportUtilities.validateImageFile(pathToUniqueImageFile);
-        }
-
-        //check that node.properties exists
-        final File nodePropsFile = new File(confDir, ImportExportUtilities.NODE_PROPERTIES);
-        if ( !nodePropsFile.exists() ) {
-            throw new IllegalStateException("node.properties must exist in " + nodePropsFile.getAbsolutePath());
-        }
-
-        //check whether mapping option was used
-        //were doing this here as if it's requested, then we need to be able to create it
-        if(programFlagsAndValues.get(MAPPING_PATH.getName()) != null) {
-            //fail if file exists
-            ImportExportUtilities.throwIfFileExists(programFlagsAndValues.get(MAPPING_PATH.getName()));
-        }
-
-        final FtpClientConfig ftpConfig = (usingFtp)?ImportExportUtilities.getFtpConfig(programFlagsAndValues): null;
-
-        final Backup backup = BackupRestoreFactory.getBackupInstance(secureSpanHome, ftpConfig, pathToUniqueImageFile,
-                isPostFiveO, isVerbose, printStream);
-
+        Backup backup = null;
         try {
+            //overwrite the supplied image name with a unique name based on it
+            String pathToUniqueImageFile = getUniqueImageFileName(programFlagsAndValues.get(IMAGE_PATH.getName()), usingFtp);
+
+            programFlagsAndValues.put(IMAGE_PATH.getName(), pathToUniqueImageFile);
+            //We only want to validate the image file when we are not using ftp
+            validateFiles(programFlagsAndValues, !usingFtp);
+
+            if(!usingFtp){
+                // check that we can write output at location asked for
+                pathToUniqueImageFile = ImportExportUtilities.getAbsolutePath(pathToUniqueImageFile);
+                ImportExportUtilities.validateImageFile(pathToUniqueImageFile);
+            }
+
+            //check that node.properties exists
+            final File nodePropsFile = new File(confDir, ImportExportUtilities.NODE_PROPERTIES);
+            if ( !nodePropsFile.exists() ) {
+                throw new IllegalStateException("node.properties must exist in " + nodePropsFile.getAbsolutePath());
+            }
+
+            //check whether mapping option was used
+            //were doing this here as if it's requested, then we need to be able to create it
+            if(programFlagsAndValues.get(MAPPING_PATH.getName()) != null) {
+                //fail if file exists
+                ImportExportUtilities.throwIfFileExists(programFlagsAndValues.get(MAPPING_PATH.getName()));
+            }
+
+            final FtpClientConfig ftpConfig = (usingFtp)?ImportExportUtilities.getFtpConfig(programFlagsAndValues): null;
+
+            backup = BackupRestoreFactory.getBackupInstance(secureSpanHome, ftpConfig, pathToUniqueImageFile,
+                    isPostFiveO, isVerbose, printStream);
+
             final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.getName());
             performBackupSteps(mappingFile, backup);
+
+            if(!failedComponents.isEmpty()){
+                return new BackupResult(pathToUniqueImageFile, BackupResult.Status.PARTIAL_SUCCESS, failedComponents, null);
+            }
+            return new BackupResult(pathToUniqueImageFile, BackupResult.Status.SUCCESS);
+            
         } catch(Backup.BackupException e){
             return new BackupResult(null, BackupResult.Status.FAILURE, null, e);
+        } catch(Exception e){
+            throw new RuntimeException(e);
         } finally {
-            backup.deleteTemporaryDirectory();
+            if(backup != null){
+                if(!backup.deleteTemporaryDirectory()){
+                    ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO,
+                            "Could not delete backup image temporary folder", isVerbose, printStream);
+                }
+            }
         }
-
-        if(!failedComponents.isEmpty()){
-            return new BackupResult(pathToUniqueImageFile, BackupResult.Status.PARTIAL_SUCCESS, failedComponents, null);            
-        }
-        return new BackupResult(pathToUniqueImageFile, BackupResult.Status.SUCCESS);
     }
 
     /**
@@ -317,24 +295,15 @@ public final class Exporter{
 
     /**
      * <p>
-     * Backs up each required component and places it into the tmpOutputDirectory directory, in the correct folder.
-     * This method orchestrates the calls to the various backUp*() methods
-     * </p>
-     *
-     * <p> This method is private and depends on the state of instance variables which were set by the caller
-     * </p>
-     *
-     * <p>
-     * The bahviour of this method is that each back up is performed individually and independently of others. If any
-     * component fails to back up, this is logged, and the execution continues onto the next backup. This behaviour
+     * The behaviour of this method is that each back up is performed individually and independently of others. If any
+     * component fails to back up, this is logged, and the execution continues onto the next component. This behaviour
      * can be modified via the -halt parameter
      * </p>
      *
-     * @param mappingFile path (optional) and name of the mapping file to be created. if not required pass <code>null</code>
+     * @param mappingFile path (optional) and name of the mapping file to be created. Can be null
      * @param backup the Backup instance to use for backup
-     * @throws Exception for any Exception when backing up the components or when creating the zip file
-     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.FatalException if ftp is requested and
-     * its not possible to ftp the newly created image
+     * @throws Backup.BackupException for any Exception when backing up the components
+     * @throws IOException if any problems when creating the zip file or its not possible to ftp the newly created image
      */
     private void performBackupSteps(final String mappingFile, final Backup backup)
             throws Backup.BackupException, IOException {
@@ -506,7 +475,7 @@ public final class Exporter{
         componentList.add(maComp);
 
         //Check for -esm, we don't add this by default, only when it's explicitly asked for
-        if(programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())){
+        if (programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())) {
             final BackupComponent emComp = new BackupComponent() {
                 public ComponentResult doBackup() throws Backup.BackupException {
                     final String msg = "Backing up component " + getComponentType().getComponentName();
@@ -538,8 +507,7 @@ public final class Exporter{
      * @throws IOException for arguments which are files, they are checked to see if the exist, which may cause an IOException
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException if any program params are invalid
      */
-    private void validateProgramParameters()
-            throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
+    private void validateProgramParameters() throws BackupRestoreLauncher.InvalidProgramArgumentException {
         //image option must be specified
         if (!programFlagsAndValues.containsKey(IMAGE_PATH.getName())) {
             throw new InvalidProgramArgumentException("missing option " + IMAGE_PATH.getName() + ", required for exporting image");
@@ -551,10 +519,15 @@ public final class Exporter{
         //check if node.properties file exists
         final File configDir = new File(ssgHome, ImportExportUtilities.NODE_CONF_DIR);
         final File nodePropsFile = new File(configDir, ImportExportUtilities.NODE_PROPERTIES);
-        final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
+        final NodeConfig nodeConfig;
+        try {
+            nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
         final DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
         if ( config == null ) {
-            throw new IOException("database configuration not found.");
+            throw new RuntimeException("Database configuration could not be loaded");
         }
 
         final File ompFile = new File(configDir, ImportExportUtilities.OMP_DAT);

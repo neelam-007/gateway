@@ -29,11 +29,11 @@ if [ $UID -eq 0 ]; then
     # invoke backup as layer7
     su layer7 -c "${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
-        -jar ${REL_BASE_DIR}/SSGBackupOnlyUtility.jar export $*"
+        -jar ${REL_BASE_DIR}/SSGBackupOnlyUtility.jar backup $*"
 elif [ "$USER" == "layer7" ]; then
     ${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
-        -jar ${REL_BASE_DIR}/SSGBackupOnlyUtility.jar export $*
+        -jar ${REL_BASE_DIR}/SSGBackupOnlyUtility.jar backup $*
 else
     echo "Must be layer7 or root to invoke ssgbackup.sh"
     exit 1

@@ -2,6 +2,8 @@ package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,7 +15,7 @@ import java.util.logging.Logger;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
- * Run backup / restore 
+ * Run backup / restore / migrate 
  */
 public class BackupRestoreLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
@@ -22,134 +24,163 @@ public class BackupRestoreLauncher {
     private static final String SSGBACKUP_SH = "ssgbackup.sh";
     private static final String SSGRESTORE_SH = "ssgrestore.sh";
     private static final String SSGMIGRATE_SH = "ssgmigrate.sh";
-    private static final String IMPORT_TYPE = "import";
-    private static final String EXPORT_TYPE = "export";
-    private static final String MIGRATE_TYPE = "migrate";
-    private static final String CFGDAEMON_TYPE = "cfgdeamon";
     private static final Logger logger = Logger.getLogger(BackupRestoreLauncher.class.getName());
     private static final String SECURE_SPAN_HOME = "/opt/SecureSpan";
 
-    /**
-     * If the Backup / Restore fails, then the VM will exist with status 1. If there is a partially successfull
-     * backup, then the VM will exist with status 2
-     * @param args
-     */
-    public static void main(final String[] args) {
-        if (args == null || args.length < 1) {
-            System.out.println(getUsage(null));
-            return;
+    public enum UTILITY_TYPE{
+        BACKUP("Backup"),
+        RESTORE("Restore"),
+        MIGRATE("Migrate"),
+        CFGDEAMON("cfgdeamon");
+
+        private final String name;
+
+        UTILITY_TYPE(final String name) {
+            this.name = name;
         }
 
-        initializeLogging(args[0]);
+        public String getName() {
+            return name;
+        }
 
-        //when noConsoleOutput is true, no System.out.println calls should happen, regardless of error conditions
-        //this is for when cfgdaemon target is ran on system reboot, errors should still be logged
-        final boolean noConsoleOutput = args[0].equalsIgnoreCase(CFGDAEMON_TYPE);
-        final String taskName = args[0].equalsIgnoreCase(IMPORT_TYPE) ?
-                "Restore" : args[0].equalsIgnoreCase(MIGRATE_TYPE) ? "Migrate" : "Backup";
-        
-        try {
-            if (args[0].equalsIgnoreCase(IMPORT_TYPE) || args[0].equalsIgnoreCase(MIGRATE_TYPE)) {
-                final String [] argsToUse;
-                if(args[0].equalsIgnoreCase(MIGRATE_TYPE)){
-                    argsToUse = MigrateToRestoreConvertor.getConvertedArguments(args, System.out);
-                }else{
-                    argsToUse = args;
+        public static UTILITY_TYPE getUtilityType(final String utilityType){
+
+            for(UTILITY_TYPE ut: UTILITY_TYPE.values()){
+                if(ut.getName().equalsIgnoreCase(utilityType)){
+                    return ut;
                 }
-
-                final Importer importer = new Importer(new File(SECURE_SPAN_HOME), System.out);
-
-                Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(argsToUse);
-                switch (result.getStatus()){
-                    case SUCCESS:
-                        final String msg = "\n" + taskName+" completed with no errors";
-                        ImportExportUtilities.logAndPrintMajorMessage( logger, Level.INFO, msg, true, System.out);
-                        break;
-                    case FAILURE:
-                        Exception e = result.getException();
-                        final String msg1 = "\n" + taskName+" failed" + ((e != null) ? ": " + e.getMessage() : "");
-                        ImportExportUtilities.logAndPrintMajorMessage( logger, Level.SEVERE, msg1, true, System.out);
-                        System.exit(1);
-                        break;
-                    case PARTIAL_SUCCESS:
-                        if(result.isWasMigrate()){
-                            System.out.println("\nMigrate of SecureSpan Gateway image partially succeeded");
-                        }else{
-                            System.out.println("\nRestore of SecureSpan Gateway image partially succeeded");
-                        }
-                        List<String> failedComponents = result.getFailedComponents();
-                        for(String s: failedComponents ){
-                            System.out.println("Failed component: " + s);
-                        }
-                        System.exit(2);
-                        break;
-                    default:
-                        throw new RuntimeException("Unexpected response from import");
-
-                }
-            } else if (args[0].equalsIgnoreCase(EXPORT_TYPE)) {
-                final Exporter exporter = new Exporter(new File(SECURE_SPAN_HOME), System.out);
-                Exporter.BackupResult result = exporter.createBackupImage(args);
-                switch (result.getStatus()){
-                    case SUCCESS:
-                        final String msg = "\nBackup completed with no errors";
-                        ImportExportUtilities.logAndPrintMajorMessage( logger, Level.INFO, msg, true, System.out);
-                        break;
-                    case FAILURE:
-                        Exception e = result.getException();
-                        final String msg1 = "\nBackup failed" + ((e != null) ? ": " + e.getMessage() : "");
-                        ImportExportUtilities.logAndPrintMajorMessage( logger, Level.SEVERE, msg1, true, System.out);
-                        System.exit(1);
-                        break;
-                    case PARTIAL_SUCCESS:
-                        System.out.println("\nBackup partially succeeded");
-                        List<String> failedComponents = result.getFailedComponents();
-                        for(String s: failedComponents ){
-                            System.out.println("Failed component: " + s);
-                        }
-                        System.exit(2);
-                        break;
-                    default:
-                        throw new RuntimeException("Unexpected response from backup");
-
-                }
-            } else if (args[0].equalsIgnoreCase(CFGDAEMON_TYPE)) {
-                final File ssgHome = new File(SECURE_SPAN_HOME, ImportExportUtilities.GATEWAY);
-                final OSConfigManager osConfigManager =
-                        new OSConfigManager(ssgHome, true, false, null);
-                final boolean filesWereCopied = osConfigManager.finishRestoreOfFilesOnReboot();
-                //this is the only output from cfgdaemon
-                if(filesWereCopied) System.out.println("Files were restored by the cfgdaemon");
-            } else if (args[0] != null) {
-                String issue = "Unsupported option " + args[0];
-                logger.warning(issue);
-                System.out.println(issue);
-                System.out.println(getUsage(args[0]));
             }
-        } catch (InvalidProgramArgumentException e) {
-            String message = taskName + " invalid argument: " + e.getMessage();
-            if (!noConsoleOutput) System.out.println(message);
-            logger.log(Level.WARNING, message);
-            if (!noConsoleOutput) System.out.println(getUsage(args[0]));
-            System.exit(1);
-        } catch (Exception e) {
-            String message = taskName+ " failed: " + ExceptionUtils.getMessage(e, "Unknown error");
-            if (!noConsoleOutput) System.out.println(message);
-            logger.log(Level.WARNING, message);
-            System.exit(1);
+            throw new IllegalArgumentException("Unsupported value '" + utilityType+"'");
         }
     }
 
-    private static void initializeLogging(final String launcherTarget) {
+    /**
+     * If the Backup / Restore / Migrate fails, then the VM will exist with status 1. If there is a partially successfull
+     * backup, then the VM will exist with status 2
+     */
+    public static void main(final String[] args) {
+        if (args == null || args.length < 1) {
+            System.out.println("usage: [restore | migrate | backup] [OPTIONS]");
+            return;
+        }
+
+        final UTILITY_TYPE utilityType = UTILITY_TYPE.getUtilityType(args[0]);
+        initializeLogging(utilityType);
+
+        //when noConsoleOutput is true, no System.out.println calls should happen, regardless of error conditions
+        //this is for when cfgdaemon target is ran on system reboot, errors should still be logged
+        final boolean noConsoleOutput = (utilityType == UTILITY_TYPE.CFGDEAMON);
+
+        try {
+
+            final Functions.UnaryThrows<
+                    ImportExportUtilities.UtilityResult,
+                    String[],
+                    ? extends Exception> utilityFunction = getUtilityFunction(utilityType);
+
+            final ImportExportUtilities.UtilityResult result = utilityFunction.call(args);
+
+            switch(result.getStatus()){
+                case SUCCESS:
+                    final String msg = "\n" + utilityType.getName() + " completed with no errors";
+                    ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, true, System.out);
+                    break;
+                case FAILURE:
+                    Exception e = result.getException();
+                    final String msg1 = "\n" + utilityType.getName() + " failed" + ((e != null) ? ": " + e.getMessage() : "");
+                    ImportExportUtilities.logAndPrintMajorMessage(logger, Level.SEVERE, msg1, true, System.out);
+                    System.exit(1);
+                    break;
+                case PARTIAL_SUCCESS:
+                    System.out.println("\n" + utilityType.getName() + " of SecureSpan Gateway image partially succeeded");
+                    List<String> failedComponents = result.getFailedComponents();
+                    for (String s : failedComponents) {
+                        System.out.println("Failed component: " + s);
+                    }
+                    System.exit(2);
+                    break;
+                default:
+                    throw new RuntimeException("Unexpected response from " + utilityType.getName().toLowerCase());
+            }
+
+        }catch (Exception e) {
+            if(e instanceof InvalidProgramArgumentException
+                    || ExceptionUtils.causedBy(e, InvalidProgramArgumentException.class)){
+                final boolean wrappedInRuntime = ExceptionUtils.causedBy(e, InvalidProgramArgumentException.class);
+                final String exceptionMsg = (wrappedInRuntime)?
+                        ExceptionUtils.getCauseIfCausedBy(e, InvalidProgramArgumentException.class).getMessage()
+                        : e.getMessage();
+
+                String message = utilityType.getName() + " invalid argument: " + exceptionMsg;
+                if (!noConsoleOutput) System.out.println(message);
+                logger.log(Level.WARNING, message);
+                if (!noConsoleOutput) System.out.println(getUsage(utilityType));
+                System.exit(1);
+            }else{
+                String message = utilityType.getName()+ " failed: " + ExceptionUtils.getMessage(e, "Unknown error");
+                if (!noConsoleOutput) System.out.println(message);
+                logger.log(Level.WARNING, message);
+                System.exit(1);
+            }
+        }
+    }
+
+    private static Functions.UnaryThrows<
+            ImportExportUtilities.UtilityResult,
+            String[],
+            ? extends Exception> getUtilityFunction(final UTILITY_TYPE utilityType) {
+        switch (utilityType) {
+            case RESTORE:
+                return new Functions.UnaryThrows<ImportExportUtilities.UtilityResult, String[], Exception>() {
+                    public ImportExportUtilities.UtilityResult call(final String[] args)
+                            throws Exception {
+                        final Importer importer = new Importer(new File(SECURE_SPAN_HOME), System.out);
+                        return importer.restoreOrMigrateBackupImage(args);
+                    }
+                };
+            case MIGRATE:
+                return new Functions.UnaryThrows<ImportExportUtilities.UtilityResult, String[], Exception>() {
+                    public ImportExportUtilities.UtilityResult call(final String[] args)
+                            throws Exception {
+                        final Importer importer = new Importer(new File(SECURE_SPAN_HOME), System.out);
+                        return importer.restoreOrMigrateBackupImage(MigrateToRestoreConvertor.getConvertedArguments(args, System.out));
+                    }
+                };
+            case BACKUP:
+                return new Functions.UnaryThrows<ImportExportUtilities.UtilityResult, String[], Exception>() {
+                    public ImportExportUtilities.UtilityResult call(final String[] args)
+                            throws Exception {
+                        final Exporter exporter = new Exporter(new File(SECURE_SPAN_HOME), System.out);
+                        return exporter.createBackupImage(args);
+                    }
+                };
+            case CFGDEAMON:
+                return new Functions.UnaryThrows<ImportExportUtilities.UtilityResult, String[], Exception>() {
+                    public ImportExportUtilities.UtilityResult call(final String[] notUsed)
+                            throws Exception {
+                        final File ssgHome = new File(SECURE_SPAN_HOME, ImportExportUtilities.GATEWAY);
+                        final OSConfigManager osConfigManager =
+                                new OSConfigManager(ssgHome, true, false, null);
+                        final boolean filesWereCopied = osConfigManager.finishRestoreOfFilesOnReboot();
+                        //this is the only output from cfgdaemon
+                        if (filesWereCopied) System.out.println("Files were restored by the cfgdaemon");
+                        return new ImportExportUtilities.UtilityResult(Status.SUCCESS);
+                    }
+                };
+        }
+
+        throw new IllegalArgumentException("Unknown utility type: " + utilityType.getName());
+    }
+
+    private static void initializeLogging(final UTILITY_TYPE utilityType) {
         final LogManager logManager = LogManager.getLogManager();
 
         final String logFileToUseAsDefault;
-        if(launcherTarget.equalsIgnoreCase(IMPORT_TYPE)
-                || launcherTarget.equalsIgnoreCase(MIGRATE_TYPE) 
-                || launcherTarget.equalsIgnoreCase(CFGDAEMON_TYPE)){
-            logFileToUseAsDefault = RESTORE_LOGCONFIG_NAME;
-        }else{
+
+        if(utilityType == UTILITY_TYPE.BACKUP){
             logFileToUseAsDefault = BACKUP_LOGCONFIG_NAME;
+        }else{
+            logFileToUseAsDefault = RESTORE_LOGCONFIG_NAME;
         }
 
         final File file = new File(SyspropUtil.getString("java.util.logging.config.file", logFileToUseAsDefault));
@@ -175,36 +206,30 @@ public class BackupRestoreLauncher {
     }
 
     /**
-     * Prints the usages for the given utility type (import/export).
+     * Prints the usages for the given utility type (restore / migrate / backup).
      *
-     * @param utilityType   import or export
-     * @return  The string containing the usages
+     * @param utilityType   restore / migrate / backup
+     * @return  The string containing the correct usages for the supplied utilityType
      */
-    private static String getUsage(final String utilityType) {
+    private static String getUsage(final UTILITY_TYPE utilityType) {
         StringBuilder output = new StringBuilder();
 
-        //determine what is the utility type
-        if (utilityType == null || "".equals(utilityType)) {
-            //from legacy code (ssgmigration.sh) will perform based on import/export.  So for now, we'll
-            //just output that if you do not specify import/export, it is required as a parameter
-            //otherwise the ssgbackup.sh will always use export and ssgrestore.sh will always use import
-            output.append("usage: [import | export] [OPTIONS]").append(EOL_CHAR);
-            output.append("\tIMPORT OPTIONS:").append(EOL_CHAR);
-            Importer.getRestoreUsage(output);
-            output.append("\tEXPORT OPTIONS:").append(EOL_CHAR);
-            Exporter.getExporterUsage(output);
-        } else if (utilityType.equals(IMPORT_TYPE)) {
-            output.append("usage: " + SSGRESTORE_SH + " [OPTIONS]").append(EOL_CHAR);
-            output.append("\tOPTIONS:").append(EOL_CHAR);
-            Importer.getRestoreUsage(output);
-        }else if (utilityType.equals(MIGRATE_TYPE)) {
-            output.append("usage: " + SSGMIGRATE_SH + " [OPTIONS]").append(EOL_CHAR);
-            output.append("\tOPTIONS:").append(EOL_CHAR);
-            Importer.getMigrateUsage(output);
-        }  else if (utilityType.equals(EXPORT_TYPE)) {
-            output.append("usage: " + SSGBACKUP_SH + " [OPTIONS]").append(EOL_CHAR);
-            output.append("\tOPTIONS:").append(EOL_CHAR);
-            Exporter.getExporterUsage(output);
+        switch (utilityType) {
+            case RESTORE:
+                output.append("usage: " + SSGRESTORE_SH + " [OPTIONS]").append(EOL_CHAR);
+                output.append("\tOPTIONS:").append(EOL_CHAR);
+                Importer.getRestoreUsage(output);
+                break;
+            case MIGRATE:
+                output.append("usage: " + SSGMIGRATE_SH + " [OPTIONS]").append(EOL_CHAR);
+                output.append("\tOPTIONS:").append(EOL_CHAR);
+                Importer.getMigrateUsage(output);
+                break;
+            case BACKUP:
+                output.append("usage: " + SSGBACKUP_SH + " [OPTIONS]").append(EOL_CHAR);
+                output.append("\tOPTIONS:").append(EOL_CHAR);
+                Exporter.getExporterUsage(output);
+                break;
         }
         return output.toString();
     }

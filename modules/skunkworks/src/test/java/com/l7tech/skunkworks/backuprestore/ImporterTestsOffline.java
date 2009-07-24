@@ -87,8 +87,8 @@ public class ImporterTestsOffline {
                 "-gdbp", "7layer"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -121,8 +121,8 @@ public class ImporterTestsOffline {
 
         try{
             System.setProperty("com.l7tech.config.backuprestore.mycnfdir", tmpSsgHome.getAbsolutePath());
-            final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
-            Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+            final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+            Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
         }finally{
             System.clearProperty("com.l7tech.config.backuprestore.mycnfdir");
         }
@@ -164,8 +164,8 @@ public class ImporterTestsOffline {
                 "-maindb"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -196,8 +196,8 @@ public class ImporterTestsOffline {
                 "-maindb"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -237,8 +237,8 @@ public class ImporterTestsOffline {
 
         try{
             System.setProperty("com.l7tech.config.backup.localDbOnly", Boolean.toString(false));
-            final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
-            Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+            final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+            Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
         }finally{
             System.clearProperty("com.l7tech.config.backup.localDbOnly");            
         }
@@ -277,8 +277,8 @@ public class ImporterTestsOffline {
                 "-maindb"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -327,8 +327,8 @@ public class ImporterTestsOffline {
                 "-newdb", "ssg_buzzcut"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -375,8 +375,8 @@ public class ImporterTestsOffline {
                 "-mapping", mappingFile.getPath()
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -428,10 +428,10 @@ public class ImporterTestsOffline {
         };
 
         final String [] convertedArgs = MigrateToRestoreConvertor.getConvertedArguments(args, null);
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(convertedArgs);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(convertedArgs);
         if(result.getException() != null) throw result.getException();
 
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -475,8 +475,8 @@ public class ImporterTestsOffline {
                 "-newdb", "ssg_buzzcut"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -504,8 +504,8 @@ public class ImporterTestsOffline {
                 "-mapping", mappingFile.getPath()
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     //==Testing node.properties and how it's managed==
@@ -528,9 +528,9 @@ public class ImporterTestsOffline {
                 "-halt"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         if(result.getException() != null) throw result.getException();
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -550,9 +550,9 @@ public class ImporterTestsOffline {
                 "-halt"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         if(result.getException() != null) throw result.getException();
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -573,9 +573,9 @@ public class ImporterTestsOffline {
                 "-halt"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         if(result.getException() != null) throw result.getException();
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -604,9 +604,9 @@ public class ImporterTestsOffline {
                 "-halt"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         if(result.getException() != null) throw result.getException();
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
 
         //Read node.properties from the ssgHome and confirm the database users property has been corrected
         final PropertiesConfiguration nodeProps = new PropertiesConfiguration();
@@ -644,9 +644,9 @@ public class ImporterTestsOffline {
                 "-halt"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         if(result.getException() != null) throw result.getException();
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     /**
@@ -674,9 +674,9 @@ public class ImporterTestsOffline {
                 "-migrate"
         };
 
-        final Importer.RestoreMigrateResult result = importer.restoreOrMigrateBackupImage(args);
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
         if(result.getException() != null) throw result.getException();
-        Assert.assertEquals("Incorrect result found", Importer.RestoreMigrateResult.Status.SUCCESS, result.getStatus());
+        Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
     }
 
     private void setUpEnvironment() throws IOException {

@@ -365,10 +365,10 @@ final class BackupImpl implements Backup {
 
     }
 
-    public void deleteTemporaryDirectory() throws IOException {
+    public boolean deleteTemporaryDirectory() {
         logger.info("cleaning up temp files at " + tmpOutputDirectory);
         if (printStream != null && isVerbose) printStream.println("Cleaning temporary files at " + tmpOutputDirectory);
-        FileUtils.deleteDir(tmpOutputDirectory);
+        return FileUtils.deleteDir(tmpOutputDirectory);
     }
 
     @Override
