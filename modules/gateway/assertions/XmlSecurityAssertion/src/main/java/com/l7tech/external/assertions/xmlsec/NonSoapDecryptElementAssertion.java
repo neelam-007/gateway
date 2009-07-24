@@ -38,7 +38,7 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
 
         meta.put(AssertionMetadata.SHORT_NAME, "Immediate Decrypt (Non-SOAP) XML Element");
         meta.put(AssertionMetadata.DESCRIPTION, "Immediately decrypt one or more elements of the message.  " +
-                                                "This does not require a SOAP Envelope and does not examine WS-Security processor results.  " +
+                                                "This does not require a SOAP Envelope and does not examine or produce WS-Security processor results.  " +
                                                 "Instead, this assertion changes the target message immediately.  The XPath should match the EncryptedData elements " +
                                                 "which are to be decrypted.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});

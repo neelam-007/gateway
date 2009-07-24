@@ -11,32 +11,19 @@ import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAssertion;
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.IssuerSerialKeyInfoDetails;
 import com.l7tech.security.xml.XencUtil;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathVariableContext;
-import com.l7tech.xml.xpath.XpathVariableFinderVariableContext;
-import org.jaxen.JaxenException;
-import org.jaxen.dom.DOMXPath;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
@@ -45,10 +32,7 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 /**
@@ -56,100 +40,27 @@ import java.util.logging.Logger;
  *
  * @see com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAssertion
  */
-public class ServerNonSoapEncryptElementAssertion extends AbstractServerAssertion<NonSoapEncryptElementAssertion> {
+public class ServerNonSoapEncryptElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapEncryptElementAssertion> {
     private static final Logger logger = Logger.getLogger(ServerNonSoapEncryptElementAssertion.class.getName());
 
     private static final SecureRandom random = new SecureRandom();
 
-    private final Auditor auditor;
-    private final DOMXPath xpath;
     private final X509Certificate recipientCert;
 
     public ServerNonSoapEncryptElementAssertion(NonSoapEncryptElementAssertion assertion, ApplicationContext context)
             throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException
     {
-        super(assertion);
-
-        this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
-        XpathExpression xpe = assertion.getXpathExpression();
-        if (xpe == null || xpe.getExpression() == null)
-            throw new InvalidXpathException("XPath expression not set");
-        try {
-            this.xpath = new DOMXPath(xpe.getExpression());
-            xpe.getNamespaces();
-            for (Map.Entry<String, String> entry : xpe.getNamespaces().entrySet()) {
-                this.xpath.addNamespace(entry.getKey(), entry.getValue());
-            }
-            this.xpath.setVariableContext(new XpathVariableFinderVariableContext(null));
-
-            this.recipientCert = CertUtils.decodeFromPEM(assertion.getRecipientCertificateBase64(), false);
-        } catch (JaxenException e) {
-            throw new InvalidXpathException(e);
-        }
+        super(assertion, "encrypt", logger, context, context);
+        this.recipientCert = CertUtils.decodeFromPEM(assertion.getRecipientCertificateBase64(), false);
     }
 
     @Override
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        try {
-            Message message = context.getTargetMessage(assertion);
-            final Document doc = message.getXmlKnob().getDocumentWritable();
-            List<Element> elementsToEncrypt = XpathVariableContext.doWithVariableFinder(new PolicyEnforcementContextXpathVariableFinder(context), new Callable<List<Element>>() {
-                @Override
-                public List<Element> call() throws Exception {
-                    List nodes = xpath.selectNodes(doc);
-                    if (nodes == null || nodes.isEmpty()) {
-                        final String msg = "XPath evaluation did not match any elements.";
-                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
-                        throw new AssertionStatusException(AssertionStatus.FALSIFIED, msg);
-                    }
-                    List<Element> elementsToEncrypt = new ArrayList<Element>();
-                    for (Object node : nodes) {
-                        if (node instanceof Element) {
-                            elementsToEncrypt.add((Element) node);
-                        } else {
-                            final String msg = "XPath evaluation produced non-Element result of type " + node.getClass();
-                            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
-                            throw new AssertionStatusException(msg);
-                        }
-                    }
-                    return elementsToEncrypt;
-                }
-            });
+    protected AssertionStatus processAffectedElements(PolicyEnforcementContext context, Message message, Document doc, List<Element> elementsToEncrypt) throws Exception {
+        Pair<Element, SecretKey> ek = createEncryptedKey(doc, recipientCert);
 
-
-            Pair<Element, SecretKey> ek = createEncryptedKey(doc, recipientCert);
-
-            for (Element element : elementsToEncrypt)
-                encryptAndReplaceElement(element, ek.left, ek.right);
-            return AssertionStatus.NONE;
-
-        } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
-            return AssertionStatus.SERVER_ERROR;
-        } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, assertion.getTargetName());
-            return AssertionStatus.FAILED;
-        } catch (JaxenException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to evaluate XPath expression: " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.FAILED;
-        } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to encrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.SERVER_ERROR;
-        } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to encrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.SERVER_ERROR;
-        } catch (KeyInfoResolvingException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to encrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.SERVER_ERROR;
-        } catch (StructureException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to encrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.SERVER_ERROR;
-        } catch (AssertionStatusException e) {
-            return e.getAssertionStatus();
-        } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to encrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.SERVER_ERROR;
-        }
+        for (Element element : elementsToEncrypt)
+            encryptAndReplaceElement(element, ek.left, ek.right);
+        return AssertionStatus.NONE;
     }
 
     private Pair<Element, SecretKey> createEncryptedKey(Document factory, X509Certificate recipientCert) throws GeneralSecurityException, InvalidDocumentFormatException {

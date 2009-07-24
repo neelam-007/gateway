@@ -11,32 +11,19 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.keys.FlexKey;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.*;
-import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathVariableContext;
-import com.l7tech.xml.xpath.XpathVariableFinderVariableContext;
-import org.jaxen.JaxenException;
-import org.jaxen.dom.DOMXPath;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.crypto.NoSuchPaddingException;
@@ -49,8 +36,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 /**
@@ -58,118 +43,41 @@ import java.util.logging.Logger;
  *
  * @see com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion
  */
-public class ServerNonSoapDecryptElementAssertion extends AbstractServerAssertion<NonSoapDecryptElementAssertion> {
+public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapDecryptElementAssertion> {
     private static final Logger logger = Logger.getLogger(ServerNonSoapDecryptElementAssertion.class.getName());
 
-    private final AssertionStatus ASSERTION_STATUS_BAD_MESSAGE = TargetMessageType.REQUEST.equals(assertion.getTarget()) ? AssertionStatus.BAD_REQUEST : AssertionStatus.SERVER_ERROR;
-    private final Auditor auditor;
-    private final DOMXPath xpath;
     private final SecurityTokenResolver securityTokenResolver;
 
     public ServerNonSoapDecryptElementAssertion(NonSoapDecryptElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub)
             throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException
     {
-        super(assertion);
-
-        this.auditor = eventPub != null ? new Auditor(this, beanFactory, eventPub, logger) : new LogOnlyAuditor(logger);
-        XpathExpression xpe = assertion.getXpathExpression();
-        if (xpe == null || xpe.getExpression() == null)
-            throw new InvalidXpathException("XPath expression not set");
-        try {
-            this.xpath = new DOMXPath(xpe.getExpression());
-            xpe.getNamespaces();
-            for (Map.Entry<String, String> entry : xpe.getNamespaces().entrySet()) {
-                this.xpath.addNamespace(entry.getKey(), entry.getValue());
-            }
-            this.xpath.setVariableContext(new XpathVariableFinderVariableContext(null));
-
-            this.securityTokenResolver = (SecurityTokenResolver)beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
-        } catch (JaxenException e) {
-            throw new InvalidXpathException(e);
-        }
+        super(assertion, "decrypt", logger, beanFactory, eventPub);
+        this.securityTokenResolver = (SecurityTokenResolver)beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
 
     @Override
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        try {
-            Message message = context.getTargetMessage(assertion);
-            final Document doc = message.getXmlKnob().getDocumentWritable();
-            List<Element> elementsToDecrypt = XpathVariableContext.doWithVariableFinder(new PolicyEnforcementContextXpathVariableFinder(context), new Callable<List<Element>>() {
-                @Override
-                public List<Element> call() throws Exception {
-                    List nodes = xpath.selectNodes(doc);
-                    if (nodes == null || nodes.isEmpty()) {
-                        final String msg = "XPath evaluation did not match any elements.";
-                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
-                        throw new AssertionStatusException(AssertionStatus.FALSIFIED, msg);
-                    }
-                    List<Element> elementsToDecrypt = new ArrayList<Element>();
-                    for (Object node : nodes) {
-                        if (node instanceof Element) {
-                            elementsToDecrypt.add((Element) node);
-                        } else {
-                            final String msg = "XPath evaluation produced non-Element result of type " + node.getClass();
-                            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
-                            throw new AssertionStatusException(msg);
-                        }
-                    }
-                    return elementsToDecrypt;
-                }
-            });
+    protected AssertionStatus processAffectedElements(PolicyEnforcementContext context, Message message, Document doc, List<Element> elementsToDecrypt) throws Exception {
+        List<String> algorithms = new ArrayList<String>();
+        List<Element> elements = new ArrayList<Element>();
 
-
-            List<String> algorithms = new ArrayList<String>();
-            List<Element> elements = new ArrayList<Element>();
-
-            for (Element encryptedDataEl : elementsToDecrypt) {
-                Pair<String, NodeList> result = decryptAndReplaceElement(encryptedDataEl);
-                String algorithm = result.left;
-                int numNodes = result.right.getLength();
-                for (int i = 0; i < numNodes; i++) {
-                    Node got = result.right.item(i);
-                    if (got instanceof Element) {
-                        Element decryptedElement = (Element) got;
-                        elements.add(decryptedElement);
-                        algorithms.add(algorithm);
-                    }
+        for (Element encryptedDataEl : elementsToDecrypt) {
+            Pair<String, NodeList> result = decryptAndReplaceElement(encryptedDataEl);
+            String algorithm = result.left;
+            int numNodes = result.right.getLength();
+            for (int i = 0; i < numNodes; i++) {
+                Node got = result.right.item(i);
+                if (got instanceof Element) {
+                    Element decryptedElement = (Element) got;
+                    elements.add(decryptedElement);
+                    algorithms.add(algorithm);
                 }
             }
-
-            context.setVariable(NonSoapDecryptElementAssertion.VAR_ELEMENTS_DECRYPTED, elements.toArray(new Element[elements.size()]));
-            context.setVariable(NonSoapDecryptElementAssertion.VAR_ENCRYPTION_METHOD_URIS, algorithms.toArray(new String[algorithms.size()]));
-
-            return AssertionStatus.NONE;
-
-        } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
-            return AssertionStatus.SERVER_ERROR;
-        } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, assertion.getTargetName());
-            return ASSERTION_STATUS_BAD_MESSAGE;
-        } catch (JaxenException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to evaluate XPath expression: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
-            return AssertionStatus.FAILED;
-        } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to decrypt element(s): " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
-            return ASSERTION_STATUS_BAD_MESSAGE;
-        } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to decrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.SERVER_ERROR;
-        } catch (KeyInfoResolvingException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to decrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.SERVER_ERROR;
-        } catch (StructureException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to decrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return ASSERTION_STATUS_BAD_MESSAGE;
-        } catch (ProcessorException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to decrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.BAD_REQUEST;
-        } catch (AssertionStatusException e) {
-            return e.getAssertionStatus();
-        } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to decrypt element(s): " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.SERVER_ERROR;
         }
+
+        context.setVariable(NonSoapDecryptElementAssertion.VAR_ELEMENTS_DECRYPTED, elements.toArray(new Element[elements.size()]));
+        context.setVariable(NonSoapDecryptElementAssertion.VAR_ENCRYPTION_METHOD_URIS, algorithms.toArray(new String[algorithms.size()]));
+
+        return AssertionStatus.NONE;
     }
 
     private Pair<String, NodeList> decryptAndReplaceElement(Element encryptedDataEl)

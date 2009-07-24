@@ -3,16 +3,16 @@ package com.l7tech.external.assertions.xmlsec.console;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.panels.*;
+import com.l7tech.console.panels.AddCertificateWizard;
+import com.l7tech.console.panels.CertDetailsPanel;
+import com.l7tech.console.panels.CertImportMethodsPanel;
 import com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAssertion;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.xml.XencUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.xml.xpath.XpathExpression;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -20,16 +20,16 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  *
  */
-public class NonSoapEncryptElementAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<NonSoapEncryptElementAssertion> {
+public class NonSoapEncryptElementAssertionPropertiesDialog extends NonSoapSecurityAssertionDialog<NonSoapEncryptElementAssertion> {
     private static final Logger logger = Logger.getLogger(NonSoapEncryptElementAssertionPropertiesDialog.class.getName());
 
     private JPanel mainPane;
@@ -40,10 +40,9 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends AssertionPro
     private JLabel xpathExpressionLabel;
 
     private String certb64;
-    private XpathExpression xpathExpression;
 
     public NonSoapEncryptElementAssertionPropertiesDialog(Frame parent, NonSoapEncryptElementAssertion assertion) {
-        super(NonSoapEncryptElementAssertion.class, parent, assertion.meta().get(AssertionMetadata.LONG_NAME) + " Properties", true);
+        super(parent, assertion);
         initComponents();
         setData(assertion);
     }
@@ -57,30 +56,7 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends AssertionPro
                 XencUtil.AES_192_CBC,
                 XencUtil.AES_256_CBC
         }));
-        editXpathButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                final NonSoapEncryptElementAssertion holder = new NonSoapEncryptElementAssertion();
-                holder.setXpathExpression(xpathExpression);
-                final XpathBasedAssertionPropertiesDialog ape = new XpathBasedAssertionPropertiesDialog(
-                        NonSoapEncryptElementAssertionPropertiesDialog.this,
-                        holder);
-                JDialog dlg = ape.getDialog();
-                dlg.setTitle("Encrypt Non-SOAP Element - XPath Expression");
-                dlg.pack();
-                dlg.setModal(true);
-                Utilities.centerOnScreen(dlg);
-                DialogDisplayer.display(dlg, new Runnable() {
-                    @Override
-                    public void run() {
-                        if (!ape.isConfirmed())
-                            return;
-                        xpathExpression = holder.getXpathExpression();
-                        updateInfo();
-                    }
-                });
-            }
-        });
+        editXpathButton.addActionListener(makeEditXpathAction());
         setRecipientCertificateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -111,7 +87,7 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends AssertionPro
 
                         try {
                             certb64 = HexUtils.encodeBase64(chain[0].getEncoded());
-                            updateInfo();
+                            updateRecipientCertLabel();
                         } catch (CertificateEncodingException e1) {
                             showCertError(e1);
                         }
@@ -135,15 +111,22 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends AssertionPro
 
     @Override
     public void setData(NonSoapEncryptElementAssertion assertion) {
-        certb64 = assertion.getRecipientCertificateBase64();
+        super.setData(assertion);
         encryptionMethodComboBox.setSelectedItem(assertion.getXencAlgorithm());
-        xpathExpression = assertion.getXpathExpression();
-        updateInfo();
+        certb64 = assertion.getRecipientCertificateBase64();
+        updateRecipientCertLabel();
     }
 
-    private void updateInfo() {
+    @Override
+    public void setXpathExpressionLabelText(String label) {
+        if (this.xpathExpressionLabel == null)
+            super.setXpathExpressionLabelText(label);
+        else
+            this.xpathExpressionLabel.setText(label);
+    }
+
+    private void updateRecipientCertLabel() {
         recipientCertLabel.setText(getCertInfo(certb64));
-        xpathExpressionLabel.setText(getXpathInfo(xpathExpression));
     }
 
     private String getCertInfo(String certb64) {
@@ -161,14 +144,10 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends AssertionPro
         }
     }
 
-    private String getXpathInfo(XpathExpression expr) {
-        return expr == null ? "<html><i>&lt;Not yet set&gt;" : expr.getExpression();
-    }
-
     @Override
     public NonSoapEncryptElementAssertion getData(NonSoapEncryptElementAssertion assertion) throws ValidationException {
+        assertion = super.getData(assertion);
         assertion.setRecipientCertificateBase64(certb64);
-        assertion.setXpathExpression(xpathExpression);
         assertion.setXencAlgorithm((String)encryptionMethodComboBox.getSelectedItem());
         return assertion;
     }

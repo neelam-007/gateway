@@ -1,18 +1,18 @@
 package com.l7tech.external.assertions.xmlsec.console;
 
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
-import com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion;
+import com.l7tech.external.assertions.xmlsec.NonSoapSignElementAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class NonSoapDecryptElementAssertionPropertiesDialog extends XpathBasedAssertionPropertiesDialog {
+public class NonSoapSignElementAssertionPropertiesDialog extends XpathBasedAssertionPropertiesDialog {
     // For now, we have nothing to configure except the XPath, so we just let our superclass handle everything
     private JPanel contentPane;
-    private final NonSoapDecryptElementAssertion assertion;
+    private final NonSoapSignElementAssertion assertion;
 
-    public NonSoapDecryptElementAssertionPropertiesDialog(Window owner, NonSoapDecryptElementAssertion assertion) {
+    public NonSoapSignElementAssertionPropertiesDialog(Window owner, NonSoapSignElementAssertion assertion) {
         super(owner, assertion);
         this.assertion = assertion;
     }
