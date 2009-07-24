@@ -29,6 +29,15 @@ public class DeleteServiceAliasAction extends DeleteEntityNodeAction<ServiceNode
         super(en);
     }
 
+    /**
+     * Create the action that deletes the policy
+     * @param en the node to delete
+     * @param confirmationEnabled: to check if a deletion confirmation is needed or not.
+     */
+    public DeleteServiceAliasAction(ServiceNodeAlias en, boolean confirmationEnabled) {
+        super(en, confirmationEnabled);
+    }
+
     protected OperationType getOperation() {
         return OperationType.DELETE;
     }

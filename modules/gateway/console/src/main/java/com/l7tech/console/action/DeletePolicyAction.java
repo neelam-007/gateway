@@ -5,31 +5,18 @@ package com.l7tech.console.action;
 
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.util.Functions;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.console.panels.WorkSpacePanel;
-import com.l7tech.console.panels.HomePagePanel;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
-import com.l7tech.console.tree.ServicesAndPoliciesTree;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityWithPolicyNode;
-import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Set;
 
 /**
  * The <code>DeletePolicyAction</code> action deletes a {@link com.l7tech.policy.Policy}.
@@ -44,6 +31,15 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
      */
     public DeletePolicyAction(PolicyEntityNode en) {
         super(en);
+    }
+
+    /**
+     * Create the action that deletes the policy
+     * @param en the node to delete
+     * @param confirmationEnabled: to check if a deletion confirmation is needed or not.
+     */
+    public DeletePolicyAction(PolicyEntityNode en, boolean confirmationEnabled) {
+        super(en, confirmationEnabled);
     }
 
     protected OperationType getOperation() {

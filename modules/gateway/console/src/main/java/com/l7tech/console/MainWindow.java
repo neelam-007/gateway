@@ -1446,7 +1446,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         TopComponents.getInstance().registerComponent(ServicesAndPoliciesTree.NAME, servicesAndPoliciesTree);
 		servicesAndPoliciesTree.addTreeSelectionListener(new TreeSelectionListener() {
             public void valueChanged(TreeSelectionEvent treeSelectionEvent) {
-                boolean enable = servicesAndPoliciesTree.getSelectionCount() > 0;
+                boolean enable = servicesAndPoliciesTree.getSmartSelectedNodes().size() == 1;
                 if (enable) {
                     if (!(servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent() instanceof ServiceNode)) {
                         enable = false;

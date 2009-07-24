@@ -29,6 +29,15 @@ public class DeletePolicyAliasAction extends DeleteEntityNodeAction<PolicyEntity
         super(en);
     }
 
+    /**
+     * Create the action that deletes the policy
+     * @param en the node to delete
+     * @param confirmationEnabled: to check if a deletion confirmation is needed or not.
+     */
+    public DeletePolicyAliasAction(PolicyEntityNodeAlias en, boolean confirmationEnabled) {
+        super(en, confirmationEnabled);
+    }
+
     protected OperationType getOperation() {
         return OperationType.DELETE;
     }

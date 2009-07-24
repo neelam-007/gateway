@@ -8,6 +8,7 @@ import com.l7tech.console.tree.servicesAndPolicies.SortComponents;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -20,7 +21,9 @@ import com.l7tech.policy.PolicyHeader;
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.event.*;
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -164,27 +167,42 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         @Override
         public void keyPressed(KeyEvent e) {
             JTree tree = (JTree)e.getSource();
-            TreePath path = tree.getSelectionPath();
-            if (path == null) return;
-            AbstractTreeNode node =
-              (AbstractTreeNode)path.getLastPathComponent();
-            if (node == null) return;
+            // Sometimes, multiple items (folders, published services, policies, or aliases) are selected.
+            List<AbstractTreeNode> abstractTreeNodes = ((ServicesAndPoliciesTree)tree).getSmartSelectedNodes();
+            if (abstractTreeNodes == null || abstractTreeNodes.isEmpty()) return;
+
+            boolean hasMultipleSelection = abstractTreeNodes.size() > 1;
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
-                if (!node.canDelete()) return;
-                if (node instanceof ServiceNodeAlias) {
-                    new DeleteServiceAliasAction((ServiceNodeAlias)node).actionPerformed(null);
-                } else if (node instanceof ServiceNode) {
-                    new DeleteServiceAction((ServiceNode)node).actionPerformed(null);
-                } else if (node instanceof PolicyEntityNodeAlias) {
-                    new DeletePolicyAliasAction((PolicyEntityNodeAlias)node).actionPerformed(null);
-                } else if (node instanceof EntityWithPolicyNode) {
-                    new DeletePolicyAction((PolicyEntityNode)node).actionPerformed(null);
-                } else if (node instanceof FolderNode) {
-                    FolderNode folderNode = (FolderNode) node;
-                    new DeleteFolderAction(folderNode.getOid(), node, Registry.getDefault().getFolderAdmin()).actionPerformed(null);
+                if (hasMultipleSelection) {
+                    int result = JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                        "Are you sure you want to delete multiple selected targets?",
+                        "Multi-deletion Confirmation",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE);
+                    if(result != JOptionPane.YES_OPTION) {
+                        return;
+                    }
                 }
-            } else if (keyCode == KeyEvent.VK_ENTER) {
+
+                boolean confirmationEnabled = !hasMultipleSelection;
+                for (AbstractTreeNode node: abstractTreeNodes) {
+                    if (!node.canDelete()) return;
+                    if (node instanceof ServiceNodeAlias) {
+                        new DeleteServiceAliasAction((ServiceNodeAlias)node, confirmationEnabled).actionPerformed(null);
+                    } else if (node instanceof ServiceNode) {
+                        new DeleteServiceAction((ServiceNode)node, confirmationEnabled).actionPerformed(null);
+                    } else if (node instanceof PolicyEntityNodeAlias) {
+                        new DeletePolicyAliasAction((PolicyEntityNodeAlias)node, confirmationEnabled).actionPerformed(null);
+                    } else if (node instanceof EntityWithPolicyNode) {
+                        new DeletePolicyAction((PolicyEntityNode)node, confirmationEnabled).actionPerformed(null);
+                    } else if (node instanceof FolderNode) {
+                        FolderNode folderNode = (FolderNode) node;
+                        new DeleteFolderAction(folderNode.getOid(), node, Registry.getDefault().getFolderAdmin(), confirmationEnabled).actionPerformed(null);
+                    }
+                }
+            } else if (keyCode == KeyEvent.VK_ENTER && !hasMultipleSelection) {
+                AbstractTreeNode node = abstractTreeNodes.get(0);
                 if (node instanceof EntityWithPolicyNode)
                     new EditPolicyAction((EntityWithPolicyNode)node).actionPerformed(null);
             }
@@ -253,6 +271,28 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
                     AbstractTreeNode node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
 
                     JPopupMenu menu = node.getPopupMenu(ServicesAndPoliciesTree.this);
+
+                    boolean hasMultipleSelection = ServicesAndPoliciesTree.this.getSmartSelectedNodes().size() > 1;
+                    if (hasMultipleSelection) {
+                        for (Component component: menu.getComponents()) {
+                            if (component instanceof JMenuItem) {
+                                Action action = ((JMenuItem)component).getAction();
+                                String actionName = (String)action.getValue(Action.NAME);
+                                //Precondition: multiple items are selected.
+                                if (
+                                    // Case 1: if "node" is an EntityWithPolicyNode (published service node, policy node, or alias),
+                                    // all assoicated actions except "Copy as Alias", "Refresh", and "Cut" are disabled.
+                                    (node instanceof EntityWithPolicyNode && !(action instanceof MarkEntityToAliasAction) && !(action instanceof RefreshTreeNodeAction) && !"Cut".equals(actionName))
+                                        ||
+                                    // Case 2: if "node" is a folder node, all associated actions except "Cut" are disabled.
+                                    (node instanceof FolderNode && !"Cut".equals(actionName))
+                                   ) {
+                                    action.setEnabled(false);
+                                }
+                            }
+                        }
+                    }
+
                     if (menu != null) {
                         Utilities.removeToolTipsFromMenuItems(menu);
                         menu.setFocusable(false);
@@ -341,7 +381,9 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
      */
     public List<AbstractTreeNode> getSmartSelectedNodes(){
         TreePath[] selectedPaths = this.getSelectionPaths();
-        List<AbstractTreeNode> selectedNodes = new ArrayList<AbstractTreeNode>(selectedPaths.length);
+        List<AbstractTreeNode> selectedNodes;
+        if (selectedPaths == null) return new ArrayList<AbstractTreeNode>(0);
+        else selectedNodes = new ArrayList<AbstractTreeNode>(selectedPaths.length);
 
         HashSet<Object> nodesToTransfer = new HashSet<Object>(selectedPaths.length);
         for(TreePath path : selectedPaths) {

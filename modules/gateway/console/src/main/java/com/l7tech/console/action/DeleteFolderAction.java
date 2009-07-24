@@ -11,7 +11,6 @@ import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.awt.*;
 
 /**
  * Action to delete a service/policy folder.
@@ -20,12 +19,18 @@ public class DeleteFolderAction extends SecureAction {
     private long folderOid;
     private AbstractTreeNode folderToDelete;
     private FolderAdmin folderAdmin;
+    private boolean confirmationEnabled; // Check if a deletion confirmation is needed or not.
 
     public DeleteFolderAction(long folderOid, AbstractTreeNode folderToDelete, FolderAdmin folderAdmin) {
+        this(folderOid, folderToDelete, folderAdmin, true);
+    }
+
+    public DeleteFolderAction(long folderOid, AbstractTreeNode folderToDelete, FolderAdmin folderAdmin, boolean confirmationEnabled) {
         super(new AttemptedDeleteAll(EntityType.FOLDER));
         this.folderOid = folderOid;
         this.folderToDelete = folderToDelete;
         this.folderAdmin = folderAdmin;
+        this.confirmationEnabled = confirmationEnabled;
     }
 
     /**
@@ -56,29 +61,36 @@ public class DeleteFolderAction extends SecureAction {
      */
     @Override
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getTopParent();
         if(folderToDelete.getChildCount() > 0) {
-            JOptionPane.showMessageDialog(f, "Cannot delete non-empty folders.", "Delete Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "Cannot delete non-empty folders.", "Delete Error", JOptionPane.ERROR_MESSAGE);
         } else {
-            int result = JOptionPane.showConfirmDialog(f,
+            if (! confirmationEnabled) {
+                deleteFolderNode();
+                return;
+            }
+
+            int result = JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                                                        getUserConfirmationMessage(),
                                                        getUserConfirmationTitle(),
                                                        JOptionPane.YES_NO_OPTION,
                                                        JOptionPane.QUESTION_MESSAGE);
-
             if(result == JOptionPane.YES_OPTION) {
-                try {
-                    folderAdmin.deleteFolder(folderOid);
-
-                    JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-                    if (tree != null) {
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        model.removeNodeFromParent(folderToDelete);
-                    }
-                } catch(ObjectModelException e) {
-                    JOptionPane.showMessageDialog( f, "Error deleting folder:\n" + ExceptionUtils.getMessage(e), "Delete Error", JOptionPane.ERROR_MESSAGE );
-                }
+                deleteFolderNode();
             }
+        }
+    }
+
+    private void deleteFolderNode() {
+        try {
+            folderAdmin.deleteFolder(folderOid);
+
+            JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+            if (tree != null) {
+                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                model.removeNodeFromParent(folderToDelete);
+            }
+        } catch(ObjectModelException e) {
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "Error deleting folder:\n" + ExceptionUtils.getMessage(e), "Delete Error", JOptionPane.ERROR_MESSAGE );
         }
     }
 

@@ -23,9 +23,15 @@ import java.util.Set;
  * either.
  */
 public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> extends EntityWithPolicyNodeAction<HT>  {
+    private boolean confirmationEnabled;  // Check if a deletion confirmation is needed or not.
 
     public DeleteEntityNodeAction(HT node) {
+        this(node, true);
+    }
+
+    public DeleteEntityNodeAction(HT node, boolean confirmationEnabled) {
         super(node);
+        this.confirmationEnabled = confirmationEnabled;
     }
 
     protected OperationType getOperation() {
@@ -73,6 +79,11 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
+        if (! confirmationEnabled) {
+            deleteEntityNode();
+            return;
+        }
+
         final String message = getUserConfirmationMessage();
         final String title = getUserConfirmationTitle();
         
@@ -84,45 +95,47 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
 
                 Runnable runnable = new Runnable() {
                     public void run() {
-                        // Delete the entity
-                        if(!deleteEntity()) return;
-
-                        //as entity successfully removed, update the tree
-                        final TopComponents creg = TopComponents.getInstance();
-                        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        model.removeNodeFromParent(node);
-
-                        //Remove any aliases
-                        OrganizationHeader oH = (OrganizationHeader) node.getUserObject();
-                        long oldServiceOid = oH.getOid();
-                        Object root = model.getRoot();
-                        RootNode rootNode = (RootNode) root;
-
-                        if(!oH.isAlias()){
-                            //fyi if an original is deleted, aliases are deleted on cascade in the model
-                            Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oldServiceOid);
-                            if(!foundNodes.isEmpty()){
-                                for(AbstractTreeNode atn: foundNodes){
-                                    model.removeNodeFromParent(atn);
-                                }
-                                rootNode.removeEntity(oldServiceOid);
-                            }
-                        }else{
-                            rootNode.removeAlias(oldServiceOid, node);
-                        }
-
-                        //Update the workspace if this service was being displayed
-                        PolicyEditorPanel pe = creg.getPolicyEditorPanel();
-                        if (pe != null && pe.getPolicyNode().getEntityOid() == entityNode.getEntityOid()) {
-                            new HomeAction().performAction();
-                        }
+                        deleteEntityNode();
                     }
                 };
                 SwingUtilities.invokeLater(runnable);
             }
         });
-
     }
-    
+
+    private void deleteEntityNode() {
+        // Delete the entity
+        if(!deleteEntity()) return;
+
+        //as entity successfully removed, update the tree
+        final TopComponents creg = TopComponents.getInstance();
+        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
+        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+        model.removeNodeFromParent(node);
+
+        //Remove any aliases
+        OrganizationHeader oH = (OrganizationHeader) node.getUserObject();
+        long oldServiceOid = oH.getOid();
+        Object root = model.getRoot();
+        RootNode rootNode = (RootNode) root;
+
+        if(!oH.isAlias()){
+            //fyi if an original is deleted, aliases are deleted on cascade in the model
+            Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oldServiceOid);
+            if(!foundNodes.isEmpty()){
+                for(AbstractTreeNode atn: foundNodes){
+                    model.removeNodeFromParent(atn);
+                }
+                rootNode.removeEntity(oldServiceOid);
+            }
+        }else{
+            rootNode.removeAlias(oldServiceOid, node);
+        }
+
+        //Update the workspace if this service was being displayed
+        PolicyEditorPanel pe = creg.getPolicyEditorPanel();
+        if (pe != null && pe.getPolicyNode().getEntityOid() == entityNode.getEntityOid()) {
+            new HomeAction().performAction();
+        }
+    }
 }
