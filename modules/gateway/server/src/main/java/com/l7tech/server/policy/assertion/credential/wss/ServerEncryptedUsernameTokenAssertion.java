@@ -112,7 +112,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
                 EncryptedKey signingToken = null;
                 for (SigningSecurityToken stok : signingTokens) {
                     if (!(stok instanceof EncryptedKey)) {
-                        logger.fine("Ignoring UsernameToken signging token that was not an EncryptedKey");
+                        logger.fine("Ignoring UsernameToken signing token that was not an EncryptedKey");
                         continue;
                     }
                     signingToken = (EncryptedKey) stok;

@@ -9,7 +9,7 @@ import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.message.Message;
 import com.l7tech.security.token.EncryptedKey;
-import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.KeyInfoInclusionType;
@@ -21,6 +21,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.MessageTargetable;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -135,21 +136,23 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
             // which is expensive.
             if (wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null) {
                 // No EncryptedKeySHA1 reference on response yet; create one
-                XmlSecurityToken[] tokens = processorResult.getXmlSecurityTokens();
-                for (XmlSecurityToken token : tokens) {
-                    if (token instanceof EncryptedKey) {
-                        // We'll just use the first one we see that's unwrapped
-                        EncryptedKey ek = (EncryptedKey)token;
-                        if (ek.isUnwrapped()) {
-                            try {
-                                wssReq.setEncryptedKey(ek.getSecretKey());
-                                wssReq.setEncryptedKeySha1(ek.getEncryptedKeySHA1());
-                            } catch ( InvalidDocumentFormatException e) {
-                                throw new IllegalStateException(e); // Can't happen - it's unwrapped already
-                            } catch (GeneralSecurityException e) {
-                                throw new IllegalStateException(e); // Can't happen - it's unwrapped already
+                for ( LoginCredentials credentials : context.getAuthenticationContext( context.getRequest() ).getCredentials() ) {
+                    SecurityToken[] tokens = credentials.getSecurityTokens();
+                    for ( SecurityToken token : tokens ) {
+                        if (token instanceof EncryptedKey && credentials.isSecurityTokenPresent( token ) ) {
+                            // We'll just use the first one we see that's unwrapped
+                            EncryptedKey ek = (EncryptedKey)token;
+                            if (ek.isUnwrapped()) {
+                                try {
+                                    wssReq.setEncryptedKey(ek.getSecretKey());
+                                    wssReq.setEncryptedKeySha1(ek.getEncryptedKeySHA1());
+                                } catch ( InvalidDocumentFormatException e) {
+                                    throw new IllegalStateException(e); // Can't happen - it's unwrapped already
+                                } catch (GeneralSecurityException e) {
+                                    throw new IllegalStateException(e); // Can't happen - it's unwrapped already
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
                 }
@@ -162,7 +165,6 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
             wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
             wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
         }
-
 
         // how was the keyreference requested?
         String keyReference = wssConfig.getKeyReference();
