@@ -4,18 +4,21 @@ import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.tomcat.util.net.jsse.JSSESocketFactory;
 
 import javax.net.ssl.KeyManager;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -117,6 +120,21 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
     }
 
     public Socket acceptSocket(ServerSocket socket) throws IOException {
-        return SsgServerSocketFactory.wrapSocket(getTransportModuleId(), getConnectorOid(), super.acceptSocket(socket));
+        final long oid = getConnectorOid();
+        try {
+            return SsgServerSocketFactory.wrapSocket(getTransportModuleId(), oid, super.acceptSocket(socket));
+        } catch (SocketException e) {
+            // Check for connectors that are going to fail every time an attempt is made to start them (Bug #7553)
+            if (e.getCause() == null && e.getMessage() != null &&
+                    e.getMessage().contains("No available certificate or key corresponds to the SSL cipher suites which are enabled."))
+            {
+                synchronized (this) {
+                    logger.log(Level.WARNING, "Marking connector " +  oid + " as disabled due to its cipher suite configuration: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    HttpTransportModule.reportMisconfiguredConnector(getTransportModuleId(), oid);
+                }
+            }
+
+            throw e;
+        }
     }
 }

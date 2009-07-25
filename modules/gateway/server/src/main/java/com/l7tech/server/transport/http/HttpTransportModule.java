@@ -90,6 +90,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private final DefaultKey defaultKeyManager;
     private final Object connectorCrudLuck = new Object();
     private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, Connector>>();
+    private final ConcurrentHashMap<Long, Boolean> reportedAsMisconfigured = new ConcurrentHashMap<Long, Boolean>();
     private final Set<SsgConnectorActivationListener> endpointListeners;
     private Embedded embedded;
     private Engine engine;
@@ -652,6 +653,33 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
+    protected void pauseConnector(long oid) {
+        synchronized (connectorCrudLuck) {
+            Pair<SsgConnector, Connector> entry = activeConnectors.remove(oid);
+            if (entry == null) return;
+            Connector connector = entry.right;
+            logger.info("Pausing " + connector.getScheme() + " connector on port " + connector.getPort());
+            embedded.removeConnector(connector);
+            closeAllSockets(oid);
+            try {
+                connector.destroy();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Exception while destroying connector for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
+            }
+
+            org.apache.catalina.Executor connectorExecutor = embedded.getExecutor( executorName(entry.left) );
+            if ( connectorExecutor != null ) {
+                embedded.removeExecutor( connectorExecutor );
+                try {
+                    connectorExecutor.stop();
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Exception while destroying thread pool for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+
+        }
+    }
+
     private final Set<String> schemes = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_HTTP, SsgConnector.SCHEME_HTTPS)));
     @Override
     protected Set<String> getSupportedSchemes() {
@@ -866,6 +894,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private void activateConnector(SsgConnector connector, Connector c) throws ListenerException {
+        reportedAsMisconfigured.remove(connector.getOid());
         embedded.addConnector(c);
         try {
             logger.info("Starting " + c.getScheme() + " connector on port " + c.getPort());
@@ -981,6 +1010,26 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         
         Reference<HttpTransportModule> instance = instancesById.get(id);
         return instance == null ? null : instance.get();
+    }
+
+    private void reportMisconfiguredConnector(final long connectorOid) {
+        if (null != reportedAsMisconfigured.putIfAbsent(connectorOid, true))
+            return;
+        logger.warning("Disabling misconfigured connector OID " + connectorOid + " until it is reconfigured");
+        removeConnector(connectorOid);
+    }
+
+    /**
+     * Report that a particular connector is failing immediately during Accept due to a configuration problem,
+     * and that it should be disabled (until reconfigured) to prevent an acceptor thread from spinning on it forever.
+     *
+     * @param transportModuleId  the transport module that owns the connector in question.  Required.
+     * @param connectorOid  the OID of the connector that can't initialize.  Required.
+     */
+    public static void reportMisconfiguredConnector(long transportModuleId, long connectorOid) {
+        final HttpTransportModule module = getInstance(transportModuleId);
+        if (module != null)
+            module.reportMisconfiguredConnector(connectorOid);
     }
 
     /**
