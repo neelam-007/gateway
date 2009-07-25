@@ -32,7 +32,6 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.AsyncAdminMethods;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -44,7 +43,6 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.HtmlUtil;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.identity.IdentityProviderConfig;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -479,47 +477,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public void updateAssertions( final AssertionTreeNode atn ) {
-        updateAssertions( atn, new HashMap<Long,String>() );
-    }
-
-    /**
-     * Update any info that is not stored in the policy but is useful
-     * for display.
-     */
-    @SuppressWarnings({"unchecked"})
-    private void updateAssertions( final AssertionTreeNode atn,
-                                   final Map<Long,String> identityProviderNameMap ) {
-        Assertion assertion = atn.asAssertion();
-        if ( assertion instanceof IdentityTargetable ) {
-            IdentityTargetable identityTargetable = (IdentityTargetable) assertion;
-            if ( identityTargetable.getIdentityTarget() != null &&
-                 identityTargetable.getIdentityTarget().needsIdentityProviderName() ) {
-                long providerOid = identityTargetable.getIdentityTarget().getIdentityProviderOid();
-                String name = identityProviderNameMap.get( providerOid );
-                if ( name == null ) {
-                    try {
-                        IdentityAdmin ia = Registry.getDefault().getIdentityAdmin();
-                        IdentityProviderConfig config
-                                = ia.findIdentityProviderConfigByID( providerOid );
-                        if ( config != null ) {
-                            name = config.getName();
-                            identityProviderNameMap.put( providerOid, name );
-                        }
-                    } catch (FindException e) {
-                        log.log(Level.WARNING, "Error loading provider name for '#"+providerOid+"'.", e);    
-                    } catch (IllegalStateException ise) {
-                        log.log(Level.WARNING, "Identity admin not available when loading provider name for '#"+providerOid+"'.");    
-                    }
-                }
-                if ( name != null ) {
-                    identityTargetable.getIdentityTarget().setIdentityProviderName( name );
-                }
-            }
-        }
-
-        for ( AssertionTreeNode child : (List<AssertionTreeNode>)Collections.list(atn.children()) ) {
-            updateAssertions( child, identityProviderNameMap );
-        }
+        PolicyTreeUtils.updateAssertions( atn, new HashMap<Long,String>() );
     }
 
     private AssertionTreeNode getCurrentRoot() {

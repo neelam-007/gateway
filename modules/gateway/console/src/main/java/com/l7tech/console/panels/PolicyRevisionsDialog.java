@@ -6,6 +6,8 @@ import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.policy.LeafAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.tree.policy.PolicyTreeUtils;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.SimpleTableModel;
@@ -35,6 +37,8 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,6 +66,7 @@ public class PolicyRevisionsDialog extends JDialog {
     private final PolicyTreeCellRenderer policyTreeCellRenderer = new PolicyTreeCellRenderer();
 
     private SimpleTableModel<PolicyVersion> tableModel;
+    private Map<Long,String> identityProviderNameMap = new HashMap<Long,String>();
 
     /** Predicate that matches any PolicyVersion whose 'active' flag is true. */
     private static final Functions.Unary<Boolean, PolicyVersion> IS_ACTIVE = new Functions.Unary<Boolean, PolicyVersion>() {
@@ -313,6 +318,8 @@ public class PolicyRevisionsDialog extends JDialog {
             }
             Assertion assertion = WspReader.getDefault().parsePermissively(xml);
             TreeModel model = new PolicyTreeModel(assertion);
+            AssertionTreeNode assTreeNode = (AssertionTreeNode)model.getRoot();
+            PolicyTreeUtils.updateAssertions( assTreeNode, identityProviderNameMap );
             policyTree.setModel(model);
             policyTree.setCellRenderer(policyTreeCellRenderer);
             Utilities.expandTree(policyTree);
