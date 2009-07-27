@@ -41,7 +41,7 @@ public class ServerNonSoapEncryptionRoundTripTest {
 
     @BeforeClass
     public static void setupKeys() throws Exception {
-        Pair<X509Certificate,PrivateKey> ks = TestCertificateGenerator.convertFromBase64Pkcs12(ServerNonSoapDecryptElementAssertionTest.TEST_KEYSTORE);
+        Pair<X509Certificate,PrivateKey> ks = TestCertificateGenerator.convertFromBase64Pkcs12(NonSoapXmlSecurityTestUtils.TEST_KEYSTORE);
         recipb64 = HexUtils.encodeBase64(ks.left.getEncoded());
         securityTokenResolver = new SimpleSecurityTokenResolver(ks.left, ks.right);
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{

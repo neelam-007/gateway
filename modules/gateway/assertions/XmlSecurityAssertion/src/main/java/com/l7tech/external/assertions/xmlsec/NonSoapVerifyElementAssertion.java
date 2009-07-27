@@ -1,15 +1,15 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.util.Functions;
-
-import java.util.logging.Logger;
 
 /**
  * Immediately verify one or more signed Elements in a non-SOAP XML message.
  */
 public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase {
-    private static final Logger logger = Logger.getLogger(NonSoapVerifyElementAssertion.class.getName());
     private static final String META_INITIALIZED = NonSoapVerifyElementAssertion.class.getName() + ".metadataInitialized";
 
     public NonSoapVerifyElementAssertion() {

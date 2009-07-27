@@ -14,7 +14,15 @@ import java.util.List;
  * @author rmak
  */
 public class SsgKeyStoreManagerStub implements SsgKeyStoreManager {
-    final SsgKeyFinder ssgKeyFinder = new SsgKeyFinderStub();
+    final SsgKeyFinder ssgKeyFinder;
+
+    public SsgKeyStoreManagerStub() {
+        this(null);
+    }
+
+    public SsgKeyStoreManagerStub(SsgKeyFinder keyFinder) {
+        this.ssgKeyFinder = keyFinder != null ? keyFinder : new SsgKeyFinderStub();
+    }
 
     @Override
     public List<SsgKeyFinder> findAll() throws FindException, KeyStoreException {
@@ -28,6 +36,16 @@ public class SsgKeyStoreManagerStub implements SsgKeyStoreManager {
 
     @Override
     public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException {
+        if (ssgKeyFinder != null) {
+            try {
+                SsgKeyEntry entry = ssgKeyFinder.getCertificateChain(keyAlias);
+                if (entry != null)
+                    return entry;
+            } catch (ObjectNotFoundException e) {
+                // Fallthrough and check for "alice"
+            }
+        }
+
         if ( "alice".equalsIgnoreCase(keyAlias) ) {
             try {
                 return new SsgKeyEntry(

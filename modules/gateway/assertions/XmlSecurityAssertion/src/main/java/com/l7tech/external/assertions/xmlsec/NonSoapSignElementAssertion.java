@@ -9,7 +9,6 @@ import java.util.logging.Logger;
  * Immediately sign one or more Elements in a non-SOAP XML message.
  */
 public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase implements PrivateKeyable {
-    protected static final Logger logger = Logger.getLogger(NonSoapSignElementAssertion.class.getName());
     private static final String META_INITIALIZED = NonSoapSignElementAssertion.class.getName() + ".metadataInitialized";
 
     private final PrivateKeyableSupport privateKeyableSupport = new PrivateKeyableSupport();

@@ -1,20 +1,20 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.policy.assertion.PrivateKeyable;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.server.DefaultKey;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
-import org.springframework.context.ApplicationContext;
+import com.l7tech.policy.assertion.PrivateKeyable;
+import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.util.ExceptionUtils;
+import org.springframework.beans.factory.BeanFactory;
 
+import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
-import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -28,12 +28,12 @@ public class ServerAssertionUtils {
      * If the object is an instance of PrivateKeyable that requests a specific private key, that private key will
      * be returned.  Otherwise the default private key will be returned.
      *
-     * @param ctx  the Spring context.  Required.
+     * @param ctx  the Spring BeanFactory.  Required.
      * @param maybePrivateKeyable  an Object that might be an instance of PrivateKeyable.  Optional.
      * @return The SslSignerInfo to use for the specified object.  Never null.
      * @throws java.security.KeyStoreException if there is a problem loading the requested cert chain and private key.
      */
-    public static SignerInfo getSignerInfo(ApplicationContext ctx, Object maybePrivateKeyable) throws KeyStoreException {
+    public static SignerInfo getSignerInfo(BeanFactory ctx, Object maybePrivateKeyable) throws KeyStoreException {
         try {
             if (maybePrivateKeyable instanceof PrivateKeyable) {
                 PrivateKeyable keyable = (PrivateKeyable)maybePrivateKeyable;

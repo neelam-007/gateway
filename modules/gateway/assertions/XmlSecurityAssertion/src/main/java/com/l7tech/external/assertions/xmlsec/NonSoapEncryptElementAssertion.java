@@ -1,16 +1,16 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import com.l7tech.policy.assertion.*;
-import com.l7tech.util.Functions;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.xml.XencUtil;
-
-import java.util.logging.Logger;
+import com.l7tech.util.Functions;
 
 /**
  * Immediately encrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
  */
 public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase {
-    protected static final Logger logger = Logger.getLogger(NonSoapEncryptElementAssertion.class.getName());
     private static final String META_INITIALIZED = NonSoapEncryptElementAssertion.class.getName() + ".metadataInitialized";
 
     // EncryptedKey properties

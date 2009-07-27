@@ -11,8 +11,6 @@ import java.util.logging.Logger;
  * Immediately decrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
  */
 public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase implements SetsVariables {
-    protected static final Logger logger = Logger.getLogger(NonSoapEncryptElementAssertion.class.getName());
-
     private static final String META_INITIALIZED = NonSoapDecryptElementAssertion.class.getName() + ".metadataInitialized";
     
     public static final String VAR_ELEMENTS_DECRYPTED = "elementsDecrypted";
