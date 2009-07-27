@@ -322,9 +322,14 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             xpathBaseField.grabFocus();
             return false;
         }
+        if ( multipleAttributeConfig.getField(ID).getValue()==null ||
+             multipleAttributeConfig.getField(ID).getValue().isEmpty() ) {
+            DialogDisplayer.showMessageDialog( this, "Attribute ID is required.  Please enter an Attribute ID.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+            return false;
+        }
         if ( multipleAttributeConfig.getField(DATA_TYPE).getValue()==null ||
              multipleAttributeConfig.getField(DATA_TYPE).getValue().isEmpty() ) {
-            DialogDisplayer.showMessageDialog( this, "Data Type is required. Please enter a Data Type.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+            DialogDisplayer.showMessageDialog( this, "Data Type is required.  Please enter a Data Type.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
             return false;
         }
         final Map<String,String> namespaces = multipleAttributeConfig.getNamespaces();

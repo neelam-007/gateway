@@ -91,9 +91,14 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
         attribute.setId(((String)idComboBox.getEditor().getItem()).trim());
         attribute.setDataType(((String)dataTypeComboBox.getEditor().getItem()).trim());
 
+        if (attribute.getId() == null || attribute.getId().isEmpty()) {
+            DialogDisplayer.showMessageDialog( this, "Attribute ID is required.  Please enter an Attribute ID.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+            return false;
+        }
+
         if ( attribute.getDataType()==null ||
              attribute.getDataType().isEmpty() ) {
-            DialogDisplayer.showMessageDialog( this, "Data Type is required. Please enter a Data Type.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+            DialogDisplayer.showMessageDialog( this, "Data Type is required.  Please enter a Data Type.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
             return false;
         }
         return true;
