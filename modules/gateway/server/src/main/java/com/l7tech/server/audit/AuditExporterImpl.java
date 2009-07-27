@@ -655,7 +655,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
 
             Element signature = DsigUtil.createEnvelopedSignature(auditMetadata,
                                                          signingCert,
-                                                         signingKey, null, null);
+                                                         signingKey, null, null, null);
             auditMetadata.appendChild(signature);
 
             zip.putNextEntry(new ZipEntry(SIG_FILENAME));

@@ -5,15 +5,19 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.soap.SoapUtil;
 import static org.junit.Assert.*;
 import org.junit.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
+import java.security.PrivateKey;
 import java.security.SignatureException;
+import java.security.cert.X509Certificate;
 
 /**
  *
@@ -108,7 +112,7 @@ public class DsigUtilTest {
                 "</soapenv:Envelope>"), secretKey);
     }
 
-    //@Ignore("Enable to ensure that dsig prechecks have negligible impact on performance")
+    @Ignore("Enable to ensure that dsig prechecks have negligible impact on performance")
     @Test
     public void testCheckPerformance() throws Exception {
         final Element sigEl = getSigElement(
@@ -143,4 +147,31 @@ public class DsigUtilTest {
         return sig;
     }
 
+    // Ensure behavior of DsigUtil.createEnvelopedSignature() has not changed due to SupportedSignatureMethods refactor
+    @Test
+    public void testGetSignatureMethodForSignerPrivateKey() throws Exception {
+        Pair<X509Certificate, PrivateKey> rsa = new TestCertificateGenerator().keySize(1024).generateWithKey();
+        Pair<X509Certificate, PrivateKey> ec = new TestCertificateGenerator().curveName("secp384r1").generateWithKey();
+        SecretKey secretKey = new SecretKeySpec(new byte[] { 0, 0 }, "proprietarySecretKey");
+
+        Key[] keys = { rsa.right, ec.right, secretKey };
+        String[] hashes = { "SHA-1", "SHA-256", "SHA-384", "SHA-512" };
+
+        for (String hash : hashes) {
+            for (Key key : keys) {
+                String wantKeyAlg = key instanceof SecretKey ? "SecretKey" : key.getAlgorithm();
+
+                try {
+                    SupportedSignatureMethods method = DsigUtil.getSignatureMethodForSignerPrivateKey(key, hash);
+                    assertEquals(method.getKeyAlgorithmName(), wantKeyAlg);
+                    assertEquals(method.getDigestAlgorithmName(), hash);
+
+                } catch (SignatureException e) {
+                    assertNull("getSignatureMethodForSignerPrivateKey() should only throw SignatureException if the requested combination is not supported",
+                            SupportedSignatureMethods.fromKeyAndMessageDigest(wantKeyAlg, hash));
+                }
+            }
+        }
+    }
 }
+

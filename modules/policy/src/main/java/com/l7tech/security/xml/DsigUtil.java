@@ -28,17 +28,12 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
-import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Utility class to help with XML digital signatures.
  */
 public class DsigUtil {
-    /** @noinspection UNUSED_SYMBOL*/
-    private static final Logger logger = Logger.getLogger(DsigUtil.class.getName());
-
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
 
     /**
@@ -50,41 +45,24 @@ public class DsigUtil {
      * @param senderSigningKey      private key to sign it with.
      * @param keyInfoChildElement   Custom key info child element to use
      * @param keyName               if specified, KeyInfo will use a keyName instead of an STR or a literal cert.
+     * @param messageDigestAlgorithm the message digest algorithm to use for the signature, or null to use the default behavior, which is:
+     *                               SHA-1 for everything except an EC private key, in which case SHA-256
      * @return the new dsig:Signature element, as a standalone element not yet attached into the document.
      * @throws SignatureException   if there is a problem creating the signature
      * @throws SignatureStructureException if there is a problem creating the signature
      * @throws XSignatureException  if there is a problem creating the signature
      */
-    public static Element createEnvelopedSignature(Element elementToSign,
+    public static Element createEnvelopedSignature(final Element elementToSign,
                                                    X509Certificate senderSigningCert,
                                                    PrivateKey senderSigningKey,
                                                    Element keyInfoChildElement,
-                                                   String keyName)
+                                                   String keyName,
+                                                   String messageDigestAlgorithm)
             throws SignatureException, SignatureStructureException, XSignatureException
     {
-        /* begin: signature selection block -- taken from WssDecoratorImpl.addSignature */
-        final String messageDigestAlgorithm = "SHA-1";
-        SupportedSignatureMethods signaturemethod;
-        if (senderSigningKey instanceof RSAPrivateKey || "RSA".equals(senderSigningKey.getAlgorithm())) {
-            if ("SHA-256".equals(messageDigestAlgorithm))
-                signaturemethod = SupportedSignatureMethods.RSA_SHA256;
-            else
-                signaturemethod = SupportedSignatureMethods.RSA_SHA1;
-
-        } else if (senderSigningKey instanceof ECPrivateKey || "EC".equals(senderSigningKey.getAlgorithm())) {
-            if ("SHA-384".equals(messageDigestAlgorithm))
-                signaturemethod = SupportedSignatureMethods.ECDSA_SHA384;
-            else
-                signaturemethod = SupportedSignatureMethods.ECDSA_SHA256;
-
-        } else if (senderSigningKey instanceof DSAPrivateKey) {
-            signaturemethod = SupportedSignatureMethods.DSA_SHA1;
-        } else if (senderSigningKey instanceof SecretKey) {
-            signaturemethod = SupportedSignatureMethods.HMAC_SHA1;
-        } else {
-            throw new SignatureException("Private Key type not supported " +
-                    senderSigningKey.getClass().getName());
-        }
+        if (messageDigestAlgorithm == null)
+            messageDigestAlgorithm = "EC".equalsIgnoreCase(senderSigningKey.getAlgorithm()) ? "SHA-256" : "SHA-1";
+        SupportedSignatureMethods signaturemethod = getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm);
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(elementToSign.getOwnerDocument(),
@@ -94,17 +72,15 @@ public class DsigUtil {
         template.setIndentation(false);
         template.setPrefix("ds");
 
-        // Add enveloped signature of entire document
-        final Element root = elementToSign;
         String idAttr = "Id";
-        if ("Assertion".equals(root.getLocalName()) &&
-                root.getNamespaceURI() != null &&
-                root.getNamespaceURI().indexOf("urn:oasis:names:tc:SAML") == 0)
+        if ("Assertion".equals(elementToSign.getLocalName()) &&
+                elementToSign.getNamespaceURI() != null &&
+                elementToSign.getNamespaceURI().indexOf("urn:oasis:names:tc:SAML") == 0)
             idAttr = "AssertionID";
-        String rootId = root.getAttribute(idAttr);
+        String rootId = elementToSign.getAttribute(idAttr);
         if (rootId == null || rootId.length() < 1) {
             rootId = "root";
-            root.setAttribute(idAttr, rootId);
+            elementToSign.setAttribute(idAttr, rootId);
         }
         Reference rootRef = template.createReference("#" + rootId);
         rootRef.addTransform(Transform.ENVELOPED);
@@ -133,12 +109,14 @@ public class DsigUtil {
         SignatureContext sigContext = new SignatureContext();
         final String finalRootId = rootId;
         sigContext.setIDResolver(new IDResolver() {
+            @Override
             public Element resolveID(Document document, String s) {
-                return s.equals(finalRootId) ? root : null;
+                return s.equals(finalRootId) ? elementToSign : null;
             }
         });
         sigContext.setEntityResolver( XmlUtil.getXss4jEntityResolver());
         sigContext.setResourceShower(new ResourceShower() {
+            @Override
             public void showSignedResource(Element element, int i, String s, String s1, byte[] bytes, String s2) {
 
             }
@@ -149,6 +127,35 @@ public class DsigUtil {
             throw new SignatureException(e);
         }
         return sigContext.sign(sigElement, senderSigningKey);
+    }
+
+    /**
+     * Given a signer private key and a digest algorithm, returns the appropriate signature method enum.
+     *
+     * @param senderSigningKey  the private key that is to be used to create the signature.  Required.
+     * @param messageDigestAlgorithm  the message digest algorithm, ie "SHA-1".  Required.
+     * @return an instance of SupportedSignatureMethods encoding the signature method to use.  Never null.
+     * @throws SignatureException if the combination of private key type and message digest is not supported.
+     */
+    public static SupportedSignatureMethods getSignatureMethodForSignerPrivateKey(Key senderSigningKey, String messageDigestAlgorithm) throws SignatureException {
+        if (messageDigestAlgorithm == null)
+            messageDigestAlgorithm = getDefaultMessageDigest();
+
+        String keyAlg;
+        if (senderSigningKey instanceof PublicKey || senderSigningKey instanceof PrivateKey)
+            keyAlg = senderSigningKey.getAlgorithm();
+        else if (senderSigningKey instanceof SecretKey)
+            keyAlg = "SecretKey";
+        else if (senderSigningKey != null)
+            throw new SignatureException("Private Key type not supported: " + senderSigningKey.getAlgorithm() + " / " +
+                    senderSigningKey.getClass().getName());
+        else
+            throw new NullPointerException("senderSigningKey is required");
+
+        SupportedSignatureMethods sigMethod = SupportedSignatureMethods.fromKeyAndMessageDigest(keyAlg, messageDigestAlgorithm);
+        if (sigMethod != null)
+            return sigMethod;
+        throw new SignatureException("No signature method available for key type " + keyAlg + " and message digest " + messageDigestAlgorithm);
     }
 
     /**
@@ -224,6 +231,7 @@ public class DsigUtil {
         SignatureContext sigContext = new SignatureContext();
         sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         sigContext.setIDResolver(new IDResolver(){
+            @Override
             public Element resolveID(Document document, String id) {
                 if (id.equals(sigElement.getOwnerDocument().getDocumentElement().getAttribute("Id"))) {
                     return sigElement.getOwnerDocument().getDocumentElement();
@@ -234,6 +242,7 @@ public class DsigUtil {
         });
 
         sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
+            @Override
             public Transform getTransform(String transform) throws NoSuchAlgorithmException {
                 if ( Transform.XSLT.equals(transform) ||
                         Transform.XPATH.equals(transform) ||
@@ -347,15 +356,14 @@ public class DsigUtil {
 
     /**
      * Strips all ds:Signature elements that are immediate children of the specified element.
-     * Note that, if a signature is removed, the resulting DOM tree will almost certainly contain multiple
+     * Note that, if a signature is removed, the resulting DOM tree may contain multiple
      * consecutive text nodes.
      *
      * @param parent  the element whose Signature children should be eliminated.
      */
     public static void stripSignatures(Element parent) {
-        List sigs = DomUtils.findChildElementsByName(parent, DIGSIG_URI, "Signature");
-        for (Iterator i = sigs.iterator(); i.hasNext();) {
-            Element sigEl = (Element)i.next();
+        List<Element> sigs = DomUtils.findChildElementsByName(parent, DIGSIG_URI, "Signature");
+        for (Element sigEl : sigs) {
             sigEl.getParentNode().removeChild(sigEl);
         }
     }

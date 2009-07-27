@@ -567,7 +567,7 @@ public class SamlProcessingTest extends TestCase {
         keyId.setAttribute("ValueType", SoapUtil.VALUETYPE_SKI);
         DomUtils.setTextContent(keyId, CertUtils.getSki(senderSigningCert));
 
-        return DsigUtil.createEnvelopedSignature(elementToSign, senderSigningCert, senderSigningKey, str, null);
+        return DsigUtil.createEnvelopedSignature(elementToSign, senderSigningCert, senderSigningKey, str, null, null);
     }
 
     /**

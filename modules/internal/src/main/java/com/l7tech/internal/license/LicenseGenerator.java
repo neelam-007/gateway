@@ -212,7 +212,7 @@ public final class LicenseGenerator {
                                                                   signerCert,
                                                                   signerKey,
                                                                   null,
-                                                                  signerCert.getSubjectDN().getName());
+                                                                  signerCert.getSubjectDN().getName(), null);
             licenseDoc.getDocumentElement().appendChild(signature);
             return licenseDoc;
         } catch (SignatureException e) {
