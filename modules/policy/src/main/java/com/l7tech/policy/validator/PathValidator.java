@@ -463,8 +463,11 @@ class PathValidator {
         }
 
         if (Assertion.isResponse(a)  && !seenResponse) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-              "Assertion targeting the response must not be positioned before a response is available.", null));
+            // If the asserion is ResponseXpathAssertion and uses a context variable as XML message source, ignore the below error.
+            if (!(a instanceof ResponseXpathAssertion) || ((ResponseXpathAssertion)a).getXmlMsgSrc() == null) {
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+                    "Assertion targeting the response must not be positioned before a response is available.", null));
+            }
         }
 
         if (a instanceof SecurityHeaderAddressable) {
