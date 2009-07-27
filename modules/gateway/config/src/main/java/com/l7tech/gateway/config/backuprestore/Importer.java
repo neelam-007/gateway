@@ -405,8 +405,8 @@ public final class Importer{
             final String adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
             if (adminDBUsername == null) {
                 throw new InvalidProgramArgumentException("Cannot restore the main database without" +
-                        " the root database user name and password. Please provide options: " + DB_ROOT_USER.getName() +
-                        " and " + DB_ROOT_PASSWD.getName());
+                        " the root database user name. Please provide options: " + DB_ROOT_USER.getName() +
+                        " and optionally" + DB_ROOT_PASSWD.getName());
             }
         }
     }
