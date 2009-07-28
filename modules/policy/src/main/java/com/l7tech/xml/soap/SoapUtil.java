@@ -363,9 +363,11 @@ public class SoapUtil extends SoapConstants {
         for (int i = 0; i < elements.getLength(); i++) {
             Element element = (Element)elements.item(i);
             String id = getElementWsuId(element);
-            Element existing = map.put(id, element);
-            if (existing != null && id != null)
-                throw new InvalidDocumentFormatException("Duplicate wsu:Id:" + id);
+            if (id != null) {
+                Element existing = map.put(id, element);
+                if (existing != null)
+                    throw new InvalidDocumentFormatException("Duplicate wsu:Id:" + id);
+            }
         }
         return map;
     }
