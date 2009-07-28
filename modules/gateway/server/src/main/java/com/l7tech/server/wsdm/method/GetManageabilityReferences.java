@@ -10,6 +10,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 /**
  * Abstraction of mows-xs:GetManageabilityReferences
@@ -24,8 +25,8 @@ import java.io.IOException;
 public class GetManageabilityReferences extends ESMMethod {
     private String resourceIdRequested;
 
-    private GetManageabilityReferences(Document doc, Message request) throws FaultMappableException {
-        super(doc, request);
+    private GetManageabilityReferences(Document doc, Message request, long esmServiceOid) throws FaultMappableException, MalformedURLException {
+        super(doc, request, esmServiceOid);
         try {
             // look for the presence of an incoming Header/ResourceId
             Element headerEl = SoapUtil.getHeaderElement(doc);
@@ -44,13 +45,13 @@ public class GetManageabilityReferences extends ESMMethod {
         return resourceIdRequested;
     }
 
-    public static GetManageabilityReferences resolve(Message request) throws FaultMappableException, SAXException, IOException {
+    public static GetManageabilityReferences resolve(Message request, long esmServiceOid) throws FaultMappableException, SAXException, IOException {
         Document doc = request.getXmlKnob().getDocumentReadOnly();
         try {
             Element bodychild = getFirstBodyChild(doc);
             if (bodychild == null) return null;
             if (testElementLocalName(bodychild, "GetManageabilityReferences")) {
-                return new GetManageabilityReferences(doc, request);
+                return new GetManageabilityReferences(doc, request, esmServiceOid);
             }
             return null;
         } catch (Exception e) {

@@ -4,6 +4,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import com.l7tech.message.Message;
 
+import java.net.MalformedURLException;
+
 /**
  * Abstraction for the wsrf-rp:GetResourceProperty method.
  * <p/>
@@ -17,8 +19,8 @@ import com.l7tech.message.Message;
 public class GetResourceProperty extends ESMMethod {
     private ResourceProperty propertyRequested;
 
-    private GetResourceProperty(Element getResourcePropertyEl, Document doc, Message request) {
-        super(doc, request);
+    private GetResourceProperty(Element getResourcePropertyEl, Document doc, Message request, long esmServiceOid) throws MalformedURLException {
+        super(doc, request, esmServiceOid);
         /*String val = XmlUtil.getTextValue(getResourcePropertyEl);
         if (val == null || val.length() < 1) {
             throw new InvalidDocumentFormatException("Could not find requested wsrf-rp:GetResourceProperty value");

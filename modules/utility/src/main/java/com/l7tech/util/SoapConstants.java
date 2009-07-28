@@ -67,6 +67,10 @@ public class SoapConstants {
         WSA_NAMESPACE_10,
         WSA_NAMESPACE_200303
     };
+
+    public static final String WSA_ANONYMOUS_ADDRESS = "http://www.w3.org/2005/08/addressing/anonymous";
+    public static final String WSA_NO_ADDRESS = "http://www.w3.org/2005/08/addressing/none";
+
     public static final String L7_MESSAGEID_NAMESPACE = "http://www.layer7tech.com/ws/addr";
     public static final String L7_MESSAGEID_PREFIX = "L7a";
     public static final String L7_SERVICEID_ELEMENT = "ServiceId";

@@ -25,6 +25,15 @@ insert into keystore_file values (3, 0, "SafeNet HSM", "luna", null, null);
 ALTER TABLE wsdm_subscription ADD COLUMN reference_parameters MEDIUMTEXT;
 
 --
+-- Add column for identifying the esm service through which this subscription was made
+--
+ALTER TABLE wsdm_subscription ADD COLUMN esm_service_oid BIGINT(20) NOT NULL;
+
+
+
+
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

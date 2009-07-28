@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 /**
  * Abstraction for the Unsubscribe method
@@ -27,8 +28,8 @@ import java.io.IOException;
 public class Unsubscribe extends ESMMethod {
     private String subscriptionIdValue;
 
-    private Unsubscribe(String subscriptionId, Element unSubscribeEl, Document doc, Message request) throws GenericNotificationExceptionFault {
-        super(doc, request);
+    private Unsubscribe(String subscriptionId, Element unSubscribeEl, Document doc, Message request, long esmServiceOid) throws GenericNotificationExceptionFault, MalformedURLException {
+        super(doc, request, esmServiceOid);
 
         // Find the SubscriptionId element and parse the id of the subscription needing unsubscription
         NodeList nl = unSubscribeEl.getElementsByTagNameNS("*", "SubscriptionId" );
@@ -52,13 +53,13 @@ public class Unsubscribe extends ESMMethod {
         }
     }
 
-    public static Unsubscribe resolve(Message request) throws GenericNotificationExceptionFault, SAXException, IOException {
+    public static Unsubscribe resolve(Message request, long esmServiceOid) throws GenericNotificationExceptionFault, SAXException, IOException {
         Document doc = request.getXmlKnob().getDocumentReadOnly();
         try {
             Element bodychild = getFirstBodyChild(doc);
             if ( bodychild != null ) {
                 if (testElementLocalName(bodychild, "Unsubscribe")) {
-                    return new Unsubscribe(getSubscriptionIdAddressingParameter(doc), bodychild, doc, request);
+                    return new Unsubscribe(getSubscriptionIdAddressingParameter(doc), bodychild, doc, request, esmServiceOid);
                 }
             }
         } catch (InvalidDocumentFormatException e) {

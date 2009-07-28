@@ -23,7 +23,6 @@ import org.xml.sax.SAXException;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -65,18 +64,18 @@ public class ServiceManagementAdministrationService implements ApplicationListen
     /**
      * Entry point for ESM subsystem. This could be called by a servlet or a special ESM assertion.
      *
-     * @param incomingURL      the URL for that request
+     * @param esmServiceOid the OID of the subscription service through which the request was received
      * @param incomingRequest  the incoming request message
      * @return a response xml
      * @throws FaultMappableException in case the service should return a soap fault
      * @throws SAXException     if there's an error processing the request
      */
-    public Document handleESMRequest(URL incomingURL, Message incomingRequest) throws FaultMappableException, IOException, SAXException {
+    public Document handleESMRequest(long esmServiceOid, Message incomingRequest) throws FaultMappableException, IOException, SAXException {
         // method classification
-        ESMMethod method = ESMMethod.resolve(incomingRequest);
+        ESMMethod method = ESMMethod.resolve(incomingRequest, esmServiceOid);
 
         if (method instanceof GetMultipleResourceProperties) {
-            return qosService.handleMultipleResourcePropertiesRequest(incomingURL, (GetMultipleResourceProperties)method);
+            return qosService.handleMultipleResourcePropertiesRequest((GetMultipleResourceProperties)method);
         } else {
             throw new FaultMappableException( buildUnknownMethodMessage(method) );
         }
@@ -85,26 +84,28 @@ public class ServiceManagementAdministrationService implements ApplicationListen
     /**
      * Entry point for ESM subsystem. This could be called by a servlet or a special ESM assertion.
      *
-     * @param incomingURL      the URL for that request
-     * @param incomingRequest  the incoming request message
+     * @param esmServiceOid the OID of the subscription service through which the request was received
+     * @param incomingRequest the incoming request message
      * @return a response xml
      * @throws FaultMappableException in case the service should return a soap fault
-     * @throws SAXException     if there's an error processing the request
+     * @throws SAXException           if there's an error processing the request
      */
-    public Document handleSubscriptionRequest(URL incomingURL, Message incomingRequest, String policyGuid)
+    public Document handleSubscriptionRequest(long esmServiceOid, Message incomingRequest, String policyGuid)
+
+
         throws FaultMappableException, IOException, SAXException {
         // method classification
-        ESMMethod method = ESMMethod.resolve(incomingRequest);
+        ESMMethod method = ESMMethod.resolve(incomingRequest, esmServiceOid);
 
         try {
             if (method instanceof Renew) {
-                return respondToRenew((Renew)method, incomingURL, policyGuid);
+                return respondToRenew((Renew) method, policyGuid);
             } else if (method instanceof Subscribe) {
-                return respondToSubscribe((Subscribe)method, incomingURL, policyGuid);
+                return respondToSubscribe((Subscribe) method, policyGuid);
             } else if (method instanceof Unsubscribe) {
-                return respondToUnsubscribe((Unsubscribe)method, incomingURL);
+                return respondToUnsubscribe((Unsubscribe) method);
             } else {
-                throw new FaultMappableException( buildUnknownMethodMessage(method) );
+                throw new FaultMappableException(buildUnknownMethodMessage(method));
             }
         } catch (SAXException e) {
             logger.log(Level.WARNING, "Problem constructing response to " + method, e);
@@ -123,17 +124,17 @@ public class ServiceManagementAdministrationService implements ApplicationListen
         return message;
     }
 
-    private Document respondToUnsubscribe(Unsubscribe unsubscribe, URL incomingURL)
+    private Document respondToUnsubscribe(Unsubscribe unsubscribe)
         throws SAXException, ResourceUnknownFault {
         subscriptionNotifier.unsubscribe(unsubscribe.getSubscriptionIdValue());
-        String output = unsubscribe.respond(incomingURL.toString());
+        String output = unsubscribe.respond(unsubscribe.getIncomingUrl().toString());
         return XmlUtil.stringToDocument(output);
     }
 
-    private Document respondToSubscribe(Subscribe subscribe, URL incomingURL, String policyGuid)
+    private Document respondToSubscribe(Subscribe subscribe, String policyGuid)
         throws SAXException, FaultMappableException {
         // look for a resource id
-        String serviceID = identifyService(incomingURL.toString(), subscribe.getReqestDoc());
+        String serviceID = identifyService(subscribe.getIncomingUrl().toString(), subscribe.getReqestDoc());
         if (serviceID != null) {
             subscribe.setServiceId(serviceID);
         } else {
@@ -142,7 +143,7 @@ public class ServiceManagementAdministrationService implements ApplicationListen
         }
         Subscription res = subscriptionNotifier.subscribe(subscribe, policyGuid);
 
-        String output = subscribe.respond(incomingURL.toString(), res.getUuid());
+        String output = subscribe.respond(subscribe.getIncomingUrl().toString(), res.getUuid());
         return XmlUtil.stringToDocument(output);
     }
 
@@ -177,9 +178,9 @@ public class ServiceManagementAdministrationService implements ApplicationListen
         return null;
     }
 
-    private Document respondToRenew(Renew renew, URL incomingURL, String policyGuid) throws SAXException, FaultMappableException {
+    private Document respondToRenew(Renew renew, String policyGuid) throws SAXException, FaultMappableException {
         subscriptionNotifier.renewSubscription(renew.getSubscriptionIdValue(), renew.getTermination(), policyGuid);
-        String output = renew.respond(incomingURL.toString());
+        String output = renew.respond(renew.getIncomingUrl().toString());
         return XmlUtil.stringToDocument(output);
     }
 

@@ -30,6 +30,7 @@ public class Subscription extends PersistentEntityImp {
     public static final String NS = "http://www.layer7tech.com/ns/wsdm/subscription";
 
     private String uuid;
+    private long esmServiceOid;
     private long publishedServiceOid;
     private String referenceCallback;
     private int topic = -1;
@@ -45,6 +46,7 @@ public class Subscription extends PersistentEntityImp {
 
     public Subscription(Subscribe method, String uuid, String ownerNodeId) throws TopicNotSupportedFaultException {
         this.uuid = uuid;
+        this.esmServiceOid = method.getEsmServiceOid();
         this.publishedServiceOid = Long.parseLong(method.getServiceId());
         this.ownerNodeId = ownerNodeId;
         if (method.isTerminationParsed()) {
@@ -80,6 +82,11 @@ public class Subscription extends PersistentEntityImp {
     @Column(name="uuid", nullable=false, unique=true, length=36)
     public String getUuid() {
         return uuid;
+    }
+
+    @Column(name="esm_service_oid", nullable=false)
+    public long getEsmServiceOid() {
+        return esmServiceOid;
     }
 
     @Column(name="callback_url", nullable=false, length=255)
@@ -136,6 +143,11 @@ public class Subscription extends PersistentEntityImp {
     @Deprecated
     protected void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Deprecated
+    public void setEsmServiceOid(long esmServiceOid) {
+        this.esmServiceOid = esmServiceOid;
     }
 
     @Deprecated

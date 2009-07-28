@@ -19,6 +19,7 @@ import javax.xml.soap.SOAPConstants;
 import java.text.ParseException;
 import java.util.Date;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 /**
  * Abstraction for the Renew method
@@ -34,8 +35,8 @@ public class Renew extends ESMMethod {
     private String subscriptionIdValue;
     private String terminationTimeValue;
 
-    private Renew(String subscriptionId, Element r, Document doc, Message request) throws GenericNotificationExceptionFault {
-        super(doc, request);
+    private Renew(String subscriptionId, Element r, Document doc, Message request, long esmServiceOid) throws GenericNotificationExceptionFault, MalformedURLException {
+        super(doc, request, esmServiceOid);
 
         // find the termination time value
         boolean terminationCheck = false;
@@ -89,13 +90,13 @@ public class Renew extends ESMMethod {
         }
     }
 
-    public static Renew resolve(Message request) throws GenericNotificationExceptionFault, SAXException, IOException {
+    public static Renew resolve(Message request, long esmServiceOid) throws GenericNotificationExceptionFault, SAXException, IOException {
         Document doc = request.getXmlKnob().getDocumentReadOnly();
         try {
             Element bodychild = getFirstBodyChild(doc);
             if ( bodychild != null ) {
                 if (testElementLocalName(bodychild, "Renew")) {
-                    return new Renew(getSubscriptionIdAddressingParameter(doc), bodychild, doc, request);
+                    return new Renew(getSubscriptionIdAddressingParameter(doc), bodychild, doc, request, esmServiceOid);
                 }
             }
         } catch (InvalidDocumentFormatException e) {

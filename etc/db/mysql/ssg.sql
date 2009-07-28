@@ -1162,6 +1162,7 @@ CREATE TABLE wsdm_subscription (
   callback_url varchar(255) NOT NULL,
   reference_parameters mediumtext,
   published_service_oid bigint(20) NOT NULL,
+  esm_service_oid bigint(20) NOT NULL,
   termination_time bigint(20) NOT NULL,
   topic int(11) NOT NULL,
   notification_policy_guid CHAR(36),

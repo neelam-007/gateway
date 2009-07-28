@@ -16,6 +16,7 @@ import org.xml.sax.SAXException;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 /**
  * Abstraction for wsrf-rp:GetMultipleResourceProperties
@@ -32,8 +33,8 @@ public class GetMultipleResourceProperties extends ESMMethod {
     private Element getMultipleResourcePropertiesEl;
     private boolean isReallyMultiResource;
 
-    private GetMultipleResourceProperties(Element rootEl, Document doc, Message request) throws InvalidResourcePropertyQNameFault {
-        super(doc, request);
+    private GetMultipleResourceProperties(Element rootEl, Document doc, Message request, long esmServiceOid) throws InvalidResourcePropertyQNameFault, MalformedURLException {
+        super(doc, request, esmServiceOid);
         getMultipleResourcePropertiesEl = rootEl;
         isReallyMultiResource = inspectForMultiResource();
         // sometimes, the request has the pattern
@@ -88,7 +89,7 @@ public class GetMultipleResourceProperties extends ESMMethod {
         return requestedProperties;
     }
 
-    public static GetMultipleResourceProperties resolve(Message request) throws FaultMappableException, SAXException, IOException {
+    public static GetMultipleResourceProperties resolve(Message request, long esmServiceOid) throws FaultMappableException, SAXException, IOException {
         Document doc = request.getXmlKnob().getDocumentReadOnly();
 
         Element bodychild;
@@ -99,7 +100,7 @@ public class GetMultipleResourceProperties extends ESMMethod {
         }
         if (bodychild == null) return null;
         if (testElementLocalName(bodychild, "GetMultipleResourceProperties")) {
-            return new GetMultipleResourceProperties(bodychild, doc, request);
+            return new GetMultipleResourceProperties(bodychild, doc, request, esmServiceOid);
         }
         return null;
     }

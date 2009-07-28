@@ -9,6 +9,7 @@ import com.l7tech.server.wsdm.Namespaces;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.message.Message;
+import com.l7tech.message.HttpRequestKnob;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -19,6 +20,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.IOException;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * Entry point for resolving which method is being invoked
@@ -32,27 +35,39 @@ import java.io.IOException;
 public abstract class ESMMethod {
     private final Document reqestDoc;
     private final Message requestMessage;
+    private final URL incomingUrl;
+    private final long esmServiceOid;
     private String messageId;
     private Element soapHeader;
 
-    private static final String WSA_ANONYMOUS_ADDRESS = "http://www.w3.org/2005/08/addressing/anonymous";
+    public static ESMMethod resolve(Message request, long esmServiceOid) throws FaultMappableException, SAXException, IOException {
 
-    public static ESMMethod resolve(Message request) throws FaultMappableException, SAXException, IOException {
-
-        ESMMethod method = GetMultipleResourceProperties.resolve(request);
-        if (method == null) method = Renew.resolve(request);
-        if (method == null) method = Subscribe.resolve(request);
-        if (method == null) method = Unsubscribe.resolve(request);
-        // if (method == null) method = GetnResourceProperty.resolve(request);
+        ESMMethod method = GetMultipleResourceProperties.resolve(request, esmServiceOid);
+        if (method == null) method = Renew.resolve(request, esmServiceOid);
+        if (method == null) method = Subscribe.resolve(request, esmServiceOid);
+        if (method == null) method = Unsubscribe.resolve(request, esmServiceOid);
+        // if (method == null) method = GetResourceProperty.resolve(request);
         // if (method == null) method = GetManageabilityReferences.resolve(request);
         if (method != null)
             method.validateRequest();
         return method;
     }
 
-    protected ESMMethod(Document reqestDoc, Message request) {
+    protected ESMMethod(Document reqestDoc, Message request, long esmServiceOid) throws MalformedURLException {
         this.reqestDoc = reqestDoc;
         this.requestMessage = request;
+        this.esmServiceOid = esmServiceOid;
+        this.incomingUrl = extractIncomingUrl();
+    }
+
+    private URL extractIncomingUrl() throws MalformedURLException {
+        HttpRequestKnob reqHttp = requestMessage.getHttpRequestKnob();
+        StringBuffer origFullUrl = new StringBuffer(reqHttp.getRequestUrl());
+        String qs = reqHttp.getQueryString();
+        if (qs != null && qs.length() > 0) {
+            origFullUrl.append("?").append(qs);
+        }
+        return new URL(origFullUrl.toString());
     }
 
     protected void validateRequest() throws FaultMappableException {
@@ -111,7 +126,7 @@ public abstract class ESMMethod {
         if (replyTo != null) {
             Element address = validateExactlyOneElement(replyTo, Namespaces.WSA, "Address", InvalidWsAddressingHeaderFault.FaultCode.MISSING_ADDRESS_IN_EPR);
             String replyToAddress = DomUtils.getTextValue(address);
-            if (!WSA_ANONYMOUS_ADDRESS.equals(replyToAddress))
+            if (!SoapConstants.WSA_ANONYMOUS_ADDRESS.equals(replyToAddress))
                 throw new InvalidWsAddressingHeaderFault("Unsupported wsa:ReplyTo endpoint reference address " + replyToAddress,
                     InvalidWsAddressingHeaderFault.FaultCode.ONLY_ANNONYMOUS_ADDRESS_SUPPORTED, address);
         }
@@ -226,5 +241,13 @@ public abstract class ESMMethod {
 
     public String getMessageId() {
         return messageId;
+    }
+
+    public long getEsmServiceOid() {
+        return esmServiceOid;
+    }
+
+    public URL getIncomingUrl() {
+        return incomingUrl;
     }
 }

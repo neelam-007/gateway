@@ -46,8 +46,7 @@ public class QoSMetricsService {
     @Resource
     private Aggregator aggregator;
 
-    public Document handleMultipleResourcePropertiesRequest(URL incomingURL,
-                                                            GetMultipleResourceProperties method)
+    public Document handleMultipleResourcePropertiesRequest(GetMultipleResourceProperties method)
         throws GenericWSRFExceptionFault, ResourceUnknownFault {
         StringBuffer output = new StringBuffer();
         output.append(
@@ -68,7 +67,7 @@ public class QoSMetricsService {
                                "xmlns:muws1=\""   + Namespaces.MUWS1   + "\">\n" +
                 "        <wsrf-rp:GetMultipleResourcePropertiesResponse>\n");
 
-        String serviceId = EsmUtils.determineServiceFromUrl(incomingURL.toString(), serviceCache);
+        String serviceId = EsmUtils.determineServiceFromUrl(method.getIncomingUrl().toString(), serviceCache);
         if (serviceId == null) {
             Element header;
             try {
@@ -118,7 +117,7 @@ public class QoSMetricsService {
                 throw new GenericWSRFExceptionFault("No metrics information available");
             }
 
-            context = new MetricsRequestContext(bin, operational, incomingURL, System.currentTimeMillis() - bin.getStartTime()); // TODO downtime
+            context = new MetricsRequestContext(bin, operational, method.getIncomingUrl(), System.currentTimeMillis() - bin.getStartTime()); // TODO downtime
         } else {
             context = null;
         }

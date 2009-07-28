@@ -10,7 +10,6 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.wsdm.ServiceManagementAdministrationService;
 import com.l7tech.server.wsdm.faults.FaultMappableException;
-import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.util.ExceptionUtils;
@@ -19,7 +18,6 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,15 +45,8 @@ public class ServerEsmMetricsAssertion extends AbstractServerAssertion<EsmMetric
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         logger.info("Forwarding message to ESM QOS Metrics Service");
 
-        final HttpRequestKnob reqHttp = context.getRequest().getHttpRequestKnob();
-        StringBuffer origFullUrl = new StringBuffer(reqHttp.getRequestUrl());
-        String qs = reqHttp.getQueryString();
-        if (qs != null && qs.length() > 0) {
-            origFullUrl.append("?").append(qs);
-        }
-
         try {
-            final Document response = esmService.handleESMRequest(new URL(origFullUrl.toString()), context.getRequest());
+            final Document response = esmService.handleESMRequest(context.getService().getOid(), context.getRequest());
             context.getResponse().initialize(response);
             return AssertionStatus.NONE;
         } catch (SAXException e) {

@@ -113,6 +113,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     private final ExecutorService threadPool = Executors.newSingleThreadExecutor();
 
     private AuditContext auditContext;
+    private Map<Long,String> routingUriCache = new HashMap<Long, String>();
 
     public SubscriptionNotifier(final String clusterNodeId) {
         this.clusterNodeId = clusterNodeId;
@@ -335,6 +336,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         public String eventId;
         public String notificationPolicyGuid;
         public MetricsSummaryBin bin;
+        public long esmServiceOid;
     }
 
     @Override
@@ -379,6 +381,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                 {
                     ServiceStatusNotificationContext ssnc = new ServiceStatusNotificationContext();
                     ssnc.subscriptionId = s.getUuid();
+                    ssnc.esmServiceOid = s.getEsmServiceOid();
                     ssnc.serviceId = serviceoid;
                     ssnc.target = s.getReferenceCallback();
                     ssnc.notificationPolicyGuid = s.getNotificationPolicyGuid();
@@ -633,6 +636,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
 
             ServiceStatusNotificationContext ssnc = new ServiceStatusNotificationContext();
             ssnc.subscriptionId = sub.getUuid();
+            ssnc.esmServiceOid = sub.getEsmServiceOid();
             ssnc.serviceId = sub.getPublishedServiceOid();
             ssnc.target = sub.getReferenceCallback();
             ssnc.refParamsXml = processReferenceParameters(sub);
@@ -789,11 +793,26 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         output = output.replace("^$^$^_WSA_TARGET_^$^$^", ssnc.target);
         output = output.replace("^$^$^_REFERENCE_PARAMS_^$^$^", ssnc.refParamsXml);
         output = output.replace("^$^$^_SUBSCRIPTION_ID_^$^$^", ssnc.subscriptionId);
-        output = output.replace("^$^$^_ESM_SUBS_SVC_URL_^$^$^", baseURL + "/ssg/wsdm/esmsubscriptions");
+        output = output.replace("^$^$^_ESM_SUBS_SVC_URL_^$^$^", baseURL + getEsmRoutingUri(ssnc.esmServiceOid));
         output = output.replace("^$^$^_EVENT_UUID_^$^$^", "urn:uuid:" + notificationEventId);
         output = output.replace("^$^$^_SRC_SVC_URL_^$^$^", baseURL + "/service/" + ssnc.serviceId);
         output = output.replace("^$^$^_NOW_TIMESTAMP_^$^$^", ISO8601Date.format(new Date(ssnc.ts)));
         return output;
     }
 
+    private String getEsmRoutingUri(long serviceOid) {
+        String esmRoutingUri;
+        PublishedService esmService = serviceCache.getCachedService(serviceOid);
+        if (esmService != null) {
+            esmRoutingUri = esmService.getRoutingUri();
+            routingUriCache.put(serviceOid, esmRoutingUri);
+        } else if (routingUriCache.containsKey(serviceOid)) {
+            esmRoutingUri = routingUriCache.get(serviceOid);
+            auditor.logAndAudit(ServiceMessages.ESM_SUBSCRIPTION_SERVICE_GONE, Long.toString(serviceOid), esmRoutingUri);
+        } else {
+            esmRoutingUri = SoapConstants.WSA_NO_ADDRESS;
+            auditor.logAndAudit(ServiceMessages.ESM_NO_SUBSCRIPTION_SERVICE, Long.toString(serviceOid), esmRoutingUri);
+        }
+        return esmRoutingUri;
+    }
 }
