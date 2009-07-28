@@ -787,15 +787,14 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
             throw new FileNotFoundException(pathToLoad);
         }
         String output = new String(IOUtils.slurpStream(i));
-        String baseURL = incomingUrl.toString();
         String notificationEventId = generateNewSubscriptionId();
         ssnc.eventId = notificationEventId;
         output = output.replace("^$^$^_WSA_TARGET_^$^$^", ssnc.target);
         output = output.replace("^$^$^_REFERENCE_PARAMS_^$^$^", ssnc.refParamsXml);
         output = output.replace("^$^$^_SUBSCRIPTION_ID_^$^$^", ssnc.subscriptionId);
-        output = output.replace("^$^$^_ESM_SUBS_SVC_URL_^$^$^", baseURL + getEsmRoutingUri(ssnc.esmServiceOid));
+        output = output.replace("^$^$^_ESM_SUBS_SVC_URL_^$^$^", getEsmRoutingUri(ssnc.esmServiceOid));
         output = output.replace("^$^$^_EVENT_UUID_^$^$^", "urn:uuid:" + notificationEventId);
-        output = output.replace("^$^$^_SRC_SVC_URL_^$^$^", baseURL + "/service/" + ssnc.serviceId);
+        output = output.replace("^$^$^_SRC_SVC_URL_^$^$^", incomingUrl.toString() + "/service/" + ssnc.serviceId);
         output = output.replace("^$^$^_NOW_TIMESTAMP_^$^$^", ISO8601Date.format(new Date(ssnc.ts)));
         return output;
     }
@@ -804,7 +803,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         String esmRoutingUri;
         PublishedService esmService = serviceCache.getCachedService(serviceOid);
         if (esmService != null) {
-            esmRoutingUri = esmService.getRoutingUri();
+            esmRoutingUri = incomingUrl.toString() + esmService.getRoutingUri();
             routingUriCache.put(serviceOid, esmRoutingUri);
         } else if (routingUriCache.containsKey(serviceOid)) {
             esmRoutingUri = routingUriCache.get(serviceOid);
