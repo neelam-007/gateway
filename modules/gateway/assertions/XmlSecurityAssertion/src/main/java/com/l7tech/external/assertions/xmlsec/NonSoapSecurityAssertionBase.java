@@ -13,10 +13,19 @@ import java.util.Arrays;
  * Base class for non-SOAP immediate-mode XML dsig/xenc transformation assertions.
  */
 public class NonSoapSecurityAssertionBase extends XpathBasedAssertion implements MessageTargetable {
+    public static String META_PROP_VERB = "NonSoapSecurityAssertion.verb";
     private MessageTargetableSupport messageTargetableSupport;
 
     protected NonSoapSecurityAssertionBase(TargetMessageType defaultTargetMessageType) {
         this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType);
+    }
+
+    /**
+     * @return a verb describing what this assertion will do to each matching element, ie "encrypt", "verify".
+     */
+    public String getVerb() {
+        String verb = meta().get(META_PROP_VERB);
+        return verb == null ? "process" : String.valueOf(verb);
     }
 
     @Override

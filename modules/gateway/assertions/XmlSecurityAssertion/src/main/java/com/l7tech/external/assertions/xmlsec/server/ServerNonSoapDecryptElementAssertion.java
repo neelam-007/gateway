@@ -7,6 +7,7 @@ import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion;
+import static com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -51,7 +52,7 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
     public ServerNonSoapDecryptElementAssertion(NonSoapDecryptElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub)
             throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException
     {
-        super(assertion, "decrypt", logger, beanFactory, eventPub);
+        super(assertion, logger, beanFactory, eventPub);
         this.securityTokenResolver = (SecurityTokenResolver)beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
 
@@ -59,32 +60,38 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
     protected AssertionStatus processAffectedElements(PolicyEnforcementContext context, Message message, Document doc, List<Element> elementsToDecrypt) throws Exception {
         List<String> algorithms = new ArrayList<String>();
         List<Element> elements = new ArrayList<Element>();
+        List<X509Certificate> recipientCerts = new ArrayList<X509Certificate>();
 
         for (Element encryptedDataEl : elementsToDecrypt) {
-            Pair<String, NodeList> result = decryptAndReplaceElement(encryptedDataEl);
+            Triple<String, NodeList, X509Certificate> result = decryptAndReplaceElement(encryptedDataEl);
             String algorithm = result.left;
-            int numNodes = result.right.getLength();
+            X509Certificate recipientCert = result.right;
+            int numNodes = result.middle.getLength();
             for (int i = 0; i < numNodes; i++) {
-                Node got = result.right.item(i);
+                Node got = result.middle.item(i);
                 if (got instanceof Element) {
                     Element decryptedElement = (Element) got;
                     elements.add(decryptedElement);
                     algorithms.add(algorithm);
+                    recipientCerts.add(recipientCert);
                 }
             }
         }
 
-        context.setVariable(NonSoapDecryptElementAssertion.VAR_ELEMENTS_DECRYPTED, elements.toArray(new Element[elements.size()]));
-        context.setVariable(NonSoapDecryptElementAssertion.VAR_ENCRYPTION_METHOD_URIS, algorithms.toArray(new String[algorithms.size()]));
+        context.setVariable(assertion.prefix(VAR_ELEMENTS_DECRYPTED), elements.toArray(new Element[elements.size()]));
+        context.setVariable(assertion.prefix(VAR_ENCRYPTION_METHOD_URIS), algorithms.toArray(new String[algorithms.size()]));
+        context.setVariable(assertion.prefix(VAR_RECIPIENT_CERTIFICATES), recipientCerts.toArray(new X509Certificate[recipientCerts.size()]));
 
         return AssertionStatus.NONE;
     }
 
-    private Pair<String, NodeList> decryptAndReplaceElement(Element encryptedDataEl)
+    private Triple<String, NodeList, X509Certificate> decryptAndReplaceElement(Element encryptedDataEl)
             throws StructureException, GeneralSecurityException, IOException, KeyInfoResolvingException, InvalidDocumentFormatException,
                    UnexpectedKeyInfoException, XSignatureException, SAXException, ParserConfigurationException
     {
-        final FlexKey flexKey = unwrapSecretKey(encryptedDataEl, securityTokenResolver);
+        Pair<X509Certificate, FlexKey> decryptionInfo = unwrapSecretKey(encryptedDataEl, securityTokenResolver);
+        X509Certificate recipientCert = decryptionInfo.left;
+        final FlexKey flexKey = decryptionInfo.right;
 
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
         // soapMsg document
@@ -127,7 +134,7 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
             algorithmName = algorithm.iterator().next();
         }
 
-        return new Pair<String, NodeList>(algorithmName, decryptedNodes);
+        return new Triple<String, NodeList, X509Certificate>(algorithmName, decryptedNodes, recipientCert);
     }
 
     /**
@@ -149,7 +156,7 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
      * @throws GeneralSecurityException if there is a problem with a certificate or key, or a required algorithm is unavailable,
      *                                  or there is an error performing the actual decryption.
      */
-    private FlexKey unwrapSecretKey(Element outerEncryptedDataEl, SecurityTokenResolver securityTokenResolver)
+    private Pair<X509Certificate, FlexKey> unwrapSecretKey(Element outerEncryptedDataEl, SecurityTokenResolver securityTokenResolver)
             throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
     {
         Element keyInfo = XmlUtil.findExactlyOneChildElementByName(outerEncryptedDataEl, SoapUtil.DIGSIG_URI, "KeyInfo");
@@ -160,7 +167,7 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
         byte[] encryptedKeyBytes = HexUtils.decodeBase64(cipherValueB64.trim());
         byte[] secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepBytes(encMethod), signerInfo.getPrivate());
         // Support "flexible" answers to getAlgorithm() query when using 3des with HSM (Bug #3705)
-        return new FlexKey(secretKeyBytes);
+        return new Pair<X509Certificate, FlexKey>(signerInfo.getCertificate(), new FlexKey(secretKeyBytes));
     }
 
     private SignerInfo findSignerInfoForEncryptedType(Element encryptedType, SecurityTokenResolver securityTokenResolver)
@@ -172,7 +179,6 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
         boolean sawSupportedFormat = false;
         for (Element keyInfo : keyInfos) {
             try {
-                // Finally try the rare but appropriate KeyInfo/X509Data
                 Element x509Data = DomUtils.findOnlyOneChildElementByName(keyInfo, SoapConstants.DIGSIG_URI, "X509Data");
                 if (x509Data == null)
                     throw new KeyInfoElement.UnsupportedKeyInfoFormatException("KeyInfo did not contain any recognized certificate reference format");
@@ -222,5 +228,4 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
             throw new KeyInfoElement.UnsupportedKeyInfoFormatException("KeyInfo X509Data was not in a supported format");
         }
     }
-
 }

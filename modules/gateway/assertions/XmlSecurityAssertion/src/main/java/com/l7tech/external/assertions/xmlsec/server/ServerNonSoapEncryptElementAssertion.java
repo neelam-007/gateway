@@ -50,7 +50,7 @@ public class ServerNonSoapEncryptElementAssertion extends ServerNonSoapSecurityA
     public ServerNonSoapEncryptElementAssertion(NonSoapEncryptElementAssertion assertion, ApplicationContext context)
             throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException
     {
-        super(assertion, "encrypt", logger, context, context);
+        super(assertion, logger, context, context);
         this.recipientCert = CertUtils.decodeFromPEM(assertion.getRecipientCertificateBase64(), false);
     }
 

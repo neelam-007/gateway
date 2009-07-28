@@ -5,8 +5,6 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 
-import java.util.logging.Logger;
-
 /**
  * Immediately decrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
  */
@@ -15,17 +13,41 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
     
     public static final String VAR_ELEMENTS_DECRYPTED = "elementsDecrypted";
     public static final String VAR_ENCRYPTION_METHOD_URIS = "encryptionMethodUris";
+    public static final String VAR_RECIPIENT_CERTIFICATES = "recipientCertificates";
+
+    protected String variablePrefix = "";
 
     public NonSoapDecryptElementAssertion() {
         super(TargetMessageType.REQUEST);
     }
 
+    public String getVariablePrefix() {
+        return variablePrefix;
+    }
+
+    public void setVariablePrefix(String variablePrefix) {
+        this.variablePrefix = variablePrefix;
+    }
+
     @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
-                new VariableMetadata(VAR_ELEMENTS_DECRYPTED, false, true, VAR_ELEMENTS_DECRYPTED, false),
-                new VariableMetadata(VAR_ENCRYPTION_METHOD_URIS, false, true, VAR_ENCRYPTION_METHOD_URIS, false, DataType.STRING),
+                new VariableMetadata(prefix(VAR_ELEMENTS_DECRYPTED), false, true, prefix(VAR_ELEMENTS_DECRYPTED), false, DataType.ELEMENT),
+                new VariableMetadata(prefix(VAR_ENCRYPTION_METHOD_URIS), false, true, prefix(VAR_ENCRYPTION_METHOD_URIS), false, DataType.STRING),
+                new VariableMetadata(prefix(VAR_RECIPIENT_CERTIFICATES), false, true, prefix(VAR_RECIPIENT_CERTIFICATES), false, DataType.CERTIFICATE),
         };
+    }
+
+    /**
+     * Prepend the current variable prefix, if any, to the specified variable name.  If the current prefix is
+     * null or empty this will return the input variable name unchanged.
+     *
+     * @param var  the variable name to prefix.  Required.
+     * @return the variable name with the current prefix prepended, along with a dot; or the variable name unchanged if the prefix is currently null or empty.
+     */
+    public String prefix(String var) {
+        String prefix = getVariablePrefix();
+        return prefix == null || prefix.trim().length() < 1 ? var : prefix.trim() + "." + var;
     }
 
     @Override
@@ -35,6 +57,7 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
             return meta;
 
         meta.put(AssertionMetadata.SHORT_NAME, "Immediate Decrypt (Non-SOAP) XML Element");
+        meta.put(META_PROP_VERB, "decrypt");
         meta.put(AssertionMetadata.DESCRIPTION, "Immediately decrypt one or more elements of the message.  " +
                                                 "This does not require a SOAP Envelope and does not examine or produce WS-Security processor results.  " +
                                                 "Instead, this assertion changes the target message immediately.  The XPath should match the EncryptedData elements " +

@@ -16,9 +16,10 @@ import java.awt.event.ActionEvent;
 
 public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionBase> extends AssertionPropertiesOkCancelSupport<AT> {
     private JPanel contentPane;
-    private JLabel xpathExpressionLabelLabel;
     private JLabel xpathExpressionLabel;
+    private JTextField xpathExpressionField;
     private JButton editXpathButton;
+    private JPanel controlsBelowXpath;
 
     private XpathExpression xpathExpression;
 
@@ -34,6 +35,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
         super((Class<AT>)assertion.getClass(), owner, String.valueOf(assertion.meta().get(AssertionMetadata.SHORT_NAME)) + " Properties", true);
         editXpathButton.addActionListener(makeEditXpathAction());
         setXpathExpression(null);
+        xpathExpressionLabel.setText("Element(s) to " + assertion.getVerb() + " XPath:");
     }
 
     protected ActionListener makeEditXpathAction() {
@@ -66,8 +68,12 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
         return contentPane;
     }
 
-    protected JLabel getXpathExpressionLabelLabel() {
-        return xpathExpressionLabelLabel;
+    protected JLabel getXpathExpressionLabel() {
+        return xpathExpressionLabel;
+    }
+
+    protected JPanel getControlsBelowXpath() {
+        return controlsBelowXpath;
     }
 
     /** @return the current XpathExpression in the view */
@@ -78,16 +84,16 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     /** @param xpathExpression the XpathExpression to change the view to */
     public void setXpathExpression(XpathExpression xpathExpression) {
         this.xpathExpression = xpathExpression;
-        final String label = xpathExpression == null ? "<html><i>&lt;Not yet set&gt;" : xpathExpression.getExpression();
-        setXpathExpressionLabelText(label);
+        final String label = xpathExpression == null ? "<Not Yet Set>" : xpathExpression.getExpression();
+        setXpathExpressionFieldText(label);
     }
 
-    public void setXpathExpressionLabelText(String label) {
-        xpathExpressionLabel.setText(label);
+    public void setXpathExpressionFieldText(String label) {
+        xpathExpressionField.setText(label);
     }
 
-    public String getXpathExpressionLabelText() {
-        return xpathExpressionLabel.getText();
+    public String getXpathExpressionFieldText() {
+        return xpathExpressionField.getText();
     }
 
     @Override

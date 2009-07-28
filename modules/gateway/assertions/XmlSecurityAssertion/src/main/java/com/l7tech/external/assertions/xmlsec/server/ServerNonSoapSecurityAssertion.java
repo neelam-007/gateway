@@ -53,14 +53,14 @@ public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityA
      * Create support class for server-side impl of non-SOAP XML security assertion.
      *
      * @param assertion the policy assertion bean.  Required.
-     * @param verb  action, ie "decrypt", for reporting errors like "Unable to decrypt elements(s): foo", or null to use "process".
      * @param logger  logger for creating auditor, or null to create one from concrete classname.
      * @param beanFactory  bean factory for creating auditor, or null to live without it
      * @param eventPub     event publisher for creating auditor, or null to create an auditor that only logs
      * @throws InvalidXpathException if the XpathExpressioun will not compile
      */
-    public ServerNonSoapSecurityAssertion(AT assertion, String verb, Logger logger, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException {
+    public ServerNonSoapSecurityAssertion(AT assertion, Logger logger, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException {
         super(assertion);
+        String verb = assertion.getVerb();
         if (verb == null) verb = "process";
         this.verb = verb;
         this.unableMessage = "Unable to " + verb + " elements(s): ";

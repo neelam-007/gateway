@@ -32,12 +32,10 @@ import java.util.logging.Logger;
 public class NonSoapEncryptElementAssertionPropertiesDialog extends NonSoapSecurityAssertionDialog<NonSoapEncryptElementAssertion> {
     private static final Logger logger = Logger.getLogger(NonSoapEncryptElementAssertionPropertiesDialog.class.getName());
 
-    private JPanel mainPane;
+    private JPanel contentPane;
     private JLabel recipientCertLabel;
     private JButton setRecipientCertificateButton;
     private JComboBox encryptionMethodComboBox;
-    private JButton editXpathButton;
-    private JLabel xpathExpressionLabel;
 
     private String certb64;
 
@@ -45,18 +43,17 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends NonSoapSecur
         super(parent, assertion);
         initComponents();
         setData(assertion);
+        getControlsBelowXpath().setLayout(new BorderLayout());
+        getControlsBelowXpath().add(createExtraPanel(), BorderLayout.CENTER);
     }
 
-    @Override
-    protected JPanel createPropertyPanel() {
-        Utilities.equalizeButtonSizes(editXpathButton, setRecipientCertificateButton);
+    protected JPanel createExtraPanel() {
         encryptionMethodComboBox.setModel(new DefaultComboBoxModel(new String[] {
                 XencUtil.TRIPLE_DES_CBC,
                 XencUtil.AES_128_CBC,
                 XencUtil.AES_192_CBC,
                 XencUtil.AES_256_CBC
         }));
-        editXpathButton.addActionListener(makeEditXpathAction());
         setRecipientCertificateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -106,7 +103,7 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends NonSoapSecur
                 DialogDisplayer.showMessageDialog(setRecipientCertificateButton, "Error Setting Certificate", msg, e);
             }
         });
-        return mainPane;
+        return contentPane;
     }
 
     @Override
@@ -115,14 +112,6 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends NonSoapSecur
         encryptionMethodComboBox.setSelectedItem(assertion.getXencAlgorithm());
         certb64 = assertion.getRecipientCertificateBase64();
         updateRecipientCertLabel();
-    }
-
-    @Override
-    public void setXpathExpressionLabelText(String label) {
-        if (this.xpathExpressionLabel == null)
-            super.setXpathExpressionLabelText(label);
-        else
-            this.xpathExpressionLabel.setText(label);
     }
 
     private void updateRecipientCertLabel() {

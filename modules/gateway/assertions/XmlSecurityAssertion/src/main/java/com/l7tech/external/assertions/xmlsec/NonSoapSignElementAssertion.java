@@ -3,8 +3,6 @@ package com.l7tech.external.assertions.xmlsec;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions;
 
-import java.util.logging.Logger;
-
 /**
  * Immediately sign one or more Elements in a non-SOAP XML message.
  */
@@ -24,6 +22,7 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
             return meta;
 
         meta.put(AssertionMetadata.SHORT_NAME, "Immediate Sign (Non-SOAP) XML Element");
+        meta.put(META_PROP_VERB, "sign");
         meta.put(AssertionMetadata.DESCRIPTION, "Immediately sign one or more elements of the message.  " +
                                                 "This does not require a SOAP Envelope and does not accumulate WS-Security decoration requirements.  " +
                                                 "Instead, this assertion changes the target message immediately.");

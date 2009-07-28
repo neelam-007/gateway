@@ -32,7 +32,7 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
     private static final Random random = new SecureRandom();
 
     public ServerNonSoapSignElementAssertion(NonSoapSignElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException {
-        super(assertion, "sign", logger, beanFactory, eventPub);
+        super(assertion, logger, beanFactory, eventPub);
         this.beanFactory = beanFactory;
     }
 

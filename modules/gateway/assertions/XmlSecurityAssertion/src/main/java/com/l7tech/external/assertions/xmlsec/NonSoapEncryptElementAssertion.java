@@ -42,6 +42,7 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
             return meta;
 
         meta.put(AssertionMetadata.SHORT_NAME, "Immediate Encrypt (Non-SOAP) XML Element");
+        meta.put(META_PROP_VERB, "encrypt");
         meta.put(AssertionMetadata.DESCRIPTION, "Immediately encrypt one or more elements of the message.  " +
                                                 "This does not require a SOAP Envelope and does not accumulate WS-Security decoration requirements.  " +
                                                 "Instead, this assertion changes the target message immediately.");
