@@ -539,16 +539,6 @@ public final class Exporter{
                 new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
         config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
 
-        //check if we can connect to the database
-        //we only need to do this if the db is local, as otherwise a db connection is not required to perform the backup
-        if(ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())){
-            try {
-                ImportExportUtilities.verifyDatabaseConnection(config, false);
-            } catch (SQLException e) {
-                throw new InvalidProgramArgumentException(e.getMessage());
-            }
-        }
-
         //will we use isVerbose output?
         if(programFlagsAndValues.containsKey(CommonCommandLineOptions.VERBOSE.getName())) isVerbose = true;
 
@@ -566,18 +556,25 @@ public final class Exporter{
             }
         }
 
-        //the decision to back up audits can come from the -ia flag or from the audits flag
-        //-ia means backup audits with a full backup
-        //this code is only concerned about whether we are including audits by any means
-        final String auditVal = programFlagsAndValues.get(IA_AUDIT_FLAG.getName());
-        if (auditVal != null && !auditVal.toLowerCase().equals("no") && !auditVal.toLowerCase().equals("false")) {
-            includeAudits = true;
-        }else {
-            includeAudits =  programFlagsAndValues.containsKey("-"
-                    + ImportExportUtilities.ComponentType.AUDITS.getComponentName());
+        //this also covers audits, which cannot be supplied without the maindb
+        final boolean isDbConnRequired = !isSelectiveBackup
+                || programFlagsAndValues.containsKey(CommonCommandLineOptions.MAINDB_OPTION.getName());
+        //check if we can connect to the database
+        //we only need to do this if the db is local, as otherwise a db connection is not required to perform the backup
+        if(isDbConnRequired && ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())){
+            try {
+                ImportExportUtilities.verifyDatabaseConnection(config, false);
+            } catch (SQLException e) {
+                throw new RuntimeException(e.getMessage());
+            }
         }
 
-        //do a quick check to see if the -esm was requrested
+        //the decision to back up audits can come from the -ia flag or from the audits flag
+        //-ia means backup audits with a full backup
+        includeAudits = programFlagsAndValues.containsKey(IA_AUDIT_FLAG.getName()) 
+                || programFlagsAndValues.containsKey("-" + ImportExportUtilities.ComponentType.AUDITS.getComponentName());
+
+        //do a quick check to see if the -esm was requested
         final boolean esmRequested = programFlagsAndValues.containsKey("-"
                 + ImportExportUtilities.ComponentType.ESM.getComponentName());
         //if the esm is requested, then it's required

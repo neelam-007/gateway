@@ -15,7 +15,7 @@ public class ProcResult {
         return exitStatus;
     }
 
-    /** @return all bytes that the process wrote to stdout while it was running.  May be empty but nevber null. */
+    /** @return all bytes that the process wrote to stdout while it was running.  May be empty but never null. */
     public byte[] getOutput() {
         return output;
     }

@@ -327,7 +327,7 @@ final class RestoreImpl implements Restore{
             osConfigManager.copyFilesToInternalFolderPriorToReboot(osFolder);
             return new ComponentResult(ComponentResult.Result.SUCCESS);
         }else{
-            final String msg = "No Operating System backup found in image";
+            final String msg = "Operating System restore is not applicable for this host";
             return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
         }
     }
