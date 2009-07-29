@@ -727,7 +727,7 @@ class PathValidator {
 
     private void processUnknown(UnknownAssertion a) {
         result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              "This assertion is unrecognized and may cause all requests to this service fail.", null));
+              "This assertion is unrecognized and may cause all requests to this service to fail.", null));
     }
 
     private boolean isSpecificUser(Assertion a) {
