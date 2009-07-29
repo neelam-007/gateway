@@ -86,7 +86,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         }
         _clusterInfoManager = (ClusterInfoManager) _webApplicationContext.getBean("clusterInfoManager");
         _roleManager = (RoleManager) _webApplicationContext.getBean("roleManager");
-        _httpClientFactory = (HttpClientFactory) _webApplicationContext.getBean("internodeHttpClientFactory");
+        _httpClientFactory = (HttpClientFactory) _webApplicationContext.getBean("httpClientFactory");
 
         _auditor = new Auditor(this, _webApplicationContext, _logger);
     }
