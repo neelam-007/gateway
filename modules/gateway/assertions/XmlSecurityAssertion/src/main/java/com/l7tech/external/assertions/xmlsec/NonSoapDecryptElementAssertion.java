@@ -70,7 +70,7 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, NonSoapDecryptElementAssertion>() {
             @Override
             public String call( final NonSoapDecryptElementAssertion ass ) {
-                StringBuilder name = new StringBuilder("Immediately Decrypt (Non-SOAP) XML Element ");
+                StringBuilder name = new StringBuilder("Immediately Decrypt (Non-SOAP) XML Elements ");
                 if (ass.getXpathExpression() == null) {
                     name .append("[XPath expression not set]");
                 } else {

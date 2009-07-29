@@ -34,7 +34,7 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, NonSoapSignElementAssertion>() {
             @Override
             public String call( final NonSoapSignElementAssertion ass ) {
-                StringBuilder name = new StringBuilder("Immediately Sign (Non-SOAP) XML Element ");
+                StringBuilder name = new StringBuilder("Immediately Sign (Non-SOAP) XML Elements ");
                 if (ass.getXpathExpression() == null) {
                     name.append("[XPath expression not set]");
                 } else {

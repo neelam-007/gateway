@@ -36,7 +36,6 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
                 new VariableMetadata(prefix(VAR_ELEMENTS_VERIFIED), false, true, prefix(VAR_ELEMENTS_VERIFIED), false, DataType.ELEMENT),
                 new VariableMetadata(prefix(VAR_SIGNATURE_METHOD_URIS), false, true, prefix(VAR_SIGNATURE_METHOD_URIS), false, DataType.STRING),
                 new VariableMetadata(prefix(VAR_DIGEST_METHOD_URIS), false, true, prefix(VAR_DIGEST_METHOD_URIS), false, DataType.STRING),
-                new VariableMetadata(prefix(VAR_SIGNATURE_METHOD_URIS), false, true, prefix(VAR_SIGNATURE_METHOD_URIS), false, DataType.STRING),
                 new VariableMetadata(prefix(VAR_SIGNING_CERTIFICATES), false, true, prefix(VAR_SIGNING_CERTIFICATES), false, DataType.CERTIFICATE),
                 new VariableMetadata(prefix(VAR_SIGNATURE_VALUES), false, true, prefix(VAR_SIGNATURE_VALUES), false, DataType.STRING),
         };
@@ -74,7 +73,7 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, NonSoapVerifyElementAssertion>() {
             @Override
             public String call( final NonSoapVerifyElementAssertion ass ) {
-                StringBuilder name = new StringBuilder("Immediately Verify (Non-SOAP) XML Element ");
+                StringBuilder name = new StringBuilder("Immediately Verify (Non-SOAP) XML Elements ");
                 if (ass.getXpathExpression() == null) {
                     name.append("[XPath expression not set]");
                 } else {
