@@ -14,10 +14,7 @@ import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.decorator.WssDecorator;
-import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.xml.decorator.DecoratorException;
+import com.l7tech.security.xml.decorator.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
@@ -76,24 +73,23 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
             return AssertionStatus.NOT_APPLICABLE;
         }
 
-
+        final SecurityKnob securityKnob = message.getSecurityKnob();
         try {
             final Document document = message.getXmlKnob().getDocumentWritable();
             List<String> securityHeaderActors = new ArrayList<String>();
             if ( assertion.isApplyWsSecurity() ) {
-                final SecurityKnob secKnob = message.getSecurityKnob();
-                final DecorationRequirements[] decorations = secKnob.getDecorationRequirements();
+                final DecorationRequirements[] decorations = securityKnob.getDecorationRequirements();
                 final SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion(document.getDocumentElement().getNamespaceURI());
 
                 if ( assertion.getWsSecurityVersion() != null )
-                    secKnob.setPolicyWssVersion(assertion.getWsSecurityVersion());
+                    securityKnob.setPolicyWssVersion(assertion.getWsSecurityVersion());
 
                 if (decorations != null && decorations.length > 0) {
                     WssDecorator decorator = new WssDecoratorImpl();
                     for (DecorationRequirements decoration : decorations) {
                         // process headers
                         processSecurityHeaderActor(context, decoration, assertion.isUseSecureSpanActor(), securityHeaderActors);
-                        processSecurityHeader(decoration, document, soapVersion,
+                        processSecurityHeader(decoration, document, soapVersion, securityKnob,
                                 assertion.isReplaceSecurityHeader(),
                                 assertion.isUseSecurityHeaderMustUnderstand());
 
@@ -114,7 +110,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                         }
                     }
                     
-                    secKnob.removeAllDecorationRequirements();
+                    securityKnob.removeAllDecorationRequirements();
                 }
             }
 
@@ -127,6 +123,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                     String actor = SoapUtil.getActorValue(securityElement);
                     if ( !securityHeaderActors.contains(actor) && l7SecHeader!=securityElement ) {
                         securityElement.getParentNode().removeChild(securityElement);
+                        securityKnob.removeDecorationResults(actor);
                     }
                 }
                 SoapUtil.removeEmptySoapHeader(document);
@@ -198,14 +195,17 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
     private void processSecurityHeader( final DecorationRequirements decoration,
                                         final Document document,
                                         final SoapVersion soapVersion,
+                                        final SecurityKnob securityKnob,
                                         final boolean replaceSecurityHeader,
                                         final boolean useSecurityHeaderMustUnderstand )
             throws InvalidDocumentFormatException {
-        Element securityHeader = SoapUtil.getSecurityElement(document, decoration.getSecurityHeaderActor());
+        String securityHeaderActor = decoration.getSecurityHeaderActor();
+        Element securityHeader = SoapUtil.getSecurityElement(document, securityHeaderActor);
         if ( securityHeader != null ) {
             if ( replaceSecurityHeader ) {
                 securityHeader.getParentNode().removeChild( securityHeader );
                 decoration.setSecurityHeaderMustUnderstand( useSecurityHeaderMustUnderstand, false );
+                securityKnob.removeDecorationResults(securityHeaderActor);
             } else {
                 final String soapUri = document.getDocumentElement().getNamespaceURI();
                 decoration.setSecurityHeaderReusable(true);
@@ -214,11 +214,11 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                     boolean defaultNS = securityHeader.hasAttribute( SoapConstants.ACTOR_ATTR_NAME );
                     securityHeader.removeAttribute( SoapConstants.ACTOR_ATTR_NAME );
                     securityHeader.removeAttributeNS( soapUri, SoapConstants.ACTOR_ATTR_NAME );
-                    if ( decoration.getSecurityHeaderActor() != null ) {
+                    if ( securityHeaderActor != null ) {
                         if ( defaultNS ) {
-                            securityHeader.setAttribute( SoapConstants.ACTOR_ATTR_NAME, decoration.getSecurityHeaderActor() );
+                            securityHeader.setAttribute( SoapConstants.ACTOR_ATTR_NAME, securityHeaderActor);
                         } else {
-                            SoapUtil.setSoapAttr( securityHeader, SoapConstants.ACTOR_ATTR_NAME, decoration.getSecurityHeaderActor() );
+                            SoapUtil.setSoapAttr( securityHeader, SoapConstants.ACTOR_ATTR_NAME, securityHeaderActor);
                         }
                     }
                     if ( useSecurityHeaderMustUnderstand )
@@ -228,8 +228,8 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                 } else {
                     // SOAP 1.2 or later
                     securityHeader.removeAttributeNS( soapUri, SoapConstants.ROLE_ATTR_NAME );
-                    if ( decoration.getSecurityHeaderActor() != null )
-                        SoapUtil.setSoapAttr( securityHeader, SoapConstants.ROLE_ATTR_NAME, decoration.getSecurityHeaderActor() );
+                    if ( securityHeaderActor != null )
+                        SoapUtil.setSoapAttr( securityHeader, SoapConstants.ROLE_ATTR_NAME, securityHeaderActor);
                     if ( useSecurityHeaderMustUnderstand )
                         SoapUtil.setSoapAttr( securityHeader, SoapConstants.MUSTUNDERSTAND_ATTR_NAME, "true");
                     else

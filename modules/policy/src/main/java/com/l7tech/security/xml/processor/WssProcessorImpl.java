@@ -19,7 +19,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.*;
-import com.l7tech.security.xml.decorator.WssDecorator;
+import com.l7tech.security.xml.decorator.WssDecoratorUtils;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.UnsupportedDocumentFormatException;
@@ -592,8 +592,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         Message relatedRequest = message.getRelated(MessageRole.REQUEST);
         SecurityKnob requestSK = relatedRequest == null ? null : relatedRequest.getSecurityKnob();
-        WssDecorator.DecorationResult requestDecResult = requestSK == null ? null : requestSK.getDecorationResult();
-        Map<String, Boolean> reqSignatures = requestDecResult == null ? null : requestDecResult.getSignatures();
+        Map<String, Boolean> reqSignatures = WssDecoratorUtils.getSignaturesDecorated(requestSK, secHeaderActorUri);
 
         if (reqSignatures == null) { // we're ok only if the message is using WSS 1.0 as far as we can tell
             if (isWsse11Seen) {
@@ -631,21 +630,21 @@ public class WssProcessorImpl implements WssProcessor {
 
                 default:
                     if (usesWss11 || strictSignatureConfirmationValidation) {
-                        Set<String> unconfirmedSignatures = signatureConfirmation.getConfirmationElements().keySet();
-                        unconfirmedSignatures.remove(null);// value-less entry already processed
+                        Set<String> unverifiedConfirmations = signatureConfirmation.getConfirmationElements().keySet();
+                        unverifiedConfirmations.remove(null);// value-less entry already processed
 
                         List<String> extras = new ArrayList<String>();
                         List<String> missingOrNotSigned = new ArrayList<String>();
                         List<String> unEncrypted = new ArrayList<String>();
 
-                        for (String maybeConfirmedValue : unconfirmedSignatures) {
+                        for (String maybeConfirmedValue : unverifiedConfirmations) {
                             if (!reqSignatures.containsKey(maybeConfirmedValue))
                                 extras.add(maybeConfirmedValue);
                         }
 
                         for (String requestSig : reqSignatures.keySet()) {
                             Set<SignedElement> signed;
-                            if (!unconfirmedSignatures.contains(requestSig)) {
+                            if (!unverifiedConfirmations.contains(requestSig)) {
                                 missingOrNotSigned.add(requestSig);
                             } else {
                                 signed = getSignedElements(signatureConfirmation.getElement(requestSig));

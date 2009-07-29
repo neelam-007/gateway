@@ -54,5 +54,15 @@ public interface WssDecorator {
          * @return A map with signature values as key; a true value for a signature means the signature value was encrypted in the decorated message.
          */
         Map<String,Boolean> getSignatures();
+
+        /**
+         * @return the security header actor to which the decoration was applied, null for the no actor header
+         */
+        String getSecurityHeaderActor();
+
+        /**
+         * Sets / changes the actor associated with the decoration results. Useful for when, e.g. the security header's actor is changed. 
+         */
+        void setSecurityHeaderActor(String newActor);
     }
 }

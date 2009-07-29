@@ -23,6 +23,7 @@ import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.security.xml.decorator.WssDecoratorUtils;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.server.ServerConfig;
@@ -142,7 +143,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
 
         // DELETE CURRENT SECURITY HEADER IF NECESSARY
         if (secHeaderHandlingOption == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER) {
-            deleteDefaultSecurityHeader(message.getXmlKnob(), requestSec.getProcessorResult());
+            deleteDefaultSecurityHeader(message, requestSec.getProcessorResult());
             return;
         }
 
@@ -161,7 +162,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
 
         // Delete the existing...
         final XmlKnob xmlKnob = message.getXmlKnob();
-        if (!deleteDefaultSecurityHeader(message.getXmlKnob(), requestSec.getProcessorResult())) {
+        if (!deleteDefaultSecurityHeader(message, requestSec.getProcessorResult())) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_POLICY);
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
@@ -209,6 +210,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                         Document wdoc = message.getXmlKnob().getDocumentWritable();
                         assert wdoc == doc;
                         SoapUtil.nukeActorAttribute(defaultSecHeader);
+                        WssDecoratorUtils.promoteDecorationResults(message.getSecurityKnob(), processedActorUri, null);
                         SoapUtil.removeSoapAttr(defaultSecHeader, SoapConstants.MUSTUNDERSTAND_ATTR_NAME);
                     } else {
                         logger.info("we can't promote l7 sec header as no actor because " +
@@ -232,17 +234,18 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     }
 
     // returns false if message was not soap
-    private boolean deleteDefaultSecurityHeader(XmlKnob xmlKnob, ProcessorResult pr) throws SAXException, IOException {
-        Document doc = xmlKnob.getDocumentReadOnly();
+    private boolean deleteDefaultSecurityHeader(Message message, ProcessorResult pr) throws SAXException, IOException {
+        Document doc = message.getXmlKnob().getDocumentReadOnly();
         if (!SoapUtil.isSoapMessageMaybe(doc))
             return false;
 
         try {
             Element defaultSecHeader = findDefaultSecurityHeader(doc, pr);
             if (defaultSecHeader != null) {
-                xmlKnob.getDocumentWritable();
+                message.getXmlKnob().getDocumentWritable();
                 defaultSecHeader.getParentNode().removeChild(defaultSecHeader);
                 SoapUtil.removeEmptySoapHeader(doc);
+                message.getSecurityKnob().removeDecorationResults(pr == null ? null : pr.getProcessedActorUri());
             }
             return true;
         } catch (InvalidDocumentFormatException e) {

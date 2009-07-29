@@ -687,7 +687,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         DecorationResult result = produceResult(c);
-        message.getSecurityKnob().setDecorationResult(result);
+        message.getSecurityKnob().addDecorationResult(result);
         return result;
     }
 
@@ -704,6 +704,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private DecorationResult produceResult(final Context c) {
         return new DecorationResult() {
             private String encryptedKeySha1 = null;
+            private String actor = null;
 
             @Override
             public String getEncryptedKeySha1() {
@@ -722,6 +723,19 @@ public class WssDecoratorImpl implements WssDecorator {
             @Override
             public Map<String, Boolean> getSignatures() {
                 return c.signatures;
+            }
+
+            @Override
+            public String getSecurityHeaderActor() {
+                if (actor == null) {
+                    actor = c.dreq.getSecurityHeaderActor();
+                }
+                return actor;
+            }
+
+            @Override
+            public void setSecurityHeaderActor(String newActor) {
+                actor = newActor;
             }
         };
     }

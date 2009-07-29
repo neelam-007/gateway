@@ -14,6 +14,7 @@ import com.l7tech.security.token.*;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.xml.decorator.WssDecoratorUtils;
 import com.l7tech.security.xml.processor.*;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
@@ -418,7 +419,7 @@ public class WssRoundTripTest {
         // prepare fake request and wss result, to accomodate the signature confirmation expectations
         final Message fakeRequest = new Message();
         SecurityKnob fakeSK = fakeRequest.getSecurityKnob();
-        fakeSK.setDecorationResult(new WssDecorator.DecorationResult() {
+        fakeSK.addDecorationResult(new WssDecorator.DecorationResult() {
             @Override
             public String getEncryptedKeySha1() { return null; }
 
@@ -432,6 +433,16 @@ public class WssRoundTripTest {
                     if (fakeSignature != null) // null means "no signatures confirmed"
                         signatures.put(fakeSignature, false);
                 return signatures;
+            }
+
+            @Override
+            public String getSecurityHeaderActor() {
+                return td.req.getSecurityHeaderActor();
+            }
+
+            @Override
+            public void setSecurityHeaderActor(String newActor) {
+                throw new UnsupportedOperationException(); 
             }
         });
 
@@ -528,7 +539,7 @@ public class WssRoundTripTest {
 
         assertNotSame( Arrays.toString(confirmation.getErrors().toArray()), SignatureConfirmation.Status.INVALID, confirmationStatus);
 
-        Set<String> signaturesInRequest = fakeRequest.getSecurityKnob().getDecorationResult().getSignatures().keySet();
+        Set<String> signaturesInRequest = WssDecoratorUtils.getSignaturesDecorated(fakeRequest.getSecurityKnob(), td.req.getSecurityHeaderActor()).keySet();
         if (confirmationStatus == SignatureConfirmation.Status.CONFIRMED) {
             Set<String> gotConfirmationValues = confirmation.getConfirmedValues().keySet();
             for (String confirmedValue : gotConfirmationValues)

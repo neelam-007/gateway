@@ -26,7 +26,7 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     private Map<String,DecorationRequirements> decorationRequirementsForAlternateRecipients = new HashMap<String,DecorationRequirements>();
     private ProcessorResultFactory lazyProcessor = null;
     private WsSecurityVersion wsSecurityVersion;
-    private WssDecorator.DecorationResult decorationResult;
+    private Map<String,List<WssDecorator.DecorationResult>> decorationResults = new HashMap<String, List<WssDecorator.DecorationResult>>();
     private boolean signatureConfirmationValidated = false;
     private boolean needsSignatureConfirmations = false;
 
@@ -150,13 +150,30 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     }
 
     @Override
-    public void setDecorationResult(WssDecorator.DecorationResult dr) {
-        decorationResult = dr;
+    public void addDecorationResult(WssDecorator.DecorationResult dr) {
+        if (! decorationResults.containsKey(dr.getSecurityHeaderActor())) {
+            decorationResults.put(dr.getSecurityHeaderActor(), new ArrayList<WssDecorator.DecorationResult>());
+        }
+        decorationResults.get(dr.getSecurityHeaderActor()).add(dr);
     }
 
     @Override
-    public WssDecorator.DecorationResult getDecorationResult() {
-        return decorationResult;
+    public List<WssDecorator.DecorationResult> getDecorationResults(String actor) {
+        return decorationResults.get(actor);
+    }
+
+    @Override
+    public List<WssDecorator.DecorationResult> getAllDecorationResults() {
+        List<WssDecorator.DecorationResult> results = new ArrayList<WssDecorator.DecorationResult>();
+        for (String actor : decorationResults.keySet()) {
+            results.addAll(decorationResults.get(actor));
+        }
+        return results;
+    }
+
+    @Override
+    public void removeDecorationResults(String actor) {
+        decorationResults.remove(actor);
     }
 
     @Override

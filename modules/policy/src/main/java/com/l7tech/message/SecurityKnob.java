@@ -107,14 +107,24 @@ public interface SecurityKnob extends MessageKnob {
     /**
      * Store the decoration results for this Message, if it has been decorated.
      */
-    void setDecorationResult(WssDecorator.DecorationResult dr);
+    void addDecorationResult(WssDecorator.DecorationResult dr);
 
     /**
-     * Obtain the decoration results for this Message, if it was undecorated.
+     * Obtain the decoration results for this Message, for the specified actor, if it was undecorated.
      *
-     * @return the DecorationResult if the Message was decorated, or null otherwise
+     * @return a list of DecorationResult's if decorations were added to the Message for the specified actor, or null otherwise
      */
-    WssDecorator.DecorationResult getDecorationResult();
+    List<WssDecorator.DecorationResult> getDecorationResults(String actor);
+
+    /**
+     * @return all decoration results applied to the message, for all actors
+     */
+    List<WssDecorator.DecorationResult> getAllDecorationResults();
+
+    /**
+     * Removes the decoration results recorded for the specified actor. Should be called when security headers are removed and/or their actor modified.
+     */
+    void removeDecorationResults(String actor);
 
     /**
      * @return true if signature confirmations were validated for this message,
