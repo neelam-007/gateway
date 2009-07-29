@@ -436,6 +436,11 @@ public class WssRoundTripTest {
             }
 
             @Override
+            public Set<String> getEncryptedSignatureValues() {
+                return new HashSet<String>();
+            }
+
+            @Override
             public String getSecurityHeaderActor() {
                 return td.req.getSecurityHeaderActor();
             }

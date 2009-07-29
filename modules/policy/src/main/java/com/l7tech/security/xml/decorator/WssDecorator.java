@@ -13,6 +13,7 @@ import javax.crypto.SecretKey;
 import java.security.GeneralSecurityException;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 
 import org.xml.sax.SAXException;
 
@@ -54,6 +55,11 @@ public interface WssDecorator {
          * @return A map with signature values as key; a true value for a signature means the signature value was encrypted in the decorated message.
          */
         Map<String,Boolean> getSignatures();
+
+        /**
+         * Gets the set of (unencrypted) signature values that became encrypted as a result of the decoration.
+         */
+        Set<String> getEncryptedSignatureValues();
 
         /**
          * @return the security header actor to which the decoration was applied, null for the no actor header

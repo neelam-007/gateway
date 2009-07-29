@@ -75,6 +75,7 @@ public class WssDecoratorImpl implements WssDecorator {
         AttachmentEntityResolver attachmentResolver;
         DecorationRequirements dreq;
         Map<String,Boolean> signatures = new HashMap<String, Boolean>();
+        Set<String> encryptedSignatures = new HashSet<String>();
 
         String getBase64EncodingTypeUri() {
             return SoapConstants.SECURITY_NAMESPACE.equals(nsf.getWsseNs())
@@ -490,6 +491,15 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         if (cryptList.size() > 0) {
+
+            // report any signature values that are getting encrypted by this decoration
+            for (Element encrypted : cryptList) {
+                NodeList sigValues = encrypted.getElementsByTagNameNS(SoapConstants.DIGSIG_URI, "SignatureValue");
+                for(int i=0; i < sigValues.getLength(); i++) {
+                    c.encryptedSignatures.add(sigValues.item(i).getTextContent());
+                }
+            }
+
             final Element[] elementsToEncrypt = cryptList.toArray(new Element[cryptList.size()]);
             if (sct != null) {
                 // Encrypt using Secure Conversation session
@@ -723,6 +733,11 @@ public class WssDecoratorImpl implements WssDecorator {
             @Override
             public Map<String, Boolean> getSignatures() {
                 return c.signatures;
+            }
+
+            @Override
+            public Set<String> getEncryptedSignatureValues() {
+                return c.encryptedSignatures;
             }
 
             @Override
