@@ -80,7 +80,7 @@ public abstract class Syntax {
         add(Boolean.TYPE);
     }});
 
-    public static String[] getReferencedNames(String s) {
+    public static String[] getReferencedNames(String s) throws VariableNameSyntaxException {
         if (s == null) throw new IllegalArgumentException();
 
         ArrayList vars = new ArrayList();
@@ -100,27 +100,27 @@ public abstract class Syntax {
     // TODO find out how to move this into Syntax subclasses
     public static Syntax parse(String rawName, final String delimiter) {
         int ppos = rawName.indexOf("|");
-        if (ppos == 0) throw new IllegalArgumentException("Variable names must not start with '|'");
+        if (ppos == 0) throw new VariableNameSyntaxException("Variable names must not start with '|'");
         if (ppos > 0) {
             return new MultivalueDelimiterSyntax(rawName.substring(0,ppos), rawName.substring(ppos+1), true);
         } else {
             // Can't combine concatenation with subscript (yet -- 2D arrays?)
             int lbpos = rawName.indexOf("[");
-            if (lbpos == 0) throw new IllegalArgumentException("Variable names must not start with '['");
+            if (lbpos == 0) throw new VariableNameSyntaxException("Variable names must not start with '['");
             if (lbpos > 0) {
                 int rbpos = rawName.indexOf("]", lbpos+1);
-                if (rbpos == 0) throw new IllegalArgumentException("Array subscript must not be empty");
+                if (rbpos == 0) throw new VariableNameSyntaxException("Array subscript must not be empty");
                 if (rbpos > 0) {
                     String ssub = rawName.substring(lbpos+1, rbpos);
                     int subscript;
                     try {
                         subscript = Integer.parseInt(ssub);
                     } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException("Array subscript not an integer", e);
+                        throw new VariableNameSyntaxException("Array subscript not an integer", e);
                     }
-                    if (subscript < 0) throw new IllegalArgumentException("Array subscript must be positive");
+                    if (subscript < 0) throw new VariableNameSyntaxException("Array subscript must be positive");
                     return new MultivalueArraySubscriptSyntax(rawName.substring(0, lbpos), subscript);
-                } else throw new IllegalArgumentException("']' expected but not found");
+                } else throw new VariableNameSyntaxException("']' expected but not found");
             } else {
                 return new MultivalueDelimiterSyntax(rawName, delimiter, false);
             }
@@ -143,7 +143,7 @@ public abstract class Syntax {
 
             if (!ok) {
                 String message = handler.handleSuspiciousToString( syntax.remainingName, o.getClass().getName() );
-                if (strict) throw new IllegalArgumentException( message );
+                if (strict) throw new VariableNameSyntaxException( message );
             }
             return o.toString();
         }
@@ -233,7 +233,7 @@ public abstract class Syntax {
             if (subscript > values.length-1) {
                 String message = handler.handleSubscriptOutOfRange( subscript, remainingName, values.length );
                 if (strict)
-                    throw new IllegalArgumentException(message);
+                    throw new VariableNameSyntaxException(message);
                 else
                     return null;
             }

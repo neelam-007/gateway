@@ -3,15 +3,16 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.util.TextUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.LineBreak;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.variable.*;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -20,9 +21,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.Iterator;
 import java.util.TreeSet;
 
 /**
@@ -305,7 +306,17 @@ public class SetVariableAssertionDialog extends JDialog {
         }
 
         // Expression. Blank is OK.
-        final String[] names = Syntax.getReferencedNames(expression);
+        final String[] names;
+        try {
+            names = Syntax.getReferencedNames(expression);
+        } catch (VariableNameSyntaxException e) {
+            _expressionStatusLabel.setIcon(WARNING_ICON);
+            _expressionStatusTextArea.setText(ExceptionUtils.getMessage(e));
+            _expressionStatusScrollPane.setBorder(_expressionStatusBorder);
+            _okButton.setEnabled(false);
+            return;
+        }
+
         final java.util.List<String> badNames = new LinkedList<String>();
         for (String name : names) {
             if (BuiltinVariables.getMetadata(name) == null &&
