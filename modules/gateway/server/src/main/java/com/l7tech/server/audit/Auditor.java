@@ -55,7 +55,8 @@ public class Auditor implements Audit {
      * @param source  source object for audit events.  Required.
      * @param beanFactory a BeanFactory to interrogate for "auditLogListener" and "auditDetailFilter" beans, or null.
      *                    If these beans are found, they will be respected when details are audited.
-     * @param eventPub  an ApplicationEventPublisher that will be used as the sink for audit detail events.  Required.
+     * @param eventPub  an ApplicationEventPublisher that will be used as the sink for audit detail events, or null
+     *                    to act as a logging-only auditor.
      * @param logger  logger to which details will be written.
      */
     public Auditor(Object source, BeanFactory beanFactory, ApplicationEventPublisher eventPub, Logger logger) {
@@ -80,7 +81,8 @@ public class Auditor implements Audit {
      * @param source  source object for audit events.  Required.
      * @param auditLogListener an AuditLogListener instance to notify when details are audited, or null.
      * @param auditDetailFilter an AuditDetailFilter that can be used to prevent some details from being audited, or null.
-     * @param eventPub  an ApplicationEventPublisher that will be used as the sink for audit detail events.  Required.
+     * @param eventPub  an ApplicationEventPublisher that will be used as the sink for audit detail events, or null
+     *                  to act as a log-only auditor.
      * @param logger  logger to which details will be written.
      */
     public Auditor(Object source, AuditLogListener auditLogListener, AuditDetailFilter auditDetailFilter, ApplicationEventPublisher eventPub, Logger logger) {
