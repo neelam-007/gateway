@@ -157,7 +157,7 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_RESPONSE_NOT_XML                  = m(4701, Level.WARNING, false, true, "Response not XML; cannot evaluate XPath expression");
     public static final M XPATH_PATTERN_INVALID                   = m(4702, Level.WARNING, "Assertion has failed because the XPath pattern is null or empty");
     public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST       = m(4703, Level.INFO, "Assertion has failed because the XPath pattern did not match request" );
-    public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE      = m(4704, Level.INFO, "Assertion has failed because the XPath pattern did not match response" );
+    public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE      = m(4704, Level.INFO, "Assertion has failed because the XPath pattern did not match response or target message" );
     public static final M XPATH_RESULT_TRUE                       = m(4705, Level.FINE, "XPath pattern returned true");
     public static final M XPATH_RESULT_FALSE                      = m(4706, Level.INFO, "XPath pattern returned false");
     public static final M XPATH_TEXT_NODE_FOUND                   = m(4707, Level.FINE, "XPath pattern found a text node");
@@ -169,7 +169,7 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_RESULTS                           = m(4713, Level.FINE, "XPath result #{0}: \"{1}\"");
     public static final M XPATH_PATTERN_INVALID_MORE_INFO         = m(4714, Level.WARNING, "Cannot evaluate XPath expression: XPath pattern is invalid ''{0}''.");
     public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST_MI    = m(4715, Level.INFO, "XPath pattern didn''t match request; assertion therefore fails; XPath is ''{0}''." );
-    public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI   = m(4716, Level.INFO, "XPath pattern didn''t match response; assertion therefore fails; XPath is ''{0}''." );
+    public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI   = m(4716, Level.INFO, "XPath pattern didn''t match response or target message; assertion therefore fails; XPath is ''{0}''." );
     public static final M XPATH_NOT_ACCELERATED                   = m(4717, Level.FINE, "Multiple result elements expected, using non-accelerated XPath." );
     public static final M XPATH_PATTERN_IS                        = m(4718, Level.FINE, "XPath is ''{0}''");
     public static final M XPATH_MESSAGE_NOT_XML                   = m(4719, Level.WARNING, "{0} not XML; cannot evaluate XPath expression");
