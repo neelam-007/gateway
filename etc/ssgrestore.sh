@@ -57,8 +57,8 @@ if [ "$1" == "cfgdeamon" ]; then
         -Dcom.l7tech.server.home=${SSG_HOME} \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -jar ${RESTORE_HOME}/SSGBackupUtility.jar cfgdeamon
-    [ -e "./logs/*.log" ] && chown -f layer7.layer7 ./logs/*.log
-    [ -e "./logs/*.log" ] && chmod -f 644 ./logs/*.log
+    chmod 644 ./logs/ssgrestore_*.log > /dev/null 2>&1
+    chown layer7.layer7 ./logs/ssgrestore_*.log > /dev/null 2>&1
     exit
 fi
 
