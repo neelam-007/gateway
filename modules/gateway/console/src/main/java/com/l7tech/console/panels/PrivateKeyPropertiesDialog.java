@@ -25,6 +25,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.security.cert.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.SyspropUtil;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -50,6 +51,8 @@ import java.util.logging.Logger;
  *
  */
 public class PrivateKeyPropertiesDialog extends JDialog {
+    private static final String PROP_ALLOW_EC_FOR_DEFAULT_SSL = "com.l7tech.allowEcKeyForDefaultSsl";
+
     private JList certList;
     private JButton destroyPrivateKeyButton;
     private JButton viewCertificateButton;
@@ -285,7 +288,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             return;
         }
         // Check for EC cert, since this can lock you out of the SSM.  (Bug #7563)
-        if (subject.getKeyType().toUpperCase().startsWith("EC")) {
+        if (subject.getKeyType().toUpperCase().startsWith("EC") && !SyspropUtil.getBoolean(PROP_ALLOW_EC_FOR_DEFAULT_SSL, false)) {
             DialogDisplayer.showMessageDialog(
                     makeDefaultSSLButton,
                     "This is an elliptic curve private key.\n\n" +
