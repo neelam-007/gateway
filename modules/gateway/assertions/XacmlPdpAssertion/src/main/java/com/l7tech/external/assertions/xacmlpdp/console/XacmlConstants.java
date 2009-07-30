@@ -8,7 +8,7 @@ import java.util.Arrays;
 /**
  * Constants for XACML
  */
-class XacmlConstants {
+public class XacmlConstants {
 
     public static final String XACML_POLICY_ELEMENT = "Policy";
 

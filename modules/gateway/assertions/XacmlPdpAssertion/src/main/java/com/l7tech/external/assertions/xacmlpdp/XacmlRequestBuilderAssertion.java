@@ -7,6 +7,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
+import com.l7tech.external.assertions.xacmlpdp.console.XacmlConstants;
 import com.l7tech.xml.xpath.XpathUtil;
 import com.l7tech.util.ExceptionUtils;
 
@@ -357,6 +358,10 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                     result.add(field.getName());
             }
             return result;
+        }
+
+        public boolean hasV1ResourceId() {
+            return XacmlConstants.XACML_10_RESOURCE_ID.equals(fields.get(ID.name()).getValue());
         }
 
         public Field getField(FieldName name) {

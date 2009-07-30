@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
@@ -705,6 +706,8 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         }
 
         boolean haveAttributeValueErrors = false;
+        int v1ResourceIdCount = 0;
+        boolean v1ResourceIdMultipleAttribute = false;
         for(int i = 0;i < root.getChildCount();i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode)root.getChildAt(i);
 
@@ -714,10 +717,25 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                 if(grandChild.getUserObject() instanceof XacmlRequestBuilderAssertion.Attribute) {
                     if(containsAttributeValueErrors(grandChild)) {
                         haveAttributeValueErrors = true;
-                        break;
+                    }
+
+                    if (child.getUserObject() instanceof XacmlRequestBuilderAssertion.Resource &&
+                        XacmlConstants.XACML_10_RESOURCE_ID.equals(((XacmlRequestBuilderAssertion.Attribute) grandChild.getUserObject()).getId())) {
+                        v1ResourceIdCount++;
+                    }
+                } else if (grandChild.getUserObject() instanceof XacmlRequestBuilderAssertion.MultipleAttributeConfig) {
+                    if ( child.getUserObject() instanceof XacmlRequestBuilderAssertion.Resource &&
+                         ((XacmlRequestBuilderAssertion.MultipleAttributeConfig)grandChild.getUserObject()).hasV1ResourceId() ) {
+                        v1ResourceIdCount++;
+                        v1ResourceIdMultipleAttribute = true;
+
                     }
                 }
             }
+        }
+
+        if (v1ResourceIdCount > 1 && XacmlAssertionEnums.XacmlVersionType.V1_0 == assertion.getXacmlVersion()) {
+            messages.add( resources.getString( "error.resource.multiple.id" ) );
         }
 
         if(haveAttributeValueErrors) {
@@ -728,6 +746,12 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
             } else if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0) {
                 messages.add( resources.getString( "error.attributevalue.required" ) );
             }
+        }
+
+        if ( messages.size() == 0 && // only warn if there are no errors
+             v1ResourceIdMultipleAttribute &&
+             XacmlAssertionEnums.XacmlVersionType.V1_0 == assertion.getXacmlVersion()) {
+            DialogDisplayer.showMessageDialog( this, resources.getString( "warning.resource.multiple.id" ), "Validation Warning", JOptionPane.WARNING_MESSAGE, null );
         }
 
         return messages.size() == 0;
