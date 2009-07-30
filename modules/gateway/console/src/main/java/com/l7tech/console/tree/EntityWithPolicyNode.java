@@ -78,12 +78,15 @@ public abstract class EntityWithPolicyNode<ET extends Entity, HT extends EntityH
         JTree tree = (JTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
         if (tree !=null) {
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            Enumeration kids = this.getParent().children();
-            while (kids.hasMoreElements()) {
-                TreeNode node = (TreeNode) kids.nextElement();
-                if (node == this) {
-                    model.removeNodeFromParent(this);
-                    break;
+            final TreeNode parent = this.getParent();
+            if (parent != null) {
+                Enumeration kids = parent.children();
+                while (kids.hasMoreElements()) {
+                    TreeNode node = (TreeNode) kids.nextElement();
+                    if (node == this) {
+                        model.removeNodeFromParent(this);
+                        break;
+                    }
                 }
             }
             RootNode rootNode = (RootNode) model.getRoot();
