@@ -690,12 +690,20 @@ public class PrivateKeyManagerWindow extends JDialog {
                 AsyncAdminMethods.JobResult<X509Certificate> result = getTrustedCertAdmin().getJobResult(activeKeypairJob);
                 activeKeypairJob = null;
                 if (result.throwableClassname != null) {
+                    final String gotmess = result.throwableMessage;
                     final String mess;
-                    if (result.throwableMessage != null && result.throwableMessage.indexOf("com.l7tech.common.io.DuplicateAliasException") >= 0) {
+                    int pos;
+                    if (gotmess != null && gotmess.indexOf("com.l7tech.common.io.DuplicateAliasException") >= 0) {
                         // More friendly error message for one common, foreseeable problem (Bug #3923)
                         mess = "Unable to generate key pair: the specified alias is already in use.";
+                    } else if (gotmess != null && (pos = gotmess.indexOf("java.security.InvalidKeyException: Curve is too small for a ")) >= 0) {
+                        // More friendly error message for another common, foreseeable problem (Bug #7648)
+                        mess = "Unable to generate key pair: " + gotmess.substring(pos + 35);
+                    } else if (gotmess != null && (pos = gotmess.indexOf("NoSuchAlgorithmException:")) >= 0) {
+                        // More friendly error message for another common, foreseeable problem (Bug #7648)
+                        mess = "Unable to generate key pair: " + gotmess.substring(pos + 25);
                     } else {
-                        mess = "Key generation failed: " + result.throwableClassname + ": " + result.throwableMessage;
+                        mess = "Key generation failed: " + result.throwableClassname + ": " + gotmess;
                     }
 
                     logger.log(Level.WARNING, mess);
