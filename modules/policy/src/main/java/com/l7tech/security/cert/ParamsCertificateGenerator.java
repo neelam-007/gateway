@@ -4,10 +4,8 @@ import com.l7tech.common.io.CertGenParams;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERPrintableString;
-import org.bouncycastle.asn1.DERSet;
+import com.l7tech.util.Functions;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -97,6 +95,9 @@ public class ParamsCertificateGenerator {
         if (c.isIncludeSubjectDirectoryAttributes())
             certgen.addExtension(X509Extensions.SubjectDirectoryAttributes.getId(), c.isSubjectDirectoryAttributesCritical(), createSubjectDirectoryAttributes(c.getCountryOfCitizenshipCountryCodes()));
 
+        if (c.isIncludeCertificatePolicies())
+            certgen.addExtension(X509Extensions.CertificatePolicies.getId(), c.isCertificatePoliciesCritical(), createCertificatePolicies(c.getCertificatePolicies()));
+
         try {
             Provider prov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR);
             return prov == null
@@ -162,6 +163,17 @@ public class ParamsCertificateGenerator {
         // Add further supported attrs here, if any
 
         return new SubjectDirectoryAttributes(attrs);
+    }
+
+    private DERSequence createCertificatePolicies(List<String> certificatePolicies) {
+        return new DERSequence(
+            Functions.map(certificatePolicies, new Functions.Unary<PolicyInformation, String>() {
+                @Override
+                public PolicyInformation call(String certificatePolicyOID) {
+                    return new PolicyInformation(new DERObjectIdentifier(certificatePolicyOID));
+                }
+            }).toArray(new ASN1Encodable[certificatePolicies.size()])
+        );
     }
 
     /**

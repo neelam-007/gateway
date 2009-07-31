@@ -121,6 +121,7 @@ public class GenerateCertificate {
         put("extKeyUsage",          new ExtKeyUsageOption("kpNameOrOid\tInclude an extended key usage including the specified key purpose (may be repeated)"));
         put("keyUsage",             new KeyUsageOption("keyUsage\tInclude a key usage including the specified key usage bit (may be repeated)"));
         put("countriesOfCitizenship", new CountriesOfCitizenshipOption("countryCode\tInclude SubjectDirectoryAttributes ext including country code (may be repeated)"));
+        put("certificatePolicies",  new CertificatePolicyOption("certificatePolicy\tInclude certificate policy (may be repeated)"));
     }};
 
     //
@@ -282,6 +283,21 @@ public class GenerateCertificate {
             List<String> codes = new ArrayList<String>(target.generator.getCertGenParams().getCountryOfCitizenshipCountryCodes());
             codes.add(countryCode);
             target.generator.countriesOfCitizenship(true, codes.toArray(new String[codes.size()]));
+        }
+    }
+
+    private static class CertificatePolicyOption extends Option {
+        protected CertificatePolicyOption(String desc) {
+            super(desc);
+        }
+
+        @Override
+        public void configure(GenerateCertificate target, Iterator<String> remainingArgs) {
+            String certPolicy = remainingArgs.next().toUpperCase();
+            remainingArgs.remove();
+            List<String> policies = new ArrayList<String>(target.generator.getCertGenParams().getCertificatePolicies());
+            policies.add(certPolicy);
+            target.generator.certificatePolicies(true, policies.toArray(new String[policies.size()]));
         }
     }
 

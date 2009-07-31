@@ -4,8 +4,10 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jce.X509KeyUsage;
+import org.bouncycastle.x509.extension.X509ExtensionUtil;
 import static org.junit.Assert.*;
 import org.junit.*;
 
@@ -112,6 +114,24 @@ public class TestCertificateGeneratorTest {
         TestCertificateGenerator.saveAsPkcs12(joeUserCertChain, joeUser.right, "7layer", "/tmp/joe.p12");
 
         System.out.println("Generated cert: " + joeUserCertChain[0]);
+    }
+
+    @Test
+    public void testTestCertificateGeneratorWithPolicies() throws Exception {
+        TestCertificateGenerator generator = new TestCertificateGenerator();
+        generator.certificatePolicies(true, new String[] {"1.2.3.4"});
+
+        X509Certificate generated = generator.generate();
+        X509Certificate decoded = CertUtils.decodeFromPEM(CertUtils.encodeAsPEM(generated));
+
+        assertTrue("CertificatePolicies extension prsent", decoded.getCriticalExtensionOIDs().contains("2.5.29.32"));
+        ASN1Object policiesExtension = X509ExtensionUtil.fromExtensionValue(decoded.getExtensionValue("2.5.29.32"));
+
+        assertTrue("CertificatePolicies extension is a ASN1 sequence", policiesExtension instanceof ASN1Sequence);
+        DERObject derObject = ((ASN1Sequence) policiesExtension).getObjectAt(0).getDERObject();
+        assertEquals("Expected configured value", derObject, new DERSequence(new DERObjectIdentifier("1.2.3.4")));
+
+        System.out.println("Decoded cert: " + decoded);
     }
 
     @Test

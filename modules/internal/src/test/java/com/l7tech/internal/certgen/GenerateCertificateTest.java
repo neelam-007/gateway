@@ -157,6 +157,15 @@ public class GenerateCertificateTest {
     }
 
     @Test
+    public void testCertPolicies() throws Exception {
+        X509Certificate got = CertUtils.decodeFromPEM(generate("-certificatePolicies", "1.2.3.4", "-certificatePolicies", "1.2.3.5.6.7"));
+        assertNotNull(got.getExtensionValue(X509Extensions.CertificatePolicies.getId()));
+        assertTrue(got.toString().contains("CertificatePolicies ["));
+        assertTrue(got.toString().contains("  [CertificatePolicyId: [1.2.3.4]"));
+        assertTrue(got.toString().contains("  [CertificatePolicyId: [1.2.3.5.6.7]"));
+    }
+
+    @Test
     public void testMakeCaAndSslCerts() throws Exception {
         final String cafile = "CertificateGeneratorTest-ca.p12";
         final String sslfile = "CertificateGeneratorTest-ssl.p12";

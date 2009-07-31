@@ -85,6 +85,7 @@ public class TestCertificateGenerator {
         c.setIncludeSubjectDirectoryAttributes(false);
         c.setSubjectDirectoryAttributesCritical(false);
         c.setCountryOfCitizenshipCountryCodes(Collections.<String>emptyList());
+        c.setCertificatePolicies(Collections.<String>emptyList());
         return this;
     }
 
@@ -231,6 +232,13 @@ public class TestCertificateGenerator {
         c.setIncludeSubjectDirectoryAttributes(true);
         c.setSubjectDirectoryAttributesCritical(critical);
         c.setCountryOfCitizenshipCountryCodes(Arrays.asList(countryCodes));
+        return this;
+    }
+
+    public TestCertificateGenerator certificatePolicies(boolean critical, String[] policies) {
+        c.setIncludeCertificatePolicies(true);
+        c.setCertificatePoliciesCritical(critical);
+        c.setCertificatePolicies(Arrays.asList(policies));
         return this;
     }
 

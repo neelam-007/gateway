@@ -46,6 +46,11 @@ public class CertGenParams implements Serializable {
     private boolean subjectDirectoryAttributesCritical;
     private List<String> countryOfCitizenshipCountryCodes;
 
+    // Certificate policies
+    private boolean includeCertificatePolicies;
+    private boolean certificatePoliciesCritical;
+    private List<String> certificatePolicies;
+
     public CertGenParams() {
     }
 
@@ -243,6 +248,30 @@ public class CertGenParams implements Serializable {
 
     public void setCountryOfCitizenshipCountryCodes(List<String> countryOfCitizenshipCountryCodes) {
         this.countryOfCitizenshipCountryCodes = countryOfCitizenshipCountryCodes;
+    }
+
+    public boolean isIncludeCertificatePolicies() {
+        return includeCertificatePolicies;
+    }
+
+    public void setIncludeCertificatePolicies(boolean includeCertificatePolicies) {
+        this.includeCertificatePolicies = includeCertificatePolicies;
+    }
+
+    public boolean isCertificatePoliciesCritical() {
+        return certificatePoliciesCritical;
+    }
+
+    public void setCertificatePoliciesCritical(boolean certificatePoliciesCritical) {
+        this.certificatePoliciesCritical = certificatePoliciesCritical;
+    }
+
+    public List<String> getCertificatePolicies() {
+        return certificatePolicies;
+    }
+
+    public void setCertificatePolicies(List<String> certificatePolicies) {
+        this.certificatePolicies = certificatePolicies;
     }
 
     /**
