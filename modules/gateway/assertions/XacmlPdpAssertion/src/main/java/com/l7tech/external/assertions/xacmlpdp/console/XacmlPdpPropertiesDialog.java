@@ -220,7 +220,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         fetchUrlButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final OkCancelDialog dlg = new OkCancelDialog(XacmlPdpPropertiesDialog.this, resources.getString( "xacml.url.label" ), true, new UrlPanel( resources.getString( "xacml.policy.url" ), null));
+                final OkCancelDialog dlg = new OkCancelDialog(XacmlPdpPropertiesDialog.this, resources.getString( "xacml.url.label" ), true, new UrlPanel( resources.getString( "xacml.policy.url" ), null, false));
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
                 DialogDisplayer.display(dlg, new Runnable() {
