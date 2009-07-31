@@ -29,6 +29,8 @@ public class IdentityTagAssertionValidator implements AssertionValidator {
             for ( Assertion pathAssertion : assertionPath.getPath() ) {
                 if ( pathAssertion == assertion ) {
                     break;
+                } else if (!pathAssertion.isEnabled()) {
+                    continue;
                 }
 
                 if ( tag.equalsIgnoreCase( getIdentityTag(pathAssertion) ) &&
