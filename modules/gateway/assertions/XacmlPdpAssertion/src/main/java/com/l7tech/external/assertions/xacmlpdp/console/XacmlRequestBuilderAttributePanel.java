@@ -4,6 +4,8 @@ import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.policy.variable.Syntax;
+import com.sun.xacml.attr.DateTimeAttribute;
 
 import javax.swing.*;
 import java.util.Set;
@@ -103,6 +105,26 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
             dataTypeComboBox.grabFocus();
             return false;
         }
+
+        // Validate Issue Instant if Xacml version is pre 2.0.
+        if(xacmlVersion != XacmlAssertionEnums.XacmlVersionType.V2_0) {
+            String issueInstant = issueInstantField.getText();
+            if (issueInstant != null) {
+                issueInstant = issueInstant.trim();
+                // if is is a blank or consists of context variable(s), then ignore validation.
+                if (issueInstant.isEmpty() || Syntax.getReferencedNames(issueInstant).length > 0) return true;
+
+                // Check if it is a valid datetime with a format "yyyy-MM-dd'T'HH:mm:ssZ"
+                try {
+                    DateTimeAttribute.getInstance(issueInstant);
+                } catch (Exception e) {
+                    DialogDisplayer.showMessageDialog(this, "Issue Instant must be specified by a blank, context variable(s),\nor a valid datetime with a format \"yyyy-MM-dd'T'HH:mm:ss[Z]\".",
+                        "Validation Error", JOptionPane.ERROR_MESSAGE, null);
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 }
