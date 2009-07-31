@@ -1,16 +1,15 @@
 package com.l7tech.server.util;
 
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.jdbc.*;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.orm.hibernate3.HibernateSystemException;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-
-import com.l7tech.util.ExceptionUtils;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author: ghuang
@@ -29,6 +28,11 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
             "com.mysql.jdbc.OperationNotSupportedException",
             "com.mysql.jdbc.PacketTooBigException",
             "com.mysql.jdbc.RowDataDynamic$OperationNotSupportedException",
+
+            // Luna exceptions
+            "com.chrysalisits.crypto.LunaCryptokiException",
+            "com.chrysalisits.crypto.LunaException",
+            "com.chrysalisits.crypto.LunaPartitionFullException",
     };
 
     @SuppressWarnings( { "deprecation" } )
