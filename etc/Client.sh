@@ -16,7 +16,7 @@ fi
 cd `dirname $0`
 
 # include startup options 
-extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dfile.encoding=UTF-8"
+extra="-server -Djava.security.egd=file:/dev/./urandom -Dcom.l7tech.proxy.listener.maxthreads=300  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dfile.encoding=UTF-8"
 
 if [ "$1" = "-bd" ]; then
 	run="-classpath Client.jar com.l7tech.client.Main"
