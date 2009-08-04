@@ -824,7 +824,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
      * for iteration does not contain any Messages
      * @throws Exception
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMultipleAttributes_MultiValuedContextVariablePartOfIteration_InvalidContent() throws Exception{
 
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
@@ -859,7 +859,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
-        server.checkRequest(context);
+        AssertionStatus result = server.checkRequest(context);
+        Assert.assertEquals("Unexpected result from checkRequest", AssertionStatus.FAILED, result);
     }
 
     private void setNameSpaces(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleConfig) {

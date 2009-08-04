@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.xml.DomElementCursor;
@@ -118,6 +119,11 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         } catch (RequiredFieldNotFoundException ranfe) {
             auditor.logAndAudit(AssertionMessages.XACML_NOT_FOUND_OPTION_ON, ranfe.getMessage());
             return AssertionStatus.FAILED;
+        } catch(VariableNameSyntaxException e){
+            //if any referenced variable is not found this exception will be thrown as we require strict processing
+            //see bug 7664
+            //already logged by ExpandVariables.badVariable
+            return AssertionStatus.FAILED;
         }
 
         switch(assertion.getOutputMessageDestination()) {
@@ -164,15 +170,16 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     }
 
     private void addResource(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Resource resource) throws DocumentHolderException, RequiredFieldNotFoundException {
+
         Element resourceElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Resource");
         root.appendChild(resourceElement);
 
-        if(resource.getResourceContent() != null) {
+        if (resource.getResourceContent() != null) {
             Element resourceContentElement = doc.createElementNS(
                     assertion.getXacmlVersion().getNamespace(), "ResourceContent");
             resourceElement.appendChild(resourceContentElement);
 
-            for(Map.Entry<String, String> entry : resource.getResourceContent().getAttributes().entrySet()) {
+            for (Map.Entry<String, String> entry : resource.getResourceContent().getAttributes().entrySet()) {
                 String name = ExpandVariables.process(entry.getKey(), vars, auditor, true);
                 String value = ExpandVariables.process(entry.getValue(), vars, auditor, true);
                 resourceContentElement.setAttribute(name, value);

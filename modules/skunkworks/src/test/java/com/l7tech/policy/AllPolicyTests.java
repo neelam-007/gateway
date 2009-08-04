@@ -6,7 +6,7 @@ import com.l7tech.server.policy.validator.DefaultPolicyValidatorTest;
 import com.l7tech.policy.wsp.WspConstantsTest;
 import com.l7tech.server.policy.CompositeAssertionTest;
 import com.l7tech.server.policy.DefaultPolicyPathBuilderTest;
-import com.l7tech.server.policy.ExpandVariablesTest;
+import com.l7tech.server.policy.variable.ExpandVariablesTest;
 import com.l7tech.server.policy.assertion.ServerSslAssertionTest;
 import junit.framework.Test;
 import junit.framework.TestCase;

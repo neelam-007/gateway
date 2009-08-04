@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.DefaultSyntaxErrorHandler;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfig;
 
 import java.text.MessageFormat;
@@ -90,9 +91,17 @@ public final class ExpandVariables {
         return Syntax.DEFAULT_MV_DELIMITER;
     }
 
-    public static void badVariable(String msg, boolean strict, Audit audit) {
-        audit.logAndAudit( CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE, msg);
-        if (strict) throw new IllegalArgumentException(msg);
+    /**
+     * Call when a non existent variable is referenced by a string value in a policy.
+     * This method will log and audit the non existent variable and optionally throw an unchecked exception.
+     *
+     * @param nonExistentVariable the non existent variable referenced in a policy
+     * @param strict              if true, a VariableNameSyntaxException will be thrown
+     * @param audit               the Audit to log and audit to
+     */
+    public static void badVariable(String nonExistentVariable, boolean strict, Audit audit) {
+        audit.logAndAudit(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE, nonExistentVariable);
+        if (strict) throw new VariableNameSyntaxException(nonExistentVariable);
     }
 
     static interface Selector<T> {
@@ -268,10 +277,12 @@ public final class ExpandVariables {
      * user variables map. If the varaible is not found in variables map
      * then the default variables map is consulted.
      *
-     * @param s the input message as a message
-     * @param vars the caller supplied varialbes map that is consulted first
-     * @param audit an audit instance to catch warnings
-     * @param strict true if failures to resolve variables should throw exceptions rather than log warnings
+     * @param s              the input message as a message
+     * @param vars           the caller supplied varialbes map that is consulted first
+     * @param audit          an audit instance to catch warnings
+     * @param strict         true if failures to resolve variables should throw exceptions rather than log warnings. If a
+     *                       variable referenced by s does not exist and strict is true then an unchecked
+     *                       VariableNameSyntaxException will be throw
      * @param varLengthLimit the length limit of each replacement context variable value, use null if no limit is applied
      * @return the message with expanded/resolved varialbes
      */
@@ -284,7 +295,7 @@ public final class ExpandVariables {
         while (matcher.find()) {
             int matchingCount = matcher.groupCount();
             if (matchingCount != 1) {
-                throw new IllegalStateException("Expecting 1 matching group, received: "+matchingCount);
+                throw new IllegalStateException("Expecting 1 matching group, received: " + matchingCount);
             }
 
             final Syntax syntax = Syntax.parse(matcher.group(1), defaultDelimiter());
