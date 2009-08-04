@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  */
 class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
     private static final String PER_MESSAGE_STORAGE_SIZE = "com.l7tech.client.gui.perMessageStorageSize";
-    private static final int MAX_PER_MESSAGE_STORAGE_SIZE = 500 * 1024; //500kb
+    private static final int DEFAULT_PER_MESSAGE_STORAGE_SIZE = 500 * 1024; //500kb
 
     private static final Logger log = Logger.getLogger(MessageViewerModel.class.getName());
     private static final int MAX_MESSAGES = 64;
@@ -63,9 +63,9 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
 
     MessageViewerModel() {
         //initialize message viewer
-        perMessageStorageSize = SyspropUtil.getInteger(PER_MESSAGE_STORAGE_SIZE, MAX_PER_MESSAGE_STORAGE_SIZE);
-        if (perMessageStorageSize <= 0 || perMessageStorageSize > MAX_PER_MESSAGE_STORAGE_SIZE) {
-            perMessageStorageSize = MAX_PER_MESSAGE_STORAGE_SIZE;
+        perMessageStorageSize = SyspropUtil.getInteger(PER_MESSAGE_STORAGE_SIZE, DEFAULT_PER_MESSAGE_STORAGE_SIZE);
+        if (perMessageStorageSize <= 0) {
+            perMessageStorageSize = DEFAULT_PER_MESSAGE_STORAGE_SIZE;
         }
 
         messages.add(new SavedTextMessage("Session started      ", "", perMessageStorageSize));
