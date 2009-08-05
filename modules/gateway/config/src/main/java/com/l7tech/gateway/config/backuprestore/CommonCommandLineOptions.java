@@ -44,7 +44,7 @@ final class CommonCommandLineOptions {
 
     public static final CommandLineOption MA_OPTION =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.MA.getComponentName(),
-            "modular assertion jars", false);
+            "modular assertion aar files", false);
 
     /**
      * The ESM_OPTION should never go into ALL_COMPONENTS. This variable is used to determine if a selective
