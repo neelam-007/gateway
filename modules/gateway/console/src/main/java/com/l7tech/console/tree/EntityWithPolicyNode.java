@@ -74,38 +74,46 @@ public abstract class EntityWithPolicyNode<ET extends Entity, HT extends EntityH
     public abstract void updateUserObject() throws FindException;
 
     protected void orphanMe() throws FindException {
+        ensureOrphan();
+        throw new FindException(getEntityName() + " does not exist any more.");
+    }
+
+    private void ensureOrphan() {
         TopComponents creg = TopComponents.getInstance();
         JTree tree = (JTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
-        if (tree !=null) {
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            final TreeNode parent = this.getParent();
-            if (parent != null) {
-                Enumeration kids = parent.children();
-                while (kids.hasMoreElements()) {
-                    TreeNode node = (TreeNode) kids.nextElement();
-                    if (node == this) {
-                        model.removeNodeFromParent(this);
-                        break;
-                    }
-                }
-            }
-            RootNode rootNode = (RootNode) model.getRoot();
-            HT header = (HT) getUserObject();
-            if(header instanceof OrganizationHeader){
-                OrganizationHeader oH = (OrganizationHeader) header;
-                if(!oH.isAlias()){
-                    Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oH.getOid());
-                    if(!foundNodes.isEmpty()){
-                        for(AbstractTreeNode atn: foundNodes){
-                            model.removeNodeFromParent(atn);
-                        }
-                        rootNode.removeEntity(oH.getOid());
-                    }
-                }else{
-                    rootNode.removeAlias(oH.getOid(), this);
+        if (tree == null)
+            return;
+        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+        if (model == null)
+            return;
+        final TreeNode parent = this.getParent();
+        if (parent != null) {
+            Enumeration kids = parent.children();
+            while (kids.hasMoreElements()) {
+                TreeNode node = (TreeNode) kids.nextElement();
+                if (node == this) {
+                    model.removeNodeFromParent(this);
+                    break;
                 }
             }
         }
-        throw new FindException(getEntityName() + " does not exist any more.");
+        RootNode rootNode = (RootNode) model.getRoot();
+        if (rootNode == null)
+            return;
+        HT header = (HT) getUserObject();
+        if(header instanceof OrganizationHeader){
+            OrganizationHeader oH = (OrganizationHeader) header;
+            if(!oH.isAlias()){
+                Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oH.getOid());
+                if(!foundNodes.isEmpty()){
+                    for(AbstractTreeNode atn: foundNodes){
+                        model.removeNodeFromParent(atn);
+                    }
+                    rootNode.removeEntity(oH.getOid());
+                }
+            }else{
+                rootNode.removeAlias(oH.getOid(), this);
+            }
+        }
     }
 }
