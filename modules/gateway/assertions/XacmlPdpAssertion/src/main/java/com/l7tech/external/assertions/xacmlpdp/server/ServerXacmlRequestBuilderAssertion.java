@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.xacmlpdp.server;
 
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -372,26 +373,27 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     }
 
     /**
-     * Check if any referenced variable is a Message. If thre is a message there can only be one
-     * @param contextVariables all available contet variables
+     * Check if any referenced variable is a Message. If there is a message there can only be one. If there is more
+     * an IllegalStateException will be thrown
+     *
+     * @param contextVariables    all available context variables
      * @param referencedVariables was obtained from a call to Syntax.getReferencedNames(content), where the value
-     * of content is the same value being passed in here
-     * @return true if 1 and only 1 messgae is referenced from referencedVariables
+     *                            of content is the same value being passed in here
+     * @return true if 1 and only 1 message is referenced from referencedVariables, false otherwise
      */
-    private boolean doesContentIncludeAMessage(Map<String, Object> contextVariables,
-                                               String[] referencedVariables){
+    private boolean doesContentIncludeAMessage(Map<String, Object> contextVariables, String[] referencedVariables) {
         //If any Message type var is referenced, there can only be 1
         boolean isAMessage = false;
-        for(String s : referencedVariables) {
-            if(!contextVariables.containsKey(s)) continue;
-            if(contextVariables.get(s) instanceof Message){
+        for (String s : referencedVariables) {
+            if (!contextVariables.containsKey(s)) continue;
+            if (contextVariables.get(s) instanceof Message) {
                 isAMessage = true;
             }
         }
 
         //this error message is UI specific, however this is how it happens - a user types in two Message context
         //variables into the UI
-        if(isAMessage && referencedVariables.length != 1)
+        if (isAMessage && referencedVariables.length != 1)
             throw new IllegalStateException(
                     "AttributeValue content text field can only support a single message context variable");
 
@@ -403,33 +405,41 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * content. We support this through allowing a context variable of type Message to be supplied.
      * If content has the name of a Message context variable , then the XML content of this variable is inserted as
      * the child of element, otherwise a text node is created.
+     * <p/>
+     * If there is any problem parsing the variable if it's off type Message, then an AssertionStatusException will be
+     * thrown with AssertionStatus.FAILED
      *
-     * It is possible that nothing will be added to the attributeValue. If content does represent a Message context
-     * variable, and there are any problems parsing it, then nothing will be added
      * @param element the Element representing the <AttributeValue> or <ResourceContent> element. Cannot be null
      * @param content the String representing either the string contents, with possibly string context variables or
-     * the name of a Message context variable. Cannot be null. If content does contains the name of more than one
-     * context variable of type Message and IllegalStateException will be thrown as this is not supported.
-     * @param vars all known context variables
+     *                the name of a Message context variable. Cannot be null. 
+     * @param vars    all known context variables
      */
-    private void addContentToElementWithMessageSupport(Element element, String content, Map<String, Object> vars){
+    private void addContentToElementWithMessageSupport(Element element, String content, Map<String, Object> vars) {
         String[] v = Syntax.getReferencedNames(content);
         boolean isAMessage = doesContentIncludeAMessage(vars, v);
 
-        if(isAMessage){
+        if (isAMessage) {
             String s = v[0];
             Object o = vars.get(s);
-            if(o instanceof Message) {
+            if (o instanceof Message) {
                 Message m = (Message) vars.get(s);//wont be null based on isAMessage being true
                 try {
-                    addXmlMessageVariableAsAttributeValue(m, element);
-                } catch (Exception e) {
-                    //can log this - but action is that the attributeValue is not modified in this case
-                }finally{m.close();}
-            }else throw new IllegalStateException("Message expected");//will not happen based on above logic
-        }else{
+                    try {
+                        addXmlMessageVariableAsAttributeValue(m, element);
+                    } catch (IOException e) {
+                        auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{s}, e);
+                        throw new AssertionStatusException(AssertionStatus.FAILED, e);
+                    } catch (SAXException e) {
+                        auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{s} , e);
+                        throw new AssertionStatusException(AssertionStatus.FAILED, e);
+                    }
+                } finally {
+                    m.close();
+                }
+            } else throw new IllegalStateException("Message expected");//will not happen based on above logic
+        } else {
             //its not a Message, create a text node
-            element.appendChild( element.getOwnerDocument().createTextNode(
+            element.appendChild(element.getOwnerDocument().createTextNode(
                     ExpandVariables.process(content, vars, auditor, true)));
         }
 
@@ -459,7 +469,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                                List<XacmlRequestBuilderAssertion.AttributeTreeNodeTag> attributeTreeNodeTags,
                                Map<String, Object> vars,
                                PolicyEnforcementContext context,
-                               XacmlAssertionEnums.XacmlVersionType xacmlVersion) throws DocumentHolderException, RequiredFieldNotFoundException {
+                               XacmlAssertionEnums.XacmlVersionType xacmlVersion)
+            throws DocumentHolderException, RequiredFieldNotFoundException {
         for(XacmlRequestBuilderAssertion.AttributeTreeNodeTag attributeTreeNodeTag : attributeTreeNodeTags) {
             if(attributeTreeNodeTag instanceof XacmlRequestBuilderAssertion.Attribute) {
                 XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributeTreeNodeTag;

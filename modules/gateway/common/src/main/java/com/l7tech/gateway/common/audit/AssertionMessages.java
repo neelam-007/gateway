@@ -513,6 +513,7 @@ public class AssertionMessages extends Messages {
     public static final M OVERSIZEDTEXT_NOT_SOAP                        = m(7241, Level.WARNING, "{0} message does not have a valid SOAP Envelope");
     public static final M OVERSIZEDTEXT_NOT_XML                         = m(7242, Level.WARNING, "{0} is not XML.");
     public static final M OVERSIZEDTEXT_SKIP_RESPONSE_NOT_ROUTED        = m(7243, Level.FINE, "No response body to check because request has not been routed yet.");
+    public static final M MESSAGE_VARIABLE_BAD_XML                      = m(7244, Level.WARNING, "Message variable {0} does not contain well-formed XML");
 
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");
