@@ -357,7 +357,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 } else if (e instanceof MessageResponseIOException) {
                     sendExceptionFault(context, e.getMessage(), hrequest, hresponse, status);
                 } else if (e instanceof IOException) {
-                    logger.warning("I/O error while processing message: " + e.getMessage());
+                    logger.log(Level.WARNING, "I/O error while processing message: " + e.getMessage(), ExceptionUtils.getDebugException(e));
                     sendExceptionFault(context, e, hrequest, hresponse, status);
                 } else if (ExceptionUtils.causedBy(e, SocketTimeoutException.class)) {
                     auditor.logAndAudit(SystemMessages.SOCKET_TIMEOUT);
