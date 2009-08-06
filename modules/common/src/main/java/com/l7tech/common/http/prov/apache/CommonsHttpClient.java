@@ -11,7 +11,6 @@ import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.*;
 import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.*;
@@ -19,6 +18,7 @@ import org.apache.commons.httpclient.params.*;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.commons.httpclient.util.URIUtil;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocket;
@@ -30,6 +30,7 @@ import java.net.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * GenericHttpClient driver for the Apache Commons HTTP client.
@@ -555,16 +556,20 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 }
 
                 private Socket verify(Socket socket, String host) throws IOException {
-                    if (hostVerifier != null && socket instanceof SSLSocket) {
-                        SSLSocket sslSocket = (SSLSocket) socket;
+                    if (socket instanceof SSLSocket) {
+                        configureEnabledProtocolsAndCiphers((SSLSocket) socket);
 
-                        // must start handshake or any exception can be lost when
-                        // getSession() is called
-                        sslSocket.startHandshake();
+                        if (hostVerifier != null) {
+                            SSLSocket sslSocket = (SSLSocket) socket;
 
-                        if (!hostVerifier.verify(host, sslSocket.getSession())) {
-                            ResourceUtils.closeQuietly(socket);
-                            throw new CausedIOException("Host name does not match certificate '" + host + "'.");
+                            // must start handshake or any exception can be lost when
+                            // getSession() is called
+                            sslSocket.startHandshake();
+
+                            if (!hostVerifier.verify(host, sslSocket.getSession())) {
+                                ResourceUtils.closeQuietly(socket);
+                                throw new CausedIOException("Host name does not match certificate '" + host + "'.");
+                            }
                         }
                     }
                     return socket;
@@ -576,5 +581,21 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         HttpHost httpHost = new HttpHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
         hconf.setHost(httpHost);
         return hconf;
+    }
+
+    private void configureEnabledProtocolsAndCiphers(SSLSocket s) {
+        String[] prots = getCommaDelimitedSystemProperty("https.protocols");
+        String[] suites = getCommaDelimitedSystemProperty("https.cipherSuites");
+        if (prots != null)
+            s.setEnabledProtocols(prots);
+        if (suites != null)
+            s.setEnabledCipherSuites(suites);
+    }
+
+    private static final Pattern commasWithWhitespace = Pattern.compile("\\s*,\\s*");
+
+    private static String[] getCommaDelimitedSystemProperty(String propertyName) {
+        String delimited = SyspropUtil.getString(propertyName, null);
+        return delimited == null || delimited.length() < 1 ? null : commasWithWhitespace.split(delimited);
     }
 }
