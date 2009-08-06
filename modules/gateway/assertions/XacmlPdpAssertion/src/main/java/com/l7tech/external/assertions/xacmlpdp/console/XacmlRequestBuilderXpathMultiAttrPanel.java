@@ -302,6 +302,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             if (CONTEXT_VARIABLE == field.getType()) {
                 String[] varStrings = Syntax.getReferencedNames(field.getValue());
                 if (varStrings.length != 1 || ! field.getValue().equals("${" + varStrings[0] + "}")) {
+                    //if more than one variable is returned, or the variable is indexed which was removed by
+                    //Syntax.getReferencedNames
                     JOptionPane.showMessageDialog(this, "Field '" + field.getName() + "' must be a reference to exactly one context variable.");
                     return false;
                 }

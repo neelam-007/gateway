@@ -97,6 +97,37 @@ public abstract class Syntax {
         return (String[]) vars.toArray(new String[0]);
     }
 
+    /**
+     * Get all variables referenced from String s with the difference that if the variable is indexed, it
+     * will be omitted in the returned array.
+     * e.g. if String s contains the string ${IDS[1]} the returned array will not contain IDS
+     * @param s String to find out what non indexed variables are referenced from it
+     * @return the list of all non indexed variables
+     * @throws VariableNameSyntaxException
+     */
+    public static String[] getReferencedNamesIndexedVarsOmitted(String s) throws VariableNameSyntaxException {
+        if (s == null) throw new IllegalArgumentException();
+
+        ArrayList vars = new ArrayList();
+        Matcher matcher = regexPattern.matcher(s);
+        while (matcher.find()) {
+            int count = matcher.groupCount();
+            if (count != 1) {
+                throw new IllegalStateException("Expecting 1 matching group, received: "+count);
+            }
+            String var = matcher.group(1);
+            if (var != null) var = var.trim();
+            final Syntax varSyntax = Syntax.parse(var, DEFAULT_MV_DELIMITER);
+
+            if (varSyntax instanceof MultivalueArraySubscriptSyntax)  continue;
+
+            vars.add(varSyntax.remainingName);
+
+        }
+        return (String[]) vars.toArray(new String[0]);
+    }
+
+
     // TODO find out how to move this into Syntax subclasses
     public static Syntax parse(String rawName, final String delimiter) {
         int ppos = rawName.indexOf("|");

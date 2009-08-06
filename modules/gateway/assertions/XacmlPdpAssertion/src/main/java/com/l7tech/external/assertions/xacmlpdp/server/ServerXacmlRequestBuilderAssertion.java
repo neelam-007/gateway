@@ -288,12 +288,15 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         for(XacmlRequestBuilderAssertion.AttributeValue attributeValue : attribute.getValues()) {
-            HashSet<String> multiValuedVars = valueContainsMultiValuedVars(attributeValue, vars);
+            HashSet<String> multiValuedVars = getAllReferencedNonIndexedMultiValueVars(attributeValue, vars);
 
             if(attributeValue.isCanElementHaveSameTypeSibilings()
                     && multiValuedVars.size() > 0
                     && xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V2_0) {
                 //context var referenced -> mapped to a new context variable name which is temporary
+                //variableMap will contain the names of all multi valued variables which are referenced. It will not
+                //contain a multi valued variable if it is subscripted. All operations below on the set of referenced
+                //multi valued variables will use this map only
                 HashMap<String, String> variableMap = new HashMap<String, String>();
 
                 //we need to maintain our multi valued context variables, and yet work with each value individualy
@@ -1142,18 +1145,28 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
     }
 
-   private HashSet<String> valueContainsMultiValuedVars(XacmlRequestBuilderAssertion.AttributeValue attributeValue, Map<String, Object> vars) {
+    /**
+     * Get the set of all referenced multi valued variables from the AttributeValue.
+     * The set will not contain any variables which have a subscript e.g. if MULTI_VAR is a multi valued variable
+     * and AttributeValue contains ${MULTI_VAR[1]} as an attribute name, name or content, the returned set will
+     * not contain the variable MULTI_VAR. If the variable was just referenced as ${MULTI_VAR} then it would be
+     * contained in the returned set.
+     * @param attributeValue the AttributeValue from which to get all referenced multi valued variables
+     * @param vars the map of known context variables and values
+     * @return a set containing all referenced multi valued variables
+     */
+   private HashSet<String> getAllReferencedNonIndexedMultiValueVars(XacmlRequestBuilderAssertion.AttributeValue attributeValue, Map<String, Object> vars) {
         HashSet<String> multiValuedVars = new HashSet<String>();
 
         for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
-            String[] v = Syntax.getReferencedNames(entry.getKey());
+            String[] v = Syntax.getReferencedNamesIndexedVarsOmitted(entry.getKey());
             for(String s : v) {
                 if(vars.containsKey(s) && (vars.get(s) instanceof Object[] || vars.get(s) instanceof List)) {
                     multiValuedVars.add(s);
                 }
             }
 
-            v = Syntax.getReferencedNames(entry.getValue());
+            v = Syntax.getReferencedNamesIndexedVarsOmitted(entry.getValue());
             for(String s : v) {
                 if(vars.containsKey(s) && (vars.get(s) instanceof Object[] || vars.get(s) instanceof List)) {
                     multiValuedVars.add(s);
@@ -1161,7 +1174,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             }
         }
 
-        String[] v = Syntax.getReferencedNames(attributeValue.getContent());
+        String[] v = Syntax.getReferencedNamesIndexedVarsOmitted(attributeValue.getContent());
         for(String s : v) {
             if(vars.containsKey(s) && (vars.get(s) instanceof Object[] || vars.get(s) instanceof List)) {
                 multiValuedVars.add(s);

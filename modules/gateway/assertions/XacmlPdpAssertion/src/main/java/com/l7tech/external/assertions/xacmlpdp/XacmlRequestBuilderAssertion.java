@@ -136,7 +136,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
      *
      * Presently AttributeValue does not care about what version of XACML the request is for. It's schema has not
      * changed yet, but it could and this can be dealt with later. It is a fundemental child element of <Attribute>
-     * , which itself can be achild of any of the 4 major xacml request components
+     * , which itself can be a child of any of the 4 major xacml request components
      */
     public static class AttributeValue extends GenericXmlElementHolder implements XmlElementCanRepeatTag{
 
