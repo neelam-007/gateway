@@ -259,6 +259,7 @@ public class LicenseDialog extends JDialog {
         }
 
         getRootPane().setDefaultButton( closeButton );
+        closeButton.requestFocusInWindow();
         Utilities.setFocusable( rootPanel, false, installButton, closeButton, removeButton );
     }
 
@@ -461,6 +462,8 @@ public class LicenseDialog extends JDialog {
                         showingLicenseOrError = true;
                         pack();
                     }
+
+                    closeButton.requestFocusInWindow();
 
                     setRemoveButtonVisibleOrInvisible();
                 } catch (IOException ex) {
