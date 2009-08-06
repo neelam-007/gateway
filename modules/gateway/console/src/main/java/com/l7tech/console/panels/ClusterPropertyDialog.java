@@ -369,6 +369,7 @@ public class ClusterPropertyDialog extends JDialog {
                     if (!property.isHiddenProperty())
                         properties.add(property);
                 }
+                Collections.sort(properties);
 
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "exception getting properties", e);

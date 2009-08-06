@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 @Proxy(lazy=false)
 @Table(name="cluster_properties")
 @AttributeOverride(name="name", column=@Column(name="propKey", nullable=false, unique=true))
-public class ClusterProperty extends NamedEntityImp {
+public class ClusterProperty extends NamedEntityImp implements Comparable {
     private static final long serialVersionUID = 1L;
     public static final Pattern PATTERN_MID_DOTS = Pattern.compile("\\.([a-zA-Z0-9_])");
 
@@ -118,5 +118,10 @@ public class ClusterProperty extends NamedEntityImp {
         }
         matcher.appendTail(sb);
         return sb.toString();
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        return getName().compareTo(((ClusterProperty)o).getName());
     }
 }
