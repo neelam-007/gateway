@@ -1,6 +1,9 @@
 # LAYER 7 TECHNOLOGIES
 # Defines SSG_JAVA_HOME, etc
 
+# Set to 1 if using 32-bit jvm, to avoid trying to allocate more than 2gb of ram for the jvm
+using32bitjvm=0
+
 ulimit -s 2048
 
 # add to path
@@ -21,7 +24,7 @@ system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
 multiplier="2/3"
 #
 let java_ram="$system_ram*$multiplier"
-if [ `expr $java_ram \> 2074412` == 1 ]; then
+if [ $using32bitjvm -ne 0 -a `expr $java_ram \> 2074412` == 1 ]; then
 	# we have more ram than java can use
 	# FIXME: when we start running 64 bit JVM
 	java_ram=2074412;
