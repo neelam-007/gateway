@@ -523,9 +523,9 @@ public class ExpandVariablesTest {
         vars.put("MULTI_VALUED_VAR", new Object[]{"one", m, "three"});
         paramValue = ExpandVariables.processNoFormat("${MULTI_VALUED_VAR}", vars, audit, true);
         Assert.assertEquals("Incorrect number of values found", 3, paramValue.size());
-        Assert.assertEquals("Incorret value found from multi valued variable", "one", paramValue.get(0));
+        Assert.assertEquals("Incorrect value found from multi valued variable", "one", paramValue.get(0));
         Assert.assertTrue("Message not found from multi valued variable", paramValue.get(1) instanceof Message);
-        Assert.assertEquals("Incorret value found from multi valued variable", "three", paramValue.get(2));
+        Assert.assertEquals("Incorrect value found from multi valued variable", "three", paramValue.get(2));
 
         //test coverage for multi valued variables surrounded by other text and variables
         paramValue = ExpandVariables.processNoFormat("The single valued var ${varname} and multi valued ${MULTI_VALUED_VAR} the Message var ${MESSAGE_VAR} test", vars, audit, true);
@@ -546,12 +546,12 @@ public class ExpandVariablesTest {
         testList.add(m);
         testList.add("three");
         
-        vars.put("LIST_VAR", new Object[]{"one", m, "three"});
+        vars.put("LIST_VAR", testList);
         paramValue = ExpandVariables.processNoFormat("${LIST_VAR}", vars, audit, true);
         Assert.assertEquals("Incorrect number of values found", 3, paramValue.size());
-        Assert.assertEquals("Incorret value found from multi valued variable", "one", paramValue.get(0));
+        Assert.assertEquals("Incorrect value found from multi valued variable", "one", paramValue.get(0));
         Assert.assertTrue("Message not found from multi valued variable", paramValue.get(1) instanceof Message);
-        Assert.assertEquals("Incorret value found from multi valued variable", "three", paramValue.get(2));
+        Assert.assertEquals("Incorrect value found from multi valued variable", "three", paramValue.get(2));
 
     }
 

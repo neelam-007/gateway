@@ -198,6 +198,9 @@ public final class ExpandVariables {
         final Object[] vals;
         if (contextValue instanceof Object[]) {
             vals = (Object[]) contextValue;
+        } else if( contextValue instanceof List){
+            final List tempList = (List) contextValue;
+            vals = tempList.toArray(new Object[]{});
         } else {
             vals = new Object[] {contextValue};
         }
