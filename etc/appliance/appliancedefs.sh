@@ -2,7 +2,7 @@
 # Defines SSG_JAVA_HOME, etc
 
 # Set to 1 if using 32-bit jvm, to avoid trying to allocate more than 2gb of ram for the jvm
-using32bitjvm=0
+using32bitjvm=1
 
 ulimit -s 2048
 
