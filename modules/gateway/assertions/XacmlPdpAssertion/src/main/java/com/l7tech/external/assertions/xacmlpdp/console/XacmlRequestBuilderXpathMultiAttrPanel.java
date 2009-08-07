@@ -15,6 +15,7 @@ import com.l7tech.xml.xpath.XpathVariableFinder;
 import com.l7tech.xml.xpath.NoSuchXpathVariableException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.variable.Syntax;
+import com.sun.xacml.attr.DateTimeAttribute;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -63,6 +64,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     private JComboBox valueExpressionType;
     private JCheckBox falsifyPolicyCheckBox;
 
+    private XacmlAssertionEnums.XacmlVersionType xacmlVersion;
+
     private final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig;
     private final DefaultTableModel tableModel;
     private final JDialog window;
@@ -74,6 +77,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                                                    final JDialog window )
     {
         this.multipleAttributeConfig = multipleAttributeConfig;
+        xacmlVersion = version;
 
         messageSourceComboBox.setModel(
                 new DefaultComboBoxModel(
@@ -112,7 +116,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
         this.window = window;
 
-        init(version, idOptions );
+        init(idOptions );
 
         idComboBox.setSelectedItem(multipleAttributeConfig.getField(ID).getValue());
         dataTypeComboBox.setSelectedItem(multipleAttributeConfig.getField(DATA_TYPE).getValue());
@@ -130,8 +134,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         return mainPanel;
     }
 
-    public void init( final XacmlAssertionEnums.XacmlVersionType version,
-                      final Set<String> idOptions ) {
+    public void init(final Set<String> idOptions ) {
         idComboBox.setModel( new DefaultComboBoxModel( idOptions.toArray() ) );
         dataTypeComboBox.setModel( new DefaultComboBoxModel( XacmlConstants.XACML_10_DATATYPES.toArray() ) );
 
@@ -254,7 +257,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         addChangeListener(valueField, VALUE);
         addTypeChangeListener(valueExpressionType, VALUE);
 
-        if(version == XacmlAssertionEnums.XacmlVersionType.V2_0) {
+        if(xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V2_0) {
             issueInstantLabel.setVisible(false);
             issueInstantFieldsPanel.setVisible(false);
         } else {
@@ -334,6 +337,25 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             DialogDisplayer.showMessageDialog( this, "Data Type is required.  Please enter a Data Type.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
             return false;
         }
+        // Validate Issue Instant if Xacml version is pre 2.0.
+        if(xacmlVersion != XacmlAssertionEnums.XacmlVersionType.V2_0) {
+            String issueInstant = issueInstantField.getText();
+            if (issueInstant != null) {
+                issueInstant = issueInstant.trim();
+                // if is is a blank or consists of context variable(s), then ignore validation.
+                if (issueInstant.isEmpty() || Syntax.getReferencedNames(issueInstant).length > 0) return true;
+
+                // Check if it is a valid datetime with a format "yyyy-MM-dd'T'HH:mm:ssZ"
+                try {
+                    DateTimeAttribute.getInstance(issueInstant);
+                } catch (Exception e) {
+                    DialogDisplayer.showMessageDialog(this, "IssueInstant must be specified by a blank, context variable(s),\nor a valid datetime with a format \"yyyy-MM-dd'T'HH:mm:ss[Z]\".",
+                        "Validation Error", JOptionPane.ERROR_MESSAGE, null);
+                    return false;
+                }
+            }
+        }
+
         final Map<String,String> namespaces = multipleAttributeConfig.getNamespaces();
         if ( !relativeXpaths.isEmpty() ) {
             String baseErrorMessage = validateXPath( xpathBaseField.getText().trim(), namespaces );
