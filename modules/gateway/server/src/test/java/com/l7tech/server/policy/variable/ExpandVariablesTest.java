@@ -4,6 +4,7 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeHeaders;
@@ -450,7 +451,108 @@ public class ExpandVariablesTest {
     public void testProcessNonExistentVariable() throws Exception {
         PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
         final Map<String, Object> vars = pec.getVariableMap(new String[]{}, audit);
-        String paramValue = ExpandVariables.process("${dontexist}", vars, audit, true);
+        ExpandVariables.process("${dontexist}", vars, audit, true);
+    }
+
+    /**
+     * Comprehensive test coverage for ExpandVariables.processNoFormat()
+     * Ensures that no empty strings are returned as index 0
+     * Tests that any preceeding text, even if a single space, is preserved
+     * Tests the correct number of elements are returned when:-
+     * only text is used
+     * when text and single valued vars are used
+     * when variables of type Message used
+     * when multi valued variables backed by an Object [] and List are used
+     * when a mix of text, single valued variables, variables of type Message and mulit valued variables are used
+     * @throws Exception
+     */
+    @BugNumber(7688)
+    @Test
+    public void testProcessNoFormat() throws Exception{
+        PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
+        final Map<String, Object> vars = pec.getVariableMap(new String[]{}, audit);
+        vars.put("varname", "value");
+        List<Object> paramValue = ExpandVariables.processNoFormat("${varname}", vars, audit, true);
+        Assert.assertEquals("Incorrect number of values found", 1, paramValue.size());
+        Assert.assertEquals("varname's value not found", "value", paramValue.get(0));
+
+        paramValue = ExpandVariables.processNoFormat("preceeding text ${varname}", vars, audit, true);
+        Assert.assertEquals("Incorrect number of values found", 2, paramValue.size());
+        Assert.assertEquals("Preceeding text should have been found", "preceeding text ", paramValue.get(0));
+        Assert.assertEquals("varname's value not found", "value", paramValue.get(1));
+
+        //preserve any empty formatting for what ever reason
+        paramValue = ExpandVariables.processNoFormat(" ${varname}", vars, audit, true);
+        Assert.assertEquals("Incorrect number of values found", 2, paramValue.size());
+        Assert.assertEquals("Preceeding empty string should have been preserved", " ", paramValue.get(0));
+        Assert.assertEquals("varname's value not found", "value", paramValue.get(1));
+
+        //preserve any post variable formatting
+        paramValue = ExpandVariables.processNoFormat(" ${varname} ", vars, audit, true);
+        Assert.assertEquals("Incorrect number of values found", 3, paramValue.size());
+        Assert.assertEquals("Preceeding empty string should have been preserved", " ", paramValue.get(0));
+        Assert.assertEquals("Trailing empty string should have been preserved", " ", paramValue.get(2));
+        Assert.assertEquals("varname's value not found", "value", paramValue.get(1));
+
+        paramValue = ExpandVariables.processNoFormat(" ${varname} trailing text", vars, audit, true);
+        Assert.assertEquals("Incorrect number of values found", 3, paramValue.size());
+        Assert.assertEquals("Preceeding empty string should have been preserved", " ", paramValue.get(0));
+        Assert.assertEquals("Trailing empty string should have been preserved", " trailing text", paramValue.get(2));
+        Assert.assertEquals("varname's value not found", "value", paramValue.get(1));
+
+        //Test variable of type Message support
+        String xml = "<donal>value</donal>";
+        Document doc = XmlUtil.parse(xml);
+        Message m = new Message(doc);
+        vars.put("MESSAGE_VAR", m);
+
+        paramValue = ExpandVariables.processNoFormat("${MESSAGE_VAR}", vars, audit, true);
+        Assert.assertEquals("Incorrect number of values found", 1, paramValue.size());
+        Assert.assertTrue("varname's value not found", paramValue.get(0) instanceof Message);
+
+        //test mix of single value variable, message variable and text
+        paramValue = ExpandVariables.processNoFormat("The single valued var ${varname} and the Message var ${MESSAGE_VAR} test", vars, audit, true);
+        Assert.assertEquals("Incorrect number of values found", 5, paramValue.size());
+        Assert.assertEquals("Incorrect text value extracted", "The single valued var ", paramValue.get(0));
+        Assert.assertEquals("varname's value not found", "value", paramValue.get(1));
+        Assert.assertEquals("Incorrect text value extracted", " and the Message var ", paramValue.get(2));
+        Assert.assertTrue("MESSAGE_VAR's value not found", paramValue.get(3) instanceof Message);
+        Assert.assertEquals("Incorrect text value extracted", " test", paramValue.get(4));
+
+        //test coverage for multi valued variables
+        vars.put("MULTI_VALUED_VAR", new Object[]{"one", m, "three"});
+        paramValue = ExpandVariables.processNoFormat("${MULTI_VALUED_VAR}", vars, audit, true);
+        Assert.assertEquals("Incorrect number of values found", 3, paramValue.size());
+        Assert.assertEquals("Incorret value found from multi valued variable", "one", paramValue.get(0));
+        Assert.assertTrue("Message not found from multi valued variable", paramValue.get(1) instanceof Message);
+        Assert.assertEquals("Incorret value found from multi valued variable", "three", paramValue.get(2));
+
+        //test coverage for multi valued variables surrounded by other text and variables
+        paramValue = ExpandVariables.processNoFormat("The single valued var ${varname} and multi valued ${MULTI_VALUED_VAR} the Message var ${MESSAGE_VAR} test", vars, audit, true);
+        Assert.assertEquals("Incorrect number of values found", 9, paramValue.size());
+        Assert.assertEquals("Incorrect text value extracted", "The single valued var ", paramValue.get(0));
+        Assert.assertEquals("varname's value not found", "value", paramValue.get(1));
+        Assert.assertEquals("Incorrect text value extracted", " and multi valued ", paramValue.get(2));
+        Assert.assertEquals("Incorret value found from multi valued variable", "one", paramValue.get(3));
+        Assert.assertTrue("Message not found from multi valued variable", paramValue.get(4) instanceof Message);
+        Assert.assertEquals("Incorret value found from multi valued variable", "three", paramValue.get(5));
+        Assert.assertEquals("Incorrect text value extracted", " the Message var ", paramValue.get(6));
+        Assert.assertTrue("MESSAGE_VAR's value not found", paramValue.get(7) instanceof Message);
+        Assert.assertEquals("Incorrect text value extracted", " test", paramValue.get(8));
+
+        //Test list backed multi valued variable
+        List<Object> testList = new ArrayList<Object>();
+        testList.add("one");
+        testList.add(m);
+        testList.add("three");
+        
+        vars.put("LIST_VAR", new Object[]{"one", m, "three"});
+        paramValue = ExpandVariables.processNoFormat("${LIST_VAR}", vars, audit, true);
+        Assert.assertEquals("Incorrect number of values found", 3, paramValue.size());
+        Assert.assertEquals("Incorret value found from multi valued variable", "one", paramValue.get(0));
+        Assert.assertTrue("Message not found from multi valued variable", paramValue.get(1) instanceof Message);
+        Assert.assertEquals("Incorret value found from multi valued variable", "three", paramValue.get(2));
+
     }
 
     private Map<String, String> nsmap() {

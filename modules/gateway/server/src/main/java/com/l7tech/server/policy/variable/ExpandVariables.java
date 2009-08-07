@@ -325,6 +325,9 @@ public final class ExpandVariables {
     /**
      * Expands variables found in the input String similar to the process() methods,
      * but does not format the resolved values to String.
+     * <p/>
+     * Multi valued variables are not returned as a single value, but the returned list will contain an element
+     * for every element in each multi valued variable found
      *
      * @return a list of Objects containing String parts from the input that do not reference variables
      *         and the resolved variable values
@@ -340,13 +343,16 @@ public final class ExpandVariables {
         while (matcher.find()) {
             int matchingCount = matcher.groupCount();
             if (matchingCount != 1) {
-                throw new IllegalStateException("Expecting 1 matching group, received: "+matchingCount);
+                throw new IllegalStateException("Expecting 1 matching group, received: " + matchingCount);
             }
-            result.add(s.substring(previousMatchEndIndex, matcher.start()));
+            final String preceedingText = s.substring(previousMatchEndIndex, matcher.start());
+            //note if there is actually an empty space, we will preserve it, so no .trim() before .isEmpty()
+            if (!preceedingText.isEmpty()) result.add(s.substring(previousMatchEndIndex, matcher.start()));
+
             Collections.addAll(result, getAndFilter(vars, Syntax.parse(matcher.group(1), defaultDelimiter()), audit, strict));
             previousMatchEndIndex = matcher.end();
         }
-        if (previousMatchEndIndex < s.length()) 
+        if (previousMatchEndIndex < s.length())
             result.add(s.substring(previousMatchEndIndex, s.length()));
         return result;
     }
