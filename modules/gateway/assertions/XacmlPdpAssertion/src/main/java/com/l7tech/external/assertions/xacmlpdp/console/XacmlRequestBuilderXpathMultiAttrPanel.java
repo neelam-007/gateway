@@ -307,7 +307,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                 if (varStrings.length != 1 || ! field.getValue().equals("${" + varStrings[0] + "}")) {
                     //if more than one variable is returned, or the variable is indexed which was removed by
                     //Syntax.getReferencedNames
-                    JOptionPane.showMessageDialog(this, "Field '" + field.getName() + "' must be a reference to exactly one context variable.");
+                    DialogDisplayer.showMessageDialog(this, "Field '" + field.getName() + "' must be a reference to exactly one context variable.", "Validation Error", JOptionPane.ERROR_MESSAGE, null);
                     return false;
                 }
             }
@@ -329,12 +329,12 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         }
         if ( multipleAttributeConfig.getField(ID).getValue()==null ||
              multipleAttributeConfig.getField(ID).getValue().isEmpty() ) {
-            DialogDisplayer.showMessageDialog( this, "Attribute ID is required.  Please enter an Attribute ID.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+            DialogDisplayer.showMessageDialog( this, "AttributeId is required.  Please enter an AttributeId.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
             return false;
         }
         if ( multipleAttributeConfig.getField(DATA_TYPE).getValue()==null ||
              multipleAttributeConfig.getField(DATA_TYPE).getValue().isEmpty() ) {
-            DialogDisplayer.showMessageDialog( this, "Data Type is required.  Please enter a Data Type.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+            DialogDisplayer.showMessageDialog( this, "DataType is required.  Please enter a DataType.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
             return false;
         }
         // Validate Issue Instant if Xacml version is pre 2.0.

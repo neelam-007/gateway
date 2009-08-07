@@ -94,14 +94,14 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
         attribute.setDataType(((String)dataTypeComboBox.getEditor().getItem()).trim());
 
         if (attribute.getId() == null || attribute.getId().isEmpty()) {
-            DialogDisplayer.showMessageDialog( this, "Attribute ID is required.  Please enter an Attribute ID.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+            DialogDisplayer.showMessageDialog( this, "AttributeId is required.  Please enter an AttributeId.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
             idComboBox.grabFocus();
             return false;
         }
 
         if ( attribute.getDataType()==null ||
              attribute.getDataType().isEmpty() ) {
-            DialogDisplayer.showMessageDialog( this, "Data Type is required.  Please enter a Data Type.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
+            DialogDisplayer.showMessageDialog( this, "DataType is required.  Please enter a DataType.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
             dataTypeComboBox.grabFocus();
             return false;
         }
@@ -118,7 +118,7 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
                 try {
                     DateTimeAttribute.getInstance(issueInstant);
                 } catch (Exception e) {
-                    DialogDisplayer.showMessageDialog(this, "Issue Instant must be specified by a blank, context variable(s),\nor a valid datetime with a format \"yyyy-MM-dd'T'HH:mm:ss[Z]\".",
+                    DialogDisplayer.showMessageDialog(this, "IssueInstant must be specified by a blank, context variable(s),\nor a valid datetime with a format \"yyyy-MM-dd'T'HH:mm:ss[Z]\".",
                         "Validation Error", JOptionPane.ERROR_MESSAGE, null);
                     return false;
                 }

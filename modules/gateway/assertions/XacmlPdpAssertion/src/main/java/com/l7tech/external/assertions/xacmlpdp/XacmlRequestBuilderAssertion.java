@@ -270,11 +270,11 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
      */
     public static class MultipleAttributeConfig implements AttributeTreeNodeTag{
         public enum FieldName {
-            ID("ID"),
-            DATA_TYPE("Data Type"),
+            ID("AttributeId"),
+            DATA_TYPE("DataType"),
             ISSUER("Issuer"),
-            ISSUE_INSTANT("Issue Instant"),
-            VALUE("Value");
+            ISSUE_INSTANT("IssueInstant"),
+            VALUE("AttributeValue");
 
             private final String displayName;
 
