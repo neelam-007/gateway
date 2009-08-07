@@ -29,7 +29,7 @@ use constant ERR_CLEANUP_FAILED    => 88;
 
 my $SWAPON='/sbin/swapon';
 my $SWAPOFF='/sbin/swapoff';
-my $MOUNTPOINT = '/ssg/etc/conf/partitions/default_/var/mnt/usbdrive';
+my $MOUNTPOINT = '/opt/SecureSpan/Gateway/node/default/var/mnt/usbdrive';
 my $USB_DEVICES = '/proc/bus/usb/devices';
 my $SWAPFILES = '/proc/swaps';
 my $DISK_BY_PATH = '/dev/disk/by-path';
