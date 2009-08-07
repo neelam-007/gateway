@@ -1,17 +1,19 @@
 package com.l7tech.console.logging;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.TimeoutRuntimeException;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.remoting.RemoteAccessException;
 
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import java.awt.*;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.rmi.*;
 import java.security.AccessControlException;
 import java.util.logging.Level;
-import java.awt.Frame;
 
 /**
  * This is now more of a "remoting" error handler, not just RMI.
@@ -32,11 +34,11 @@ public class RmiErrorHandler implements ErrorHandler {
         final RemoteAccessException raex = ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteAccessException.class);
 
 
-
         final Frame topParent = TopComponents.getInstance().getTopParent();
         if (throwable instanceof SocketException ||
             throwable instanceof SocketTimeoutException ||
             throwable instanceof TimeoutRuntimeException ||
+            throwable instanceof SSLException ||
             rex instanceof ConnectException ||
             rex instanceof ConnectIOException ||
             rex instanceof NoSuchObjectException ||
@@ -49,7 +51,17 @@ public class RmiErrorHandler implements ErrorHandler {
             TopComponents.getInstance().disconnectFromGateway();
         }
 
-        if (topParent != null &&
+        if (topParent != null && throwable instanceof SSLException) {
+            Throwable t = e.getThrowable();
+            String message = "A SecureSpan Gateway keystore or SSL/TLS communication error occurred.";
+            e.getLogger().log(Level.SEVERE, message, t);
+            if (throwable instanceof SSLHandshakeException) {
+                message = "The SSL/TLS handshake with the SecureSpan Gateway has failed: " + ExceptionUtils.getMessage(throwable);
+                t = null;
+            }
+            topParent.repaint();
+            DialogDisplayer.showMessageDialog(topParent, null, message, t);
+        } else if (topParent != null &&
             (throwable instanceof RemoteException ||
              throwable instanceof SocketException ||
              throwable instanceof SocketTimeoutException ||
