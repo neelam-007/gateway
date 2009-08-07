@@ -664,6 +664,7 @@ public class AssertionMessages extends Messages {
     public static final M XACML_REQUEST_ERROR        = m(8900, Level.WARNING, "Error generating request: {0}");
     public static final M XACML_NOT_FOUND_OPTION_OFF = m(8901, Level.INFO, "A value for {0} was not found. Cannot add <Attribute> element to the {1} element");
     public static final M XACML_NOT_FOUND_OPTION_ON  = m(8902, Level.INFO, "Policy falsified: a value for {0} was not found");
+    public static final M XACML_INVALID_XML_ATTRIBUTE= m(8903, Level.WARNING, "XML attribute name {0} with value {1} are not valid for an XML attribute");
 
     public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");

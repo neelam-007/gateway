@@ -27,6 +27,7 @@ import com.l7tech.xml.xpath.XpathResultIterator;
 import com.l7tech.xml.xpath.XpathResultNode;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ValidationUtils;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
@@ -41,9 +42,11 @@ import java.io.IOException;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
- * User: njordan
- * Date: 31-Mar-2009
- * Time: 9:05:35 PM
+ *
+ * @author njordan
+ * @author darmstrong
+ * @author steve
+ * @author jbufu
  */
 public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<XacmlRequestBuilderAssertion> {
     public ServerXacmlRequestBuilderAssertion(XacmlRequestBuilderAssertion ea, ApplicationContext applicationContext) {
@@ -183,7 +186,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             for (Map.Entry<String, String> entry : resource.getResourceContent().getAttributes().entrySet()) {
                 String name = ExpandVariables.process(entry.getKey(), vars, auditor, true);
                 String value = ExpandVariables.process(entry.getValue(), vars, auditor, true);
-                resourceContentElement.setAttribute(name, value);
+                safelyAddXmlAttributeToElement(resourceContentElement, name, value);
             }
 
             addContentToElementWithMessageSupport(resourceContentElement, resource.getResourceContent().getContent(), vars);
@@ -351,7 +354,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     for(Map.Entry<String, String> entry : updatedAttributes.entrySet()) {
                         String name = ExpandVariables.process(entry.getKey(), vars, auditor, true);
                         String attrValue = ExpandVariables.process(entry.getValue(), vars, auditor, true);
-                        valueElement.setAttribute(name, attrValue);
+                        safelyAddXmlAttributeToElement(valueElement, name, attrValue);
                     }
 
                     addContentToElementWithMessageSupport(valueElement, content, vars);
@@ -367,11 +370,38 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
                     String name = ExpandVariables.process(entry.getKey(), vars, auditor, true);
                     String value = ExpandVariables.process(entry.getValue(), vars, auditor, true);
-                    valueElement.setAttribute(name, value);
+                    safelyAddXmlAttributeToElement(valueElement, name, value);
                 }
 
                 addContentToElementWithMessageSupport(valueElement, attributeValue.getContent(), vars);
             }
+        }
+    }
+
+    /**
+     * If its possible that the attributeName contains invalid xml due to it's value having being retrieved from
+     * ExpandVariables.process, use this method to add the attribute to the element, so it can deal with the
+     * DOMException and log a meaningful warning and then throw the exception as an AssertionStatusException
+     * <p/>
+     * See ValidationUtils.isProbablyValidXmlName() which validates the XML, this may not catch every scenario
+     *
+     * @param element        the Element to add the attribute to
+     * @param attributeName  the name of the attribute, could likely contain invalid xml characters
+     * @param attributeValue the value of the attribute
+     */
+    private void safelyAddXmlAttributeToElement(final Element element,
+                                                final String attributeName,
+                                                final String attributeValue) {
+
+        try {
+            if(!ValidationUtils.isProbablyValidXmlName(attributeName)){
+                auditor.logAndAudit(AssertionMessages.XACML_INVALID_XML_ATTRIBUTE, new String[]{attributeName, attributeValue});
+                throw new AssertionStatusException(AssertionStatus.FAILED);
+            }
+            element.setAttribute(attributeName, attributeValue);
+        } catch (DOMException e) {
+            auditor.logAndAudit(AssertionMessages.XACML_INVALID_XML_ATTRIBUTE, new String[]{attributeName, attributeValue}, e);
+            throw new AssertionStatusException(AssertionStatus.FAILED, e);
         }
     }
 
