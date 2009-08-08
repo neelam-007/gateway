@@ -84,7 +84,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
 
         public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
             try {
-                Assertion ass = wspReader.parseStrictly(getAssertion().getAssertionXml());
+                Assertion ass = wspReader.parseStrictly(getAssertion().getAssertionXml(), WspReader.INCLUDE_DISABLED);
                 if (ass == null) throw new IOException("Parsed AssertionXml produced null policy");
 
                 AssertionModule module = assertionRegistry.getModuleForClassLoader(ass.getClass().getClassLoader());
@@ -188,7 +188,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         public Validator(WhichModuleAssertion a) {
             assertion = a;
             try {
-                WspReader.getDefault().parseStrictly(a.getAssertionXml());
+                WspReader.getDefault().parseStrictly(a.getAssertionXml(), WspReader.INCLUDE_DISABLED);
             } catch (Exception e) {
                 xmlProblem = e;
             }

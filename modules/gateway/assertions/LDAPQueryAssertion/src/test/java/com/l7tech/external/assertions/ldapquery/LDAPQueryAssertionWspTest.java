@@ -51,7 +51,7 @@ public class LDAPQueryAssertionWspTest {
         ass.setFailIfNoResults(true);
 
         String xml = WspWriter.getPolicyXml(ass);
-        LDAPQueryAssertion ass2 = (LDAPQueryAssertion) WspReader.getDefault().parseStrictly(xml);
+        LDAPQueryAssertion ass2 = (LDAPQueryAssertion) WspReader.getDefault().parseStrictly(xml, WspReader.INCLUDE_DISABLED);
 
         assertEquals(ass.isEnableCache(), ass2.isEnableCache());
         assertEquals(ass.isFailIfNoResults(), ass2.isFailIfNoResults());
@@ -76,7 +76,7 @@ public class LDAPQueryAssertionWspTest {
         assertNotNull(ass.getQueryMappings());
 
         String xml = WspWriter.getPolicyXml(ass);
-        LDAPQueryAssertion ass2 = (LDAPQueryAssertion) WspReader.getDefault().parseStrictly(xml);
+        LDAPQueryAssertion ass2 = (LDAPQueryAssertion) WspReader.getDefault().parseStrictly(xml, WspReader.INCLUDE_DISABLED);
 
         assertNotNull(ass2.getQueryMappings());
     }
@@ -111,7 +111,7 @@ public class LDAPQueryAssertionWspTest {
 
     @Test
     public void testCompatibilityWithPre466Assertions() throws Exception {
-        LDAPQueryAssertion ass = (LDAPQueryAssertion)WspReader.getDefault().parseStrictly(OLD_PRE_466_FORMAT_ASSERTION_XML);
+        LDAPQueryAssertion ass = (LDAPQueryAssertion)WspReader.getDefault().parseStrictly(OLD_PRE_466_FORMAT_ASSERTION_XML, WspReader.INCLUDE_DISABLED);
         assertEquals(49384, ass.getCachePeriod());
         assertEquals(443, ass.getLdapProviderOid());
         assertEquals("blarg", ass.getSearchFilter());

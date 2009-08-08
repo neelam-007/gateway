@@ -45,7 +45,7 @@ public class PublishServiceWizardTest {
         for (EntityHeader serviceHeader : services) {
             PublishedService service = registry.getServiceManager().findServiceByID(serviceHeader.getStrId());
             String policyXml = service.getPolicy().getXml();
-            Assertion assertion = WspReader.getDefault().parsePermissively(policyXml);
+            Assertion assertion = WspReader.getDefault().parsePermissively(policyXml, WspReader.INCLUDE_DISABLED);
             log.info("--------------------------------\nService: " + service.getName() + "\n------------\n");
             log.info(assertion.toString());
             log.info("--------------------------------\n");

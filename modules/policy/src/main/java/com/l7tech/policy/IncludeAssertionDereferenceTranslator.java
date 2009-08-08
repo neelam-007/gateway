@@ -70,7 +70,7 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
                 return policy.getAssertion();
             } else {
                 HashMap<String, Policy> policyFragments = new HashMap<String, Policy>();
-                Assertion returnValue = WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(policy.getAssertion()));
+                Assertion returnValue = WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(policy.getAssertion()), WspReader.INCLUDE_DISABLED);
                 if(include.retrieveFragmentPolicy() != null) {
                     extractPolicyFragments(include.retrieveFragmentPolicy().getAssertion(), policyFragments);
                     setPolicyFragments(returnValue, policyFragments);

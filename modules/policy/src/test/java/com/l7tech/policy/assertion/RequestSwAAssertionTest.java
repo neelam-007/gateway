@@ -72,7 +72,7 @@ public class RequestSwAAssertionTest extends TestCase {
      */
     private void testPolicyValues(final String policyXml,
                                   final boolean signatureRequired) throws Exception {
-        Assertion policy = WspReader.getDefault().parseStrictly(policyXml);
+        Assertion policy = WspReader.getDefault().parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
 
         boolean hasPart = false;
 
@@ -115,7 +115,7 @@ public class RequestSwAAssertionTest extends TestCase {
      * Test assertion requireSignature method 
      */
     public void testSignatureRequired(String policyXml, boolean signatureRequired) throws Exception {
-        Assertion policy = WspReader.getDefault().parseStrictly(policyXml);
+        Assertion policy = WspReader.getDefault().parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
 
         boolean hasAssertion = false;
 

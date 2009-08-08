@@ -264,7 +264,7 @@ public class EditPolicyAction extends NodeAction {
                 public Assertion getAssertion() throws IOException, FindException {
                     PolicyVersion fullVersion = Registry.getDefault().getPolicyAdmin().
                             findPolicyVersionByPrimaryKey(policyVersion.getPolicyOid(), policyVersion.getOid());
-                    return WspReader.getDefault().parsePermissively(fullVersion.getXml());
+                    return WspReader.getDefault().parsePermissively(fullVersion.getXml(), WspReader.INCLUDE_DISABLED);
                 }
 
                 public String toString() {

@@ -102,7 +102,7 @@ public class Policy extends NamedEntityImp implements HasFolder {
         }
 
         if (assertion == null) {
-            assertion = WspReader.getDefault().parsePermissively(xml);
+            assertion = WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
             assertion.ownerPolicyOid(getOid());
         }
 

@@ -17,7 +17,7 @@ public class ComparisonAssertionTest {
         AssertionRegistry assreg = new AssertionRegistry();
         assreg.registerAssertion(ComparisonAssertion.class);
         WspConstants.setTypeMappingFinder(assreg);
-        Assertion ass = WspReader.getDefault().parseStrictly(POLICY_XML);
+        Assertion ass = WspReader.getDefault().parseStrictly(POLICY_XML, WspReader.INCLUDE_DISABLED);
 
         String what = WspWriter.getPolicyXml(ass);
         Assert.assertEquals("what", what, POLICY_XML);

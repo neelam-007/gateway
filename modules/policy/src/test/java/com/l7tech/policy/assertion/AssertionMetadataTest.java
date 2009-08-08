@@ -100,7 +100,7 @@ public class AssertionMetadataTest extends TestCase {
 
         // Strict reader should fail, since we haven't told it about the new assertion
         try {
-            new WspReader(null).parseStrictly(policyXml);
+            new WspReader(null).parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
             fail("Expected exception not caught");
         } catch (InvalidPolicyStreamException e) {
             // Ok
@@ -109,7 +109,7 @@ public class AssertionMetadataTest extends TestCase {
         // Strict reader should succeed once it's hooked up to an AssertionRegistry that knows about our new assertion
         final AssertionRegistry reg = new AssertionRegistry();
         reg.registerAssertion(UncustomizedMetadataAssertion.class);
-        Assertion out = new WspReader(reg).parseStrictly(policyXml);
+        Assertion out = new WspReader(reg).parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
         assertEquals(UncustomizedMetadataAssertion.class.getName(), firstKid(firstKid(out)).getClass().getName());
     }
 

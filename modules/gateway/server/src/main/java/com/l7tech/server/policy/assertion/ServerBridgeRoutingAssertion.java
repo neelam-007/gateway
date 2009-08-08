@@ -380,7 +380,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         String policyXml = assertion.getPolicyXml();
         if (policyXml != null) {
             try {
-                Assertion a = wspReader.parsePermissively(policyXml);
+                Assertion a = wspReader.parsePermissively(policyXml, WspReader.OMIT_DISABLED);
                 hardcodedPolicy = new Policy(a, null);
                 hardcodedPolicy.setAlwaysValid(true);
             } catch (IOException e) {

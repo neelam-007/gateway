@@ -242,7 +242,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
     }
 
     private static BridgeRoutingAssertion cloneAssertion(BridgeRoutingAssertion assertion) throws IOException {
-        return (BridgeRoutingAssertion)WspReader.getDefault().parseStrictly(WspWriter.getPolicyXml(assertion));
+        return (BridgeRoutingAssertion)WspReader.getDefault().parseStrictly(WspWriter.getPolicyXml(assertion), WspReader.INCLUDE_DISABLED);
     }
 
     /** @param tc a JTextComponent to configure as holding a TCP port. */

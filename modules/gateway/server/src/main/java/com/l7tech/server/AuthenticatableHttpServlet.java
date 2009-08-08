@@ -451,7 +451,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             Set<String> guids = new HashSet<String>();
             final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyManager, guids, false, false);
             try {
-                rootWithIncludes = Assertion.translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translator);
+                rootWithIncludes = Assertion.translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion), WspReader.OMIT_DISABLED), translator);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -472,7 +472,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected Assertion parsePolicy( final String policyXml ) throws IOException {
         Assertion rootassertion;
         try {
-            rootassertion = inlineIncludes( wspReader.parsePermissively( policyXml ) );
+            rootassertion = inlineIncludes( wspReader.parsePermissively( policyXml, WspReader.OMIT_DISABLED) );
         } catch (PolicyAssertionException e) {
             throw new CausedIOException("Policy error", e);
         }
@@ -556,10 +556,10 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * (recursive method)
      */
     private Assertion findCredentialAssertion(Assertion arg) {
-        if (arg.isCredentialSource()) {
+        if (arg.isEnabled() && arg.isCredentialSource()) {
             return arg;
         }
-        if (arg instanceof CompositeAssertion) {
+        if (arg.isEnabled() && arg instanceof CompositeAssertion) {
             CompositeAssertion root = (CompositeAssertion)arg;
             Iterator i = root.getChildren().iterator();
             //noinspection WhileLoopReplaceableByForEach

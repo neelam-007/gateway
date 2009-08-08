@@ -426,7 +426,7 @@ class SsgPoliciesPanel extends JPanel {
                         }
 
                         if (policyInputStream != null) {
-                            Assertion rootAssertion = WspReader.getDefault().parsePermissively(XmlUtil.parse(policyInputStream).getDocumentElement());
+                            Assertion rootAssertion = WspReader.getDefault().parsePermissively(XmlUtil.parse(policyInputStream).getDocumentElement(), WspReader.INCLUDE_DISABLED);
                             // Filter out all disabled assertions that are ignored by the SSB.  Also, after filtering,
                             // check if a composite assertin is empty.  If so, filter out the composite assertion as well.
                             filterAllDisabledDescendantAssertions(rootAssertion, null);

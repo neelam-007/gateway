@@ -460,7 +460,7 @@ public class GClient {
                     throw new IllegalArgumentException("Request xml is empty");
 
                 Managers.getAssertionRegistry();
-                Assertion assertion = WspReader.getDefault().parsePermissively(policyXml);
+                Assertion assertion = WspReader.getDefault().parsePermissively(policyXml, WspReader.INCLUDE_DISABLED);
                 logger.info("Decorating with policy: \n" + assertion.toString());
                 ClientAssertion clientAssertion = ClientPolicyFactory.getInstance().makeClientPolicy(assertion);
 

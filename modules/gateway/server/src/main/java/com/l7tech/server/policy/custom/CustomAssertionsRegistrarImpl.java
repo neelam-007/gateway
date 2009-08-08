@@ -143,7 +143,7 @@ public class CustomAssertionsRegistrarImpl
      * @throws IOException              on policy format error
      */
     public Assertion resolvePolicy(String xml) throws IOException {
-        return ((WspReader)getApplicationContext().getBean("wspReader", WspReader.class)).parsePermissively(xml);
+        return ((WspReader)getApplicationContext().getBean("wspReader", WspReader.class)).parsePermissively(xml, WspReader.OMIT_DISABLED);
     }
 
     /**

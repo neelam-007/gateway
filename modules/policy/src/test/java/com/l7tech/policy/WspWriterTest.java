@@ -384,7 +384,7 @@ public class WspWriterTest extends TestCase {
         String xml = WspWriter.getPolicyXml(bra);
         log.info("Bra with server cert oid: " + xml);
 
-        Assertion got = WspReader.getDefault().parsePermissively(xml);
+        Assertion got = WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
         assertTrue(got instanceof BridgeRoutingAssertion);
         assertEquals((long)((BridgeRoutingAssertion)got).getServerCertificateOid(), 232L);
     }

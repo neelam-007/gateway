@@ -128,7 +128,7 @@ public class PolicyImporter {
                 }
             }
             try {
-                Assertion rootAssertion = WspReader.getDefault().parsePermissively(XmlUtil.nodeToString(policy));
+                Assertion rootAssertion = WspReader.getDefault().parsePermissively(XmlUtil.nodeToString(policy), WspReader.INCLUDE_DISABLED);
                 HashSet<String> visitedGuids = new HashSet<String>();
                 visitedGuids.add(receiverPolicy.getGuid());
                 if(containsCircularReferences(rootAssertion, fragments, visitedGuids)) {

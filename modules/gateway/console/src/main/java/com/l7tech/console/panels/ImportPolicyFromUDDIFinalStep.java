@@ -55,7 +55,7 @@ public class ImportPolicyFromUDDIFinalStep extends WizardStepPanel {
         } else {
             Assertion ass = null;
             try {
-                ass = WspReader.getDefault().parsePermissively(xml);
+                ass = WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
                 if (ass == null) {
                     bad = true;
                 }

@@ -30,7 +30,7 @@ public class NewPreorderIterator implements Iterator {
 
         final Assertion root;
         try {
-            root = WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(origRoot));
+            root = WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(origRoot), WspReader.INCLUDE_DISABLED);
             updateAssertionTemporaryData(root, origRoot);
         } catch (IOException e) {
             throw new RuntimeException(e); // Can't happen

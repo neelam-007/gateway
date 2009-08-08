@@ -6,7 +6,6 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 
@@ -84,7 +83,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @throws IOException              on policy format error
      */
     public Assertion resolvePolicy(String xml) throws IOException {
-        return WspReader.getDefault().parsePermissively(xml);
+        return WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
     }
 
     /**

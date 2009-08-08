@@ -81,7 +81,7 @@ public class RemoteReferenceResolver {
         // Go through each assertion and fix the changed references.
         Assertion root;
         try {
-            root = getWspReader().parsePermissively( XmlUtil.nodeToString(policyXML));
+            root = getWspReader().parsePermissively( XmlUtil.nodeToString(policyXML), WspReader.INCLUDE_DISABLED);
         } catch (IOException e) {
             throw new InvalidPolicyStreamException(e);
         }

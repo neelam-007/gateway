@@ -1554,7 +1554,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
             try {
 
-                Assertion ass = wspReader.parsePermissively(maybePolicyXml);
+                Assertion ass = wspReader.parsePermissively(maybePolicyXml, WspReader.INCLUDE_DISABLED);
                 if (ass == null) {
                     log.fine("Paste of null policy; ignoring");
                     return false;

@@ -172,7 +172,7 @@ public class SamplePolicyTest extends TestCase {
 
         String sxml = WspWriter.getPolicyXml(testin);
         log.info("Serialized to: " + sxml);
-        Assertion testout = WspReader.getDefault().parsePermissively(sxml);
+        Assertion testout = WspReader.getDefault().parsePermissively(sxml, WspReader.INCLUDE_DISABLED);
 
         Iterator it = testout.preorderIterator();
         while (it.hasNext()) {

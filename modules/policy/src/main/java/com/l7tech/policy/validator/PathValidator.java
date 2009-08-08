@@ -601,7 +601,7 @@ class PathValidator {
             return;
         }
         try {
-            WspReader.getDefault().parseStrictly(policyXml);
+            WspReader.getDefault().parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
             policyParseCache.put(policyXml, Boolean.TRUE);
         } catch (IOException e) {
             policyParseCache.put(policyXml, e);

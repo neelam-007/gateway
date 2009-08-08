@@ -242,7 +242,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     {
         final Assertion assertion;
         try {
-            assertion = wspReader.parsePermissively(policyXml);
+            assertion = wspReader.parsePermissively(policyXml, WspReader.INCLUDE_DISABLED);
         } catch (IOException e) {
             throw new RuntimeException("Cannot parse passed Policy XML: " + ExceptionUtils.getMessage(e), e);
         }
@@ -268,7 +268,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, final PolicyType policyType, final boolean soap, Wsdl wsdl, HashMap<String, Policy> fragments) {
         final Assertion assertion;
         try {
-            assertion = wspReader.parsePermissively(policyXml);
+            assertion = wspReader.parsePermissively(policyXml, WspReader.INCLUDE_DISABLED);
             addPoliciesToPolicyReferenceAssertions(assertion, fragments);
         } catch (IOException e) {
             throw new RuntimeException("Cannot parse passed Policy XML: " + ExceptionUtils.getMessage(e), e);

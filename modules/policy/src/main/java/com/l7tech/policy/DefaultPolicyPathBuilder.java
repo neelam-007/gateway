@@ -62,7 +62,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             Set<String> guids = includedPolicyGuids==null ? new HashSet<String>() : includedPolicyGuids;
             final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyFinder, guids, false, inlineDisabled);
             try {
-                rootWithIncludes = Assertion.translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translator);
+                rootWithIncludes = Assertion.translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion), WspReader.INCLUDE_DISABLED), translator);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

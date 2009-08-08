@@ -45,7 +45,7 @@ public class FtpRoutingAssertionTest extends TestCase {
         registry.registerAssertion(FtpRoutingAssertion.class);
         WspReader wspr = new WspReader(registry);
         
-        FtpRoutingAssertion assertion = (FtpRoutingAssertion) wspr.parseStrictly(POLICY);
+        FtpRoutingAssertion assertion = (FtpRoutingAssertion) wspr.parseStrictly(POLICY, WspReader.INCLUDE_DISABLED);
 
         assertEquals("SSL", assertion.getClientCertKeyAlias());
         assertEquals(FtpCredentialsSource.SPECIFIED, assertion.getCredentialsSource());

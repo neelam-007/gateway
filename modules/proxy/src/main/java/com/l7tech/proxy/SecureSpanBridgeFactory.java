@@ -234,7 +234,7 @@ public class SecureSpanBridgeFactory {
                 PolicyManager staticPolicyManager = policyManagerCache.get(policyXml);
                 if (staticPolicyManager != null)
                     return staticPolicyManager;
-                Assertion rootAssertion = WspReader.getDefault().parsePermissively(policyXml);
+                Assertion rootAssertion = WspReader.getDefault().parsePermissively(policyXml, WspReader.OMIT_DISABLED);
                 Policy policy = new Policy(rootAssertion, null);
                 staticPolicyManager = new StaticPolicyManager(policy);
                 policyManagerCache.put(policyXml, staticPolicyManager);

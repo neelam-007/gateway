@@ -245,7 +245,7 @@ public class XacmlAssertionsTest {
         registry.registerAssertion(XacmlRequestBuilderAssertion.class);
         WspReader wspr = new WspReader(registry);
 
-        XacmlRequestBuilderAssertion assertion = (XacmlRequestBuilderAssertion) wspr.parseStrictly(XACML_REQUEST_XML);
+        XacmlRequestBuilderAssertion assertion = (XacmlRequestBuilderAssertion) wspr.parseStrictly(XACML_REQUEST_XML, WspReader.INCLUDE_DISABLED);
 
         Assert.assertNotNull(assertion);
         return assertion;
@@ -256,7 +256,7 @@ public class XacmlAssertionsTest {
         registry.registerAssertion(XacmlPdpAssertion.class);
         WspReader wspr = new WspReader(registry);
 
-        XacmlPdpAssertion assertion = (XacmlPdpAssertion) wspr.parseStrictly(XACML_PDP_XML);
+        XacmlPdpAssertion assertion = (XacmlPdpAssertion) wspr.parseStrictly(XACML_PDP_XML, WspReader.INCLUDE_DISABLED);
 
         Assert.assertNotNull(assertion);
         return assertion;

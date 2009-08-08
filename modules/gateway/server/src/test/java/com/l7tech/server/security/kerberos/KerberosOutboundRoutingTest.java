@@ -131,7 +131,7 @@ public class KerberosOutboundRoutingTest extends KerberosTest {
     private ServerHttpRoutingAssertion getAssertion(String policyXml)
             throws IOException, ServerPolicyException
     {
-        Assertion as = policyReader.parsePermissively(policyXml);
+        Assertion as = policyReader.parsePermissively(policyXml, WspReader.INCLUDE_DISABLED);
         Assert.assertNotNull(as);
         Assert.assertTrue(as instanceof AllAssertion);
         AllAssertion all = (AllAssertion) as;

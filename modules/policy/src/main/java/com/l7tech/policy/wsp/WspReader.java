@@ -3,8 +3,10 @@ package com.l7tech.policy.wsp;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.util.EmptyIterator;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.util.List;
+import java.util.Iterator;
 
 /**
  * Build a policy tree from an XML document.
@@ -21,6 +24,16 @@ import java.util.List;
  * Time: 3:44:19 PM
  */
 public class WspReader {
+    public static enum Visibility {
+        /** Do not filter the parsed policy to remove assertions that are not enabled. */
+        includeDisabled,
+
+        /** Filter the parsed policy to remove assertions that are not enabled. */
+        omitDisabled
+    }
+    public static final Visibility INCLUDE_DISABLED = Visibility.includeDisabled;
+    public static final Visibility OMIT_DISABLED = Visibility.omitDisabled;
+
     private final WspVisitor permissiveWspVisitor;
     private final WspVisitor strictWspVisitor;
 
@@ -81,15 +94,16 @@ public class WspReader {
      * {@link com.l7tech.policy.assertion.UnknownAssertion} instances, and processing will try to continue.
      *
      * @param policyElement an element of type WspConstants.L7_POLICY_NS_CURRENT:WspConstants.POLICY_ELNAME
+     * @param includeDisabled what to do with assertions with enabled=false: {@link #INCLUDE_DISABLED} or {@link #OMIT_DISABLED}.
      * @return the policy tree it contained.  A null return means a valid &lt;Policy/&gt; tag was present, but
      *         it was empty.
      * @throws InvalidPolicyStreamException if the stream did not contain a valid policy
      */
-    public Assertion parsePermissively(Element policyElement) throws InvalidPolicyStreamException {
-        return parse(findPolicyElement(policyElement), permissiveWspVisitor);
+    public Assertion parsePermissively(Element policyElement, Visibility includeDisabled) throws InvalidPolicyStreamException {
+        return parse(findPolicyElement(policyElement), permissiveWspVisitor, includeDisabled);
     }
 
-    static Assertion parse(Element policyElement, WspVisitor visitor) throws InvalidPolicyStreamException {
+    static Assertion parse(Element policyElement, WspVisitor visitor, Visibility includeDisabled) throws InvalidPolicyStreamException {
         List childElements = TypeMappingUtils.getChildElements(policyElement);
         if (childElements.isEmpty())
             return null; // Empty Policy tag explicitly means a null policy
@@ -104,17 +118,47 @@ public class WspReader {
                 throw new InvalidPolicyStreamException("Policy does not have an assertion as its immediate child");
             Assertion root = (Assertion) target;
             root.treeChanged();
+
+            if (Visibility.omitDisabled.equals(includeDisabled))
+                root = filterOutDisabledAssertions(root);
+
             return root;
         } finally {
             WspWriter.setCurrent(null);
         }
     }
 
-    static Assertion parse(InputStream wspStream, WspVisitor visitor) throws IOException {
-        return parse(new InputSource(wspStream), visitor);        
+    static Assertion filterOutDisabledAssertions(Assertion assertionTree) {
+        recursiveFilterOutDisabledAssertions(assertionTree, new EmptyIterator() {
+            @Override
+            public void remove() { }
+        });
+        return assertionTree;
     }
 
-    static Assertion parse(InputSource inputSource, WspVisitor visitor) throws IOException {
+    static void recursiveFilterOutDisabledAssertions(Assertion arg, Iterator parentIterator) {
+        if (arg == null || !arg.isEnabled()) {
+            parentIterator.remove();
+            return;
+        }
+
+        if (arg instanceof CompositeAssertion) {
+            CompositeAssertion comp = (CompositeAssertion)arg;
+            List kids = comp.getChildren();
+            Iterator i = kids.iterator();
+            //noinspection WhileLoopReplaceableByForEach
+            while (i.hasNext())
+                recursiveFilterOutDisabledAssertions((Assertion)i.next(), i);
+            if (kids.isEmpty())
+                parentIterator.remove();
+        }
+    }
+
+    static Assertion parse(InputStream wspStream, WspVisitor visitor, Visibility includeDisabled) throws IOException {
+        return parse(new InputSource(wspStream), visitor, includeDisabled);
+    }
+
+    static Assertion parse(InputSource inputSource, WspVisitor visitor, Visibility includeDisabled) throws IOException {
         try {
             Document doc = XmlUtil.parse(inputSource, false);
             Element root = findPolicyElement(doc.getDocumentElement());
@@ -125,7 +169,7 @@ public class WspReader {
                 throw new InvalidPolicyStreamException("Document element is not in a recognized namespace");
             final WspWriter wspWriter = new WspWriter();
             WspWriter.setCurrent(wspWriter);
-            return parse(root, visitor);
+            return parse(root, visitor, includeDisabled);
         } catch (Exception e) {
             throw new InvalidPolicyStreamException("Unable to parse policy: " + ExceptionUtils.getMessage( e ), e);
         } finally {
@@ -139,11 +183,12 @@ public class WspReader {
      * recognized assertions, will immediately abort processing with an InvalidPolicyStreamException.
      *
      * @param wspXml    the document to parse
+     * @param includeDisabled what to do with assertions with enabled=false: {@link #INCLUDE_DISABLED} or {@link #OMIT_DISABLED}.
      * @return          the policy tree it contained, or null
      * @throws IOException if the policy was not valid.
      */
-    public Assertion parseStrictly(String wspXml) throws IOException {
-        return parse(wspXml, strictWspVisitor);
+    public Assertion parseStrictly(String wspXml, Visibility includeDisabled) throws IOException {
+        return parse(wspXml, strictWspVisitor, includeDisabled);
     }
 
     /**
@@ -152,17 +197,18 @@ public class WspReader {
      * instances, and processing will try to continue.
      *
      * @param wspXml    the document to parse
+     * @param includeDisabled what to do with assertions with enabled=false: {@link #INCLUDE_DISABLED} or {@link #OMIT_DISABLED}.
      * @return          the policy tree it contained, or null
      * @throws IOException if the policy was not valid, even if unrecognized assertions are preserved as {@link com.l7tech.policy.assertion.UnknownAssertion}.
      */
-    public Assertion parsePermissively(String wspXml) throws IOException {
-        return parse(wspXml.trim(), permissiveWspVisitor);
+    public Assertion parsePermissively(String wspXml, Visibility includeDisabled) throws IOException {
+        return parse(wspXml.trim(), permissiveWspVisitor, includeDisabled);
     }
 
-    static Assertion parse(String wspXml, WspVisitor visitor) throws IOException {
+    static Assertion parse(String wspXml, WspVisitor visitor, Visibility includeDisabled) throws IOException {
         if (wspXml == null)
             throw new IllegalArgumentException("wspXml may not be null");
-        return parse(new InputSource(new StringReader(wspXml)), visitor);
+        return parse(new InputSource(new StringReader(wspXml)), visitor, includeDisabled);
     }
 
 }

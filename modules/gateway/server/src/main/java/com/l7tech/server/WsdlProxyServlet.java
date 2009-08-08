@@ -11,19 +11,20 @@ import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.MissingCredentialsException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyPathBuilder;
+import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.WsspAssertion;
-import com.l7tech.policy.assertion.xmlsec.WssVersionAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.xmlsec.WssVersionAssertion;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.wssp.WsspWriter;
-import com.l7tech.policy.PolicyPathBuilder;
-import com.l7tech.policy.PolicyPathBuilderFactory;
-import com.l7tech.policy.Policy;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
@@ -31,11 +32,7 @@ import com.l7tech.server.policy.filter.IdentityRule;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.server.transport.ListenerException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -557,7 +554,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
 
         try{
-            Assertion rootassertion = Policy.simplify(policyPathBuilder.inlineIncludes(wspReader.parsePermissively(svc.getPolicy().getXml()), null, false));
+            Assertion rootassertion = Policy.simplify(policyPathBuilder.inlineIncludes(wspReader.parsePermissively(svc.getPolicy().getXml(), WspReader.OMIT_DISABLED), null, false));
 
             //we should ignore wssp assertion if the wssp assertion is disabled
             WsspAssertion wsspAssertion = Assertion.find(rootassertion, WsspAssertion.class, true);

@@ -165,7 +165,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
             @Override
             public PolicyValidatorResult call() throws Exception {
                 try {
-                    final Assertion assertion = WspReader.getDefault().parsePermissively(policyXml);
+                    final Assertion assertion = WspReader.getDefault().parsePermissively(policyXml, WspReader.INCLUDE_DISABLED);
                     return policyValidator.validate(assertion, policyType, wsdl, soap,
                             new AssertionLicense() {
                                 @Override

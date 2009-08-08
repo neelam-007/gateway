@@ -316,7 +316,7 @@ public class PolicyRevisionsDialog extends JDialog {
                 policyTree.setModel(new DefaultTreeModel(makeMessageNode("Empty policy")));
                 return;
             }
-            Assertion assertion = WspReader.getDefault().parsePermissively(xml);
+            Assertion assertion = WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
             TreeModel model = new PolicyTreeModel(assertion);
             AssertionTreeNode assTreeNode = (AssertionTreeNode)model.getRoot();
             PolicyTreeUtils.updateAssertions( assTreeNode, identityProviderNameMap );
