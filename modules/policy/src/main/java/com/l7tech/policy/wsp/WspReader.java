@@ -3,10 +3,8 @@ package com.l7tech.policy.wsp;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TooManyChildElementsException;
-import com.l7tech.util.EmptyIterator;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -15,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.util.List;
-import java.util.Iterator;
 
 /**
  * Build a policy tree from an XML document.
@@ -120,37 +117,11 @@ public class WspReader {
             root.treeChanged();
 
             if (Visibility.omitDisabled.equals(includeDisabled))
-                root = filterOutDisabledAssertions(root);
+                root = Assertion.filterOutDisabledAssertions(root);
 
             return root;
         } finally {
             WspWriter.setCurrent(null);
-        }
-    }
-
-    static Assertion filterOutDisabledAssertions(Assertion assertionTree) {
-        recursiveFilterOutDisabledAssertions(assertionTree, new EmptyIterator() {
-            @Override
-            public void remove() { }
-        });
-        return assertionTree;
-    }
-
-    static void recursiveFilterOutDisabledAssertions(Assertion arg, Iterator parentIterator) {
-        if (arg == null || !arg.isEnabled()) {
-            parentIterator.remove();
-            return;
-        }
-
-        if (arg instanceof CompositeAssertion) {
-            CompositeAssertion comp = (CompositeAssertion)arg;
-            List kids = comp.getChildren();
-            Iterator i = kids.iterator();
-            //noinspection WhileLoopReplaceableByForEach
-            while (i.hasNext())
-                recursiveFilterOutDisabledAssertions((Assertion)i.next(), i);
-            if (kids.isEmpty())
-                parentIterator.remove();
         }
     }
 

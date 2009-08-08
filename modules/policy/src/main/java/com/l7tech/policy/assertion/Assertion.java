@@ -3,18 +3,15 @@
  */
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.annotation.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.annotation.ProcessesRequest;
-import com.l7tech.policy.assertion.annotation.ProcessesResponse;
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
-import com.l7tech.policy.assertion.annotation.ProcessesMultipart;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.util.ClassUtils;
+import com.l7tech.util.EmptyIterator;
 
-import java.io.Serializable;
-import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -510,6 +507,46 @@ public abstract class Assertion implements Cloneable, Serializable {
             in = (Assertion)kids.get(0);
         }
         return in;
+    }
+
+    /**
+     * Transform a policy tree into a new one with any disabled assertions removed.  Assertions
+     * where {@link #isEnabled()} is false will treated as though they were never present in the policy in the
+     * first place.
+     * <p/>
+     * This is a static method because it may need to replace an Assertion with a null reference if it is disabled,
+     * or if it is a composite assertion and all of its children are disabled.
+     *
+     * @param assertionTree  an assertion or assertion tree to filter.  May be null.
+     * @return the assertion tree with all disabled assertions filtered out.  May be null.
+     */
+    public static Assertion filterOutDisabledAssertions(Assertion assertionTree) {
+        final boolean[] wasRemoved = { false };
+        recursiveFilterOutDisabledAssertions(assertionTree, new EmptyIterator() {
+            @Override
+            public void remove() {
+                wasRemoved[0] = true;
+            }
+        });
+        return wasRemoved[0] ? null : assertionTree;
+    }
+
+    private static void recursiveFilterOutDisabledAssertions(Assertion arg, Iterator parentIterator) {
+        if (arg == null || !arg.isEnabled()) {
+            parentIterator.remove();
+            return;
+        }
+
+        if (arg instanceof CompositeAssertion) {
+            CompositeAssertion comp = (CompositeAssertion)arg;
+            List kids = comp.getChildren();
+            Iterator i = kids.iterator();
+            //noinspection WhileLoopReplaceableByForEach
+            while (i.hasNext())
+                recursiveFilterOutDisabledAssertions((Assertion)i.next(), i);
+            if (kids.isEmpty())
+                parentIterator.remove();
+        }
     }
 
     /**
