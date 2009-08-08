@@ -22,6 +22,7 @@ import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.CertificateSigningServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.transport.ListenerException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 
 import javax.security.auth.x500.X500Principal;
@@ -168,7 +169,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             return;
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), e);
             return;
         }
 
@@ -203,7 +204,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
               ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
         } catch (CertificateEncodingException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), e);
         }
     }
 
