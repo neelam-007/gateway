@@ -248,7 +248,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
             final String issuerVal = DomUtils.getTextValue(issuerEl);
             if (issuerVal.length() == 0) throw new MissingRequiredElementException("X509IssuerName was empty");
             final String serialVal = DomUtils.getTextValue(serialEl);
-            if (serialVal.length() == 0) throw new MissingRequiredElementException("X509Serial was empty");
+            if (serialVal.length() == 0) throw new MissingRequiredElementException("X509SerialNumber was empty");
             return securityTokenResolver.lookupByIssuerAndSerial(new X500Principal(issuerVal), new BigInteger(serialVal));
         } else {
             throw new KeyInfoElement.UnsupportedKeyInfoFormatException("KeyInfo X509Data was not in a supported format");

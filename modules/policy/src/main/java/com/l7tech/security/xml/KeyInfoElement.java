@@ -171,7 +171,7 @@ public class KeyInfoElement implements ParsedElement {
             final String issuerVal = DomUtils.getTextValue(issuerEl);
             if (issuerVal.length() == 0) throw new SAXException("X509IssuerName was empty");
             final String serialVal = DomUtils.getTextValue(serialEl);
-            if (serialVal.length() == 0) throw new SAXException("X509Serial was empty");
+            if (serialVal.length() == 0) throw new SAXException("X509SerialNumber was empty");
             return securityTokenResolver.lookupByIssuerAndSerial(new X500Principal(issuerVal), new BigInteger(serialVal));
         } else {
             throw new SAXException("KeyInfo X509Data did not contain one of " + allowedTypes);
