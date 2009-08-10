@@ -25,6 +25,7 @@ public class NamespacePrefixQueryForm extends JDialog {
     private JTextField prefixtxt;
     private JButton cancelbutton;
     private JButton okbutton;
+    private boolean validationFinished;
     boolean cancelled = false;
 
     public String nsuri;
@@ -63,7 +64,11 @@ public class NamespacePrefixQueryForm extends JDialog {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                     cancel();
                 } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    ok();
+                    if (validationFinished) {
+                        validationFinished = false;
+                    } else {
+                        ok();
+                    }
                 }
             }
             public void keyTyped(KeyEvent e) {}
@@ -86,6 +91,7 @@ public class NamespacePrefixQueryForm extends JDialog {
         if (! ValidationUtils.isProbablyValidXmlNamespacePrefix(prefixtxt.getText())) {
             DialogDisplayer.showMessageDialog(this, "'" + prefixtxt.getText() + "' is an invalid namespace prefix.  Please correct it and try again.",
                 "Invalid Prefix", JOptionPane.ERROR_MESSAGE, null);
+            validationFinished = true;
             return;
         }
         nsuri = uritxt.getText();
