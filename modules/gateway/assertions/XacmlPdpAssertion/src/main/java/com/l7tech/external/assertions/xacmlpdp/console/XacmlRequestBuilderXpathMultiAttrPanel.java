@@ -265,6 +265,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             addTypeChangeListener(issueInstantExpressionType, ISSUE_INSTANT);
         }
 
+        falsifyPolicyCheckBox.setSelected(multipleAttributeConfig.isFalsifyPolicyEnabled());
+
         Utilities.setDoubleClickAction( namespacesTable, modifyNamespaceButton );
         enableOrDisableButtons();
     }
