@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.VariablePrefixUtil;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionListener;
@@ -23,10 +24,7 @@ import java.util.Collections;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
- * User: njordan
- * Date: 23-Mar-2009
- * Time: 6:11:12 PM
- * To change this template use File | Settings | File Templates.
+ * @author njordan
  */
 public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<XacmlRequestBuilderAssertion> {
     private static final ResourceBundle resources = ResourceBundle.getBundle( XacmlRequestBuilderDialog.class.getName() );
@@ -74,7 +72,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                 TreePath path = evt.getPath();
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
 
-                if(lastNodePanel != null && !lastNodePanel.handleDispose()) {
+                if(lastNodePanel != null && !lastNodePanel.handleDispose(XacmlRequestBuilderDialog.this)) {
                     lastErrorNodePanel = lastNodePanel;
                     tree.setSelectionPath(evt.getOldLeadSelectionPath());
                     return;
@@ -162,7 +160,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                if(lastNodePanel != null && !lastNodePanel.handleDispose()) {
+                if(lastNodePanel != null && !lastNodePanel.handleDispose(XacmlRequestBuilderDialog.this)) {
                     return;
                 }
 
@@ -671,6 +669,21 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         }
         
         return assertion;
+    }
+
+    /**
+     * Expose inherited methods to all client code of this dialog. Dialogs need to be able to access the previous
+     * assertion of a policy to deal with the corner case where assertions are added back to back to a policy,
+     * and the policy is not saved. When this happens assertions added to a policy cannot see the variables set
+     * by previous assertions.
+     *
+     * Delegating to super class via this protected method to maintain the access control on the inherited method
+     * @return the previous Assertion for this policy, from which knowledge of previous set variables can be
+     * retrieved from. Can be null if no previous assertions
+     */
+    @Override
+    protected Assertion getPreviousAssertion(){
+        return super.getPreviousAssertion();
     }
 
     private boolean isTreeValid(java.util.List<String> messages) {

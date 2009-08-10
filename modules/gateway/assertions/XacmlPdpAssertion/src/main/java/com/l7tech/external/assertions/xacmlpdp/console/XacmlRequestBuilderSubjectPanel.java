@@ -41,7 +41,7 @@ public class XacmlRequestBuilderSubjectPanel extends JPanel implements XacmlRequ
     }
 
     @Override
-    public boolean handleDispose() {
+    public boolean handleDispose(final XacmlRequestBuilderDialog builderDialog) {
         // Access editor directly to get the current text
         subject.setSubjectCategory(((String)subjectCategoryComboBox.getEditor().getItem()).trim());
 

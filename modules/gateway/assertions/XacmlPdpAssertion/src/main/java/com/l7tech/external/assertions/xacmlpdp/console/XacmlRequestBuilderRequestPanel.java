@@ -103,7 +103,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
     }
 
     @Override
-    public boolean handleDispose() {
+    public boolean handleDispose(final XacmlRequestBuilderDialog builderDialog) {
         if(outputMessageComboBox.getSelectedItem()!= XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             return true;
         }

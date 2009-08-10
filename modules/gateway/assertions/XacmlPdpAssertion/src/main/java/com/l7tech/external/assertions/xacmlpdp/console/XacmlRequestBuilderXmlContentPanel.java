@@ -201,7 +201,7 @@ public class XacmlRequestBuilderXmlContentPanel extends JPanel implements XacmlR
     }
 
     @Override
-    public boolean handleDispose() {
+    public boolean handleDispose(final XacmlRequestBuilderDialog builderDialog) {
         return true;
     }
 

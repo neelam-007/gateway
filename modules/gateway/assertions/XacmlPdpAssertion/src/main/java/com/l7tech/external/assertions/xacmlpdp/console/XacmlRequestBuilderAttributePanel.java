@@ -88,7 +88,7 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
     }
 
     @Override
-    public boolean handleDispose() {
+    public boolean handleDispose(final XacmlRequestBuilderDialog builderDialog) {
         // Access editors directly to get the current text
         attribute.setId(((String)idComboBox.getEditor().getItem()).trim());
         attribute.setDataType(((String)dataTypeComboBox.getEditor().getItem()).trim());

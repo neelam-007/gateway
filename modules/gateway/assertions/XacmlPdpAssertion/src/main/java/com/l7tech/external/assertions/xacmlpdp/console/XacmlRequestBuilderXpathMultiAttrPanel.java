@@ -16,6 +16,7 @@ import com.l7tech.xml.xpath.NoSuchXpathVariableException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.sun.xacml.attr.DateTimeAttribute;
 
 import javax.swing.*;
@@ -301,7 +302,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
 
     @Override
-    public boolean handleDispose() {
+    public boolean handleDispose(final XacmlRequestBuilderDialog builderDialog) {
         multipleAttributeConfig.setFalsifyPolicyEnabled(falsifyPolicyCheckBox.isSelected());
 
         for (XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field : multipleAttributeConfig.getFields().values()) {
@@ -361,14 +362,14 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
         final Map<String,String> namespaces = multipleAttributeConfig.getNamespaces();
         if ( !relativeXpaths.isEmpty() ) {
-            String baseErrorMessage = validateXPath( xpathBaseField.getText().trim(), namespaces );
+            String baseErrorMessage = validateXPath( xpathBaseField.getText().trim(), namespaces, builderDialog );
             if ( baseErrorMessage != null ) {
                 DialogDisplayer.showMessageDialog( this, "Invalid \"XPath Base\" : " + baseErrorMessage, "Validation Error", JOptionPane.ERROR_MESSAGE, null );
                 return false;
             }
             for ( XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName field : relativeXpaths ) {
                 String xpath = multipleAttributeConfig.getField(field).getValue();
-                String xpathErrorMessage = validateXPath( xpath, namespaces );
+                String xpathErrorMessage = validateXPath( xpath, namespaces, builderDialog);
                 if ( xpathErrorMessage != null ) {
                     DialogDisplayer.showMessageDialog( this, "Invalid XPath for \""+field+"\" : " + xpathErrorMessage, "Validation Error", JOptionPane.ERROR_MESSAGE, null );
                     return false;
@@ -379,7 +380,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         if ( !absoluteXpaths.isEmpty() ) {
             for ( XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName field : absoluteXpaths ) {
                 String xpath = multipleAttributeConfig.getField(field).getValue();
-                String xpathErrorMessage = validateXPath( xpath, namespaces );
+                String xpathErrorMessage = validateXPath( xpath, namespaces, builderDialog );
                 if ( xpathErrorMessage != null ) {
                     DialogDisplayer.showMessageDialog( this, "Invalid XPath for \""+field+"\" : " + xpathErrorMessage, "Validation Error", JOptionPane.ERROR_MESSAGE, null );
                     return false;
@@ -413,11 +414,16 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         return valid;
     }
 
-    private String validateXPath( final String xpath, final Map<String,String> namespaces ) {
+    private String validateXPath( final String xpath,
+                                  final Map<String,String> namespaces,
+                                  final XacmlRequestBuilderDialog builderDialog) {
         String error = null;
         try {
-            final Set<String> variables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
-            XpathUtil.compileAndEvaluate(testDocument, xpath, namespaces, buildXpathVariableFinder(variables));
+            final Map<String, VariableMetadata> predecessorVariables = assertion.getParent() != null ?
+                    PolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
+                    PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( builderDialog.getPreviousAssertion() );
+
+            XpathUtil.compileAndEvaluate(testDocument, xpath, namespaces, buildXpathVariableFinder(predecessorVariables.keySet()));
         } catch ( XPathSyntaxException e) {
             return ExceptionUtils.getMessage( e );
         } catch ( JaxenException e) {
