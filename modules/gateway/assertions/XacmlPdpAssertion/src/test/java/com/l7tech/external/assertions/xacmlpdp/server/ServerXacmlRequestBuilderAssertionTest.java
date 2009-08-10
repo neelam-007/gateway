@@ -350,9 +350,16 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
                 assertion, ApplicationContexts.getTestApplicationContext());
-        AssertionStatus status = server.checkRequest(context);
 
-        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
+        // Case 1: set the falsify-policy checkbox as checked.  This is the default setting.
+        multipleConfig.setFalsifyPolicyEnabled(true);
+        AssertionStatus status = server.checkRequest(context);
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FAILED, status);
+
+        //Case 2: set the falsify-policy checkbox as unchecked.
+        multipleConfig.setFalsifyPolicyEnabled(false);
+        status = server.checkRequest(context);
+        Assert.assertEquals("checkRequest returned NONE AssertionStatus",  AssertionStatus.NONE, status);
 
         //validate generated xml
         Message reqeust = context.getRequest();
