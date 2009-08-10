@@ -417,8 +417,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         String error = null;
         try {
             final Set<String> variables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
-            Object t = XpathUtil.compileAndEvaluate(testDocument, xpath, namespaces, buildXpathVariableFinder(variables));
-            System.out.println(t);
+            XpathUtil.compileAndEvaluate(testDocument, xpath, namespaces, buildXpathVariableFinder(variables));
         } catch ( XPathSyntaxException e) {
             return ExceptionUtils.getMessage( e );
         } catch ( JaxenException e) {
