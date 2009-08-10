@@ -331,7 +331,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         private String messageSourceContextVar = "";
         private String xpathBase = "";
         private Map<String, String> namespaces = new HashMap<String, String>();
-        private boolean falsifyPolicyEnabled;  // this is corresponding to the checkbox in XPath Mulitiple Attributes panel.
+        private boolean falsifyPolicyEnabled = true;  // this is corresponding to the checkbox in XPath Mulitiple Attributes panel.  The default is checked.
 
         public MultipleAttributeConfig() {
         }
