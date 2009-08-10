@@ -50,10 +50,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
     public XacmlRequestBuilderDialog(Window owner, XacmlRequestBuilderAssertion a) {
         super(owner, resources.getString( "xacml.request.builder" ) );
+        assertion = a;
         createPopupMenu();
         initComponents();
-
-        assertion = a;
     }
 
     public void initComponents() {
@@ -114,7 +113,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                                     (XacmlRequestBuilderAssertion.MultipleAttributeConfig)item,
                                     assertion.getXacmlVersion(),
                                     getIdOptions(((DefaultMutableTreeNode)path.getPath()[1]).getUserObject()),
-                                    XacmlRequestBuilderDialog.this);
+                                    XacmlRequestBuilderDialog.this, assertion);
                     lastNodePanel = panel;
                     nodeSettingsPanel.add(panel.getPanel());
                 }else if(item instanceof String && XACML_REQUEST_ELEMENT.equals(node.getUserObject())) {
@@ -568,7 +567,6 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
     @Override
     public void setData(XacmlRequestBuilderAssertion assertion) {
-        this.assertion = assertion.clone();
 
         DefaultMutableTreeNode root = new DefaultMutableTreeNode(XACML_REQUEST_ELEMENT, true);
         for(XacmlRequestBuilderAssertion.Subject subject : this.assertion.getSubjects()) {

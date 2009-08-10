@@ -15,6 +15,7 @@ import com.l7tech.xml.xpath.XpathVariableFinder;
 import com.l7tech.xml.xpath.NoSuchXpathVariableException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.sun.xacml.attr.DateTimeAttribute;
 
 import javax.swing.*;
@@ -31,10 +32,7 @@ import org.w3c.dom.Document;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
- * User: njordan
- * Date: 2-Apr-2009
- * Time: 8:36:28 PM
- * To change this template use File | Settings | File Templates.
+ * @author njordan
  */
 public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements XacmlRequestBuilderNodePanel {
     private JPanel mainPanel;
@@ -64,19 +62,22 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     private JComboBox valueExpressionType;
     private JCheckBox falsifyPolicyCheckBox;
 
-    private XacmlAssertionEnums.XacmlVersionType xacmlVersion;
+    private final XacmlAssertionEnums.XacmlVersionType xacmlVersion;
 
     private final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig;
     private final DefaultTableModel tableModel;
     private final JDialog window;
     private final Document testDocument;
+    private final XacmlRequestBuilderAssertion assertion;
 
     public XacmlRequestBuilderXpathMultiAttrPanel( final XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig,
                                                    final XacmlAssertionEnums.XacmlVersionType version,
                                                    final Set<String> idOptions,
-                                                   final JDialog window )
+                                                   final JDialog window,
+                                                   final XacmlRequestBuilderAssertion assertion)
     {
         this.multipleAttributeConfig = multipleAttributeConfig;
+        this.assertion = assertion;
         xacmlVersion = version;
 
         messageSourceComboBox.setModel(
@@ -84,7 +85,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                         new Object[] {
                                 XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST.getLocationName(),
                                 XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE.getLocationName()}));
-        
+
         if(multipleAttributeConfig.getMessageSource() == XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST) {
             messageSourceComboBox.setSelectedIndex(0);
         } else if(multipleAttributeConfig.getMessageSource() == XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE) {
@@ -150,7 +151,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                 enableOrDisableButtons();
             }
         } );
-        
+
         messageSourceComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
@@ -302,7 +303,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     @Override
     public boolean handleDispose() {
         multipleAttributeConfig.setFalsifyPolicyEnabled(falsifyPolicyCheckBox.isSelected());
-        
+
         for (XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field : multipleAttributeConfig.getFields().values()) {
             if (CONTEXT_VARIABLE == field.getType()) {
                 String[] varStrings = Syntax.getReferencedNames(field.getValue());
@@ -415,8 +416,9 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     private String validateXPath( final String xpath, final Map<String,String> namespaces ) {
         String error = null;
         try {
-            final Set<String> variables = Collections.emptySet(); //PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
-            XpathUtil.compileAndEvaluate(testDocument, xpath, namespaces, buildXpathVariableFinder(variables));
+            final Set<String> variables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+            Object t = XpathUtil.compileAndEvaluate(testDocument, xpath, namespaces, buildXpathVariableFinder(variables));
+            System.out.println(t);
         } catch ( XPathSyntaxException e) {
             return ExceptionUtils.getMessage( e );
         } catch ( JaxenException e) {
@@ -427,6 +429,13 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         return error;
     }
 
+    /**
+     * The only purpose of this method is to validate that any referenced variables from a relative xpath refer
+     * to variables defined in the policy so far. The actual value returned is not important. The server side
+     * will be required to return the correct value of the requested variable
+     * @param variables the variable to validate has been defined somewhere previously in this policy
+     * @return
+     */
     private XpathVariableFinder buildXpathVariableFinder( final Set<String> variables ) {
         return new XpathVariableFinder(){
             @Override

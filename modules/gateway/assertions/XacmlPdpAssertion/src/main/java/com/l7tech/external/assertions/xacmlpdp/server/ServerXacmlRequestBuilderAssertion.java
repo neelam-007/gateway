@@ -21,10 +21,7 @@ import com.l7tech.message.XmlKnob;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
-import com.l7tech.xml.xpath.XpathResult;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathResultIterator;
-import com.l7tech.xml.xpath.XpathResultNode;
+import com.l7tech.xml.xpath.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ValidationUtils;
@@ -59,10 +56,10 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
+        final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder;
+        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        final DocumentBuilder builder;
 
         try {
             builder = factory.newDocumentBuilder();
@@ -71,7 +68,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             return AssertionStatus.FAILED;
         }
 
-        Document doc = builder.newDocument();
+        final Document doc = builder.newDocument();
 
         Element rootParent = null;
         if(assertion.getSoapEncapsulation() != XacmlAssertionEnums.SoapVersion.NONE) {
@@ -94,7 +91,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             rootParent = body;
         }
 
-        Element root = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Request");
+        final Element root = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Request");
         root.setAttribute("xmlns", assertion.getXacmlVersion().getNamespace());
         if(rootParent == null) {
             doc.appendChild(root);
@@ -560,7 +557,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             executeXpathExpression(
                     documentHolder.getDocument(),
                     multipleAttributeConfig.getXpathBase(),
-                    multipleAttributeConfig.getNamespaces());
+                    multipleAttributeConfig.getNamespaces(),
+                    contextVariables);
 
         ElementCursor resultCursor = xpathResultSetIterator != null && xpathResultSetIterator.hasNext() ? xpathResultSetIterator.nextElementAsCursor() : null;
 
@@ -598,7 +596,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 new HashMap<XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName, String>();
             for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field : nonValueFields) {
                 fieldCurrentValues.put(field.getName(), XPATH_RELATIVE == field.getType() ?
-                    getRelativeXpathValueForField(resultCursor, field.getValue(), namespaces)
+                    getRelativeXpathValueForField(resultCursor, field.getValue(), namespaces, contextVariables)
                     : getValueForField(field, documentHolder, namespaces, contextVariables, iterationCount));
             }
 
@@ -696,11 +694,11 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @throws RequiredFieldNotFoundException thown if a required field is not found
      *         with the extra condition under "Falsify Policy Option" on.
      */
-    private boolean ignoreCreatingAttributeElement(String fieldName,
-                                                   String fieldValue,
-                                                   String elementName,
-                                                   boolean isFalsifyPolicyEnabled,
-                                                   Boolean ignoreIssueInstant) throws RequiredFieldNotFoundException {
+    private boolean ignoreCreatingAttributeElement(final String fieldName,
+                                                   final String fieldValue,
+                                                   final String elementName,
+                                                   final boolean isFalsifyPolicyEnabled,
+                                                   final Boolean ignoreIssueInstant) throws RequiredFieldNotFoundException {
         if (fieldName == null) throw new IllegalArgumentException("Attribute display name must not be null.");
 
         // ignoreIssueInstant setting to null means that the field is ID or Data Type, so go to the next notFound checking.
@@ -718,15 +716,18 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         return false;
     }
 
-    private XpathResultIterator executeXpathExpression(Document inputDoc, String xpath, Map<String, String> namespaces){
+    private XpathResultIterator executeXpathExpression(final Document inputDoc,
+                                                       final String xpath,
+                                                       final Map<String, String> namespaces,
+                                                       final Map<String, Object> contextVariables){
         if(xpath == null || xpath.isEmpty()) return null;
         
         XpathResultIterator xpathResultSetIterator = null;
 
-        ElementCursor cursor = new DomElementCursor(inputDoc);
+        final ElementCursor cursor = new DomElementCursor(inputDoc);
         cursor.moveToRoot();
         try {
-            XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(),null, true);
+            final XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(), buildXpathVariableFinder(contextVariables), true);
             if(xpathResult.getType() == XpathResult.TYPE_NODESET) {
                 //our base xpath has evaluted to a result set, now our iterator it is no longer null
                 xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
@@ -746,8 +747,9 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @param fields
      * @return
      */
-    private boolean areAnyIterableFieldsReferencingMultiValuedVariables(Map<String, Object> contextVariables,
-                                                                Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> fields) {
+    private boolean areAnyIterableFieldsReferencingMultiValuedVariables(
+            final Map<String, Object> contextVariables,
+            final Set<XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field> fields) {
         boolean isUsingMultiValuedCtxVariables = false;
         for(XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField: fields){
             if(CONTEXT_VARIABLE == configField.getType()){
@@ -810,7 +812,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             throw new UnsupportedOperationException("method cannot be used for value field");
 
         if( XPATH_ABSOLUTE == configField.getType() ) {
-            return getAbsoluteXPathResult(configField, documentHolder.getDocument(), namespaces);
+            return getAbsoluteXPathResult(configField, documentHolder.getDocument(), namespaces, contextVariables);
         } else if ( CONTEXT_VARIABLE == configField.getType()) {
             //Determine if it's a multi valued context variable
             if(fieldValueContainMultiValuedContextVariable(configField.getValue(), contextVariables)){
@@ -840,12 +842,16 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      */
     private String getAbsoluteXPathResult(final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField,
                                           final Document document,
-                                          final Map<String, String> namespaces) {
-        ElementCursor cursor = new DomElementCursor(document);
+                                          final Map<String, String> namespaces,
+                                          final Map<String, Object> contextVariables) {
+        final ElementCursor cursor = new DomElementCursor(document);
         cursor.moveToRoot();
-        XpathResult xpathResult;
+        final XpathResult xpathResult;
         try {
-            xpathResult = cursor.getXpathResult(new XpathExpression(configField.getValue(), namespaces).compile(), null, true);
+            xpathResult = cursor.getXpathResult(new XpathExpression(configField.getValue(), namespaces).compile(),
+                    buildXpathVariableFinder(contextVariables),
+                    true);
+            
         } catch (XPathExpressionException e) {
             return null;
         } catch (InvalidXpathException e) {
@@ -875,13 +881,19 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     * @param namespaces any required namespaces
     * @return the String value of the xpath expression, or null if the element cursor is null.
     */
-    private String getRelativeXpathValueForField(ElementCursor cursor, String xpath, Map<String, String> namespaces) {
+    private String getRelativeXpathValueForField(final ElementCursor cursor,
+                                                 final String xpath,
+                                                 final Map<String, String> namespaces,
+                                                 final Map<String, Object> contextVariables) {
         if (cursor == null) {
             return null;
         }
 
         try {
-             XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(), null, true);
+             final XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(),
+                     buildXpathVariableFinder(contextVariables),
+                     true);
+            
              if(xpathResult.getType() == XpathResult.TYPE_NODESET) {
                  if (xpathResult.getNodeSet().size() < 1 || xpathResult.getNodeSet().getType(0) == XpathResult.TYPE_NODESET) {
                      return "";
@@ -906,22 +918,26 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
     /**
      * Evaluate an absolute xpath expression and return the list of results wrapped in XpathResultWrapper
+     *
      * @param valueField contains the xpath expression. isXpath() should return true
-     * @param document used to create DomElementCursor from
+     * @param document   used to create DomElementCursor from
      * @param namespaces any referenced namespaces from the xpath expression
      * @return result of xpath expression. Cannot be null, but can be empty
      */
     private List<XpathResultWrapper> getAbsoluteXPathResultForValue(
             final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field valueField,
-                                          final Document document,
-                                          final Map<String, String> namespaces) {
-        ElementCursor cursor = new DomElementCursor(document);
+            final Document document,
+            final Map<String, String> namespaces,
+            final Map<String, Object> contextVariables) {
+        final ElementCursor cursor = new DomElementCursor(document);
         cursor.moveToRoot();
-        XpathResult xpathResult;
-
+        final XpathResult xpathResult;
         try {
             xpathResult = cursor.getXpathResult(
-                    new XpathExpression(valueField.getValue(), namespaces).compile(), null, true);
+                    new XpathExpression( valueField.getValue(), namespaces).compile(),
+                    buildXpathVariableFinder(contextVariables),
+                    true);
+
         } catch (XPathExpressionException e) {
             return Collections.emptyList();
         } catch (InvalidXpathException e) {
@@ -929,6 +945,22 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         return processXPathResult(xpathResult);
+    }
+
+    private XpathVariableFinder buildXpathVariableFinder( final Map<String, Object> contextVariables ) {
+        return new XpathVariableFinder(){
+            @Override
+            public Object getVariableValue( final String namespaceUri,
+                                            final String variableName ) throws NoSuchXpathVariableException {
+                if ( namespaceUri != null )
+                    throw new NoSuchXpathVariableException("Unsupported XPath variable namespace '"+namespaceUri+"'.");
+
+                if ( !contextVariables.containsKey(variableName) )
+                    throw new NoSuchXpathVariableException("Unsupported XPath variable name '"+variableName+"'.");
+
+                return contextVariables.get(variableName);
+            }
+        };
     }
 
      /**
@@ -940,12 +972,15 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      */
     private List<XpathResultWrapper> getRelativeXPathResult(final ElementCursor cursor,
                                                             final String xpath,
-                                                            final Map<String, String> namespaces) {
+                                                            final Map<String, String> namespaces,
+                                                            final Map<String, Object> contextVariables) {
         if( cursor == null )
              throw new NullPointerException("resultCursor cannot be null when AttributeValue is using a relative xpath expression");
-        XpathResult xpathResult;
+        final XpathResult xpathResult;
         try {
-            xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(), null, true);
+            xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(),
+                    buildXpathVariableFinder(contextVariables),
+                    true);
         } catch(InvalidXpathException ixe) {
             return Collections.emptyList();
         } catch(XPathExpressionException xee) {
@@ -1086,8 +1121,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             }
         } else if( valueField.getType().isXpath() ) { // XPATH_RELATIVE or XPATH_ABSOLUTE
             List<XpathResultWrapper> xpathResults = XPATH_RELATIVE == valueField.getType() ?
-                getRelativeXPathResult(resultCursor, valueField.getValue(), namespaces) :
-                getAbsoluteXPathResultForValue(valueField, documentHolder.getDocument(), namespaces);
+                getRelativeXPathResult(resultCursor, valueField.getValue(), namespaces, contextVariables) :
+                getAbsoluteXPathResultForValue(valueField, documentHolder.getDocument(), namespaces, contextVariables);
 
             if (xpathResults.isEmpty()) {
                 returnList.add(new AttributeValue(""));
