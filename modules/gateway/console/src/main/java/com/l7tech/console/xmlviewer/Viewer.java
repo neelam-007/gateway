@@ -23,20 +23,25 @@ package com.l7tech.console.xmlviewer;
 import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
 import com.l7tech.console.xmlviewer.properties.ViewerProperties;
 import com.l7tech.console.xmlviewer.util.DocumentUtilities;
-import org.dom4j.Document;
+import com.l7tech.gui.util.ClipboardActions;
 import org.dom4j.DocumentException;
 import org.dom4j.io.XMLWriter;
 import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
+import javax.swing.tree.TreeModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.TreeSelectionListener;
 import java.awt.*;
-import java.io.File;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.URL;
 
 /**
  * The viewer for a eXchaNGeR document. This gives a tree view of an
@@ -109,17 +114,73 @@ public class Viewer extends JPanel implements XDocumentListener {
 
         setLayout(new BorderLayout());
 
+        ExchangerElement rootElement;
         try {
             if (document !=null) {
-                tree = new XmlTree(this, (ExchangerElement)document.getRoot());
+                rootElement = (ExchangerElement) document.getRoot();
+                tree = new XmlTree(this, rootElement);
                 document.addListener(this);
             } else {
+                rootElement = null;
                 tree = new XmlTree(this, null);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         JComponent c = tree;
+
+        tree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) { pop(e); }
+
+            @Override
+            public void mouseReleased(MouseEvent e) { pop(e); }
+
+            private void pop(MouseEvent ev) {
+                if (!ev.isPopupTrigger())
+                    return;
+                JPopupMenu menu = makeMenu();
+                menu.show((Component)ev.getSource(), ev.getX(), ev.getY());
+            }
+
+            private JPopupMenu makeMenu() {
+                JPopupMenu contextMenu = new JPopupMenu();
+                JMenuItem item = new JMenuItem(new AbstractAction("Copy Sample Message") {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        ExchangerElement rootElement = getCurrentTreeRootElement();
+                        if (rootElement == null)
+                            return;
+                        final Clipboard clip = ClipboardActions.getClipboard();
+                        if (clip == null)
+                            return;
+                        final String toCopy = rootElement.asXML();
+                        clip.setContents(new Transferable() {
+                            @Override
+                            public DataFlavor[] getTransferDataFlavors() {
+                                return new DataFlavor[] { DataFlavor.stringFlavor };
+                            }
+
+                            @Override
+                            public boolean isDataFlavorSupported(DataFlavor flavor) {
+                                return DataFlavor.stringFlavor.equals(flavor);
+                            }
+
+                            @Override
+                            public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+                                return toCopy;
+                            }
+                        }, null);
+                    }
+                });
+                ExchangerElement rootElement = getCurrentTreeRootElement();
+                final boolean haveRoot = rootElement != null;
+                final boolean haveClip = ClipboardActions.isSystemClipboardAvailable();
+                item.setEnabled(haveClip && haveRoot);
+                contextMenu.add(item);
+                return contextMenu;
+            }
+        });
 
         if (scrollpane) {
             scrollPane = new JScrollPane(tree,
@@ -132,6 +193,14 @@ public class Viewer extends JPanel implements XDocumentListener {
 
         setBorder(new EmptyBorder(0, 0, 0, 0));
         add(c, BorderLayout.CENTER);
+    }
+
+    private ExchangerElement getCurrentTreeRootElement() {
+        final TreeModel model = tree.getModel();
+        if (model == null)
+            return null;
+        XmlElementNode rootElementNode = (XmlElementNode) model.getRoot();
+        return rootElementNode == null ? null : rootElementNode.getElement();
     }
 
     /**
