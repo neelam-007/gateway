@@ -565,6 +565,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
     @Override
     public void setData(XacmlRequestBuilderAssertion assertion) {
+        this.assertion = assertion.clone();
 
         DefaultMutableTreeNode root = new DefaultMutableTreeNode(XACML_REQUEST_ELEMENT, true);
         for(XacmlRequestBuilderAssertion.Subject subject : this.assertion.getSubjects()) {

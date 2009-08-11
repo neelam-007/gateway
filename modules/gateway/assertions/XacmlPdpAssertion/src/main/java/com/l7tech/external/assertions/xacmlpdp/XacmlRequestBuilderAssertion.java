@@ -923,7 +923,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
     @Override
     public XacmlRequestBuilderAssertion clone() {
         XacmlRequestBuilderAssertion copy = (XacmlRequestBuilderAssertion) super.clone();
-
+        copy.setParent(this.parent);
         if ( action != null ) {
             copy.action = (Action) action.clone();
         }
