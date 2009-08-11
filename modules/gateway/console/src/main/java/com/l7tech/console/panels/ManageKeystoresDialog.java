@@ -112,7 +112,7 @@ public class ManageKeystoresDialog extends JDialog {
             lunaKeystoreAvailabilityLabel.setText("Client software and JSP not installed or not configured");
         }
 
-        enableLunaButton.setEnabled(canUseLuna && (!currentlyUsingLuna || !configuredToUseLuna));
+        enableLunaButton.setEnabled(canUseLuna && !currentlyUsingLuna);
         enableLunaButton.setVisible(enableLunaButton.isEnabled());
         disableLunaButton.setEnabled(currentlyUsingLuna || configuredToUseLuna);
         disableLunaButton.setVisible(disableLunaButton.isEnabled());
