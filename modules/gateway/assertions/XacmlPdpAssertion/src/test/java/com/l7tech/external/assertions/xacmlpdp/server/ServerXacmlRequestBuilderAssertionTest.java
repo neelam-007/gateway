@@ -21,6 +21,7 @@ import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAsserti
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.REGULAR;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.CONTEXT_VARIABLE;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.test.BugNumber;
 import org.xml.sax.SAXException;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -731,6 +732,440 @@ public class ServerXacmlRequestBuilderAssertionTest {
                 fixLines(createdXml).trim());
     }
 
+    /**
+     * If an xpath expression references a non existent variable, it will cause the assertion to fail
+     * @throws Exception
+     */
+    @BugNumber(7287)
+    @Test(expected = AssertionStatusException.class)
+    public void testMultipleAttributes_XpathVariable_NotFound() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        //make sure the policy does not allow fall through when an expression evaluates to a not found result
+        multipleConfig.setFalsifyPolicyEnabled(true);
+
+        final PolicyEnforcementContext context = getContext();
+
+        final String attributeValue = "offensiveStats";
+        context.setVariable("attributevalue", attributeValue);
+
+        final String baseVariable = "player";
+        context.setVariable("basevariable", baseVariable);
+
+        configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
+
+        //fyi 'player' could be replaced by a xpath variable
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]");
+        setNameSpaces(multipleConfig);
+
+        //Just set up the minimum - id, datatype and value
+        multipleConfig.getField(ID).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/play:LName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/*[local-name() = $datatype]/text()");
+        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/*[local-name() = $attributevalue]/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        server.checkRequest(context);
+    }
+    
+    /**
+     * Test that absolute and relative xpaths behave the same
+     * See func spec http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_XACML#Multiple_Attributes
+     * If a field value results in more than one value, regardless of relative or absolute, then the first value
+     * should be retrieved
+     * @throws Exception
+     */
+    @BugNumber(7698)
+    @Test
+    public void testMultipleAttributes_RelativeAndAbsolute_SameBehaviour() throws Exception{
+
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        //make sure the policy does not allow fall through when an expression evaluates to a not found result
+        multipleConfig.setFalsifyPolicyEnabled(true);
+
+        final PolicyEnforcementContext context = getContext();
+        configureMultipleAttributeConfig(PLAYER_BUG_7698_STATS_REQUEST, multipleConfig, context);
+
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
+        setNameSpaces(multipleConfig);
+
+        //Just set up the minimum - id, datatype and value
+        multipleConfig.getField(ID).setType(XPATH_ABSOLUTE);
+        //first value will be used
+        multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:FName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(DATA_TYPE).setValue("play:offensiveStats/play:assists/text()");
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        AssertionStatus status = server.checkRequest(context);
+
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
+
+        //validate generated xml
+        Message reqeust = context.getRequest();
+        String absXml = XmlUtil.elementToXml(reqeust.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
+        //first value will be used
+        multipleConfig.getField(ID).setValue("play:FName/text()");
+        status = server.checkRequest(context);
+        reqeust = context.getRequest();
+        String relXml = XmlUtil.elementToXml(reqeust.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+
+        Assert.assertEquals("Relative and Absolute xpaths are different", relXml, absXml);
+
+    }
+
+    /**
+     * Tests that when the base xpath expression results in no values, but it's not needed for a required field
+     * that an Attribute can still be generated
+     * @throws Exception
+     */
+    @BugNumber(7287)
+    @Test
+    public void testMultipleAttributes_BaseExpressionNoResults() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        final PolicyEnforcementContext context = getContext();
+
+        configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
+
+        //this xpath will not yield any results as player1 element does not exist
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player1");
+        setNameSpaces(multipleConfig);
+
+        multipleConfig.getField(ID).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:LName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:FName/text()");
+        multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ISSUER).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:LName/text()");
+        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:offensiveStats/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        AssertionStatus status = server.checkRequest(context);
+
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
+
+        //validate generated xml
+        Message reqeust = context.getRequest();
+        String createdXml = XmlUtil.elementToXml(reqeust.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+
+        Assert.assertEquals("Invalid XACML reqeust generated by assertion", EXPECTED_XPATH_ABSOLUTE_VARIABLE,
+                fixLines(createdXml).trim());
+    }
+
+    /**
+     * Tests that when the fail assertion check box is not checked, that iteration continues if it cannot create
+     * an attribute value for a current value
+     *
+     * The relative xpath for datatype for one of the base xpaths will yield no value, so this iteration is skipped
+     * and continues on with the next result
+     *
+     * @throws Exception
+     */
+    @BugNumber(7287)
+    @Test
+    public void testMultipleAttributes_IterationContinues() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        //we want the processing to continue
+        multipleConfig.setFalsifyPolicyEnabled(false);
+        
+        final PolicyEnforcementContext context = getContext();
+        configureMultipleAttributeConfig(PLAYER_BUG_7287_STATS_REQUEST, multipleConfig, context);
+
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
+        setNameSpaces(multipleConfig);
+
+        //Just set up the minimum - id, datatype and value
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ID).setValue("play:FName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(DATA_TYPE).setValue("play:number/text()");
+        multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ISSUER).setValue("play:LName/text()");
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        AssertionStatus status = server.checkRequest(context);
+
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
+
+        //validate generated xml
+        Message reqeust = context.getRequest();
+        String createdXml = XmlUtil.elementToXml(reqeust.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+
+        Assert.assertEquals("Invalid XACML reqeust generated by assertion", EXECPTED_XPATH_BUG_7278,
+                fixLines(createdXml).trim());
+    }
+
+    /**
+     * See test testMultipleAttributes_IterationContinues above
+     * this test tells the multiple attributes configuration to fail if any required value is not found
+     * @throws Exception
+     */
+    @BugNumber(7287)
+    @Test
+    public void testMultipleAttributes_IterationStopsAndFails() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        //we want the processing to continue
+        multipleConfig.setFalsifyPolicyEnabled(true);
+
+        final PolicyEnforcementContext context = getContext();
+        configureMultipleAttributeConfig(PLAYER_BUG_7287_STATS_REQUEST, multipleConfig, context);
+
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
+        setNameSpaces(multipleConfig);
+
+        //Just set up the minimum - id, datatype and value
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ID).setValue("play:FName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(DATA_TYPE).setValue("play:number/text()");
+        multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ISSUER).setValue("play:LName/text()");
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        AssertionStatus status = server.checkRequest(context);
+
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FAILED, status);
+    }
+
+     /**
+     * Test that the issue instant is validated correctly and that it can stop <Attribute> elements from
+     * being generated
+     * In this test the valid of issue instant is invalid and check box is checked
+     * @throws Exception
+     */
+    @Test
+    public void testMultipleAttributes_IssueInstantInvalid() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        multipleConfig.setFalsifyPolicyEnabled(true);
+        final PolicyEnforcementContext context = getContext();
+
+        configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
+
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
+        setNameSpaces(multipleConfig);
+
+        //Just set up the minimum - id, datatype and value
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ID).setValue("play:LName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(DATA_TYPE).setValue("play:FName/text()");
+        multipleConfig.getField(ISSUE_INSTANT).setType(REGULAR);
+        multipleConfig.getField(ISSUE_INSTANT).setValue("invalid");
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        //Make sure version is not 2.0
+        assertion.setXacmlVersion(XacmlAssertionEnums.XacmlVersionType.V1_0);
+
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        AssertionStatus status = server.checkRequest(context);
+
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FAILED, status);
+    }
+
+    /**
+     * Test that the issue instant is validated correctly and that it can stop <Attribute> elements from
+     * being generated
+     * In this test the valid of issue instant is valid for some <Attribute>s, invalid for one and results in no value
+     * found in another
+     * @throws Exception
+     */
+    @Test
+    public void testMultipleAttributes_IssueInstantInvalid_NoStop() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        multipleConfig.setFalsifyPolicyEnabled(false);
+        final PolicyEnforcementContext context = getContext();
+
+        configureMultipleAttributeConfig(PLAYER_STATS_REQUEST_WITH_ISSUE_INSTANT, multipleConfig, context);
+
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
+        setNameSpaces(multipleConfig);
+
+        //Just set up the minimum - id, datatype and value
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ID).setValue("play:LName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(DATA_TYPE).setValue("play:FName/text()");
+        multipleConfig.getField(ISSUE_INSTANT).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ISSUE_INSTANT).setValue("play:proStartTime/text()");
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        //Make sure version is not 2.0
+        assertion.setXacmlVersion(XacmlAssertionEnums.XacmlVersionType.V1_0);
+        
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        AssertionStatus status = server.checkRequest(context);
+
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
+
+        //validate generated xml
+        Message reqeust = context.getRequest();
+        String createdXml = XmlUtil.elementToXml(reqeust.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+
+        Assert.assertEquals("Invalid XACML reqeust generated by assertion", EXEPECTED_ISSUE_INSTANT,
+                fixLines(createdXml).trim());
+    }
+
+    /**
+     * Tests that issue instant is simply ignored when it's specified with a blank value
+     * @throws Exception
+     */
+    @Test
+    public void testMultipleAttributes_IssueInstant_NotPresent() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        multipleConfig.setFalsifyPolicyEnabled(false);
+        final PolicyEnforcementContext context = getContext();
+
+        configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
+
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
+        setNameSpaces(multipleConfig);
+
+        //Just set up the minimum - id, datatype and value
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ID).setValue("play:LName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(DATA_TYPE).setValue("play:FName/text()");
+        multipleConfig.getField(ISSUE_INSTANT).setType(REGULAR);
+        multipleConfig.getField(ISSUE_INSTANT).setValue("");
+        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        //Make sure version is not 2.0
+        assertion.setXacmlVersion(XacmlAssertionEnums.XacmlVersionType.V1_0);
+
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        AssertionStatus status = server.checkRequest(context);
+
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
+
+        //validate generated xml
+        Message reqeust = context.getRequest();
+        String createdXml = XmlUtil.elementToXml(reqeust.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+
+        Assert.assertEquals("Invalid XACML reqeust generated by assertion", EXPECTED_XPATH_RELATIVE_VARIABLE_1_0,
+                fixLines(createdXml).trim());
+    }
+
+    /**
+     * Fields cannot reference message variables
+     * @throws Exception
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testMultipleAttributes_FieldCannotReferenceMessages() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        final PolicyEnforcementContext context = getContext();
+
+        String xml = "<donal>value</donal>";
+        Document doc = XmlUtil.parse(xml);
+        Message m = new Message(doc);
+
+        String contextVariable = "MULTI_VALUE";
+        Object [] multiVariable = new Object[]{"one", m, "three"};
+        context.setVariable(contextVariable, multiVariable);
+
+
+        configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
+
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
+        setNameSpaces(multipleConfig);
+
+        //Just set up the minimum - id, datatype and value
+        multipleConfig.getField(ID).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ID).setValue("play:LName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(CONTEXT_VARIABLE);
+        multipleConfig.getField(DATA_TYPE).setValue("${MULTI_VALUE}");
+        multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ISSUER).setValue("play:LName/text()");
+        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        server.checkRequest(context);
+    }
     /**
      * Test that relative and absolute xpaths work side by side, with the relative path defining the iteration
      * @throws Exception
@@ -1534,6 +1969,141 @@ public class ServerXacmlRequestBuilderAssertionTest {
             "   </soapenv:Body>\n" +
             "</soapenv:Envelope>";
 
+    private static final String PLAYER_STATS_REQUEST_WITH_ISSUE_INSTANT = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:play=\"http://playerstatsws.test.l7tech.com\">\n" +
+            "   <soapenv:Header/>\n" +
+            "   <soapenv:Body>\n" +
+            "      <play:addPlayer>\n" +
+            "         <play:player>\n" +
+            "            <play:FName>Aaron</play:FName>\n" +
+            "            <play:LName>Flint</play:LName>\n" +
+            "            <play:draftDetails/>\n" +
+            "            <play:number>7</play:number>\n" +
+            "            <play:offensiveStats>\n" +
+            "               <play:assists>200</play:assists>\n" +
+            "            </play:offensiveStats>\n" +
+            "            <play:physicalStats/>\n" +
+            "            <play:proStartTime>200-08-11T08:23:47-05:00</play:proStartTime>\n" +
+            "         </play:player>\n" +
+            "         <play:player>\n" +
+            "            <play:FName>Jennard</play:FName>\n" +
+            "            <play:LName>Dy</play:LName>\n" +
+            "            <play:draftDetails/>\n" +
+            "            <play:number>7</play:number>\n" +
+            "            <play:offensiveStats>\n" +
+            "               <play:assists>300</play:assists>\n" +
+            "            </play:offensiveStats>\n" +
+            "            <play:physicalStats/>\n" +
+            "            <play:proStartTime>invalid value</play:proStartTime>\n" +
+            "         </play:player>\n" +
+            "         <play:player>\n" +
+            "            <play:FName>Mark</play:FName>\n" +
+            "            <play:LName>Swan</play:LName>\n" +
+            "            <play:draftDetails/>\n" +
+            "            <play:number>12</play:number>\n" +
+            "            <play:offensiveStats>\n" +
+            "               <play:assists>500</play:assists>\n" +
+            "            </play:offensiveStats>\n" +
+            "            <play:physicalStats/>\n" +
+            "            <play:proStartTime>200-04-10T16:23:47-05:00</play:proStartTime>\n" +
+            "         </play:player>\n" +
+            "         <play:player>\n" +
+            "            <play:FName>Donal</play:FName>\n" +
+            "            <play:LName>Armstrong</play:LName>\n" +
+            "            <play:draftDetails/>\n" +
+            "            <play:number>15</play:number>\n" +
+            "            <play:offensiveStats>\n" +
+            "               <play:assists>600</play:assists>\n" +
+            "            </play:offensiveStats>\n" +
+            "            <play:physicalStats/>\n" +
+            "         </play:player>\n" +
+            "         <play:delay>0</play:delay>\n" +
+            "      </play:addPlayer>\n" +
+            "   </soapenv:Body>\n" +
+            "</soapenv:Envelope>";
+
+    /**
+     * Modified so that Jennard has no player number element
+     */
+    private static final String PLAYER_BUG_7287_STATS_REQUEST = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:play=\"http://playerstatsws.test.l7tech.com\">\n" +
+            "   <soapenv:Header/>\n" +
+            "   <soapenv:Body>\n" +
+            "      <play:addPlayer>\n" +
+            "         <play:player>\n" +
+            "            <play:FName>Aaron</play:FName>\n" +
+            "            <play:LName>Flint</play:LName>\n" +
+            "            <play:draftDetails/>\n" +
+            "            <play:number>7</play:number>\n" +
+            "            <play:offensiveStats>\n" +
+            "               <play:assists>200</play:assists>\n" +
+            "            </play:offensiveStats>\n" +
+            "            <play:physicalStats/>\n" +
+            "         </play:player>\n" +
+            "         <play:player>\n" +
+            "            <play:FName>Jennard</play:FName>\n" +
+            "            <play:LName>Dy</play:LName>\n" +
+            "            <play:draftDetails/>\n" +
+            "            <play:offensiveStats>\n" +
+            "               <play:assists>300</play:assists>\n" +
+            "            </play:offensiveStats>\n" +
+            "            <play:physicalStats/>\n" +
+            "         </play:player>\n" +
+            "         <play:player>\n" +
+            "            <play:FName>Mark</play:FName>\n" +
+            "            <play:LName>Swan</play:LName>\n" +
+            "            <play:draftDetails/>\n" +
+            "            <play:number>12</play:number>\n" +
+            "            <play:offensiveStats>\n" +
+            "               <play:assists>500</play:assists>\n" +
+            "            </play:offensiveStats>\n" +
+            "            <play:physicalStats/>\n" +
+            "         </play:player>\n" +
+            "         <play:delay>0</play:delay>\n" +
+            "      </play:addPlayer>\n" +
+            "   </soapenv:Body>\n" +
+            "</soapenv:Envelope>";
+
+    private static final String PLAYER_BUG_7698_STATS_REQUEST = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:play=\"http://playerstatsws.test.l7tech.com\">\n" +
+            "   <soapenv:Header/>\n" +
+            "   <soapenv:Body>\n" +
+            "      <play:addPlayer>\n" +
+            "         <play:player>\n" +
+            "            <play:FName>Aaron</play:FName>\n" +
+            "            <play:FName>Second Name</play:FName>\n" +
+            "            <play:LName>Flint</play:LName>\n" +
+            "            <play:draftDetails/>\n" +
+            "            <play:number>7</play:number>\n" +
+            "            <play:offensiveStats>\n" +
+            "               <play:assists>200</play:assists>\n" +
+            "            </play:offensiveStats>\n" +
+            "            <play:physicalStats/>\n" +
+            "         </play:player>\n" +
+            "         <play:player>\n" +
+            "            <play:FName>Aaron</play:FName>\n" +
+            "            <play:FName>Second Name</play:FName>\n" +
+            "            <play:LName>Dy</play:LName>\n" +
+            "            <play:draftDetails/>\n" +
+            "            <play:number>7</play:number>\n" +
+            "            <play:offensiveStats>\n" +
+            "               <play:assists>300</play:assists>\n" +
+            "            </play:offensiveStats>\n" +
+            "            <play:physicalStats/>\n" +
+            "         </play:player>\n" +
+            "         <play:player>\n" +
+            "            <play:FName>Aaron</play:FName>\n" +
+            "            <play:FName>Second Name</play:FName>\n" +
+            "            <play:LName>Swan</play:LName>\n" +
+            "            <play:draftDetails/>\n" +
+            "            <play:number>12</play:number>\n" +
+            "            <play:offensiveStats>\n" +
+            "               <play:assists>500</play:assists>\n" +
+            "            </play:offensiveStats>\n" +
+            "            <play:physicalStats/>\n" +
+            "         </play:player>\n" +
+            "         <play:delay>0</play:delay>\n" +
+            "      </play:addPlayer>\n" +
+            "   </soapenv:Body>\n" +
+            "</soapenv:Envelope>";
+
     private final String EXPECTED_XPATH_RELATIVE_VARIABLE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<Request xmlns=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\">\n" +
             "    <Subject>\n" +
@@ -1548,6 +2118,68 @@ public class ServerXacmlRequestBuilderAssertionTest {
             "            </AttributeValue>\n" +
             "        </Attribute>\n" +
             "        <Attribute AttributeID=\"Swan\" DataType=\"Mark\">\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>500</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "        </Attribute>\n" +
+            "    </Subject>\n" +
+            "    <Resource/>\n" +
+            "    <Action/>\n" +
+            "    <Environment/>\n" +
+            "</Request>";
+
+    private final String EXPECTED_XPATH_RELATIVE_VARIABLE_1_0 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<Request xmlns=\"urn:oasis:names:tc:xacml:1.0:context\">\n" +
+            "    <Subject>\n" +
+            "        <Attribute AttributeID=\"Flint\" DataType=\"Aaron\">\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>200</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "        </Attribute>\n" +
+            "        <Attribute AttributeID=\"Dy\" DataType=\"Jennard\">\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>300</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "        </Attribute>\n" +
+            "        <Attribute AttributeID=\"Swan\" DataType=\"Mark\">\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>500</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "        </Attribute>\n" +
+            "    </Subject>\n" +
+            "    <Resource/>\n" +
+            "    <Action/>\n" +
+            "    <Environment/>\n" +
+            "</Request>";
+
+    private final String EXEPECTED_ISSUE_INSTANT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<Request xmlns=\"urn:oasis:names:tc:xacml:1.0:context\">\n" +
+            "    <Subject>\n" +
+            "        <Attribute AttributeID=\"Flint\" DataType=\"Aaron\" IssueInstant=\"200-08-11T08:23:47-05:00\">\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>200</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "        </Attribute>\n" +
+            "        <Attribute AttributeID=\"Swan\" DataType=\"Mark\" IssueInstant=\"200-04-10T16:23:47-05:00\">\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>500</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "        </Attribute>\n" +
+            "    </Subject>\n" +
+            "    <Resource/>\n" +
+            "    <Action/>\n" +
+            "    <Environment/>\n" +
+            "</Request>";
+
+    private final String EXECPTED_XPATH_BUG_7278 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<Request xmlns=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\">\n" +
+            "    <Subject>\n" +
+            "        <Attribute AttributeID=\"Aaron\" DataType=\"7\" Issuer=\"Flint\">\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>200</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "        </Attribute>\n" +
+            "        <Attribute AttributeID=\"Mark\" DataType=\"12\" Issuer=\"Swan\">\n" +
             "            <AttributeValue>\n" +
             "                <play:assists>500</play:assists>\n" +
             "            </AttributeValue>\n" +

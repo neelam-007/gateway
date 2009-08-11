@@ -514,6 +514,7 @@ public class AssertionMessages extends Messages {
     public static final M OVERSIZEDTEXT_NOT_XML                         = m(7242, Level.WARNING, "{0} is not XML.");
     public static final M OVERSIZEDTEXT_SKIP_RESPONSE_NOT_ROUTED        = m(7243, Level.FINE, "No response body to check because request has not been routed yet.");
     public static final M MESSAGE_VARIABLE_BAD_XML                      = m(7244, Level.WARNING, "Message variable {0} does not contain well-formed XML");
+    public static final M MESSAGE_VARIABLE_NOT_XML                      = m(7245, Level.INFO, "Message variable {0} does not contain XML");
 
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");
@@ -661,10 +662,14 @@ public class AssertionMessages extends Messages {
     public static final M ADD_WSS_USERNAME_NOT_SOAP            = m(8880, Level.WARNING, "{0} message is not SOAP, cannot add WSS UsernameToken");
     public static final M ADD_WSS_USERNAME_MORE_THAN_ONE_TOKEN = m(8881, Level.WARNING, "Request included more than one X509 security token whose key ownership was proven");
 
-    public static final M XACML_REQUEST_ERROR        = m(8900, Level.WARNING, "Error generating request: {0}");
-    public static final M XACML_NOT_FOUND_OPTION_OFF = m(8901, Level.INFO, "A value for {0} was not found. Cannot add <Attribute> element to the {1} element");
-    public static final M XACML_NOT_FOUND_OPTION_ON  = m(8902, Level.INFO, "Policy falsified: a value for {0} was not found");
-    public static final M XACML_INVALID_XML_ATTRIBUTE= m(8903, Level.WARNING, "XML attribute name {0} with value {1} are not valid for an XML attribute");
+    public static final M XACML_REQUEST_ERROR              = m(8900, Level.WARNING, "Error generating request: {0}");
+    public static final M XACML_NOT_FOUND_OPTION_OFF       = m(8901, Level.INFO, "A value for {0} was not found. Cannot add <Attribute> element to the {1} element");
+    public static final M XACML_NOT_FOUND_OPTION_ON        = m(8902, Level.INFO, "Policy falsified: a value for {0} was not found");
+    public static final M XACML_INVALID_XML_ATTRIBUTE      = m(8903, Level.WARNING, "XML attribute name {0} with value {1} are not valid for an XML attribute");
+    public static final M XACML_INCORRECT_NUM_RESULTS_FOR_FIELD = m(8904, Level.INFO, "Found {0} results for field {1}. Only the first value will be used");
+    public static final M XACML_INCORRECT_TYPE_FOR_FIELD   = m(8905, Level.INFO, "Incorrect xpath result type {0} found for field {1}. Cannot add <Attribute> element to the {2} element");
+    public static final M XACML_BASE_EXPRESSION_NO_RESULTS = m(8906, Level.INFO, "Xpath base expression {0} found no results. Affects all dependent attribute fields");
+    public static final M XACML_INVALID_ISSUE_INSTANT      = m(8907, Level.INFO, "Invalid value for issue instant: {0} IssueInstant, if supplied, must be a valid datetime with a format \"yyyy-MM-dd'T'HH:mm:ss[Z]\"");    
 
     public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");
