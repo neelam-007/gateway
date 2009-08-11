@@ -250,21 +250,21 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             }
         }));
 
-        addChangeListener(idComboBox, ID);
-        addTypeChangeListener(idExpressionType, ID);
-        addChangeListener(dataTypeComboBox, DATA_TYPE);
-        addTypeChangeListener(dataTypeExpressionType, DATA_TYPE);
-        addChangeListener(issuerField, ISSUER);
-        addTypeChangeListener(issuerExpressionType, ISSUER);
-        addChangeListener(valueField, VALUE);
-        addTypeChangeListener(valueExpressionType, VALUE);
+        addValueChangeListener(idComboBox, ID);
+        addTypeChangeListener(idExpressionType, ID, idComboBox);
+        addValueChangeListener(dataTypeComboBox, DATA_TYPE);
+        addTypeChangeListener(dataTypeExpressionType, DATA_TYPE, dataTypeComboBox);
+        addValueChangeListener(issuerField, ISSUER);
+        addTypeChangeListener(issuerExpressionType, ISSUER, issuerField);
+        addValueChangeListener(valueField, VALUE);
+        addTypeChangeListener(valueExpressionType, VALUE, valueField);
 
         if(xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V2_0) {
             issueInstantLabel.setVisible(false);
             issueInstantFieldsPanel.setVisible(false);
         } else {
-            addChangeListener(issueInstantField, ISSUE_INSTANT);
-            addTypeChangeListener(issueInstantExpressionType, ISSUE_INSTANT);
+            addValueChangeListener(issueInstantField, ISSUE_INSTANT);
+            addTypeChangeListener(issueInstantExpressionType, ISSUE_INSTANT, issuerField);
         }
 
         falsifyPolicyCheckBox.setSelected(multipleAttributeConfig.isFalsifyPolicyEnabled());
@@ -273,29 +273,60 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         enableOrDisableButtons();
     }
 
-    private void addChangeListener(final JTextField textField, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
-        textField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+    private void addValueChangeListener(final JTextField valueTextField, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
+        valueTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
                 @Override
                 public void run() {
-                    multipleAttributeConfig.getField(fieldName).setValue(textField.getText().trim());
+                    multipleAttributeConfig.getField(fieldName).setValue(valueTextField.getText().trim());
                 }
             }));
     }
 
-    private void addChangeListener(final JComboBox field, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
-        field.addActionListener(new RunOnChangeListener(new Runnable() {
+    private void addValueChangeListener(final JComboBox valuesComboBox, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
+        valuesComboBox.addActionListener(new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
-                multipleAttributeConfig.getField(fieldName).setValue(((String)field.getSelectedItem()).trim());
+                multipleAttributeConfig.getField(fieldName).setValue(((String)valuesComboBox.getSelectedItem()).trim());
             }
         }));
     }
 
-    private void addTypeChangeListener(final JComboBox field, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName) {
-        field.addActionListener(new RunOnChangeListener(new Runnable() {
+    private void addTypeChangeListener(final JComboBox typesComboBox, final XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName fieldName, final JComponent valueComponent) {
+        typesComboBox.addActionListener(new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
-                multipleAttributeConfig.getField(fieldName).setType((XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) field.getSelectedItem());
+                XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType previousType = multipleAttributeConfig.getField(fieldName).getType();
+                XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType newType = (XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType) typesComboBox.getSelectedItem();
+
+                // Update the field type
+                multipleAttributeConfig.getField(fieldName).setType(newType);
+
+                // The below section is implemented for fixing the bug 7682.
+                // To resolve 7682, we have to resolve a special case - when user changes the field value, then change the type
+                // from Context Variable to one of other types, the field value will be automatically wrapped by a context variable
+                // wrapper "${...}" in multipleAttributeConfig, which will cause validation error for "Absolute XPath" type later.
+                // Thus, we need to remove the wrapper in multipleAttributeConfig before the validation, when user changes the type
+                // from Context Variable to other type.
+                if (previousType == CONTEXT_VARIABLE && previousType != newType) {
+                    String textInValueComponent;
+                    if (valueComponent instanceof JTextField) {
+                        textInValueComponent = ((JTextField)valueComponent).getText();
+                    } else if (valueComponent instanceof JComboBox) {
+                        textInValueComponent = ((String) ((JComboBox)valueComponent).getSelectedItem()).trim();
+                    } else {
+                        throw new RuntimeException("Invalid component to accept field value.");
+                    }
+
+                    boolean hasContextVariableWrapperInValueComponent = Syntax.getReferencedNames(textInValueComponent).length > 0;
+                    if (! hasContextVariableWrapperInValueComponent) {
+                        // Althought this text doesn't have the "${}" wrapper, the value in multipleAttributeConfig does
+                        // have the wrapper, so we need to remove the wrapper before updating the value.
+                        String[] contextVariables = Syntax.getReferencedNames(multipleAttributeConfig.getField(fieldName).getValue());
+                        if (contextVariables.length != 1) throw new IllegalArgumentException("AttributeValue must be a reference to exactly one context variable.");
+                        // Update the field value without the "${}" wrapper (Note: the wrapper has been removed in the above step.)
+                        multipleAttributeConfig.getField(fieldName).setValue(contextVariables[0]);
+                    }
+                }
             }
         }));
     }
