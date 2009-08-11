@@ -341,24 +341,6 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             DialogDisplayer.showMessageDialog( this, "DataType is required.  Please enter a DataType.", "Validation Error", JOptionPane.ERROR_MESSAGE, null );
             return false;
         }
-        // Validate Issue Instant if Xacml version is pre 2.0.
-        if(xacmlVersion != XacmlAssertionEnums.XacmlVersionType.V2_0) {
-            String issueInstant = issueInstantField.getText();
-            if (issueInstant != null) {
-                issueInstant = issueInstant.trim();
-                // if is is a blank or consists of context variable(s), then ignore validation.
-                if (issueInstant.isEmpty() || Syntax.getReferencedNames(issueInstant).length > 0) return true;
-
-                // Check if it is a valid datetime with a format "yyyy-MM-dd'T'HH:mm:ssZ"
-                try {
-                    DateTimeAttribute.getInstance(issueInstant);
-                } catch (Exception e) {
-                    DialogDisplayer.showMessageDialog(this, "IssueInstant must be specified by a blank, context variable(s),\nor a valid datetime with a format \"yyyy-MM-dd'T'HH:mm:ss[Z]\".",
-                        "Validation Error", JOptionPane.ERROR_MESSAGE, null);
-                    return false;
-                }
-            }
-        }
 
         final Map<String,String> namespaces = multipleAttributeConfig.getNamespaces();
         if ( !relativeXpaths.isEmpty() ) {
@@ -387,6 +369,30 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                 }
             }
         }
+
+        // Validate IssueInstant if the Xacml version is pre 2.0 and the option of IssueInstant is Regular.
+        if(xacmlVersion != XacmlAssertionEnums.XacmlVersionType.V2_0) {
+            XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType issueInstantType = multipleAttributeConfig.getField(ISSUE_INSTANT).getType();
+            // Ignore the validation if IssueInstant is specified by Context Variable or XPath.
+            if (issueInstantType == XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.REGULAR) {
+                String issueInstant = issueInstantField.getText();
+                if (issueInstant != null) {
+                    issueInstant = issueInstant.trim();
+                    // if is is a blank or consists of context variable(s), then ignore validation.
+                    if (issueInstant.isEmpty() || Syntax.getReferencedNames(issueInstant).length > 0) return true;
+
+                    // Check if it is a valid datetime with a format "yyyy-MM-dd'T'HH:mm:ss[Z]"
+                    try {
+                        DateTimeAttribute.getInstance(issueInstant);
+                    } catch (Exception e) {
+                        DialogDisplayer.showMessageDialog(this, "IssueInstant must be either a blank or a valid datetime with a format \"yyyy-MM-dd'T'HH:mm:ss[Z]\".",
+                            "Validation Error", JOptionPane.ERROR_MESSAGE, null);
+                        return false;
+                    }
+                }
+            }
+        }
+
         return true;
     }
 
