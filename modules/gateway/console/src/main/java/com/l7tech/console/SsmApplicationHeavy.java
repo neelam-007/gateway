@@ -5,17 +5,19 @@
  */
 package com.l7tech.console;
 
-import com.l7tech.console.util.SsmPreferences;
-import com.l7tech.console.util.PreferencesChangedEvent;
 import com.l7tech.console.util.HeavySsmPreferences;
+import com.l7tech.console.util.PreferencesChangedEvent;
+import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.HelpUtil;
+import com.rsa.jsafe.provider.JsafeJCE;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.swing.*;
-import java.util.logging.Logger;
 import java.io.File;
+import java.security.Security;
+import java.util.logging.Logger;
 
 /**
  * Thick-client version of SsmApplication.
@@ -41,6 +43,9 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
         if (running) {
             throw new IllegalStateException("SSM already running");
         }
+
+        installAdditionalSecurityProviders();
+
         if (!isSuppressAutoLookAndFeel()) setAutoLookAndFeel();
         mainWindow = new MainWindow(this);
         TopComponents.getInstance().registerComponent("mainWindow", mainWindow);
@@ -125,5 +130,9 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
     public void showHelpTopicsRoot() {
         String applicationHome = System.getProperty(APPLICATION_HOME_PROPERTY, new File(".").getAbsolutePath());
         HelpUtil.showHelpTopicsRoot(applicationHome, TopComponents.getInstance().getTopParent());
+    }
+
+    private void installAdditionalSecurityProviders() {
+        Security.addProvider(new JsafeJCE());
     }
 }
