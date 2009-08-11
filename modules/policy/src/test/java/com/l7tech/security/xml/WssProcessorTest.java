@@ -24,8 +24,8 @@ import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.soap.SoapUtil;
 import org.jcp.xml.dsig.internal.dom.DOMReference;
 import org.jcp.xml.dsig.internal.dom.DOMSubTreeData;
-import static org.junit.Assert.*;
 import org.junit.*;
+import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -938,6 +938,19 @@ public class WssProcessorTest {
         doTest(makeEttkTestDocument("ECDSA with SHA-284 signed using Luna", XmlUtil.stringAsDocument(SIGNED_USING_SHA384_WITH_ECDSA)));
     }
 
+    @Test
+    @BugNumber(7580)
+    public void testBug7580ProcessWsscRequest() throws Exception {
+        SecurityContextFinder scf = new SecurityContextFinder() {
+            @Override
+            public SecurityContext getSecurityContext(String securityContextIdentifier) {
+                return new SimpleSecureConversationSession(B7580_WSSC_IDENT, B7580_WSSC_SHARED_SECRET, "http://schemas.xmlsoap.org/ws/2004/04/sc");
+            }
+        };
+        TestDocument testDocument = new TestDocument("Bug7580ProcessWsscRequest", XmlUtil.stringAsDocument(B7580_WSSC_REQ), null, null, scf, null, null);
+        doTest(testDocument);
+    }
+
     private static Message makeMessage(String xml) throws SAXException {
         Message message = new Message();
         message.initialize(XmlUtil.stringToDocument(xml));
@@ -1022,4 +1035,30 @@ public class WssProcessorTest {
             "penv:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><productid xsi:type=\"xsd:long\">-9206260647417300294</product" +
             "id><amount xsi:type=\"xsd:long\">1</amount><price xsi:type=\"xsd:float\">5.0</price><accountid xsi:type=\"xsd:long\">228</accou" +
             "ntid></ns1:placeOrder></soapenv:Body></soapenv:Envelope>";
+
+    private static final String B7580_WSSC_IDENT = "http://www.layer7tech.com/uuid/ed0cc365c1d4f1b06d82e2db7872e65cadca160a";
+    private static final byte[] B7580_WSSC_SHARED_SECRET = { -87,32,-79,-40,108,-31,-31,-66,-80,103,114,4,104,-43,54,-94 };
+    private static final byte[] B7580_WSSC_DERIVED_WITH_LUNA = { 59,8,20,97,-128,-28,68,-5,-48,90,-81,98,82,-90,-64,75 };
+    private static final String B7580_WSSC_REQ =
+            "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:" +
+            "xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><soap:Header><wsse:Security actor=\"secure_span\" soap:mustUnderstand=\"1\" xmlns:" +
+            "wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/" +
+            "oasis-200401-wss-wssecurity-utility-1.0.xsd\"><wsu:Timestamp wsu:Id=\"Timestamp-1-d793dfd7097cc37a5883b5a0dd76867e\"><wsu:Created>" +
+            "2009-08-11T20:16:52.924341377Z</wsu:Created><wsu:Expires>2009-08-11T20:21:52.924Z</wsu:Expires></wsu:Timestamp><wssc:SecurityContextToken xmlns:" +
+            "wssc=\"http://schemas.xmlsoap.org/ws/2004/04/sc\"><wssc:Identifier>http://www.layer7tech.com/uuid/ed0cc365c1d4f1b06d82e2db7872e65cadca160a</wssc:" +
+            "Identifier></wssc:SecurityContextToken><wssc:DerivedKeyToken wssc:Algorithm=\"http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk/p_sha1\" wsu:" +
+            "Id=\"DerivedKey-Sig-0-ccac801e6ea98d5d30d8e88bd96e5ac5\" xmlns:wssc=\"http://schemas.xmlsoap.org/ws/2004/04/sc\"><wsse:SecurityTokenReference><wsse:" +
+            "Reference URI=\"http://www.layer7tech.com/uuid/ed0cc365c1d4f1b06d82e2db7872e65cadca160a\" ValueType=\"http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct\"/>" +
+            "</wsse:SecurityTokenReference><wssc:Generation>0</wssc:Generation><wssc:Length>16</wssc:Length><wssc:Label>WS-SecureConversation</wssc:Label><wsse:" +
+            "Nonce>Ok+XTDkuVaBxWKwGiV3uBQ==</wsse:Nonce></wssc:DerivedKeyToken><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algor" +
+            "ithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#hmac-sha1\"/><ds:Reference URI" +
+            "=\"#Timestamp-1-d793dfd7097cc37a5883b5a0dd76867e\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/></ds:Transforms><ds:" +
+            "DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><ds:DigestValue>8vmhbtctYxxRx8V0lfrLYS2wR4M=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:" +
+            "SignatureValue>c0xOexnaLgiErN565l1j42rulw4=</ds:SignatureValue><ds:KeyInfo><wsse:SecurityTokenReference xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-" +
+            "200401-wss-wssecurity-secext-1.0.xsd\"><wsse:Reference URI=\"#DerivedKey-Sig-0-ccac801e6ea98d5d30d8e88bd96e5ac5\" ValueType=\"http://schemas.xmlsoap.org/ws/2004/04" +
+            "/security/sc/dk\"/></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></wsse:Security></soap:Header><soap:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"><" +
+            "delay>0</delay></listProducts></soap:Body></soap:Envelope>";
+
+    
+
 }

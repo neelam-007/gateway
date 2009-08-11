@@ -159,16 +159,17 @@ public class SecureConversationKeyDeriver {
      */
     public byte[] pSHA1(byte[] secret, byte[] seed, int requiredlength) throws NoSuchAlgorithmException, InvalidKeyException {
         // compute A(1)
-        byte[] ai = getHMacSHA1(secret).doFinal(seed);
+        final SecretKeySpec key = new SecretKeySpec(secret, "HMacSHA1");
+        byte[] ai = doHmac(key, seed);
         // compute A(1) + seed
         byte[] aiPlusSeed = new byte[ai.length + seed.length];
         System.arraycopy(ai, 0, aiPlusSeed, 0, ai.length);
         System.arraycopy(seed, 0, aiPlusSeed, ai.length, seed.length);
         // start the P_SHA-1
-        byte[] output = getHMacSHA1(secret).doFinal(aiPlusSeed);
+        byte[] output = doHmac(key, aiPlusSeed);
         // continue until we get at least the desired length
         while (output.length < requiredlength) {
-            ai = getHMacSHA1(secret).doFinal(ai);
+            ai = doHmac(key, ai);
             if (aiPlusSeed.length == (ai.length + seed.length)) {
                 System.arraycopy(ai, 0, aiPlusSeed, 0, ai.length);
             } else {
@@ -176,7 +177,7 @@ public class SecureConversationKeyDeriver {
                 System.arraycopy(ai, 0, aiPlusSeed, 0, ai.length);
                 System.arraycopy(seed, 0, aiPlusSeed, ai.length, seed.length);
             }
-            byte[] bytesToAppend = getHMacSHA1(secret).doFinal(aiPlusSeed);
+            byte[] bytesToAppend = doHmac(key, aiPlusSeed);
             byte[] newoutput = new byte[output.length + bytesToAppend.length];
             System.arraycopy(output, 0, newoutput, 0, output.length);
             System.arraycopy(bytesToAppend, 0, newoutput, output.length, bytesToAppend.length);
@@ -191,13 +192,12 @@ public class SecureConversationKeyDeriver {
         return output;
     }
 
-    private Mac getHMacSHA1(byte[] secret) throws NoSuchAlgorithmException, InvalidKeyException {
-        if (hmac == null) {
+    private byte[] doHmac(Key key, byte[] seed) throws NoSuchAlgorithmException, InvalidKeyException {
+        if (hmac == null)
             hmac = Mac.getInstance("HMacSHA1");
-            Key key = new SecretKeySpec(secret, "HMacSHA1");
-            hmac.init(key);
-        }
-        return hmac;
+        hmac.reset();
+        hmac.init(key);
+        return hmac.doFinal(seed);
     }
 
     private Mac hmac;
