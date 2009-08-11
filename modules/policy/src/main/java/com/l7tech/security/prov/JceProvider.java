@@ -267,6 +267,17 @@ public abstract class JceProvider {
     }
 
     /**
+     * Get an implementation of the specified MessageDigest.
+     *
+     * @param messageDigest the algorithm to get, ie "SHA-384".  Required.
+     * @return an implementation.  Never null.
+     * @throws NoSuchAlgorithmException if the specified algorithm is invalid or not available from the provider.
+     */
+    public MessageDigest getMessageDigest(String messageDigest) throws NoSuchAlgorithmException {
+        return getMessageDigest(messageDigest, getProviderFor("MessageDigest." + messageDigest));
+    }
+
+    /**
      * Obtain a Signature instance from the current JceProvider.
      *
      * @param alg  the signature algorithm, ie "SHA1withRSA".  Required.
@@ -347,6 +358,18 @@ public abstract class JceProvider {
         } catch (NoSuchProviderException e) {
             throw new RuntimeException(e); // can't happen
         }
+    }
+
+    /**
+     * Get the specified MessageDigest from the specified Provider (which may be null).
+     *
+     * @param algorithmName  the hash to get.  Required.
+     * @param prov the provider to get it from, or null to get it from the current higheset-preference Provider for that hash.
+     * @return an implementation of the requested hash.  Never null.
+     * @throws NoSuchAlgorithmException if the requested hash is invalid or not available from the specified provider.
+     */
+    public static MessageDigest getMessageDigest(String algorithmName, Provider prov) throws NoSuchAlgorithmException {
+        return prov == null ? MessageDigest.getInstance(algorithmName) : MessageDigest.getInstance(algorithmName, prov);
     }
 
     /**
