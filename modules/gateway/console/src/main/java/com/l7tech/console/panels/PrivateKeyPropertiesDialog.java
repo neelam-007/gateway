@@ -289,15 +289,23 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         }
         // Check for EC cert, since this can lock you out of the SSM.  (Bug #7563)
         if (subject.getKeyType().toUpperCase().startsWith("EC") && !SyspropUtil.getBoolean(PROP_ALLOW_EC_FOR_DEFAULT_SSL, false)) {
-            DialogDisplayer.showMessageDialog(
+            DialogDisplayer.showConfirmDialog(
                     makeDefaultSSLButton,
                     "This is an elliptic curve private key.\n\n" +
-                    "Many SSL clients -- including the SecureSpan Manager as shipped, the Gateway's browser-based\n" +
-                    "admin applet when run with a standard Java install, and many web browsers -- will\n" +
-                    "be unable to connect to an SSL server that uses this key for its SSL server cert.",
+                    "Many SSL clients -- including Gateway's browser-based admin applet when run\n" +
+                    "with a standard Java install, and many web browsers -- will be unable to connect\n" +
+                    "to an SSL server that uses this key as its SSL server certificate.\n\n" +
+                    "Are you sure you wish the cluster to use this as as the default SSL private key?",
                     "Unsuitable Default SSL Key",
+                    JOptionPane.YES_NO_CANCEL_OPTION,
                     JOptionPane.WARNING_MESSAGE,
-                    null);
+                    new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(int option) {
+                            if (option == JOptionPane.OK_OPTION)
+                                doMakeDefaultSsl();
+                        }
+                    });
             return;
         }
         doMakeDefaultSsl();
