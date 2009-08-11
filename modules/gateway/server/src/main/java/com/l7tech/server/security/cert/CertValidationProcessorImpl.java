@@ -580,7 +580,6 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                             throw new IllegalStateException("Unexpected invalidation operation: '" + op + "'");
                     }
                 }
-                if (currentDefaultRevocationPolicy == null) throw new IllegalStateException("Default revocation policy deleted and not replaced");
             } finally {
                 lock.writeLock().unlock();
             }
