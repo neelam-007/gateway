@@ -762,7 +762,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
         final List<AttributeValue> attributeValues = getAttributeValues(documentHolder,
                 namespaces,
-                multipleAttributeConfig.getField(ATTRIBUTE_VALUE),
+                multipleAttributeConfig.getField(VALUE),
                 contextVariables,
                 resultCursor);
 
@@ -908,7 +908,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         if( XPATH_RELATIVE == configField.getType() )
             throw new IllegalArgumentException("If xpath, field must not be relative");
 
-        if( ATTRIBUTE_VALUE == configField.getName() )
+        if( VALUE == configField.getName() )
             throw new UnsupportedOperationException("method cannot be used for value field");
 
         if( XPATH_ABSOLUTE == configField.getType() ) {

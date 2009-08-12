@@ -114,7 +114,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             issueInstantField.setText(multipleAttributeConfig.getField(ISSUE_INSTANT).getValue());
         }
 
-        valueField.setText(multipleAttributeConfig.getField(ATTRIBUTE_VALUE).getValue());
+        valueField.setText(multipleAttributeConfig.getField(VALUE).getValue());
 
         this.window = window;
 
@@ -127,7 +127,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         dataTypeExpressionType.setSelectedItem(multipleAttributeConfig.getField(DATA_TYPE).getType());
         issuerExpressionType.setSelectedItem(multipleAttributeConfig.getField(ISSUER).getType());
         issueInstantExpressionType.setSelectedItem(multipleAttributeConfig.getField(ISSUE_INSTANT).getType());
-        valueExpressionType.setSelectedItem(multipleAttributeConfig.getField(ATTRIBUTE_VALUE).getType());
+        valueExpressionType.setSelectedItem(multipleAttributeConfig.getField(VALUE).getType());
 
         testDocument = XmlUtil.stringAsDocument("<blah xmlns=\"http://bzzt.com\"/>");
     }
@@ -256,8 +256,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         addTypeChangeListener(dataTypeExpressionType, DATA_TYPE, dataTypeComboBox);
         addValueChangeListener(issuerField, ISSUER);
         addTypeChangeListener(issuerExpressionType, ISSUER, issuerField);
-        addValueChangeListener(valueField, ATTRIBUTE_VALUE);
-        addTypeChangeListener(valueExpressionType, ATTRIBUTE_VALUE, valueField);
+        addValueChangeListener(valueField, VALUE);
+        addTypeChangeListener(valueExpressionType, VALUE, valueField);
 
         if(xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V2_0) {
             issueInstantLabel.setVisible(false);
