@@ -264,7 +264,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             issueInstantFieldsPanel.setVisible(false);
         } else {
             addValueChangeListener(issueInstantField, ISSUE_INSTANT);
-            addTypeChangeListener(issueInstantExpressionType, ISSUE_INSTANT, issuerField);
+            addTypeChangeListener(issueInstantExpressionType, ISSUE_INSTANT, issueInstantField);
         }
 
         falsifyPolicyCheckBox.setSelected(multipleAttributeConfig.isFalsifyPolicyEnabled());
