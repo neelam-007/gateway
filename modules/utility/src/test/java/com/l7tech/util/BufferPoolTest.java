@@ -5,40 +5,44 @@
 
 package com.l7tech.util;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.*;
 
-import java.util.logging.Logger;
+import java.util.Arrays;
 import java.util.Random;
-
-import com.l7tech.util.BufferPool;
+import java.util.logging.Logger;
 
 /**
  * @author mike
  */
-public class BufferPoolTest extends TestCase {
+public class BufferPoolTest {
     private static Logger log = Logger.getLogger(BufferPoolTest.class.getName());
 
-    public BufferPoolTest(String name) {
-        super(name);
+    private int[] reqPerSizeClass = new int[BufferPool.getNumSizeClasses()];
+
+    @Before
+    public void clearHistogram() {
+        Arrays.fill(reqPerSizeClass, 0);
     }
 
-    public static Test suite() {
-        return new TestSuite(BufferPoolTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testBufferPool() throws Exception {
         Random rand = new Random(827357);
-        for (int i = 0; i < 3000; ++i) {
-            int size = rand.nextInt(500000);
+        for (int i = 0; i < 5000; ++i) {
+            boolean big = rand.nextInt(100) > 50;
+            int randRange = big ? 1200000 : 8000;
+            int size = rand.nextInt(randRange);
+            reqPerSizeClass[BufferPool.getSizeClass(size)]++;
             byte[] buf = BufferPool.getBuffer(size);
             assertTrue(buf.length >= size);
             BufferPool.returnBuffer(buf);
+        }
+
+        // Show histogram to ensure adequate coverage
+        System.out.println("Sz\tCnt");
+        for (int sc = 0; sc < reqPerSizeClass.length; sc++) {
+            int count = reqPerSizeClass[sc];
+            System.out.println(sc + "\t" + count);
         }
 
         // Get a teeny buffer
