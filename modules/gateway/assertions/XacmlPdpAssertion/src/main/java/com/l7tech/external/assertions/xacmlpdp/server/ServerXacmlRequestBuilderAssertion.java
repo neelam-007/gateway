@@ -548,9 +548,14 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
         boolean iteratingOnBaseXPath = false;
         List<String> iterableValues = new ArrayList<String>();
-        for (XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField : nonValueFields) {
+        for (XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField : multipleAttributeConfig.getAllFields()) {
             if (XPATH_RELATIVE == configField.getType())
                 iteratingOnBaseXPath = true;
+
+            //for iteration were need to know if a relative xpath is in the attribute field, but not if it contains
+            //a multi valued context variable. The attribute value field in itself cannot cause iteration for Attribute elements
+            if(configField.getName() == VALUE) continue;
+
             if (isUsingMultiValuedCtxVariables && CONTEXT_VARIABLE == configField.getType())
                 iterableValues.add(configField.getValue());
         }
