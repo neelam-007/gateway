@@ -23,6 +23,7 @@ import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ValidationUtils;
 import com.sun.xacml.attr.DateTimeAttribute;
@@ -1149,9 +1150,14 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 String [] varNames = Syntax.getReferencedNames(valueField.getValue());
                 if(varNames.length != 0) {
                     Object contextVarValue = contextVariables.get(varNames[0]);
-                    returnList.add(contextVarValue instanceof Message ?
-                        new AttributeValue((Message)contextVarValue) :
-                        new AttributeValue(ExpandVariables.process(contextVarValue.toString(), contextVariables, auditor, true)));
+                    if(contextVarValue == null){
+                        auditor.logAndAudit(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE, varNames[0]);
+                        throw new VariableNameSyntaxException(varNames[0]);
+                    }else{
+                        returnList.add(contextVarValue instanceof Message ?
+                            new AttributeValue((Message)contextVarValue) :
+                            new AttributeValue(ExpandVariables.process(contextVarValue.toString(), contextVariables, auditor, true)));
+                    }
                 }
             }
         } else if( valueField.getType().isXpath() ) { // XPATH_RELATIVE or XPATH_ABSOLUTE
