@@ -48,7 +48,7 @@ if [ ! -z "${SSGNODE}" ] ; then
             fi
         fi
 
-        echo "${NODE_OPTS}" | grep -q "\-XX:MaxPermSize"
+        echo "${NODE_OPTS}" | grep -s "\-XX:MaxPermSize"
         if [ ${?} -ne 0 ] ; then
             NODE_OPTS="${NODE_OPTS} -XX:MaxPermSize=${NODE_DEFAULT_MAX_PERM_SIZE}"
         fi
