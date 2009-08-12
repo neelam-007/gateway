@@ -406,8 +406,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("id/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("value/a/text()");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("value/a/text()");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -455,8 +455,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("id/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("value/a");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -500,8 +500,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("donal:id/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("value/a");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -544,8 +544,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("donal:id/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("value/a");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         assertion.setXacmlVersion(XacmlAssertionEnums.XacmlVersionType.V1_1);
@@ -589,8 +589,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("donal:id/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
         multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/test/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("value/a");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -647,8 +647,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("play:LName/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("*[local-name() = $datatype]/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("*[local-name() = $attributevalue]/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("*[local-name() = $attributevalue]/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -709,8 +709,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/play:LName/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
         multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/*[local-name() = $datatype]/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
-        multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/*[local-name() = $attributevalue]/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/*[local-name() = $attributevalue]/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -763,8 +763,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/play:LName/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
         multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/*[local-name() = $datatype]/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
-        multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/*[local-name() = $attributevalue]/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/*[local-name() = $basevariable]/*[local-name() = $attributevalue]/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -776,7 +776,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
                 assertion, ApplicationContexts.getTestApplicationContext());
         server.checkRequest(context);
     }
-    
+
     /**
      * Test that absolute and relative xpaths behave the same
      * See func spec http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_XACML#Multiple_Attributes
@@ -805,8 +805,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:FName/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("play:offensiveStats/play:assists/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("play:offensiveStats/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -859,8 +859,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:FName/text()");
         multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
         multipleConfig.getField(ISSUER).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:LName/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
-        multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:offensiveStats/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:offensiveStats/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -912,8 +912,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(DATA_TYPE).setValue("play:number/text()");
         multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
         multipleConfig.getField(ISSUER).setValue("play:LName/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("play:offensiveStats/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -961,8 +961,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(DATA_TYPE).setValue("play:number/text()");
         multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
         multipleConfig.getField(ISSUER).setValue("play:LName/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("play:offensiveStats/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -1002,8 +1002,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(DATA_TYPE).setValue("play:FName/text()");
         multipleConfig.getField(ISSUE_INSTANT).setType(REGULAR);
         multipleConfig.getField(ISSUE_INSTANT).setValue("invalid");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("play:offensiveStats/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         //Make sure version is not 2.0
@@ -1047,8 +1047,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(DATA_TYPE).setValue("play:FName/text()");
         multipleConfig.getField(ISSUE_INSTANT).setType(XPATH_RELATIVE);
         multipleConfig.getField(ISSUE_INSTANT).setValue("play:proStartTime/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("play:offensiveStats/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         //Make sure version is not 2.0
@@ -1096,8 +1096,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(DATA_TYPE).setValue("play:FName/text()");
         multipleConfig.getField(ISSUE_INSTANT).setType(REGULAR);
         multipleConfig.getField(ISSUE_INSTANT).setValue("");
-        multipleConfig.getField(VALUE).setType(XPATH_RELATIVE);
-        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("play:offensiveStats/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         //Make sure version is not 2.0
@@ -1153,8 +1153,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_VALUE}");
         multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
         multipleConfig.getField(ISSUER).setValue("play:LName/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
-        multipleConfig.getField(VALUE).setValue("play:offensiveStats/play:assists");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("play:offensiveStats/play:assists");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -1186,8 +1186,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/donal:id/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
         multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/datatype/text()");
-        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
-        multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/value/a");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/value/a");
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
         XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
@@ -1230,8 +1230,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("donal:id/text()");
         multipleConfig.getField(DATA_TYPE).setType(XPATH_RELATIVE);
         multipleConfig.getField(DATA_TYPE).setValue("datatype/text()");
-        multipleConfig.getField(VALUE).setType(CONTEXT_VARIABLE);
-        multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(CONTEXT_VARIABLE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("${MULTI_VARIABLE}");
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
@@ -1283,8 +1283,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("donal:id/text()");
         multipleConfig.getField(DATA_TYPE).setType(CONTEXT_VARIABLE);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
-        multipleConfig.getField(VALUE).setType(CONTEXT_VARIABLE);
-        multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(CONTEXT_VARIABLE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
         Object [] dataTypes = new Object[]{"datatype1", "datatype2", "datatype3", "datatype4"};
@@ -1339,8 +1339,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("donal:id/text()");
         multipleConfig.getField(DATA_TYPE).setType(CONTEXT_VARIABLE);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
-        multipleConfig.getField(VALUE).setType(CONTEXT_VARIABLE);
-        multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(CONTEXT_VARIABLE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
         Object [] dataTypes = new Object[]{"datatype1", "datatype2"};
@@ -1392,8 +1392,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute/donal:id/text()");
         multipleConfig.getField(DATA_TYPE).setType(CONTEXT_VARIABLE);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}");
-        multipleConfig.getField(VALUE).setType(CONTEXT_VARIABLE);
-        multipleConfig.getField(VALUE).setValue("${MULTI_VARIABLE}");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(CONTEXT_VARIABLE);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("${MULTI_VARIABLE}");
 
         //define datatype as a multi valued context variable
         Object [] dataTypes = new Object[]{"datatype1", "datatype2"};
@@ -1446,8 +1446,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("${ID}");
         multipleConfig.getField(DATA_TYPE).setType(REGULAR);
         multipleConfig.getField(DATA_TYPE).setValue("${DATATYPE}");
-        multipleConfig.getField(VALUE).setType(REGULAR);
-        multipleConfig.getField(VALUE).setValue("${ATTRIBUTE_VALUE}");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(REGULAR);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("${ATTRIBUTE_VALUE}");
 
         //define datatype as a multi valued context variable
         context.setVariable("DATATYPE", "datatype1");
@@ -1500,8 +1500,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         multipleConfig.getField(ID).setValue("donal:id/text()");
         multipleConfig.getField(DATA_TYPE).setType(REGULAR);
         multipleConfig.getField(DATA_TYPE).setValue("${MULTI_DATATYPE}"); //this should be an error - it contains a message
-        multipleConfig.getField(VALUE).setType(REGULAR);
-        multipleConfig.getField(VALUE).setValue("static string");
+        multipleConfig.getField(ATTRIBUTE_VALUE).setType(REGULAR);
+        multipleConfig.getField(ATTRIBUTE_VALUE).setValue("static string");
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);

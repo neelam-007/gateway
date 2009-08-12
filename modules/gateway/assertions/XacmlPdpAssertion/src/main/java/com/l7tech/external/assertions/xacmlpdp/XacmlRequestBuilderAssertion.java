@@ -274,7 +274,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             DATA_TYPE("DataType"),
             ISSUER("Issuer"),
             ISSUE_INSTANT("IssueInstant"),
-            VALUE("AttributeValue");
+            ATTRIBUTE_VALUE("AttributeValue");
 
             private final String displayName;
 
@@ -324,7 +324,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             put(DATA_TYPE.name(), new Field(DATA_TYPE));
             put(ISSUER.name(), new Field(ISSUER));
             put(ISSUE_INSTANT.name(), new Field(ISSUE_INSTANT));
-            put(VALUE.name(), new Field(VALUE));
+            put(ATTRIBUTE_VALUE.name(), new Field(ATTRIBUTE_VALUE));
         }};
 
         private XacmlAssertionEnums.MessageLocation messageSource = XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST;
@@ -370,7 +370,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
         public Set<Field> getNonValueFields() {
             Set<Field> result = new HashSet<Field>(fields.values());
-            result.remove(fields.get(VALUE.name()));
+            result.remove(fields.get(ATTRIBUTE_VALUE.name()));
             return result;
         }
 
