@@ -322,6 +322,15 @@ public abstract class JceProvider {
     }
 
     /**
+     * Get a provider for bulk block ciphers.  This is broken out from getProviderFor() for performance reasons.
+     *
+     * @return a Provider for block Cipher implementations (AES, DES), or null if the default provider should be used instead.
+     */
+    public Provider getBlockCipherProvider() {
+        return getProviderFor("Cipher.AES");
+    }
+
+    /**
      * Get a Provider appropriate for the specified service.  See JceProvider for a list of recognized service
      * names.
      *

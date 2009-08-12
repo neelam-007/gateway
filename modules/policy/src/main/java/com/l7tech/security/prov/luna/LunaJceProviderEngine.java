@@ -55,6 +55,11 @@ public class LunaJceProviderEngine extends JceProvider {
     }
 
     @Override
+    public Provider getBlockCipherProvider() {
+        return JCE_PROVIDER;
+    }
+
+    @Override
     public String getDisplayName() {
         return JCE_PROVIDER.toString() + " / " + JCA_PROVIDER.toString();
     }

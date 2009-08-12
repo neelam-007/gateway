@@ -1370,7 +1370,7 @@ public class WssProcessorImpl implements WssProcessor {
         };
 
         // TODO we won't know the actual cipher until the EncryptionMethod is created, so we'll hope that the Provider will be the same for all symmetric crypto
-        Provider symmetricProvider = JceProvider.getInstance().getProviderFor("Cipher.AES");
+        Provider symmetricProvider = JceProvider.getInstance().getBlockCipherProvider();
         if (symmetricProvider != null)
             af.setProvider(symmetricProvider.getName());
         dc.setAlgorithmFactory(af);

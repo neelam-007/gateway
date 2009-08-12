@@ -49,6 +49,11 @@ public class RsaJceProviderEngine extends JceProvider {
     }
 
     @Override
+    public Provider getBlockCipherProvider() {
+        return PROVIDER;
+    }
+
+    @Override
     protected String getRsaNoPaddingCipherName() {
         return "RSA/ECB/NoPadding";
     }
