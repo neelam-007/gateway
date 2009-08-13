@@ -16,9 +16,7 @@ import java.io.Serializable;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
- * User: njordan
- * Date: 31-Mar-2009
- * Time: 7:42:45 PM
+ * @author njordan
  */
 public class XacmlRequestBuilderAssertion extends Assertion implements UsesVariables, SetsVariables{
     /**
@@ -30,7 +28,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
      */
     public static class GenericXmlElement implements Cloneable, Serializable {
         private Map<String, String> attributes;
-        private String content="";//I might be xml
+        private String content="";
 
         public GenericXmlElement() {
         }
@@ -179,15 +177,35 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
     /**
      * AttributeTreeNodeTag is implemented by both Attribute and MultipleAttributeConfig. The implementations are
-     * listed here as the reason for this interface is to allow all nodes, which will end up as <Attribute> nodes,
+     * listed here as the reason for this abstract class is to allow all nodes, which will end up as <Attribute> nodes,
      * to exist in the XACML Request Builder tree, as a direct child of either Subject, Request, Action or
-     * Environment. The UI can process all these nodes generically with this interface
+     * Environment. The UI can process all these nodes generically with this abstract class
      */
-    public static interface AttributeTreeNodeTag extends Cloneable, java.io.Serializable {
-        AttributeTreeNodeTag clone();
+    public static abstract class AttributeTreeNodeTag implements Cloneable, java.io.Serializable {
+        /**
+         * true when this AttributeTreeNodeTag requires validation of it's data elements. When false, it does not
+         * This is used in the UI to know when the handleDispose should validate the nodes contents.
+         * When the node is being removed, we do not care if it contains invalid data
+         *
+         * Get and set does not follow bean style naming so that the value is not serialized
+         */
+        private boolean requiresValidation = true;
+
+        @Override
+        protected Object clone() throws CloneNotSupportedException{
+            return super.clone();
+        }
+        
+        public boolean shouldValidate() {
+            return requiresValidation;
+        }
+
+        public void doSetNoValidationRequired() {
+            this.requiresValidation = false;
+        }
     }
 
-    public static class Attribute implements AttributeTreeNodeTag {
+    public static class Attribute extends AttributeTreeNodeTag {
         private String id = "";
         private String dataType = "";
         private String issuer = "";
@@ -268,7 +286,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
      * MultipleAttributeConfig can appear as the User Object in the XACML Request Builder tree, as a sibling of
      * Attribute only. As a result it needs to be identifiable and processed differently when found in the tree
      */
-    public static class MultipleAttributeConfig implements AttributeTreeNodeTag{
+    public static class MultipleAttributeConfig extends AttributeTreeNodeTag{
         public enum FieldName {
             ID("AttributeId"),
             DATA_TYPE("DataType"),
@@ -551,7 +569,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                 if ( attributeTreeNodes != null ) {
                     copy.attributeTreeNodes = new ArrayList<AttributeTreeNodeTag>();
                     for ( AttributeTreeNodeTag attributeTreeNodeTag : attributeTreeNodes ) {
-                        copy.attributeTreeNodes.add( attributeTreeNodeTag.clone() );                       
+                        copy.attributeTreeNodes.add( (AttributeTreeNodeTag) attributeTreeNodeTag.clone() );
                     }
                 }
 

@@ -460,6 +460,15 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
+                Object o = node.getUserObject();
+                if(!(o instanceof XacmlRequestBuilderAssertion.Attribute)){
+                    throw new IllegalStateException("Incorrect node type found");//coding error
+                }
+                XacmlRequestBuilderAssertion.Attribute attNode =
+                        (XacmlRequestBuilderAssertion.Attribute)o;
+                //do not validate this node in handleDispose
+                attNode.doSetNoValidationRequired();
+
                 treeModel.removeNodeFromParent(node);
             }
         });
@@ -488,6 +497,15 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
+                Object o = node.getUserObject();
+                if(!(o instanceof XacmlRequestBuilderAssertion.MultipleAttributeConfig)){
+                    throw new IllegalStateException("Incorrect node type found");//coding error
+                }
+                XacmlRequestBuilderAssertion.MultipleAttributeConfig multiAttNode =
+                        (XacmlRequestBuilderAssertion.MultipleAttributeConfig)o;
+                //do not validate this node in handleDispose
+                multiAttNode.doSetNoValidationRequired();
+
                 treeModel.removeNodeFromParent(node);
             }
         });

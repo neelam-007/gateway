@@ -334,6 +334,9 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
     @Override
     public boolean handleDispose(final XacmlRequestBuilderDialog builderDialog) {
+        //return true if the node is being removed
+        if(!multipleAttributeConfig.shouldValidate()) return true;
+
         multipleAttributeConfig.setFalsifyPolicyEnabled(falsifyPolicyCheckBox.isSelected());
 
         for (XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field : multipleAttributeConfig.getFields().values()) {

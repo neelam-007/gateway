@@ -12,10 +12,7 @@ import java.util.Set;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
- * User: njordan
- * Date: 2-Apr-2009
- * Time: 5:31:35 PM
- * To change this template use File | Settings | File Templates.
+ * @author njordan
  */
 public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRequestBuilderNodePanel {
     private JTextField issuerField;
@@ -89,6 +86,9 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
 
     @Override
     public boolean handleDispose(final XacmlRequestBuilderDialog builderDialog) {
+        //return true if the node is being removed
+        if(!attribute.shouldValidate()) return true;
+
         // Access editors directly to get the current text
         attribute.setId(((String)idComboBox.getEditor().getItem()).trim());
         attribute.setDataType(((String)dataTypeComboBox.getEditor().getItem()).trim());
