@@ -219,6 +219,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     private int getMinMultiValuedCtxVariableReferenced(Collection<String> values, Map<String, Object> contextVariables,
                                                        boolean valuesAlreadyProcessed){
         int smallestCtxVarSize = 0;
+        int largestCtxVarSize = 0;
+
         for(String s: values){
             if(!valuesAlreadyProcessed){
                 String[] v = Syntax.getReferencedNames(s);
@@ -229,8 +231,17 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             if(multiCtxVarValues != null){
                 smallestCtxVarSize = (multiCtxVarValues.size() < smallestCtxVarSize || smallestCtxVarSize == 0)
                         ? multiCtxVarValues.size() : smallestCtxVarSize;
+
+                largestCtxVarSize = (multiCtxVarValues.size() > largestCtxVarSize)
+                        ? multiCtxVarValues.size(): largestCtxVarSize;
             }
         }
+
+        if(smallestCtxVarSize != largestCtxVarSize){
+            auditor.logAndAudit(AssertionMessages.XACML_NOT_ALL_CTX_VARS_USED, Integer.toString(smallestCtxVarSize),
+                    Integer.toString(largestCtxVarSize));
+        }
+
         return smallestCtxVarSize;
     }
 
@@ -659,6 +670,11 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             if(bothIterateMethodsBeingUsed){
                 //when both methods are being used, then both must say it's ok to continue
                 exitIteration = !(multiValueMoreResults && xpathMoreResults);
+                if(exitIteration && multiValueMoreResults != xpathMoreResults){
+                    //only call this if both values are not false e.g. no need to call if both methods of iteration
+                    //exhaust at the same time
+                    logIterationEndState(multiValueMoreResults, xpathMoreResults);
+                }
             }else{
                 //check xpath
                 if(iteratingOnBaseXPath){
@@ -669,6 +685,24 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             }
         } while(!exitIteration);
 //        while (iteratingOnBaseXPath && resultCursor != null || isUsingMultiValuedCtxVariables && iterationCount < smallestCtxVarSize)
+
+    }
+
+    /**
+     * Log and audit an INFO message explaining why iteration ended
+     * Message is only logged when both context variables and xpath results are used in iteration in
+     * addMultipleAttributes. Logs for the user that not all info from a source was used 
+     */
+    private void logIterationEndState(final boolean ctxMoreValues, final boolean xpathMoreValues){
+
+        //coding error
+        if(ctxMoreValues && xpathMoreValues) throw new IllegalStateException("Method is not required while both values are true");
+
+        if(ctxMoreValues){
+            auditor.logAndAudit(AssertionMessages.XACML_NOT_ALL_VALUES_USED, "all referenced multi valued context variables", "an xpath result set was");
+        }else if (xpathMoreValues){
+            auditor.logAndAudit(AssertionMessages.XACML_NOT_ALL_VALUES_USED, "the xpath result set", "multi valued context variables were");
+        }
 
     }
 
