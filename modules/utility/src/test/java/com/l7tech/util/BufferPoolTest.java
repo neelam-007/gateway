@@ -32,9 +32,11 @@ public class BufferPoolTest {
             boolean big = rand.nextInt(100) > 50;
             int randRange = big ? 1200000 : 8000;
             int size = rand.nextInt(randRange);
-            reqPerSizeClass[BufferPool.getSizeClass(size)]++;
+            final int sizeClass = BufferPool.getSizeClass(size);
+            reqPerSizeClass[sizeClass]++;
             byte[] buf = BufferPool.getBuffer(size);
             assertTrue(buf.length >= size);
+            assertTrue(buf.length <= BufferPool.getSizeOfSizeClass(sizeClass + 1));
             BufferPool.returnBuffer(buf);
         }
 

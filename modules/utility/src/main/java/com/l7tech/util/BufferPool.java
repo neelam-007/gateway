@@ -42,7 +42,7 @@ public class BufferPool {
                 byte[] bytes = ref.get();
                 if (bytes != null)
                     return bytes;
-                // That SoftReference was reclaimed by the GC; try the next one
+                // That ref was reclaimed by the GC; try the next one
             }
             return null;
         }
@@ -70,7 +70,7 @@ public class BufferPool {
                 byte[] bytes = ref.get();
                 if (bytes != null && bytes.length >= wantSize)
                     return bytes;
-                // That SoftReference was reclaimed by the GC; try the next one
+                // That ref was reclaimed by the GC; try the next one
             }
             return null;
         }
@@ -188,5 +188,9 @@ public class BufferPool {
                 return i;
         }
         return sizes.length;
+    }
+
+    static int getSizeOfSizeClass(int sizeClass) {
+        return sizeClass < sizes.length ? sizes[sizeClass] : Integer.MAX_VALUE;
     }
 }
