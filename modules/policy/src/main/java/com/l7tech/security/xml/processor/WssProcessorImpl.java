@@ -981,7 +981,7 @@ public class WssProcessorImpl implements WssProcessor {
                         final SignedElement[] signedElements = signingSecurityToken.getSignedElements();
                         for (int i = signedElements.length - 1; i >= 0; i--) {
                             SignedElement signedElement = signedElements[i];
-                            if (element.equals(signedElement.asElement())) {
+                            if (element == signedElement.asElement()) {
                                 tokens.add(signingSecurityToken);
                             }
                         }
