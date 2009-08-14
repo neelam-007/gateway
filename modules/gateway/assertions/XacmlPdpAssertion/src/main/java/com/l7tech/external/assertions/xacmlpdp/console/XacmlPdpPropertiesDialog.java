@@ -41,10 +41,7 @@ import java.awt.event.ActionEvent;
 import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.net.URLConnection;
 import java.net.URL;
 import java.security.AccessControlException;
@@ -310,9 +307,11 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                 new MessageSourceEntry(
                         XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE, null));
 
-        final Map<String, VariableMetadata> predecessorVariables = assertion.getParent() != null ?
-                PolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
-                PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() );
+        final Map<String, VariableMetadata> predecessorVariables =
+                (assertion.getParent() != null) ? PolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
+                (getPreviousAssertion() != null)? PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
+                Collections.<String, VariableMetadata>emptyMap();
+
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
         for (String variableName: predecessorVariableNames) {
             if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {

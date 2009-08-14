@@ -43,6 +43,10 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         return Collections.unmodifiableList( children ).iterator();
     }
 
+    /**
+     * Return the list of children. Never null
+     * @return List of child assertions
+     */
     public List getChildren() {
         return children;
     }

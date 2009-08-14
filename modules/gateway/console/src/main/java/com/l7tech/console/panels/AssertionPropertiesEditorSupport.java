@@ -123,11 +123,11 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
         if ( parentAssertion instanceof CompositeAssertion ) {
             CompositeAssertion compositeAssertion = (CompositeAssertion) parentAssertion;
             java.util.List<Assertion> children = (java.util.List<Assertion>) compositeAssertion.getChildren();
-            if ( children != null && children.size() > (insertPosition-1) ) {
-                assertion = children.get( insertPosition-1 );
-            } else if (children != null && children.size() <= insertPosition ) {
-                assertion = children.get( children.size()-1 );   
-            }
+            //children should never be null
+            if(children.isEmpty()) return assertion;
+
+            if(children.size() > (insertPosition-1) ) return children.get(insertPosition-1);
+            else return children.get(children.size() - 1);
         }
 
         return assertion;

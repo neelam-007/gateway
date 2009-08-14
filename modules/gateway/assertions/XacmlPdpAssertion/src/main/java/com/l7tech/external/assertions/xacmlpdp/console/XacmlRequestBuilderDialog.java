@@ -65,6 +65,11 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
             @Override
             public void valueChanged(TreeSelectionEvent evt) {
                 if(lastNodePanel != null && lastNodePanel == lastErrorNodePanel) {
+                    //this happens when the user previously tried to leave a node but the validation code in
+                    //handleDispose disallowed this and the lastNodePanel was not changed
+                    //this causes a tree changed event so when this happens we do not want to validate as we know
+                    //there is currently an error and the user can correct. By clearing the lastErrorNodePanel
+                    //here, the next time the user leaves the node the validation code will run
                     lastErrorNodePanel = null;
                     return;
                 }
