@@ -665,7 +665,7 @@ public class AssertionMessages extends Messages {
 
     public static final M XACML_REQUEST_ERROR              = m(8900, Level.WARNING, "Error generating request: {0}");
     public static final M XACML_NOT_FOUND_OPTION_OFF       = m(8901, Level.INFO, "A value for {0} was not found. Cannot add <Attribute> element to the {1} element");
-    public static final M XACML_NOT_FOUND_OPTION_ON        = m(8902, Level.WARNING, "Policy falsified: a value for {0} was not found");
+    public static final M XACML_NOT_FOUND_OPTION_ON        = m(8902, Level.WARNING, "Assertion failed: a value for {0} was not found");
     public static final M XACML_INVALID_XML_ATTRIBUTE      = m(8903, Level.WARNING, "XML attribute name {0} with value {1} are not valid for an XML attribute");
     public static final M XACML_INCORRECT_NUM_RESULTS_FOR_FIELD = m(8904, Level.INFO, "Found {0} results for field {1}. Only the first value will be used");
     public static final M XACML_INCORRECT_TYPE_FOR_FIELD   = m(8905, Level.INFO, "Incorrect xpath result type {0} found for field {1}. Cannot add <Attribute> element to the {2} element");
