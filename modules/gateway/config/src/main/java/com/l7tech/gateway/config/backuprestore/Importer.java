@@ -45,8 +45,8 @@ public final class Importer{
             "location of the mapping template file", true);
     static final CommandLineOption DB_HOST_NAME = new CommandLineOption("-dbh", "database host name", true);
     static final CommandLineOption DB_NAME = new CommandLineOption("-db", "database name", true);
-    static final CommandLineOption DB_ROOT_PASSWD = new CommandLineOption("-dbp", "database root password", true);
-    static final CommandLineOption DB_ROOT_USER = new CommandLineOption("-dbu", "database root username", true);
+    static final CommandLineOption DB_ADMIN_PASSWD = new CommandLineOption("-dbp", "database admin password", true);
+    static final CommandLineOption DB_ADMIN_USER = new CommandLineOption("-dbu", "database admin username", true);
     static final CommandLineOption OS_OVERWRITE =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.OS.getComponentName(),
             "overwrite os level config files", false);
@@ -69,11 +69,11 @@ public final class Importer{
      * Note this doesn't list MIGRATE. for ssgmigrate.sh, MIGRATE is an ignored option
      */
     static final List<CommandLineOption> ALL_MIGRATE_OPTIONS = Collections.unmodifiableList(Arrays.asList(
-            IMAGE_PATH_MIGRATE, MAPPING_PATH, DB_ROOT_USER, DB_ROOT_PASSWD,DB_HOST_NAME, DB_NAME, CONFIG_ONLY,
+            IMAGE_PATH_MIGRATE, MAPPING_PATH, DB_ADMIN_USER, DB_ADMIN_PASSWD,DB_HOST_NAME, DB_NAME, CONFIG_ONLY,
             OS_OVERWRITE, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD, CREATE_NEW_DB));
 
     static final List<CommandLineOption> ALL_RESTORE_OPTIONS = Collections.unmodifiableList(Arrays.asList(
-            IMAGE_PATH, DB_ROOT_USER, DB_ROOT_PASSWD, CommonCommandLineOptions.HALT_ON_FIRST_FAILURE,
+            IMAGE_PATH, DB_ADMIN_USER, DB_ADMIN_PASSWD, CommonCommandLineOptions.HALT_ON_FIRST_FAILURE,
             CommonCommandLineOptions.VERBOSE));
 
     static final List<CommandLineOption> MIGRATE_OPTIONS = Collections.unmodifiableList(Arrays.asList(
@@ -402,11 +402,11 @@ public final class Importer{
                 || args.containsKey(CommonCommandLineOptions.AUDITS_OPTION.getName());
 
         if(isDbComponent){
-            final String adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
+            final String adminDBUsername = programFlagsAndValues.get(DB_ADMIN_USER.getName());
             if (adminDBUsername == null) {
                 throw new InvalidProgramArgumentException("Cannot restore the main database without" +
-                        " the root database user name. Please provide options: " + DB_ROOT_USER.getName() +
-                        " and optionally " + DB_ROOT_PASSWD.getName());
+                        " the admin database user name. Please provide options: " + DB_ADMIN_USER.getName() +
+                        " and optionally " + DB_ADMIN_PASSWD.getName());
             }
         }
     }
@@ -451,11 +451,11 @@ public final class Importer{
         final String msg1 = "Intitializing database connection properties...";
         ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg1, isVerbose, printStream);
         
-        final String adminDBUsername = programFlagsAndValues.get(DB_ROOT_USER.getName());
+        final String adminDBUsername = programFlagsAndValues.get(DB_ADMIN_USER.getName());
         if(adminDBUsername == null)
             throw new IllegalStateException("No admin database user supplied with -dbu option");
         
-        final String tempAdminPassword = programFlagsAndValues.get(DB_ROOT_PASSWD.getName());
+        final String tempAdminPassword = programFlagsAndValues.get(DB_ADMIN_PASSWD.getName());
         // its ok for password to be empty string
         final String adminDBPasswd = (tempAdminPassword != null)? tempAdminPassword: "";
 

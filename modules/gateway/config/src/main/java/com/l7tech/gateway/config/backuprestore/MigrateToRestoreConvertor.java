@@ -2,7 +2,6 @@ package com.l7tech.gateway.config.backuprestore;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.io.PrintStream;
 
@@ -59,10 +58,10 @@ public class MigrateToRestoreConvertor {
 
         //all other database options, currently migrate ALWAYS requires these
         //again, not validating here, invalid arguments will be caught in Importer
-        restoreArgs.add(Importer.DB_ROOT_USER.getName());
-        restoreArgs.add(initialValidArgs.get(Importer.DB_ROOT_USER.getName()));
-        restoreArgs.add(Importer.DB_ROOT_PASSWD.getName());
-        restoreArgs.add(initialValidArgs.get(Importer.DB_ROOT_PASSWD.getName()));
+        restoreArgs.add(Importer.DB_ADMIN_USER.getName());
+        restoreArgs.add(initialValidArgs.get(Importer.DB_ADMIN_USER.getName()));
+        restoreArgs.add(Importer.DB_ADMIN_PASSWD.getName());
+        restoreArgs.add(initialValidArgs.get(Importer.DB_ADMIN_PASSWD.getName()));
         restoreArgs.add(Importer.DB_HOST_NAME.getName());
         restoreArgs.add(initialValidArgs.get(Importer.DB_HOST_NAME.getName()));
         restoreArgs.add(Importer.GATEWAY_DB_USERNAME.getName());
