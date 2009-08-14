@@ -882,6 +882,132 @@ public class ServerXacmlRequestBuilderAssertionTest {
                 fixLines(createdXml).trim());
     }
 
+
+    /**
+     * Tests that when the base xpath expression has an unresolvable namespace prefix, it will return a status,
+     * AssertionStatus.UNRESOLVABLE_NAMESPACE_PREFIX.
+     * @throws Exception
+     */
+    @BugNumber(7502)
+    @Test
+    public void testMultipleAttributes_BaseExpression_InvalidCausedByUnresolvableNamespacePrefix() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        final PolicyEnforcementContext context = getContext();
+
+        configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
+
+        //this xpath has an unresolvable namespace prefix
+        multipleConfig.setXpathBase("/soapenv_unresolvable:Envelope/soapenv:Body/play:addPlayer/play:player1");
+        setNameSpaces(multipleConfig);
+
+        multipleConfig.getField(ID).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:LName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:FName/text()");
+        multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ISSUER).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:LName/text()");
+        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:offensiveStats/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        try {
+            server.checkRequest(context);
+            Assert.fail("Not supposed to reach this point.");
+        } catch (AssertionStatusException e) {
+            AssertionStatus status = e.getAssertionStatus();
+            Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.UNRESOLVABLE_NAMESPACE_PREFIX, status);
+        }
+    }
+
+    /**
+     * Tests that when MultipleAttributeConfig has an unresolvable namespace prefix, it will return a status,
+     * AssertionStatus.UNRESOLVABLE_NAMESPACE_PREFIX.
+     * @throws Exception
+     */
+    @BugNumber(7684)
+    @Test
+    public void testMultipleAttributes_UnresolvableNamespacePrefix() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        final PolicyEnforcementContext context = getContext();
+
+        configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
+
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player1");
+        setNameSpacesWithUnresolvableNameSpace(multipleConfig);
+
+        multipleConfig.getField(ID).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:LName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:FName/text()");
+        multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ISSUER).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:LName/text()");
+        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:offensiveStats/play:assists");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        try {
+            server.checkRequest(context);
+            Assert.fail("Not supposed to reach this point.");
+        } catch (AssertionStatusException e) {
+            AssertionStatus status = e.getAssertionStatus();
+            Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.UNRESOLVABLE_NAMESPACE_PREFIX, status);
+        }
+    }
+
+    /**
+     * Tests that when MultipleAttributeConfig has an incorrect namespace URI, it will return a FAILED status.
+     * @throws Exception
+     */
+    @BugNumber(7684)
+    @Test
+    public void testMultipleAttributes_IncorrectNamespaceURI() throws Exception{
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+        final PolicyEnforcementContext context = getContext();
+
+        configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
+
+        multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player1");
+        setNameSpacesWithIncorrectNamespaceURI(multipleConfig);
+
+        multipleConfig.getField(ID).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(ID).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:LName/text()");
+        multipleConfig.getField(DATA_TYPE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(DATA_TYPE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:FName/text()");
+        multipleConfig.getField(ISSUER).setType(XPATH_RELATIVE);
+        multipleConfig.getField(ISSUER).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:LName/text()");
+        multipleConfig.getField(VALUE).setType(XPATH_ABSOLUTE);
+        multipleConfig.getField(VALUE).setValue("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:offensiveStats/play:assists");
+        multipleConfig.setFalsifyPolicyEnabled(true);
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+        AssertionStatus status = server.checkRequest(context);
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FAILED, status);
+    }
+
     /**
      * Tests that when the fail assertion check box is not checked, that iteration continues if it cannot create
      * an attribute value for a current value
@@ -1663,6 +1789,20 @@ public class ServerXacmlRequestBuilderAssertionTest {
     private void setNameSpaces(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleConfig) {
         Map<String, String> namespaces = new HashMap<String, String>();
         namespaces.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+        namespaces.put("ws", "http://warehouse.acme.com/ws");
+        namespaces.put("donal", "http://donal.com");
+        namespaces.put("play", "http://playerstatsws.test.l7tech.com");
+        multipleConfig.setNamespaces(namespaces);
+    }
+
+    private void setNameSpacesWithUnresolvableNameSpace(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleConfig) {
+        Map<String, String> namespaces = new HashMap<String, String>();
+        multipleConfig.setNamespaces(namespaces);
+    }
+
+    private void setNameSpacesWithIncorrectNamespaceURI(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleConfig) {
+        Map<String, String> namespaces = new HashMap<String, String>();
+        namespaces.put("soapenv", "http://incorrect_schemas.xmlsoap.org/soap/envelope/"); // This is an incorrect namespace URI.
         namespaces.put("ws", "http://warehouse.acme.com/ws");
         namespaces.put("donal", "http://donal.com");
         namespaces.put("play", "http://playerstatsws.test.l7tech.com");

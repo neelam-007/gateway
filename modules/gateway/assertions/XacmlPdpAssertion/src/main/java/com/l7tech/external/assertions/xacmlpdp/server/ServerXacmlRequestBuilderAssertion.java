@@ -26,10 +26,12 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.DomUtils;
 import com.sun.xacml.attr.DateTimeAttribute;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
+import org.jaxen.UnresolvableException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
@@ -583,13 +585,21 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         ElementCursor resultCursor = null;
         XpathResultIterator xpathResultSetIterator = null;
         final boolean isFailAssertionEnabled = multipleAttributeConfig.isFalsifyPolicyEnabled();
-        
+        final Map<String, String> namespaces = multipleAttributeConfig.getNamespaces();
+
         if(iteratingOnBaseXPath){
             //Set up iterator for first run through do while loop
             xpathResultSetIterator = initializeXpathBase(documentHolder.getDocument(), multipleAttributeConfig,
                     contextVariables);
             if(xpathResultSetIterator == null){
-                auditor.logAndAudit(AssertionMessages.XACML_BASE_EXPRESSION_NO_RESULTS, multipleAttributeConfig.getXpathBase());
+                Set<String> incorrectNamespacePrefixes = causedByIncorrectNamespaceURI(documentHolder.getDocument(), namespaces);
+                if (incorrectNamespacePrefixes.isEmpty()) {
+                    auditor.logAndAudit(AssertionMessages.XACML_BASE_EXPRESSION_NO_RESULTS, multipleAttributeConfig.getXpathBase());
+                } else {
+                    for (String  prefix: incorrectNamespacePrefixes) {
+                        auditor.logAndAudit(AssertionMessages.XACML_INCORRECT_NAMESPACE_URI, prefix);
+                    }
+                }
             }
         }
 
@@ -600,8 +610,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 ||  (issueInstantField.getValue() == null || issueInstantField.getValue().isEmpty());
 
         final String elementName = parent.getLocalName();
-        final Map<String, String> namespaces = multipleAttributeConfig.getNamespaces();
-        
+
         //now we know everything required to define the iteration
         int iterationCount = 0;
         boolean exitIteration;
@@ -686,6 +695,32 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         } while(!exitIteration);
 //        while (iteratingOnBaseXPath && resultCursor != null || isUsingMultiValuedCtxVariables && iterationCount < smallestCtxVarSize)
 
+    }
+
+    /**
+     * Validate the definition of the user-defined namespaces URI.
+     * @param doc: the document that contains all required namespaces.
+     * @param clientNamespaces: the user-defined namespaces in Multiple Attributes.
+     * @return a set of namespace prefixes with incorrect namespace URI definitions.
+     */
+    private Set<String> causedByIncorrectNamespaceURI(Document doc, Map<String, String> clientNamespaces) {
+        NodeList list = doc.getElementsByTagName("*");
+        Map<String, String> serverNamespaces = new HashMap<String, String>();
+
+        for (int i=0; i<list.getLength(); i++) {
+            Element element = (Element)list.item(i);
+            Map<String, String> map = DomUtils.getNamespaceMap(element);
+            if (!map.isEmpty()) serverNamespaces.putAll(map);
+        }
+
+        Set<String> prefixes = new HashSet<String>();
+        for (String prefix: clientNamespaces.keySet()) {
+            if (serverNamespaces.containsKey(prefix) && !clientNamespaces.get(prefix).equals(serverNamespaces.get(prefix))) {
+                prefixes.add(prefix);
+            }
+        }
+
+        return prefixes;
     }
 
     /**
@@ -1004,11 +1039,26 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(),
                         buildXpathVariableFinder(contextVariables), true);
         } catch (XPathExpressionException e) {
-            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
-            throw new AssertionStatusException(AssertionStatus.FAILED);
+            String errorMessage = ExceptionUtils.getMessage(e);
+            if (ExceptionUtils.causedBy(e, UnresolvableException.class) && errorMessage != null && errorMessage.contains("Cannot resolve namespace prefix")) {
+                // This is a case where the given namespace map includes unresolvable namespace prefix.
+                String prefix = errorMessage.substring(errorMessage.indexOf('\''));
+                auditor.logAndAudit(AssertionMessages.XPATH_UNRESOLVABLE_PREFIX, new String[]{prefix}, e);
+                throw new AssertionStatusException(AssertionStatus.UNRESOLVABLE_NAMESPACE_PREFIX);
+            } else {
+                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
+                throw new AssertionStatusException(AssertionStatus.INVALID_XPATH);
+            }
         } catch (InvalidXpathException e) {
-            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
-            throw new AssertionStatusException(AssertionStatus.FAILED);
+            String errorMessage = ExceptionUtils.getMessage(e);
+            if (ExceptionUtils.causedBy(e, UnresolvableException.class) && errorMessage != null && errorMessage.contains("Cannot resolve namespace prefix")) {
+                // This is a case where prefix is invalid in the xpath pattern.
+                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
+                throw new AssertionStatusException(AssertionStatus.UNRESOLVABLE_NAMESPACE_PREFIX);
+            } else {
+                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
+                throw new AssertionStatusException(AssertionStatus.INVALID_XPATH);
+            }
         }
 
         return xpathResult;

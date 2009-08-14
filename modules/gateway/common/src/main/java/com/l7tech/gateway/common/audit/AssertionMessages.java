@@ -173,6 +173,7 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_NOT_ACCELERATED                   = m(4717, Level.FINE, "Multiple result elements expected, using non-accelerated XPath." );
     public static final M XPATH_PATTERN_IS                        = m(4718, Level.FINE, "XPath is ''{0}''");
     public static final M XPATH_MESSAGE_NOT_XML                   = m(4719, Level.WARNING, "{0} not XML; cannot evaluate XPath expression");
+    public static final M XPATH_UNRESOLVABLE_PREFIX               = m(4720, Level.WARNING, "Cannot resolve namespace prefix {0}");
 
     // ServerRequestAcceleratedXpathAssertion & ServerResponseAcceleratedXpathAssertion messages
     public static final M ACCEL_XPATH_NO_HARDWARE                 = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software XPath processing");
@@ -672,6 +673,7 @@ public class AssertionMessages extends Messages {
     public static final M XACML_INVALID_ISSUE_INSTANT      = m(8907, Level.INFO, "Invalid value for issue instant: {0} IssueInstant, if supplied, must be a valid datetime with a format \"yyyy-MM-dd'T'HH:mm:ss[Z]\"");
     public static final M XACML_NOT_ALL_VALUES_USED        = m(8908, Level.INFO, "Not all values from {0} were used as {1} also part of iteration and had less values");
     public static final M XACML_NOT_ALL_CTX_VARS_USED      = m(8909, Level.INFO, "Only {0} values from all referenced context variables will be used. The largest referenced variable has {1} values");
+    public static final M XACML_INCORRECT_NAMESPACE_URI    = m(8910, Level.INFO, "Namespace prefix {0} with incorrect namespace URI may cause XPath base pattern to match no results");
 
     public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");

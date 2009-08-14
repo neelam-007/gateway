@@ -38,7 +38,9 @@ public class AssertionStatus {
 
     /** Assertion not yet implemented. */
     @Deprecated public static final AssertionStatus __NOT_YET_IMPLEMENTED = make( statuses, MISC + 0, Level.INFO, "Not yet implemented!" );
-    public static final AssertionStatus NOT_APPLICABLE      = make( statuses, MISC + 1, Level.INFO, "Not applicable in this context" );
+    public static final AssertionStatus NOT_APPLICABLE = make( statuses, MISC + 1, Level.INFO, "Not applicable in this context" );
+    public static final AssertionStatus INVALID_XPATH  = make( statuses, MISC + 2, Level.INFO, "Invalid XPath Pattern" );
+    public static final AssertionStatus UNRESOLVABLE_NAMESPACE_PREFIX = make( statuses, MISC + 3, Level.INFO, "Unresolvable Namespace Prefix" );
 
     /** Generic catch-all status */
     public static final AssertionStatus SERVER_ERROR        = make( statuses, SERVER + 0, Level.INFO, "Internal Server Error" );
