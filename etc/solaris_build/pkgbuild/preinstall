@@ -19,7 +19,8 @@ if [ "$UID_GATEWAY" = "$UID_SSGCONF" ] ; then
     UID_SSGCONF=""
 fi
 
-if [ `grep \^gateway\: /etc/group` ]; then 
+GWGROUPFOUND=`grep \^gateway\: /etc/group`
+if [ -n "${GWGROUPFOUND}" ]; then
 	echo "group gateway already exists"
 else
 	echo "adding gateway group"
@@ -34,7 +35,8 @@ else
 	fi
 fi
 
-if [ `grep \^gateway\: /etc/passwd` ]; then
+GWUSERFOUND=`grep \^gateway\: /etc/passwd`
+if [ -n "${GWUSERFOUND}" ]; then
 	echo "user gateway already exists"
 else
     UID_PARAM=""
@@ -49,7 +51,8 @@ else
 	fi
 fi
 
-if [ `grep \^layer7\: /etc/group` ]; then
+L7GROUPFOUND=`grep \^layer7\: /etc/group`
+if [ -n "${L7GROUPFOUND}" ]; then
 	echo "group layer7 already exists"
 else
 	echo "adding layer7 group"
@@ -64,7 +67,8 @@ else
 	fi
 fi
 
-if [ `grep \^layer7\: /etc/passwd` ]; then
+L7USERFOUND=`grep \^layer7\: /etc/passwd`
+if [ -n "${L7USERFOUND}" ]; then
 	echo "user layer7 already exists"
 else
 	echo "adding layer7 user"
