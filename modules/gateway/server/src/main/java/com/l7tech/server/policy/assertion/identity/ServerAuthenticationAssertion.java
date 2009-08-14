@@ -7,6 +7,8 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.identity.User;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 
 /**
@@ -22,8 +24,18 @@ public class ServerAuthenticationAssertion extends ServerIdentityAssertion<Authe
     }
 
     @Override
-    protected AssertionStatus checkUser(AuthenticationResult authResult) {
-        // Doesn't care
+    protected AssertionStatus checkUser(AuthenticationResult authResult) {       
+        User requestingUser = authResult.getUser();
+        long requestProvider = requestingUser.getProviderId();
+
+        // provider must always match
+        if (requestProvider != assertion.getIdentityProviderOid()) {
+            auditor.logAndAudit(AssertionMessages.SPECIFICUSER_PROVIDER_MISMATCH,
+                    Long.toString(requestProvider), Long.toString(assertion.getIdentityProviderOid()));
+            return AssertionStatus.AUTH_FAILED;
+        }
+
+        // Doesn't care about the precise identity of the user
         return AssertionStatus.NONE;
     }
 }
