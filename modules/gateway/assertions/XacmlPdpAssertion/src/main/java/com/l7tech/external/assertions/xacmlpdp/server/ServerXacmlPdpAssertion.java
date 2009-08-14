@@ -246,6 +246,10 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                         cth,
                         bais);
                 context.setVariable(assertion.getOutputMessageVariableName(), m);
+            } else if (assertion.getOutputMessageTarget() == XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST) {
+                context.getRequest().initialize(stashManagerFactory.createStashManager(),
+                        cth,
+                        bais);
             } else {
                 context.getResponse().initialize(stashManagerFactory.createStashManager(),
                         cth,

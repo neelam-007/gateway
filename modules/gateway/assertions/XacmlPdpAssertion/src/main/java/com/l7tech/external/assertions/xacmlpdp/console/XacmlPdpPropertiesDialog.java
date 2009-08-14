@@ -108,6 +108,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     private JPanel xacmlPolicyPanel;
     private JCheckBox sourceSOAPEncapsulatedCheckBox;
     private JCheckBox targetSOAPEncapsulatedCheckBox;
+    private JLabel messageVariableLabel;
 
     private UIAccessibility uiAccessibility;
     private String policyXml; // uiAccessibility editor cannot be used after dialog disposal
@@ -130,6 +131,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
 
         DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
+        comboBoxModel.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST);
         comboBoxModel.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE);
         comboBoxModel.addElement(XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE);
         messageOutputComboBox.setModel(comboBoxModel);
@@ -140,6 +142,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             }
         }) );
 
+        messageVariableLabel.setEnabled(false);
         outputMessageVariableNameField.setEnabled(false);
 
         policyLocationComboBox.setModel(new DefaultComboBoxModel(new String[] {CONFIGURED_IN_ADVANCE, resources.getString( "monitor.url.label" ) }));
@@ -461,6 +464,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
         //first check the message variable, and manage setting the context variable text field to be enabled or not
         if(outputEntry == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE){
+            messageVariableLabel.setEnabled(true);
             outputMessageVariableNameField.setEnabled(true);
 
             if(outputMessageVariableNameField.getText().trim().length() == 0){
@@ -468,6 +472,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                 return;
             }
         }else{
+            messageVariableLabel.setEnabled(false);
             outputMessageVariableNameField.setEnabled(false);
         }
 
