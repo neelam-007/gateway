@@ -5,14 +5,12 @@ import com.ibm.xml.dsig.*;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
-import com.l7tech.security.xml.DsigUtil;
-import com.l7tech.security.xml.KeyInfoDetails;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.xml.decorator.DecoratorException;
+import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
@@ -22,16 +20,16 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
-import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.TimeZone;
-import java.io.IOException;
 
 /**
  * Class <code>SamlAssertionGenerator</code> is a central entry point
@@ -209,8 +207,13 @@ public class SamlAssertionGenerator {
                                      final KeyInfoInclusionType keyInfoType)
             throws SignatureException
     {
-        TemplateGenerator template = new TemplateGenerator(assertionDoc, XSignature.SHA1,
-                                                           Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
+        SupportedSignatureMethods signaturemethod = DsigUtil.getSignatureMethod(signingKey);
+
+        // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
+        TemplateGenerator template = new TemplateGenerator(assertionDoc,
+                                                           signaturemethod.getMessageDigestIdentifier(),
+                                                           Canonicalizer.EXCLUSIVE,
+                                                           signaturemethod.getAlgorithmIdentifier());
 
         String idAttr = options.getVersion()==Options.VERSION_1 ?
                 SamlConstants.ATTR_ASSERTION_ID:
@@ -225,6 +228,7 @@ public class SamlAssertionGenerator {
         template.addReference(ref);
 
         SignatureContext context = new SignatureContext();
+        context.setAlgorithmFactory(new WssProcessorAlgorithmFactory(null));
         context.setEntityResolver( XmlUtil.getXss4jEntityResolver());
         context.setIDResolver(new IDResolver() {
             public Element resolveID(Document document, String s) {
@@ -311,7 +315,7 @@ public class SamlAssertionGenerator {
         try {
             context.sign(signatureElement, signingKey);
         } catch (XSignatureException e) {
-            throw new SignatureException(e.getMessage());
+            throw new SignatureException(e.getMessage(), e);
         }
     }
 

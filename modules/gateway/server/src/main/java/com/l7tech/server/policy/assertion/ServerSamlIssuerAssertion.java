@@ -276,9 +276,11 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             auditDone();
             return AssertionStatus.NONE;
         } catch (SignatureException e) {
-            return AssertionStatus.FAILED; // TODO AUDIT
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to sign assertion: " + ExceptionUtils.getMessage(e) }, e);
+            return AssertionStatus.FAILED;
         } catch (CertificateException e) {
-            return AssertionStatus.FAILED; // TODO AUDIT
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to process certificate: " + ExceptionUtils.getMessage(e) }, e);
+            return AssertionStatus.FAILED;
         }
     }
 
