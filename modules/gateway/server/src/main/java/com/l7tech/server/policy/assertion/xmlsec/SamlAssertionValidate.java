@@ -11,6 +11,7 @@ import com.l7tech.security.token.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
@@ -161,8 +162,14 @@ public class SamlAssertionValidate {
                 logger.finer(result.toString());
                 return;
             }
-            final SigningSecurityToken[] signingTokens = wssResults.getSigningTokens(assertion.asElement());
-            if (signingTokens.length == 0) {
+
+
+            final Element assertionElement = assertion.asElement();
+            final Pair<SigningSecurityToken, SigningSecurityToken[]> tokes = extractEmbeddedSignature(wssResults.getSigningTokens(assertionElement), assertionElement);
+            final SigningSecurityToken embeddedSignatureToken = tokes.left;
+            final SigningSecurityToken[] signingTokens = tokes.right;
+
+            if (embeddedSignatureToken == null && signingTokens.length == 0) {
                 Error result = new Error("Unsigned SAML assertion found in security Header", null);
                 validationResults.add(result);
                 logger.finer(result.toString());
@@ -176,11 +183,16 @@ public class SamlAssertionValidate {
 
             if (assertion.isSenderVouches()) {
                 if (assertion.getIssuerCertificate() == null) {
-                    if (signingTokens[0] instanceof X509SigningSecurityToken) {
+                    if (signingTokens.length > 0 && signingTokens[0] instanceof X509SigningSecurityToken) {
                         X509SigningSecurityToken signingSecurityToken = (X509SigningSecurityToken)signingTokens[0];
                         assertion.setIssuerCertificate(signingSecurityToken.getMessageSigningCertificate());
-                    } else {
+                    } else if (signingTokens.length > 0) {
                         Error result = new Error("Assertion was signed by non-X509 SecurityToken " + signingTokens[0].getClass(), null);
+                        validationResults.add(result);
+                        logger.finer(result.toString());
+                        return;
+                    } else {
+                        Error result = new Error("Assertion was not signed by an X.509 SecurityToken", null);
                         validationResults.add(result);
                         logger.finer(result.toString());
                         return;
@@ -245,6 +257,30 @@ public class SamlAssertionValidate {
         } catch (IOException e) {
             validationResults.add(new Error("Can't process non SOAP messages", e));
         }
+    }
+
+    /**
+     * Extract the saml:Assertion's embedded issuer signature from any other signatures covering it.
+     *
+     * @param signingTokens  signing security tokens whose signatures cover the saml:Assertion element.  Required, but may be empty.
+     * @param samlAssertionElement  the saml:Assertion element whose embedded signature to sift out.  Required.
+     * @return a Pair consisting of the embedded issuer signature (or null one wasn't found), and the rest of the signatures.
+     *         If there are multiple embedded issuer signatures this method will select the first one from signingTokens to use as the .left of the return value.
+     */
+    private Pair<SigningSecurityToken, SigningSecurityToken[]> extractEmbeddedSignature(SigningSecurityToken[] signingTokens, Element samlAssertionElement) {
+        SigningSecurityToken embedded = null;
+        List<SigningSecurityToken> ret = new ArrayList<SigningSecurityToken>();
+        for (SigningSecurityToken signingToken : signingTokens) {
+            SignedElement[] signed = signingToken.getSignedElements();
+            if (embedded == null && signingToken.asElement() == samlAssertionElement && signed.length == 1 && signed[0].asElement() == samlAssertionElement) {
+                // It's the saml:Assertion's embedded issuer signature
+                embedded = signingToken;
+            } else {
+                // It's some other signature that happens to cover the saml:Assertion
+                ret.add(signingToken);
+            }
+        }
+        return new Pair<SigningSecurityToken, SigningSecurityToken[]>(embedded, ret.toArray(new SigningSecurityToken[ret.size()]));
     }
 
     private boolean isBodyOrTimestampSigned( final SignedElement[] signedElements,
