@@ -169,7 +169,7 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
             throw new RemoteInvocationCanceledException(msg, e);
         } catch (InvocationTargetException e) {
             //noinspection ThrowableInstanceNeverThrown
-            logger.log(Level.FINER, "Exception during remote API call: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(new Throwable(e)));
+            logger.log(Level.INFO, "Exception during remote API call: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(new Throwable(e)));
 
             Throwable target = e.getCause();
             if (target instanceof ThrowableWrapper) {
