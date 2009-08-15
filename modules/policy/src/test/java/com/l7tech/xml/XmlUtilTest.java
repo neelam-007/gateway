@@ -330,6 +330,60 @@ public class XmlUtilTest {
         }
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testCreateEmptyDocumentNullName() {
+        XmlUtil.createEmptyDocument(null, "s", "urn:blah");
+    }
+
+    @Test
+    public void testCreateEmptyDocumentNoPrefix() {
+        Document doc = XmlUtil.createEmptyDocument("foo", null, "urn:blah");
+        checkDocument(doc, "foo", null, "foo", "urn:blah");
+    }
+    
+    @Test
+    public void testCreateEmptyDocumentNoNsUri() {
+        Document doc = XmlUtil.createEmptyDocument("foo", "s", null);
+        checkDocument(doc, "foo", null, null, null);
+    }
+
+    @Test
+    public void testCreateEmptyDocumentNoNsUriOrPrefix() {
+        Document doc = XmlUtil.createEmptyDocument("foo", null, null);
+        checkDocument(doc, "foo", null, null, null);
+    }
+
+    @Test
+    public void testCreateEmptyDocument() {
+        Document doc = XmlUtil.createEmptyDocument("foo", "s", "urn:blah");
+        checkDocument(doc, "s:foo", "s", "foo", "urn:blah");
+    }
+
+    private static void checkDocument(Document doc, String wantNodeName, String wantPrefix, String wantLocalName, String wantNsUri) {
+        try {
+            assertNotNull(doc);
+            Element root = doc.getDocumentElement();
+            checkElement(root, wantNodeName, wantPrefix, wantLocalName, wantNsUri);
+            final String string = XmlUtil.nodeToString(doc);
+            System.out.println("Got xml:\n" + string);
+            Document reparsed = XmlUtil.stringToDocument(string);
+            checkElement(reparsed.getDocumentElement(), wantNodeName, wantPrefix, wantLocalName, wantNsUri);
+        } catch (SAXException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void checkElement(Element element, String wantNodeName, String wantPrefix, String wantLocalName, String wantNsUri) {
+        assertNotNull(element);
+        assertEquals(element.getNodeName(), wantNodeName);
+        assertEquals(element.getPrefix(), wantPrefix);
+        assertEquals(element.getNamespaceURI(), wantNsUri);
+        if (wantNsUri != null)
+            assertEquals(element.getLocalName(), wantLocalName);
+    }
+
     @Test
     @BugNumber(6851)
     public void testSerializerTransparencyOfXmlElements_with_Default() throws Exception {

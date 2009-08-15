@@ -239,26 +239,34 @@ public class XmlUtil extends DomUtils {
         return getDocumentBuilder().newDocument();
     }
 
-    /** @return a new DOM document contianing only a single empty element. */
+    /**
+     * Create a new empty XML document with the specified document element.
+     *
+     * @param rootElementName the local name of the document element.  Required.
+     * @param rootPrefix the namespace prefix to add to the document element, or null to leave it unprefixed.
+     * @param rootNs the namespace URI in which to place the document element, or null to leave it in the empty namespace.
+     *               If this is specified, a namespace declaration will be added for either the specified rootPrefix or for
+     *               the default namespace if rootPrefix is null.
+     * @return a new DOM document contianing only a single empty document element.  Never null.
+     */
     public static Document createEmptyDocument(String rootElementName, String rootPrefix, String rootNs) {
-        // TODO make a better-performing version of this
-        try {
-            if (rootElementName == null || rootElementName.length() < 1) throw new IllegalArgumentException();
-            final String xml;
-            if (rootNs != null) {
-                if (rootPrefix != null) {
-                    final String el = rootPrefix + ":" + rootElementName;
-                    xml = "<" + el + " xmlns:" + rootPrefix + "=\"" + rootNs + "\"/>";
-                } else {
-                    xml = "<" + rootElementName + " xmlns=\"" + rootNs + "\"/>";
-                }
+        if (rootElementName == null)
+            throw new NullPointerException("rootElementName");
+        Document doc = getDocumentBuilder().newDocument();
+        final Element root;
+        if (rootNs == null) {
+            root = doc.createElement(rootElementName);
+        } else {
+            if (rootPrefix == null) {
+                root = doc.createElementNS(rootNs, rootElementName);
+                root.setAttributeNS(XMLNS_NS, "xmlns", rootNs);
             } else {
-                xml = "<" + rootElementName + "/>";
+                root = doc.createElementNS(rootNs, rootPrefix + ":" + rootElementName);
+                root.setAttributeNS(XMLNS_NS, "xmlns:" + rootPrefix, rootNs);
             }
-            return stringToDocument(xml);
-        } catch ( SAXException e) {
-            throw new RuntimeException(e); // can't happen
         }
+        doc.appendChild(root);
+        return doc;
     }
 
     public static Document stringToDocument(String inputXmlNotAUrl) throws SAXException {

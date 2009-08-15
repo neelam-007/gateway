@@ -13,6 +13,7 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.*;
 import com.l7tech.util.ElementAlreadyExistsException;
 import com.l7tech.xml.MessageNotSoapException;
+import static com.l7tech.xml.soap.SoapVersion.SOAP_1_1;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.wsdl.*;
 import org.w3c.dom.*;
@@ -529,7 +530,7 @@ public class SoapUtil extends SoapConstants {
         }
 
         SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion( soapMsg.getDocumentElement().getNamespaceURI() );
-        String actors = soapVersion == SoapVersion.SOAP_1_1 || soapVersion == SoapVersion.UNKNOWN ?
+        String actors = soapVersion == SOAP_1_1 || soapVersion == SoapVersion.UNKNOWN ?
                 SyspropUtil.getString( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
                 SyspropUtil.getString( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
 
@@ -563,7 +564,7 @@ public class SoapUtil extends SoapConstants {
             final String actorValue = getActorValue( element );
             if ( actorValue != null ) {
                 SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion( document.getDocumentElement().getNamespaceURI() );
-                String actors = soapVersion == SoapVersion.SOAP_1_1 || soapVersion == SoapVersion.UNKNOWN ?
+                String actors = soapVersion == SOAP_1_1 || soapVersion == SoapVersion.UNKNOWN ?
                         SyspropUtil.getString( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
                         SyspropUtil.getString( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
 
@@ -1441,6 +1442,18 @@ public class SoapUtil extends SoapConstants {
         }
 
         return def.getTargetNamespace();
+    }
+
+    /**
+     * Creates an empty SOAP document and returns the Body element, ready to have the payload added to it.
+     *
+     * @return the Body element of a newly-created empty SOAP document (created with XmlUtil document factory).  Never null.
+     */
+    public static Element createSoapEnvelopeAndGetBody(SoapVersion version) {
+        String nsUri = SoapVersion.SOAP_1_1.equals(version) ? SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE : SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE;
+        Document doc = XmlUtil.createEmptyDocument("Envelope", "s", nsUri);
+        Element env = doc.getDocumentElement();
+        return XmlUtil.createAndAppendElementNS(env, "Body", env.getNamespaceURI(), env.getPrefix());
     }
 
     public interface OperationListener {
