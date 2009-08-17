@@ -102,7 +102,9 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
         if ( assertion.getIdentityTag() == null ) {
             for ( AuthenticationResult authResult : authContext.getUntaggedAuthenticationResults() ) {
                 lastStatus = checkUser(authResult);
-                if (lastStatus.equals(AssertionStatus.NONE)) {
+                if ( isSuccess( lastStatus ) ) {
+                    authContext.tagAuthenticationResult( authResult, AuthenticationContext.TAG_NONE );
+
                     // successful output point
                     return lastStatus;
                 }
@@ -111,9 +113,22 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
             AuthenticationResult authResult = authContext.getAuthenticationResultForTag( assertion.getIdentityTag() );
             if ( authResult != null ) {
                 lastStatus = checkUser(authResult);
-                if (lastStatus.equals(AssertionStatus.NONE)) {
+                if ( isSuccess( lastStatus ) ) {
                     // successful output point
                     return lastStatus;
+                }
+            }
+
+            // tag not found or identity did not match, so check if the identity was
+            // authenticated as a side-effect of a previous auth assertion
+            for ( AuthenticationResult untaggedAuthResult : authContext.getUntaggedAuthenticationResults() ) {
+                lastStatus = checkUser(untaggedAuthResult);
+                if ( isSuccess( lastStatus ) ) {
+                    // Only successful if we manage to add our identity tag
+                    if ( authContext.tagAuthenticationResult( untaggedAuthResult, assertion.getIdentityTag() ) ) {
+                        // successful output point
+                        return lastStatus;
+                    }
                 }
             }
         }
@@ -125,7 +140,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
                     continue; // don't attempt to authenticate twice with the same token
                 }
                 lastStatus = validateCredentials(provider, pc, context, authContext);
-                if (lastStatus.equals(AssertionStatus.NONE)) {
+                if ( isSuccess( lastStatus ) ) {
                     // successful output point
                     return lastStatus;
                 }
@@ -181,16 +196,26 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
         if (name == null) name = user.getId();
 
         // Authentication success
-        authContext.addAuthenticationResult(authResult, assertion.getIdentityTag());
+        authContext.addAuthenticationResult(authResult);
         auditor.logAndAudit(AssertionMessages.IDENTITY_AUTHENTICATED, name);
 
         // Make sure this guy matches our criteria
-        return checkUser(authResult);
+        AssertionStatus status = checkUser(authResult);
+        if ( isSuccess( status ) ) {
+            authContext.tagAuthenticationResult(
+                    authResult,
+                    assertion.getIdentityTag()==null ? AuthenticationContext.TAG_NONE : assertion.getIdentityTag() );
+        }
+        return status;
     }
 
     @Override
     protected Auditor getAuditor() {
         return auditor;
+    }
+
+    private boolean isSuccess( final AssertionStatus status ) {
+        return AssertionStatus.NONE.equals( status );
     }
 
     private AssertionStatus authFailed(LoginCredentials pc, Exception e) {

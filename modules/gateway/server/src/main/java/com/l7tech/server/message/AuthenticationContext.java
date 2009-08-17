@@ -17,6 +17,20 @@ public class AuthenticationContext extends CredentialContext {
 
     //- PUBLIC
 
+    /**
+     * Identity tag for use when authenticating without an identity tag.
+     *
+     * <p>Results should be tagged with this in the case that there is
+     * no specified identity tag to prevent re-tagging.</p>
+     */
+    public static final String TAG_NONE = "";
+
+
+    /**
+     * Is there an authenticated user?
+     *
+     * @return True if an identity was authenticated (but not necessarily authorized)
+     */
     public boolean isAuthenticated() {
         return lastAuthenticationResult != null;
     }
@@ -27,25 +41,46 @@ public class AuthenticationContext extends CredentialContext {
      * @param authResult The result to add.
      */
     public void addAuthenticationResult( final AuthenticationResult authResult ) {
-        addAuthenticationResult( authResult, null );
-    }
-
-    /**
-     * Add an authentication result to the context.
-     *
-     * @param authResult The result to add.
-     * @param identityTag The identity tag to associate with the authentication (may be null)
-     */
-    public void addAuthenticationResult( final AuthenticationResult authResult,
-                                         final String identityTag ) {
         if (authResult == null) throw new NullPointerException("authResult");
-        Pair<AuthenticationResult,String> taggedResult = new Pair<AuthenticationResult,String>(authResult, identityTag);
+        Pair<AuthenticationResult,String> taggedResult = new Pair<AuthenticationResult,String>(authResult, null);
         if (!authenticationResults.contains(taggedResult)) {
             authenticationResults.add(taggedResult);
         }
         this.lastAuthenticationResult = authResult;
     }
 
+    /**
+     * Tag an authentication result in the context.
+     *
+     * <p>An authentication result can only be tagged once.</p>
+     *
+     * @param authResult The result to add.
+     * @param identityTag The identity tag to associate with the authentication (must not be null)
+     * @return true if an authentication result was tagged.
+     */
+    public boolean tagAuthenticationResult( final AuthenticationResult authResult,
+                                            final String identityTag ) {
+        boolean tagged = false;
+        if (identityTag == null) throw new IllegalArgumentException("identityTag is required");
+
+        if (authResult != null ) {
+            Pair<AuthenticationResult,String> untaggedResult = new Pair<AuthenticationResult,String>(authResult, null);
+            int index = authenticationResults.indexOf( untaggedResult );
+            if ( index > -1 ) {
+                authenticationResults.remove( index );
+                authenticationResults.add( index, new Pair<AuthenticationResult,String>(authResult, identityTag) );
+                tagged = true;
+            }
+        }
+
+        return tagged;
+    }
+
+    /**
+     * Get a list of unique authentication results.
+     *
+     * @return The list (may be empty but never null)
+     */
     public List<AuthenticationResult> getAllAuthenticationResults() {
         List<AuthenticationResult> authResults = new ArrayList<AuthenticationResult>();
         for ( Pair<AuthenticationResult,String> taggedResult : authenticationResults ) {
@@ -56,10 +91,15 @@ public class AuthenticationContext extends CredentialContext {
         return authResults;
     }
 
+    /**
+     * Get a list of authentication results with no identity tag.
+     *
+     * @return The list (may be empty but never null)
+     */
     public List<AuthenticationResult> getUntaggedAuthenticationResults() {
         List<AuthenticationResult> authResults = new ArrayList<AuthenticationResult>();
         for ( Pair<AuthenticationResult,String> taggedResult : authenticationResults ) {
-            if ( taggedResult.right==null && !authResults.contains(taggedResult.left) ) {
+            if ( normalizeTag(taggedResult.right)==null && !authResults.contains(taggedResult.left) ) {
                 authResults.add(taggedResult.left);
             }
         }
@@ -77,7 +117,7 @@ public class AuthenticationContext extends CredentialContext {
 
         if ( identityTag != null ) {
             for ( Pair<AuthenticationResult,String> taggedResult : authenticationResults ) {
-                if ( identityTag.equalsIgnoreCase( taggedResult.right ) ) {
+                if ( identityTag.equalsIgnoreCase( normalizeTag(taggedResult.right) ) ) {
                     result = taggedResult.left;
                     break;
                 }
@@ -116,7 +156,7 @@ public class AuthenticationContext extends CredentialContext {
                 if ( authResultAndTag.left.matchesSecurityToken( token ) ) {
                     if ( result == null ) {
                         result = authResultAndTag.left;
-                        resultTag = authResultAndTag.right;
+                        resultTag = normalizeTag(authResultAndTag.right);
                     } else {
                         throw new IllegalStateException("Multiple authentication results for token '"+token.getClass()+"' of type '"+token.getType()+"'.");
                     }
@@ -167,4 +207,17 @@ public class AuthenticationContext extends CredentialContext {
 
     private AuthenticationResult lastAuthenticationResult = null;
     private List<Pair<AuthenticationResult,String>> authenticationResults = new ArrayList<Pair<AuthenticationResult,String>>();
+
+    /**
+     * Normalize an identity tag by replacing the empty tag with null.
+     */
+    private String normalizeTag( final String identityTag ) {
+        String resultTag = identityTag;
+
+        if ( resultTag!=null && resultTag.isEmpty() ) {
+            resultTag = null;
+        }
+
+        return resultTag;
+    }
 }
