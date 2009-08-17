@@ -862,7 +862,7 @@ public final class Importer{
         final String gwPass =
                 new String(mpm.decryptPasswordIfEncrypted(propConfig.getString("node.db.config.main.pass")));
 
-        return new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass);
+        return rewriteHostName(new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, gwUser, gwPass));
     }
 
     /**
@@ -904,7 +904,25 @@ public final class Importer{
 
         String clusterPassPhrase = new String(decryptor.decryptPasswordIfEncrypted(nodeConfig.getClusterPassphrase()));
 
-        return new Pair<DatabaseConfig, String>(config, clusterPassPhrase);
+        return new Pair<DatabaseConfig, String>(rewriteHostName(config), clusterPassPhrase);
+    }
+
+    /**
+     * Check if the hostname contained in the DatabaseConfig config represents 'localhost'. If it does update the
+     * host name string to be 'localhost'
+     * This is to allow root connections to the mysql instance, which will reject them even if they are from localhost
+     * if the connection string does not specify localhost for the hostname
+     * @param config DatabaseConfig to potentially update
+     * @return config updated
+     */
+    private DatabaseConfig rewriteHostName(final DatabaseConfig config){
+
+        final String hostName = config.getHost();
+        if(ImportExportUtilities.isHostLocal(hostName)){
+            config.setHost("localhost");
+        }
+
+        return config;
     }
 
     /**
