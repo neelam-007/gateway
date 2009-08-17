@@ -133,7 +133,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             ps = getRequestedService(req);
         } catch (FindException e) {
             // if they ask for an invalid services WSDL return 404 since that WSDL doc does not exist
-            logger.log(Level.INFO, "Invalid service requested", e);
+            logger.log(Level.INFO, "Invalid service requested (" + e.getMessage() + ")", ExceptionUtils.getDebugException(e));
             sendBackError(res, HttpServletResponse.SC_NOT_FOUND, e.getMessage());
             return;
         } catch (AmbiguousServiceException e) {
