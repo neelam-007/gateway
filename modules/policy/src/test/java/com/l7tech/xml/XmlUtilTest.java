@@ -5,7 +5,9 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.xml.soap.SoapUtil;
@@ -13,12 +15,11 @@ import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathResultNodeSet;
-import com.l7tech.test.BugNumber;
 import org.junit.*;
+import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import static org.junit.Assert.*;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
@@ -432,6 +433,21 @@ public class XmlUtilTest {
         assertEquals(str2, str3);
     }
 
+    @Test(timeout = 5000, expected = SAXException.class)
+    @BugNumber(7685)
+    public void testDoctypeParserInfiniteLoop_defaultParser() throws IOException, SAXException {
+        Document parsed = XmlUtil.parse(new ByteArrayInputStream(HexUtils.decodeBase64(BUG_7685_DOCTYPE_INFINITE_LOOP_SPLOIT_BASE64)));
+        assertNotNull(parsed);
+    }
+
+    @Ignore("Disabled because it currently fails (infinite loop)")
+    @Test(timeout = 5000)
+    @BugNumber(7685)
+    public void testDoctypeParserInfiniteLoop_doctypeAllowingParser() throws IOException, SAXException {
+        Document parsed = XmlUtil.parse(new ByteArrayInputStream(HexUtils.decodeBase64(BUG_7685_DOCTYPE_INFINITE_LOOP_SPLOIT_BASE64)), true);
+        assertNotNull(parsed);
+    }
+
     public static final String XML_WITH_LEADING_WHITESPACE =
             "\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -459,4 +475,38 @@ public class XmlUtilTest {
                                                   "</s:Header>" +
                                                   "<s:Body/>" +
                                                   "</s:Envelope>";
+
+    public static final String BUG_7685_DOCTYPE_INFINITE_LOOP_SPLOIT_BASE64 =
+            "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCFET0NUWVBFIEVudmVsb3Bl\n" +
+            "IFNZU1RFTSAid2FhaPSAgJMuZHRkIj4gICAgICAgIAo8c29hcDpFbnZlbG9wZQl4bWxuczpzb2Fw\n" +
+            "PSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VudmVsb3BlLyIgeG1sbnM6eHNpPSJo\n" +
+            "dHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSIgeG1sbnM6eHNkPSJodHRw\n" +
+            "Oi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSIgeG1sbnM6d3NhPSJodHRwOi8vc2NoZW1hcy54\n" +
+            "bWxzb2FwLm9yZy93cy8yMDA0LzAzL2FkZHJlc3NpbmciIHhtbG5zOndzc2U9Imh0dHA6Ly9kb2Nz\n" +
+            "Lm9hc2lzLW9wZW4ub3JnL3dzcy8yMDA0LzAxL29hc2lzLTIwMDQwMS13c3Mtd3NzZWN1cml0eS1z\n" +
+            "ZWNleHQtMS4wLnhzZCIgeG1sbnM6d3N1PSJodHRwOi8vZG9jcy5vYXNpcy1vcGVuLm9yZy93c3Mv\n" +
+            "MjAwNC8wMS9vYXNpcy0yMDA0MDEtd3NzLXdzc2VjdXJpdHktdXRpbGl0eS0xLjAueHNkIj4KCTxz\n" +
+            "b2FwOkhlYWRlcj4KCQk8d3NhOkFjdGlvbj5odHRwOi8vd2FyZWhvdXNlLmFjbWUuY29tL3dzL2xp\n" +
+            "c3RQcm9kdWN0czwvd3NhOkFjdGlvbj4KCQk8d3NhOk1lc3NhZ2VJRD51dWlkOjQwYTFkYjI2LTI2\n" +
+            "OTctNDc5OC1hMmI3LTgwM2M3M2IwN2IyZjwvd3NhOk1lc3NhZ2VJRD4KCQk8d3NhOlJlcGx5VG8+\n" +
+            "CgkJCTx3c2E6QWRkcmVzcz5odHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA0LzAzL2Fk\n" +
+            "ZHJlc3Npbmcvcm9sZS9hbm9ueW1vdXM8L3dzYTpBZGRyZXNzPgoJCTwvd3NhOlJlcGx5VG8+CgkJ\n" +
+            "PHdzYTpUbz5odHRwOi8vcmlrZXI6ODg4OC9BQ01FV2FyZWhvdXNlV1MvU2VydmljZTEuYXNteDwv\n" +
+            "d3NhOlRvPgoJCTx3c3NlOlNlY3VyaXR5IHNvYXA6bXVzdFVuZGVyc3RhbmQ9IjEiPgoJCQk8d3N1\n" +
+            "OlRpbWVzdGFtcCB3c3U6SWQ9IlRpbWVzdGFtcC1kZjA5YmIzZC1kNjA1LTQ4NzAtYjdhNS1jZWIx\n" +
+            "ZmJjZDQ3YmIiPgoJCQkJPHdzdTpDcmVhdGVkPjIwMDQtMDYtMTRUMTg6NDk6MDVaPC93c3U6Q3Jl\n" +
+            "YXRlZD4KCQkJCTx3c3U6RXhwaXJlcz4yMDA0LTA2LTE0VDE4OjU0OjA1Wjwvd3N1OkV4cGlyZXM+\n" +
+            "CgkJCTwvd3N1OlRpbWVzdGFtcD4KCQkJPHdzc2U6VXNlcm5hbWVUb2tlbiB4bWxuczp3c3U9Imh0\n" +
+            "dHA6Ly9kb2NzLm9hc2lzLW9wZW4ub3JnL3dzcy8yMDA0LzAxL29hc2lzLTIwMDQwMS13c3Mtd3Nz\n" +
+            "ZWN1cml0eS11dGlsaXR5LTEuMC54c2QiIHdzdTpJZD0iU2VjdXJpdHlUb2tlbi0wM2FkYzdmMy0x\n" +
+            "NjVmLTRhZmMtOGMyOS1kYTNjNmEzZjg1YmYiPgoJCQkJPHdzc2U6VXNlcm5hbWU+dXNlcm5hbWU8\n" +
+            "L3dzc2U6VXNlcm5hbWU+CgkJCQk8d3NzZTpQYXNzd29yZCBUeXBlPSJodHRwOi8vZG9jcy5vYXNp\n" +
+            "cy1vcGVuLm9yZy93c3MvMjAwNC8wMS9vYXNpcy0yMDA0MDEtd3NzLXVzZXJuYW1lLXRva2VuLXBy\n" +
+            "b2ZpbGUtMS4wI1Bhc3N3b3JkVGV4dCI+cGFzc3dvcmQ8L3dzc2U6UGFzc3dvcmQ+CgkJCQk8d3Nz\n" +
+            "ZTpOb25jZT5SSGlrUXJhZU43d0Myc2M5OGg2VWNRPT08L3dzc2U6Tm9uY2U+CgkJCQk8d3N1OkNy\n" +
+            "ZWF0ZWQ+MjAwNC0wNi0xNFQxODo0OTowNVo8L3dzdTpDcmVhdGVkPgoJCQk8L3dzc2U6VXNlcm5h\n" +
+            "bWVUb2tlbj4KCQk8L3dzc2U6U2VjdXJpdHk+Cgk8L3NvYXA6SGVhZGVyPgoJPHNvYXA6Qm9keSB3\n" +
+            "c3U6SWQ9IklkLTNhODUzOTRiLWU2ZGMtNDY5ZC1hYTVhLWRiYTRkNzg3YzAzNSI+CgkJPGxpc3RQ\n" +
+            "cm9kdWN0cyB4bWxucz0iaHR0cDovL3dhcmVob3VzZS5hY21lLmNvbS93cyIgLz4KCTwvc29hcDpC\n" +
+            "b2R5Pgo8L3NvYXA6RW52ZWxvcGU+";
 }
