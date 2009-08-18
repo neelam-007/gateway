@@ -90,8 +90,12 @@ public class NamespacePrefixQueryForm extends JDialog {
     private void ok() {
         if (! ValidationUtils.isProbablyValidXmlNamespacePrefix(prefixtxt.getText())) {
             DialogDisplayer.showMessageDialog(this, "'" + prefixtxt.getText() + "' is an invalid namespace prefix.  Please correct it and try again.",
-                "Invalid Prefix", JOptionPane.ERROR_MESSAGE, null);
-            validationFinished = true;
+                "Invalid Prefix", JOptionPane.ERROR_MESSAGE, new Runnable() {
+                    @Override
+                    public void run() {
+                        validationFinished = true;
+                    }
+                });
             return;
         }
         nsuri = uritxt.getText();
