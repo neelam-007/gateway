@@ -337,7 +337,9 @@ public class WSSecurityProcessorUtils {
                             signingSecurityTokens,
                             identityTarget );
 
-                    if ( signingSecurityToken != null ) {
+                    // Check token equality here since there may be multiple SignedElements
+                    // for any given DOM element (see bug 7718)
+                    if ( signingSecurityToken != null && signingSecurityToken == signedElement.getSigningSecurityToken() ) {
                         foundSignedElementsForIdentity.add( signedElement );
                     }
                 }

@@ -186,7 +186,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             }
         } else {
             try {
-                String senderId = getSenderId(wssResults.getSigningTokens(timestamp.asElement()), createdIsoString, null);
+                String senderId = getSenderId(timestamp.asElement(), signedElements, createdIsoString, null);
                 if (senderId == null) return getBadMessageStatus();
                 messageIdStr = senderId;
             } catch (MultipleSenderIdException e) {
@@ -212,12 +212,19 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
         return auditor;
     }
 
-    private String getSenderId(XmlSecurityToken[] signingTokens, String createdIsoString, String what)
+    private String getSenderId( final Element timestampElement,
+                                final SignedElement[] signedElementsForIdentity,
+                                final String createdIsoString,
+                                final String what )
         throws MultipleSenderIdException, UnsupportedEncodingException
     {
         String senderId = null;
 
-        for (XmlSecurityToken signingToken : signingTokens) {
+        for ( SignedElement element : signedElementsForIdentity ) {
+            if ( !timestampElement.isSameNode(element.asElement()) )
+                continue;
+
+            SigningSecurityToken signingToken = element.getSigningSecurityToken();
             if (signingToken instanceof X509SigningSecurityToken) {
                 if (senderId != null) throw new MultipleSenderIdException();
                 X509Certificate signingCert = ((X509SigningSecurityToken)signingToken).getMessageSigningCertificate();
@@ -269,9 +276,10 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_UNSUPPORTED_TOKEN_TYPE, what, signingToken.getClass().getName());
                 return null;
             }
-            }
-        return senderId;
         }
+
+        return senderId;
+    }
 
     private String skiToString(X509Certificate signingCert) throws CertificateEncodingException {
         byte[] ski = CertUtils.getSKIBytesFromCert(signingCert);
