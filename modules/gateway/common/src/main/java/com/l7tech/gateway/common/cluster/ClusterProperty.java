@@ -122,6 +122,11 @@ public class ClusterProperty extends NamedEntityImp implements Comparable {
 
     @Override
     public int compareTo(Object o) {
-        return getName().compareTo(((ClusterProperty)o).getName());
+        if (o == null || ! (o instanceof ClusterProperty)) throw new IllegalArgumentException("The compared object must be a ClusterProperty.");
+        String originalPropName = getName();
+        String comparedPropName = ((ClusterProperty)o).getName();
+        if (originalPropName == null || comparedPropName == null) throw new NullPointerException("Cluster Property Name must not be null.");
+
+        return originalPropName.toLowerCase().compareTo(comparedPropName.toLowerCase());
     }
 }
