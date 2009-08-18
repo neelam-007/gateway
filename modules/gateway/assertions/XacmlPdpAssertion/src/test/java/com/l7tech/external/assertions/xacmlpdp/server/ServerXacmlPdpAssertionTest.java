@@ -264,7 +264,7 @@ import org.springframework.mock.web.MockServletContext;
          PolicyEnforcementContext context = getContext("<invalidxacmlrequestxml />", true, null);
 
          AssertionStatus status = serverPdpAssertion.checkRequest(context);
-         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FAILED, status);
+         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FALSIFIED, status);
      }
 
     //-------------Test with variable interpolation

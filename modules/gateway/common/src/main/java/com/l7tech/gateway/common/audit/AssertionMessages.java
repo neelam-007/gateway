@@ -675,6 +675,10 @@ public class AssertionMessages extends Messages {
     public static final M XACML_NOT_ALL_CTX_VARS_USED      = m(8909, Level.INFO, "Only {0} values from all referenced context variables will be used. The largest referenced variable has {1} values");
     public static final M XACML_INCORRECT_NAMESPACE_URI    = m(8910, Level.INFO, "Namespace prefix {0} with incorrect namespace URI may cause XPath base pattern to match no results");
 
+    public static final M XACML_PDP_INVALID_REQUEST           = m(8930, Level.WARNING, "Error processing XACML request: {0}");
+    public static final M XACML_PDP_REQUEST_NOT_ENCAPSULATED  = m(8931, Level.WARNING, "XACML request is not SOAP encapsulated");
+    public static final M XACML_PDP_REQUEST_NAMESPACE_UNKNOWN = m(8932, Level.WARNING, "XACML request namespace is not recognized: {0}"); 
+
     public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");
     public static final M MCM_TOO_MANY_MAPPINGS  = m(9003, Level.WARNING, "Message context mapping dropped {0}.");

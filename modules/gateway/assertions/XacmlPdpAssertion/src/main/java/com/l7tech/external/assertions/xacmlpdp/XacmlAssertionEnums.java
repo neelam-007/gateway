@@ -49,20 +49,22 @@ public class XacmlAssertionEnums {
             return namespace;
         }
 
+        @Override
         public String toString() {
             return displayName;
         }
 
         /**
-         * Validate that a String is a valid xacml request version
-         * @param versionToCheck String to check is a valid xacml request version. Cannot be null
+         * Validate that a String is a valid xacml request version.
+         *
+         * @param versionToCheck String to check is a valid xacml request version.
          * @return true if versionToCheck is a valid version, false otherwise
          */
-        public static boolean isValidXacmlVersionType(String versionToCheck){
-            if(versionToCheck == null) throw new NullPointerException("versionToCheck cannot be null");
-
-            for(XacmlVersionType valueType: XacmlVersionType.values()){
-                if(valueType.getNamespace().equals(versionToCheck)) return true;
+        public static boolean isValidXacmlVersionType( final String versionToCheck ){
+            if ( versionToCheck != null ) {
+                for( XacmlVersionType valueType: XacmlVersionType.values() ){
+                    if(valueType.getNamespace().equals(versionToCheck)) return true;
+                }
             }
 
             return false;
@@ -92,6 +94,7 @@ public class XacmlAssertionEnums {
             return prefix;
         }
 
+        @Override
         public String toString() {
             return displayName;
         }

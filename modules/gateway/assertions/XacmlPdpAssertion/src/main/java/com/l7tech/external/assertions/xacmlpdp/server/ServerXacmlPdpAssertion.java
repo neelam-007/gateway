@@ -167,22 +167,30 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             {
                 rootElement = XmlUtil.findFirstChildElementByName(rootElement, rootElement.getNamespaceURI(), "Body");
                 if(rootElement == null) {
-                    return AssertionStatus.FAILED;
+                    auditor.logAndAudit(AssertionMessages.XACML_PDP_REQUEST_NOT_ENCAPSULATED);
+                    return AssertionStatus.FALSIFIED;
                 }
                 //the namespace varies with the version, do not check namespace here, it is checked below
                 rootElement = XmlUtil.findFirstChildElementByName(rootElement, (String) null, "Request");
                 if(rootElement == null) {
-                    return AssertionStatus.FAILED;
+                    auditor.logAndAudit(AssertionMessages.XACML_PDP_REQUEST_NOT_ENCAPSULATED);
+                    return AssertionStatus.FALSIFIED;
                 }
             }
 
             //check the namespace on rootElement is valid. The namespace represents the xacml request version
             String nameSpace = rootElement.getNamespaceURI();
             if(!XacmlAssertionEnums.XacmlVersionType.isValidXacmlVersionType(nameSpace)){
-                return AssertionStatus.FAILED;
+                auditor.logAndAudit(AssertionMessages.XACML_PDP_REQUEST_NAMESPACE_UNKNOWN, nameSpace);
+                return AssertionStatus.FALSIFIED;
             }
             
-            RequestCtx requestCtx = RequestCtx.getInstance(rootElement);
+            RequestCtx requestCtx;
+            try {
+                requestCtx = RequestCtx.getInstance(rootElement);
+            } catch (ParsingException e) {
+                throw new InvalidRequestException( ExceptionUtils.getMessage(e), e );
+            }
             ResponseCtx responseCtx = pdp.evaluate(requestCtx);
 
             AssertionStatus status = AssertionStatus.NONE;
@@ -259,7 +267,8 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             return status;
         } catch(NoSuchPartException nspe) {
             return AssertionStatus.FAILED;
-        } catch(ParsingException pe) {
+        } catch(InvalidRequestException e) {
+            auditor.logAndAudit(AssertionMessages.XACML_PDP_INVALID_REQUEST, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         } catch (InvalidPolicyException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
@@ -338,6 +347,12 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
 
     private static final class InvalidPolicyException extends Exception {
         public InvalidPolicyException( String message, Throwable cause ) {
+            super( message, cause );
+        }
+    }
+
+    private static final class InvalidRequestException extends Exception {
+        public InvalidRequestException( String message, Throwable cause ) {
             super( message, cause );
         }
     }
