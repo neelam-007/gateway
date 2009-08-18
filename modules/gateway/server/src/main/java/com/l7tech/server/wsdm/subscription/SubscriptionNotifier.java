@@ -384,6 +384,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                     ssnc.esmServiceOid = s.getEsmServiceOid();
                     ssnc.serviceId = serviceoid;
                     ssnc.target = s.getReferenceCallback();
+                    ssnc.refParamsXml = processReferenceParameters(s);
                     ssnc.notificationPolicyGuid = s.getNotificationPolicyGuid();
                     ssnc.ts = now;
                     callbacks.add(ssnc);
