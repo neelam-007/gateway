@@ -468,11 +468,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             Object o = vars.get(s);
             if (o instanceof Message) {
                 Message m = (Message) vars.get(s);//wont be null based on isAMessage being true
-                try {
-                    addXmlMessageVariableAsAttributeValue(m, element, s);
-                } finally {
-                    m.close();
-                }
+                addXmlMessageVariableAsAttributeValue(m, element, s);
             } else throw new IllegalStateException("Message expected");//will not happen based on above logic
         } else {
             //its not a Message, create a text node
