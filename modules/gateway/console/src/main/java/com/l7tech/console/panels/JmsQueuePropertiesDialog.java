@@ -32,6 +32,7 @@ import java.awt.event.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.IOException;
@@ -887,7 +888,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         providerComboBox.setSelectedIndex(0);
     }
 
-    private static class ComboItem {
+    private static class ComboItem implements Comparable {
         ComboItem(String name, long id) {
             serviceName = name;
             serviceID = id;
@@ -922,6 +923,16 @@ public class JmsQueuePropertiesDialog extends JDialog {
             result = (serviceName != null ? serviceName.hashCode() : 0);
             result = 31 * result + (int) (serviceID ^ (serviceID >>> 32));
             return result;
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            if (o == null || ! (o instanceof ComboItem)) throw new IllegalArgumentException("The compared object must be a ComboItem.");
+            String originalServiceName = this.serviceName;
+            String comparedServiceName = ((ComboItem)o).serviceName;
+            if (originalServiceName == null || comparedServiceName == null) throw new NullPointerException("Service Name must not be null.");
+
+            return originalServiceName.toLowerCase().compareTo(comparedServiceName.toLowerCase());
         }
     }
 
@@ -1041,17 +1052,18 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 associateQueueWithPublishedService.setEnabled(false);
             }
         } else {
-            ComboItem[] comboitems = new ComboItem[allServices.length];
+            ArrayList<ComboItem> comboitems = new ArrayList<ComboItem>(allServices.length);
             Object selectMe = null;
             for (int i = 0; i < allServices.length; i++) {
                 EntityHeader aService = allServices[i];
                 ServiceHeader svcHeader = (ServiceHeader) aService;
-                comboitems[i] = new ComboItem(svcHeader.getDisplayName(), svcHeader.getOid());
+                comboitems.add(new ComboItem(svcHeader.getDisplayName(), svcHeader.getOid()));
                 if (isHardWired && aService.getOid() == hardWiredId) {
-                    selectMe = comboitems[i];
+                    selectMe = comboitems.get(i);
                 }
             }
-            serviceNameCombo.setModel(new DefaultComboBoxModel(comboitems));
+            Collections.sort(comboitems);
+            serviceNameCombo.setModel(new DefaultComboBoxModel(comboitems.toArray()));
             if (selectMe != null) {
                 serviceNameCombo.setSelectedItem(selectMe);
                 associateQueueWithPublishedService.setSelected(true);
