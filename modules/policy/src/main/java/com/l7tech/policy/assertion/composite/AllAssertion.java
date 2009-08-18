@@ -17,4 +17,12 @@ public final class AllAssertion extends CompositeAssertion {
     public AllAssertion( List children ) {
         super( children );
     }
+
+    /**
+     * Check if the assertion is the root assertion.
+     * @return true if this AllAssertion has no parent.
+     */
+    public boolean isRoot() {
+        return getParent() == null;
+    }
 }

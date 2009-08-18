@@ -28,6 +28,7 @@ import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.IdentityTagable;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -61,10 +62,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.text.MessageFormat;
@@ -622,6 +620,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             ba.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    if (PolicyEditorPanel.this.hasEmptyRoot()) {
+                        ba.setEnabled(true);
+                        buttonSaveAndActivate.setEnabled(true);
+                        bsaa.setEnabled(true);
+                        buttonSaveOnly.setEnabled(true);
+                        return;
+                    }
                     appendToMessageArea("<i>Policy saved and made active.</i>");
                     ba.setEnabled(false);
                     buttonSaveAndActivate.setEnabled(false);
@@ -635,6 +640,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             bsaa.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    if (PolicyEditorPanel.this.hasEmptyRoot()) {
+                        bsaa.setEnabled(true);
+                        buttonSaveOnly.setEnabled(true);
+                        return;
+                    }
                     appendToMessageArea("<i>Policy saved but not activated.</i>");
                     bsaa.setEnabled(false);
                     buttonSaveOnly.setEnabled(false);
@@ -1455,6 +1465,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                 WspWriter.getPolicyXml(getCurrentRoot().asAssertion());
                         if (xml != null) {
                             this.node = rootAssertion;
+
+                            if (hasEmptyRoot()) {
+                                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                    "Cannot save an empty policy or published service.  Please add assertion(s) into it or delete it.", "Save Warning",
+                                    JOptionPane.WARNING_MESSAGE, null);
+                                return;
+                            }
+
                             HashMap<String, Policy> includedFragments = new HashMap<String, Policy>();
                             extractFragmentsFromAssertion(rootAssertion.asAssertion(), includedFragments);
                             if(PolicyEditorPanel.this.removeNameFromIncludeAssertions(rootAssertion.asAssertion())) {
@@ -1484,6 +1502,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                    : ActionEvent.ALT_MASK;
         ret.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, mask));
         return ret;
+    }
+
+    private boolean hasEmptyRoot() {
+        if (rootAssertion == null) throw new NullPointerException("Root assertion must not be null.");
+        if (!(rootAssertion.asAssertion() instanceof AllAssertion)) throw new RuntimeException("Root assertion must be an AllAssertion.");
+
+        AllAssertion assertion = (AllAssertion)rootAssertion.asAssertion();
+        return assertion.isRoot() && assertion.isEmpty();
     }
 
     private boolean removeNameFromIncludeAssertions(Assertion rootAssertion) {
