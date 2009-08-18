@@ -180,7 +180,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                         prefix = dialog.getPrefix();
                         namespace = dialog.getUri();
 
-                        if ( validateNamespacePrefix( null, prefix ) ) {
+                        if ( validateNamespacePrefix( null, prefix ) &&
+                             validateNamespace( null, namespace ) ) {
                             done = true;
                             tableModel.addRow(new String[] {prefix, namespace});
                             if(multipleAttributeConfig.getNamespaces() == null) {
@@ -204,7 +205,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
                 final String originalPrefix = (String)namespacesTable.getValueAt(namespacesTable.getSelectedRow(), 0);
                 String prefix = originalPrefix;
-                String namespace = (String)namespacesTable.getValueAt(namespacesTable.getSelectedRow(), 1);
+                final String originalNamespace = (String)namespacesTable.getValueAt(namespacesTable.getSelectedRow(), 1);
+                String namespace = originalNamespace;
                 boolean done = false;
                 while ( !done ) {
                     XacmlRequestBuilderNamespaceDialog dialog = new XacmlRequestBuilderNamespaceDialog(window, prefix, namespace);
@@ -215,7 +217,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                         prefix = dialog.getPrefix();
                         namespace = dialog.getUri();
 
-                        if ( validateNamespacePrefix( originalPrefix, prefix ) ) {
+                        if ( validateNamespacePrefix( originalPrefix, prefix ) &&
+                             validateNamespace( originalNamespace, namespace ) ) {
                             done = true;
                             tableModel.setValueAt(prefix, namespacesTable.getSelectedRow(), 0);
                             tableModel.setValueAt(namespace, namespacesTable.getSelectedRow(), 1);
@@ -454,6 +457,20 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         return valid;
     }
 
+    private boolean validateNamespace( final String originalNamespace, final String namespace ) {
+        boolean valid = false;
+
+        if ( (originalNamespace==null || !originalNamespace.equals( namespace )) && isDuplicateNamespace( namespace )) {
+            JOptionPane.showMessageDialog(window,
+                "The namespace '" + namespace + "' is already specified.\n Please check the namespace and try again.",
+                "Duplicate Namespace", JOptionPane.ERROR_MESSAGE, null );
+        } else {
+            valid = true;
+        }
+
+        return valid;
+    }
+
     private String validateXPath( final String xpath,
                                   final Map<String,String> namespaces,
                                   final XacmlRequestBuilderDialog builderDialog) {
@@ -499,5 +516,9 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
     private boolean isDuplicateNamespacePrefix( final String prefix ) {
         return multipleAttributeConfig.getNamespaces().containsKey(prefix);
+    }
+
+    private boolean isDuplicateNamespace( final String namespace ) {
+        return multipleAttributeConfig.getNamespaces().containsValue(namespace);
     }
 }
