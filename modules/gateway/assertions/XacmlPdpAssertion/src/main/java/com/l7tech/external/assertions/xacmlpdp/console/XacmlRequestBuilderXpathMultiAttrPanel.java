@@ -325,9 +325,12 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                         // Althought this text doesn't have the "${}" wrapper, the value in multipleAttributeConfig does
                         // have the wrapper, so we need to remove the wrapper before updating the value.
                         String[] contextVariables = Syntax.getReferencedNames(multipleAttributeConfig.getField(fieldName).getValue());
-                        if (contextVariables.length != 1) throw new IllegalArgumentException("AttributeValue must be a reference to exactly one context variable.");
-                        // Update the field value without the "${}" wrapper (Note: the wrapper has been removed in the above step.)
-                        multipleAttributeConfig.getField(fieldName).setValue(contextVariables[0]);
+                        if (contextVariables.length > 1) {
+                            throw new IllegalArgumentException("AttributeValue must be a reference to exactly one context variable.");
+                        } else if (contextVariables.length == 1) {
+                            // Update the field value without the "${}" wrapper (Note: the wrapper has been removed in the above step.)
+                            multipleAttributeConfig.getField(fieldName).setValue(contextVariables[0]);
+                        } // Otherwise, don't update anything.
                     }
                 }
             }
