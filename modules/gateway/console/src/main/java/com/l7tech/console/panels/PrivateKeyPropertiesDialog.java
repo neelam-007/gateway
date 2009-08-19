@@ -292,10 +292,10 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             DialogDisplayer.showConfirmDialog(
                     makeDefaultSSLButton,
                     "This is an elliptic curve private key.\n\n" +
-                    "Many SSL clients -- including Gateway's browser-based admin applet when run\n" +
+                    "Many SSL clients -- including the Gateway's browser-based admin applet when run\n" +
                     "with a standard Java install, and many web browsers -- will be unable to connect\n" +
                     "to an SSL server that uses this key as its SSL server certificate.\n\n" +
-                    "Are you sure you wish the cluster to use this as as the default SSL private key?",
+                    "Are you sure you wish the cluster to use this as the default SSL private key?",
                     "Unsuitable Default SSL Key",
                     JOptionPane.YES_NO_CANCEL_OPTION,
                     JOptionPane.WARNING_MESSAGE,
