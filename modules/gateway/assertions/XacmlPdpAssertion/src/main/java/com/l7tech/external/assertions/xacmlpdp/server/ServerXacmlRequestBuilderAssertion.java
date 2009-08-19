@@ -214,15 +214,17 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     /**
      * From the Collection values, check if each value references a multi valued context variable, and if it does
      * return the size of the smallest multi valued context variable
-     * @param values cant be null
-     * @param contextVariables cant be null
+     *
+     * @param values                 cant be null
+     * @param contextVariables       cant be null
      * @param valuesAlreadyProcessed if true, then we won't convert the values in values to it's internal form using
-     * Syntax.getReferencedNames(). false implies that variableName is in the form ${...}
+     *                               Syntax.getReferencedNames(). false implies that variableName is in the form ${...}
      * @return size of the smallest referenced multi valued context variable. 0 if none are referenced. this is a not
-     * a test to check if a multi valued context variable is referenced
+     *         a test to check if a multi valued context variable is referenced
      */
-    private int getMinMultiValuedCtxVariableReferenced(Collection<String> values, Map<String, Object> contextVariables,
-                                                       boolean valuesAlreadyProcessed){
+    private int getMinMultiValuedCtxVariableReferenced(final Collection<String> values,
+                                                       final Map<String, Object> contextVariables,
+                                                       final boolean valuesAlreadyProcessed) {
         int smallestCtxVarSize = 0;
         int largestCtxVarSize = 0;
 
@@ -265,7 +267,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         if(!valueAlreadyProcessed){
             String[] v = Syntax.getReferencedNames(variableName);
             if(v.length == 0) throw new IllegalStateException("Context variable '"+variableName+"' not found");
-            o = contextVariables.get(v[0]);
+            final String baseVariableName = Syntax.getMatchingName(v[0], contextVariables.keySet());
+            o = contextVariables.get(baseVariableName);
         }else{
             if(!contextVariables.containsKey(variableName))
                 throw new IllegalStateException("Context variable '"+variableName+"' not found");
@@ -422,73 +425,6 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             element.setAttribute(attributeName, attributeValue);
         } catch (DOMException e) {
             auditor.logAndAudit(AssertionMessages.XACML_INVALID_XML_ATTRIBUTE, new String[]{attributeName, attributeValue}, e);
-            throw new AssertionStatusException(AssertionStatus.FAILED, e);
-        }
-    }
-
-    /**
-     * Check if any referenced variable is a Message. If there is a message there can only be one. If there is more
-     * an IllegalStateException will be thrown
-     *
-     * @param contextVariables    all available context variables
-     * @param referencedVariables was obtained from a call to Syntax.getReferencedNames(content), where the value
-     *                            of content is the same value being passed in here
-     * @return true if 1 and only 1 message is referenced from referencedVariables, false otherwise
-     */
-    private boolean doesContentIncludeAMessage(Map<String, Object> contextVariables, String[] referencedVariables) {
-        //If any Message type var is referenced, there can only be 1
-        boolean isAMessage = false;
-        for (String s : referencedVariables) {
-            if (!contextVariables.containsKey(s)) continue;
-            if (contextVariables.get(s) instanceof Message) {
-                isAMessage = true;
-            }
-        }
-
-        //this error message is UI specific, however this is how it happens - a user types in two Message context
-        //variables into the UI
-        if (isAMessage && referencedVariables.length != 1)
-            throw new IllegalStateException(
-                    "AttributeValue content text field can only support a single message context variable");
-
-        return isAMessage;
-    }
-
-    /**
-     * Add the message to the supplied element. The element will only be added if it's xml
-     * <p/>
-     * The message parameter will not be closed by this method.
-     *
-     * @param message     The Message to add. Must be xml, assertion will fail if it's not
-     * @param element     The element to add the xml fragment from message to
-     * @param messageName The name of the message variable. Can be null when called from context where this info
-     *                    is not available
-     * @return boolean true if the message was added, false otherwise. If the message is not xml the return will be
-     *         false
-     * @throws AssertionStatusException if either the xml cannot be read / parsed, of the message is not xml
-     */
-    private void addXmlMessageVariableAsAttributeValue(final Message message,
-                                                       final Element element,
-                                                       String messageName) {
-        if (messageName == null) messageName = "Unknown";
-
-        // todo: mixed content is allowed in AttributeValue, should be able to add non-xml messages
-        try {
-            if (message.isXml()) {
-                final XmlKnob xmlKnob = message.getXmlKnob();
-                final Document doc = xmlKnob.getDocumentReadOnly();
-                final Document docOwner = element.getOwnerDocument();
-                final Node newNode = docOwner.importNode(doc.getDocumentElement(), true);
-                element.appendChild(newNode);
-            } else {
-                auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_NOT_XML, new String[]{messageName});
-                throw new AssertionStatusException(AssertionStatus.FAILED, "Message does not contain xml");
-            }
-        } catch (IOException e) {
-            auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{messageName}, e);
-            throw new AssertionStatusException(AssertionStatus.FAILED, e);
-        } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{messageName}, e);
             throw new AssertionStatusException(AssertionStatus.FAILED, e);
         }
     }
@@ -1102,8 +1038,9 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         final static String MULTI_VAL_STRING_SEPARATOR = ", "; // todo: handle this better
         private String processedContent;     // simple content or already toString()'ed
         private Message message;             // content from one (XML) message
-        private List<Object> mixedContent;   // mixed content (strings and (xml) messages) - strings have not been processed
+        private List<Object> mixedContent;   // mixed content (strings and (xml) messages)
         private XpathResultWrapper wrapper;
+        private Element domElement;             //domElement most likely from varname.elements from an xpath assertion
 
         public AttributeValue(String processedContent) {
             this.processedContent = processedContent;
@@ -1113,6 +1050,15 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             this.message = message;
         }
 
+        private AttributeValue(Element domElement) {
+            this.domElement = domElement;
+        }
+
+        /**
+         * The Objects in mixedContent should be either String, Message or Element. Additional code is needed
+         * to process any other types in addMeToAnElement
+         * @param mixedContent
+         */
         public AttributeValue(List<Object> mixedContent) {
             this.mixedContent = mixedContent;
         }
@@ -1127,7 +1073,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
          * @param element
          * @return true if successfully added, false otherwise
          */
-        public boolean addMeToAnElement(Element element){
+        public boolean addMeToAnElement(final Element element){
 
             //am I a String?
             if(processedContent != null){
@@ -1141,6 +1087,11 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 return true;
             }
 
+            if(domElement != null){
+                addElementAsAttributeValue(element, domElement);
+                return true;
+            }
+            
             //am I from an Xpath result?
             if(wrapper != null){
                 if(!wrapper.isNodeSet()){
@@ -1166,6 +1117,12 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     } else if (part instanceof Message) {
                         isPreviousString = false;
                         addXmlMessageVariableAsAttributeValue((Message)part, element, null);
+                    } else if(part instanceof Element){
+                        addElementAsAttributeValue(element, (Element)part);
+                    } else{
+                        auditor.logAndAudit(AssertionMessages.XACML_UNSUPPORTED_MIXED_CONTENT, part.getClass().getName());
+                        throw new AssertionStatusException(AssertionStatus.FAILED,
+                                "Unsupported type of mixed content found for AttributeValue");
                     }
                 }
                 return true;
@@ -1173,6 +1130,52 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             
             return false;
         }
+
+        private void addElementAsAttributeValue(final Element parentElement, final Element elementToAddToParent) {
+            final Document docOwner = parentElement.getOwnerDocument();
+            final Node newNode = docOwner.importNode(elementToAddToParent, true);
+            parentElement.appendChild(newNode);
+        }
+
+        /**
+         * Add the message to the supplied element. The element will only be added if it's xml
+         * <p/>
+         * The message parameter will not be closed by this method.
+         *
+         * @param message     The Message to add. Must be xml, assertion will fail if it's not
+         * @param element     The element to add the xml fragment from message to
+         * @param messageName The name of the message variable. Can be null when called from context where this info
+         *                    is not available
+         * @return boolean true if the message was added, false otherwise. If the message is not xml the return will be
+         *         false
+         * @throws AssertionStatusException if either the xml cannot be read / parsed, of the message is not xml
+         */
+        private void addXmlMessageVariableAsAttributeValue(final Message message,
+                                                           final Element element,
+                                                           String messageName) {
+            if (messageName == null) messageName = "Unknown";
+
+            // todo: mixed content is allowed in AttributeValue, should be able to add non-xml messages
+            try {
+                if (message.isXml()) {
+                    final XmlKnob xmlKnob = message.getXmlKnob();
+                    final Document doc = xmlKnob.getDocumentReadOnly();
+                    final Document docOwner = element.getOwnerDocument();
+                    final Node newNode = docOwner.importNode(doc.getDocumentElement(), true);
+                    element.appendChild(newNode);
+                } else {
+                    auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_NOT_XML, new String[]{messageName});
+                    throw new AssertionStatusException(AssertionStatus.FAILED, "Message does not contain xml");
+                }
+            } catch (IOException e) {
+                auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{messageName}, e);
+                throw new AssertionStatusException(AssertionStatus.FAILED, e);
+            } catch (SAXException e) {
+                auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{messageName}, e);
+                throw new AssertionStatusException(AssertionStatus.FAILED, e);
+            }
+        }
+
     }
 
     /**
@@ -1199,9 +1202,16 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 List varValues = getMultiValuedContextVariable(valueField.getValue(), contextVariables, false);
                 //contextVars contains String and or Messages
                 for(Object varValue : varValues){
-                    returnList.add(varValue instanceof Message ?
-                        new AttributeValue((Message)varValue) :
-                        new AttributeValue(ExpandVariables.process(varValue.toString(), contextVariables, auditor, true)));
+                    final AttributeValue valueToAdd;
+                    if(varValue instanceof Message){
+                        valueToAdd = new AttributeValue((Message) varValue);
+                    } else if(varValue instanceof Element){
+                        valueToAdd = new AttributeValue((Element)varValue);
+                    }else{
+                        valueToAdd = new AttributeValue(
+                                ExpandVariables.process(varValue.toString(), contextVariables, auditor, true));    
+                    }
+                    returnList.add(valueToAdd);
                 }
             } else { // single-value context variable, may contain a Message reference
                 String [] varNames = Syntax.getReferencedNames(valueField.getValue());

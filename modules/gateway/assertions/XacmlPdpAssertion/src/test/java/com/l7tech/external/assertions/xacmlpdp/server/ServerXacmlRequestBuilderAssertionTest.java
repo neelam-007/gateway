@@ -9,6 +9,8 @@ package com.l7tech.external.assertions.xacmlpdp.server;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.assertion.ServerXpathAssertion;
+import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
@@ -21,8 +23,11 @@ import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAsserti
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.REGULAR;
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.CONTEXT_VARIABLE;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.AuditDetailAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.DomUtils;
+import com.l7tech.xml.xpath.XpathExpression;
 import org.xml.sax.SAXException;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -44,7 +49,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
      */
     @Test
     public void testAttributeValue() throws Exception{
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
 
         context.setVariable("var1", "value1");
 
@@ -81,7 +86,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
      */
     @Test
     public void testAttributeValueContentOfTypeMessage() throws Exception{
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
@@ -123,7 +128,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
     @BugNumber(7727)
     @Test
     public void testAttributeValueMixedContent() throws Exception {
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
@@ -164,7 +169,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
     @BugNumber(7727)
     @Test
     public void testResourceContentMixedContent() throws Exception {
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
@@ -201,7 +206,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
     @BugNumber(7727)
     @Test
     public void testAttributeValueMixedContentMultiMessages() throws Exception {
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
@@ -253,7 +258,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
      */
     @Test
     public void testAttributeValueContentIsMultiValuedOfDifferentTypes() throws Exception{
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
@@ -297,7 +302,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
      */
     @Test
     public void testDynamicAttributeValueBehaviour() throws Exception{
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
@@ -353,7 +358,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
      */
     @Test(expected = AssertionStatusException.class)
     public void testDynamicAttributeValueBehaviourMultiVarCocacanated() throws Exception{
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
 
         Object [] contentVars = new Object[]{"one","three"};
 
@@ -397,7 +402,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
      */
     @Test
     public void testDynamicAttributeValueBehaviourWithIndexedMultiVar() throws Exception{
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
 
         String multiContextVariable = "MULTI_VALUE";
         Object [] contentVars = new Object[]{"one", "two", "three"};
@@ -447,7 +452,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
      */
     @Test
     public void testResourceWithMessage() throws Exception{
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
@@ -504,7 +509,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE, multipleConfig, context);
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -556,7 +561,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/ws:listProducts/Attribute");
@@ -605,7 +610,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/ws:listProducts/Attribute");
@@ -653,7 +658,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE_WITH_NAMESPACES, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute");
@@ -697,7 +702,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE_WITH_NAMESPACES, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute");
@@ -742,7 +747,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE_WITH_NAMESPACES, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute");
@@ -790,7 +795,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //make sure the policy does not allow fall through when an expression evaluates to a not found result
         multipleConfig.setFalsifyPolicyEnabled(true);
 
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
         final String dataType = "FName";
         context.setVariable("datatype", dataType);
 
@@ -852,7 +857,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //make sure the policy does not allow fall through when an expression evaluates to a not found result
         multipleConfig.setFalsifyPolicyEnabled(true);
 
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
         final String dataType = "FName";
         context.setVariable("datatype", dataType);
 
@@ -908,7 +913,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //make sure the policy does not allow fall through when an expression evaluates to a not found result
         multipleConfig.setFalsifyPolicyEnabled(true);
 
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
 
         final String attributeValue = "offensiveStats";
         context.setVariable("attributevalue", attributeValue);
@@ -942,6 +947,74 @@ public class ServerXacmlRequestBuilderAssertionTest {
     }
 
     /**
+     * Tests that the MultipleAttribute dialog supports the .elements context variable created by the results
+     * of an xpath expression. This results in context variables of type Element.
+     * <p/>
+     * Also tests that the AttributeValue's content supports .elements
+     *
+     * @throws Exception
+     */
+    @BugNumber(7721)
+    @Test
+    public void testMultipleAttributes_XpathResultsElements() throws Exception {
+        final Document requestDoc = XmlUtil.parse(PLAYER_STATS_REQUEST);
+        final PolicyEnforcementContext context = getContext(requestDoc);
+
+        final RequestXpathAssertion ass = new RequestXpathAssertion(new XpathExpression("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:offensiveStats/*", getNameSpaces()));
+        //needed to make the results of the xpath assertion available to the context!!!
+        new AllAssertion(Arrays.asList(ass, new AuditDetailAssertion("${requestXpath.elements}")));
+        final ServerXpathAssertion sxa = new ServerRequestXpathAssertion(ass, ApplicationContexts.getTestApplicationContext());
+        final AssertionStatus xpathStatus = sxa.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.NONE, xpathStatus);
+
+        final Element[] els = (Element[]) context.getVariable("requestXpath.elements");
+        Assert.assertEquals("Incorrect test configuration. Incorrect number of elements found", 3, els.length);
+
+        XacmlRequestBuilderAssertion.MultipleAttributeConfig
+                multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
+
+        configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
+
+        multipleConfig.getField(ID).setType(REGULAR);
+        multipleConfig.getField(ID).setValue("Flint");
+        multipleConfig.getField(DATA_TYPE).setType(REGULAR);
+        multipleConfig.getField(DATA_TYPE).setValue("Aaron");
+        multipleConfig.getField(VALUE).setType(CONTEXT_VARIABLE);
+        multipleConfig.getField(VALUE).setValue("${requestXpath.elements}");
+
+        XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
+        XacmlRequestBuilderAssertion.Subject subject = new XacmlRequestBuilderAssertion.Subject();
+
+        subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
+        assertion.setSubjects(Arrays.asList(subject));
+
+        XacmlRequestBuilderAssertion.Resource resource = new XacmlRequestBuilderAssertion.Resource();
+        XacmlRequestBuilderAssertion.Attribute resourceAttribute = new XacmlRequestBuilderAssertion.Attribute();
+        resourceAttribute.setId("Flint");
+        resourceAttribute.setDataType("Aaron");
+        XacmlRequestBuilderAssertion.AttributeValue resourceAttributeValue = new XacmlRequestBuilderAssertion.AttributeValue();
+        resourceAttributeValue.setContent("${requestXpath.elements}");
+        resourceAttribute.setValues(Arrays.asList(resourceAttributeValue));
+        resource.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(resourceAttribute));
+
+        assertion.setResources(Arrays.asList(resource));
+
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
+                assertion, ApplicationContexts.getTestApplicationContext());
+
+        AssertionStatus status = server.checkRequest(context);
+
+        Assert.assertEquals("checkRequest returned invalid AssertionStatus", AssertionStatus.NONE, status);
+
+        //validate generated xml
+        Message reqeust = context.getRequest();
+        String createdXml = XmlUtil.elementToXml(reqeust.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+
+        Assert.assertEquals("Invalid XACML reqeust generated by assertion", EXPECTED_XPATH_ELEMENTS_XACML_REQUEST,
+                fixLines(createdXml).trim());
+    }
+
+    /**
      * Test that absolute and relative xpaths behave the same
      * See func spec http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_XACML#Multiple_Attributes
      * If a field value results in more than one value, regardless of relative or absolute, then the first value
@@ -957,7 +1030,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //make sure the policy does not allow fall through when an expression evaluates to a not found result
         multipleConfig.setFalsifyPolicyEnabled(true);
 
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(PLAYER_BUG_7698_STATS_REQUEST, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
@@ -1009,7 +1082,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
     public void testMultipleAttributes_BaseExpressionNoResults() throws Exception{
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
 
         configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
 
@@ -1057,7 +1130,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
     public void testMultipleAttributes_BaseExpression_InvalidCausedByUnresolvableNamespacePrefix() throws Exception{
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
 
         configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
 
@@ -1101,7 +1174,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
     public void testMultipleAttributes_UnresolvableNamespacePrefix() throws Exception{
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
 
         configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
 
@@ -1143,7 +1216,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
     public void testMultipleAttributes_IncorrectNamespaceURI() throws Exception{
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
 
         configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
 
@@ -1189,7 +1262,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //we want the processing to continue
         multipleConfig.setFalsifyPolicyEnabled(false);
         
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(PLAYER_BUG_7287_STATS_REQUEST, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
@@ -1238,7 +1311,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //we want the processing to continue
         multipleConfig.setFalsifyPolicyEnabled(true);
 
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(PLAYER_BUG_7287_STATS_REQUEST, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
@@ -1278,7 +1351,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
         multipleConfig.setFalsifyPolicyEnabled(true);
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
 
         configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
 
@@ -1323,7 +1396,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
         multipleConfig.setFalsifyPolicyEnabled(false);
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
 
         configureMultipleAttributeConfig(PLAYER_STATS_REQUEST_WITH_ISSUE_INSTANT, multipleConfig, context);
 
@@ -1372,7 +1445,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
         multipleConfig.setFalsifyPolicyEnabled(false);
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
 
         configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
 
@@ -1420,7 +1493,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
     public void testMultipleAttributes_FieldCannotReferenceMessages() throws Exception{
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
@@ -1466,7 +1539,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE_WITH_NAMESPACES, multipleConfig, context);
 
         setNameSpaces(multipleConfig);
@@ -1509,7 +1582,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE_WITH_NAMESPACES, multipleConfig, context);
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute");
 
@@ -1562,7 +1635,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE_WITH_NAMESPACES, multipleConfig, context);
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute");
 
@@ -1618,7 +1691,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE_WITH_NAMESPACES_3ATTRIBUTES, multipleConfig, context);
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute");
 
@@ -1672,7 +1745,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE_WITH_NAMESPACES, multipleConfig, context);
 
         setNameSpaces(multipleConfig);
@@ -1725,7 +1798,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE_WITH_NAMESPACES, multipleConfig, context);
 
         setNameSpaces(multipleConfig);
@@ -1779,7 +1852,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         XacmlRequestBuilderAssertion.MultipleAttributeConfig
                 multipleConfig = new XacmlRequestBuilderAssertion.MultipleAttributeConfig();
 
-        PolicyEnforcementContext context = getContext();
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(XPATH_MESSAGE_WITH_NAMESPACES, multipleConfig, context);
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/ws:listProducts/donal:Attribute");
 
@@ -1828,7 +1901,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //make sure the policy does not allow fall through when an expression evaluates to a not found result
         multipleConfig.setFalsifyPolicyEnabled(true);
 
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
@@ -1876,7 +1949,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //make sure the policy does not allow fall through when an expression evaluates to a not found result
         multipleConfig.setFalsifyPolicyEnabled(true);
 
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(PLAYER_STATS_REQUEST_MULTIPLE_ATTRIBUTE_VALUES, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
@@ -1924,7 +1997,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //make sure the policy does not allow fall through when an expression evaluates to a not found result
         multipleConfig.setFalsifyPolicyEnabled(true);
 
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(PLAYER_STATS_REQUEST, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
@@ -1951,12 +2024,17 @@ public class ServerXacmlRequestBuilderAssertionTest {
     }
 
     private void setNameSpaces(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleConfig) {
+        Map<String, String> namespaces = getNameSpaces();
+        multipleConfig.setNamespaces(namespaces);
+    }
+
+    private Map<String, String> getNameSpaces() {
         Map<String, String> namespaces = new HashMap<String, String>();
         namespaces.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
         namespaces.put("ws", "http://warehouse.acme.com/ws");
         namespaces.put("donal", "http://donal.com");
         namespaces.put("play", "http://playerstatsws.test.l7tech.com");
-        multipleConfig.setNamespaces(namespaces);
+        return namespaces;
     }
 
     private void setNameSpacesWithUnresolvableNameSpace(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleConfig) {
@@ -1975,10 +2053,14 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
     /**
      * contextVariableName takes precedence over useRequest. When not null the xacmlRequestXml is placed in a variable
+     * @param requestDoc
      */
-    private PolicyEnforcementContext getContext()
+    private PolicyEnforcementContext getContext(final Document requestDoc)
             throws SAXException {
-        Message request = new Message();
+        final Message request = new Message();
+        if(requestDoc != null){
+            request.initialize(requestDoc);
+        }
         Message response = new Message();
 
         MockServletContext servletContext = new MockServletContext();
@@ -2830,6 +2912,34 @@ public class ServerXacmlRequestBuilderAssertionTest {
             "        </Attribute>\n" +
             "    </Subject>\n" +
             "    <Resource/>\n" +
+            "    <Action/>\n" +
+            "    <Environment/>\n" +
+            "</Request>";
+
+    private final String EXPECTED_XPATH_ELEMENTS_XACML_REQUEST = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<Request xmlns=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\">\n" +
+            "    <Subject>\n" +
+            "        <Attribute AttributeID=\"Flint\" DataType=\"Aaron\">\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>200</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>300</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>500</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "        </Attribute>\n" +
+            "    </Subject>\n" +
+            "    <Resource>\n" +
+            "        <Attribute AttributeId=\"Flint\" DataType=\"Aaron\">\n" +
+            "            <AttributeValue>\n" +
+            "                <play:assists>200</play:assists>\n" +
+            "                <play:assists>300</play:assists>\n" +
+            "                <play:assists>500</play:assists>\n" +
+            "            </AttributeValue>\n" +
+            "        </Attribute>\n" +
+            "    </Resource>\n" +
             "    <Action/>\n" +
             "    <Environment/>\n" +
             "</Request>";

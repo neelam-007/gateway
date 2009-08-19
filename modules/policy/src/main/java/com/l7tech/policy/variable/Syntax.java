@@ -80,21 +80,30 @@ public abstract class Syntax {
         add(Boolean.TYPE);
     }});
 
-    public static String[] getReferencedNames(String s) throws VariableNameSyntaxException {
+    /**
+     * This will return the entire string contained within each set of ${...} in the String s. The variables names
+     * may not exist and variables referenced like ${variablename.mainpart} will be returned as variablename.mainpart.
+     * <p/>
+     * There is no special behaviour for variables referenced which use selectors
+     *
+     * @param s String to find out what variables are referenced using our syntax of ${}
+     * @return all the variable names which are contained within our variable reference syntax of ${...} in String s
+     */
+    public static String[] getReferencedNames(final String s) {
         if (s == null) throw new IllegalArgumentException();
 
-        ArrayList vars = new ArrayList();
-        Matcher matcher = regexPattern.matcher(s);
+        final List<String> vars = new ArrayList<String>();
+        final Matcher matcher = regexPattern.matcher(s);
         while (matcher.find()) {
-            int count = matcher.groupCount();
+            final int count = matcher.groupCount();
             if (count != 1) {
-                throw new IllegalStateException("Expecting 1 matching group, received: "+count);
+                throw new IllegalStateException("Expecting 1 matching group, received: " + count);
             }
             String var = matcher.group(1);
             if (var != null) var = var.trim();
             vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).remainingName);
         }
-        return (String[]) vars.toArray(new String[0]);
+        return vars.toArray(new String[0]);
     }
 
     /**
