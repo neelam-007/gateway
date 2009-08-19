@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
@@ -433,19 +434,32 @@ public class XmlUtilTest {
         assertEquals(str2, str3);
     }
 
-    @Test(timeout = 5000, expected = SAXException.class)
+    // Normal parser should refuse DOCTYPE
+    @Test(expected = SAXParseException.class)
     @BugNumber(7685)
-    public void testDoctypeParserInfiniteLoop_defaultParser() throws IOException, SAXException {
-        Document parsed = XmlUtil.parse(new ByteArrayInputStream(HexUtils.decodeBase64(BUG_7685_DOCTYPE_INFINITE_LOOP_SPLOIT_BASE64)));
-        assertNotNull(parsed);
+    public void testDoctypeRefused() throws Exception {
+        String xml = TestDocuments.getTestDocumentAsXml(TestDocuments.BUG_7685_SPLOIT_XML);
+        XmlUtil.stringToDocument(xml);
     }
 
-    @Ignore("Disabled because it currently fails (infinite loop)")
-    @Test(timeout = 5000)
+    // Xerces2 2.9.1 parses the illegal DOCTYPE correctly, then our safe entity resolver refuses the external entity
+    @Test(expected = IOException.class, timeout = 5000)
+    @BugNumber(7685)
+    public void testDoctypeInfiniteLoop() throws Exception {
+        String xml = TestDocuments.getTestDocumentAsXml(TestDocuments.BUG_7685_SPLOIT_XML);
+        XmlUtil.parse(new StringReader(xml), true);
+    }
+
+    @Test(expected = SAXException.class, timeout = 5000)
+    @BugNumber(7685)
+    public void testDoctypeParserInfiniteLoop_defaultParser() throws IOException, SAXException {
+        XmlUtil.parse(new ByteArrayInputStream(HexUtils.decodeBase64(BUG_7685_DOCTYPE_INFINITE_LOOP_SPLOIT_BASE64)));
+    }
+
+    @Test(expected = SAXParseException.class, timeout = 5000)
     @BugNumber(7685)
     public void testDoctypeParserInfiniteLoop_doctypeAllowingParser() throws IOException, SAXException {
-        Document parsed = XmlUtil.parse(new ByteArrayInputStream(HexUtils.decodeBase64(BUG_7685_DOCTYPE_INFINITE_LOOP_SPLOIT_BASE64)), true);
-        assertNotNull(parsed);
+        XmlUtil.parse(new ByteArrayInputStream(HexUtils.decodeBase64(BUG_7685_DOCTYPE_INFINITE_LOOP_SPLOIT_BASE64)), true);
     }
 
     public static final String XML_WITH_LEADING_WHITESPACE =

@@ -104,6 +104,9 @@ public final class TestDocuments {
 
     public static final String NCES_REQ_WITH_CANCELED_XMLNS = DIR + "nces/nces_req_with_canceled_xmlns.xml";
 
+    public static final String BUG_7685_SPLOIT_XML = DIR + "bug7685_sploit_xml.dat";
+    
+
     public static class SecurityPolicies {
         private final String ROUND3_MS_WSDL = "wssp_interop_apr_2006/round3_ms.wsdl";
         private final String ROUND3_IBM_WSDL = "wssp_interop_apr_2006/round3_ibm.wsdl";

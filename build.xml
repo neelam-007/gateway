@@ -1520,7 +1520,7 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xbean-saml-1.1-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xbean-saml-2.0-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xbean-xenc-xmldsig-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/xercesImpl-2.9.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/xercesImpl-2.9.1-l7p1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xmlpad-3.7.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xmlpad-res-3.7.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xmlsec-1.4.2.jar"/>

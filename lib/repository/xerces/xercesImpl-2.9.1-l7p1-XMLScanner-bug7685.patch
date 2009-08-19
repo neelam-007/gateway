@@ -1,0 +1,14 @@
+Index: tools/org/apache/xerces/impl/XMLScanner.java
+===================================================================
+--- tools/org/apache/xerces/impl/XMLScanner.java	Tue Aug 18 19:30:18 PDT 2009
++++ tools/org/apache/xerces/impl/XMLScanner.java	Tue Aug 18 19:30:18 PDT 2009
+@@ -1026,6 +1026,9 @@
+                     int c = fEntityScanner.peekChar();
+                     if (XMLChar.isMarkup(c) || c == ']') {
+                         fStringBuffer.append((char)fEntityScanner.scanChar());
++                    } else if (c != -1 && isInvalidLiteral(c)) {
++                        reportFatalError("InvalidCharInSystemID",
++                                new Object[] {Integer.toString(c, 16)});
+                     }
+                 } while (fEntityScanner.scanLiteral(quote, ident) != quote);
+                 fStringBuffer.append(ident);
