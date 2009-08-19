@@ -902,7 +902,7 @@ public class DialogDisplayer {
 
     /**
      * Display the specified dialog as a sheet attached to the specified RootPaneContainer (which must
-     * also be a JComponenet).
+     * also be a Componenet).
      *
      * @param rpc   the RootPaneContainer to hold the sheet.  Must be non-null.
      * @param sheet    the sheet to display.
