@@ -190,7 +190,10 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 safelyAddXmlAttributeToElement(resourceContentElement, name, value);
             }
 
-            addContentToElementWithMessageSupport(resourceContentElement, resource.getResourceContent().getContent(), vars);
+            final AttributeValue attValue = new AttributeValue(
+                    ExpandVariables.processNoFormat(resource.getResourceContent().getContent(), vars, auditor, true));
+
+            attValue.addMeToAnElement(resourceContentElement);
         }
 
         addAttributes(doc, resourceElement, resource.getAttributes(), vars, context, assertion.getXacmlVersion());
@@ -283,27 +286,27 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     private void addAttribute(Document xacmlRequestDocument,
                               Element parent,
                               XacmlRequestBuilderAssertion.Attribute attribute,
-                              Map<String, Object> vars,
+                              Map<String, Object> contextVariables,
                               XacmlAssertionEnums.XacmlVersionType xacmlVersion)
     {
         Element attributeElement = xacmlRequestDocument.createElementNS(assertion.getXacmlVersion().getNamespace(), "Attribute");
-        attributeElement.setAttribute("AttributeId", ExpandVariables.process(attribute.getId(), vars, auditor, true));
-        attributeElement.setAttribute("DataType", ExpandVariables.process(attribute.getDataType(), vars, auditor, true));
+        attributeElement.setAttribute("AttributeId", ExpandVariables.process(attribute.getId(), contextVariables, auditor, true));
+        attributeElement.setAttribute("DataType", ExpandVariables.process(attribute.getDataType(), contextVariables, auditor, true));
         parent.appendChild(attributeElement);
 
         if(attribute.getIssuer().length() > 0) {
-            attributeElement.setAttribute("Issuer", ExpandVariables.process(attribute.getIssuer(), vars, auditor, true));
+            attributeElement.setAttribute("Issuer", ExpandVariables.process(attribute.getIssuer(), contextVariables, auditor, true));
         }
 
         if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0) {
             if(attribute.getIssueInstant().length() > 0) {
                 attributeElement.setAttribute("IssueInstant",
-                        ExpandVariables.process(attribute.getIssueInstant(), vars, auditor, true));
+                        ExpandVariables.process(attribute.getIssueInstant(), contextVariables, auditor, true));
             }
         }
 
         for(XacmlRequestBuilderAssertion.AttributeValue attributeValue : attribute.getValues()) {
-            HashSet<String> multiValuedVars = getAllReferencedNonIndexedMultiValueVars(attributeValue, vars);
+            HashSet<String> multiValuedVars = getAllReferencedNonIndexedMultiValueVars(attributeValue, contextVariables);
 
             if(attributeValue.isCanElementHaveSameTypeSibilings()
                     && multiValuedVars.size() > 0
@@ -312,7 +315,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 //variableMap will contain the names of all multi valued variables which are referenced. It will not
                 //contain a multi valued variable if it is subscripted. All operations below on the set of referenced
                 //multi valued variables will use this map only
-                HashMap<String, String> variableMap = new HashMap<String, String>();
+                final Map<String, String> variableMap = new HashMap<String, String>();
 
                 //we need to maintain our multi valued context variables, and yet work with each value individualy
                 //the variable ssg.internal.xacml.request.var allows code below to work with each value from a multi
@@ -320,13 +323,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 //note: this mechanism allows the indiviudal values of a multi valued context variable to reference
                 //other context variables
                 int i = 1;
-                for(String s : multiValuedVars) {
+                for(final String s : multiValuedVars) {
                     variableMap.put(s, "ssg.internal.xacml.request.var" + i++);
                 }
 
                 //updatedAttributes represents the original attributes, but the new single valued context variable
                 //created above is used in place of the multi valued context variable entered by the user
-                HashMap<String, String> updatedAttributes =
+                final Map<String, String> updatedAttributes =
                         new HashMap<String, String>(attributeValue.getAttributes().size());
 
                 for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
@@ -342,50 +345,56 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
                 //same process for content
                 String content = attributeValue.getContent();
-                for(Map.Entry<String, String> entry : variableMap.entrySet()) {
+                for(final Map.Entry<String, String> entry : variableMap.entrySet()) {
                     content = content.replaceAll("\\Q${" + entry.getKey() + "}\\E", "\\$\\{" + entry.getValue() + "\\}");
                 }
                 //find the smallest referenced context variable
-                int smallestCtxVarSize =  getMinMultiValuedCtxVariableReferenced(variableMap.keySet(), vars, true);
+                final int smallestCtxVarSize =  getMinMultiValuedCtxVariableReferenced(variableMap.keySet(), contextVariables, true);
 
                 for(int z = 0; z < smallestCtxVarSize; z++){
                     //for each iteration, find from variablemap what multi valued context variabels are referenced,
                     //find the single value used in it's place, and updated the single valued variable with
                     //a value for this iteration
-                    for(Map.Entry<String, String> entry : variableMap.entrySet()) {
+                    for(final Map.Entry<String, String> entry : variableMap.entrySet()) {
 
-                        List multiCtxVarValues = getMultiValuedContextVariable(entry.getKey(), vars, true);
+                        final List multiCtxVarValues = getMultiValuedContextVariable(entry.getKey(), contextVariables, true);
                         if(multiCtxVarValues == null) throw new IllegalStateException("Unexpected type of context variable found");
-                        vars.put(entry.getValue(), multiCtxVarValues.get(z));
+                        contextVariables.put(entry.getValue(), multiCtxVarValues.get(z));
                     }
 
-                    Element valueElement =
+                    final Element valueElement =
                             xacmlRequestDocument.createElementNS(assertion.getXacmlVersion().getNamespace(), "AttributeValue");
                     attributeElement.appendChild(valueElement);
 
-                    for(Map.Entry<String, String> entry : updatedAttributes.entrySet()) {
-                        String name = ExpandVariables.process(entry.getKey(), vars, auditor, true);
-                        String attrValue = ExpandVariables.process(entry.getValue(), vars, auditor, true);
+                    for(final Map.Entry<String, String> entry : updatedAttributes.entrySet()) {
+                        final String name = ExpandVariables.process(entry.getKey(), contextVariables, auditor, true);
+                        final String attrValue = ExpandVariables.process(entry.getValue(), contextVariables, auditor, true);
                         safelyAddXmlAttributeToElement(valueElement, name, attrValue);
                     }
 
-                    addContentToElementWithMessageSupport(valueElement, content, vars);
+                    final AttributeValue attValue = new AttributeValue(
+                            ExpandVariables.processNoFormat(content, contextVariables, auditor, true));
+
+                    attValue.addMeToAnElement(valueElement);
                 }
 
-                for(String newVariableName : variableMap.values()) {
-                    vars.remove(newVariableName);
+                for(final String newVariableName : variableMap.values()) {
+                    contextVariables.remove(newVariableName);
                 }
             } else {
-                Element valueElement = xacmlRequestDocument.createElementNS(assertion.getXacmlVersion().getNamespace(), "AttributeValue");
+                final Element valueElement = xacmlRequestDocument.createElementNS(assertion.getXacmlVersion().getNamespace(), "AttributeValue");
                 attributeElement.appendChild(valueElement);
 
-                for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
-                    String name = ExpandVariables.process(entry.getKey(), vars, auditor, true);
-                    String value = ExpandVariables.process(entry.getValue(), vars, auditor, true);
+                for(final Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
+                    final String name = ExpandVariables.process(entry.getKey(), contextVariables, auditor, true);
+                    final String value = ExpandVariables.process(entry.getValue(), contextVariables, auditor, true);
                     safelyAddXmlAttributeToElement(valueElement, name, value);
                 }
 
-                addContentToElementWithMessageSupport(valueElement, attributeValue.getContent(), vars);
+                final AttributeValue attValue = new AttributeValue(
+                        ExpandVariables.processNoFormat(attributeValue.getContent(), contextVariables, auditor, true));
+
+                attValue.addMeToAnElement(valueElement);
             }
         }
     }
@@ -446,65 +455,32 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     }
 
     /**
-     * Add the contents of the <AttributeValue> or <ResourceContent> elements. These schema elements can take any
-     * content. We support this through allowing a context variable of type Message to be supplied.
-     * If content has the name of a Message context variable , then the XML content of this variable is inserted as
-     * the child of element, otherwise a text node is created.
+     * Add the message to the supplied element. The element will only be added if it's xml
      * <p/>
-     * If there is any problem parsing the variable if it's off type Message, then an AssertionStatusException will be
-     * thrown with AssertionStatus.FAILED
+     * The message parameter will not be closed by this method.
      *
-     * @param element the Element representing the <AttributeValue> or <ResourceContent> element. Cannot be null
-     * @param content the String representing either the string contents, with possibly string context variables or
-     *                the name of a Message context variable. Cannot be null. 
-     * @param vars    all known context variables
-     */
-    private void addContentToElementWithMessageSupport(Element element, String content, Map<String, Object> vars) {
-        String[] v = Syntax.getReferencedNames(content);
-        boolean isAMessage = doesContentIncludeAMessage(vars, v);
-
-        if (isAMessage) {
-            String s = v[0];
-            Object o = vars.get(s);
-            if (o instanceof Message) {
-                Message m = (Message) vars.get(s);//wont be null based on isAMessage being true
-                addXmlMessageVariableAsAttributeValue(m, element, s);
-            } else throw new IllegalStateException("Message expected");//will not happen based on above logic
-        } else {
-            //its not a Message, create a text node
-            element.appendChild(element.getOwnerDocument().createTextNode(
-                    ExpandVariables.process(content, vars, auditor, true)));
-        }
-
-
-    }
-
-    /**
-     * Add the message to the supplied element. The element will only be added if it's xml 
-     *
-     * Note: Caller needs to close the Message themselves
-     * @param message The Message to add. Must be xml, assertion will fail if it's not
-     * @param element The element to add the xml fragment from message to
+     * @param message     The Message to add. Must be xml, assertion will fail if it's not
+     * @param element     The element to add the xml fragment from message to
      * @param messageName The name of the message variable. Can be null when called from context where this info
-     * is not available 
+     *                    is not available
      * @return boolean true if the message was added, false otherwise. If the message is not xml the return will be
-     * false
+     *         false
      * @throws AssertionStatusException if either the xml cannot be read / parsed, of the message is not xml
      */
     private void addXmlMessageVariableAsAttributeValue(final Message message,
-                                                          final Element element,
-                                                          String messageName) {
-        if(messageName == null) messageName = "Unknown";
-        
+                                                       final Element element,
+                                                       String messageName) {
+        if (messageName == null) messageName = "Unknown";
+
         // todo: mixed content is allowed in AttributeValue, should be able to add non-xml messages
         try {
-            if(message.isXml()){
-                XmlKnob xmlKnob = message.getXmlKnob();
-                Document doc = xmlKnob.getDocumentReadOnly();
-                Document docOwner = element.getOwnerDocument();
-                Node newNode = docOwner.importNode(doc.getDocumentElement(), true);
+            if (message.isXml()) {
+                final XmlKnob xmlKnob = message.getXmlKnob();
+                final Document doc = xmlKnob.getDocumentReadOnly();
+                final Document docOwner = element.getOwnerDocument();
+                final Node newNode = docOwner.importNode(doc.getDocumentElement(), true);
                 element.appendChild(newNode);
-            }else{
+            } else {
                 auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_NOT_XML, new String[]{messageName});
                 throw new AssertionStatusException(AssertionStatus.FAILED, "Message does not contain xml");
             }
@@ -1126,7 +1102,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         final static String MULTI_VAL_STRING_SEPARATOR = ", "; // todo: handle this better
         private String processedContent;     // simple content or already toString()'ed
         private Message message;             // content from one (XML) message
-        private List<Object> mixedContent;   // mixed content (strings and (xml) messages)
+        private List<Object> mixedContent;   // mixed content (strings and (xml) messages) - strings have not been processed
         private XpathResultWrapper wrapper;
 
         public AttributeValue(String processedContent) {
@@ -1184,7 +1160,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 boolean isPreviousString = false;
                 for (Object part : mixedContent) {
                     if (part instanceof String) {
-                        element.appendChild(element.getOwnerDocument().createTextNode((isPreviousString ? MULTI_VAL_STRING_SEPARATOR : "") + part ));
+                        final String value = (String) (isPreviousString? MULTI_VAL_STRING_SEPARATOR + part: part);
+                        element.appendChild(element.getOwnerDocument().createTextNode(value));
                         isPreviousString = true;
                     } else if (part instanceof Message) {
                         isPreviousString = false;
