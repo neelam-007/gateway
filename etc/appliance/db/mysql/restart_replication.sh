@@ -82,7 +82,7 @@ read -e
 if test $REPLY ; then DBUSER=$REPLY ; fi
 
 echo -n "Enter replication password: [$DBPWD] "
-read -e
+read -s -e
 if test $REPLY ; then DBPWD=$REPLY ; fi
 
 echo -n "Enter MySQL root user: [$ROOT] "
@@ -90,7 +90,7 @@ read -e
 if test $REPLY ; then ROOT=$REPLY ; fi
 
 echo -n "Enter MySQL root password: [$ROOT_PWD] "
-read -e
+read -s -e
 if test $REPLY ; then ROOT_PWD=$REPLY ; fi
 
 # Massage the user and password args for mysql on slave.
