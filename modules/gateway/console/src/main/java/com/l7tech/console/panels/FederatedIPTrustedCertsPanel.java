@@ -233,13 +233,15 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
                 }
             }
         }
+        java.util.List<TrustedCert> removedCerts = trustedCertsPanel.getRemovedCerts();
         for (FederatedIdentityProviderConfig cfg : fedIdProvConfigs) {
             long[] trustedCertOIDs = cfg.getTrustedCertOids();
             for (long trustedCertOID : trustedCertOIDs) {
                 if (trustedCertOID == trustedCert.getOid()) {
-                    return true;
+                    // Check if this cert is a removed cert in trustedCertsPanel.
+                    if (! removedCerts.contains(trustedCert))
+                        return true;
                 }
-
             }
         }
         return false;

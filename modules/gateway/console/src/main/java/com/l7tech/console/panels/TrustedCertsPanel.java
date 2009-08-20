@@ -121,6 +121,14 @@ public class TrustedCertsPanel extends JPanel {
     }
 
     /**
+     * Get the removed certificates.
+     * @return the removed certificates.
+     */
+    public List<TrustedCert> getRemovedCerts() {
+        return removedCerts;
+    }
+
+    /**
      * Listener interface to allow veto of add/remove.
      */
     interface TrustedCertListener {
@@ -246,6 +254,7 @@ public class TrustedCertsPanel extends JPanel {
     private final int maximumItems;
     private final TrustedCertListener listener;
     private final java.util.List<TrustedCert> certificates = new ArrayList<TrustedCert>();
+    private final java.util.List<TrustedCert> removedCerts = new ArrayList<TrustedCert>();
     private Collection<RevocationCheckPolicy> policies;
     private boolean notifiedMaximum = false;
 
@@ -345,6 +354,7 @@ public class TrustedCertsPanel extends JPanel {
         if (row >= 0) {
             if ( listener.removeTrustedCert( certificates.get(row) )) {
                 notifiedMaximum = false;
+                removedCerts.add(certificates.get(row));
                 certificates.remove(row);
                 ((AbstractTableModel) trustedCertsTable.getModel()).fireTableDataChanged();
                 enableOrDisableControls();
@@ -371,6 +381,7 @@ public class TrustedCertsPanel extends JPanel {
             if ( certificates.size() < maximumItems ) {
                 if ( listener.addTrustedCert( trustedCert ) ) {
                     certificates.add(trustedCert);
+                    removedCerts.remove(trustedCert);
                     sortTrustedCerts();
                     ((AbstractTableModel) trustedCertsTable.getModel()).fireTableDataChanged();
                 }
