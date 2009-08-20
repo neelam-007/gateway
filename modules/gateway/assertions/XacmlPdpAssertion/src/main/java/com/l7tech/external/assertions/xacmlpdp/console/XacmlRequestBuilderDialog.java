@@ -229,6 +229,13 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
             return;
         }
 
+        if(lastNodePanel != null && !lastNodePanel.handleDispose(XacmlRequestBuilderDialog.this)) {
+            lastErrorNodePanel = lastNodePanel;
+            return;
+        } else {
+            lastErrorNodePanel = null;
+        }
+
         TreePath path = tree.getPathForLocation(evt.getX(), evt.getY());
         DefaultMutableTreeNode node = null;
         try {
