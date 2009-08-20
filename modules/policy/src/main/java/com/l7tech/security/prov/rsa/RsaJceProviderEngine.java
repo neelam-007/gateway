@@ -34,7 +34,8 @@ public class RsaJceProviderEngine extends JceProvider {
                 }
             } else {
                 logger.info("Initializing RSA library in non-FIPS 140 mode");
-                CryptoJ.setMode(CryptoJ.NON_FIPS140_MODE);
+                if (CryptoJ.isFIPS140Compliant())
+                    CryptoJ.setMode(CryptoJ.NON_FIPS140_MODE);
                 PROVIDER = new JsafeJCE();
                 Security.insertProviderAt(PROVIDER, 1);
             }
