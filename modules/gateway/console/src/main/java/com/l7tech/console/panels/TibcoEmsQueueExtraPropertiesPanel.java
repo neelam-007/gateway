@@ -6,6 +6,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.TibcoEmsConstants;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import java.awt.*;
@@ -79,8 +81,11 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             verifyServerCertCheckBox.setSelected(strToBool(properties.getProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST)));
             verifyServerHostNameCheckBox.setSelected(strToBool(properties.getProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST_NAME)));
             useCertForClientAuthCheckBox.setSelected(properties.getProperty(TibcoEmsConstants.TibjmsSSL.IDENTITY) != null);
-            clientCertsComboBox.select(Long.parseLong(properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, "-1")),
-                                       properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS));
+            
+            Long keystoreId = Long.parseLong(properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, "-1"));
+            String keyAlias = keystoreId == -1? null : properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS);
+            int index = clientCertsComboBox.select(keystoreId, keyAlias);
+            if (index < 0) clientCertsComboBox.setSelectedIndex(0);
         }
 
         enableOrDisableComponents();
@@ -110,8 +115,22 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
                                     "\t" + clientCertsComboBox.getSelectedKeyAlias();
             properties.setProperty(TibcoEmsConstants.TibjmsSSL.IDENTITY, JmsConnection.VALUE_KEYSTORE_BYTES + whichKey);
             properties.setProperty(TibcoEmsConstants.TibjmsSSL.PASSWORD, JmsConnection.VALUE_KEYSTORE_PASSWORD + whichKey);
-            properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, Long.toString(clientCertsComboBox.getSelectedKeystoreId()));
-            properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS, clientCertsComboBox.getSelectedKeyAlias());
+            
+            long selectedKeystoreId = clientCertsComboBox.getSelectedKeystoreId();
+            properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, Long.toString(selectedKeystoreId));
+
+            String selectedKeyAlias;
+            if (selectedKeystoreId == -1) {
+                try {
+                    SsgKeyEntry defaultSslKey = Registry.getDefault().getTrustedCertManager().findKeyEntry(null, -1);
+                    selectedKeyAlias = defaultSslKey.getAlias();
+                } catch (Exception e) {
+                    throw new RuntimeException("Cannot find Default SSL Key", e);
+                }
+            } else {
+                selectedKeyAlias = clientCertsComboBox.getSelectedKeyAlias();
+            }
+            properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS, selectedKeyAlias);
         }
 
         return properties;

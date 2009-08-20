@@ -23,7 +23,6 @@ import java.util.logging.Logger;
  */
 public class PrivateKeysComboBox extends JComboBox {
     private static final Logger _logger = Logger.getLogger(PrivateKeysComboBox.class.getName());
-    private static final String DEFAULT_PRIVATE_KEY = "<Default SSL Key>";
 
     /** An item in the combo box. */
     private static class PrivateKeyItem {
@@ -45,7 +44,7 @@ public class PrivateKeysComboBox extends JComboBox {
 
     private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(-1, null, null, "NONE") {
         public String toString() {
-            return DEFAULT_PRIVATE_KEY;
+            return "<Default SSL Key>";
         }
     };
 
@@ -76,14 +75,12 @@ public class PrivateKeysComboBox extends JComboBox {
     }
 
     /**
-     * Creates a combo box prepopulated with a list of private keys from specified SSG
-     * keystores; and with none selected initially.
+     * Creates a combo box prepopulated with a list of private keys from specified SSG keystores.
      * @param includeHardwareKeystore  if true, hardware keystores should be included in the list.
      */
     public PrivateKeysComboBox(final boolean includeHardwareKeystore) {
         _includeHardwareKeystore = includeHardwareKeystore;
         populate();
-        setSelectedIndex(-1);
     }
 
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
