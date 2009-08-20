@@ -655,7 +655,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @param xpathResult the result of an xpath expression evaluation
      * @param fieldDisplayName the name of the field which represents the attribute we need a value for
      * @param elementName the major element under which the <Attribute> the attribute is for, is for e.g. Subject4
-     * @return a String if a value was found. null otherwise. If the value is null, and audit and log at audit level
+     * @return a String if a value was found. null otherwise. If the value is null, and audit and log at info level
      * will have been generated
      */
     private String processAndGetFieldValueFromXpath(final XpathResult xpathResult,
@@ -671,7 +671,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     Integer.toString(results.size()), fieldDisplayName);
         }
 
-        XpathResultWrapper wrapper = results.get(0);
+        final XpathResultWrapper wrapper = results.get(0);
         if(wrapper.isNodeSet()){
             auditor.logAndAudit(AssertionMessages.XACML_INCORRECT_TYPE_FOR_FIELD, "NodeSet", fieldDisplayName, elementName);
             return null;
@@ -880,7 +880,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @param configField the attribute field to get the value for
      * @param multiVarIndex used as the index to extract the correct value from a multi valued context variable
      * @param elementName String the name of the element under which this <Attribute> is being created for
-     * @return the resolved String value for this field
+     * @return the resolved String value for this field, can be null if no value was found
      */
     private String getValueForField(final XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field configField,
                                     final DocumentHolder documentHolder,
