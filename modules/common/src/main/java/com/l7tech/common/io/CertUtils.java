@@ -13,6 +13,8 @@ import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
@@ -108,6 +110,7 @@ public class CertUtils {
     private static final Pattern PATTERN_CRL = Pattern.compile(PEM_CSR_BEGIN_MARKER + REGEX_BASE64 + PEM_CSR_END_MARKER);
     private static final Pattern PATTERN_NEW_CRL = Pattern.compile(PEM_CSR_BEGIN_NEW_MARKER + REGEX_BASE64 + PEM_CSR_END_NEW_MARKER);
     private static final Pattern SUN_X509KEY_EC_CURVENAME_GUESSER = Pattern.compile("^algorithm = EC([a-zA-Z0-9]+)(?:\\s|,|$)");
+    private static final Pattern SUN_ECPUBLICKEYIMPL_EC_CURVENAME_GUESSER = Pattern.compile("  parameters: ([a-zA-Z0-9]+)(?:\\s|,|$)");
 
     public static boolean isCertCaCapable(X509Certificate cert) {
         if (cert == null) return false;
@@ -856,10 +859,61 @@ public class CertUtils {
         return l;
     }
 
+
+    static final Class<? extends ECPublicKey> sunECPublicKeyImpl;
+    static {
+        Class impl = null;
+        try {
+            impl = Class.forName("sun.security.ec.ECPublicKeyImpl");
+            if (!ECPublicKey.class.isAssignableFrom(impl))
+                impl = null;
+        } catch (ClassNotFoundException e) {
+            logger.log(Level.FINE, "No sun.security.ec.ECPublicKeyImpl available; will not attempt to guess EC curve names");
+        }
+        //noinspection unchecked
+        sunECPublicKeyImpl = impl;
+    }
+
+    static final Constructor<? extends ECPublicKey> sunECPublicKeyImpl_ctorFromEncoded;
+    static {
+        Constructor ctor = null;
+        try {
+            ctor = sunECPublicKeyImpl == null ? null : sunECPublicKeyImpl.getConstructor(byte[].class);
+        } catch (NoSuchMethodException e) {
+            logger.log(Level.FINE, "No sun.security.ec.ECPublicKeyImpl constructor from byte[] available; will not attempt to guess EC curve names");
+        }
+        //noinspection unchecked
+        sunECPublicKeyImpl_ctorFromEncoded = ctor;
+    }
+
+    static ECPublicKey asSunECPublicKeyImpl(PublicKey publicKey) {
+        if (!"EC".equals(publicKey.getAlgorithm()))
+            return null;
+        if (sunECPublicKeyImpl == null || sunECPublicKeyImpl_ctorFromEncoded == null)
+            return null;
+        if (!("X509".equals(publicKey.getFormat()) || "X.509".equals(publicKey.getFormat())))
+            return null;
+        try {
+            return sunECPublicKeyImpl_ctorFromEncoded.newInstance(new Object[]{ publicKey.getEncoded() });
+        } catch (InstantiationException e) {
+            logger.log(Level.WARNING, "Unable to check curve name: " + ExceptionUtils.getMessage(e), e);
+            return null;
+        } catch (IllegalAccessException e) {
+            logger.log(Level.WARNING, "Unable to check curve name: " + ExceptionUtils.getMessage(e), e);
+            return null;
+        } catch (InvocationTargetException e) {
+            logger.log(Level.WARNING, "Unable to check curve name: " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
+    }
+
     /**
      * Try to guess the curve name of an EC public key that doesn't necessarily implement ECPublicKey.
      * The Sun JDK's X509Certificate impl will use a generic X509Key instance to hold an EC key
      * if there's no EC key factory available.  This method abuses that class's current toString() method.
+     * <p/>
+     * As a fallback, this method will try converting the key to an instance of sun.security.ec.ECPublicKeyImpl
+     * if possible, and will then try abusing its toString() method instead.
      *
      * @param publicKey a key to examine.  Need not implement ECPublicKey.  Required.
      * @return the named curve, if we are willing to hazard a guess, or null.
@@ -867,12 +921,24 @@ public class CertUtils {
     public static String guessEcCurveName(PublicKey publicKey) {
         if (!"EC".equals(publicKey.getAlgorithm()))
             return null;
-        if (!"sun.security.x509.X509Key".equals(publicKey.getClass().getName()))
-            return null;
+        if ("sun.security.x509.X509Key".equals(publicKey.getClass().getName())) {
+            // It's an X509Key, can just match its special format
+            String keyStr = publicKey.toString();
+            if (keyStr == null || !(keyStr.startsWith("algorithm = EC")))
+                return null;
+            Matcher matcher = SUN_X509KEY_EC_CURVENAME_GUESSER.matcher(keyStr);
+            return matcher.find() ? matcher.group(1) : null;
+        } else if (!"sun.security.ec.ECPublicKeyImpl".equals(publicKey.getClass().getName())) {
+            // Try converting to a Sun ECPublicKeyImpl, if that class is available
+            publicKey = asSunECPublicKeyImpl(publicKey);
+            if (publicKey == null)
+                return null;
+        }
+
         String keyStr = publicKey.toString();
-        if (keyStr == null || !(keyStr.startsWith("algorithm = EC")))
+        if (keyStr == null || !(keyStr.startsWith("Sun EC public key")))
             return null;
-        Matcher matcher = SUN_X509KEY_EC_CURVENAME_GUESSER.matcher(keyStr);
+        Matcher matcher = SUN_ECPUBLICKEYIMPL_EC_CURVENAME_GUESSER.matcher(keyStr);
         return matcher.find() ? matcher.group(1) : null;
     }
 
