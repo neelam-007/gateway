@@ -1030,7 +1030,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         //make sure the policy does not allow fall through when an expression evaluates to a not found result
         multipleConfig.setFalsifyPolicyEnabled(true);
 
-        final PolicyEnforcementContext context = getContext(null);
+        PolicyEnforcementContext context = getContext(null);
         configureMultipleAttributeConfig(PLAYER_BUG_7698_STATS_REQUEST, multipleConfig, context);
 
         multipleConfig.setXpathBase("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player");
@@ -1058,15 +1058,17 @@ public class ServerXacmlRequestBuilderAssertionTest {
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
 
         //validate generated xml
-        Message reqeust = context.getRequest();
-        String absXml = XmlUtil.elementToXml(reqeust.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+        Message request = context.getRequest();
+        String absXml = XmlUtil.elementToXml(request.getXmlKnob().getDocumentReadOnly().getDocumentElement());
 
         multipleConfig.getField(ID).setType(XPATH_RELATIVE);
         //first value will be used
         multipleConfig.getField(ID).setValue("play:FName/text()");
+        context = getContext(null);
+        configureMultipleAttributeConfig(PLAYER_BUG_7698_STATS_REQUEST, multipleConfig, context);
         status = server.checkRequest(context);
-        reqeust = context.getRequest();
-        String relXml = XmlUtil.elementToXml(reqeust.getXmlKnob().getDocumentReadOnly().getDocumentElement());
+        request = context.getRequest();
+        String relXml = XmlUtil.elementToXml(request.getXmlKnob().getDocumentReadOnly().getDocumentElement());
 
         Assert.assertEquals("Relative and Absolute xpaths are different", relXml, absXml);
 
@@ -2917,7 +2919,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
             "</Request>";
 
     private final String EXPECTED_XPATH_ELEMENTS_XACML_REQUEST = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<Request xmlns=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\">\n" +
+            "<Request xmlns=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\" xmlns:play=\"http://playerstatsws.test.l7tech.com\">\n" +
             "    <Subject>\n" +
             "        <Attribute AttributeID=\"Flint\" DataType=\"Aaron\">\n" +
             "            <AttributeValue>\n" +

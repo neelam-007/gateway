@@ -95,8 +95,24 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             rootParent = body;
         }
 
-        final Element root = xacmlRequestDocument.createElementNS(assertion.getXacmlVersion().getNamespace(), "Request");
-        root.setAttribute("xmlns", assertion.getXacmlVersion().getNamespace());
+        final String defaultNS = assertion.getXacmlVersion().getNamespace();
+        final Element root = xacmlRequestDocument.createElementNS(defaultNS, "Request");
+        root.setAttribute("xmlns", defaultNS);
+        // Add all other namespaces from the request
+        try {
+            Message request = context.getRequest();
+            Map<String, String> namespacesMap = getAllNamespaces(request.getXmlKnob().getDocumentReadOnly());
+            for (String prefix: namespacesMap.keySet()) {
+                String namespace = namespacesMap.get(prefix);
+                // Don't add duplicate namespaces such as default namespace and "soapenv".
+                if (!defaultNS.equals(namespace) && !prefix.equals("soapenv")) {
+                    root.setAttribute("xmlns:" + prefix, namespace);
+                }
+            }
+        } catch (Exception e) {
+            // Don't add any namespaces if any exceptions thrown.
+        }
+
         if(rootParent == null) {
             xacmlRequestDocument.appendChild(root);
         } else {
@@ -612,15 +628,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
      * @return a set of namespace prefixes with incorrect namespace URI definitions.
      */
     private Set<String> causedByIncorrectNamespaceURI(Document doc, Map<String, String> clientNamespaces) {
-        NodeList list = doc.getElementsByTagName("*");
-        Map<String, String> serverNamespaces = new HashMap<String, String>();
-
-        for (int i=0; i<list.getLength(); i++) {
-            Element element = (Element)list.item(i);
-            Map<String, String> map = DomUtils.getNamespaceMap(element);
-            if (!map.isEmpty()) serverNamespaces.putAll(map);
-        }
-
+        Map<String, String> serverNamespaces = getAllNamespaces(doc);
         Set<String> prefixes = new HashSet<String>();
         for (String prefix: clientNamespaces.keySet()) {
             if (serverNamespaces.containsKey(prefix) && !clientNamespaces.get(prefix).equals(serverNamespaces.get(prefix))) {
@@ -629,6 +637,24 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         return prefixes;
+    }
+
+    /**
+     * Get all namespaces in the document.
+     * @param doc: the given document.
+     * @return a map of prefixes and namespaces.
+     */
+    private Map<String, String> getAllNamespaces(Document doc) {
+        NodeList list = doc.getElementsByTagName("*");
+        Map<String, String> namespaces = new HashMap<String, String>();
+
+        for (int i=0; i<list.getLength(); i++) {
+            Element element = (Element)list.item(i);
+            Map<String, String> map = DomUtils.getNamespaceMap(element);
+            if (!map.isEmpty()) namespaces.putAll(map);
+        }
+
+        return namespaces;
     }
 
     /**
@@ -708,6 +734,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         //no null pointer concern as the xpath result is off type nodeset due to above check and return
+        @SuppressWarnings({"ConstantConditions"})
         XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
         if (xpathResultSetIterator == null) {
             return null;
