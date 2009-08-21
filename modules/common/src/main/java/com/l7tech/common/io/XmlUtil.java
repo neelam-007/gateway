@@ -24,6 +24,7 @@ import javax.xml.validation.Validator;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * XmlUtil extends DomUtils to provide parsing / io features.
@@ -41,6 +42,7 @@ public class XmlUtil extends DomUtils {
     public static final String JAXP_SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
     public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
     public static final String XERCES_DISALLOW_DOCTYPE = "http://apache.org/xml/features/disallow-doctype-decl";
+    public static final String XERCES_DEFER_NODE_EXPANSION = "http://apache.org/xml/features/dom/defer-node-expansion";
 
     private static final EntityResolver SAFE_ENTITY_RESOLVER = new EntityResolver() {
         @Override
@@ -92,7 +94,10 @@ public class XmlUtil extends DomUtils {
             throw exception;
         }
     };
-    private static ThreadLocal documentBuilder = new ThreadLocal() {
+    private static final ThreadLocal documentBuilder = new ThreadLocal() {
+        private final DocumentBuilderFactory dbf =
+                configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), true );
+
         @Override
         protected synchronized Object initialValue() {
             try {
@@ -105,7 +110,10 @@ public class XmlUtil extends DomUtils {
             }
         }
     };
-    private static ThreadLocal documentBuilderAllowingDoctype = new ThreadLocal() {
+    private static final ThreadLocal documentBuilderAllowingDoctype = new ThreadLocal() {
+        private final DocumentBuilderFactory dbfAllowingDoctype =
+                configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), false );
+
         @Override
         protected synchronized Object initialValue() {
             try {
@@ -119,10 +127,10 @@ public class XmlUtil extends DomUtils {
         }
     };
     @SuppressWarnings({"deprecation"})
-    private static ThreadLocal<XMLSerializer> formattedXMLSerializer = new ThreadLocal<XMLSerializer>() {
+    private static final ThreadLocal<XMLSerializer> formattedXMLSerializer = new ThreadLocal<XMLSerializer>() {
         @Override
         @SuppressWarnings({"deprecation"})
-        protected synchronized XMLSerializer initialValue() {
+        protected XMLSerializer initialValue() {
             XMLSerializer xmlSerializer = new XMLSerializer();
             OutputFormat of = new OutputFormat();
             of.setIndent(4);
@@ -131,15 +139,15 @@ public class XmlUtil extends DomUtils {
         }
     };
     @SuppressWarnings({"deprecation"})
-    private static ThreadLocal<XMLSerializer> encodingXMLSerializer = new ThreadLocal<XMLSerializer>() {
+    private static final ThreadLocal<XMLSerializer> encodingXMLSerializer = new ThreadLocal<XMLSerializer>() {
         @Override
         @SuppressWarnings({"deprecation"})
-        protected synchronized XMLSerializer initialValue() {
+        protected XMLSerializer initialValue() {
             return new XMLSerializer();
         }
     };
     @SuppressWarnings({"deprecation"})
-    private static ThreadLocal<XMLSerializer> transparentXMLSerializer = new ThreadLocal<XMLSerializer>() {
+    private static final ThreadLocal<XMLSerializer> transparentXMLSerializer = new ThreadLocal<XMLSerializer>() {
         @Override
         @SuppressWarnings({"deprecation"})
         protected XMLSerializer initialValue() {
@@ -154,30 +162,19 @@ public class XmlUtil extends DomUtils {
             return new XMLSerializer(format);
         }
     };
-    private static ThreadLocal<Canonicalizer> transparentXMLSerializer_XSS4J_W3C = new ThreadLocal<Canonicalizer>() {
+    private static final ThreadLocal<Canonicalizer> transparentXMLSerializer_XSS4J_W3C = new ThreadLocal<Canonicalizer>() {
         @Override
-        protected synchronized Canonicalizer initialValue() {
+        protected Canonicalizer initialValue() {
             return new W3CCanonicalizer2WC();
         }
     };
-    private static ThreadLocal<Canonicalizer> exclusiveCanonicalizer = new ThreadLocal<Canonicalizer>() {
+    private static final ThreadLocal<Canonicalizer> exclusiveCanonicalizer = new ThreadLocal<Canonicalizer>() {
         @Override
-        protected synchronized Canonicalizer initialValue() {
+        protected Canonicalizer initialValue() {
             return new ExclusiveC11r();
         }
     };
-    private static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
     private static Schema SCHEMA_SCHEMA;
-    private static DocumentBuilderFactory dbfAllowingDoctype = DocumentBuilderFactory.newInstance();
-    static {
-        dbf.setNamespaceAware(true);
-        dbf.setAttribute(XERCES_DISALLOW_DOCTYPE, Boolean.TRUE);
-    }
-
-    static {
-        dbfAllowingDoctype.setNamespaceAware(true);
-    }
-
     private static boolean serializeWithXss4j = DEFAULT_SERIALIZE_WITH_XSS4J;
 
     /**
@@ -232,6 +229,34 @@ public class XmlUtil extends DomUtils {
 
     private static DocumentBuilder getDocumentBuilderAllowingDoctype() {
         return (DocumentBuilder)documentBuilderAllowingDoctype.get();
+    }
+
+    /**
+     * Common settings for DocumentBuilderFactory
+     */
+    private static DocumentBuilderFactory configureDocumentBuilderFactory( final DocumentBuilderFactory dbf,
+                                                                           final boolean disallowDoctype ) {
+        dbf.setNamespaceAware(true);
+
+        try {
+            dbf.setFeature( XERCES_DISALLOW_DOCTYPE, disallowDoctype );
+        } catch ( ParserConfigurationException pce ) {
+            logger.log( Level.CONFIG,
+                    "XML parser does not support disallow doctype.",
+                    ExceptionUtils.getDebugException(pce));
+        }
+
+        if ( !SyspropUtil.getBoolean( "com.l7tech.common.xmlDeferNodeExpansion", true ) ) {
+            try {
+                dbf.setFeature( XERCES_DEFER_NODE_EXPANSION, false );
+            } catch ( ParserConfigurationException pce ) {
+                logger.log( Level.CONFIG,
+                        "XML parser does not support deferred node expansion.",
+                        ExceptionUtils.getDebugException(pce));
+            }
+        }
+
+        return dbf;
     }
 
     /** @return a new, empty DOM document with absolutely nothing in it. */
@@ -434,7 +459,7 @@ public class XmlUtil extends DomUtils {
                 serializer.serialize(doc);
                 break;
             case Node.DOCUMENT_FRAGMENT_NODE:
-                DocumentFragment fragment = (DocumentFragment) serializer;
+                DocumentFragment fragment = (DocumentFragment) node;
                 serializer.serialize(fragment);
                 break;
             default:

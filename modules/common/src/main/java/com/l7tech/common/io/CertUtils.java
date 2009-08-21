@@ -30,6 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.nio.charset.Charset;
 
 /**
  * @author mike
@@ -111,6 +112,8 @@ public class CertUtils {
     private static final Pattern PATTERN_NEW_CRL = Pattern.compile(PEM_CSR_BEGIN_NEW_MARKER + REGEX_BASE64 + PEM_CSR_END_NEW_MARKER);
     private static final Pattern SUN_X509KEY_EC_CURVENAME_GUESSER = Pattern.compile("^algorithm = EC([a-zA-Z0-9]+)(?:\\s|,|$)");
     private static final Pattern SUN_ECPUBLICKEYIMPL_EC_CURVENAME_GUESSER = Pattern.compile("  parameters: ([a-zA-Z0-9]+)(?:\\s|,|$)");
+    /** Use static Charset to avoid JDK blocking (google "FastCharsetProvider synchronization" ) */
+    private static final Charset ISO_8859_1_CHARSET = Charset.forName( "ISO-8859-1" );
 
     public static boolean isCertCaCapable(X509Certificate cert) {
         if (cert == null) return false;
@@ -132,7 +135,7 @@ public class CertUtils {
     public static X509Certificate decodeCert(byte[] bytes) throws CertificateException {
         // Detect PEM early, since the Sun cert parser is piss-poor unreliable at doing so on its own
         if (looksLikePem(bytes)) try {
-            return decodeFromPEM(new String(bytes, "ISO-8859-1"));
+            return decodeFromPEM(new String(bytes, ISO_8859_1_CHARSET));
         } catch (IOException e) {
             throw new CertificateException("Invalid PEM-format certificate", e);
         }
@@ -147,12 +150,8 @@ public class CertUtils {
      * @return true if bytes contains a PEM start marker within the first couple hundred bytes; otherwise false.
      */
     public static boolean looksLikePem(byte[] bytes) {
-        try {
-            String prefix = new String(bytes, 0, Math.min(200,bytes.length), "ISO-8859-1");
-            return prefix.indexOf(PEM_CERT_BEGIN_MARKER) >= 0;
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // can't happen
-        }
+        String prefix = new String(bytes, 0, Math.min(200,bytes.length), ISO_8859_1_CHARSET);
+        return prefix.indexOf(PEM_CERT_BEGIN_MARKER) >= 0;
     }
 
     /**
@@ -1473,7 +1472,7 @@ public class CertUtils {
         if (key == null || !(key instanceof PrivateKey))
             throw new AliasNotFoundException("The specified alias does not contain a private key.");
 
-         return new KeyStore.PrivateKeyEntry((PrivateKey)key, chainToImport);
+        return new KeyStore.PrivateKeyEntry((PrivateKey)key, chainToImport);
     }
 
     private static final String FACTORY_ALGORITHM = "X.509";
