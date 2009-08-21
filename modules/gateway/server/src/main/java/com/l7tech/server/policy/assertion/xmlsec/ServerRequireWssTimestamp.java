@@ -97,16 +97,12 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             return getBadMessageStatus();
         }
 
-        Pair<Boolean,Collection<ParsedElement>> signatureConfirmationValidation = WSSecurityProcessorUtils.processSignatureConfirmations(msg.getSecurityKnob(), processorResult, auditor);
-
         if ( assertion.isSignatureRequired() ) {
             final Collection<ParsedElement> elements = ProcessorResultUtil.getParsedElementsForNode( wssTimestamp.asElement(), processorResult.getElementsThatWereSigned() );
-            if (signatureConfirmationValidation.getValue() != null)
-                elements.addAll(signatureConfirmationValidation.getValue());
 
             if ( new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
                 if ( elements.isEmpty() ||
-                    (isResponse() && ! signatureConfirmationValidation.getKey()) ||
+                    (isResponse() && !isValidSignatureConfirmation(msg, processorResult, elements)) ||
                     ! WSSecurityProcessorUtils.isValidSingleSigner(
                         authContext,
                         processorResult,
@@ -118,7 +114,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             } else {
                 // Ensure signed with the required identity
                 if ( elements.isEmpty() ||
-                     (isResponse() && ! signatureConfirmationValidation.getKey()) ||
+                     (isResponse() && !isValidSignatureConfirmation(msg, processorResult, elements)) ||
                      ! WSSecurityProcessorUtils.isValidSigningIdentity(
                              authContext,
                              assertion.getIdentityTarget(),
@@ -128,6 +124,8 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
                     return getBadMessageStatus();
                 }
             }
+        } else  if (isResponse() && !isValidSignatureConfirmation(msg, processorResult, null)) {
+            return AssertionStatus.FALSIFIED;
         }
 
         final long now = System.currentTimeMillis();
@@ -174,15 +172,27 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             }
         }
 
-        if (isResponse() && ! signatureConfirmationValidation.getKey()) {
-            return AssertionStatus.FALSIFIED;
-        }
-
         return AssertionStatus.NONE;
     }
 
     @Override
     protected Auditor getAuditor() {
         return auditor;
+    }
+
+    /**
+     * Validate confirmation and add signature confirmation elements to collection if not null.
+     */
+    private boolean isValidSignatureConfirmation( final Message message,
+                                                  final ProcessorResult wssResults,
+                                                  final Collection<ParsedElement> signatureConfirmationElementHolder ) {
+        Pair<Boolean,Collection<ParsedElement>> signatureConfirmationValidation =
+                WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, auditor);
+
+        if ( signatureConfirmationElementHolder != null && signatureConfirmationValidation.getValue() != null ) {
+            signatureConfirmationElementHolder.addAll(signatureConfirmationValidation.getValue());
+        }
+        
+        return signatureConfirmationValidation.getKey();
     }
 }

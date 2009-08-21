@@ -79,8 +79,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         // the assertion.
         if( elements.length>0 &&
            new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
-            Pair<Boolean,Collection<ParsedElement>> signatureConfirmationValidation = WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, auditor);
-            valid = (isRequest() || signatureConfirmationValidation.getKey()) &&
+            valid = (isRequest() || isValidSignatureConfirmation( message, wssResults, null )) &&
                     WSSecurityProcessorUtils.isValidSingleSigner(
                         context.getAuthenticationContext(message),
                         wssResults,
@@ -103,15 +102,8 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         // matched. Therefore we only perform this check if there is a target identity for
         // the assertion.
         if ( !new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
-
-            Pair<Boolean,Collection<ParsedElement>> signatureConfirmationValidation = WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, auditor);
-
             Collection<ParsedElement> elementsToCheck = Arrays.asList(elements);
-            if (signatureConfirmationValidation.getValue() != null) {
-                elementsToCheck.addAll(signatureConfirmationValidation.getValue());
-            }
-
-            return (isRequest() || signatureConfirmationValidation.getKey()) &&
+            return (isRequest() || isValidSignatureConfirmation(message, wssResults, elementsToCheck) ) &&
                    WSSecurityProcessorUtils.isValidSigningIdentity(
                        context.getAuthenticationContext(message),
                        assertion.getIdentityTarget(),
@@ -126,6 +118,22 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
     @Override
     protected boolean isAllowIfEmpty() {
         return false;
+    }
+
+    /**
+     * Validate confirmation and add signature confirmation elements to collection if not null.
+     */    
+    private boolean isValidSignatureConfirmation( final Message message,
+                                                  final ProcessorResult wssResults,
+                                                  final Collection<ParsedElement> signatureConfirmationElementHolder ) {
+        Pair<Boolean,Collection<ParsedElement>> signatureConfirmationValidation =
+                WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, auditor);
+
+        if ( signatureConfirmationElementHolder != null && signatureConfirmationValidation.getValue() != null ) {
+            signatureConfirmationElementHolder.addAll(signatureConfirmationValidation.getValue());
+        }
+        
+        return signatureConfirmationValidation.getKey();
     }
 
     private String prefixVariable( final String variableName ) {
