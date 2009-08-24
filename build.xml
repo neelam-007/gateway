@@ -1819,7 +1819,9 @@
         <!-- Help files -->
         <unzip src="${src.root}/webhelp/ssb/help.zip"
                dest="${build.installer}/Client-${build.version}"/>
-
+        <!-- allow for inconsistently named SSB help directory -->
+        <move file="${build.installer}/Client-${build.version}/WebHelp"
+                  tofile="${build.installer}/Client-${build.version}/help" failonerror="false"/>
         <!-- Create distro TAR -->
         <tar destfile="${build.installer}/Client-${build.version}.tar.gz"
              compression="gzip">
@@ -1890,7 +1892,9 @@
         <!-- Help files -->
         <unzip src="${src.root}/webhelp/ssm/help.zip"
                dest="${build.installer}/Manager-${build.version}"/>
-
+        <!-- allow for inconsistently named SSB help directory -->
+        <move file="${build.installer}/Manager-${build.version}/WebHelp"
+                  tofile="${build.installer}/Manager-${build.version}/help" failonerror="false"/>
         <!-- Create distro TAR -->
         <tar destfile="${build.installer}/Manager-${build.version}.tar.gz"
              compression="gzip">
