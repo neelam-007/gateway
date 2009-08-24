@@ -381,7 +381,7 @@ public final class Exporter{
         final File nodePropsFile = new File(confDir, ImportExportUtilities.NODE_PROPERTIES);
         final File ompFile = new File(confDir, ImportExportUtilities.OMP_DAT);
         // Read database connection settings
-        final DatabaseConfig config = ImportExportUtilities.getNodeConfig(nodePropsFile, ompFile);
+        final DatabaseConfig config = ImportExportUtilities.getDatabaseConfig(nodePropsFile, ompFile);
 
         final BackupComponent dbComp = new BackupComponent() {
             public ComponentResult doBackup() throws Backup.BackupException {

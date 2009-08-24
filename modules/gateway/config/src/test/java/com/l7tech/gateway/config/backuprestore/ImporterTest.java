@@ -16,6 +16,12 @@ import java.io.File;
 import java.net.URL;
 
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.test.BugNumber;
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 
 public class ImporterTest {
 
@@ -393,6 +399,24 @@ public class ImporterTest {
             Assert.assertTrue("Config file '" + configFile.getAbsolutePath()+"' should be a file",
                     configFile.isFile());
         }
+        
+        //read node.properties and confirm that the files node.properties and omp.dat were copied to the restore host
+        final File nodeProperties = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + ImportExportUtilities.NODE_PROPERTIES);
+        final File ompFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + ImportExportUtilities.OMP_DAT);
+        final DatabaseConfig config = ImportExportUtilities.getDatabaseConfig(nodeProperties, ompFile);
+
+        //Test that node.properties and omp.dat were copied successfull.
+        //the restore host's node.properties has a value of doesnotexist.l7tech.com for the hostname
+        Assert.assertEquals("Incorrect properties value found", "localhost", config.getHost());
+        Assert.assertEquals("Incorrect properties value found", "gateway", config.getNodeUsername());
+        //Confirm that passwords and cluster passphrase can be decrypted successfully
+        Assert.assertEquals("Incorrect properties value found", "7layer", config.getNodePassword());
+
+        //Confirm the cluster passphrase
+        final MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+        final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodeProperties, true);
+        Assert.assertEquals("Incorrect properties value found", "111111", new String(decryptor.decryptPassword(nodeConfig.getClusterPassphrase())));
+
     }
 
     /**
@@ -427,15 +451,19 @@ public class ImporterTest {
 
     /**
      * Test the restore of the config component, with the migrate capability, explicitly by working with the Restore
-     * interface. This guarantees that the config files are successfully restored, as they are deleted before the
-     * restore happens
-     *
-     * The test resouce exclude_files lists node.properties, as isMigrate is true in this test, node.properties is
+     * interface. This guarantees that the config files are successfully restored, as they are deleted by the test case
+     * before the restore happens
+     * <p/>
+     * Ensures that node.identity files - node.properties and omp.dat are not copied when doing a migrate
+     * <p/>
+     * The test resouce exclude_files lists ssglog.properties, as isMigrate is true in this test, this file is
      * not copied and is excluded
+     *
      * @throws Exception
      */
     @Test
-    public void testConfigRestoreWithMigrateAndExcludeFile() throws Exception{
+    @BugNumber(7741)
+    public void testConfigRestoreWithMigrateAndExcludeFile() throws Exception {
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
         final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
         final Restore restore =
@@ -443,7 +471,7 @@ public class ImporterTest {
 
         //delete all the config files that were created as part of this test set up
 
-        for(String fileName: ImportExportUtilities.CONFIG_FILES){
+        for (String fileName : ImportExportUtilities.CONFIG_FILES) {
             final File configFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + fileName);
             configFile.delete();
         }
@@ -453,18 +481,70 @@ public class ImporterTest {
 
         //node.properties should not exist
 
-        for(String fileName: ImportExportUtilities.CONFIG_FILES){
+        for (String fileName : ImportExportUtilities.CONFIG_FILES) {
             final File configFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + fileName);
-            if(fileName.equals("node.properties")){
-                Assert.assertFalse("Config file should not exist at: " + configFile.getAbsolutePath(),
-                        configFile.exists());
-            }else{
+            if (fileName.equals(ImportExportUtilities.NODE_PROPERTIES)) {
+                Assert.assertFalse("Config file should never be copied for migrate and should not exist at: "
+                        + configFile.getAbsolutePath(), configFile.exists());
+            } else if (fileName.equals(ImportExportUtilities.OMP_DAT)) {
+                Assert.assertFalse("Config file should never be copied for migrate and should not exist at: "
+                        + configFile.getAbsolutePath(), configFile.exists());
+            } else if (fileName.equals("ssglog.properties")) {
+                Assert.assertFalse("Config file should not exist at: " + configFile.getAbsolutePath(), configFile.exists());
+            } else {
                 Assert.assertTrue("Config file should exist at: " + configFile.getAbsolutePath(),
                         configFile.exists());
-                Assert.assertTrue("Config file '" + configFile.getAbsolutePath()+"' should be a file",
+                Assert.assertTrue("Config file '" + configFile.getAbsolutePath() + "' should be a file",
                         configFile.isFile());
             }
         }
+    }
+
+    /**
+     * Tests that when a migrate is done with -config, that the db command line params are always written to the
+     * migrate hosts node.properties
+     * @throws BackupRestoreLauncher.InvalidProgramArgumentException
+     */
+    @Test
+    @BugNumber(7741)
+    public void testMigrateParamsWrittenOnConfigOnly() throws Exception {
+        final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+        final String [] args = new String[]{"import",
+                "-image", buzzcutImage.getPath(),
+                "-config",
+                "-migrate",
+                "-dbh", "localhost", // this is a different value to the canned value in test resources node.properties
+                "-db", "ssg_buzzcut", //this has to match the canned node.properties value as otherwise -newdb is required
+                "-dbu", "root",
+                "-dbp", "7layer",
+                "-gdbu", "nodeuser", // this is a different value to the canned value in test resources node.properties
+                "-gdbp", "nodepwd", // this is a different value to the canned value in test resources node.properties
+                "-cp", "clusterpp", // this is a different value to the canned value in test resources node.properties
+                "-halt",
+                "-v"
+        };
+
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertNotNull("result should not be null", result);
+
+        Assert.assertEquals("result should be success", ImportExportUtilities.UtilityResult.Status.SUCCESS,
+                result.getStatus());
+
+        //read node.properties and confirm that the above command line options were written
+        final File nodeProperties = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + ImportExportUtilities.NODE_PROPERTIES);
+        final File ompFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + ImportExportUtilities.OMP_DAT);
+        final DatabaseConfig config = ImportExportUtilities.getDatabaseConfig(nodeProperties, ompFile);
+
+        Assert.assertEquals("Incorrect properties value found", "localhost", config.getHost());
+        Assert.assertEquals("Incorrect properties value found", "nodeuser", config.getNodeUsername());
+        Assert.assertEquals("Incorrect properties value found", "nodepwd", config.getNodePassword());
+
+        //Confirm the cluster passphrase
+        final MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+        final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodeProperties, true);
+        Assert.assertEquals("Incorrect properties value found", "clusterpp", new String(decryptor.decryptPassword(nodeConfig.getClusterPassphrase())));
+
     }
 
     @Test

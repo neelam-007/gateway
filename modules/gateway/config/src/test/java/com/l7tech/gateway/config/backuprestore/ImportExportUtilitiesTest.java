@@ -89,7 +89,7 @@ public class ImportExportUtilitiesTest {
         final URL ompRes = this.getClass().getClassLoader().getResource("Gateway/node/default/etc/conf/omp.dat");
         File ompFile = new File(ompRes.getPath());
 
-        DatabaseConfig dbConfig = ImportExportUtilities.getNodeConfig(nodeFile, ompFile);
+        DatabaseConfig dbConfig = ImportExportUtilities.getDatabaseConfig(nodeFile, ompFile);
 
         Assert.assertNotNull("dbConfig should not be null", dbConfig);
         Assert.assertEquals("Invalid value returned from " +

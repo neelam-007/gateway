@@ -91,9 +91,7 @@ final class RestoreImpl implements Restore{
     }
 
     /**
-     * Validates that omp.dat exists in the SSG installation. It must exist if the SSG has been correctly
-     * installed
-     * Also validates that the custom assertion and modular assertion directories exist
+     * Validates that configuration, modular and custom assertion directories exist.
      * @param testSsgHome
      */
     private void throwIfSsgInstallationInvalid(final File testSsgHome){
@@ -296,8 +294,10 @@ final class RestoreImpl implements Restore{
                     //this is not necessary, however it a safeguard against copying config files accidently
                     //we are explicitly only copying files we know about
                     for (String ssgFile : ImportExportUtilities.CONFIG_FILES) {
-                        if(ignoreNodeIdentity && ssgFile.equals(ImportExportUtilities.NODE_PROPERTIES)) continue;
-                        if(ignoreNodeIdentity && ssgFile.equals(ImportExportUtilities.OMP_DAT)) continue;
+                        if ((ignoreNodeIdentity || isMigrate) && ssgFile.equals(ImportExportUtilities.NODE_PROPERTIES))
+                            continue;
+                        if ((ignoreNodeIdentity || isMigrate) && ssgFile.equals(ImportExportUtilities.OMP_DAT))
+                            continue;
                         if (ssgFile.equals(name)) return true;
                     }
                     return false;

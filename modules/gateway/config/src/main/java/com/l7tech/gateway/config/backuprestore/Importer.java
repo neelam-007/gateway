@@ -1067,7 +1067,8 @@ public final class Importer{
 
         //any task added after here will not be filtered
         //restore the node identity when we know it has been ignored by config restore
-        if(isDbComponent){
+        //for migrate, always overwrite the hosts identity with updated values from the command line
+        if(isDbComponent || isMigrate){
             returnList.add(new RestoreComponent(){
                 public ComponentResult doRestore() throws Restore.RestoreException {
                     final String msg = taskVerb + " component " + getComponentType().getComponentName();

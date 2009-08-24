@@ -469,12 +469,15 @@ public class ImportExportUtilities {
     /**
      * Retrieve a DatabaseConfig object using the supplied node.properties file and omp.dat file. This provides all
      * information required to connect to the database represented in node.properties
-     * @param nodePropsFile node.properties
-     * @param ompFile omp.dat
+     * @param nodePropsFile node.properties. Cannot be null, must exist
+     * @param ompFile omp.dat. Cannot be null, may not exist
      * @return DatabaseConfig representing the db in node.properties
      * @throws java.io.IOException if any exception occurs while reading the supplied files
      */
-    public static DatabaseConfig getNodeConfig(final File nodePropsFile, final File ompFile) throws IOException {
+    public static DatabaseConfig getDatabaseConfig(final File nodePropsFile, final File ompFile) throws IOException {
+        if (nodePropsFile == null) throw new NullPointerException("nodePropsFile cannot be null");
+        if (ompFile == null) throw new NullPointerException("ompFile cannot be null");
+        
         final MasterPasswordManager decryptor = ompFile.exists() ?
                 new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) :
                 null;
