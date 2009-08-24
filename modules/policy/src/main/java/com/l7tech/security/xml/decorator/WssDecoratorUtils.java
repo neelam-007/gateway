@@ -39,13 +39,15 @@ public class WssDecoratorUtils {
     }
 
     public static void promoteDecorationResults(SecurityKnob securityKnob, String oldActor, String newActor) {
-        securityKnob.removeDecorationResults(newActor);
         List<WssDecorator.DecorationResult> decorationResults = securityKnob.getDecorationResults(oldActor);
-        securityKnob.removeDecorationResults(oldActor);
-        for (WssDecorator.DecorationResult dr : decorationResults) {
-            dr.setSecurityHeaderActor(newActor);
-            securityKnob.addDecorationResult(dr);
+        if (decorationResults != null) {
+            securityKnob.removeDecorationResults(newActor);
+            securityKnob.removeDecorationResults(oldActor);
+            for (WssDecorator.DecorationResult dr : decorationResults) {
+                dr.setSecurityHeaderActor(newActor);
+                securityKnob.addDecorationResult(dr);
+            }
+            securityKnob.removeDecorationResults(oldActor);
         }
-        securityKnob.removeDecorationResults(oldActor);
     }
 }
