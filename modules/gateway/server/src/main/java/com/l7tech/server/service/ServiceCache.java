@@ -841,6 +841,22 @@ public class ServiceCache
         return out;
     }
 
+    public List<PublishedService> getCachedServicesByName(String serviceName) {
+        List<PublishedService> out = new ArrayList<PublishedService>();
+        rwlock.readLock().lock();
+        try {
+            for ( PublishedService service : services.values() ) {
+                if( serviceName == null && service.getName() == null ||
+                    serviceName != null && serviceName.equals(service.getName())) {
+                    out.add(service);
+                }
+            }
+        } finally {
+            rwlock.readLock().unlock();
+        }
+        return out;
+    }
+
     public Collection<PublishedService> getCachedServicesByURI(String uri) {
         Collection<PublishedService> foundServices = null;
         // if uri param provided, narrow down list using it

@@ -66,6 +66,10 @@ import java.util.logging.Logger;
 public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(SubscriptionNotifier.class.getName());
 
+    public static final String ESM_SUBSCRIPTION_SERVICE_NAME = "ESM Subscription Service";
+    public static final String ESM_SUBSCRIPTION_SERVICE_ROOT_WSDL = "esmsm-0.5.wsdl";
+    public static final String ESM_SUBSCRIPTION_SERVICE_URI_PREFIX = "/wsdm/esmsubscriptions";
+
     public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
     public static final String DEFAULT_USER_AGENT = PRODUCT + "/v" + BuildInfo.getProductVersion() + "-b" + BuildInfo.getBuildNumber();
 
@@ -113,7 +117,6 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     private final ExecutorService threadPool = Executors.newSingleThreadExecutor();
 
     private AuditContext auditContext;
-    private Map<Long,String> routingUriCache = new HashMap<Long, String>();
 
     public SubscriptionNotifier(final String clusterNodeId) {
         this.clusterNodeId = clusterNodeId;
@@ -801,17 +804,26 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     }
 
     private String getEsmRoutingUri(long serviceOid) {
-        String esmRoutingUri;
+        String esmRoutingUri = null;
         PublishedService esmService = serviceCache.getCachedService(serviceOid);
         if (esmService != null) {
             esmRoutingUri = incomingUrl.toString() + esmService.getRoutingUri();
-            routingUriCache.put(serviceOid, esmRoutingUri);
-        } else if (routingUriCache.containsKey(serviceOid)) {
-            esmRoutingUri = routingUriCache.get(serviceOid);
-            auditor.logAndAudit(ServiceMessages.ESM_SUBSCRIPTION_SERVICE_GONE, Long.toString(serviceOid), esmRoutingUri);
         } else {
-            esmRoutingUri = SoapConstants.WSA_NO_ADDRESS;
-            auditor.logAndAudit(ServiceMessages.ESM_NO_SUBSCRIPTION_SERVICE, Long.toString(serviceOid), esmRoutingUri);
+            // fall back to the first esm subscription service found
+            List<PublishedService> subscriptionServices = serviceCache.getCachedServicesByName(ESM_SUBSCRIPTION_SERVICE_NAME);
+            for(PublishedService service : subscriptionServices) {
+                if (service.isInternal()) {
+                    esmRoutingUri = incomingUrl.toString() + service.getRoutingUri();
+                    auditor.logAndAudit(ServiceMessages.ESM_SUBSCRIPTION_SERVICE_GONE, Long.toString(serviceOid), esmRoutingUri);
+                    break;
+                }
+            }
+
+            if (esmRoutingUri == null) {
+                // there are no esm subscription services, use the special address "none"
+                auditor.logAndAudit(ServiceMessages.ESM_NO_SUBSCRIPTION_SERVICE, Long.toString(serviceOid), esmRoutingUri);
+                esmRoutingUri = SoapConstants.WSA_NO_ADDRESS;
+            }
         }
         return esmRoutingUri;
     }

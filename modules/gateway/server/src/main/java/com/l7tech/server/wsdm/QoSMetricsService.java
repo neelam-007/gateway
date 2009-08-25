@@ -37,6 +37,10 @@ import java.util.logging.Logger;
 public class QoSMetricsService {
     private final static Logger logger = Logger.getLogger(QoSMetricsService.class.getName());
 
+    public static final String ESM_QOS_METRICS_SERVICE_NAME = "ESM QosMetrics Service";
+    public static final String ESM_QOS_METRICS_URI_PREFIX = "/wsdm/qosmetrics";
+    public static final String ESM_QOS_METRICS_ROOT_WSDL = "qosmw-0.5.wsdl";
+
     @Resource
     private ServiceMetricsServices serviceMetricsServices;
 

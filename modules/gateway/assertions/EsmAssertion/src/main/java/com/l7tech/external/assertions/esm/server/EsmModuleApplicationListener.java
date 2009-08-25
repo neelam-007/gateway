@@ -19,6 +19,8 @@ import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
+import static com.l7tech.server.wsdm.QoSMetricsService.*;
+import static com.l7tech.server.wsdm.subscription.SubscriptionNotifier.*;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceType;
 import com.l7tech.util.ExceptionUtils;
@@ -50,12 +52,6 @@ public class EsmModuleApplicationListener implements ApplicationListener {
     ServiceTemplate subscriptionsTemplate;
 
     private EsmApplicationContext esmSpring;
-    private static final String ESM_QOS_METRICS_SERVICE_NAME = "ESM QosMetrics Service";
-    private static final String ESM_SUBSCRIPTION_SERVICE_NAME = "ESM Subscription Service";
-    private static final String ESM_QOS_METRICS_URI_PREFIX = "/wsdm/qosmetrics";
-    private static final String ESM_QOS_METRICS_ROOT_WSDL = "qosmw-0.5.wsdl";
-    private static final String ESM_SUBSCRIPTION_SERVICE_ROOT_WSDL = "esmsm-0.5.wsdl";
-    private static final String ESM_SUBSCRIPTION_SERVICE_URI_PREFIX = "/wsdm/esmsubscriptions";
 
     /*
      * Called by the ServerAssertionRegistry when the module containing this class is first loaded

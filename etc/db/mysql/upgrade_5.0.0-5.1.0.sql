@@ -27,7 +27,7 @@ ALTER TABLE wsdm_subscription ADD COLUMN reference_parameters MEDIUMTEXT;
 --
 -- Add column for identifying the esm service through which this subscription was made
 --
-ALTER TABLE wsdm_subscription ADD COLUMN esm_service_oid BIGINT(20) NOT NULL;
+ALTER TABLE wsdm_subscription ADD COLUMN esm_service_oid BIGINT(20) NOT NULL DEFAULT -1;
 
 
 
