@@ -64,6 +64,7 @@ public class EditRequireWssSamlAction extends NodeAction {
                     else {
                         updatedAssertion = new RequireWssSaml2(requestWssSaml);
                     }
+                    updatedAssertion.setEnabled(requestWssSaml.isEnabled());
                     node.setUserObject(updatedAssertion);
                     if (requestWssSaml.getParent() != null) {
                         requestWssSaml.getParent().replaceChild(requestWssSaml, updatedAssertion);
