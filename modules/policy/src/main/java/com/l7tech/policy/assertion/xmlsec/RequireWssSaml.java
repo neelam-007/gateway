@@ -76,6 +76,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         this.setVersion(requestWssSaml.getVersion());
         this.setTarget(requestWssSaml.getTarget());
         this.setOtherTargetMessageVariable(requestWssSaml.getOtherTargetMessageVariable());
+        this.setEnabled(requestWssSaml.isEnabled());
     }
 
     /**
