@@ -88,6 +88,7 @@ public class CaptureProperty extends JDialog {
                         // Get and set description
                         String description = propertyDescriptor == null? "" : propertyDescriptor.getDescription();
                         descField.setText(description);
+                        descField.setCaretPosition(0);
 
                         // Get and set value
                         String initialValue = propertyDescriptor == null? "" : propertyDescriptor.getDefaultValue();
