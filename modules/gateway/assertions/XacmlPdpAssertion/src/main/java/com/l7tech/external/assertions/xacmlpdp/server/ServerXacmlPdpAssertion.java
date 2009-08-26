@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.Auditor;
@@ -304,15 +305,17 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         PolicyFinder policyFinder = new PolicyFinder();
         try {
             String policy = ((StaticResourceInfo)assertion.getResourceInfo()).getDocument();
-            String expandedPolicy = ExpandVariables.process(policy, context.getVariableMap(variablesUsed, auditor), auditor, false);
+            String expandedPolicy = ExpandVariables.process(policy, context.getVariableMap(variablesUsed, auditor), auditor, true);
             ConstantPolicyModule policyModule = new ConstantPolicyModule(expandedPolicy);
             Set<ConstantPolicyModule> policyModules = new HashSet<ConstantPolicyModule>();
             policyModules.add(policyModule);
             policyFinder.setModules(policyModules);
         } catch (SAXException e) {
-            throw new InvalidPolicyException("Invalid XACML policy after variable expansion '" + ExceptionUtils.getMessage(e) + "'.", e);
+            throw new InvalidPolicyException("Invalid XACML policy after variable expansion '" + ExceptionUtils.getMessage(e) + "'", e);
         } catch (ParsingException e) {
-            throw new InvalidPolicyException("Invalid XACML policy after variable expansion '" + ExceptionUtils.getMessage(e) + "'.", e);
+            throw new InvalidPolicyException("Invalid XACML policy after variable expansion '" + ExceptionUtils.getMessage(e) + "'", e);
+        } catch (VariableNameSyntaxException e) {
+            throw new InvalidPolicyException("Invalid XACML policy during variable expansion", e); // message from exception is already audited
         }
 
         return policyFinder;
