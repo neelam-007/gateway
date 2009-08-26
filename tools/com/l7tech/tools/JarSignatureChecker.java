@@ -71,7 +71,12 @@ public class JarSignatureChecker {
             jarFile = new JarFile(file);
             for ( JarEntry entry : Collections.list(jarFile.entries()) ) {
                 // have to read the entry before you can get the certs
-                readStream( jarFile.getInputStream(entry) );
+                InputStream in = null;
+                try {
+                    readStream( in = jarFile.getInputStream(entry) );
+                } finally {
+                    if ( in != null ) in.close();   
+                }
                 Certificate[] certificates = entry.getCertificates();
                 if ( certificates != null ) {
                     for ( Certificate certificate : certificates ) {
