@@ -841,13 +841,12 @@ public class ServiceCache
         return out;
     }
 
-    public List<PublishedService> getCachedServicesByName(String serviceName) {
+    public List<PublishedService> getInternalServices() {
         List<PublishedService> out = new ArrayList<PublishedService>();
         rwlock.readLock().lock();
         try {
             for ( PublishedService service : services.values() ) {
-                if( serviceName == null && service.getName() == null ||
-                    serviceName != null && serviceName.equals(service.getName())) {
+                if( service.isInternal() ) {
                     out.add(service);
                 }
             }

@@ -810,9 +810,9 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
             esmRoutingUri = incomingUrl.toString() + esmService.getRoutingUri();
         } else {
             // fall back to the first esm subscription service found
-            List<PublishedService> subscriptionServices = serviceCache.getCachedServicesByName(ESM_SUBSCRIPTION_SERVICE_NAME);
-            for(PublishedService service : subscriptionServices) {
-                if (service.isInternal()) {
+            String subscriptionWsdlUrl = "file://__ssginternal/" + ESM_SUBSCRIPTION_SERVICE_ROOT_WSDL;
+            for(PublishedService service : serviceCache.getInternalServices()) {
+                if (subscriptionWsdlUrl.equals(service.getWsdlUrl())) {
                     esmRoutingUri = incomingUrl.toString() + service.getRoutingUri();
                     auditor.logAndAudit(ServiceMessages.ESM_SUBSCRIPTION_SERVICE_GONE, Long.toString(serviceOid), esmRoutingUri);
                     break;
