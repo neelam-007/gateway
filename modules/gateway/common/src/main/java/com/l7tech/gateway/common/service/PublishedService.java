@@ -74,6 +74,9 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         setPolicy(objToCopy.getPolicy()==null ? null : new Policy(objToCopy.getPolicy()));
         setRoutingUri(objToCopy.getRoutingUri());
         setSoap(objToCopy.isSoap());
+        setInternal(objToCopy.isInternal());
+        _soapVersion = objToCopy.getSoapVersion();
+        setFolder(objToCopy.getFolder());
         _wsdlUrl = objToCopy._wsdlUrl;
         setWsdlXml(objToCopy.getWsdlXml());
     }
