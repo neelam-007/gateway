@@ -66,7 +66,7 @@ echo "**************************************************************************
 echo "***************************** Tarari (cpp_manager) *****************************"
 echo "********************************************************************************"
 if [ -e /usr/local/Tarari/bin/cpp_manager ]; then
-   /usr/local/Tarari/bin/cpp_manager -s
+   LD_LIBRARY_PATH="/usr/local/Tarari/lib" /usr/local/Tarari/bin/cpp_manager -s
 else
    echo cpp_manager not found
 fi
