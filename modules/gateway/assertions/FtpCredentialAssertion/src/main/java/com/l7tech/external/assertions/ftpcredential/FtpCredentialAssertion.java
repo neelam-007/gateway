@@ -44,21 +44,18 @@ public class FtpCredentialAssertion extends Assertion implements UsesVariables {
         if (!Boolean.TRUE.equals(meta.get(META_INITIALIZED))) {
     
             // Set description for GUI
-            meta.put(AssertionMetadata.SHORT_NAME, "FTP authentication");
+            meta.put(AssertionMetadata.SHORT_NAME, "Require FTP Credentials");
             meta.put(AssertionMetadata.LONG_NAME, "The requestor must provide credentials using FTP authentication");
 
             // Add to palette folder(s)
             //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
             //   misc, audit, policyLogic, threatProtection
             meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
-            meta.put(AssertionMetadata.PALETTE_NODE_NAME, "FTP Credentials");
             meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
 
             // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
             meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "none");
 
-            // Set up smart Getter for nice, informative policy node name, for GUI
-            meta.put(AssertionMetadata.POLICY_NODE_NAME, "Require FTP Authentication");
             meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
 
             // request default feature set name for our class name, since we are a known optional module
