@@ -39,7 +39,7 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
 
         @Override
         public String getName() {
-            return "Authentication Assertion Properties";
+            return "Change Authentication Identity Provider";
         }
     };
 

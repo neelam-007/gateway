@@ -66,7 +66,14 @@ public class FindEntityDialog extends JDialog {
         final String vowels = resources.getString("vowels");
         final String an = vowels.contains(name.substring(0,1).toLowerCase()) ? resources.getString("an") : resources.getString("a");
 
-        setTitle(MessageFormat.format(resources.getString("titlePattern"), an, name));
+        //Identity provider specific text
+        final String titleText;
+        if(entityType == EntityType.ID_PROVIDER_CONFIG){
+            titleText = "Change Authentication Identity Provider";            
+        }else{
+            titleText = MessageFormat.format(resources.getString("titlePattern"), an, name);
+        }
+        setTitle(titleText);
 
         headerLabel.setText(MessageFormat.format(resources.getString("labelPattern"), an, name));
         headerLabel.setDisplayedMnemonic(resources.getString("labelAccelerator").charAt(0));
