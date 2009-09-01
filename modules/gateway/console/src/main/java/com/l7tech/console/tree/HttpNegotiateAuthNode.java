@@ -15,7 +15,7 @@ public class HttpNegotiateAuthNode extends AbstractLeafPaletteNode {
      * construct the <CODE>HttpBasicAuthNode</CODE> instance.
      */
     public HttpNegotiateAuthNode() {
-        super("Windows Integrated", "com/l7tech/console/resources/authentication.gif");
+        super("Require Windows Integrated Authentication Credentials", "com/l7tech/console/resources/authentication.gif");
     }
 
     /**

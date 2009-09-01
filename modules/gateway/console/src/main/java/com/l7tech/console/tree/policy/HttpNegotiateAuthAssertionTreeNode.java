@@ -18,7 +18,7 @@ public class HttpNegotiateAuthAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Require Windows Integrated Authentication";
+        return "Require Windows Integrated Authentication Credentials";
     }
 
     /**
