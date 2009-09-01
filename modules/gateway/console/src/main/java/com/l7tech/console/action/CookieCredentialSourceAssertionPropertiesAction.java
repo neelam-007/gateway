@@ -32,7 +32,7 @@ public class CookieCredentialSourceAssertionPropertiesAction extends SecureActio
 
     @Override
     public String getName() {
-        return "Cookie Credential Source Properties";
+        return "HTTP Cookie Properties";
     }
 
     @Override

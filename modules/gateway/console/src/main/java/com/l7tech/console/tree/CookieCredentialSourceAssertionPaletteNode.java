@@ -20,7 +20,7 @@ public class CookieCredentialSourceAssertionPaletteNode extends AbstractLeafPale
      * construct the <CODE>HttpBasicAuthNode</CODE> instance.
      */
     public CookieCredentialSourceAssertionPaletteNode() {
-        super("HTTP Cookie", "com/l7tech/console/resources/authentication.gif");
+        super("Require HTTP Cookie", "com/l7tech/console/resources/authentication.gif");
     }
 
     /**
