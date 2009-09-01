@@ -33,7 +33,7 @@ public class WsFederationPassiveTokenRequestTreeNode extends LeafAssertionTreeNo
         String name = null;
         Assertion assertion = asAssertion();
         if (assertion instanceof WsFederationPassiveTokenRequest) {
-            name = "Obtain credentials using WS-Federation request to " + ((WsFederationPassiveTokenRequest)assertion).getIpStsUrl();
+            name = "Obtain Credentials using WS-Federation Request to " + ((WsFederationPassiveTokenRequest)assertion).getIpStsUrl();
         }
         else {
             WsFederationPassiveTokenExchange _assertion = (WsFederationPassiveTokenExchange) assertion;

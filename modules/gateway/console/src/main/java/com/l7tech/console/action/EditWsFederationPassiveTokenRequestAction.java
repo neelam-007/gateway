@@ -59,7 +59,7 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
      */
     @Override
     public String getName() {
-        return "View/Edit WS-Federation PRP Properties";
+        return "WS-Federation Request Properties";
     }
 
     //- PROTECTED

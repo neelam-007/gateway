@@ -26,7 +26,7 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
     }
 
     public WsFederationPassiveTokenRequestPropertiesDialog(WsFederationPassiveTokenRequest assertion, boolean request, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
-        super(owner, "Configure WS-Federation Token Action", modal);
+        super(owner, "WS-Federation Request Properties", modal);
         this.wsFedAssertion = assertion;
         this.readOnly = readOnly;
 
