@@ -16,7 +16,7 @@ public class HttpDigestAuthNode extends AbstractLeafPaletteNode {
      * construct the <CODE>HttpDigestAuthNode</CODE> instance.
      */
     public HttpDigestAuthNode() {
-        super("HTTP Digest", "com/l7tech/console/resources/authentication.gif");
+        super("Require HTTP Digest Credentials", "com/l7tech/console/resources/authentication.gif");
     }
 
     /**

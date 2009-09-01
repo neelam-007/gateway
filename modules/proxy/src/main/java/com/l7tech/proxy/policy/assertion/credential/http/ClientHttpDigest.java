@@ -57,7 +57,7 @@ public class ClientHttpDigest extends ClientAssertion {
      * @return the human-readable node name that is displayed.
      */
     public String getName() {
-        return "Require HTTP Digest Authentication";
+        return "Require HTTP Digest Credentials";
     }
 
     /**
