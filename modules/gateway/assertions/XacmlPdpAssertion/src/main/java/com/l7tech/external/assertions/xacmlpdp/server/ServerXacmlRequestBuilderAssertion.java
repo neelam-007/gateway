@@ -721,15 +721,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                                      final Map<String, Object> contextVariables){
         final ElementCursor cursor = new DomElementCursor(document);
 
-        //Execute the base xpath expression, if any, to get information on iteration
-        final XpathResult xpathResult = multipleAttributeConfig.getRelativeXPathFieldNames().isEmpty() ? null :
-            executeXpathExpression(cursor,
+        final XpathResult xpathResult = executeXpathExpression(cursor,
                     true,
                     multipleAttributeConfig.getXpathBase(),
                     multipleAttributeConfig.getNamespaces(),
                     contextVariables);
 
-        if(xpathResult != null && xpathResult.getType() != XpathResult.TYPE_NODESET) {
+        if(xpathResult.getType() != XpathResult.TYPE_NODESET) {
             return null;
         }
 
