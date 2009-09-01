@@ -1,15 +1,15 @@
 #!/bin/bash
 
-HAZ_ISVM="`dmesg | grep -i vmware`"
-HAZ_ISHARDWARE="`uname -a | grep x86_64`"
-if [ ! -z "$HAZ_ISHARDWARE" ] ; then
-	ISHARDWARE=1
-	ISVM=
-	if [ ! -z "$HAZ_ISVM" ] ; then
-		ISHARDWARE=
-		ISVM=1
-	fi
-fi
+#HAZ_ISVM="`dmesg | grep -i vmware`"
+#HAZ_ISHARDWARE="`uname -a | grep x86_64`"
+#if [ ! -z "$HAZ_ISHARDWARE" ] ; then
+#	ISHARDWARE=1
+#	ISVM=
+#	if [ ! -z "$HAZ_ISVM" ] ; then
+#		ISHARDWARE=
+#		ISVM=1
+#	fi
+#fi
 
 # set this manually as there's no way to tell by script the difference between normal hardware and NCES
 ISNCES=""
@@ -18,31 +18,44 @@ ISNCES=""
 ## #%PAM-1.0
 ## # This file is auto-generated.
 ## # User changes will be destroyed the next time authconfig is run.
-## auth        required      /lib/security/$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail unlock_time=1200 root_unlock_time=1200
-## auth        required      /lib/security/$ISA/pam_env.so
-## auth        sufficient    /lib/security/$ISA/pam_unix.so likeauth nullok
-## auth        required      /lib/security/$ISA/pam_deny.so
+## auth        required      pam_tally2.so deny=5 even_deny_root_account onerr=fail unlock_time=1200 root_unlock_time=1200
+## auth        required      pam_env.so
+## auth        sufficient    pam_unix.so likeauth nullok
+## auth        required      pam_deny.so
 ## 
-## account     required      /lib/security/$ISA/pam_unix.so
-## account     required      /lib/security/$ISA/pam_tally2.so 
-## account     sufficient    /lib/security/$ISA/pam_succeed_if.so uid < 100 quiet
-## account     required      /lib/security/$ISA/pam_permit.so
+## account     required      pam_unix.so
+## account     required      pam_tally2.so
+## account     sufficient    pam_succeed_if.so uid < 100 quiet
+## account     required      pam_permit.so
 ## 
-## password    requisite     /lib/security/$ISA/pam_cracklib.so retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2
-## password    sufficient    /lib/security/$ISA/pam_unix.so nullok use_authtok md5 shadow remember=5
-## password    required      /lib/security/$ISA/pam_deny.so
+## password    requisite     pam_cracklib.so retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2
+## password    sufficient    pam_unix.so nullok use_authtok md5 shadow remember=5
+## password    required      pam_deny.so
 ## 
-## session     required      /lib/security/$ISA/pam_limits.so
-## session     required      /lib/security/$ISA/pam_unix.so
+## session     required      pam_limits.so
+## session     required      pam_unix.so
 
 
 harden() {
+  if [ -z "$1" ] ; then
+      ISVM=0
+      ISHARDWARE=1
+  else
+     case "$1" in
+        "vmware"  ) ISVM=1;
+            ISHARDWARE=0;;
+        "*"  ) ISVM=0;
+            ISHARDWARE=1;;
+     esac
+  fi
+
   # GEN005020
   userdel ftp
 
   # LNX00260
-  #rpm -e yum
-  #rm -f /etc/yum.conf
+  rpm -e yum
+  rm -f /etc/yum.conf
+  rm -rf /etc/yum.repos.d
 
   # LNX00320
   userdel sync
@@ -70,18 +83,18 @@ harden() {
   # GEN000460
   sed -i -e '/pam_tally\.so/d' /etc/pam.d/system-auth
 
-  if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9].*unlock_time=1200 root_unlock_time=1200' /etc/pam.d/system-auth; then
+  if ! grep -Eq 'auth +required +.*pam_tally2.so deny=[0-9].*unlock_time=1200 root_unlock_time=1200' /etc/pam.d/system-auth; then
 
 	 # delete any auth required pam_tally2 lines to be sure
-	 sed -i -e '/auth\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
+	 sed -i -e '/auth\s*required\s*.*pam_tally2.so/d' /etc/pam.d/system-auth
 
 	 # add in the new line before the pam_env line, use \2 as the substitution to ensure we have the same lib or lib64 line
-	 sed -i -r -e 's/^(.*(auth\s*required\s*.*)\/pam_env\.so.*)$/\2\/pam_tally2\.so deny=5 even_deny_root_account onerr=fail unlock_time=1200 root_unlock_time=1200\n\1/' /etc/pam.d/system-auth
+	 sed -i -r -e 's/^(.*(auth\s*required\s*.*)pam_env\.so.*)$/\2pam_tally2\.so deny=5 even_deny_root_account onerr=fail unlock_time=1200 root_unlock_time=1200\n\1/' /etc/pam.d/system-auth
 
 	 # delete any account sufficient pam_tally2 lines to be sure
-	 sed -i -e '/account\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
+	 sed -i -e '/account\s*required\s*.*pam_tally2.so/d' /etc/pam.d/system-auth
 
-	 sed -i -r -e 's/^(.*(account\s*)sufficient(\s*.*)\/pam_succeed_if\.so.*)$/\2required  \3\/pam_tally2.so\n\1/' /etc/pam.d/system-auth
+	 sed -i -r -e 's/^(.*(account\s*)sufficient(\s*.*)pam_succeed_if\.so.*)$/\2required  \3pam_tally2.so\n\1/' /etc/pam.d/system-auth
 
   fi
   # Use a listfile with SSH to prevent DOS attacks on system accounts
@@ -119,13 +132,13 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
 
   # GEN000580, GEN000600, GEN000620 GEN000640
   sed -i -e 's/PASS_MIN_LEN\t5/PASS_MIN_LEN\t9/' /etc/login.defs
-  sed -i -e 's/\(password\s*requisite\s*.*\/pam_cracklib.so\)\(\s.*\)/\1 retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2/' /etc/pam.d/system-auth
+  sed -i -e 's/\(password\s*requisite\s*.*pam_cracklib.so\)\(\s.*\)/\1 retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2/' /etc/pam.d/system-auth
 
   # GEN000800
   # remove the pam_unix line with potentially the remember=5 already at the end
-  sed -i -e '/password\s*sufficient\s*.*\/pam_unix.so\s*.*/d' /etc/pam.d/system-auth
+  sed -i -e '/password\s*sufficient\s*.*pam_unix.so\s*.*/d' /etc/pam.d/system-auth
   # and now add it back in properly with all arguments
-  sed -i -r -e 's/^(password\s*required\s*\/(.*)\/pam_deny.so\s*)$/password    sufficient    \/\2\/pam_unix.so nullok use_authtok md5 shadow remember=5\n\1/' /etc/pam.d/system-auth
+  sed -i -r -e 's/^(password\s*required\s*(.*)pam_deny.so\s*)$/password    sufficient    pam_unix.so nullok use_authtok md5 shadow remember=5\n\1/' /etc/pam.d/system-auth
 
   # GEN000820
   sed -i -e 's/PASS_MAX_DAYS\t99999/PASS_MAX_DAYS\t60/' -e 's/PASS_MIN_DAYS\t0/PASS_MIN_DAYS\t1/' /etc/login.defs
@@ -331,8 +344,8 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   rm -f /var/log/btmp
 
   # GEN000460
-  sed -i -e '/auth\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so deny=5.* onerr=fail no_magic_root unlock_time=1200 root_unlock_time=1200/d' /etc/pam.d/system-auth
-  sed -i -e '/account\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so no_magic_root.* reset/d' /etc/pam.d/system-auth
+  sed -i -e '/auth\s*required\s*pam_tally2.so deny=5.* onerr=fail no_magic_root unlock_time=1200 root_unlock_time=1200/d' /etc/pam.d/system-auth
+  sed -i -e '/account\s*required\s*pam_tally2.so no_magic_root.* reset/d' /etc/pam.d/system-auth
   rm -f /etc/ssh/ssh_allowed_users
   sed -i -e '/auth       requisite    pam_listfile.so item=user sense=allow file=\/etc\/ssh\/ssh_allowed_users onerr=succeed/d' /etc/pam.d/sshd
   rm -f /etc/tty_users
@@ -351,11 +364,11 @@ halt:*:13637:0:99999:7:::' /etc/shadow
 
   # GEN000580, GEN000600, GEN000620, GEN000640
   sed -i -e 's/PASS_MIN_LEN\t9/PASS_MIN_LEN\t5/' /etc/login.defs
-#  sed -i -e 's/(password\s*requisite\s*.*\/pam_cracklib.so\s.*) minlen=9 ucredit=2 lcredit=2 dcredit=2 ocredit=2.*$/\1/' /etc/pam.d/system-auth
-  sed -i -e 's/^\(password\s*requisite\s*.*\/pam_cracklib\.so\s\)\(.*\)\(minlen.*\)/\1\2/' /etc/pam.d/system-auth
+#  sed -i -e 's/(password\s*requisite\s*.*pam_cracklib.so\s.*) minlen=9 ucredit=2 lcredit=2 dcredit=2 ocredit=2.*$/\1/' /etc/pam.d/system-auth
+  sed -i -e 's/^\(password\s*requisite\s*.*pam_cracklib\.so\s\)\(.*\)\(minlen.*\)/\1\2/' /etc/pam.d/system-auth
 
   # GEN000800
-  sed -i -e 's/\(password\s*sufficient\s*.*\/pam_unix.so\s.*\) remember=5/\1/' /etc/pam.d/system-auth
+  sed -i -e 's/\(password\s*sufficient\s*.*pam_unix.so\s.*\) remember=5/\1/' /etc/pam.d/system-auth
 
   # GEN000820
   sed -i -e 's/PASS_MAX_DAYS\t60/PASS_MAX_DAYS\t99999/' -e 's/PASS_MIN_DAYS\t1/PASS_MIN_DAYS\t0/' /etc/login.defs
@@ -430,7 +443,8 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   sed -i -e '/ssgconfig/d' /etc/at.deny
 
   # GEN003540
-  chmod 755 /var/crash
+  chown root:root /var/crash
+  chmod -R 700 /var/crash
 
   # GEN003740
   chmod 644 /etc/xinetd.conf
@@ -577,7 +591,7 @@ if [ ! -e /var/log/btmp ] ; then
 fi
 
 # GEN000460
-if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth(.*)required(.*)/lib(.*)/security/\$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail unlock_time=1200 root_unlock_time=1200')" ] ; then
+if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth(.*)required(.*)pam_tally2.so deny=5 even_deny_root_account onerr=fail unlock_time=1200 root_unlock_time=1200')" ] ; then
 	echo "Error - pam_tally2 not set up properly - auth required"
 fi
 
@@ -596,12 +610,12 @@ if [ ! "`cat /etc/login.defs | grep PASS_MIN_LEN | grep 9`" ] ; then
 	echo "Error - PASS_MIN_LEN setting invalid in /etc/login.defs"
 fi
 
-if [ ! "$(cat /etc/pam.d/system-auth | grep ^password | head -n 1 | egrep 'password(.*)requisite(.*)/lib(.*)/security/\$ISA/pam_cracklib.so retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2(\s*)$')" ] ; then 
+if [ ! "$(cat /etc/pam.d/system-auth | grep ^password | head -n 1 | egrep 'password(.*)requisite(.*)pam_cracklib.so retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2(\s*)$')" ] ; then
 	echo "Error - Invalid password complexity requirements"
 fi
 
 # GEN000800
-if [ ! "$(egrep 'password(.*)sufficient(.*)/lib(.*)/security/\$ISA/pam_unix.so nullok use_authtok md5 shadow remember=5' /etc/pam.d/system-auth)" ] ; then 
+if [ ! "$(egrep 'password(.*)sufficient(.*)pam_unix.so nullok use_authtok md5 shadow remember=5' /etc/pam.d/system-auth)" ] ; then
 	echo "Error - Invalid password reuse requirements"
 fi
 
@@ -823,7 +837,10 @@ fi
 }
 
 case "$1" in
-  "-r"  ) soften;;
-  "-t"  ) stigtest;;
-  *     ) harden;;
+  "-r"  ) shift;
+	      soften;;
+  "-t"  ) shift;
+	      stigtest;;
+  *     ) shift;
+	      harden;;
 esac
