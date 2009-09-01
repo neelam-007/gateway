@@ -20,17 +20,25 @@ public class SslAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        String ret = "Require SSL or TLS Transport";
-        SslAssertion sa = (SslAssertion)getUserObject();
-        if (SslAssertion.FORBIDDEN.equals(sa.getOption()))
-            ret = "Forbid SSL or TLS transport";
-        else if (SslAssertion.OPTIONAL.equals(sa.getOption()))
-            ret = "Optional SSL or TLS transport";
-        if (sa.isRequireClientAuthentication()) {
-            ret += " with Client Certificate Authentication";
+        final String sslOrTls = "SSL or TLS Transport";
+        final String prefix;
+        final SslAssertion sa = (SslAssertion)getUserObject();
+        if (SslAssertion.FORBIDDEN.equals(sa.getOption())){
+            prefix = "Forbid";
+        }else if (SslAssertion.OPTIONAL.equals(sa.getOption())){
+            prefix = "Optional";
+        }else{
+            prefix = "Require";
         }
 
-        return ret;
+        final String retStr;
+        if (sa.isRequireClientAuthentication()) {
+            retStr = "Require " + sslOrTls + " with Client Certificate Authentication";
+        }else{
+            retStr = prefix +" "+sslOrTls;
+        }
+
+        return retStr;
     }
 
     /**

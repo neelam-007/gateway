@@ -22,8 +22,7 @@ public class SslTransportNode extends AbstractLeafPaletteNode {
      *                                    false otherwise
      */
     public SslTransportNode(boolean requireClientAuthentication){
-        super(requireClientAuthentication ? "SSL with Client Certificate Authentication" : "SSL or TLS Transport",
-                "com/l7tech/console/resources/ssl.gif");
+        super("Set SSL or TLS Transport", "com/l7tech/console/resources/ssl.gif");
         this.requireClientAuthentication = requireClientAuthentication;
     }
 

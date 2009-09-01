@@ -31,7 +31,7 @@ public class SslPropertiesAction extends NodeAction {
      */
     @Override
     public String getName() {
-        return "SSL Properties";
+        return "SSL or TLS Transport Properties";
     }
 
     /**

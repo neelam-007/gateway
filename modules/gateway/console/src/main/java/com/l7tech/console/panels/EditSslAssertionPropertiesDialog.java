@@ -43,7 +43,7 @@ public class EditSslAssertionPropertiesDialog extends JDialog {
     }
 
     private void initialize(boolean readOnly) {
-        setTitle("SSL or TLS options");
+        setTitle("SSL or TLS Transport Properties");
         Container pane = getContentPane();
         pane.setLayout(new BorderLayout());
         /** Set content pane */
