@@ -45,18 +45,17 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(SHORT_NAME, "LDAP Query Assertion");
+        final String assertionName = "Query LDAP";
+        meta.put(SHORT_NAME, assertionName);
         meta.put(LONG_NAME, "Retrieve attributes from an LDAP directory");
+        meta.put(PROPERTIES_ACTION_NAME, "LDAP Query Properties");
 
-        meta.put(PALETTE_NODE_NAME, "LDAP Query");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "accessControl" });
 
-        meta.put(POLICY_NODE_NAME, "Query LDAP");
-
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, LDAPQueryAssertion>() {
             public String call(LDAPQueryAssertion assertion) {
-                return "Query LDAP " + assertion.getSearchFilter();
+                return assertionName + " " + assertion.getSearchFilter();
             }
         });
 
