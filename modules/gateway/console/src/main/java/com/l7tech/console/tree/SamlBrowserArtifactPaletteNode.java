@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
  */
 public class SamlBrowserArtifactPaletteNode extends AbstractLeafPaletteNode {
     public SamlBrowserArtifactPaletteNode(){
-        super("SAML Browser Artifact", "com/l7tech/console/resources/xmlWithCert16.gif");
+        super("Retrieve SAML Browser Artifact", "com/l7tech/console/resources/xmlWithCert16.gif");
     }
 
     /**

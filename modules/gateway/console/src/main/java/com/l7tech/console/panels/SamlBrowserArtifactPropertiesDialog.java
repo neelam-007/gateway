@@ -40,7 +40,7 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
     public SamlBrowserArtifactPropertiesDialog(SamlBrowserArtifact assertion, final Frame owner, boolean modal, boolean readOnly)
             throws HeadlessException
     {
-        super(owner, "Configure SAML Browser/Artifact", modal);
+        super(owner, "SAML Browser Artifact Properties", modal);
         this.samlBrowserArtifactAssertion = assertion;
         this.readOnly = readOnly;
         this.authProperties = new AuthenticationProperties(assertion.getAuthenticationProperties());

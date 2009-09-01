@@ -41,7 +41,7 @@ public class EditSamlBrowserArtifactAction extends NodeAction {
     }
 
     public String getName() {
-        return "View/Edit SAML Browser Artifact Properties";
+        return "SAML Browser Artifact Properties";
     }
 
     public String getDescription() {
