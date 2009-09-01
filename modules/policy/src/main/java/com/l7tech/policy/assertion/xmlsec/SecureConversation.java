@@ -35,7 +35,7 @@ public class SecureConversation extends SecurityHeaderAddressableSupport {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "WS Secure Conversation");
+        meta.put(AssertionMetadata.SHORT_NAME, "Require WS-SecureConversation");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
