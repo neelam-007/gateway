@@ -16,7 +16,7 @@ public class HttpBasicAuthNode extends AbstractLeafPaletteNode {
      * construct the <CODE>HttpBasicAuthNode</CODE> instance.
      */
     public HttpBasicAuthNode() {
-        super("HTTP Basic", "com/l7tech/console/resources/authentication.gif");
+        super("Require HTTP Basic Credentials", "com/l7tech/console/resources/authentication.gif");
     }
 
     /**

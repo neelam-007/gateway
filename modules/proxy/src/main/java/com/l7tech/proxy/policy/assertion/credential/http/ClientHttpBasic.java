@@ -63,7 +63,7 @@ public class ClientHttpBasic extends ClientAssertion {
      * @return the human-readable node name that is displayed.
      */
     public String getName() {
-        return "Require HTTP Basic Authentication";
+        return "Require HTTP Basic Credentials";
     }
 
     /**
