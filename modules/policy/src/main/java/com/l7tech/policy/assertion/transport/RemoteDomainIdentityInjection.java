@@ -36,6 +36,7 @@ public class RemoteDomainIdentityInjection extends Assertion implements SetsVari
         DefaultAssertionMetadata meta = super.defaultMeta();
         meta.put(AssertionMetadata.SHORT_NAME, "Require Remote Domain Identity");
         meta.put(AssertionMetadata.LONG_NAME, "XML VPN Will Inject the Windows Domain Identity");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Remote Domain Identity Properties");
         meta.put(AssertionMetadata.DESCRIPTION, "Requires the request to have included Windows domain identity information.  The XML VPN Client will recognize this assertion and, if permitted to do so, will inject this information.");
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.server.policy.assertion.transport.ServerRemoteDomainIdentityInjection");
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.transport.ClientRemoteDomainIdentityInjection");
