@@ -9,52 +9,47 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.VariableMetadata;
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import java.util.Arrays;
+
+import org.junit.Test;
+import org.junit.Assert;
 
 /**
  * Unit tests for PolicyService.
  */
-public class VariablePrefixesTest extends TestCase {
-    public VariablePrefixesTest(String name) {
-        super(name);
-    }
+public class VariablePrefixesTest {
 
-    public static Test suite() {
-         final TestSuite suite = new TestSuite(VariablePrefixesTest.class);
-        return new TestSetup(suite);
-    }
-
+    @Test
     public void testAmbiguousPrefixes() throws Exception {
         Variable var = ServerVariables.getVariable("gateway.time.yyyy-MM-dd");
-        assertEquals(var.getName(), "gateway.time");
+        Assert.assertEquals(var.getName(), "gateway.time");
 
         var = ServerVariables.getVariable("gateway.asdfasdf");
-        assertEquals(var.getName(), "gateway");
+        Assert.assertEquals(var.getName(), "gateway");
 
         // make sure the legacy wss message attribute variables are retrieved correctly
         var = ServerVariables.getVariable("request.wss.signingcertificate");
-        assertEquals("request.wss.signingcertificate", var.getName());
+        Assert.assertEquals("request.wss.signingcertificate", var.getName());
 
         var = ServerVariables.getVariable("request.wss.signingcertificate.base64");
-        assertEquals("request.wss.signingcertificate.base64", var.getName());
+        Assert.assertEquals("request.wss.signingcertificate.base64",
+                var.getName() + BuiltinVariables.getUnmatchedName( "request.wss.signingcertificate.base64" ));
 
         var = ServerVariables.getVariable("request.wss.signingcertificate.pem");
-        assertEquals("request.wss.signingcertificate.pem", var.getName());
+        Assert.assertEquals("request.wss.signingcertificate.pem",
+                var.getName() + BuiltinVariables.getUnmatchedName( "request.wss.signingcertificate.pem" ));
     }
 
+    @Test
     public void testBuiltinPrefixes() throws Exception {
         VariableMetadata meta = BuiltinVariables.getMetadata("gateway.time.yyyy-MM-dd");
-        assertEquals(meta.getName(), "gateway.time");
-        assertTrue(meta.isPrefixed());
+        Assert.assertEquals(meta.getName(), "gateway.time");
+        Assert.assertTrue(meta.isPrefixed());
 
         meta = BuiltinVariables.getMetadata("gateway.asdfasdfafd");
-        assertEquals(meta.getName(), "gateway");
-        assertTrue(meta.isPrefixed());
+        Assert.assertEquals(meta.getName(), "gateway");
+        Assert.assertTrue(meta.isPrefixed());
     }
 
 /*
@@ -114,12 +109,5 @@ public class VariablePrefixesTest extends TestCase {
             user2,
             xpath3,
         }));
-    }
-
-    protected void setUp() throws Exception {
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(VariablePrefixesTest.suite());
     }
 }

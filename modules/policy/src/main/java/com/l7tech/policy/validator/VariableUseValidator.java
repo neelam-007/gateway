@@ -57,7 +57,7 @@ public class VariableUseValidator implements AssertionValidator {
                     }
 
                     if (BuiltinVariables.isDeprecated(var)) {
-                        warningStrings.add("Deprecated variable '" + var + "' should be replaced by '" + BuiltinVariables.getMetadata(var).getReplacedBy() + "'.");
+                        warningStrings.add("Deprecated variable '" + var + "' should be replaced by '" + BuiltinVariables.getMetadata(var).getReplacedBy() + BuiltinVariables.getUnmatchedName(var) + "'.");
                     }
                 }
             } catch (IllegalArgumentException iae) {

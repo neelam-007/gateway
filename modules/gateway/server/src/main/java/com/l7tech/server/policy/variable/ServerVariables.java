@@ -441,103 +441,22 @@ public class ServerVariables {
                 }
             }
         }),
-        new Variable("request.ssl.clientCertificate", new Getter(){
+        new Variable("request.ssl.clientCertificate", new SelectingGetter("request.ssl.clientCertificate"){
             @Override
-            public Object get(String name, PolicyEnforcementContext context){
+            public Object getBaseObject(PolicyEnforcementContext context){
                 return getOnlyOneClientCertificateForSource(
                         context.getAuthenticationContext(context.getRequest()).getCredentials(),
                         SslAssertion.class );
             }
         }),
-        new Variable("request.ssl.clientCertificate.base64", new Getter(){
+        new Variable("request.wss.signingcertificate", new SelectingGetter("request.wss.signingcertificate"){
             @Override
-            public Object get(String name, PolicyEnforcementContext context){
-                final X509Certificate certificate = getOnlyOneClientCertificateForSource(
-                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
-                        SslAssertion.class );
-                if ( certificate != null ) {
-                    try {
-                        return HexUtils.encodeBase64(certificate.getEncoded(), true);//strip whitespaces
-                    } catch (Exception e) {
-                        logger.log(Level.SEVERE, "Error getting base64 value.", e);
-                    }
-                }
-                return null;
-            }
-        }),
-        new Variable("request.ssl.clientCertificate.pem", new Getter(){
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final X509Certificate certificate = getOnlyOneClientCertificateForSource(
-                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
-                        SslAssertion.class );
-                if ( certificate != null ) {
-                    try {
-                        return CertUtils.encodeAsPEM(certificate);
-                    } catch (Exception e) {
-                        logger.log(Level.SEVERE, "Error getting certificate's PEM value.", e);
-                    }
-                }
-                return null;
-            }
-        }),
-        new Variable("request.ssl.clientCertificate.der", new Getter(){
-            @Override
-            public Object get(String name, PolicyEnforcementContext context){
-                final X509Certificate certificate = getOnlyOneClientCertificateForSource(
-                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
-                        SslAssertion.class );
-                if ( certificate != null ) {
-                    try {
-                        return certificate.getEncoded();
-                    } catch (CertificateEncodingException cee) {
-                        logger.log(Level.SEVERE, "Error getting certificate encoding.", cee);
-                    }
-                }
-                return null;
-            }
-        }),
-        new Variable("request.wss.signingcertificate", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
+            public Object getBaseObject(PolicyEnforcementContext context) {
                 return getOnlyOneClientCertificateForSource(
                         context.getAuthenticationContext(context.getRequest()).getCredentials(),
                         RequireWssX509Cert.class );
             }
         }),
-        new Variable("request.wss.signingcertificate.base64", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final X509Certificate certificate = getOnlyOneClientCertificateForSource(
-                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
-                        RequireWssX509Cert.class );
-                if ( certificate != null ) {
-                    try {
-                        return HexUtils.encodeBase64(certificate.getEncoded(), true);//strip whitespaces
-                    } catch (Exception e) {
-                        logger.log(Level.SEVERE, "Error getting base64 value.", e);
-                    }
-                }
-                return null;
-            }
-        }),
-        new Variable("request.wss.signingcertificate.pem", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final X509Certificate certificate = getOnlyOneClientCertificateForSource(
-                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
-                        RequireWssX509Cert.class );
-                if ( certificate != null ) {
-                    try {
-                        return CertUtils.encodeAsPEM(certificate);
-                    } catch (Exception e) {
-                        logger.log(Level.SEVERE, "Error getting certificate's PEM value.", e);
-                    }
-                }
-                return null;
-            }
-        }),
-
         new MultiVariable("request", MessageSelector.getPrefixes(), new SelectingGetter("request") {
             @Override
             protected Object getBaseObject( PolicyEnforcementContext context ) {
@@ -545,14 +464,12 @@ public class ServerVariables {
             }
 
         }),
-
         new MultiVariable("response", MessageSelector.getPrefixes(), new SelectingGetter("response") {
             @Override
             protected Object getBaseObject( PolicyEnforcementContext context ) {
                 return context.getResponse();
             }
         }),
-
         new Variable("request.compression.gzip.found", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
@@ -748,7 +665,7 @@ public class ServerVariables {
             if ( object != null && !baseName.equalsIgnoreCase(name) ) {
                 object = ExpandVariables.processSingleVariableAsObject(
                         "${"+name+"}",
-                        Collections.singletonMap(baseName, object),
+                        Collections.singletonMap(baseName.toLowerCase(), object),
                         new LogOnlyAuditor(logger) );
             }
             return object;

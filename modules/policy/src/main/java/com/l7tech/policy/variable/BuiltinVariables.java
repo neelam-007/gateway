@@ -78,7 +78,22 @@ public class BuiltinVariables {
         VariableMetadata meta = getMetadata(name);
         return meta != null && meta.isDeprecated();
     }
-        
+
+    /**
+     * Get the unmatched name, including any leading ".", "|", etc
+     *
+     * @param name The variable name
+     * @return The unmatched part of the name (which is the whole name if not a built-in variable)
+     */
+    public static String getUnmatchedName( final String name ) {
+        String unmatched = name;
+        String newname = Syntax.getMatchingName(name, metadataByName.keySet());
+        if ( newname != null ) {
+            unmatched = name.substring( newname.length() );
+        }
+        return unmatched;
+    }
+
     public static Map getAllMetadata() {
         return Collections.unmodifiableMap(metadataByName);
     }
@@ -128,13 +143,8 @@ public class BuiltinVariables {
         new VariableMetadata("response.http.status", false, false, null, false, DataType.INTEGER),
         new VariableMetadata(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, true, true, null, false),
 
-        new VariableMetadata("request.ssl.clientcertificate", false, false, null, false, DataType.CERTIFICATE),
-        new VariableMetadata("request.ssl.clientcertificate.base64", false, false, null, false, DataType.STRING),
-        new VariableMetadata("request.ssl.clientcertificate.pem", false, false, null, false, DataType.STRING),
-
-        new VariableMetadata("request.wss.signingcertificate", false, false, null, false, DataType.CERTIFICATE, "request.wss.signingcertificates.value.1"),
-        new VariableMetadata("request.wss.signingcertificate.base64", false, false, null, false, DataType.STRING, "request.wss.signingcertificates.value.1.base64"),
-        new VariableMetadata("request.wss.signingcertificate.pem", false, false, null, false, DataType.STRING, "request.wss.signingcertificates.value.1.pem"),
+        new VariableMetadata("request.ssl.clientcertificate", true, false, null, false, DataType.CERTIFICATE),
+        new VariableMetadata("request.wss.signingcertificate", true, false, null, false, DataType.CERTIFICATE, "request.wss.signingcertificates.value.1"),
 
         new VariableMetadata("request.http", true, false, null, false),
         new VariableMetadata("request.mainpart", false, false, null, false),
