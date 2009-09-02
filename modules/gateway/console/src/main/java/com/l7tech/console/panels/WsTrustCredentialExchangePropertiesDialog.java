@@ -36,7 +36,7 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
     }
 
     public WsTrustCredentialExchangePropertiesDialog(WsTrustCredentialExchange assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
-        super(owner, "Configure WS-Trust Credential Exchange", modal);
+        super(owner, "WS-Trust Credential Exchange Properties", modal);
         this.wsTrustAssertion = assertion;
         this.readOnly = readOnly;
         requestTypeCombo.setModel(new DefaultComboBoxModel(new WsTrustRequestType[] {WsTrustRequestType.ISSUE, WsTrustRequestType.VALIDATE}));

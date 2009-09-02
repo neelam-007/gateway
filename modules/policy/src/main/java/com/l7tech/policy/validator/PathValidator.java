@@ -34,6 +34,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.text.MessageFormat;
 
 /**
  * validate single path, and collect the validation results in the
@@ -48,6 +49,8 @@ import java.util.*;
  * PathValidator would be passed a map of assertion instances to validator instances.
  */
 class PathValidator {
+
+    private static final ResourceBundle bundle = ResourceBundle.getBundle( PathValidator.class.getName() );
 
     private static final Class<? extends Assertion> ASSERTION_HTTPBASIC = HttpBasic.class;
     private static final Class<? extends Assertion> ASSERTION_SECURECONVERSATION = SecureConversation.class;
@@ -93,12 +96,12 @@ class PathValidator {
     }
 
     PathValidator(AssertionPath ap, PolicyValidatorResult r, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) {
+        if (assertionLicense == null) throw new NullPointerException();
         result = r;
         assertionPath = ap;
         this.wsdl = wsdl;
         this.soap = soap;
         this.assertionLicense = assertionLicense;
-        if (assertionLicense == null) throw new NullPointerException();
     }
 
     /**
@@ -119,8 +122,8 @@ class PathValidator {
         // Check licensing
         if (assertionLicense != null) {
             if (!assertionLicense.isAssertionEnabled(a)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      "This assertion is not available on this Gateway cluster and may cause all requests to this service to fail.", null));
+                result.addWarning(new PolicyValidatorResult.Warning(
+                        a, assertionPath, bundle.getString("assertion.unknown"), null));
             }
         }
 
@@ -141,14 +144,14 @@ class PathValidator {
 
         if (normallyBeforeRouting(a) && seenRouting) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion is typically positioned before routing", null));
+                  bundle.getString("assertion.routing.normallybefore"), null));
         }
 
         if (a instanceof AuditAssertion) {
             AuditAssertion auditAssertion = (AuditAssertion) a;
             if (auditAssertion.isSaveRequest() || auditAssertion.isSaveResponse()) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "Saving request or response XML may result in excessive disk space usage; do not enable for production services", null));
+                  bundle.getString("auditing.excessivediskspace"), null));
             }
         }
 
@@ -192,7 +195,7 @@ class PathValidator {
         if (a instanceof TrueAssertion) {
             if (a.getParent() != null && a.getParent() instanceof AllAssertion) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion is not useful when the child of an All assertion", null));
+                  bundle.getString("allassertion.notusefullchild"), null));
             }
         }
 
@@ -229,13 +232,13 @@ class PathValidator {
 
         if (!foundPreRoutingWssAssertion && !foundPostRoutingWssAssertion) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
-                    "WS-Security version 1.1 is specified but insufficient WS-Security signing or encryption assertions exist in the policy.", null));
+                    bundle.getString("wssecurity.1_1.insufficientassertions"), null));
         } else if (!foundPreRoutingWssAssertion) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
-                    "No WS-Security signing or encryption assertion before route. Policy may not produce WSS v1.1 compliant messages.", null));
+                    bundle.getString("wssecurity.nosecuritybeforeroute"), null));
         } else if (!foundPostRoutingWssAssertion) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
-                    "No WS-Security signing or encryption assertion after route. Policy may not produce WSS v1.1 compliant messages.", null));
+                    bundle.getString("wssecurity.nosecurityafterroute"), null));
         }
     }
 
@@ -276,7 +279,7 @@ class PathValidator {
         if (xslt.getResourceInfo().getType() == AssertionResourceType.MESSAGE_URL) {
             if (soap) {
                 result.addWarning(new PolicyValidatorResult.Warning(xslt, assertionPath,
-                  "This assertion is configured to require an &lt;?xml-stylesheet?&gt; processing instruction, but SOAP messages do not allow them.", null));
+                  bundle.getString("assertion.stylesheetprocessinginstruction"), null));
             }
         }
     }
@@ -287,15 +290,14 @@ class PathValidator {
             a.getEncoding().length() > 0 &&
             !Charset.isSupported(a.getEncoding())) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                                                                "The encoding '" + a.getEncoding() + "' is not supported",
-                                                                null));
+                    MessageFormat.format(bundle.getString("unsupported.encoding"), a.getEncoding()), null));
         }
     }
 
     private void processHtmlFormDataAssertion(HtmlFormDataAssertion htmlFormDataAssertion) {
         if (htmlFormDataAssertion != null && seenRouting && Assertion.isRequest(htmlFormDataAssertion)) {
             result.addWarning(new PolicyValidatorResult.Warning(htmlFormDataAssertion, assertionPath,
-                                                                "This assertion should occur before the request is routed.",
+                                                                bundle.getString("assertion.routing.shouldbebefore"),
                                                                 null));
         }
     }
@@ -328,20 +330,16 @@ class PathValidator {
         final CustomAssertionHolder csh = (CustomAssertionHolder)a;
         if (Category.ACCESS_CONTROL.equals(csh.getCategory())) {
             if (!seenCredentials(a)) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath, "Access control specified without " +
-                  "authentication scheme.", null));
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath, bundle.getString("accesscontrol.noauthscheme"), null));
             }
             if (seenCustomAuth) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have an access control Custom " +
-                  "Assertion in this path.", null));
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("accesscontrol.alreadyprovided"), null));
             } else if (getMessageTargetContext(targetName).seenAccessControl) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertion is " +
-                  "allowed when an access control Custom Assertion is used.", null));
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath, bundle.getString("accesscontrol.userorgroupnotallowed"), null));
             }
 
             if (seenRouting) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion is after " +
-                  "route.", null));
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.routing.isafter"), null));
             }
             getMessageTargetContext(targetName).seenAccessControl = true;
             seenCustomAuth = true;
@@ -353,22 +351,21 @@ class PathValidator {
         final String targetName = AssertionUtils.getTargetName(a);
 
         if (!seenCredentials(a)) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath, "Access control specified without authentication scheme.", null));
+            result.addError(new PolicyValidatorResult.Error(a, assertionPath, bundle.getString("accesscontrol.noauthscheme"), null));
         }
 
         if ( seenRouting && Assertion.isRequest(a) ) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion is after route.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.routing.isafter"), null));
         }
 
         if (getMessageTargetContext(targetName).seenSpecificUserAssertion && isSpecificUser(a) && !getMessageTargetContext(targetName).allowsMultipleSignatures) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "Uncommon use of multiple user identities in the same path.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.uncommon.multipleidentities"), null));
         } else if (getMessageTargetContext(targetName).seenAuthenticationAssertion && isAuthenticationAssertion(a) && !getMessageTargetContext(targetName).allowsMultipleSignatures) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "Uncommon use of multiple authentication assertions in the same path.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.uncommon.multipleauthassertions"), null));
         }
 
         if (seenCustomAuth) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertions are allowed when " +
-              "an access control Custom Assertion is used.", null));
+            result.addError(new PolicyValidatorResult.Error(a, assertionPath, bundle.getString("accesscontrol.userorgroupnotallowed"), null));
         }
 
         getMessageTargetContext(targetName).seenAccessControl = true;
@@ -383,12 +380,12 @@ class PathValidator {
         final String targetName = AssertionUtils.getTargetName(a);
 
         if (seenRouting && isDefaultActor(a) && Assertion.isRequest(a)) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.routing.mustbebefore"), null));
         }
 
         if (getMessageTargetContext(targetName).seenAccessControl && isDefaultActor(a) || seenCredentialsSinceModified(a)) {
             result.addWarning(new PolicyValidatorResult.
-              Warning(a, assertionPath, "Uncommon use of multiple access control.", null));
+              Warning(a, assertionPath, bundle.getString("accesscontrol.uncommonuse"), null));
         }
 
         setSeenCredentialsSinceModified(a, false);
@@ -398,20 +395,20 @@ class PathValidator {
         final String targetName = AssertionUtils.getTargetName(a);
 
         if (seenRouting && isDefaultActor(a) && Assertion.isRequest(a)) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.routing.mustbebefore"), null));
         }
 
         if (a instanceof RequireWssX509Cert) {
             if ( seenWssSignature(a, targetName) && !getMessageTargetContext(targetName).allowsMultipleSignatures ) {
                 result.addWarning(new PolicyValidatorResult.
-                  Warning(a, assertionPath, "WSS Signature(s) already required for " + targetName, null));
+                  Warning(a, assertionPath, MessageFormat.format(bundle.getString("wssecurity.wsssignature.alreadyrequired"), targetName), null));
             }
             setSeenWssSignature(a, targetName);
             if (((RequireWssX509Cert)a).isAllowMultipleSignatures()) {
                 getMessageTargetContext(targetName).allowsMultipleSignatures = true;
             } else if ( getMessageTargetContext(targetName).allowsMultipleSignatures ) {
                 result.addWarning(new PolicyValidatorResult.
-                  Warning(a, assertionPath, "WSS Signature assertion has conflicting multiple signature setting.", null));
+                  Warning(a, assertionPath, bundle.getString("wssecurity.multiplesignatures.conflicting"), null));
             }
         }
 
@@ -419,14 +416,14 @@ class PathValidator {
         if (a instanceof SecureConversation) {
             if (haveSeen(AssertionUtils.getTargetName(a), ASSERTION_SECURECONVERSATION)) {
                 result.addError(new PolicyValidatorResult.
-                  Error(a,assertionPath,"WS Secure Conversation already specified.", null));
+                  Error(a,assertionPath,bundle.getString("wssecurity.secureconversation.alreadyspecified"), null));
             }
         }
 
         if (a instanceof RequireWssSaml) {
             if (haveSeen(AssertionUtils.getTargetName(a), ASSERTION_SAMLASSERTION)) {
                 result.addError(new PolicyValidatorResult.
-                  Error(a,assertionPath,"SAML Assertion already specified.", null));
+                  Error(a,assertionPath,bundle.getString("saml.alreadyspecified"), null));
             }
         }
 
@@ -453,11 +450,11 @@ class PathValidator {
                 // REASON FOR THIS RULE:
                 // it makes no sense to validate something about the request after it's routed
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should occur before the request is routed.", null));
+                  bundle.getString("assertion.routing.shouldbebefore"), null));
             } else if (a instanceof MessageTargetable) { // This warning is only for MessageTargetable assertions
                 if ( Assertion.isRequest(a) && seenResponse) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      "Assertion targets the request after a response is available.", null));
+                      bundle.getString("assertion.uncommon.requestusage"), null));
                 }
             }
         }
@@ -466,7 +463,7 @@ class PathValidator {
             // If the asserion is ResponseXpathAssertion and uses a context variable as XML message source, ignore the below error.
             if (!(a instanceof ResponseXpathAssertion) || ((ResponseXpathAssertion)a).getXmlMsgSrc() == null) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                    "Assertion targeting the response must not be positioned before a response is available.", null));
+                    bundle.getString("assertion.response.usebeforeavailable"), null));
             }
         }
 
@@ -474,7 +471,7 @@ class PathValidator {
             if (!SecurityHeaderAddressableSupport.isLocalRecipient(a) &&
                 (hasFlag(a, ValidatorFlag.PERFORMS_VALIDATION) || a.isCredentialSource()) && 
                 !hasFlag(a, ValidatorFlag.PROCESSES_NON_LOCAL_WSS_RECIPIENT)) {
-                String msg = "A WSS Recipient other than \"Default\" will not be enforced by the gateway. This assertion will always succeed.";
+                final String msg = bundle.getString("wssecurity.wssrecipient.notenforced");
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
             }
         }
@@ -492,16 +489,12 @@ class PathValidator {
                  !haveSeen(targetName, ASSERTION_ENCRYPTEDUSERNAMETOKEN) &&
                  !haveSeen(targetName, ASSERTION_KERBEROSTICKET))
             {
-                String actor = assertionToActor(a);
-                String msg;
+                final String actor = assertionToActor(a);
+                final String msg;
                 if (actor.equals(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE)) {
-                    msg = "This assertion should be preceded by a WSS Signature assertion, " +
-                          "a WS Secure Conversation assertion, a SAML assertion, " +
-                          "an Encrypted UsernameToken assertion, or a WSS Kerberos assertion.";
+                    msg = bundle.getString("wssecurity.missingpriorsecurityassertion");
                 } else {
-                    msg = "This assertion should be preceded by a WSS Signature assertion," +
-                          "an Encrypted UsernameToken assertion, a WSS Kerberos assertion, or a " +
-                          "SAML assertion (for actor " + actor + ").";
+                    msg = MessageFormat.format(bundle.getString("wssecurity.missingpriorsecurityassertion.actor"), actor);
                 }
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
             }
@@ -509,44 +502,43 @@ class PathValidator {
 
         if (a instanceof RequestSwAAssertion && seenRouting && Assertion.isRequest(a)) {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-              "The assertion must be positioned before the routing assertion.", null));
+              bundle.getString("assertion.routing.mustbebefore"), null));
         }
 
         if (a instanceof ResponseXpathAssertion) {
             if (((ResponseXpathAssertion)a).getXmlMsgSrc()==null && !seenResponse && Assertion.isResponse(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion will not work because there is no response yet. " +
-                  "Move this assertion after a routing assertion.", null));
+                  bundle.getString("assertion.response.beforeresponse"), null));
             }
         } else if(a instanceof WsTrustCredentialExchange) {
             if(!seenUsernamePasswordCredentials(targetName)
             && !seenSamlSecurity(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by a credential assertion (HTTP Basic, XPath Credentials, WSS UsernameToken Basic or SAML).", null));
+                  bundle.getString("wssecurity.missingpriorcredentialassertion"), null));
             }
         } else if(a instanceof WsFederationPassiveTokenRequest) {
             if(!seenUsernamePasswordCredentials(targetName)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by a credential assertion (HTTP Basic, XPath Credentials or WSS UsernameToken Basic).", null));
+                  bundle.getString("wssecurity.missingpriorcredentialassertion.short"), null));
             }
         } else if(a instanceof WsFederationPassiveTokenExchange) {
             if(!seenSamlSecurity(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by a SAML assertion.", null));
+                  bundle.getString("saml.missingbefore"), null));
             }
         } else if (a instanceof WssBasic) {
             // bugzilla 2518
             if (!(a instanceof EncryptedUsernameTokenAssertion) && Assertion.isRequest( a )) {
                 if (!haveSeen(targetName, SslAssertion.class)) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      "This assertion should be preceded by a SSL or TLS Transport assertion.", null));
+                      bundle.getString("transport.missingbefore"), null));
                 }
             }
         } else if (a instanceof AddWssSecurityToken) {
             // bugzilla 2753, 2421
             if (((AddWssSecurityToken)a).isIncludePassword() && !seenUsernamePasswordCredentials(REQUEST_TARGET_NAME)) { // NOTE: this assertion always gets request creds
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by an assertion that collects a password.", null));
+                  bundle.getString("assertion.missingpasswordcollection"), null));
             }
         }
     }
@@ -581,7 +573,7 @@ class PathValidator {
         // todo, refactor RoutingAssertion interface so it doesn't need to be implemented
         // by assertions that dont really route like echo and template
         if (a != null) {
-            if (!(a.getClass().getName().contains("EchoRoutingAssertion") || a instanceof HardcodedResponseAssertion)) {
+            if (!(a instanceof RoutingAssertionDoesNotRoute)) {
                 seenRouting = true;
             }
         }
@@ -596,7 +588,7 @@ class PathValidator {
             return;
         if (cachedResult instanceof Throwable) {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                                                            "This manually specified policy XML is not valid.",
+                                                            bundle.getString("assertion.policyxml.invalid"),
                                                             (Throwable)cachedResult));
             return;
         }
@@ -606,7 +598,7 @@ class PathValidator {
         } catch (IOException e) {
             policyParseCache.put(policyXml, e);
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                                                            "This manually specified policy XML is not valid.",
+                                                            bundle.getString("assertion.policyxml.invalid"),
                                                             e));
         }
     }
@@ -615,13 +607,12 @@ class PathValidator {
         Long oid = a.getEndpointOid();
         if (oid == null) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              "The assertion might not work as configured." +
-              " There is no protected service JMS queue defined.", null));
+              bundle.getString("jms.noqueuedefined"), null));
         }
 
         if (a.isAttachSamlSenderVouches() && !getMessageTargetContext(REQUEST_TARGET_NAME).seenAccessControl) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                    "Routing with SAML Sender-Vouches but credentials are not authenticated.", null));
+                    bundle.getString("saml.sendervouces.notauthenticated"), null));
         }
     }
 
@@ -629,8 +620,7 @@ class PathValidator {
         String url = a.getProtectedServiceUrl();
         if (url == null) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              "The assertion might not work as configured." +
-              " The protected service URL is empty.", null));
+              bundle.getString("routing.emptyurl"), null));
         } else {
             // only do this if the url has no context variables
             if (url.indexOf("${") < 0) {
@@ -638,15 +628,14 @@ class PathValidator {
                     new URL(url);
                 } catch (MalformedURLException e) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      "The assertion might not work as configured." +
-                      " The protected service URL is malformed.", null));
+                      bundle.getString("routing.malformedurl"), null));
                 }
             }
         }
 
         if (a.isAttachSamlSenderVouches() && !getMessageTargetContext(REQUEST_TARGET_NAME).seenAccessControl) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                    "Routing with SAML Sender-Vouches but credentials are not authenticated.", null));
+                    bundle.getString("saml.sendervouces.notauthenticated"), null));
         }
     }
 
@@ -683,9 +672,7 @@ class PathValidator {
                 }
             }
             if (!feedback.isEmpty()) {
-                StringBuffer msg = new StringBuffer("The service refers to a relative namespace URI, " +
-                  "which will prevent XML digital signatures from " +
-                  "functioning properly.");
+                StringBuffer msg = new StringBuffer(bundle.getString("wssecurity.dsig.relativenamespaceuri"));
                 for (Object aFeedback : feedback) {
                     RelativeURINamespaceProblemFeedback fb = (RelativeURINamespaceProblemFeedback)aFeedback;
                     msg.append("<br>Namespace: ").append(fb.ns);
@@ -703,7 +690,7 @@ class PathValidator {
     private void processSoapSpecific(Assertion a) {
         if (!soap) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              "This assertion only works with SOAP services.", null));
+              bundle.getString("assertion.requiressoap"), null));
         }
     }
 
@@ -717,7 +704,7 @@ class PathValidator {
             }
         }
         result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                          "This composite assertion does not contain any children and will always fail.",
+                          bundle.getString("assertion.composite.nochildren"),
                           null));
     }
 
@@ -727,7 +714,7 @@ class PathValidator {
 
     private void processUnknown(UnknownAssertion a) {
         result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              "This assertion is unrecognized and may cause all requests to this service to fail.", null));
+              bundle.getString("assertion.unrecognized"), null));
     }
 
     private boolean isSpecificUser(Assertion a) {

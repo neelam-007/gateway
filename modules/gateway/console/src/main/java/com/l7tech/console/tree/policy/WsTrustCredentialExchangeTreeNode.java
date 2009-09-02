@@ -25,6 +25,6 @@ public class WsTrustCredentialExchangeTreeNode extends LeafAssertionTreeNode<WsT
     }
 
     public String getName() {
-        return "Exchange credentials using WS-Trust request to " + assertion.getTokenServiceUrl();
+        return "Exchange Credentials using WS-Trust Request to " + assertion.getTokenServiceUrl();
     }
 }

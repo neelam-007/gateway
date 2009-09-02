@@ -42,7 +42,7 @@ public class EditWsTrustCredentialExchangeAction extends NodeAction {
 
     @Override
     public String getName() {
-        return "View/Edit WS-Trust Credential Exchange Properties";
+        return "WS-Trust Credential Exchange Properties";
     }
 
     @Override

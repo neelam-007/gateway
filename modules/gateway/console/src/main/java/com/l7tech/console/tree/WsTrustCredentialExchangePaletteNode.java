@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
  */
 public class WsTrustCredentialExchangePaletteNode extends AbstractLeafPaletteNode {
     public WsTrustCredentialExchangePaletteNode(){
-        super("WS-Trust Credential Exchange", "com/l7tech/console/resources/xmlWithCert16.gif");
+        super("Exchange Credentials using WS-Trust", "com/l7tech/console/resources/xmlWithCert16.gif");
     }
 
     /**

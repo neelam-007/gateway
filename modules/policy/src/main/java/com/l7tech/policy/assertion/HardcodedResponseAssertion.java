@@ -27,7 +27,7 @@ import java.io.IOException;
  * A pseudo-routing assertion that returns a hardcoded response message, with a hardcoded
  * response status and content type.
  */
-public class HardcodedResponseAssertion extends RoutingAssertion implements UsesVariables {
+public class HardcodedResponseAssertion extends RoutingAssertion implements UsesVariables, RoutingAssertionDoesNotRoute {
     private int responseStatus = 200;
     private boolean earlyResponse;
     private String responseContentType = "text/xml; charset=UTF-8";

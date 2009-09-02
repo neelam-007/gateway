@@ -4,6 +4,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.RoutingAssertionDoesNotRoute;
 import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.HashMap;
@@ -14,7 +15,7 @@ import java.util.HashMap;
  * @author emil
  * @version 21-Mar-2005
  */
-public class EchoRoutingAssertion extends RoutingAssertion {
+public class EchoRoutingAssertion extends RoutingAssertion implements RoutingAssertionDoesNotRoute {
 
     public EchoRoutingAssertion() {
         // This is because this was the effective default when the Server
