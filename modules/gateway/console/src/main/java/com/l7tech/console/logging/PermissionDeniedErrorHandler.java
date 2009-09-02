@@ -9,7 +9,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 
@@ -44,8 +43,6 @@ public class PermissionDeniedErrorHandler implements ErrorHandler {
 
             e.getLogger().log(Level.INFO, message, ExceptionUtils.getDebugException(t));
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Permission Denied", message, null);
-        } else if ( ExceptionUtils.causedBy(t, WsdlUtils.WSDLFactoryNotTrustedException.class) ) {
-            TopComponents.getInstance().showNoPrivilegesErrorMessage();
         } else {
             e.handle();
         }

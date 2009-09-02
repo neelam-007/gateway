@@ -5,7 +5,6 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.util.WsdlComposer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.console.xmlviewer.Viewer;
 import org.dom4j.DocumentException;
 import org.w3c.dom.Document;
@@ -66,12 +65,14 @@ public class WsdlCreateWizard extends Wizard {
         collect();
 
         getButtonHelp().addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(WsdlCreateWizard.this);
             }
         });
     }
 
+    @Override
     protected final JPanel createButtonPanel() {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
@@ -90,6 +91,7 @@ public class WsdlCreateWizard extends Wizard {
             buttonPreview = new JButton();
             buttonPreview.setText("Preview");
             buttonPreview.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     // ensure model is up to date
                     getSelectedWizardPanel().storeSettings(wizardInput);
@@ -109,8 +111,6 @@ public class WsdlCreateWizard extends Wizard {
 
                         Frame mw = TopComponents.getInstance().getTopParent();
                         DialogDisplayer.display(new RawWsdlDialog(mw, writer.toString(), "Preview"));
-                    } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
-                        TopComponents.getInstance().showNoPrivilegesErrorMessage();    
                     } catch (WSDLException e1) {
                         throw new RuntimeException(e1);
                     } catch (DocumentException e1) {
@@ -129,6 +129,7 @@ public class WsdlCreateWizard extends Wizard {
     /**
      * Override finish so all panels get the chance to update their settings 
      */
+    @Override
     protected void finish(ActionEvent evt) {
         getSelectedWizardPanel().storeSettings(wizardInput);
         collect();
@@ -173,6 +174,7 @@ public class WsdlCreateWizard extends Wizard {
             getContentPane().add(panel, BorderLayout.CENTER);
 
             addWindowListener(new WindowAdapter() {
+                @Override
                 public void windowClosing(WindowEvent e) {
                     dispose();
                 }

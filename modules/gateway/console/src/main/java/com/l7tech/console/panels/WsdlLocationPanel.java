@@ -9,7 +9,6 @@ import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.console.event.WsdlListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.util.SwingWorker;
@@ -29,6 +28,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 import javax.wsdl.WSDLException;
+import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLLocator;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -511,7 +511,7 @@ public class WsdlLocationPanel extends JPanel {
                         if (SyspropUtil.getBoolean(SYSPROP_NO_WSDL_IMPORTS)) {
                             // Old technique, don't process imports correctly
                             String wsdlStr = XmlUtil.nodeToString(resolvedDoc);
-                            wsdl = Wsdl.newInstance(WsdlUtils.getWSDLFactory(), baseUri, new StringReader(wsdlStr), false);
+                            wsdl = Wsdl.newInstance(WSDLFactory.newInstance(), baseUri, new StringReader(wsdlStr), false);
                             wsdlDocument = resolvedDoc;
                             wsdlResources = new ArrayList<ResourceTrackingWSDLLocator.WSDLResource>();
                             wsdlResources.add(new ResourceTrackingWSDLLocator.WSDLResource(baseUri, "text/xml", wsdlStr));
@@ -522,7 +522,7 @@ public class WsdlLocationPanel extends JPanel {
                             Map<String,String> urisToResources =
                                     processor.processDocument( baseUri, new GatewayResourceResolver(logger, baseUri, baseDoc) );
 
-                            wsdl = Wsdl.newInstance(WsdlUtils.getWSDLFactory(), Wsdl.getWSDLLocator(baseUri, urisToResources, logger));
+                            wsdl = Wsdl.newInstance(WSDLFactory.newInstance(), Wsdl.getWSDLLocator(baseUri, urisToResources, logger));
 
                             Collection<ResourceTrackingWSDLLocator.WSDLResource> wsdls = ResourceTrackingWSDLLocator.toWSDLResources(baseUri, urisToResources, true, false, false);
 
@@ -534,16 +534,6 @@ public class WsdlLocationPanel extends JPanel {
                         }
                         return wsdl;
                     }
-                } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
-                    SwingUtilities.invokeLater(new Runnable(){
-                        @Override
-                        public void run() {
-                            if(dlg.isVisible()) {
-                                dlg.setVisible(false);
-                                TopComponents.getInstance().showNoPrivilegesErrorMessage();
-                            }
-                        }
-                    });
                 } catch (final WSDLException e1) {
                     SwingUtilities.invokeLater(new Runnable(){
                         @Override

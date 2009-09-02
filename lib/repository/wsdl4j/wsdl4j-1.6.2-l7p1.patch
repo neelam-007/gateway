@@ -1,0 +1,72 @@
+diff -ur /opt/wsdl4j-1_6_2/src/com/ibm/wsdl/util/StringUtils.java src/main/java/com/ibm/wsdl/util/StringUtils.java
+--- /opt/wsdl4j-1_6_2/src/com/ibm/wsdl/util/StringUtils.java	2006-11-07 00:03:18.000000000 -0800
++++ src/main/java/com/ibm/wsdl/util/StringUtils.java	2009-08-25 17:32:34.000000000 -0700
+@@ -16,9 +16,17 @@
+  */
+ public class StringUtils
+ {
+-  public static final String lineSeparator =
+-    System.getProperty("line.separator", "\n");
+-  public static final String lineSeparatorStr = cleanString(lineSeparator);
++  public static final String lineSeparator;
++  public static final String lineSeparatorStr;
++  static {
++      String separator = "\n";
++      try {
++          separator = System.getProperty("line.separator", "\n");
++      } catch (SecurityException se) {}
++      lineSeparator = separator;
++      lineSeparatorStr = cleanString(lineSeparator);
++  }
++
+ 
+   // Ensure that escape sequences are passed through properly.
+   public static String cleanString(String str)
+diff -ur /opt/wsdl4j-1_6_2/src/com/ibm/wsdl/util/xml/DOM2Writer.java src/main/java/com/ibm/wsdl/util/xml/DOM2Writer.java
+--- /opt/wsdl4j-1_6_2/src/com/ibm/wsdl/util/xml/DOM2Writer.java	2006-11-07 00:03:18.000000000 -0800
++++ src/main/java/com/ibm/wsdl/util/xml/DOM2Writer.java	2009-08-25 17:28:11.000000000 -0700
+@@ -36,8 +36,10 @@
+   static
+   {
+     xmlEncodingMap.put(null, Constants.XML_DECL_DEFAULT);
+-    xmlEncodingMap.put(System.getProperty("file.encoding"),
++    try {
++        xmlEncodingMap.put(System.getProperty("file.encoding"),
+                        Constants.XML_DECL_DEFAULT);
++    } catch (SecurityException se) {}
+     xmlEncodingMap.put("UTF8", "UTF-8");
+     xmlEncodingMap.put("UTF-16", "UTF-16");
+     xmlEncodingMap.put("UnicodeBig", "UTF-16");
+diff -ur /opt/wsdl4j-1_6_2/src/com/ibm/wsdl/xml/WSDLReaderImpl.java src/main/java/com/ibm/wsdl/xml/WSDLReaderImpl.java
+--- /opt/wsdl4j-1_6_2/src/com/ibm/wsdl/xml/WSDLReaderImpl.java	2006-11-07 00:03:18.000000000 -0800
++++ src/main/java/com/ibm/wsdl/xml/WSDLReaderImpl.java	2009-08-25 17:20:31.000000000 -0700
+@@ -1335,6 +1335,8 @@
+     NamedNodeMap nodeMap = el.getAttributes();
+     int length = nodeMap.getLength();
+ 
++    registerChildElementNSDeclarations( el.getChildNodes(), def );
++
+     for (int i = 0; i < length; i++)
+     {
+       Attr attribute = (Attr)nodeMap.item(i);
+@@ -2114,6 +2116,20 @@
+     }
+   }
+ 
++    private static void registerChildElementNSDeclarations( final NodeList nodes,
++                                                            final Definition def ) {
++        if ( nodes != null ) {
++            for ( int i=0; i<nodes.getLength(); i++ ) {
++                Node node = nodes.item(i);
++                if ( node instanceof Element ) {
++                    Element element = (Element) node;
++                    registerNSDeclarations( element.getAttributes(), def );
++                    registerChildElementNSDeclarations( element.getChildNodes(), def );
++                }
++            }
++        }
++    }
++
+   private static void registerNSDeclarations(NamedNodeMap attrs, Definition def)
+   {
+       int size = attrs.getLength();

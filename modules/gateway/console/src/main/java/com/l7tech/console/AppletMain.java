@@ -8,7 +8,6 @@ package com.l7tech.console;
 import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.SheetHolder;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -17,16 +16,12 @@ import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.ExceptionDialog;
 import com.l7tech.util.WeakSet;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.gateway.common.service.PublishedService;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.mail.internet.MimeUtility;
 import javax.swing.*;
-import javax.wsdl.WSDLException;
-import javax.wsdl.xml.WSDLLocator;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -69,6 +64,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         instances.add(this);
     }
 
+    @Override
     public synchronized void init() {
         super.init();
 
@@ -120,9 +116,6 @@ public class AppletMain extends JApplet implements SheetHolder {
 
             initHelpKeyBinding();
             initBrowserSaveErrorStrategy();
-            
-            // Install WSDL Factory that is safe for Applet use
-            Wsdl.setWSDLFactoryBuilder( WsdlUtils.getWSDLFactoryBuilder() );
         }
         TopComponents.getInstance().setServiceUrl(serviceUrl);
     }
@@ -151,6 +144,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         String aname = "showHelpTopics";
 
         AbstractAction helpAction = new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 logger.fine("Attempting to show help topics root in response to F1 key");
                 showHelpTopicsRoot();
@@ -181,6 +175,7 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
 
+    @Override
     public void start() {
         setFocusable(true);
         forceEarlyClassLoading();
@@ -254,6 +249,7 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
 
+    @Override
     public void destroy() {
         instances.remove(this);
 
@@ -368,6 +364,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         return context;
     }
 
+    @Override
     public String getAppletInfo() {
         return "Title: SecureSpan Manager Applet \n"
             + "Author: Layer 7 Technologies \n"
@@ -384,6 +381,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         }
     }
 
+    @Override
     public void showSheet(JInternalFrame sheet) {
         DialogDisplayer.showSheet(this, sheet);
     }
@@ -402,6 +400,7 @@ public class AppletMain extends JApplet implements SheetHolder {
 
         // Can't use System.exit on error (kills browser)
         Runnable shutdownTask = new Runnable() {
+            @Override
             public void run() {
                 // Remove applet content
                 AppletMain otherMain = (AppletMain) TopComponents.getInstance().getComponent( COMPONENT_NAME );

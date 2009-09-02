@@ -8,6 +8,7 @@ import com.l7tech.console.util.WsdlComposer;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.util.SyspropUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -68,6 +69,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     private JButton removeFromResultButton;
     
     private ActionListener manageCompositionActionListener = new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             Object obj = e.getSource();
             if (obj instanceof JButton) {
@@ -119,7 +121,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     }
 
     private void initialize() {
-        maxSources = Integer.getInteger(MAX_SOURCE_WSDLS, 50);
+        maxSources = SyspropUtil.getInteger(MAX_SOURCE_WSDLS, 50);
         setShowDescriptionPanel(false);
         panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
 
@@ -130,23 +132,27 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         sourceOperationsList.setModel(sourceOperationsListModel);
 
         sourceTabs.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 enableAddRemoveOperationsButtons();
             }
         });
         resultTabs.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 enableAddRemoveOperationsButtons();
             }
         });
 
         addWSDL.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doAddSourceWsdl();
             }
         });
 
         sourceWsdlList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent listSelectionEvent) {
                 updateSourceWsdlInfo();
             }
@@ -341,10 +347,12 @@ public class WSDLCompositionPanel extends WizardStepPanel{
 
         java.util.List<WsdlComposer.WsdlHolder> wsdlList = new ArrayList<WsdlComposer.WsdlHolder>();
 
+        @Override
         public int getSize() {
             return wsdlList.size();
         }
 
+        @Override
         public Object getElementAt(int index) {
             if (index >= 0 && index < wsdlList.size())
                 return wsdlList.get(index);
@@ -411,12 +419,14 @@ public class WSDLCompositionPanel extends WizardStepPanel{
 
         private void initialise() {
             buttonOK.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     onOk();
                 }
             });
 
             buttonCancel.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     onCancel();
                 }

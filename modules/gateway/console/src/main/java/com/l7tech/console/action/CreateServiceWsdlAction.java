@@ -13,7 +13,6 @@ import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlComposer;
-import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import static com.l7tech.objectmodel.EntityType.SERVICE;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -35,8 +34,6 @@ import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
 import javax.wsdl.Definition;
 import javax.wsdl.Port;
 import javax.wsdl.Service;
@@ -102,6 +99,7 @@ public class CreateServiceWsdlAction extends SecureAction {
     @Override
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 try {
                     WizardStepPanel defPanel =
@@ -118,8 +116,6 @@ public class CreateServiceWsdlAction extends SecureAction {
                     wizard.pack();
                     Utilities.centerOnScreen(wizard);
                     DialogDisplayer.display(wizard);
-                } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
-                    TopComponents.getInstance().showNoPrivilegesErrorMessage();
                 } catch (WSDLException we) {
                     throw new RuntimeException(we);
                 }
@@ -153,7 +149,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                 WsdlComposer composer = (WsdlComposer) w.getWizardInput();
                 Definition def = composer.buildOutputWsdl();
 
-                WSDLFactory fac = WsdlUtils.getWSDLFactory();
+                WSDLFactory fac = WSDLFactory.newInstance();
                 ExtensionRegistry reg =  Wsdl.disableSchemaExtensions(fac.newPopulatedExtensionRegistry());
                 WSDLWriter wsdlWriter = fac.newWSDLWriter();
                 def.setExtensionRegistry(reg);
@@ -204,8 +200,6 @@ public class CreateServiceWsdlAction extends SecureAction {
                 service.setWsdlXml(sw.toString());
 
                 tryToPublish = true;
-            } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
-                    TopComponents.getInstance().showNoPrivilegesErrorMessage();
             } catch (Exception e) {
                 Frame w = TopComponents.getInstance().getTopParent();
                 log.log(Level.WARNING, "error saving service", e);
@@ -266,12 +260,11 @@ public class CreateServiceWsdlAction extends SecureAction {
          */
         public void serviceAdded(final EntityHeader eh) {
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
                         AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
-                        TreeNode[] nodes = root.getPath();
-                        TreePath nPath = new TreePath(nodes);
                         //Remove any filter before insert
                         TopComponents.getInstance().clearFilter();
 

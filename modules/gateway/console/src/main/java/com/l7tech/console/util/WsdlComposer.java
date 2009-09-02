@@ -2,7 +2,6 @@ package com.l7tech.console.util;
 
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.util.WsdlUtils;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -82,7 +81,7 @@ public class WsdlComposer {
 
     private void initialise(Document wsdl) throws WSDLException {
         originalWsdlDoc = wsdl;
-        wsdlFactory = WsdlUtils.getWSDLFactory();
+        wsdlFactory = WSDLFactory.newInstance();
         extensionRegistry = Wsdl.disableSchemaExtensions(wsdlFactory.newPopulatedExtensionRegistry());
 
         delegateWsdl = wsdlFactory.newDefinition();

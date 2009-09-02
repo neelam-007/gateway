@@ -20,7 +20,7 @@
 	<dependencies>
         <dependency name="layer7-common" rev="latest.integration" force="true" conf="core; test->default,test"/>
 		<dependency org="org.apache.ws.commons.policy" name="policy" rev="1.0" force="true" conf="core"/>
-		<dependency org="wsdl4j" name="wsdl4j" rev="1.6.2" force="true" conf="core"/>
+		<dependency org="wsdl4j" name="wsdl4j" rev="1.6.2-l7p1" force="true" conf="core"/>
 		<dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
 	</dependencies>
 </ivy-module>
