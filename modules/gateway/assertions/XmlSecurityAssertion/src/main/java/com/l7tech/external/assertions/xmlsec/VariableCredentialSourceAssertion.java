@@ -69,7 +69,7 @@ public class VariableCredentialSourceAssertion extends SecurityHeaderAddressable
         meta.put(AssertionMetadata.DESCRIPTION, "Gateway retrieves X.509 certificate credentials from context variable");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, -1000);
-        //meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.VariableCredentialSourceAssertionPropertiesDialog");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.VariableCredentialSourceAssertionPropertiesDialog");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, VariableCredentialSourceAssertion>() {
