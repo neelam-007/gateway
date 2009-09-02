@@ -50,6 +50,7 @@ import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -93,7 +94,9 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * @param policyFactory  used to compile policies into server policies
      * @param securityTokenResolver used to locate security tokens
      */
-    public TokenServiceImpl(DefaultKey defaultKey, ServerPolicyFactory policyFactory, SecurityTokenResolver securityTokenResolver) {
+    public TokenServiceImpl( final DefaultKey defaultKey,
+                             final ServerPolicyFactory policyFactory,
+                             final SecurityTokenResolver securityTokenResolver) {
         if (defaultKey == null) {
             throw new IllegalArgumentException("DefaultKey must be provided to create a TokenService");
         }
@@ -133,10 +136,10 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * context.getFaultLevel() is to contain a template for an error to return to the requestor.
      */
     @Override
-    public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context,
-                                                         CredentialsAuthenticator authenticator,
-                                                         boolean useThumbprintForSamlSignature,
-                                                         boolean useThumbprintForSamlSubject)
+    public AssertionStatus respondToSecurityTokenRequest(final PolicyEnforcementContext context,
+                                                         final CredentialsAuthenticator authenticator,
+                                                         final boolean useThumbprintForSamlSignature,
+                                                         final boolean useThumbprintForSamlSubject)
                                                          throws InvalidDocumentFormatException,
                                                                 TokenServiceImpl.TokenServiceException,
                                                                 ProcessorException,
@@ -300,7 +303,10 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         validCredsOverMsgLvlSec.addChild(new RequireWssSaml());
         validCredsOverMsgLvlSec.addChild(new SecureConversation());
         msgLvlBranch.addChild(validCredsOverMsgLvlSec);
-        msgLvlBranch.addChild(new RequireWssSignedElement());
+        OneOrMoreAssertion signedBody = new OneOrMoreAssertion();
+        signedBody.addChild(new RequireWssSignedElement());
+        signedBody.addChild(new RequireWssSignedElement( XpathExpression.soap12BodyXpathValue() ));
+        msgLvlBranch.addChild(signedBody);
 
         AllAssertion sslBranch = new AllAssertion();
         sslBranch.addChild(new SslAssertion());
@@ -322,8 +328,11 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return base;
     }
 
-    private Document handleSamlRequest(Map rstTypes, String samlNs, PolicyEnforcementContext context,
-                                       boolean useThumbprintForSignature, boolean useThumbprintForSubject)
+    private Document handleSamlRequest( final Map<String,String> rstTypes,
+                                        final String samlNs,
+                                        final PolicyEnforcementContext context,
+                                        final boolean useThumbprintForSignature,
+                                        final boolean useThumbprintForSubject)
                                        throws TokenServiceException, GeneralSecurityException
     {
         String clientAddress = null;
@@ -369,7 +378,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         Document signedAssertionDoc = generator.createAssertion(subjectStatement, options);
 
         // Prepare the response
-        StringBuffer responseXml = new StringBuffer(rstResponsePrefix((String)rstTypes.get(TRUSTNS), (String)rstTypes.get(SCNS)));
+        StringBuilder responseXml = new StringBuilder(rstResponsePrefix(rstTypes.get(TRUSTNS), rstTypes.get(SCNS), rstTypes.get(SOAPNS)));
         try {
             responseXml.append( XmlUtil.nodeToString(signedAssertionDoc));
             responseXml.append(WST_RST_RESPONSE_INFIX);
@@ -383,9 +392,10 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         }
     }
 
-    private Document handleSecureConversationContextRequest(Map rstTypes, PolicyEnforcementContext context,
-                                                            User requestor,
-                                                            String scns) throws TokenServiceException, GeneralSecurityException {
+    private Document handleSecureConversationContextRequest( final Map<String,String> rstTypes,
+                                                             final PolicyEnforcementContext context,
+                                                             final User requestor,
+                                                             final String scns ) throws TokenServiceException, GeneralSecurityException {
         SecureConversationSession newSession;
         try {
             newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor,
@@ -424,10 +434,12 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         if (clientCert != null) {
             secretXml = produceEncryptedKeyXml(newSession.getSharedSecret(), clientCert);
         } else {
-            secretXml = produceBinarySecretXml(newSession.getSharedSecret(), (String)rstTypes.get(TRUSTNS));
+            secretXml = produceBinarySecretXml(newSession.getSharedSecret(), rstTypes.get(TRUSTNS));
         }
         try {
-            String xmlStr = rstResponsePrefix((String)rstTypes.get(TRUSTNS), (String)rstTypes.get(SCNS)) +
+            String xmlStr = rstResponsePrefix(rstTypes.get(TRUSTNS),
+                                              rstTypes.get(SCNS),
+                                              rstTypes.get(SOAPNS)) +
                                       "<wsc:SecurityContextToken>" +
                                         "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
                                       "</wsc:SecurityContextToken>" +
@@ -446,7 +458,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return prepareSignedResponse(response);
     }
 
-    private Document prepareSignedResponse( Document response ) throws TokenServiceException {
+    private Document prepareSignedResponse( final Document response ) throws TokenServiceException {
         SsgKeyEntry signer;
         Element body;
         try {
@@ -481,16 +493,17 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return response;
     }
 
-    private String produceBinarySecretXml(byte[] sharedSecret, String trustns) {
-        StringBuffer output = new StringBuffer();
+    private String produceBinarySecretXml( final byte[] sharedSecret,
+                                           final String trustns ) {
+        StringBuilder output = new StringBuilder();
         output.append("<wst:BinarySecret Type=\"").append(trustns).append("/SymmetricKey" + "\">");
         output.append(HexUtils.encodeBase64(sharedSecret, true));
         output.append("</wst:BinarySecret>");
         return output.toString();
     }
 
-    private String produceEncryptedKeyXml(byte[] sharedSecret, X509Certificate requestorCert) throws GeneralSecurityException {
-        StringBuffer encryptedKeyXml = new StringBuffer();
+    private String produceEncryptedKeyXml( final byte[] sharedSecret, final X509Certificate requestorCert ) throws GeneralSecurityException {
+        StringBuilder encryptedKeyXml = new StringBuilder();
         // Key info and all
         encryptedKeyXml.append("<xenc:EncryptedKey wsu:Id=\"newProof\" xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\">" +
                                  "<xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\" />");
@@ -528,7 +541,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy
      */
-    private boolean isRequestForSecureConversationContext(Map<String, String> rstTypes) {
+    private boolean isRequestForSecureConversationContext( final Map<String, String> rstTypes ) {
         String val = rstTypes.get( SoapConstants.WST_TOKENTYPE);
         if (val == null || !"http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct".equals(val)) {
             return false;
@@ -548,7 +561,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy
      */
-    private boolean isRequestForSecureConversationContext0502(Map<String, String> rstTypes) {
+    private boolean isRequestForSecureConversationContext0502( final Map<String, String> rstTypes ) {
         String val = rstTypes.get( SoapConstants.WST_TOKENTYPE);
         if (val == null || !"http://schemas.xmlsoap.org/ws/2005/02/sc/sct".equals(val)) {
             return false;
@@ -568,7 +581,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * expected value of   TokenType is 'urn:oasis:names:tc:SAML:2.0:assertion#Assertion',
      * expected value of RequestType is 'http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue'
      */
-    private boolean isRequestForSAML20Token(Map rstTypes) {
+    private boolean isRequestForSAML20Token( final Map rstTypes ) {
         String tokenType = (String)rstTypes.get( SoapConstants.WST_TOKENTYPE);
         if (tokenType == null ||
             !tokenType.startsWith("urn:oasis:names:tc:SAML:2.0:assertion") ||
@@ -591,9 +604,10 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      *
      * The old way was using too much code duplication and was too innefficient.
      */
-    private Map<String, String> getTrustTokenTypeAndRequestTypeValues(PolicyEnforcementContext context) throws InvalidDocumentFormatException {
+    private Map<String, String> getTrustTokenTypeAndRequestTypeValues( final PolicyEnforcementContext context ) throws InvalidDocumentFormatException {
         Map<String, String> output = new HashMap<String, String>();
         // initial value important (dont remove)
+        output.put(SOAPNS, SOAPConstants.URI_NS_SOAP_ENVELOPE);
         output.put(SCNS, SoapConstants.WSSC_NAMESPACE);
         Document doc;
         try {
@@ -609,6 +623,10 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             return output;
         }
         Element body = SoapUtil.getBodyElement(doc);
+        if ( SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals( body.getNamespaceURI() ) ) {
+            output.put(SOAPNS, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
+        }
+
         Element maybeRSTEl = DomUtils.findFirstChildElement(body);
 
         // body must include wst:RequestSecurityToken element
@@ -645,7 +663,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy
      */
-    private boolean isRequestForSAMLToken(Map rstTypes) {
+    private boolean isRequestForSAMLToken( final Map rstTypes ) {
         String tokenType = (String)rstTypes.get( SoapConstants.WST_TOKENTYPE);
         if (tokenType == null || !PSAML.matcher(tokenType).find()) {
             logger.fine("TokenType '" + tokenType + "' is not recognized as calling for a saml:Assertion");
@@ -655,7 +673,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return !(requestType == null || !requestType.endsWith("/trust/Issue"));
      }
 
-    private String getRemoteAddress(PolicyEnforcementContext pec) {
+    private String getRemoteAddress( final PolicyEnforcementContext pec ) {
         String ip = null;
 
         if(pec!=null) {
@@ -668,7 +686,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return ip;
     }
 
-    private User getUser(PolicyEnforcementContext context) {
+    private User getUser( final PolicyEnforcementContext context ) {
         User user = null;
 
         if(context.getDefaultAuthenticationContext().isAuthenticated()) {
@@ -682,12 +700,14 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return user;
     }
 
-    private String getName(User user) {
+    private String getName( final User user ) {
         return user.getName()!=null ? user.getName() : user.getLogin();      
     }
 
-    private static String rstResponsePrefix(String wstns, String wsscns) {
-        return "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+    private static String rstResponsePrefix( final String wstns,
+                                             final String wsscns,
+                                             final String soapns ) {
+        return "<soap:Envelope xmlns:soap=\"" + soapns + "\">" +
               "<soap:Body>" +
                 "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + wstns + "\" " +
                   "xmlns:wsu=\"" + SoapConstants.WSU_NAMESPACE + "\" " +
@@ -708,4 +728,5 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      */
     private static final String TRUSTNS = "trustns";
     private static final String SCNS = "scns";
+    private static final String SOAPNS = "soapns";
 }

@@ -10,6 +10,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.SoapConstants;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.common.io.XmlUtil;
 import org.w3c.dom.*;
@@ -29,6 +30,9 @@ public abstract class WsTrustConfig {
     private String wspNs;
     private String wsaNs;
     private String wsscNs = SoapConstants.WSSC_NAMESPACE;
+    private String soapNs = SyspropUtil.getBoolean( "com.l7tech.security.wstrust.useSoap12", false ) ? 
+            SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE :
+            SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
 
     public WsTrustConfig(String wstNs, String wspNs, String wsaNs) {
         this.wstNs = wstNs;
@@ -56,6 +60,14 @@ public abstract class WsTrustConfig {
         return wsscNs;
     }
 
+    public String getSoapNs() {
+        return soapNs;
+    }
+
+    public void setSoapNs( String soapNs ) {
+        this.soapNs = soapNs;
+    }
+
     /**
      * @return the request type URI for the specified WsTrustRequestType for this WsTrustConfig's version of WS-Trust.
      *         Never null -- any valid WsTrustRequestType instance will produce a URI.
@@ -66,7 +78,7 @@ public abstract class WsTrustConfig {
 
 
     protected Document makeRequestSecurityTokenResponseMessage(String tokenString) throws SAXException {
-        String start = "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+        String start = "<soap:Envelope xmlns:soap=\"" + getSoapNs() + "\">" +
                 "<soap:Body>" +
                 "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + getWstNs() + "\" " +
                 "xmlns:wsu=\"" + SoapConstants.WSU_NAMESPACE + "\" " +
@@ -98,7 +110,7 @@ public abstract class WsTrustConfig {
         if (desiredTokenType != null && SamlSecurityToken.class.isAssignableFrom(desiredTokenType.getInterfaceClass()))
             extraNs += " xmlns:saml=\"" + desiredTokenType.getWstPrototypeElementNs() + "\"";
 
-        Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\"" + extraNs + ">" +
+        Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + getSoapNs() + "\"" + extraNs + ">" +
                                                     "<soap:Header/><soap:Body>" +
                                                     "<wst:RequestSecurityToken xmlns:wst=\"" + getWstNs() + "\">" +
                                                     "</wst:RequestSecurityToken>" +

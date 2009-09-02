@@ -60,7 +60,7 @@ public class TokenServiceClient {
      *
      * @param wstConfig  the WS-Trust version to use for the messages.  Must not be null.
      */
-    public TokenServiceClient(WsTrustConfig wstConfig) {
+    public TokenServiceClient( final WsTrustConfig wstConfig ) {
         this(wstConfig, null);
     }
 
@@ -71,7 +71,8 @@ public class TokenServiceClient {
      * @param wstConfig  the WS-Trust version to use for the messages.  Must not be null.
      * @param httpClient the HTTP client to use for remote HTTP calls.  Must not be null.
      */
-    public TokenServiceClient(WsTrustConfig wstConfig, GenericHttpClient httpClient) {
+    public TokenServiceClient( final WsTrustConfig wstConfig,
+                               final GenericHttpClient httpClient ) {
         if (wstConfig == null) throw new NullPointerException();
         this.wstConfig = wstConfig;
         this.httpClient = httpClient;
@@ -106,14 +107,14 @@ public class TokenServiceClient {
      * @return a signed SOAP message containing a wst:RequestSecurityToken
      * @throws CertificateException if ther eis a problem with the clientCertificate
      */
-    public Document createRequestSecurityTokenMessage(X509Certificate clientCertificate,
-                                                             PrivateKey clientPrivateKey,
-                                                             SecurityTokenType desiredTokenType,
-                                                             WsTrustRequestType requestType,
-                                                             XmlSecurityToken base,
-                                                             String appliesToAddress,
-                                                             String wstIssuerAddress,
-                                                             Date timestampCreatedDate)
+    public Document createRequestSecurityTokenMessage( final X509Certificate clientCertificate,
+                                                       final PrivateKey clientPrivateKey,
+                                                       final SecurityTokenType desiredTokenType,
+                                                       final WsTrustRequestType requestType,
+                                                       final XmlSecurityToken base,
+                                                       final String appliesToAddress,
+                                                       final String wstIssuerAddress,
+                                                       final Date timestampCreatedDate)
             throws CertificateException
     {
         try {
@@ -163,11 +164,11 @@ public class TokenServiceClient {
      * @param wstIssuerAddress
      * @return a DOM containing a complete SOAP envelope.  Never null.
      */
-    public Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType,
-                                                      WsTrustRequestType requestType,
-                                                      XmlSecurityToken base,
-                                                      String appliesToAddress,
-                                                      String wstIssuerAddress) {
+    public Document createRequestSecurityTokenMessage( final SecurityTokenType desiredTokenType,
+                                                       final WsTrustRequestType requestType,
+                                                       final XmlSecurityToken base,
+                                                       final String appliesToAddress,
+                                                       final String wstIssuerAddress ) {
         try {
             return wstConfig.makeRequestSecurityTokenMessage(desiredTokenType,
                                                              requestType,
@@ -192,9 +193,11 @@ public class TokenServiceClient {
      * the response is required to be signed.
      */
     public SecureConversationSession obtainSecureConversationSessionUsingWssSignature(
-            URL url, Date timestampCreatedDate,
-            X509Certificate serverCertificate, X509Certificate clientCertificate,
-            PrivateKey clientPrivateKey)
+            final URL url,
+            final Date timestampCreatedDate,
+            final X509Certificate serverCertificate,
+            final X509Certificate clientCertificate,
+            final PrivateKey clientPrivateKey)
             throws IOException, GeneralSecurityException, UnrecognizedServerCertException {
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 SecurityTokenType.WSSC_CONTEXT, WsTrustRequestType.ISSUE, null, null, null, timestampCreatedDate);
@@ -209,8 +212,9 @@ public class TokenServiceClient {
      * Requests a SecureConversation context token. The request is transport-secured (ssl) and transport authenticated.
      */
     public SecureConversationSession obtainSecureConversationSessionWithSslAndOptionalHttpBasic(
-            PasswordAuthentication httpBasicCredentials,
-            URL url, X509Certificate serverCertificate)
+            final PasswordAuthentication httpBasicCredentials,
+            final URL url,
+            final X509Certificate serverCertificate )
             throws IOException, GeneralSecurityException, UnrecognizedServerCertException
     {
         if (!("https".equals(url.getProtocol()))) throw new IllegalArgumentException("URL must be HTTPS");
@@ -225,34 +229,19 @@ public class TokenServiceClient {
     /**
      * Obtain a SAML token using WS-Trust.  The request will be signed if a client cert, client key, and recipient
      * cert are provided.  Response will be required to be signed if requireWssSignedResponse is true.
-     *
-     * @param httpBasicCredentials
-     * @param url
-     * @param serverCertificate
-     * @param timestampCreatedDate
-     * @param clientCertificate
-     * @param clientPrivateKey
-     * @param requestType
-     * @param tokenType
-     * @param base
-     * @param appliesToAddress
-     * @param wstIssuerAddress
-     * @param requireWssSignedResponse
-     * @throws IOException
-     * @throws GeneralSecurityException
      */
-    public SamlAssertion obtainSamlAssertion(PasswordAuthentication httpBasicCredentials,
-                                                    URL url,
-                                                    X509Certificate serverCertificate,
-                                                    Date timestampCreatedDate,
-                                                    X509Certificate clientCertificate,
-                                                    PrivateKey clientPrivateKey,
-                                                    WsTrustRequestType requestType,
-                                                    SecurityTokenType tokenType,
-                                                    XmlSecurityToken base,
-                                                    String appliesToAddress,
-                                                    String wstIssuerAddress,
-                                                    boolean requireWssSignedResponse)
+    public SamlAssertion obtainSamlAssertion( final PasswordAuthentication httpBasicCredentials,
+                                              final URL url,
+                                              final X509Certificate serverCertificate,
+                                              Date timestampCreatedDate,
+                                              final X509Certificate clientCertificate,
+                                              final PrivateKey clientPrivateKey,
+                                              final WsTrustRequestType requestType,
+                                              final SecurityTokenType tokenType,
+                                              final XmlSecurityToken base,
+                                              final String appliesToAddress,
+                                              final String wstIssuerAddress,
+                                              final boolean requireWssSignedResponse)
             throws IOException, GeneralSecurityException, UnrecognizedServerCertException
     {
         if (httpClient == null) throw new IllegalStateException("httpClient must be configured to use obtainSamlAssertion");
@@ -275,13 +264,13 @@ public class TokenServiceClient {
         return (SamlAssertion)result;
     }
 
-    private Object obtainResponse(X509Certificate clientCertificate,
-                                  URL url,
-                                  Document requestDoc,
-                                  PrivateKey clientPrivateKey,
-                                  X509Certificate serverCertificate,
-                                  PasswordAuthentication httpBasicCredentials,
-                                  boolean requireWssSignedResponse)
+    private Object obtainResponse( final X509Certificate clientCertificate,
+                                   final URL url,
+                                   final Document requestDoc,
+                                   final PrivateKey clientPrivateKey,
+                                   final X509Certificate serverCertificate,
+                                   final PasswordAuthentication httpBasicCredentials,
+                                   final boolean requireWssSignedResponse)
             throws IOException, GeneralSecurityException, UnrecognizedServerCertException
     {
         if (httpClient == null) throw new IllegalStateException("httpClient must be configured to use obtainResponse");
@@ -357,7 +346,7 @@ public class TokenServiceClient {
         }
     }
 
-    private static void checkForSoapFault(Document response) throws InvalidDocumentFormatException {
+    private static void checkForSoapFault( final Document response ) throws InvalidDocumentFormatException {
         {
             // check for fault message from server
             Element payload = SoapUtil.getPayloadElement(response);
@@ -380,7 +369,7 @@ public class TokenServiceClient {
      * @return an Object representing the parsed security token.  At the moment this will be an instance of either
      *         SamlAssertion or SecureConversationSession.  Never null; will either succeed or throw.
      */
-    public Object parseUnsignedRequestSecurityTokenResponse(Document response)
+    public Object parseUnsignedRequestSecurityTokenResponse( final Document response )
             throws InvalidDocumentFormatException
     {
         try {
@@ -413,10 +402,10 @@ public class TokenServiceClient {
      * @throws GeneralSecurityException  if there is a problem with a certificate, key, or signature
      * @throws com.l7tech.security.xml.processor.ProcessorException   if there is a problem undecorating the signed message
      */
-    public Object parseSignedRequestSecurityTokenResponse(Document response,
-                                                           X509Certificate clientCertificate,
-                                                           PrivateKey clientPrivateKey,
-                                                           X509Certificate serverCertificate)
+    public Object parseSignedRequestSecurityTokenResponse( final Document response,
+                                                           final X509Certificate clientCertificate,
+                                                           final PrivateKey clientPrivateKey,
+                                                           final X509Certificate serverCertificate )
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
                    UnrecognizedServerCertException
     {
@@ -424,10 +413,10 @@ public class TokenServiceClient {
         return parseRequestSecurityTokenResponse(response, clientCertificate, clientPrivateKey, serverCertificate);
     }
 
-    private Object parseRequestSecurityTokenResponse(Document response,
-                                                            X509Certificate clientCertificate,
-                                                            PrivateKey clientPrivateKey,
-                                                            X509Certificate serverCertificate)
+    private Object parseRequestSecurityTokenResponse( final Document response,
+                                                      final X509Certificate clientCertificate,
+                                                      final PrivateKey clientPrivateKey,
+                                                      final X509Certificate serverCertificate )
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
                    UnrecognizedServerCertException
     {
@@ -483,11 +472,11 @@ public class TokenServiceClient {
                                                  " (namespace=" + what.getNamespaceURI() + ")");
     }
 
-    private static void verifySignature(Element rstr,
-                                        X509Certificate serverCertificate,
-                                        Document response,
-                                        X509Certificate clientCertificate,
-                                        PrivateKey clientPrivateKey)
+    private static void verifySignature( final Element rstr,
+                                         final X509Certificate serverCertificate,
+                                         final Document response,
+                                         final X509Certificate clientCertificate,
+                                         final PrivateKey clientPrivateKey )
             throws InvalidDocumentFormatException, GeneralSecurityException,
                    ProcessorException, UnrecognizedServerCertException
     {
@@ -528,15 +517,15 @@ public class TokenServiceClient {
             throw new InvalidDocumentFormatException("Response body was not signed.");
     }
 
-    private Object processSecurityContextToken(Element scTokenEl,
-                                                      Element rstr,
-                                                      X509Certificate clientCertificate,
-                                                      PrivateKey clientPrivateKey)
+    private Object processSecurityContextToken( final Element scTokenEl,
+                                                final Element rstr,
+                                                final X509Certificate clientCertificate,
+                                                final PrivateKey clientPrivateKey )
             throws InvalidDocumentFormatException, GeneralSecurityException, UnexpectedKeyInfoException {
         // Extract session ID
         Element identifierEl = DomUtils.findOnlyOneChildElementByName(scTokenEl, SoapConstants.WSSC_NAMESPACE_ARRAY, "Identifier");
         if (identifierEl == null) throw new InvalidDocumentFormatException("Response contained no wsc:Identifier");
-        String identifier = DomUtils.getTextValue(identifierEl).trim();
+        final String identifier = DomUtils.getTextValue(identifierEl).trim();
         if (identifier == null || identifier.length() < 4) throw new InvalidDocumentFormatException("Response wsc:Identifier was empty or too short");
 
         // Extract optional expiry date
@@ -593,17 +582,18 @@ public class TokenServiceClient {
         }
 
         final Date finalExpires = expires;
-        final String finalIdentifier = identifier;
-        final byte[] finalSecret = sharedSecret;
         return new SecureConversationSession() {
+            @Override
             public String getSessionId() {
-                return finalIdentifier;
+                return identifier;
             }
 
+            @Override
             public byte[] getSharedSecret() {
-                return finalSecret;
+                return sharedSecret;
             }
 
+            @Override
             public Date getExpiryDate() {
                 return finalExpires;
             }

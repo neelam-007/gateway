@@ -12,8 +12,8 @@ import java.util.Map;
  * and the namespace array.
  */
 public class XpathExpression extends CompilableXpath implements Serializable {
-    private String expression;
-    private Map<String, String> namespaces = new LinkedHashMap<String, String>();
+
+    //- PUBLIC
 
     /**
      * default constructor for XML serialization support
@@ -24,12 +24,14 @@ public class XpathExpression extends CompilableXpath implements Serializable {
      * @return a standard xpath value that points to the soap body (standard for many xpath based assertions)
      */
     public static XpathExpression soapBodyXpathValue() {
-        XpathExpression xpath = new XpathExpression();
-        xpath.setExpression( SoapConstants.SOAP_BODY_XPATH);
-        Map<String, String> nss = new LinkedHashMap<String, String>();
-        nss.put( SoapConstants.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_ENVELOPE);
-        xpath.setNamespaces(nss);
-        return xpath;
+        return buildSoapBodyXpath( SOAPConstants.URI_NS_SOAP_ENVELOPE );
+    }
+
+    /**
+     * @return a standard xpath value that points to the soap body (standard for many xpath based assertions)
+     */
+    public static XpathExpression soap12BodyXpathValue() {
+        return buildSoapBodyXpath( SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE );
     }
 
     /**
@@ -116,4 +118,19 @@ public class XpathExpression extends CompilableXpath implements Serializable {
         result = 29 * result + namespaces.hashCode();
         return result;
     }
+
+    //- PRIVATE
+
+    private String expression;
+    private Map<String, String> namespaces = new LinkedHashMap<String, String>();    
+
+    private static XpathExpression buildSoapBodyXpath( final String soapNs ) {
+        XpathExpression xpath = new XpathExpression();
+        xpath.setExpression( SoapConstants.SOAP_BODY_XPATH);
+        Map<String, String> nss = new LinkedHashMap<String, String>();
+        nss.put( SoapConstants.SOAP_ENV_PREFIX, soapNs );
+        xpath.setNamespaces(nss);
+        return xpath;
+    }
+       
 }
