@@ -184,6 +184,10 @@ public class SslAssertion extends ConfidentialityAssertion {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
+        meta.put(AssertionMetadata.SHORT_NAME, "Set SSL or TLS Transport");
+        meta.put(AssertionMetadata.LONG_NAME, "The incoming request must use SSL transport");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ssl.gif");
+
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
                 new WspEnumTypeMapping(Option.class, "optionValue")
         )));

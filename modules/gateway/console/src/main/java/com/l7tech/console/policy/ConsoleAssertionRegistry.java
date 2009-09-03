@@ -93,6 +93,21 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         putDefaultGetter(PROPERTIES_ACTION_FACTORY, new PropertiesActionMetadataFinder());
 
         putDefaultGetter(PROPERTIES_EDITOR_FACTORY, new PropertiesEditorFactoryMetadataFinder());
+
+        putDefaultGetter(PALETTE_NODE_NAME, new MetadataFinder() {
+            private String getDefaultName(AssertionMetadata meta) {
+                Object name = meta.get(SHORT_NAME);
+                if (name != null)
+                    return name.toString();
+                return meta.getAssertionClass().getSimpleName();
+            }
+
+            @Override
+            public Object get(final AssertionMetadata meta, String key) {
+                return cache(meta, key, getDefaultName(meta));
+            }
+        });
+
     }
 
     public void updateModularAssertions() {

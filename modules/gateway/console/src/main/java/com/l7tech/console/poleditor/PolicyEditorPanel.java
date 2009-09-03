@@ -1150,7 +1150,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (assertion != null) {
             msg = MessageFormat.format( "Assertion: <a href=\"file://assertion#{0}\">{1}</a>",
                     pathString(pe.getAssertionOrdinal(), pe.getAssertionIndexPath()),
-                    Descriptions.getDescription(assertion).getShortDescription());
+                    atn.getName());
         } else {
             msg = ""; // supplied message (non single assertion related)
         }

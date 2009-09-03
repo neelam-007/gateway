@@ -62,56 +62,6 @@ public class Descriptions {
     }
 
     /**
-     * the class MemberOfGroupDescription returns the specific assertion
-     * description for the MemberOfGroup assertion
-     */
-    public static class MemberOfGroupDescription extends AssertionDescription {
-
-        public MemberOfGroupDescription(MemberOfGroup a) {
-            super(a);
-        }
-
-        /**
-         * The method returns the assertion parameters for MemeberOfGroup
-         * to be used in messages.
-         *
-         * @return the <CODE>Object[]</CODE> array of assertion parameters
-         */
-        protected Object[] parameters() {
-            return new Object[]{
-                ((MemberOfGroup)assertion).getGroupName()
-            };
-        }
-    }
-
-    /**
-     * the class SpecificUserDescription returns the specific assertion
-     * description for the SpecificUser
-     */
-    public static class SpecificUserDescription extends AssertionDescription {
-
-        public SpecificUserDescription(SpecificUser a) {
-            super(a);
-        }
-
-        /**
-         * The method returns the assertion parameters for MemeberOfGroup
-         * to be used in messages.
-         *
-         * @return the <CODE>Object[]</CODE> array of assertion parameters
-         */
-        protected Object[] parameters() {
-            SpecificUser userassertion = (SpecificUser)assertion;
-            String param = userassertion.getUserLogin();
-            if (param == null || param.length() < 1) param = userassertion.getUserName();
-            if (param == null || param.length() < 1) param = userassertion.getUserUid();
-            return new Object[]{
-                param
-            };
-        }
-    }
-
-    /**
      * the class SpecificUserDescription returns the specific assertion
      * description for the SpecificUser
      */
@@ -194,8 +144,6 @@ public class Descriptions {
     // maping assertions to assertion tree nodes
     static {
         descriptionsMap.put(SslAssertion.class, NoParam.class);
-        descriptionsMap.put(SpecificUser.class, SpecificUserDescription.class);
-        descriptionsMap.put(MemberOfGroup.class, MemberOfGroupDescription.class);
         descriptionsMap.put(OneOrMoreAssertion.class, NoParam.class);
         descriptionsMap.put(AllAssertion.class, NoParam.class);
         descriptionsMap.put(HttpBasic.class, NoParam.class);

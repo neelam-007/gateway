@@ -2,6 +2,8 @@ package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 
 /**
@@ -21,8 +23,9 @@ public class SslTransportNode extends AbstractLeafPaletteNode {
      * @param requireClientAuthentication true if the client authentication is required,
      *                                    false otherwise
      */
-    public SslTransportNode(boolean requireClientAuthentication){
-        super("Set SSL or TLS Transport", "com/l7tech/console/resources/ssl.gif");
+    public SslTransportNode(boolean requireClientAuthentication) {
+        super(new SslAssertion().meta().get(PALETTE_NODE_NAME).toString()
+                , new SslAssertion().meta().get(PALETTE_NODE_ICON).toString());
         this.requireClientAuthentication = requireClientAuthentication;
     }
 
