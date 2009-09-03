@@ -96,31 +96,15 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
 
     /**
      * Create a SecureAction which will only be enabled if the user meets the admin requirement (if specified)
-     * and if at least one of the specified assertion licenses is enabled.
+     * and the specified feature set license is enabled.
      *
-     * @param attemptedOperation  the operation that needs to be enabled to allow this action
-     * @param allowedAssertionLicenses  a collection of Assertion classes, any of which will, if licensed, enable this action
+     * @param attemptedOperation
+     * @param requiredFeaturesetLicense  required feature set name, ie "service:TrustStore"
      */
-    protected SecureAction(AttemptedOperation attemptedOperation, Collection<Class> allowedAssertionLicenses) {
+    protected SecureAction(AttemptedOperation attemptedOperation, String requiredFeaturesetLicense) {
         this.attemptedOperation = attemptedOperation;
-        if (allowedAssertionLicenses != null)
-            for (Class clazz : allowedAssertionLicenses)
-                featureSetNames.add(Assertion.getFeatureSetName(clazz));
-        initLicenseListener();
-    }
-
-    /**
-     * Create a SecureAction which will only be enabled if the user meets the admin requirement (if specified)
-     * and if at least one of the specified feature sets is enabled by the license.
-     *
-     * @param attemptedOperation  the operation that needs to be enabled to allow this action
-     * @param allowedFeatureSetNames zero or more feature set names, any of which will, if licensed, enable this action
-     */
-    protected SecureAction(AttemptedOperation attemptedOperation, String[] allowedFeatureSetNames) {
-        this.attemptedOperation = attemptedOperation;
-        for (String featureSet : allowedFeatureSetNames) {
-            featureSetNames.add(featureSet);
-        }
+        if (requiredFeaturesetLicense != null)
+            featureSetNames.add(requiredFeaturesetLicense);
         initLicenseListener();
     }
 
@@ -130,14 +114,62 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      *
      * @param attemptedOperation
      * @param requiredFeaturesetLicense  required feature set name, ie "service:TrustStore"
+     * @param lazyActionValuesFlag regardless of value, setActionValues() will not be called by super()'s constructor
      */
-    protected SecureAction(AttemptedOperation attemptedOperation, String requiredFeaturesetLicense) {
-        this(attemptedOperation);
+    protected SecureAction(AttemptedOperation attemptedOperation, String requiredFeaturesetLicense, boolean lazyActionValuesFlag) {
+        super(lazyActionValuesFlag);
+        this.attemptedOperation = attemptedOperation;
         if (requiredFeaturesetLicense != null)
             featureSetNames.add(requiredFeaturesetLicense);
         initLicenseListener();
     }
+    
+    /**
+     * Create a SecureAction which will only be enabled if the user meets the admin requirement (if specified)
+     * and if at least one of the specified feature sets is enabled by the license.
+     *
+     * @param attemptedOperation  the operation that needs to be enabled to allow this action
+     * @param allowedFeatureSetNames zero or more feature set names, any of which will, if licensed, enable this action
+     */
+    protected SecureAction(AttemptedOperation attemptedOperation, String[] allowedFeatureSetNames) {
+        this.attemptedOperation = attemptedOperation;
+        featureSetNames.addAll(Arrays.asList(allowedFeatureSetNames));
+        initLicenseListener();
+    }
 
+    /**
+     * Create a SecureAction which will only be enabled if the user meets the admin requirement (if specified)
+     * and if at least one of the specified assertion licenses is enabled.
+     *
+     * @param attemptedOperation  the operation that needs to be enabled to allow this action
+     * @param allowedAssertionLicenses  a collection of Assertion classes, any of which will, if licensed, enable this action
+     */
+    protected SecureAction(AttemptedOperation attemptedOperation, Collection<Class> allowedAssertionLicenses) {
+        this(attemptedOperation);
+        if (allowedAssertionLicenses != null)
+            for (Class clazz : allowedAssertionLicenses)
+                featureSetNames.add(Assertion.getFeatureSetName(clazz));
+        initLicenseListener();
+    }
+
+    /**
+     * Create a SecureAction which will only be enabled if the user meets the admin requirement (if specified)
+     * and if at least one of the specified assertion licenses is enabled.
+     *
+     * @param attemptedOperation  the operation that needs to be enabled to allow this action
+     * @param allowedAssertionLicenses  a collection of Assertion classes, any of which will, if licensed, enable this action
+     * @param lazyActionValuesFlag regardless of value, setActionValues() will not be called by super()'s constructor
+     */
+    protected SecureAction(AttemptedOperation attemptedOperation, Collection<Class> allowedAssertionLicenses, boolean lazyActionValuesFlag) {
+        super(lazyActionValuesFlag);
+
+        this.attemptedOperation = attemptedOperation;
+        if (allowedAssertionLicenses != null)
+            for (Class clazz : allowedAssertionLicenses)
+                featureSetNames.add(Assertion.getFeatureSetName(clazz));
+        initLicenseListener();
+    }
+    
     /** Registers this action as a license listener, if any license requirements were set on it. */
     private void initLicenseListener() {
         if (featureSetNames.isEmpty()) return;

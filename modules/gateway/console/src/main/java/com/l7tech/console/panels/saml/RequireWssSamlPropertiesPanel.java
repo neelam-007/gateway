@@ -7,6 +7,7 @@ package com.l7tech.console.panels.saml;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.panels.LegacyAssertionPropertyDialog;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 
 import javax.swing.*;
@@ -26,7 +27,7 @@ import java.util.Collection;
  * @author emil
  * @version Jan 18, 2005
  */
-public class RequireWssSamlPropertiesPanel extends JDialog {
+public class RequireWssSamlPropertiesPanel extends LegacyAssertionPropertyDialog {
     private JTabbedPane tabbedPane;
     private JButton buttonOk;
     private JButton buttonCancel;
@@ -40,13 +41,8 @@ public class RequireWssSamlPropertiesPanel extends JDialog {
      * Creates new wizard
      */
     public RequireWssSamlPropertiesPanel(RequireWssSaml assertion, Frame parent, boolean modal, boolean readOnly) {
-        super(parent);
-        if (assertion == null) {
-            throw new IllegalArgumentException();
-        }
+        super(parent, assertion, modal);
         this.assertion = assertion;
-        setTitle("SAML Constraints");
-        setModal(modal);
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
         /** Set content pane */

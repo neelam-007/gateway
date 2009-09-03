@@ -77,13 +77,6 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         putDefaultGetter(POLICY_NODE_FACTORY, new PolicyNodeFactoryMetadataFinder());
 
         putDefaultGetter(POLICY_NODE_NAME, new MetadataFinder() {
-            private String getDefaultName(AssertionMetadata meta) {
-                Object name = meta.get(SHORT_NAME);
-                if (name != null)
-                    return name.toString();
-                return meta.getAssertionClass().getSimpleName();
-            }
-
             @Override
             public Object get(final AssertionMetadata meta, String key) {
                 return cache(meta, key, getDefaultName(meta));
@@ -95,19 +88,26 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         putDefaultGetter(PROPERTIES_EDITOR_FACTORY, new PropertiesEditorFactoryMetadataFinder());
 
         putDefaultGetter(PALETTE_NODE_NAME, new MetadataFinder() {
-            private String getDefaultName(AssertionMetadata meta) {
-                Object name = meta.get(SHORT_NAME);
-                if (name != null)
-                    return name.toString();
-                return meta.getAssertionClass().getSimpleName();
+            @Override
+            public Object get(final AssertionMetadata meta, final String key) {
+                return cache(meta, key, getDefaultName(meta));
             }
+        });
 
+        putDefaultGetter(PROPERTIES_ACTION_NAME, new MetadataFinder() {
             @Override
             public Object get(final AssertionMetadata meta, String key) {
                 return cache(meta, key, getDefaultName(meta));
             }
         });
 
+    }
+
+    private String getDefaultName(final AssertionMetadata meta) {
+        final Object name = meta.get(SHORT_NAME);
+        if (name != null)
+            return name.toString();
+        return meta.getAssertionClass().getSimpleName();
     }
 
     public void updateModularAssertions() {

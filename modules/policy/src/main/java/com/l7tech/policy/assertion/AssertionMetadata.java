@@ -81,6 +81,7 @@ public interface AssertionMetadata {
 
     /**
      * String.  Name to display on "Properties..." pop-up menu action if using the DefaultAssertionPropertiesAction.
+     * Also name to display on the properties dialog window
      * <P/>
      * Defaults to SHORT_NAME converted to title caps, then followed by " Properties".
      * For example, a SHORT_NAME of "Request XML integrity" would lead to a default properties action name of

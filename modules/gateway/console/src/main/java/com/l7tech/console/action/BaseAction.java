@@ -43,10 +43,9 @@ public abstract class BaseAction extends AbstractAction {
      * subclass may rely on it's own constructor values before getName() can return
      * a valid value. The default assumes that the subclass can provide this information
      * before it's instance variables have been set
-     * @param differentSiguature
+     * @param lazyActionValues
      */
-    public BaseAction(boolean differentSiguature){
-
+    public BaseAction(boolean lazyActionValues){
     }
 
     protected void setActionValues() {

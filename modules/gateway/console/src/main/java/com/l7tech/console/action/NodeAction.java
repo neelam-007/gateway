@@ -8,6 +8,8 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
 import java.util.Arrays;
@@ -22,6 +24,9 @@ import java.util.logging.Level;
  * The developer need only subclass this abstract class and
  * define the <code>actionPerformed</code> method.
  *
+ * If a subclass would like to use meta data for the getName() value from SecureAction then simply do not
+ * override getName() as the implementation in NodeAction will use the meta data. For this to work correctly the
+ * subclass should call a constructor of NodeAction which takes the lazyActionValuesFlag
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -31,6 +36,22 @@ public abstract class NodeAction extends SecureAction {
 
     public NodeAction(AbstractTreeNode node) {
         this(node, null);
+    }
+
+    /**
+     * @param lazyActionValuesFlag regardless of value, BaseAction's setActionValues() method will not be called until
+     * all of our instance variables required are set
+     */
+    public NodeAction(AbstractTreeNode node, Class requiredAssertionLicense, boolean lazyActionValuesFlag) {
+        this(node, requiredAssertionLicense, null, lazyActionValuesFlag);
+    }
+
+    /**
+     * @param lazyActionValuesFlag regardless of value, BaseAction's setActionValues() method will not be called until
+     * all of our instance variables required are set
+     */
+    public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedOperation attemptedOperation, boolean lazyActionValuesFlag) {
+        this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation, lazyActionValuesFlag);
     }
 
     /**
@@ -44,19 +65,40 @@ public abstract class NodeAction extends SecureAction {
         this(node, requiredAssertionLicense, null);
     }
 
+    public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedOperation attemptedOperation) {
+        this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation);
+    }
 
     public NodeAction(AbstractTreeNode node, Collection<Class> allowedAssertionLicenses, AttemptedOperation attemptedOperation) {
         super(attemptedOperation, allowedAssertionLicenses);
         this.node = node;
     }
-
-    public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedOperation attemptedOperation) {
-        this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation);
+    
+    public NodeAction(AbstractTreeNode node, String featureSetNames, AttemptedOperation attemptedOperation) {
+        super(featureSetNames, attemptedOperation);
+        this.node = node;
     }
 
-    public NodeAction(AbstractTreeNode node, String featureSetNames, AttemptedOperation attemptedOperation) {
-        super(attemptedOperation, featureSetNames);
+    /**
+     * @param lazyActionValuesFlag regardless of value, BaseAction's setActionValues() method will not be called until
+     * all of our instance variables required are set
+     */
+    public NodeAction(AbstractTreeNode node, String featureSetNames, AttemptedOperation attemptedOperation, boolean lazyActionValuesFlag) {
+        super(attemptedOperation, featureSetNames, lazyActionValuesFlag);
         this.node = node;
+        //now call setActionValues as we've got our node instance variable set
+        setActionValues();
+    }
+
+    /**
+     * @param lazyActionValuesFlag regardless of value, BaseAction's setActionValues() method will not be called until
+     * all of our instance variables required are set
+     */
+    public NodeAction(AbstractTreeNode node, Collection<Class> allowedAssertionLicenses, AttemptedOperation attemptedOperation, boolean lazyActionValuesFlag) {
+        super(attemptedOperation, allowedAssertionLicenses, lazyActionValuesFlag);
+        this.node = node;
+        //now call setActionValues as we've got our node instance variable set
+        setActionValues();
     }
 
     /**
@@ -111,5 +153,17 @@ public abstract class NodeAction extends SecureAction {
         }
 
         return null;
+    }
+
+    /**
+     * Implementation of getName() all subclasses can use when they want to delegate the name of the context click
+     * action to meta data
+     * @return
+     */
+    @Override
+    public String getName() {
+        if(node == null) return super.getName();
+        final Assertion as = node.asAssertion();
+        return as.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString();
     }
 }
