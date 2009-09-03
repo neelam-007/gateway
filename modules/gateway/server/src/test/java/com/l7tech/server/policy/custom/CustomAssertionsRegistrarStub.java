@@ -37,17 +37,25 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
         CustomAssertions.register(eh);
     }
 
+    @Override
     public byte[] getAssertionClass(String className) {
         return null;
     }
 
+    @Override
     public byte[] getAssertionResourceBytes(String path) {
+        return null;
+    }
+
+    @Override
+    public AssertionResourceData getAssertionResourceData( String name ) {
         return null;
     }
 
     /**
      * @return the list of all assertions known to the runtime
      */
+    @Override
     public Collection getAssertions() {
         Set customAssertionDescriptors = CustomAssertions.getAllDescriptors();
         return asCustomAssertionHolders(customAssertionDescriptors);
@@ -58,6 +66,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @return the list of all assertions known to the runtime
      *         for a give n category
      */
+    @Override
     public Collection getAssertions(Category c) {
         final Set customAssertionDescriptors = CustomAssertions.getDescriptors(c);
         return asCustomAssertionHolders(customAssertionDescriptors);
@@ -70,6 +79,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @param a the assertion class
      * @return the custom assertion UI class or <b>null</b>
      */
+    @Override
     public CustomAssertionUI getUI(String a) {
         return CustomAssertions.getUI(a);
     }
@@ -82,6 +92,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @return the policy tree
      * @throws IOException              on policy format error
      */
+    @Override
     public Assertion resolvePolicy(String xml) throws IOException {
         return WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
     }
@@ -93,6 +104,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @param a the assertion class
      * @return the custom assertion descriptor class or <b>null</b>
      */
+    @Override
     public CustomAssertionDescriptor getDescriptor(Class a) {
         return CustomAssertions.getDescriptor(a);
     }

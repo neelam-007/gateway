@@ -111,6 +111,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     }
 
     public void updateModularAssertions() {
+        long startTime = System.currentTimeMillis();
         for (Assertion prototype : modulePrototypes)
             unregisterAssertion(prototype);
         if (!TopComponents.getInstance().isApplet())
@@ -120,8 +121,9 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         try {
             ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
             Collection<ClusterStatusAdmin.ModuleInfo> modules = cluster.getAssertionModuleInfo();
-            for (ClusterStatusAdmin.ModuleInfo module : modules)
+            for (ClusterStatusAdmin.ModuleInfo module : modules) {
                 registerAssertionsFromModule(module);
+            }
         } catch (RuntimeException e) {
             if (ExceptionUtils.causedBy(e, NoSuchMethodException.class)) {
                 logger.fine("Gateway does not support modular assertions");
@@ -133,6 +135,8 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             }
 
             throw new RuntimeException("Unexpected error getting modular assertion info: " + ExceptionUtils.getMessage(e), e);
+        } finally {
+            logger.info( "Loading modular assertions took " +(System.currentTimeMillis()-startTime)+ "ms." );
         }
     }
 

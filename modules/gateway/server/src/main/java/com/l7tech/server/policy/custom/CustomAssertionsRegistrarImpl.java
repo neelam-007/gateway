@@ -1,21 +1,23 @@
 package com.l7tech.server.policy.custom;
 
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.AssertionModule;
+import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.util.ModuleClassLoader;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -27,6 +29,8 @@ import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * The server side CustomAssertionsRegistrar implementation.
@@ -44,6 +48,7 @@ public class CustomAssertionsRegistrarImpl
         this.assertionRegistry = assertionRegistry;
     }
 
+    @Override
     public byte[] getAssertionClass(String className) {
         // ensure a name such as "com.something.MyClass"
         if (className == null || className.lastIndexOf('.') <= className.indexOf('.'))
@@ -53,6 +58,7 @@ public class CustomAssertionsRegistrarImpl
         return getAssertionResourceBytes(classAsResource);
     }
 
+    @Override
     public byte[] getAssertionResourceBytes(String path) {
         if (logger.isLoggable(Level.FINEST))
             logger.finest("Serving custom assertion resource: " + path);
@@ -60,19 +66,9 @@ public class CustomAssertionsRegistrarImpl
         if (customAssertionClassloader == null)
             return null;
 
-        InputStream classIn = null;
-        try {
-            if (isCustomAssertionResource(path)) {
-                classIn = customAssertionClassloader.getResourceAsStream(path);
-                if (classIn != null)
-                    return IOUtils.slurpStream(classIn);
-            }
-        }
-        catch(IOException ioe) {
-            logger.log(Level.WARNING, "Error loading custom assertion resource: " + path + ": " + ExceptionUtils.getMessage(ioe), ioe);
-        }
-        finally {
-            ResourceUtils.closeQuietly(classIn);
+        byte[] data = getCustomAssertionResourceBytes( path );
+        if ( data != null ) {
+            return data;
         }
 
         // Check for modular assertion resource
@@ -91,9 +87,128 @@ public class CustomAssertionsRegistrarImpl
         return null;
     }
 
+    @Override
+    public AssertionResourceData getAssertionResourceData( final String resourcePath ) {
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("Serving custom assertion resource data: " + resourcePath);
+
+        if (customAssertionClassloader == null)
+            return null;
+
+        byte[] data = getCustomAssertionResourceBytes( resourcePath );
+        if ( data != null ) {
+            return new AssertionResourceData(resourcePath, false, data);
+        }
+
+        return zip( resourcePath );
+    }
+
+    private byte[] getCustomAssertionResourceBytes( final String path ) {
+        InputStream classIn = null;
+        try {
+            if (isCustomAssertionResource(path)) {
+                classIn = customAssertionClassloader.getResourceAsStream(path);
+                if (classIn != null)
+                    return IOUtils.slurpStream(classIn);
+            }
+        }
+        catch(IOException ioe) {
+            logger.log(Level.WARNING, "Error loading custom assertion resource: " + path + ": " + ExceptionUtils.getMessage(ioe), ioe);
+        }
+        finally {
+            ResourceUtils.closeQuietly(classIn);
+        }
+
+        return null;
+    }
+
+    private AssertionResourceData zip( final String resourcePath ) {
+        AssertionResourceData data = null;
+
+        final long startTime = System.currentTimeMillis();
+
+        Set<AssertionModule> modules = assertionRegistry.getLoadedModules();
+        if ( modules != null ) {
+
+            BufferPoolByteArrayOutputStream baos = null;
+            try {
+                baos= new BufferPoolByteArrayOutputStream(64*1024);
+                ZipOutputStream zipOut = null;
+                try {
+                    for ( AssertionModule module : modules ) {
+                        byte[] resourceData = module.getResourceBytes( resourcePath, true );
+                        if ( resourceData != null ) {
+                            String[] paths = module.getClientResources();
+                            if ( paths != null ) {
+                                for ( String path : paths ) {
+                                    if ( samePackage( resourcePath, path ) ) {
+                                        byte[] resourceBytes = module.getResourceBytes( path, true );
+                                        if ( resourceBytes == null ) {
+                                            logger.warning( "Missing resource '"+path+"'." );
+                                            continue;
+                                        }
+                                        if ( zipOut == null ) { // zip must have an entry, so creation is lazy
+                                            zipOut = new ZipOutputStream( new NonCloseableOutputStream(baos) );
+
+                                        }
+                                        zipOut.putNextEntry( new ZipEntry( path ) );
+                                        zipOut.write( resourceBytes );
+                                        zipOut.closeEntry();
+                                    }
+                                }
+                            }
+
+                            if ( zipOut == null ) {
+                                // Resource not indexed, so return single item
+                                data = new AssertionResourceData( resourcePath, false, resourceData);
+                            }
+                            break;
+                        }
+                    }
+                } catch (IOException e) {
+                    logger.log( Level.WARNING, "Error creating resource ZIP.", e );
+                } finally {
+                    ResourceUtils.closeQuietly( zipOut );
+                }
+
+                if ( zipOut != null ) {
+                    data = new AssertionResourceData( getPackagePath(resourcePath), true, baos.toByteArray());
+                }
+            } finally {
+                ResourceUtils.closeQuietly( baos );
+            }
+        }
+
+        if ( data != null && logger.isLoggable( Level.FINE )) {
+            logger.log( Level.FINE, "Creating " + data.getData().length + " byte assertion zip took " +(System.currentTimeMillis()-startTime)+ "ms." );
+        }
+        
+        return data;
+    }
+
+    private boolean samePackage( final String path1, final String path2 ) {
+        return getPackagePath( path1 ).equals( getPackagePath( path2 ) );
+    }
+
+    private String getPackagePath( final String path ) {
+        String packagePath = path;
+
+        if ( packagePath.startsWith("/") ) {
+            packagePath = packagePath.substring( 1 );
+        }
+
+        int index = packagePath.lastIndexOf( '/' );
+        if ( index >= 0 ) {
+            packagePath = packagePath.substring( 0, index );
+        }
+
+        return packagePath;
+    }
+
     /**
      * @return the list of all assertions known to the runtime
      */
+    @Override
     public Collection getAssertions() {
         Set customAssertionDescriptors = CustomAssertions.getDescriptors();
         return asCustomAssertionHolders(customAssertionDescriptors);
@@ -104,6 +219,7 @@ public class CustomAssertionsRegistrarImpl
      * @return the list of all assertions known to the runtime
      *         for a give n category
      */
+    @Override
     public Collection getAssertions( Category c) {
         final Set customAssertionDescriptors = CustomAssertions.getDescriptors(c);
         return asCustomAssertionHolders(customAssertionDescriptors);
@@ -118,6 +234,7 @@ public class CustomAssertionsRegistrarImpl
      * @param a the assertion class
      * @return the custom assertion descriptor class or <b>null</b>
      */
+    @Override
     public CustomAssertionDescriptor getDescriptor(Class a) {
         return CustomAssertions.getDescriptor(a);
     }
@@ -129,6 +246,7 @@ public class CustomAssertionsRegistrarImpl
      * @param assertionClassName the assertion class name
      * @return the custom assertion UI class or <b>null</b>
      */
+    @Override
     public CustomAssertionUI getUI(String assertionClassName) {
         return CustomAssertions.getUI(assertionClassName);
     }
@@ -142,6 +260,7 @@ public class CustomAssertionsRegistrarImpl
      * @return the policy tree
      * @throws IOException              on policy format error
      */
+    @Override
     public Assertion resolvePolicy(String xml) throws IOException {
         return ((WspReader)getApplicationContext().getBean("wspReader", WspReader.class)).parsePermissively(xml, WspReader.OMIT_DISABLED);
     }
@@ -156,6 +275,7 @@ public class CustomAssertionsRegistrarImpl
     /**
      * Perform bean initialization after properties are set.
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         if (serverConfig == null) {
             throw new IllegalArgumentException("Server Config is required");

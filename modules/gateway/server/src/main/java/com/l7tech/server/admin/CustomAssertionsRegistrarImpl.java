@@ -26,17 +26,25 @@ public class CustomAssertionsRegistrarImpl
         this.delegate = delegate;
     }
 
+    @Override
     public byte[] getAssertionClass(String className) {
         return delegate.getAssertionClass(className);
     }
 
+    @Override
     public byte[] getAssertionResourceBytes(String path) {
         return delegate.getAssertionResourceBytes(path);
+    }
+
+    @Override
+    public AssertionResourceData getAssertionResourceData( String path ) {
+        return delegate.getAssertionResourceData(path);
     }
 
     /**
      * @return the list of all assertions known to the runtime
      */
+    @Override
     public Collection getAssertions() {
         return delegate.getAssertions();
     }
@@ -46,6 +54,7 @@ public class CustomAssertionsRegistrarImpl
      * @return the list of all assertions known to the runtime
      *         for a give n category
      */
+    @Override
     public Collection getAssertions(Category c) {
         return delegate.getAssertions(c);
     }
@@ -57,6 +66,7 @@ public class CustomAssertionsRegistrarImpl
      * @param a the assertion class
      * @return the custom assertion descriptor class or <b>null</b>
      */
+    @Override
     public CustomAssertionDescriptor getDescriptor(Class a) {
         return delegate.getDescriptor(a);
     }
@@ -68,6 +78,7 @@ public class CustomAssertionsRegistrarImpl
      * @param a the assertion class name
      * @return the custom assertion UI class or <b>null</b>
      */
+    @Override
     public CustomAssertionUI getUI(String a) {
         return delegate.getUI(a);
     }
@@ -80,11 +91,13 @@ public class CustomAssertionsRegistrarImpl
      * @return the policy tree
      * @throws java.io.IOException      on policy format error
      */
+    @Override
     public Assertion resolvePolicy(String xml) throws IOException {
         return delegate.resolvePolicy(xml);
     }
 
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         if (delegate == null) {
             throw new IllegalArgumentException("custom assertion registrar delegate required");

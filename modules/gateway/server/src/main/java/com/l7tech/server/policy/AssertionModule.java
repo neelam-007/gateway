@@ -1,12 +1,20 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.util.ClassUtils;
+import com.l7tech.util.ExceptionUtils;
 
-import java.io.IOException;
 import java.io.Closeable;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.jar.JarFile;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Represents a module jarfile that contains at least one assertion, loaded from /ssg/modules/assertions.
@@ -14,6 +22,8 @@ import java.util.jar.JarFile;
  * This takes ownership of the jar file and keeps it open -- call {@link #close()} to close it.
  */
 public class AssertionModule implements Closeable {
+    private static final Logger logger = Logger.getLogger(AssertionModule.class.getName());
+
     private final String moduleName;
     private final JarFile jarfile;
     private final long jarfileModifiedTime;
@@ -74,6 +84,48 @@ public class AssertionModule implements Closeable {
     }
 
     /**
+     * Get the list of resources that are likely necessary for the console.
+     *
+     * @return The list of resource paths.
+     */
+    public String[] getClientResources() {
+        Set<String> resources = new LinkedHashSet<String>();
+
+        for ( Assertion assertion : getAssertionPrototypes() ) {
+            AssertionMetadata meta = assertion.meta();
+            try {
+                Collection<URL> urls = ClassUtils.listResources( meta.getAssertionClass(), "/AAR-INF/assertion.index");
+                for ( URL url : urls ) {
+                    String path = url.getFile();
+                    int index = path.lastIndexOf( "AAR-INF/" );
+                    if ( index > 0 ) {
+                        path = path.substring( index + 8 );
+                    }
+                    resources.add( path );
+                }
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Unable to read assertion index for module " + getName() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+
+            try {
+                Collection<URL> urls = ClassUtils.listResources( meta.getAssertionClass(), "/AAR-INF/console.index");
+                for ( URL url : urls ) {
+                    String path = url.getFile();
+                    int index = path.lastIndexOf( "AAR-INF/" );
+                    if ( index > 0 ) {
+                        path = path.substring( index + 8 );
+                    }
+                    resources.add( path );
+                }
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Unable to read console index for module " + getName() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
+
+        return resources.toArray( new String[resources.size()] );
+    }
+
+    /**
      * Check if this module includes any classes in the specified package.
      *
      * @param packageName the package to check
@@ -114,6 +166,7 @@ public class AssertionModule implements Closeable {
      *
      * @throws IOException if there is an error closing the jarfile or the class loader
      */
+    @Override
     public void close() throws IOException {
         try {
             classLoader.close();

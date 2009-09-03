@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.gateway.common.admin.Administrative;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 
 /**
@@ -33,6 +34,14 @@ public interface CustomAssertionsRegistrar {
      */
     @Administrative(licensed=false)
     byte[] getAssertionResourceBytes(String path);
+
+    /**
+     * Get resource data for custom / modular resources.
+     *
+     * @return the resource data, or null
+     */
+    @Administrative(licensed=false)
+    AssertionResourceData getAssertionResourceData( final String name );
 
     /**
      * @return the list of all assertions known to the runtime
@@ -80,4 +89,51 @@ public interface CustomAssertionsRegistrar {
      */
     @Administrative(licensed=false)
     CustomAssertionUI getUI(String assertionClassName);
+
+    /**
+     * Assertion data is used to wrap one or more resources.
+     */
+    static final class AssertionResourceData implements Serializable {
+        private final String resourceName;
+        private final boolean zip;
+        private final byte[] data;
+
+        public AssertionResourceData( final String resourceName,
+                                      final boolean zip,
+                                      final byte[] data ) {
+            this.resourceName = resourceName;
+            this.zip = zip;
+            this.data = data;
+        }
+
+        /**
+         * Get the resource name.
+         *
+         * <p>This will be the class/resource name for a single resource or the
+         * package name for a ZIP.</p>
+         *
+         * @return The resource name.
+         */
+        public String getResourceName() {
+            return resourceName;
+        }
+
+        /**
+         * Is the data a ZIP or single resource.
+         *
+         * @return True if a ZIP
+         */
+        public boolean isZip() {
+            return zip;
+        }
+
+        /**
+         * Get the data.
+         *
+         * @return The data bytes (never null)
+         */
+        public byte[] getData() {
+            return data;
+        }
+    }
 }

@@ -35,7 +35,7 @@
             <chainedmapper>
                 <mapper type="regexp" from=".*[/\\]build[/\\]classes[/\\](.*)" to="\1"/>
                 <packagemapper from="*.class" to="*"/>
-            </chainedmapper>            
+            </chainedmapper>
         </pathconvert>
         <fail unless="moduleAssertionList">Unable to detect any assertion classes, please declare assertions using the moduleAssertionList property.</fail>
         <echo level="info">Detected assertions: ${moduleAssertionList}</echo>
@@ -58,6 +58,27 @@
     <!-- Create AAR file -->
     <target name="-aar" depends="compile, -detect">
         <property name="privateLibraries" value=""/>
+
+        <!-- Build indexes -->
+        <mkdir dir="${package.classes.dir}/AAR-INF"/>
+        <fileset id="aar.assertion.fileset" dir="${package.classes.dir}" casesensitive="yes">
+            <exclude name="**/console/**/*"/>
+            <exclude name="**/client/**/*"/>
+            <exclude name="**/server/**/*"/>
+        </fileset>
+        <pathconvert property="aar.assertion.fileset.property" pathsep="${line.separator}" dirsep="/" refid="aar.assertion.fileset">
+            <map from="${package.classes.dir}" to=""/>
+        </pathconvert>
+        <echo file="${package.classes.dir}/AAR-INF/assertion.index">${aar.assertion.fileset.property}</echo>
+        <replaceregexp file="${package.classes.dir}/AAR-INF/assertion.index" match="^[/\\]" replace="" byline="true"/>
+        <fileset id="aar.console.fileset" dir="${package.classes.dir}" casesensitive="yes">
+            <include name="**/console/**/*"/>
+        </fileset>
+        <pathconvert property="aar.console.fileset.property" pathsep="${line.separator}" dirsep="/" refid="aar.console.fileset">
+            <mapper type="regexp" from="[/\\](.*)" to="\1"/>
+        </pathconvert>
+        <echo file="${package.classes.dir}/AAR-INF/console.index">${aar.console.fileset.property}</echo>
+        <replaceregexp file="${package.classes.dir}/AAR-INF/console.index" match="^[/\\]" replace="" byline="true"/>
         <jar destfile="build/${moduleName}.${moduleFileExtension}" duplicate="fail">
             <manifest>
                 <attribute name="Specification-Title" value="ModularAssertion"/>
@@ -76,7 +97,7 @@
                 <!-- space-separated list of filename patterns, with simple * and ? support, ie:  "foov?-L7*.jar blatch*.jar" -->
                 <attribute name="ModularAssertion-Private-Libraries" value="${privateLibraries}"/>
             </manifest>
-            
+
             <fileset dir="${package.classes.dir}"/>
             <zipfileset prefix="AAR-INF/lib" dir="build/dependency"/>
         </jar>
