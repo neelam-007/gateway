@@ -16,10 +16,11 @@ public class AssertionPath implements Serializable {
      * Path representing the parent, null if lastPathComponent represents
      * the root.
      * */
-    private AssertionPath parentPath;
+    private final AssertionPath parentPath;
     /** Last path assertion. */
-    private Assertion lastPathComponent;
+    private final Assertion lastPathComponent;
     private int pathOrder;
+    private int hashCode;
 
     /**
      * Construct the new assertion path from the given <code>Assertion</code>
@@ -34,6 +35,8 @@ public class AssertionPath implements Serializable {
         lastPathComponent = assertions[assertions.length - 1];
         if (assertions.length > 1)
             parentPath = new AssertionPath(assertions, assertions.length - 1);
+        else
+            parentPath = null;
     }
 
     /**
@@ -57,6 +60,12 @@ public class AssertionPath implements Serializable {
         this.lastPathComponent = ap.lastPathComponent;
     }
 
+    protected AssertionPath( final AssertionPath parentPath,
+                             final Assertion lastPathComponent ) {
+        this.parentPath = parentPath;
+        this.lastPathComponent = lastPathComponent;
+    }
+
     /**
      * Constructs a new AssertionPath with the identified path components of
      * length <code>length</code>.
@@ -65,6 +74,8 @@ public class AssertionPath implements Serializable {
         lastPathComponent = assertionPath[length - 1];
         if (length > 1)
             parentPath = new AssertionPath(assertionPath, length - 1);
+        else
+            parentPath = null;
     }
 
     /**
@@ -78,10 +89,7 @@ public class AssertionPath implements Serializable {
      */
     public AssertionPath addAssertion(Assertion child)
       throws NullPointerException {
-        AssertionPath ap = new AssertionPath(this);
-        ap.parentPath = this;
-        ap.lastPathComponent = child;
-        return ap;
+        return new AssertionPath(this, child);
     }
 
     /**
@@ -260,7 +268,12 @@ public class AssertionPath implements Serializable {
      */
     @Override
     public int hashCode() {
-        return lastPathComponent.hashCode() + (parentPath==null ? 0 : (17 * parentPath.getPathCount()) + (13 * parentPath.hashCode()));
+        int hashCode = this.hashCode;
+        if ( hashCode == 0 ) {
+            hashCode = lastPathComponent.hashCode() + (parentPath==null ? 0 : (17 * parentPath.getPathCount()) + (13 * parentPath.hashCode()));
+            this.hashCode = hashCode;
+        }
+        return hashCode;
     }
 
     /**

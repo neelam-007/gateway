@@ -42,6 +42,7 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
         this.inlineDisabled = inlineDisabled;
     }
 
+    @Override
     public Assertion translate(Assertion sourceAssertion) throws PolicyAssertionException {
         if (!(sourceAssertion instanceof Include)) return sourceAssertion;
 
@@ -82,6 +83,7 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
         }
     }
 
+    @Override
     public void translationFinished(Assertion sourceAssertion) {
         if (!(sourceAssertion instanceof Include)) return;
 
@@ -104,7 +106,7 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
         } else if(rootAssertion instanceof Include) {
             Include includeAssertion = (Include)rootAssertion;
             if(includeAssertion.retrieveFragmentPolicy() != null) {
-                policyFragments.put(includeAssertion.getPolicyName(), includeAssertion.retrieveFragmentPolicy());
+                policyFragments.put(includeAssertion.getPolicyGuid(), includeAssertion.retrieveFragmentPolicy());
             }
         }
     }
@@ -124,8 +126,8 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
             }
         } else if(rootAssertion instanceof Include) {
             Include includeAssertion = (Include)rootAssertion;
-            if(policyFragments.containsKey(includeAssertion.getPolicyName())) {
-                includeAssertion.replaceFragmentPolicy(policyFragments.get(includeAssertion.getPolicyName()));
+            if(policyFragments.containsKey(includeAssertion.getPolicyGuid())) {
+                includeAssertion.replaceFragmentPolicy(policyFragments.get(includeAssertion.getPolicyGuid()));
             }
         }
     }
