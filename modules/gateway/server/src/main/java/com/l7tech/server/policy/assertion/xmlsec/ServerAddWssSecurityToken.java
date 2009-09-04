@@ -70,6 +70,7 @@ public class ServerAddWssSecurityToken extends ServerAddWssSignature<AddWssSecur
             }
             wssReq.setUsernameTokenCredentials(new UsernameTokenImpl(name, pass));
             wssReq.setSignUsernameToken(true);
+            wssReq.setSignTimestamp();
             return 1;
         } else {
             auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_UNSUPPORTED_TYPE, assertion.getTokenType().getName());
