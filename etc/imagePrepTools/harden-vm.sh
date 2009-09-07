@@ -10,6 +10,9 @@ rm -f /var/lib/mysql/*.log
 echo "Cleaning logs..."
 rm -f /var/log/*/*
 find /var/log -maxdepth 1 -type f | grep -v '/btmp$' | xargs rm -f
+service ssg stop
+rm -f /opt/SecureSpan/Appliance/controller/var/logs/*.log
+rm -f /opt/SecureSpan/Gateway/node/default/var/logs/*.log
 
 echo "Zeroing disk space..."
 # Zero out space only on hardware image, no VMWare
@@ -40,6 +43,7 @@ echo "Done, now run:"
 echo ""
 echo "export HISTSIZE=0"
 echo "rm -f /root/.bash_history"
+echo "/usr/bin/vmware-config-tools.pl -d"
 echo "rm $0"
 echo "poweroff -d"
 echo ""
