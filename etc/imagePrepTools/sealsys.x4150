@@ -185,6 +185,8 @@ seal)
   # Delete all log files.
   rm -f /var/log/*/*
   rm -f /var/log/*
+  #stop the ssg services and clean up their logs
+  service ssg stop
   rm -f /opt/SecureSpan/Appliance/controller/var/logs/*.log
   rm -f /opt/SecureSpan/Gateway/node/default/var/logs/*.log
 
