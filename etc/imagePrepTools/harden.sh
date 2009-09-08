@@ -193,8 +193,8 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   fi
   echo '-a exit,always -S unlink -S rmdir' >> /etc/audit/audit.rules
   echo '-w /var/log/audit/' >> /etc/audit/audit.rules
-  echo '-w /etc/auditd.conf' >> /etc/audit/audit.rules
-  echo '-w /etc/audit.rules' >> /etc/audit/audit.rules
+  echo '-w /etc/audit/auditd.conf' >> /etc/audit/audit.rules
+  echo '-w /etc/audit/audit.rules' >> /etc/audit/audit.rules
   echo '-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon' >> /etc/audit/audit.rules
   echo '-a exit,always -S settimeofday -S setrlimit -S setdomainname' >> /etc/audit/audit.rules
   echo '# The mysqld program is expected to call sched_setscheduler' >> /etc/audit/audit.rules
@@ -656,8 +656,8 @@ if [ "$ISNCES" ] ; then
 fi
 
 if [ "$ISVM" ] ; then 
-	if [ ! "`egrep 'max_log_file = 5' /etc/auditd.conf`" ] ; then
-		echo "Error - bad max_log_file setting for /etc/auditd.conf"
+	if [ ! "`egrep 'max_log_file = 5' /etc/audit/auditd.conf`" ] ; then
+		echo "Error - bad max_log_file setting for /etc/audit/auditd.conf"
 	fi
 fi
 
