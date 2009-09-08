@@ -174,31 +174,31 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   # GEN002740
   # VM has max_log_file set to 5, hardware is 125
   if [ "$ISVM" ] ; then
-	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 5/' /etc/auditd.conf
+	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 5/' /etc/audit/auditd.conf
   fi
   if [ "$ISHARDWARE" ] ; then
-	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 125/' /etc/auditd.conf
+	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 125/' /etc/audit/auditd.conf
   fi
   if [ "$ISNCES" ] ; then
-	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 125/' /etc/auditd.conf
+	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 125/' /etc/audit/auditd.conf
   fi
 
   # Remove audit.rules added contents first to ensure not duplication
-  sed -i -e '/^\-a exit,always \-S open \-F success=0$/d' /etc/audit.rules
-  sed -i -e '/^\-a exit,always \-S unlink \-S rmdir/, /sched_setscheduler \-F euid\!=27$/d' /etc/audit.rules
+  sed -i -e '/^\-a exit,always \-S open \-F success=0$/d' /etc/audit/audit.rules
+  sed -i -e '/^\-a exit,always \-S unlink \-S rmdir/, /sched_setscheduler \-F euid\!=27$/d' /etc/audit/audit.rules
 
   # GEN002760
   if [ "$ISNCES" ] ; then 
-	  echo '-a exit,always -S open -F success=0' >> /etc/audit.rules
+	  echo '-a exit,always -S open -F success=0' >> /etc/audit/audit.rules
   fi
-  echo '-a exit,always -S unlink -S rmdir' >> /etc/audit.rules
-  echo '-w /var/log/audit/' >> /etc/audit.rules
-  echo '-w /etc/auditd.conf' >> /etc/audit.rules
-  echo '-w /etc/audit.rules' >> /etc/audit.rules
-  echo '-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon' >> /etc/audit.rules
-  echo '-a exit,always -S settimeofday -S setrlimit -S setdomainname' >> /etc/audit.rules
-  echo '# The mysqld program is expected to call sched_setscheduler' >> /etc/audit.rules
-  echo '-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27' >> /etc/audit.rules
+  echo '-a exit,always -S unlink -S rmdir' >> /etc/audit/audit.rules
+  echo '-w /var/log/audit/' >> /etc/audit/audit.rules
+  echo '-w /etc/auditd.conf' >> /etc/audit/audit.rules
+  echo '-w /etc/audit.rules' >> /etc/audit/audit.rules
+  echo '-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon' >> /etc/audit/audit.rules
+  echo '-a exit,always -S settimeofday -S setrlimit -S setdomainname' >> /etc/audit/audit.rules
+  echo '# The mysqld program is expected to call sched_setscheduler' >> /etc/audit/audit.rules
+  echo '-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27' >> /etc/audit/audit.rules
 
   # GEN002960
   touch /etc/cron.allow
@@ -415,19 +415,19 @@ halt:*:13637:0:99999:7:::' /etc/shadow
 
   # GEN002740
   # I don't think we need to change this on soften, it'll be set correctly by the harden() regardless
-  #sed -i -e 's/max_log_file = 125/max_log_file = 5/' /etc/auditd.conf
+  #sed -i -e 's/max_log_file = 125/max_log_file = 5/' /etc/audit/auditd.conf
 
   # GEN002760
   sed -i -e '/-a exit,always -S open -F success=0/d' \
   			-e '/-a exit,always -S unlink -S rmdir/d' \
   			-e '/-w \/var\/log\/audit\//d' \
-         -e '/-w \/etc\/auditd.conf/d' \
-         -e '/-w \/etc\/audit.rules/d' \
+         -e '/-w \/etc\/audit\/auditd.conf/d' \
+         -e '/-w \/etc\/audit\/audit.rules/d' \
          -e '/-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon/d' \
          -e '/-a exit,always -S settimeofday -S setrlimit -S setdomainname/d' \
          -e '/# The mysqld program is expected to call sched_setscheduler/d' \
          -e '/-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27/d' \
-      /etc/audit.rules
+      /etc/audit/audit.rules
   # GEN002960
   rm -f /etc/cron.allow
   sed -i -e '/ssgconfig/d' /etc/cron.deny
@@ -644,14 +644,14 @@ $F2"
 fi
 
 # GEN002740 GEN002760
-F="/etc/audit.rules"
+F="/etc/audit/audit.rules"
 
 if [ "$ISNCES" ] ; then
 	if [ ! "`/sbin/chkconfig --list auditd | grep "3:on"`" ] ; then 
 		echo "Error - auditd missing from runlevel 3"
 	fi
 	if [ ! "`grep -- "-a exit,always -S open -F success=0" $F`" ] ; then
-	  echo "Error - Missing settings in /etc/audit.rules"
+	  echo "Error - Missing settings in /etc/audit/audit.rules"
 	fi
 fi
 
@@ -665,59 +665,59 @@ fi
 #if [ "$ISNCES" ] ; then
 #	  ! "`grep -- "-a exit,always -S unlink -S rmdir" $F`" -o \
 #	  ! "`grep -- "-w /var/log/audit/" $F`" -o \
-#	  ! "`grep -- "-w /etc/auditd.conf" $F`" -o \
-#	  ! "`grep -- "-w /etc/audit.rules" $F`" -o \
+#	  ! "`grep -- "-w /etc/audit/auditd.conf" $F`" -o \
+#	  ! "`grep -- "-w /etc/audit/audit.rules" $F`" -o \
 #	  ! "`grep -- "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
 #	  ! "`grep -- "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
 #	  ! "`grep -- "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
 #	  ! "`grep -- "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
-#	  echo "Error - Missing settings in /etc/audit.rules"
+#	  echo "Error - Missing settings in /etc/audit/audit.rules"
 #	fi
 #fi
 
 # Non NCES, non VM
 if [ "$ISHARDWARE" ] ; then 
-	if [ ! "`egrep 'max_log_file = 125' /etc/auditd.conf`" ] ; then
-		echo "Error - bad max_log_file setting for /etc/auditd.conf"
+	if [ ! "`egrep 'max_log_file = 125' /etc/audit/auditd.conf`" ] ; then
+		echo "Error - bad max_log_file setting for /etc/audit/auditd.conf"
 	fi
 fi
 
 # for all
 if [ ! "`grep -- "-a exit,always -S unlink -S rmdir" $F`" -o \
 	  ! "`grep -- "-w /var/log/audit/" $F`" -o \
-	  ! "`grep -- "-w /etc/auditd.conf" $F`" -o \
-	  ! "`grep -- "-w /etc/audit.rules" $F`" -o \
+	  ! "`grep -- "-w /etc/audit/auditd.conf" $F`" -o \
+	  ! "`grep -- "-w /etc/audit/audit.rules" $F`" -o \
 	  ! "`grep -- "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
 	  ! "`grep -- "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
 	  ! "`grep -- "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
 	  ! "`grep -- "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
-	  echo "Error - Missing settings in /etc/audit.rules"
+	  echo "Error - Missing settings in /etc/audit/audit.rules"
 fi
 
 # Settings for virtual machines
 if [ "$ISVM" ] ; then
-	if [ ! "`grep max_log_file /etc/auditd.conf | grep 5`" ] ; then
-		echo "Error - bad max_log_file setting for /etc/auditd.conf"
+	if [ ! "`grep max_log_file /etc/audit/auditd.conf | grep 5`" ] ; then
+		echo "Error - bad max_log_file setting for /etc/audit/auditd.conf"
 	fi
 fi
 
 # GEN002740, GEN002760 
 # FIXME - duplication?
-#F="/etc/audit.rules"
+#F="/etc/audit/audit.rules"
 #if [ "$ISNCES" ] ; then
 #	if [ ! "`grep -- '-a exit,always -S open -F success=0' $F`" ] ; then
-#		echo "NCES: Missing rule in /etc/audit.rules"
+#		echo "NCES: Missing rule in /etc/audit/audit.rules"
 #	fi
 #fi
 #if [ ! "`grep -- "-a exit,always -S unlink -S rmdir" $F`" -o \
 #	  ! "`grep -- "-w /var/log/audit/" $F`" -o \
-#	  ! "`grep -- "-w /etc/auditd.conf" $F`" -o \
-#	  ! "`grep -- "-w /etc/audit.rules" $F`" -o \
+#	  ! "`grep -- "-w /etc/audit/auditd.conf" $F`" -o \
+#	  ! "`grep -- "-w /etc/audit/audit.rules" $F`" -o \
 #	  ! "`grep -- "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
 #	  ! "`grep -- "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
 #	  ! "`grep -- "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
 #	  ! "`grep -- "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
-#	  echo "Error - Missing settings in /etc/audit.rules"
+#	  echo "Error - Missing settings in /etc/audit/audit.rules"
 #fi
 
 # GEN002960
