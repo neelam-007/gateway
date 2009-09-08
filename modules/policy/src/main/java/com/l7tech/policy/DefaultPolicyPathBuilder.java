@@ -13,6 +13,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Default policy path builder. The class builds assertion paths from
@@ -36,6 +37,7 @@ import java.util.logging.Level;
  * @version 1.0
  */
 public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
+    private static final Logger logger = Logger.getLogger( DefaultPolicyPathBuilder.class.getName() );
     private final GuidBasedEntityManager<Policy> policyFinder;
 
     /**
@@ -145,6 +147,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * @param assertion the root assertion
      */
     private Set<AssertionPath> generatePaths(Assertion assertion, boolean processIncludes) throws InterruptedException, PolicyAssertionException {
+        long startTime = System.currentTimeMillis();
         Set<AssertionPath> assertionPaths = new LinkedHashSet<AssertionPath>();
         Iterator preorder = processIncludes ?
                 assertion.preorderIterator(new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<String>(), false, false)) :
@@ -159,6 +162,9 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             if (parentCreatesNewPaths(anext)) {
                 AssertionPath cp = pathStack.peek();
 
+                List siblings = anext.getParent().getChildren();
+                boolean lastChild = siblings.indexOf(anext) + 1 == siblings.size();
+
                 Set<AssertionPath> add = new LinkedHashSet<AssertionPath>();
                 Set<AssertionPath> remove = new HashSet<AssertionPath>();
 
@@ -166,6 +172,8 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                     if( assertionPath.contains( anext.getParent() ) &&
                             !containsSibling( assertionPath, anext ) ) {
                         AssertionPath a = assertionPath.addAssertion( anext );
+                        if ( lastChild )
+                            remove.add( assertionPath );
                         add.add( a );
                     }
                     if( Thread.interrupted() ) throw new InterruptedException();
@@ -176,9 +184,8 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                 assertionPaths.removeAll(remove);
                 assertionPaths.addAll(add);
 
-                List siblings = anext.getParent().getChildren();
                 // if last sibling and the parent path was pushed on stack, pop the parent
-                if (siblings.indexOf(anext) + 1 == siblings.size()) {
+                if ( lastChild ) {
                     AssertionPath p = pathStack.pop();
                     assertionPaths.remove(p);
                 }
@@ -215,7 +222,13 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             }
 
         }
-        return pruneIncompletePaths(assertionPaths);
+
+        long timeTaken = System.currentTimeMillis() - startTime;
+        if ( timeTaken > 2000 ) {
+            logger.info( "Policy path building took " + timeTaken + "ms for " + assertionPaths.size() + " path(s)." );
+        }
+
+        return assertionPaths;
     }
 
     /**
@@ -240,56 +253,6 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
 
     private Stack<AssertionPath> pathStack = new Stack<AssertionPath>();
 
-
-    /**
-     * prune the incomplete assertion paths. The incomplete paths
-     * contain composite assertions  where the assertion has children
-     * and the child is not immediate assertion in the path. Those
-     * (incomplete) paths were kept arround so the correct full paths
-     * could get accumulated
-     *
-     * @param assertionPaths the assertion path set to process
-     * @return the new <code>Set</code> without incomplete paths
-     */
-    private Set<AssertionPath> pruneIncompletePaths(Set<AssertionPath> assertionPaths) {
-        Set<AssertionPath> remove = new HashSet<AssertionPath>();
-
-        // the last node is a composite, it has children but the path
-        // is not showing that
-        // this could be as well done in the second loop. Doing the 'last assertion'
-        // check first is a quickshortcut, and happens often
-        for( AssertionPath assertionPath : assertionPaths ) {
-            final Assertion assertion = assertionPath.lastAssertion();
-            if( assertion instanceof CompositeAssertion ) {
-                CompositeAssertion ca = (CompositeAssertion) assertion;
-                if( !ca.getChildren().isEmpty() ) {
-                    remove.add( assertionPath );
-                    continue;
-                }
-            }
-            // there is node that is a composite, it has some children, but the next
-            // assertion in path is not in the child set
-            Assertion[] assertionArr = assertionPath.getPath();
-            for( int i = 0; i < assertionArr.length; i++ ) {
-                Assertion a = assertionArr[i];
-                if( a == assertionPath.lastAssertion() ) {
-                    continue;
-                }
-                if( a instanceof CompositeAssertion ) {
-                    CompositeAssertion ca = (CompositeAssertion) a;
-                    List children = ca.getChildren();
-                    Assertion next = assertionArr[i + 1];
-                    if( !children.isEmpty() && !children.contains( next ) ) {
-                        remove.add( assertionPath );
-                        break;
-                    }
-                }
-            }
-        }
-
-        assertionPaths.removeAll(remove);
-        return assertionPaths;
-    }
 
     /**
      * default assertion path result holder
