@@ -80,6 +80,7 @@ public class ResolveForeignTrustedCertificatePanel extends WizardStepPanel {
         createCert.addActionListener( new NewTrustedCertificateAction(certListener, "Add"));
 
         selectCert.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 CertSearchPanel sp = new CertSearchPanel(owner, false, true);
                 sp.addCertListener(certListener);
@@ -89,9 +90,10 @@ public class ResolveForeignTrustedCertificatePanel extends WizardStepPanel {
             }
         });
 
-        Utilities.equalizeButtonSizes(new AbstractButton[] {selectCert, createCert});
+        Utilities.equalizeButtonSizes(selectCert, createCert);
 
         ActionListener updateEnableStates = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableDisableComponents();
             }
@@ -113,20 +115,30 @@ public class ResolveForeignTrustedCertificatePanel extends WizardStepPanel {
         selectCertScrollPane.setEnabled(changeRadio.isSelected());
         selectCert.setEnabled(changeRadio.isSelected());
         createCert.setEnabled(changeRadio.isSelected());
+        notifyListeners();
     }
 
+    @Override
     public String getDescription() {
         return getStepLabel();
     }
 
-    public boolean canFinish() {
-        return !hasNextPanel();
+    @Override
+    public boolean canAdvance() {
+        return !changeRadio.isSelected() || selectedServerCert != null;
     }
 
+    @Override
+    public boolean canFinish() {
+        return !hasNextPanel() && canAdvance();
+    }
+
+    @Override
     public String getStepLabel() {
         return "Unresolved Trusted certificate " + certReference.getCertName();
     }
 
+    @Override
     public boolean onNextButton() {
         // collect actions details and store in the reference for resolution
         if (changeRadio.isSelected()) {
@@ -136,7 +148,7 @@ public class ResolveForeignTrustedCertificatePanel extends WizardStepPanel {
                 logger.severe("Could not get trusted certificate ID.");
                 return false;
             }
-            certReference.setLocalizeReplace(newCertObjectId.longValue());
+            certReference.setLocalizeReplace(newCertObjectId);
         } else if (deleteRadio.isSelected()) {
             certReference.setLocalizeDelete();
         } else if (ignoreRadio.isSelected()) {
@@ -154,9 +166,11 @@ public class ResolveForeignTrustedCertificatePanel extends WizardStepPanel {
     }
 
     private CertListener certListener = new CertListenerAdapter() {
+        @Override
         public void certSelected(CertEvent e) {
-                selectedServerCert = e.getCert();
-                if (selectedServerCert != null) updateTrustedCertTable();
+            selectedServerCert = e.getCert();
+            if (selectedServerCert != null) updateTrustedCertTable();
+            notifyListeners();
         }
     };
 }
