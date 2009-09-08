@@ -52,6 +52,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
     private static final int COL_SIG_METHOD_URI = 2;
     private static final int COL_DIG_METHOD_URI = 3;
     private static final int COL_VALIDATED_SIGNATURE_VALUES = 4;
+    private static final int COL_SIGNATURE_ELEMENT = 5;
 
     private final SecurityTokenResolver securityTokenResolver;
 
@@ -88,12 +89,14 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         Collection<String> signatureMethodUris = getColumn(infos, COL_SIG_METHOD_URI, String.class);
         Collection<String> digestMethodUris = getColumn(infos, COL_DIG_METHOD_URI, String.class);
         Collection<String> signatureValues = getColumn(infos, COL_VALIDATED_SIGNATURE_VALUES, String.class);
+        Collection<Element> signatureElements = getColumn(infos, COL_SIGNATURE_ELEMENT, Element.class);
 
         context.setVariable(assertion.prefix(VAR_ELEMENTS_VERIFIED), signedElements.toArray(new Element[signedElements.size()]));
         context.setVariable(assertion.prefix(VAR_SIGNING_CERTIFICATES), signerCerts.toArray(new X509Certificate[signerCerts.size()]));
         context.setVariable(assertion.prefix(VAR_SIGNATURE_METHOD_URIS), signatureMethodUris.toArray(new String[signatureMethodUris.size()]));
         context.setVariable(assertion.prefix(VAR_DIGEST_METHOD_URIS), digestMethodUris.toArray(new String[digestMethodUris.size()]));
         context.setVariable(assertion.prefix(VAR_SIGNATURE_VALUES), signatureValues.toArray(new String[signatureMethodUris.size()]));
+        context.setVariable(assertion.prefix(VAR_SIGNATURE_ELEMENTS), signatureElements.toArray(new Element[signatureElements.size()]));
 
         return AssertionStatus.NONE;
     }
@@ -204,7 +207,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
                 throw new InvalidDocumentFormatException(msg);
             }
 
-            Object[] outRow = { elementCovered, signingCert, sigMethodUri, digestMethodUri, validatedSignatureValue };
+            Object[] outRow = { elementCovered, signingCert, sigMethodUri, digestMethodUri, validatedSignatureValue, sigElement };
             outRows.add(outRow);
         }
 

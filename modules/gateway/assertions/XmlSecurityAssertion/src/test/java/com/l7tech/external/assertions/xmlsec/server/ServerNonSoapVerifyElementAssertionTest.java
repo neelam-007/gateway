@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.xpath.XpathExpression;
 import static org.junit.Assert.*;
 import org.junit.*;
@@ -15,8 +16,8 @@ import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.util.HashMap;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 
 /**
  *
@@ -88,5 +89,14 @@ public class ServerNonSoapVerifyElementAssertionTest {
         assertNotNull(signatureValues);
         assertEquals(1, signatureValues.length);
         assertEquals(SIGNATURE_VALUE, signatureValues[0]);
+
+        Object[] signatureElements = (Object[])context.getVariable("signatureElements");
+        assertNotNull(signatureElements);
+        assertEquals(1, signatureElements.length);
+        assertTrue(Element.class.isInstance(signatureElements[0]));
+        Element sigElement = (Element) signatureElements[0];
+        assertEquals("Signature", sigElement.getLocalName());
+        assertEquals(SoapConstants.DIGSIG_URI, sigElement.getNamespaceURI());
+
     }
 }

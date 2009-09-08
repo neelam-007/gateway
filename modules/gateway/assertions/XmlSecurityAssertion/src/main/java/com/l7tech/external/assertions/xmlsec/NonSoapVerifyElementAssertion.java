@@ -15,6 +15,7 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     public static final String VAR_DIGEST_METHOD_URIS = "digestMethodUris";
     public static final String VAR_SIGNING_CERTIFICATES = "signingCertificates";
     public static final String VAR_SIGNATURE_VALUES = "signatureValues";
+    public static final String VAR_SIGNATURE_ELEMENTS = "signatureElements";
 
     protected String variablePrefix = "";
 
@@ -38,6 +39,7 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
                 new VariableMetadata(prefix(VAR_DIGEST_METHOD_URIS), false, true, prefix(VAR_DIGEST_METHOD_URIS), false, DataType.STRING),
                 new VariableMetadata(prefix(VAR_SIGNING_CERTIFICATES), false, true, prefix(VAR_SIGNING_CERTIFICATES), false, DataType.CERTIFICATE),
                 new VariableMetadata(prefix(VAR_SIGNATURE_VALUES), false, true, prefix(VAR_SIGNATURE_VALUES), false, DataType.STRING),
+                new VariableMetadata(prefix(VAR_SIGNATURE_ELEMENTS), false, true, prefix(VAR_SIGNATURE_ELEMENTS), false, DataType.ELEMENT),
         };
     }
 
