@@ -115,7 +115,6 @@ public class LogonDialog extends JDialog {
      */
     public LogonDialog(Frame parent) {
         super(parent, true);
-        Utilities.setAlwaysOnTop(this, true);
         this.parentFrame = parent;
         setTitle("");
         initResources();
@@ -595,9 +594,7 @@ public class LogonDialog extends JDialog {
         } else if (actionCommand.equals(CMD_MANAGE_CERT) ){
             UserIdentificationRequestDialog certManager = new UserIdentificationRequestDialog(certsHash);
             Utilities.centerOnScreen(certManager);
-            Utilities.setAlwaysOnTop(this, false);
             DialogDisplayer.display(certManager, null);
-            Utilities.setAlwaysOnTop(this, true);
             populateCertificateChoices();
             loginButton.setEnabled(certSelection.getItemCount() > 0 &&
                 (serverComboBox.getSelectedItem() != null && !((String)serverComboBox.getSelectedItem()).equalsIgnoreCase("")));
@@ -852,7 +849,6 @@ public class LogonDialog extends JDialog {
           throws HeadlessException {
             super(owner, true);
             setTitle("Logon in progress");
-            Utilities.setAlwaysOnTop(this, true);
             setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
             setResizable(false);
             serviceUrl = url;

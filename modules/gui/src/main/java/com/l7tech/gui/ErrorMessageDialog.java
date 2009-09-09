@@ -106,7 +106,8 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         Utilities.setEscKeyStrokeDisposes(this);
-        Utilities.setAlwaysOnTop(this, true);
+        if (getOwner() == null)
+            Utilities.setAlwaysOnTop(this, true);
         Utilities.centerOnScreen(this);
     }
 

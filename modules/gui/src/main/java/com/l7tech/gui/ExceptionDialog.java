@@ -187,7 +187,8 @@ public class ExceptionDialog extends JDialog implements ActionListener {
      * @param throwable .
      */
     private void initialize(String title, String labelMessage, String message, Throwable throwable, Level level) {
-        Utilities.setAlwaysOnTop(this, true);
+        if (getOwner() == null)
+            Utilities.setAlwaysOnTop(this, true);
 
         if (labelMessage != null) {
             internalErrorLabelText = labelMessage;

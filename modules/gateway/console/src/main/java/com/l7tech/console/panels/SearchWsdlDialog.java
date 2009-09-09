@@ -87,7 +87,8 @@ public class SearchWsdlDialog extends JDialog {
     }
 
     private void initialize() throws FindException {
-        Utilities.setAlwaysOnTop(this, true);
+        if (getOwner() == null)
+            Utilities.setAlwaysOnTop(this, true);
 
         // load prefs
         String uddiType = preferences.getString(UDDI_TYPE, "");

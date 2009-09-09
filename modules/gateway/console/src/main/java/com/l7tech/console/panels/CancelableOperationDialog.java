@@ -48,7 +48,6 @@ public class CancelableOperationDialog extends JDialog {
 
     private void doInit() {
         setResizable(false);
-        Utilities.setAlwaysOnTop(this, true);
 
         Container p = getContentPane();
         p.setLayout(new GridBagLayout());

@@ -58,7 +58,6 @@ public class RequireWssSamlPropertiesPanel extends LegacyAssertionPropertyDialog
     }
 
     private void initialize(final boolean readOnly) {
-        Utilities.setAlwaysOnTop(this, true);
         setResizable(true);
 
         final Border emptyBorder = BorderFactory.createEmptyBorder(10, 10, 5, 10);
