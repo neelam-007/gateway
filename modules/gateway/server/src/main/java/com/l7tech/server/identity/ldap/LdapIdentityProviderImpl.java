@@ -363,12 +363,25 @@ public class LdapIdentityProviderImpl
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
+            Set<String> distinctCertAttributeNames = new HashSet<String>();
             UserMappingConfig[] mappings = config.getUserMappings();
             for (UserMappingConfig mapping : mappings) {
                 String certAttributeName = mapping.getUserCertAttrName();
+                if (certAttributeName == null || certAttributeName.length() < 1) {
+                    logger.fine("User mapping for class " + mapping.getObjClass() +
+                                " contained empty cert attribute name. This mapping will be " +
+                                "ignored as part of the indexing process.");
+                } else {
+                    distinctCertAttributeNames.add(certAttributeName);
+                }
+            }
+            for (String certAttributeName : distinctCertAttributeNames) {
+                String filter = "(" + certAttributeName + "=*)";
+                sc.setReturningAttributes(new String[] {certAttributeName});
+
                 NamingEnumeration answer = null;
                 try {
-                    answer = context.search(config.getSearchBase(), "(" + certAttributeName + "=*)", sc);
+                    answer = context.search(config.getSearchBase(), filter, sc);
 
                     while (answer.hasMore()) {
                         SearchResult sr = (SearchResult)answer.next();
