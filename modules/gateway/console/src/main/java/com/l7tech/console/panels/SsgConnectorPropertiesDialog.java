@@ -10,6 +10,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
+import com.l7tech.gui.widgets.JCheckBoxListModel;
 import com.l7tech.util.*;
 import com.l7tech.objectmodel.FindException;
 
@@ -434,120 +435,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         interfaceComboBox.setModel(interfaceComboBoxModel);
     }
 
-    public static class JCheckBoxListModel extends AbstractListModel {
-        public static final String CLIENT_PROPERTY_ENTRY_CODE = "JCheckBoxListModel.entryCode";
-        private final List<JCheckBox> entries;
-        private int armedEntry = -1;
-
-        public JCheckBoxListModel(List<JCheckBox> entries) {
-            this.entries = new ArrayList<JCheckBox>(entries);
-        }
-
-        protected List<JCheckBox> getEntries() {
-            //noinspection ReturnOfCollectionOrArrayField
-            return entries;
-        }
-
-        @Override
-        public int getSize() {
-            return entries.size();
-        }
-
-        @Override
-        public Object getElementAt(int index) {
-            return getEntryAt(index);
-        }
-
-        public JCheckBox getEntryAt(int index) {
-            return entries.get(index);
-        }
-
-        public void swapEntries(int index1, int index2) {
-            JCheckBox value1 = entries.get(index1);
-            JCheckBox value2 = entries.get(index2);
-            entries.set(index2, value1);
-            entries.set(index1, value2);
-            fireContentsChanged(this, index1, index2);
-        }
-
-        /**
-         * Set the "armed" state for the checkbox at the specified index.
-         * Any currently-armed checkbox will be disarmed.
-         * <p/>
-         * The "armed" state is normally shown on mousedown to show that a checkbox is toggling.
-         *
-         * @param index index of list entry to arm
-         */
-        public void arm(int index) {
-            disarm();
-            if (index < 0) return;
-            ButtonModel entryModel = getEntryAt(index).getModel();
-            entryModel.setArmed(true);
-            entryModel.setRollover(true);
-            armedEntry = index;
-            fireContentsChanged(this, armedEntry, armedEntry);
-        }
-
-        /**
-         * Clear the "armed" state from any checkbox that was armed by a call to {@link #arm}.
-         */
-        public void disarm() {
-            if (armedEntry >= 0) {
-                getEntryAt(armedEntry).getModel().setArmed(false);
-                fireContentsChanged(this, armedEntry, armedEntry);
-                armedEntry = -1;
-            }
-        }
-
-        /**
-         * Toggle the checkbox at the specified index.
-         * @param index the index to toggle.  Must be between 0 and getSize() - 1 inclusive.
-         */
-        public void toggle(int index) {
-            if (armedEntry >= 0 && armedEntry != index) disarm();
-            JCheckBox entry = getEntryAt(index);
-            ButtonModel entryModel = entry.getModel();
-            entryModel.setArmed(false);
-            entryModel.setRollover(false);
-            entry.setSelected(!entry.isSelected());
-            fireContentsChanged(this, index, index);
-        }
-
-        /**
-         * @return true if at least one check box is checked.
-         */
-        public boolean isAnyEntryChecked() {
-            for (JCheckBox entry : entries) {
-                if (entry.isSelected()) return true;
-            }
-            return false;
-        }
-
-        /**
-         * Get the code name for the specified entry.
-         *
-         * @param entry  one of the checkbox list entries.  Required.
-         * @return the code name for this entry, ie "SSL_RSA_WITH_3DES_EDE_CBC_SHA".
-         */
-        protected static String getEntryCode(JCheckBox entry) {
-            Object code = entry.getClientProperty(CLIENT_PROPERTY_ENTRY_CODE);
-            return code != null ? code.toString() : entry.getText();
-        }
-
-        protected String buildEntryCodeString() {
-            StringBuilder ret = new StringBuilder(128);
-            boolean isFirst = true;
-            for (JCheckBox entry : entries) {
-                if (entry.isSelected()) {
-                    if (!isFirst) ret.append(',');
-                    ret.append(getEntryCode(entry));
-                    isFirst = false;
-                }
-            }
-            return ret.toString();
-        }
-    }
-
     public static class CipherSuiteListModel extends JCheckBoxListModel {
         private final String[] allCiphers;
         private final Set<String> defaultCiphers;
@@ -623,32 +510,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
-    /**
-     * @noinspection SerializableNonStaticInnerClassWithoutSerialVersionUID,CloneableClassInSecureContext,NonStaticInnerClassInSecureContext
-     */
-    private class CipherSuiteListSelectionModel extends DefaultListSelectionModel {
-        @Override
-        public void setSelectionInterval(int index0, int index1) {
-            super.setSelectionInterval(index0, index1);
-            cipherSuiteListModel.arm(index0);
-        }
-    }
-
-    /**
-     * A cell renderer for lists whose list items are actually components.
-     */
-    private static class ComponentListCellRenderer extends DefaultListCellRenderer {
-        @Override
-        public Component getListCellRendererComponent(JList list, Object valueObj, int index, boolean isSelected, boolean cellHasFocus) {
-            Component value = (Component)valueObj;
-            Component supe = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            value.setForeground(supe.getForeground());
-            value.setBackground(supe.getBackground());
-            value.setFont(supe.getFont());
-            return value;
-        }
-    }
-
     private static String[] getCipherSuiteNames() {
         String[] unfiltered = Registry.getDefault().getTransportAdmin().getAllCipherSuiteNames();
         if (INCLUDE_ALL_CIPHERS)
@@ -697,43 +558,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         String[] allCiphers = getCipherSuiteNames();
         Set<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
                 Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
-        cipherSuiteListModel = new CipherSuiteListModel(allCiphers, defaultCiphers);
-        cipherSuiteList.setModel(cipherSuiteListModel);
-        cipherSuiteList.setSelectionModel(new CipherSuiteListSelectionModel());
-        cipherSuiteList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        cipherSuiteList.setCellRenderer(new ComponentListCellRenderer());
-        cipherSuiteList.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseExited(MouseEvent e) {
-                cipherSuiteListModel.disarm();
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                int selectedIndex = cipherSuiteList.locationToIndex(e.getPoint());
-                if (selectedIndex < 0) return;
-                cipherSuiteListModel.disarm();
-                cipherSuiteListModel.arm(selectedIndex);
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                int selectedIndex = cipherSuiteList.locationToIndex(e.getPoint());
-                if (selectedIndex < 0) return;
-                cipherSuiteListModel.toggle(selectedIndex);
-            }
-        });
-        // Change unmodified space from 'addToSelection' to 'toggleCheckBox' (ie, same as our above single-click handler)
-        cipherSuiteList.getInputMap().put(KeyStroke.getKeyStroke(' '), "toggleCheckBox");
-        //noinspection CloneableClassInSecureContext
-        cipherSuiteList.getActionMap().put("toggleCheckBox", new AbstractAction("toggleCheckBox") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int selectedIndex = cipherSuiteList.getSelectedIndex();
-                cipherSuiteListModel.toggle(selectedIndex);
-            }
-        });
-        cipherSuiteList.addListSelectionListener(new ListSelectionListener() {
+        this.cipherSuiteListModel = new CipherSuiteListModel(allCiphers, defaultCiphers);
+        final JList cipherSuiteList = this.cipherSuiteList;
+        final CipherSuiteListModel cipherSuiteListModel = this.cipherSuiteListModel;
+        cipherSuiteListModel.attachToJList(cipherSuiteList);
+        this.cipherSuiteList.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisableCipherSuiteButtons();
@@ -750,24 +579,24 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         moveUpButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int index = cipherSuiteList.getSelectedIndex();
+                int index = SsgConnectorPropertiesDialog.this.cipherSuiteList.getSelectedIndex();
                 if (index < 1) return;
                 int prevIndex = index - 1;
                 cipherSuiteListModel.swapEntries(prevIndex, index);
-                cipherSuiteList.setSelectedIndex(prevIndex);
-                cipherSuiteList.ensureIndexIsVisible(prevIndex);
+                SsgConnectorPropertiesDialog.this.cipherSuiteList.setSelectedIndex(prevIndex);
+                SsgConnectorPropertiesDialog.this.cipherSuiteList.ensureIndexIsVisible(prevIndex);
             }
         });
 
         moveDownButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int index = cipherSuiteList.getSelectedIndex();
+                int index = SsgConnectorPropertiesDialog.this.cipherSuiteList.getSelectedIndex();
                 if (index < 0 || index >= cipherSuiteListModel.getSize() - 1) return;
                 int nextIndex = index + 1;
                 cipherSuiteListModel.swapEntries(index, nextIndex);
-                cipherSuiteList.setSelectedIndex(nextIndex);
-                cipherSuiteList.ensureIndexIsVisible(nextIndex);
+                SsgConnectorPropertiesDialog.this.cipherSuiteList.setSelectedIndex(nextIndex);
+                SsgConnectorPropertiesDialog.this.cipherSuiteList.ensureIndexIsVisible(nextIndex);
             }
         });
     }
