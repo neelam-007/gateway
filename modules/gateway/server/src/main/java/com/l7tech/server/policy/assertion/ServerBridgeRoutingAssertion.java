@@ -64,6 +64,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -244,7 +245,8 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     }
 
                     HeaderHolder hh = new HeaderHolder();
-                    PolicyApplicationContext pac = newPolicyApplicationContext(context, bridgeRequest, bridgeResponse, pak, origUrl, hh);
+                    long[] latencyHolder = new long[]{-1};
+                    PolicyApplicationContext pac = newPolicyApplicationContext(context, bridgeRequest, bridgeResponse, pak, origUrl, hh, latencyHolder);
                     messageProcessor.processMessage(pac);
 
                     final HttpResponseKnob hrk = bridgeResponse.getKnob(HttpResponseKnob.class);
@@ -253,6 +255,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
                     else
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, url.getPath(), String.valueOf(status));
+
+                    if ( latencyHolder[0] > -1 ) {
+                        context.setVariable(HttpRoutingAssertion.VAR_ROUTING_LATENCY, ""+latencyHolder[0]);                                            
+                    }
 
                     // todo: move to abstract routing assertion
                     requestMsg.notifyMessage(bridgeResponse, MessageRole.RESPONSE);
@@ -557,8 +563,14 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         return url;
     }
 
-    private PolicyApplicationContext newPolicyApplicationContext(final PolicyEnforcementContext context, Message bridgeRequest, Message bridgeResponse, PolicyAttachmentKey pak, URL origUrl, final HeaderHolder hh) {
-        return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
+    private PolicyApplicationContext newPolicyApplicationContext( final PolicyEnforcementContext context,
+                                                                  final Message bridgeRequest,
+                                                                  final Message bridgeResponse,
+                                                                  final PolicyAttachmentKey pak,
+                                                                  final URL origUrl,
+                                                                  final HeaderHolder hh,
+                                                                  final long[] latencyHolder) {
+        return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, new LatencyRequestInterceptor(latencyHolder), pak, origUrl) {
             @Override
             public HttpCookie[] getSessionCookies() {
                 int cookieRule = assertion.getRequestHeaderRules().ruleForName("cookie");
@@ -759,7 +771,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         }
     }
 
-    public class HeaderHolder {
+    public static class HeaderHolder {
         private HttpHeaders headers;
 
         public HttpHeaders getHeaders() {
@@ -768,6 +780,29 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
         public void setHeaders(HttpHeaders headers) {
             this.headers = headers;
+        }
+    }
+
+    private static class LatencyRequestInterceptor extends NullRequestInterceptor {
+        private final long[] latencyHolder;
+        private long latencyTimerStart;
+
+        LatencyRequestInterceptor( final long[] latencyHolder ) {
+            this.latencyHolder = latencyHolder;
+        }
+
+        @Override
+        public void onBackEndRequest( final PolicyApplicationContext context, final List<HttpHeader> headersSent ) {
+            latencyTimerStart = System.currentTimeMillis();
+        }
+
+        @Override
+        public void onBackEndReply( final PolicyApplicationContext context ) {
+            if ( latencyTimerStart > 0 ) {
+                long latencyTimerEnd = System.currentTimeMillis();
+                long latency = latencyTimerEnd - latencyTimerStart;
+                latencyHolder[0] = latency;
+            }
         }
     }
 
