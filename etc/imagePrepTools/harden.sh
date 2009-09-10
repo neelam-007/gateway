@@ -1,15 +1,13 @@
 #!/bin/bash
 
-#HAZ_ISVM="`dmesg | grep -i vmware`"
-#HAZ_ISHARDWARE="`uname -a | grep x86_64`"
-#if [ ! -z "$HAZ_ISHARDWARE" ] ; then
-#	ISHARDWARE=1
-#	ISVM=
-#	if [ ! -z "$HAZ_ISVM" ] ; then
-#		ISHARDWARE=
-#		ISVM=1
-#	fi
-#fi
+usage() {
+	echo "$0 [-h|-r|-t] [vmware|appliance]"
+        echo "-h: harden"
+        echo "-r: reverse/soften"
+        echo "-t: test the hardness of a system"
+        echo "vmware: specify that this is a vmware appliance"
+        echo "appliance: specify that this a hardware appliance"
+}
 
 # set this manually as there's no way to tell by script the difference between normal hardware and NCES
 ISNCES=""
@@ -42,12 +40,24 @@ harden() {
       ISHARDWARE=1
   else
      case "$1" in
-        "vmware"  ) ISVM=1;
-            ISHARDWARE=0;;
-        "*"  ) ISVM=0;
-            ISHARDWARE=1;;
+        "vmware"  ) 
+            ISVM=1;
+            ISHARDWARE=0
+            ;;
+        "*"  ) 
+            ISVM=0;
+            ISHARDWARE=1
+            ;;
      esac
   fi
+	message="We are hardening "
+
+  if [ "$ISVM" ]  ; then  
+     message="$message a virtual appliance"
+  else
+     message="$message a hardware appliance"
+  fi
+  echo "$message"
 
   # GEN005020
   userdel ftp
@@ -175,11 +185,7 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   # VM has max_log_file set to 5, hardware is 125
   if [ "$ISVM" ] ; then
 	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 5/' /etc/audit/auditd.conf
-  fi
-  if [ "$ISHARDWARE" ] ; then
-	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 125/' /etc/audit/auditd.conf
-  fi
-  if [ "$ISNCES" ] ; then
+  else
 	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 125/' /etc/audit/auditd.conf
   fi
 
@@ -838,9 +844,15 @@ fi
 
 case "$1" in
   "-r"  ) shift;
-	      soften;;
+	  soften "$1"
+ 	  ;;
   "-t"  ) shift;
-	      stigtest;;
-  *     ) shift;
-	      harden;;
+	  stigtest "$1"
+	  ;;
+  "-h" 	) shift;
+	  harden "$1"
+	  ;;
+  *	) usage;
+	  exit;
+	  ;;
 esac
