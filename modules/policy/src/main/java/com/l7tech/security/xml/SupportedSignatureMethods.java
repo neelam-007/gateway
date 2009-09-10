@@ -17,7 +17,7 @@ public enum SupportedSignatureMethods {
     /** DSA with SHA-1 (defaults from XSS4J) */
     DSA_SHA1("DSA", "SHA-1", SignatureMethod.DSA, XSignature.SHA1),
     /** HMAC with SHA-1 (defaults from XSS4J) */
-    HMAC_SHA1("SecretKey", "SHA-1", SignatureMethod.HMAC, XSignature.SHA1),
+    HMAC_SHA1("HMAC", "SHA-1", SignatureMethod.HMAC, XSignature.SHA1),
     /** RSA with SHA-256 extension*/
     RSA_SHA256("RSA", "SHA-256", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", "http://www.w3.org/2001/04/xmlenc#sha256"),
     /** ECDSA with SHA-1 (Suite-B crypto support) */
@@ -39,6 +39,8 @@ public enum SupportedSignatureMethods {
     private final String algorithmIdentifier;
     /** The corresponding message digest identifier */
     private final String messageDigestIdentifier;
+    /** This UI display name. */
+    private final String displayName;
 
     /**
      * Private constructor.
@@ -51,6 +53,7 @@ public enum SupportedSignatureMethods {
         this.digestAlg = digestAlg;
         this.algorithmIdentifier = algId;
         this.messageDigestIdentifier = msgDigestId;
+        this.displayName = keyAlg + " / " + digestAlg;
     }
 
     /**
@@ -83,6 +86,27 @@ public enum SupportedSignatureMethods {
      */
     public String getMessageDigestIdentifier() {
         return messageDigestIdentifier;
+    }
+
+    /**
+     * @return a display name to use for UI purposes.
+     */
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    /**
+     * Returns the first SupportedSignatureMethod that has the specified display name.
+     *
+     * @param displayName the display name to look up.
+     * @return the first matching signature method, or null if no match.
+     */
+    public static SupportedSignatureMethods fromDisplayName(String displayName) {
+        for (SupportedSignatureMethods sm : values()) {
+            if (sm.getDisplayName().equals(displayName))
+                    return sm;
+        }
+        return null;
     }
 
     /**
