@@ -29,11 +29,10 @@ public final class TimeUnit implements Serializable, Comparable {
     private final String abbreviation;
     private final int multiplier;
 
-    private static final Map valuesByAbbrev = new HashMap();
+    private static final Map<String,TimeUnit> valuesByAbbrev = new HashMap<String,TimeUnit>();
     static {
-        for (int i = 0; i < ALL.length; i++) {
-            TimeUnit timeUnit = ALL[i];
-            valuesByAbbrev.put(timeUnit.getAbbreviation(), timeUnit);
+        for ( TimeUnit timeUnit : ALL ) {
+            valuesByAbbrev.put( timeUnit.getAbbreviation(), timeUnit );
         }
     }
 
@@ -56,10 +55,12 @@ public final class TimeUnit implements Serializable, Comparable {
         return value * multiplier;
     }
 
+    @Override
     public String toString() {
         return name;
     }
 
+    @Override
     public int compareTo(Object o) {
         TimeUnit that = (TimeUnit)o;
         return this.multiplier - that.multiplier;
@@ -74,10 +75,10 @@ public final class TimeUnit implements Serializable, Comparable {
     }
 
     public static TimeUnit fromAbbreviation(String value) {
-        return (TimeUnit)valuesByAbbrev.get(value);
+        return valuesByAbbrev.get(value);
     }
 
-    private static final Pattern numberPattern = Pattern.compile("(-?\\d*\\.?\\d*)(\\p{Lower})*");
+    private static final Pattern numberPattern = Pattern.compile("(-?\\d*\\.?\\d*)(\\p{Lower}*)");
 
     /**
      * Parses a time duration expressed as a number (which may contain periods, commas or spaces) followed by a one- or
@@ -100,7 +101,7 @@ public final class TimeUnit implements Serializable, Comparable {
 
             final TimeUnit unit;
             String maybeUnit = mat.group(2);
-            TimeUnit tu = (TimeUnit) valuesByAbbrev.get(maybeUnit);
+            TimeUnit tu = valuesByAbbrev.get(maybeUnit);
             if (tu == null) tu = unsuffixedUnit;
             unit = tu;
 
@@ -120,10 +121,12 @@ public final class TimeUnit implements Serializable, Comparable {
     // This method is invoked reflectively by WspEnumTypeMapping
     public static EnumTranslator getEnumTranslator() {
         return new EnumTranslator() {
+            @Override
             public String objectToString(Object target) {
                 return ((TimeUnit)target).getAbbreviation();
             }
 
+            @Override
             public Object stringToObject(String value) throws IllegalArgumentException {
                 TimeUnit tu = TimeUnit.fromAbbreviation(value);
                 if (tu == null) throw new IllegalArgumentException("Unknown TimeUnit abbreviation: '" + value + "'");
