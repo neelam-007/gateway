@@ -137,7 +137,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 try {
                     cachedvalues = createNewCacheEntry(filterExpression);
                 } catch (FindException e) {
-                    logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     return AssertionStatus.SERVER_ERROR;
                 }
                 cacheLock.writeLock().lock();
@@ -162,7 +162,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
             try {
                 values = createNewCacheEntry(filterExpression);
             } catch (FindException e) {
-                logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getMessage(e));
+                logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 return AssertionStatus.SERVER_ERROR;
             }
 
@@ -247,7 +247,11 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 return cachedvalues;
             } catch (Exception e) {
                 if (ExceptionUtils.causedBy(e, NamingException.class)) {
-                    throw new FindException("Error searching for LDAP entry: " + e.getMessage(), e);
+                    String extraDetail = "";
+                    if ( e instanceof NamingException && ((NamingException)e).getRemainingName()!=null ) {
+                        extraDetail = "; remaining name '" + ((NamingException)e).getRemainingName().toString().trim() + "'";
+                    }
+                    throw new FindException("Error searching for LDAP entry: " + e.getMessage() + extraDetail, e);
                 } else {
                     throw new FindException("Error searching for LDAP entry", e);
                 }
