@@ -130,9 +130,9 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
-        put(PALETTE_NODE_CLIENT_ICON, new MetadataFinder() {
+        put(CLIENT_ASSERTION_POLICY_ICON, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, "com/l7tech/console/resources/policy16.gif");
+                return cache(meta, key, "com/l7tech/proxy/resources/tree/policy16.gif");
             }
         });
 

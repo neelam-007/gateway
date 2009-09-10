@@ -231,7 +231,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
 
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssSaml");
-        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
+        meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.SamlStatementValidator");
 
         return meta;

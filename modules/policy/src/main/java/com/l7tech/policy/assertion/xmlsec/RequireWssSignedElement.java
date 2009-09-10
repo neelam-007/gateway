@@ -149,7 +149,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
                 WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping);            
         }});
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssIntegrity");
-        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
+        meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.XpathBasedAssertionValidator");

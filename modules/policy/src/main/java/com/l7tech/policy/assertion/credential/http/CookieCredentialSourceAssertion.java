@@ -38,7 +38,7 @@ public class CookieCredentialSourceAssertion extends Assertion {
         meta.put(AssertionMetadata.LONG_NAME, "Gather credentials in the form of an HTTP session cookie.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
-        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
+        meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, Assertion>(){
             public String call(Assertion assertion) {

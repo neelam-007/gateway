@@ -40,7 +40,7 @@ public class SecureConversation extends SecurityHeaderAddressableSupport {
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
-        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+        meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         return meta;
     }

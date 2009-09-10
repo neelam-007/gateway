@@ -188,7 +188,6 @@ public class SslAssertion extends ConfidentialityAssertion {
         meta.put(AssertionMetadata.SHORT_NAME, "Set SSL or TLS Transport");
         meta.put(AssertionMetadata.DESCRIPTION, "The incoming request either must use, optionally use, or is forbidden to use the SSL/TLS transport. Client certificate authentication is optional if 'must use'.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ssl.gif");
-        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/ssl.gif");
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
                 new WspEnumTypeMapping(Option.class, "optionValue")
@@ -222,7 +221,7 @@ public class SslAssertion extends ConfidentialityAssertion {
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SSL or TLS Transport Properties");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/About16.gif");
 
-        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/ssl.gif");
+        meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/ssl.gif");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         return meta;
     }

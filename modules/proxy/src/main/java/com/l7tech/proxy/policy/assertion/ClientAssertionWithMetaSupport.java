@@ -52,7 +52,7 @@ public abstract class ClientAssertionWithMetaSupport extends ClientAssertion{
     }
     
     public String iconResource(boolean open) {
-        final String s = (String)assertion.meta().get(AssertionMetadata.PALETTE_NODE_CLIENT_ICON);
+        final String s = (String)assertion.meta().get(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON);
         return s != null ? s : "com/l7tech/console/resources/policy16.gif";
     }
 

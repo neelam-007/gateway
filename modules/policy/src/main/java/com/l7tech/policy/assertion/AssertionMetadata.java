@@ -80,6 +80,13 @@ public interface AssertionMetadata {
     String CLIENT_ASSERTION_TARGETS = "clientAssertionTargets";
 
     /**
+     * String file path.  Icon to display for the client policy node for this assertion in the XML VPN Client
+     * Defaults to "com/l7tech/proxy/resources/tree/policy16.gif", which is a picture of a small piece of paper with
+     * writing, and is always available on the VPN Client
+     */
+    String CLIENT_ASSERTION_POLICY_ICON = "clientAssertionPolicyIcon";
+    
+    /**
      * String.  Name to display on "Properties..." pop-up menu action if using the DefaultAssertionPropertiesAction.
      * Also name to display on the properties dialog window
      * <P/>
@@ -113,13 +120,6 @@ public interface AssertionMetadata {
      * writing, and is always available on both SSM and manager applet.
      */
     String PALETTE_NODE_ICON = "paletteNodeIcon";
-
-    /**
-     * String file path.  Icon to display for the client palette node for this assertion
-     * Defaults to "com/l7tech/console/resources/policy16.gif", which is a picture of a small piece of paper with
-     * writing, and is always available on both SSM and manager applet.
-     */
-    String PALETTE_NODE_CLIENT_ICON = "paletteNodeClientIcon";
 
     /**
      * Integer. The sort priority for the palette node for this assertion, if using DefaultAssertionPaletteNode.

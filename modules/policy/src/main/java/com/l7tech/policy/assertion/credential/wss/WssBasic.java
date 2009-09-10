@@ -35,7 +35,7 @@ public class WssBasic extends WssCredentialSourceAssertion {
             }
         });
 
-        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
+        meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
 
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         
