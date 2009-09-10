@@ -182,6 +182,7 @@ seal)
   # remove ~/.bash_history
   rm -f ~/.bash_history
 
+  chmod o-w /var/log/* 
   # Delete all log files.
   rm -f /var/log/*/*
   rm -f /var/log/*
