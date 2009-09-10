@@ -940,7 +940,7 @@
         <constructor-arg index="0" ref="clientCertManager"/>
     </bean>
 
-    <bean id="securityTokenResolver" class="com.l7tech.server.DelegatingSecurityTokenResolver">
+    <bean id="securityTokenResolver" class="com.l7tech.security.xml.DelegatingSecurityTokenResolver">
         <constructor-arg index="0">
             <list>
                 <ref local="trustedSecurityTokenResolver"/>

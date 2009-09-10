@@ -3,14 +3,17 @@ package com.l7tech.security.xml;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
 
 import javax.security.auth.x500.X500Principal;
-import java.security.cert.X509Certificate;
 import java.math.BigInteger;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Wraps an existing SecurityTokenResolver with a new one that delegates unknown resolutions to it.
  */
 public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
-    private final SecurityTokenResolver[] delegates;
+    private final Collection<SecurityTokenResolver> delegates;
 
     /**
      * Create a security token resolver that delegates to the specified resolvers in order.
@@ -18,12 +21,21 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
      * @param delegates delegate resolvers.  May be empty, although that would be pretty pointless
      */
     public DelegatingSecurityTokenResolver(SecurityTokenResolver... delegates) {
-        this.delegates = delegates;
+        this.delegates = Collections.unmodifiableCollection( Arrays.asList(delegates) );
         if (delegates == null) throw new NullPointerException("delegates must not be null"); // can't happen
         for (SecurityTokenResolver delegate : delegates) {
             if (delegate == null)
                 throw new IllegalArgumentException("delegate may not be null");
         }
+    }
+
+    /**
+     * Create a security token resolver that delegates to the specified resolvers in order.
+     *
+     * @param delegates delegate resolvers.  May be empty, although that would be pretty pointless
+     */
+    public DelegatingSecurityTokenResolver(Collection<SecurityTokenResolver> delegates) {
+        this(delegates.toArray(new SecurityTokenResolver[delegates.size()]));
     }
 
     @Override
@@ -133,7 +145,7 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
     }
 
 
-    protected SecurityTokenResolver[] getDelegates() {
+    protected Collection<SecurityTokenResolver> getDelegates() {
         return delegates;
     }
 }
