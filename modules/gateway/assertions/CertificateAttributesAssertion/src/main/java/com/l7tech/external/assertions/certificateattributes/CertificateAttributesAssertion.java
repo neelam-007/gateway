@@ -72,7 +72,7 @@ public class CertificateAttributesAssertion extends Assertion implements SetsVar
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Extract Attributes from Certificate");
-        meta.put(AssertionMetadata.LONG_NAME, "Extract Attributes from Certificate");
+        meta.put(AssertionMetadata.DESCRIPTION, "Extract information from the X.509 Certificate of the last authenticated user and place them into context variables.");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Certificate Attributes Properties");
 
         // Add to palette folder(s)

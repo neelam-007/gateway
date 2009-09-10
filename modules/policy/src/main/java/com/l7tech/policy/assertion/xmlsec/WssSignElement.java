@@ -84,22 +84,23 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Sign Element");
+        final String assertionName = "Sign Element";
+        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
         meta.put(AssertionMetadata.DESCRIPTION, "Sign one or more elements of the message.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, 80000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, WssSignElement>() {
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, WssSignElement, Boolean>() {
             @Override
-            public String call( final WssSignElement responseWssIntegrity ) {
-                StringBuilder name = new StringBuilder("Sign element ");
+            public String call(final WssSignElement responseWssIntegrity, final Boolean decorate) {
+                StringBuilder name = new StringBuilder(assertionName + " ");
                 if (responseWssIntegrity.getXpathExpression() == null) {
-                    name .append("[XPath expression not set]");
+                    name.append("[XPath expression not set]");
                 } else {
                     name.append(responseWssIntegrity.getXpathExpression().getExpression());
                 }
-                return AssertionUtils.decorateName(responseWssIntegrity, name);
+                return (decorate) ? AssertionUtils.decorateName(responseWssIntegrity, name) : assertionName;
             }
         });
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssIntegrity");

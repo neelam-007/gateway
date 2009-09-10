@@ -43,8 +43,9 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode<Me
      * @return the node name that is displayed
      */
     @Override
-    public String getName() {
-        return decorateName( "Authenticate Group: " + ((MemberOfGroup)getUserObject()).getGroupName() +
-          " from [" + idProviderName() + "]");
+    public String getName(final boolean decorate) {
+        final String assertionName = "Authenticate User or Group";
+        return (decorate)? decorateName( "Authenticate Group: " + ((MemberOfGroup)getUserObject()).getGroupName() +
+          " from [" + idProviderName() + "]"): assertionName;
     }
 }

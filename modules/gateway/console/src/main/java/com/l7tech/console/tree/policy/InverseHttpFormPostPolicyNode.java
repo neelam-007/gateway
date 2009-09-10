@@ -19,7 +19,7 @@ public class InverseHttpFormPostPolicyNode extends LeafAssertionTreeNode {
     /**
      * @return the node name that is displayed
      */
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "MIME to HTTP Form Translation";
     }
 

@@ -18,7 +18,7 @@ public class FaultLevelTreeNode extends LeafAssertionTreeNode {
         super(assertion);
     }
 
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Override SOAP Fault";
     }
 

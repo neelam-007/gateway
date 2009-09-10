@@ -67,10 +67,11 @@ public class RequestWssKerberos extends SecurityHeaderAddressableSupport impleme
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(AssertionMetadata.SHORT_NAME, "Require WS-Security Kerberos Token Profile Credentials");
-        meta.put(AssertionMetadata.LONG_NAME, "Gateway retrieves and validates a Kerberos security token from the request");
+        meta.put(AssertionMetadata.DESCRIPTION, "Gateway retrieves and validates a Kerberos security token from the request");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
         meta.putNull(AssertionMetadata.PROPERTIES_ACTION_FACTORY);
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         
         return meta;

@@ -21,14 +21,6 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode<HttpRout
     }
 
     /**
-     * @return the node name that is displayed
-     */
-    @Override
-    public String getName() {
-        return getName(null);
-    }
-
-    /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
      *
@@ -57,6 +49,12 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode<HttpRout
             return false;
         String url = assertion.getProtectedServiceUrl();
         return url != null && !url.toLowerCase().startsWith("http:");
+    }
+
+
+    public String getName(final boolean decorate) {
+        final String name = getName(null);
+        return (decorate)? AssertionUtils.decorateName(assertion, name): name;
     }
 
     protected String getName( final String suffix ) {

@@ -17,7 +17,7 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
  * @author $Author$
  * @version $Revision$
  */
-public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
+public class WsFederationPassiveTokenRequestPropertiesDialog extends LegacyAssertionPropertyDialog {
 
     //- PUBLIC
 
@@ -26,7 +26,7 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
     }
 
     public WsFederationPassiveTokenRequestPropertiesDialog(WsFederationPassiveTokenRequest assertion, boolean request, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
-        super(owner, "WS-Federation Request Properties", modal);
+        super(owner, assertion, modal);
         this.wsFedAssertion = assertion;
         this.readOnly = readOnly;
 
@@ -35,7 +35,7 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
         timestampCheckBox.setSelected(assertion.isTimestamp());
         replyUrlTextField.setText(assertion.getReplyUrl());
         authenticationCheckBox.setSelected(assertion.isAuthenticate());
-        contextUrlTextField.setText(assertion.getContext());
+        contextUrlTextField.setText(assertion.getContextUrl());
 
         getContentPane().add(mainPanel);
 
@@ -155,6 +155,7 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
                 }
             }
             catch(URISyntaxException use) {
+                System.out.println(use);
             }
         }
 

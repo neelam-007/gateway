@@ -16,7 +16,7 @@ import java.awt.event.ActionListener;
 /**
  * Simple edit dialog for cookie credential source bean.
  */
-public class CookieCredentialSourceAssertionPropertiesDialog extends JDialog {
+public class CookieCredentialSourceAssertionPropertiesDialog extends LegacyAssertionPropertyDialog {
     private JPanel rootPanel;
     private JTextField cookieNameField;
     private JButton okButton;
@@ -24,7 +24,7 @@ public class CookieCredentialSourceAssertionPropertiesDialog extends JDialog {
     private boolean confirmed = false;
 
     public CookieCredentialSourceAssertionPropertiesDialog(Frame owner, boolean modal, CookieCredentialSourceAssertion assertion, boolean readOnly) {
-        super(owner, "HTTP Cookie Properties", modal);
+        super(owner, assertion, modal);
         setContentPane(rootPanel);
 
         setData(assertion);

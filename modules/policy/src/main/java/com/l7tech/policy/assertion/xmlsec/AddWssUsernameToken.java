@@ -146,26 +146,27 @@ public class AddWssUsernameToken extends MessageTargetableAssertion implements S
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Add WSS UsernameToken");
+        final String assertionName = "Add WS-Security UsernameToken";
+        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
         meta.put(AssertionMetadata.DESCRIPTION, "Add a WS-Security UsernameToken to the message.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.AddWssUsernameTokenPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.AddWssUsernameTokenValidator");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, AddWssUsernameToken>(){
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, AddWssUsernameToken, Boolean>(){
             @Override
-            public String call( final AddWssUsernameToken addWssBasic ) {
+            public String call(final AddWssUsernameToken addWssBasic, final Boolean decorate) {
                 StringBuilder nameBuilder = new StringBuilder();
                 nameBuilder.append("Add");
-                if ( addWssBasic.isEncrypt() ) {
+                if (addWssBasic.isEncrypt()) {
                     nameBuilder.append(" encrypted");
                 }
-                nameBuilder.append(" WSS UsernameToken");
-                if ( addWssBasic.isDigest() ) {
-                    nameBuilder.append(" digest");                   
+                nameBuilder.append(" WS-Security UsernameToken");
+                if (addWssBasic.isDigest()) {
+                    nameBuilder.append(" digest");
                 }
-                return AssertionUtils.decorateName( addWssBasic, nameBuilder );
+                return (decorate) ? AssertionUtils.decorateName(addWssBasic, nameBuilder) : assertionName;
             }
         });
 

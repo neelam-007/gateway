@@ -127,16 +127,17 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
-        meta.put(PALETTE_NODE_NAME, "Add Signed Security Token");
+        final String assertionName = "Add Signed Security Token";
+        meta.put(PALETTE_NODE_NAME, assertionName);
         meta.put(DESCRIPTION, "Add a signed security token to the message.");
         meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(PALETTE_NODE_SORT_PRIORITY, 60000);
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
-        meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, AddWssSecurityToken>() {
+        meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, AddWssSecurityToken, Boolean>() {
             @Override
-            public String call( final AddWssSecurityToken assertion ) {
-                return AssertionUtils.decorateName(assertion, "Add signed " + assertion.getTokenType().getName());
+            public String call(final AddWssSecurityToken assertion, final Boolean decorate) {
+                return (decorate) ? AssertionUtils.decorateName(assertion, assertionName) : assertionName;
             }
         });
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.AddWssSecurityTokenPropertiesAction");

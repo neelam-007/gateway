@@ -19,9 +19,11 @@ public class XslTransformationTreeNode extends LeafAssertionTreeNode<XslTransfor
         super(assertion);
     }
 
-    @Override
-    public String getName() {
-        StringBuilder nodeName = new StringBuilder("XSL transform");
+    public String getName(final boolean decorate) {
+        final String assertionName = "Apply XSL Transformation";
+        if(!decorate) return assertionName;
+        
+        StringBuilder nodeName = new StringBuilder(assertionName);
 
         final String tname = assertion.getTransformName();
         if (tname != null && tname.length() > 0 && tname.trim().length() > 0) {

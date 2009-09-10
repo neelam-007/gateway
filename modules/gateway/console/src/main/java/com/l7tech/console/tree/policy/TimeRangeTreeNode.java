@@ -19,23 +19,30 @@ public class TimeRangeTreeNode extends LeafAssertionTreeNode<TimeRange> {
         super(assertion);
     }
 
-    public String getName() {
-        if (!assertion.isControlDay() && !assertion.isControlTime()) return "No Availability Defined";
+    public String getName(final boolean decorate) {
+        final String assertionName = "Limit Availability to Time/Days";
+        if(!decorate) return assertionName;
 
-        String nodeName = "Available ";
+        final StringBuffer buffer = new StringBuffer("Limit Availability to: ");
+
+        if (!assertion.isControlDay() && !assertion.isControlTime()){
+            buffer.append("No Availability Defined");
+            return buffer.toString();
+        }
+
         if (assertion.isControlDay()) {
-            nodeName += week[assertion.getStartDayOfWeek()-1] +
-                        " through " + week[assertion.getEndDayOfWeek()-1] + " ";
+            buffer.append(week[assertion.getStartDayOfWeek()-1] +
+                        " through " + week[assertion.getEndDayOfWeek()-1] + " ");
         }
 
         if (assertion.isControlTime() && assertion.getTimeRange() != null) {
             TimeOfDayRange tr = assertion.getTimeRange();
 
-            nodeName += "from " + timeToString(utcToLocalTime(tr.getFrom())) + " to " +
-                                  timeToString(utcToLocalTime(tr.getTo()));
+            buffer.append("from " + timeToString(utcToLocalTime(tr.getFrom())) + " to " +
+                                  timeToString(utcToLocalTime(tr.getTo())));
         }
 
-        return nodeName;
+        return buffer.toString();
     }
 
     protected String iconResource(boolean open) {

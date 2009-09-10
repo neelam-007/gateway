@@ -11,6 +11,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -38,6 +40,7 @@ public class FindEntityDialog extends JDialog {
     private final EntityType entityType;
 
     private EntityHeader selectedEntityHeader;
+
     private Action okAction = new AbstractAction() {
         public void actionPerformed(ActionEvent e) {
             ok();
@@ -49,19 +52,21 @@ public class FindEntityDialog extends JDialog {
         }
     };
 
-    public FindEntityDialog(Frame owner, EntityType entityType) {
+    public FindEntityDialog(Frame owner, EntityType entityType, final Assertion assertion) {
         super(owner, true);
         this.entityType = entityType;
-        initialize();
+        initialize(assertion);
     }
 
-    public FindEntityDialog(JDialog owner, EntityType entityType) throws HeadlessException {
+    public FindEntityDialog(JDialog owner, EntityType entityType, final Assertion assertion) throws HeadlessException {
         super(owner, true);
         this.entityType = entityType;
-        initialize();
+        initialize(assertion);
     }
 
-    private void initialize() {
+    private void initialize(Assertion assertion) {
+        if(entityType == EntityType.ID_PROVIDER_CONFIG && assertion == null) throw new IllegalStateException("assertion cannot be null for identity providers");
+        
         final String name = entityType.getName();
         final String vowels = resources.getString("vowels");
         final String an = vowels.contains(name.substring(0,1).toLowerCase()) ? resources.getString("an") : resources.getString("a");
@@ -69,7 +74,7 @@ public class FindEntityDialog extends JDialog {
         //Identity provider specific text
         final String titleText;
         if(entityType == EntityType.ID_PROVIDER_CONFIG){
-            titleText = "Change Authentication Identity Provider";            
+            titleText = assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString();
         }else{
             titleText = MessageFormat.format(resources.getString("titlePattern"), an, name);
         }
@@ -131,8 +136,8 @@ public class FindEntityDialog extends JDialog {
         return selectedEntityHeader;
     }
 
-    public static void find(final EntityType whatKind, final Functions.UnaryVoid<EntityHeader> runWhenSelected) {
-        final FindEntityDialog fed = new FindEntityDialog(TopComponents.getInstance().getTopParent(), whatKind);
+    public static void find(final EntityType whatKind, final Functions.UnaryVoid<EntityHeader> runWhenSelected, final Assertion assertion) {
+        final FindEntityDialog fed = new FindEntityDialog(TopComponents.getInstance().getTopParent(), whatKind, assertion);
         fed.pack();
         Utilities.centerOnParentWindow(fed);
         DialogDisplayer.display(fed, new Runnable() {

@@ -22,7 +22,7 @@ import java.util.logging.Level;
  * @author $Author$
  * @version $Revision$
  */
-public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
+public class EditWsFederationPassiveTokenRequestAction extends NodeActionWithMetaSupport {
 
     //- PUBLIC
 
@@ -35,7 +35,7 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
      * @param node the node this action will acto on
      */
     public EditWsFederationPassiveTokenRequestAction(AbstractTreeNode node) {
-        super(node, WsFederationPassiveTokenRequest.class);
+        super(node, WsFederationPassiveTokenRequest.class, node.asAssertion());
         Assertion assertion = node.asAssertion();
         if (assertion instanceof WsFederationPassiveTokenRequest) {
             isTokenRequest = true;
@@ -52,22 +52,8 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
         parent = assertion.getParent();
     }
 
-    /**
-     * Get the name of this action.
-     *
-     * @return the name.
-     */
-    @Override
-    public String getName() {
-        return "WS-Federation Request Properties";
-    }
-
     //- PROTECTED
 
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Edit16.gif";
-    }
 
     @Override
     protected void performAction() {
@@ -103,6 +89,7 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
                         }
                     }
 
+                    isTokenRequest = dlg.isTokenRequest();
                     JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
                         PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
@@ -118,7 +105,7 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
     //- PRIVATE
 
     private final CompositeAssertion parent;
-    private final boolean isTokenRequest;
+    private boolean isTokenRequest;
     private final WsFederationPassiveTokenRequest wsFedAssertion;
 
 }

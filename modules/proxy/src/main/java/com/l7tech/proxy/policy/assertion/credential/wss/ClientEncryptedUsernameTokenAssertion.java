@@ -31,6 +31,7 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
     public static final Logger log = Logger.getLogger(ClientEncryptedUsernameTokenAssertion.class.getName());
 
     public ClientEncryptedUsernameTokenAssertion( EncryptedUsernameTokenAssertion data ) {
+        super(data);
         this.data = data;
     }
 
@@ -71,14 +72,6 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
-    }
-
-    public String getName() {
-        return "Require Encrypted UsernameToken Authentication";
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/authentication.gif";
     }
 
     protected EncryptedUsernameTokenAssertion data;

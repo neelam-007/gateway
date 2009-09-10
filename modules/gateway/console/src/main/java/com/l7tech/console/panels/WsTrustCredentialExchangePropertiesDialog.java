@@ -18,7 +18,7 @@ import java.net.URL;
 /**
  * @author alex
  */
-public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
+public class WsTrustCredentialExchangePropertiesDialog extends LegacyAssertionPropertyDialog {
     private WsTrustCredentialExchange wsTrustAssertion;
     private boolean assertionChanged = false;
     private boolean readOnly = false;
@@ -31,12 +31,8 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
     private JTextField tokenServiceUrlField;
     private JTextField issuerField;
 
-    public WsTrustCredentialExchange getWsTrustAssertion() {
-        return wsTrustAssertion;
-    }
-
     public WsTrustCredentialExchangePropertiesDialog(WsTrustCredentialExchange assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
-        super(owner, "WS-Trust Credential Exchange Properties", modal);
+        super(owner, assertion, modal);
         this.wsTrustAssertion = assertion;
         this.readOnly = readOnly;
         requestTypeCombo.setModel(new DefaultComboBoxModel(new WsTrustRequestType[] {WsTrustRequestType.ISSUE, WsTrustRequestType.VALIDATE}));

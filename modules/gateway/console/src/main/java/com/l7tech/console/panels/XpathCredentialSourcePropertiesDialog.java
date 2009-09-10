@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * @author alex
  */
-public class XpathCredentialSourcePropertiesDialog extends JDialog {
+public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionPropertyDialog {
     private XpathCredentialSource xpathCredsAssertion;
     private boolean assertionChanged = false;
     private boolean readOnly = false;
@@ -44,7 +44,7 @@ public class XpathCredentialSourcePropertiesDialog extends JDialog {
     }
 
     public XpathCredentialSourcePropertiesDialog(XpathCredentialSource assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
-        super(owner, "Configure XPath Credential Source", modal);
+        super(owner, assertion, modal);
         this.xpathCredsAssertion = assertion;
         this.readOnly = readOnly;
 

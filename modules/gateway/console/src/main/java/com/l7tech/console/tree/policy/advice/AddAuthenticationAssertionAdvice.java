@@ -27,6 +27,6 @@ public class AddAuthenticationAssertionAdvice implements Advice {
                 ass.setIdentityProviderOid(entityHeader.getOid());
                 pc.proceed();
             }
-        });
+        }, ass);
     }
 }

@@ -18,8 +18,11 @@ public class RequestXpathPolicyTreeNode extends XpathBasedAssertionTreeNode {
         _assertion = assertion;
     }
 
-    public String getBaseName() {
-        StringBuffer sb = new StringBuffer("Request must match XPath ");
+    public String getBaseName(final boolean decorate) {
+        final String assertionName = "Evaluate Request XPath";
+        if(!decorate) return assertionName;
+        
+        StringBuffer sb = new StringBuffer(assertionName+ " against ");
         if (_assertion.getXpathExpression() == null) {
             sb.append("[XPath expression not set]");
         } else {

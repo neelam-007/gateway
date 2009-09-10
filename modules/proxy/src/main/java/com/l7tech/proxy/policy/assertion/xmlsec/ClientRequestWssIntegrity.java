@@ -76,14 +76,4 @@ public class ClientRequestWssIntegrity extends ClientDomXpathBasedAssertion<Requ
         return AssertionStatus.NONE;
     }
 
-    public String getName() {
-        String str = "";
-        if (data != null && data.getXpathExpression() != null)
-            str = " matching XPath expression \"" + data.getXpathExpression().getExpression() + '"';
-        return "Request WSS Integrity - sign elements" + str;
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
-    }
 }

@@ -40,7 +40,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
     /**
      * @return the node name that is displayed
      */
-    public String getName() {
+    public String getName(final boolean decorate) {
         CustomAssertionHolder cha = (CustomAssertionHolder)asAssertion();
         final CustomAssertion ca = cha.getCustomAssertion();
         String name = ca.getName();

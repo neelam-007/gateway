@@ -11,11 +11,7 @@ import java.text.MessageFormat;
 import java.util.logging.Logger;
 
 /**
- * Created by IntelliJ IDEA.
- * User: megery
- * Date: May 23, 2008
- * Time: 9:22:59 AM
- * To change this template use File | Settings | File Templates.
+ * @author megery
  */
 public class EsmSubscriptionAssertionPolicyNode extends DefaultAssertionPolicyNode<EsmSubscriptionAssertion> {
     private static final Logger logger = Logger.getLogger(EsmSubscriptionAssertionPolicyNode.class.getName());

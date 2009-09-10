@@ -25,8 +25,10 @@ public class SetVariableAssertionPolicyNode extends LeafAssertionTreeNode {
     /**
      * @return the node name that is displayed
      */
-    public String getName() {
-        StringBuffer name = new StringBuffer("Set ");
+    public String getName(final boolean decorate) {
+        final String assertionName = "Set Context Variable";
+
+        StringBuffer name = new StringBuffer(assertionName + " ");
         name.append(assertion.getVariableToSet());
         name.append(" as ");
         name.append(assertion.getDataType().getName());
@@ -42,7 +44,7 @@ public class SetVariableAssertionPolicyNode extends LeafAssertionTreeNode {
             name.append(expression, 0, MAX_DISPLAY_LENGTH - 1);
             name.append("...");
         }
-        return name.toString();
+        return (decorate)? name.toString(): assertionName;
     }
 
     /**

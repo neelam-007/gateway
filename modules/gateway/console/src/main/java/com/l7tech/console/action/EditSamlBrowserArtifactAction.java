@@ -22,7 +22,7 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public class EditSamlBrowserArtifactAction extends NodeAction {
+public class EditSamlBrowserArtifactAction extends NodeActionWithMetaSupport {
     private final SamlBrowserArtifact samlBrowserArtifactAssertion;
 
     /**
@@ -33,23 +33,11 @@ public class EditSamlBrowserArtifactAction extends NodeAction {
      * @param node the node this action will acto on
      */
     public EditSamlBrowserArtifactAction(AbstractTreeNode node) {
-        super(node, SamlBrowserArtifact.class);
+        super(node, SamlBrowserArtifact.class, node.asAssertion());
         if (!(node.asAssertion() instanceof SamlBrowserArtifact)) {
             throw new IllegalArgumentException();
         }
         samlBrowserArtifactAssertion = (SamlBrowserArtifact)node.asAssertion();
-    }
-
-    public String getName() {
-        return "SAML Browser Artifact Properties";
-    }
-
-    public String getDescription() {
-        return getName();
-    }
-
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Edit16.gif";
     }
 
     protected void performAction() {

@@ -139,7 +139,7 @@ class ScopeDialog extends JDialog {
 
         specificFindButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                final FindEntityDialog fed = new FindEntityDialog(ScopeDialog.this, entityType);
+                final FindEntityDialog fed = new FindEntityDialog(ScopeDialog.this, entityType, null);
                 fed.pack();
                 Utilities.centerOnScreen(fed);
                 DialogDisplayer.display(fed, new Runnable() {
@@ -158,7 +158,7 @@ class ScopeDialog extends JDialog {
 
         folderFindButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                final FindEntityDialog fed = new FindEntityDialog(ScopeDialog.this, EntityType.FOLDER);
+                final FindEntityDialog fed = new FindEntityDialog(ScopeDialog.this, EntityType.FOLDER, null);
                 fed.pack();
                 Utilities.centerOnScreen(fed);
                 DialogDisplayer.display(fed, new Runnable() {

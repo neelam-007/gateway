@@ -144,7 +144,7 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
             GenericHttpRequestParams params = new GenericHttpRequestParams(ipStsUrl);
             initParams(params);
 
-            XmlSecurityToken token = FederationPassiveClient.exchangeFederationToken(httpClient, params, partnerAssertion, assertion.getContext(), false);
+            XmlSecurityToken token = FederationPassiveClient.exchangeFederationToken(httpClient, params, partnerAssertion, assertion.getContextUrl(), false);
             if(token instanceof SamlAssertion) {
                 samlAssertion = (SamlAssertion) token;
             }
@@ -174,7 +174,7 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
      *
      */
     private void doAuth(PolicyEnforcementContext context, SamlAssertion samlAssertion, boolean allowDeferred) throws AuthRequiredException, StopAndAuditException {
-        doAuth(context, httpClient, samlAssertion, assertion.getReplyUrl(), assertion.getContext(), allowDeferred);
+        doAuth(context, httpClient, samlAssertion, assertion.getReplyUrl(), assertion.getContextUrl(), allowDeferred);
     }
 
     /**

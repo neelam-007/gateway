@@ -23,8 +23,9 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode<SchemaValida
     }
 
     @Override
-    public String getName() {
-        return AssertionUtils.decorateName(assertion, "Validate Schema");
+    public String getName(final boolean decorate) {
+        final String assertionName = "Validate XML Schema";
+        return (decorate)? AssertionUtils.decorateName(assertion, assertionName): assertionName;
     }
 
     @Override

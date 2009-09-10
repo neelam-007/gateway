@@ -13,7 +13,7 @@ public class JmsTransportTreeNode extends LeafAssertionTreeNode<JmsTransportAsse
         super(assertion);
     }
 
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Message received using JMS";
     }
 

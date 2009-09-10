@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.JDialog;
@@ -41,8 +42,17 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
         super( owner, title, AssertionPropertiesEditorSupport.DEFAULT_MODALITY_TYPE );
     }
 
+    public AssertionPropertiesEditorSupport( Window owner, Assertion assertion) {
+        super( owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString()
+                , AssertionPropertiesEditorSupport.DEFAULT_MODALITY_TYPE );
+    }
+
     public AssertionPropertiesEditorSupport( Window owner, String title, ModalityType modalityType ) {
         super( owner, title, modalityType );
+    }
+
+    public AssertionPropertiesEditorSupport( Window owner, Assertion assertion, ModalityType modalityType ) {
+        super( owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString() , modalityType );
     }
 
     @Override

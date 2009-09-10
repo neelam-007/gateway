@@ -170,10 +170,11 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpResponseEvaluationAssertionPropertiesEditor");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SamlpResponseEvaluationAssertion>() {
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, SamlpResponseEvaluationAssertion, Boolean>() {
             @Override
-            public String call(SamlpResponseEvaluationAssertion assertion) {
-                StringBuilder sb = new StringBuilder("SAMLP Evaluator");
+            public String call(final SamlpResponseEvaluationAssertion assertion, final Boolean decorate) {
+                final String assertionName = "SAMLP Evaluator";
+                StringBuilder sb = new StringBuilder(assertionName);
 
                 if (assertion.getAuthenticationStatement() != null)
                     sb.append(" (Authentication)");
@@ -182,7 +183,7 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
                 else if (assertion.getAttributeStatement() != null)
                     sb.append(" (Attribute Query)");
 
-                return AssertionUtils.decorateName(assertion, sb);
+                return (decorate) ? AssertionUtils.decorateName(assertion, sb) : assertionName;
             }
         });
 

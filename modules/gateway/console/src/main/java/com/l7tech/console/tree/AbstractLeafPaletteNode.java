@@ -1,5 +1,10 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_ICON;
+
 /**
  * Base class for leaf nodes (no children) with icons.
  *
@@ -13,10 +18,17 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
     /**
      *
      */
-    public AbstractLeafPaletteNode(String name, String iconResource) {
+    public AbstractLeafPaletteNode(final String name, final String iconResource) {
         super(null);
         this.name = name != null ? name : "NAME NOT SET";
         this.iconResource = iconResource;
+    }
+
+    public AbstractLeafPaletteNode(final Assertion assertion){
+        super(null);
+        final AssertionMetadata meta = assertion.meta();
+        this.name = meta.get(PALETTE_NODE_NAME).toString();
+        this.iconResource = meta.get(PALETTE_NODE_ICON).toString();
     }
 
     /**

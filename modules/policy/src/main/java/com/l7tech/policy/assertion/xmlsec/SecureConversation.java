@@ -36,10 +36,12 @@ public class SecureConversation extends SecurityHeaderAddressableSupport {
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(AssertionMetadata.SHORT_NAME, "Require WS-SecureConversation");
+        meta.put(AssertionMetadata.DESCRIPTION, "Requires that requests and responses be secured using the WS-SecureConversation protocol.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
-
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+        meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         return meta;
     }
 }

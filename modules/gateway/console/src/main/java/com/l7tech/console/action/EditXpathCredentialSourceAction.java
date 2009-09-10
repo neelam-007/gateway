@@ -16,7 +16,7 @@ import java.util.logging.Level;
 /**
  * @author alex
  */
-public class EditXpathCredentialSourceAction extends NodeAction {
+public class EditXpathCredentialSourceAction extends NodeActionWithMetaSupport {
     private final XpathCredentialSource xpathCredsAssertion;
 
     /**
@@ -27,26 +27,11 @@ public class EditXpathCredentialSourceAction extends NodeAction {
      * @param node the node this action will acto on
      */
     public EditXpathCredentialSourceAction(AbstractTreeNode node) {
-        super(node, XpathCredentialSource.class);
+        super(node, XpathCredentialSource.class, node.asAssertion());
         if (!(node.asAssertion() instanceof XpathCredentialSource)) {
             throw new IllegalArgumentException();
         }
         xpathCredsAssertion = (XpathCredentialSource)node.asAssertion();
-    }
-
-    @Override
-    public String getName() {
-        return "View/Edit XPath Credential Source Properties";
-    }
-
-    @Override
-    public String getDescription() {
-        return getName();
-    }
-
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Edit16.gif";
     }
 
     @Override

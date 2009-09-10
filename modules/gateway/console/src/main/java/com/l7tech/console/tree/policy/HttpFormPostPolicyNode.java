@@ -21,7 +21,7 @@ public class HttpFormPostPolicyNode extends LeafAssertionTreeNode {
     /**
      * @return the node name that is displayed
      */
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "HTTP Form to MIME Translation";
     }
 

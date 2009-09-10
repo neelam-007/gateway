@@ -96,6 +96,12 @@ public interface AssertionMetadata {
     String PROPERTIES_ACTION_DESC = "propertiesActionDesc";
 
     /**
+     * String. Path of image icon to use for the action.
+     * Defaults to com/l7tech/console/resources/Properties16.gif
+     */
+    String PROPERTIES_ACTION_ICON = "propertiesActionIcon";
+
+    /**
      * String.  Name to display on the palette node for this assertion, if using DefaultAssertionPaletteNode.
      * Defaults to SHORT_NAME.
      */
@@ -107,6 +113,13 @@ public interface AssertionMetadata {
      * writing, and is always available on both SSM and manager applet.
      */
     String PALETTE_NODE_ICON = "paletteNodeIcon";
+
+    /**
+     * String file path.  Icon to display for the client palette node for this assertion
+     * Defaults to "com/l7tech/console/resources/policy16.gif", which is a picture of a small piece of paper with
+     * writing, and is always available on both SSM and manager applet.
+     */
+    String PALETTE_NODE_CLIENT_ICON = "paletteNodeClientIcon";
 
     /**
      * Integer. The sort priority for the palette node for this assertion, if using DefaultAssertionPaletteNode.
@@ -170,10 +183,20 @@ public interface AssertionMetadata {
     String POLICY_NODE_NAME = "policyNodeName";
 
     /**
-     * Functions.Unary< String, Assertion >.  Generator of name to display on the policy node for this assertion,
-     * if using DefaultAssertionPolicyNode.  This is a generator rather than just simple String so that it can
-     * vary based on the configuration of the particular assertion whose policy node is being displayed.
+     * Allowed Types: Functions.Unary< String, Assertion > or Functions.Binary<String, Assertion, Boolean> or String
      * <p/>
+     * If a Function it's a generator of name to display on the policy node for this assertion,
+     * if using DefaultAssertionPolicyNode. It is also the String used to describe the assertion in the Policy Validator
+     * Messages window.
+     * <p/>
+     * This is a generator rather than just simple String so that it can vary based on the configuration of the
+     * particular assertion whose policy node is being displayed.
+     * If a Functions.Binary is supplied, the Boolean parameter tells the generator whether or not to decorate the
+     * generated String. The Policy windows needs assertion names decorated, but the policy validation window does not
+     * <p/>
+     * If the value is a String, it's value will be used
+     * <p/>
+     * No other types are supported
      * Defaults to null.
      */
     String POLICY_NODE_NAME_FACTORY = "policyNodeNameFactory";

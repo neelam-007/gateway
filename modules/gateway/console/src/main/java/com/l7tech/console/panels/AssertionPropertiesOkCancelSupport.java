@@ -27,6 +27,11 @@ public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> e
         this.beanClass = beanClass;
     }
 
+    protected AssertionPropertiesOkCancelSupport(Class<? extends AT> beanClass, final Assertion assertion, Window owner, boolean modal) {
+        super(owner, assertion, modal ? AssertionPropertiesOkCancelSupport.DEFAULT_MODALITY_TYPE : ModalityType.MODELESS);
+        this.beanClass = beanClass;
+    }
+
     protected AssertionPropertiesOkCancelSupport(Class<? extends AT> beanClass) {
         this.beanClass = beanClass;
     }

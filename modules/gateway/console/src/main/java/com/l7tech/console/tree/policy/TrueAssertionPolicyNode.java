@@ -15,7 +15,7 @@ public class TrueAssertionPolicyNode extends LeafAssertionTreeNode {
     /**
      * @return the node name that is displayed
      */
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Continue processing";
     }
 

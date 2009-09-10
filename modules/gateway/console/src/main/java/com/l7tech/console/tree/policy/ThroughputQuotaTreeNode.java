@@ -21,15 +21,16 @@ public class ThroughputQuotaTreeNode extends LeafAssertionTreeNode<ThroughputQuo
         super(assertion);
     }
 
-    public String getName() {
-        String nodeName;
+    public String getName(final boolean decorate) {
+        final String assertionName = "Apply Throughput Quota";
+        final StringBuffer buffer = new StringBuffer(assertionName);
         if (assertion.getCounterStrategy() == ThroughputQuota.DECREMENT) {
-            nodeName = "Decrement counter " + assertion.getCounterName();
+            buffer.append(": Decrement counter " + assertion.getCounterName());
         } else {
-            nodeName = "Max Throughput " + assertion.getCounterName() + ": " +
-                       assertion.getQuota() + " per " + timeUnitStr(assertion.getTimeUnit());
+            buffer.append(": " + assertion.getCounterName() + ": " +
+                       assertion.getQuota() + " per " + timeUnitStr(assertion.getTimeUnit()));
         }
-        return nodeName;
+        return (decorate)? buffer.toString(): assertionName;
     }
 
     private String timeUnitStr(int timeUnit) {

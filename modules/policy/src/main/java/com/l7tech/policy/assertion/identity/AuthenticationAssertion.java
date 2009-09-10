@@ -66,6 +66,12 @@ public class AuthenticationAssertion extends IdentityAssertion {
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/user16.png");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddAuthenticationAssertionAdvice");
         meta.put(AssertionMetadata.POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.AuthenticationAssertionPolicyNode");
+
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Change Authentication Identity Provider");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/Properties16.gif");
+
+        //Change Authentication Identity Provider
+
         return meta;
     }
 }

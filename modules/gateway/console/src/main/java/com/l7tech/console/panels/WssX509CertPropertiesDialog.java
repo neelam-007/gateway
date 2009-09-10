@@ -17,7 +17,7 @@ public class WssX509CertPropertiesDialog extends AssertionPropertiesOkCancelSupp
     //- PUBLIC
 
     public WssX509CertPropertiesDialog( final Window owner, final RequireWssX509Cert assertion ) {
-        super(RequireWssX509Cert.class, owner, resources.getString("dialog.title"), true);
+        super(RequireWssX509Cert.class, assertion, owner, true);
         initComponents();
         setData(assertion);
     }

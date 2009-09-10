@@ -126,18 +126,18 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
-        meta.put(SHORT_NAME, "Require Timestamp");
+
+        final String assertionName = "Require Timestamp";
+        meta.put(SHORT_NAME, assertionName);
         meta.put(DESCRIPTION, "The message must contain a Timestamp.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(PALETTE_NODE_SORT_PRIORITY, 68000);
-        meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequireWssTimestamp>() {
+        meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, RequireWssTimestamp, Boolean>() {
             @Override
-            public String call(RequireWssTimestamp assertion) {
-                return AssertionUtils.decorateName(
-                        assertion,
-                        MessageFormat.format("Require {0}Timestamp",
-                                assertion.isSignatureRequired() ? "signed " : ""));
+            public String call(final RequireWssTimestamp assertion, final Boolean decorate) {
+                final String decoratedName = (assertion.isSignatureRequired()) ? "Require signed Timestamp" : assertionName;
+                return (decorate)? AssertionUtils.decorateName(assertion, decoratedName): assertionName;
             }
         });
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RequireWssTimestampDialog");

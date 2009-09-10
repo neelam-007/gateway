@@ -83,22 +83,23 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Require Encrypted Element");
+        final String assertionName = "Require Encrypted Element";
+        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
         meta.put(AssertionMetadata.DESCRIPTION, "The message must contain one or more encrypted elements.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, 90000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequireWssEncryptedElement>() {
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, RequireWssEncryptedElement, Boolean>() {
             @Override
-            public String call( final RequireWssEncryptedElement requestWssConfidentiality ) {
-                StringBuilder name = new StringBuilder("Require encrypted element ");
+            public String call(final RequireWssEncryptedElement requestWssConfidentiality, final Boolean decorate) {
+                StringBuilder name = new StringBuilder(assertionName + " ");
                 if (requestWssConfidentiality.getXpathExpression() == null) {
-                    name .append("[XPath expression not set]");
+                    name.append("[XPath expression not set]");
                 } else {
                     name.append(requestWssConfidentiality.getXpathExpression().getExpression());
                 }
-                return AssertionUtils.decorateName(requestWssConfidentiality, name);
+                return (decorate) ? AssertionUtils.decorateName(requestWssConfidentiality, name) : assertionName;
             }
         });
         meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssEncryptedElement>(){

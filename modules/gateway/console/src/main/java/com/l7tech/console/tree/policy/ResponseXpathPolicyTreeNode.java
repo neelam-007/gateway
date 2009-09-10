@@ -18,17 +18,18 @@ public class ResponseXpathPolicyTreeNode extends XpathBasedAssertionTreeNode {
         _assertion = assertion;
     }
 
-    public String getBaseName() {
-        StringBuffer sb = new StringBuffer();
+    public String getBaseName(final boolean decorate) {
+        final String assertionName = "Evaluate Response XPath";
+        
+        StringBuffer sb = new StringBuffer(assertionName);
         final String variableName = _assertion.getXmlMsgSrc();
-        if (variableName == null) {
-            sb.append("Response");
-        } else {
+        if(variableName != null){
+            sb.append(" from variable ");
             sb.append(Syntax.SYNTAX_PREFIX);
             sb.append(variableName);
             sb.append(Syntax.SYNTAX_SUFFIX);
         }
-        sb.append(" must match XPath ");
+        sb.append(" against ");    
         if (_assertion.getXpathExpression() == null) {
             sb.append("[XPath expression not set]");
         } else {

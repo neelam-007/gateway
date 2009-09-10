@@ -25,25 +25,13 @@ import java.util.logging.Level;
  *
  * @author emil
  */
-public class EditRequireWssSamlAction extends NodeAction {
+public class EditRequireWssSamlAction extends NodeActionWithMetaSupport {
 
     public EditRequireWssSamlAction(AssertionTreeNode node) {
-        super(node, RequireWssSaml.class);
+        super(node, RequireWssSaml.class, node.asAssertion());
         if (!(node.asAssertion() instanceof RequireWssSaml)) {
             throw new IllegalArgumentException();
         }
-    }
-
-    public String getName() {
-        return "View/Edit SAML Assertion";
-    }
-
-    public String getDescription() {
-        return getName();
-    }
-
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Edit16.gif";
     }
 
     protected void performAction() {

@@ -8,6 +8,9 @@ package com.l7tech.policy.assertion.credential.wss;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.util.Functions;
 
 /**
  * @author alex
@@ -19,12 +22,23 @@ public class WssBasic extends WssCredentialSourceAssertion {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "WSS UsernameToken Basic");
+        final String baseName = "Require WS-Security UsernameToken Profile Credentials";
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "The requestor must provide BASIC credentials in a WSS Username Token");
         meta.putNull(AssertionMetadata.PROPERTIES_EDITOR_FACTORY);
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME, "Require WSS UsernameToken Basic Authentication");
 
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, Assertion, Boolean>(){
+            public String call(Assertion assertion, Boolean decorate) {
+                if(!decorate) return baseName;
+                return AssertionUtils.decorateName(assertion, baseName);
+            }
+        });
+
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
+
+        meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
+        
         return meta;
     }
 }

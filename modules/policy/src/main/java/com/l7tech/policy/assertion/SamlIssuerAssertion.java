@@ -244,9 +244,11 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.saml.SamlIssuerAssertionPropertiesEditor");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddSamlIssuerAssertionAdvice");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SamlIssuerAssertion>() {
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, SamlIssuerAssertion, Boolean>() {
             @Override
-            public String call(SamlIssuerAssertion sia) {
+            public String call(final SamlIssuerAssertion sia, final Boolean decorate) {
+                final String assertionName = "Create SAML Assertion";
+
                 StringBuilder sb = new StringBuilder();
                 sb.append("Issue ");
                 if (sia.isSignAssertion()) sb.append("signed ");
@@ -260,7 +262,9 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
                         sb.append("Bearer-Token ");
                     }
                 }
-                sb.append("SAML Assertion");
+
+                sb.append(assertionName);
+
                 EnumSet<DecorationType> dts = sia.getDecorationTypes();
                 if (dts == null || dts.isEmpty()) return AssertionUtils.decorateName(sia, sb);
 
@@ -272,7 +276,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
                     else
                         sb.append("response");
                 }
-                return AssertionUtils.decorateName(sia, sb);
+                return (decorate) ? AssertionUtils.decorateName(sia, sb) : assertionName;
             }
         });
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(

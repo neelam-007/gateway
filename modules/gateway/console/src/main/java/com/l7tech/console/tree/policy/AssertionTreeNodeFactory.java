@@ -45,7 +45,6 @@ public class AssertionTreeNodeFactory {
 
     // maping assertions to assertion tree nodes
     static {
-        assertionMap.put(SslAssertion.class, SslAssertionTreeNode.class);
         assertionMap.put(SpecificUser.class, SpecificUserAssertionTreeNode.class);
         assertionMap.put(MemberOfGroup.class, MemberOfGroupAssertionTreeNode.class);
         assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
@@ -53,11 +52,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(AllAssertion.class, AllAssertionTreeNode.class);
         assertionMap.put(TrueAssertion.class, TrueAssertionPolicyNode.class);
         assertionMap.put(FalseAssertion.class, FalseAssertionPolicyNode.class);
-
-        assertionMap.put(HttpBasic.class, HttpBasicAuthAssertionTreeNode.class);
-        assertionMap.put(HttpDigest.class, HttpDigestAuthAssertionTreeNode.class);
-        assertionMap.put(HttpNegotiate.class, HttpNegotiateAuthAssertionTreeNode.class);
-        assertionMap.put(CookieCredentialSourceAssertion.class, CookieCredentialSourceAssertionTreeNode.class);
 
         assertionMap.put(RoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
         assertionMap.put(HttpRoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
@@ -75,11 +69,8 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
         assertionMap.put(AuditAssertion.class, AuditAssertionPolicyNode.class);
         assertionMap.put(AuditDetailAssertion.class, AuditDetailAssertionTreeNode.class);
-        assertionMap.put(WsTrustCredentialExchange.class, WsTrustCredentialExchangeTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenExchange.class, WsFederationPassiveTokenRequestTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenRequest.class, WsFederationPassiveTokenRequestTreeNode.class);
-        assertionMap.put(XpathCredentialSource.class, XpathCredentialSourceTreeNode.class);
-        assertionMap.put(SamlBrowserArtifact.class, SamlBrowserArtifactTreeNode.class);
         assertionMap.put(Regex.class, RegexPolicyNode.class);
         assertionMap.put(ThroughputQuota.class, ThroughputQuotaTreeNode.class);
         assertionMap.put(HttpFormPost.class, HttpFormPostPolicyNode.class);
@@ -185,7 +176,7 @@ public class AssertionTreeNodeFactory {
             return "com/l7tech/console/resources/unknown.gif";
         }
 
-        public String getName() {
+        public String getName(final boolean decorate) {
             return name;
         }
     }

@@ -14,10 +14,7 @@ class AnonymousAssertionTreeNode extends LeafAssertionTreeNode<TrueAssertion> {
         super(node);
     }
 
-    /**
-     * @return the node name that is displayed
-     */
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Anonymous access";
     }
 

@@ -54,8 +54,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         }
     }
 
-    @Override
-    public String getName() {
+    public String getName(final boolean decorate) {
         Policy policy = getPolicy();
         StringBuilder sb = new StringBuilder("Include: ");
         if (policy == null) {

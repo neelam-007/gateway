@@ -47,7 +47,7 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
 
         final String assertionName = "Query LDAP";
         meta.put(SHORT_NAME, assertionName);
-        meta.put(LONG_NAME, "Retrieve attributes from an LDAP directory");
+        meta.put(DESCRIPTION, "Retrieve attributes from an LDAP directory server and store them in context variables.");
         meta.put(PROPERTIES_ACTION_NAME, "LDAP Query Properties");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");

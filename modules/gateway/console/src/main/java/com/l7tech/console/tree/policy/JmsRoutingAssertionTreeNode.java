@@ -29,26 +29,27 @@ public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
     /**
      * @return the node name that is displayed
      */
-    public String getName() {
+    public String getName(final boolean decorate) {
+        final String assertionName = "Route via JMS";
         final String name = "Route to JMS Queue ";
         JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
         String actor = SecurityHeaderAddressableSupport.getActorSuffix(ass);
-        String endpointName = null;
+
         if (ass.getEndpointOid() == null) {
             return name + "(Not Yet Specified)" + actor;
-        } else {
-            try {
-                JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(ass.getEndpointOid());
-                if(endpoint != null) {
-                    endpointName = endpoint.getName();
-                } else {
-                    endpointName = ass.getEndpointName();
-                }
-            } catch(FindException e) {
+        }
+        String endpointName;
+        try {
+            JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(ass.getEndpointOid());
+            if(endpoint != null) {
+                endpointName = endpoint.getName();
+            } else {
                 endpointName = ass.getEndpointName();
             }
+        } catch(FindException e) {
+            endpointName = ass.getEndpointName();
         }
-        return name + (endpointName == null ? "(unnamed)" : endpointName) + actor;
+        return (decorate)? name + (endpointName == null ? "(unnamed)" : endpointName) + actor: assertionName;
     }
 
     /**

@@ -48,6 +48,17 @@ public abstract class BaseAction extends AbstractAction {
     public BaseAction(boolean lazyActionValues){
     }
 
+    public BaseAction(final String name, final String desc, final String img){
+        if(name == null || name.trim().isEmpty()) throw new IllegalArgumentException("name cannot be null or empty");
+        if(desc == null || desc.trim().isEmpty()) throw new IllegalArgumentException("desc cannot be null or empty");
+        if(img == null || img.trim().isEmpty()) throw new IllegalArgumentException("img cannot be null or empty");
+
+        putValue(Action.NAME, name);
+        putValue(Action.SHORT_DESCRIPTION, desc);
+        Image imgIcon = ImageCache.getInstance().getIcon(img);
+        putValue(Action.SMALL_ICON, new ImageIcon(imgIcon));
+    }
+
     protected void setActionValues() {
         String name = getName();
         if (name != null) {
@@ -211,6 +222,8 @@ public abstract class BaseAction extends AbstractAction {
 
     /**
      * Actually perform the action.
+     *
+     * Must run on the Swing event thread
      */
     protected abstract void performAction();
 

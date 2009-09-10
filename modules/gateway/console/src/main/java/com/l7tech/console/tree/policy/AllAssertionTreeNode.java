@@ -14,10 +14,8 @@ public class AllAssertionTreeNode extends CompositeAssertionTreeNode<AllAssertio
         super(assertion);
     }
 
-    /**
-     * @return the node name that is displayed
-     */
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "All assertions must evaluate to true";
     }
+
 }

@@ -16,7 +16,7 @@ public class ExactlyOneAssertionTreeNode extends CompositeAssertionTreeNode<Exac
     /**
      * @return the node name that is displayed
      */
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Exactly one assertion must evaluate to true";
     }
 }

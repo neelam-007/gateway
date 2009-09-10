@@ -133,28 +133,30 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.SHORT_NAME, "Add or remove WS-Security");
+
+        final String assertionName = "Add or Remove WS-Security";
+        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
         meta.put(AssertionMetadata.DESCRIPTION, "Add, remove or modify the WS-Security related contents of a message.");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.WsSecurityPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String,WsSecurity>(){
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, WsSecurity, Boolean>() {
             @Override
-            public String call( final WsSecurity wsSecurity ) {
+            public String call(final WsSecurity wsSecurity, final Boolean decorate) {
                 StringBuilder nameBuilder = new StringBuilder();
 
-                if ( wsSecurity.isApplyWsSecurity() ) {
+                if (wsSecurity.isApplyWsSecurity()) {
                     nameBuilder.append("Apply ");
                 }
 
                 nameBuilder.append("WS-Security");
-                if ( wsSecurity.isApplyWsSecurity() &&
-                     !Assertion.isResponse( wsSecurity ) &&
-                     wsSecurity.getWsSecurityVersion() != null ) {
+                if (wsSecurity.isApplyWsSecurity() &&
+                        !Assertion.isResponse(wsSecurity) &&
+                        wsSecurity.getWsSecurityVersion() != null) {
                     nameBuilder.append(" ");
                     nameBuilder.append(wsSecurity.getWsSecurityVersion());
                 }
 
-                return AssertionUtils.decorateName( wsSecurity, nameBuilder );
+                return (decorate)? AssertionUtils.decorateName(wsSecurity, nameBuilder): assertionName;
             }
         });
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(

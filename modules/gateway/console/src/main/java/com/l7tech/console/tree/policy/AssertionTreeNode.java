@@ -16,10 +16,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.Syntax;
@@ -127,11 +124,15 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return assertion;
     }
 
+    abstract public String getName(boolean decorate);
+
     /**
      * @return the node name that is displayed
      */
     @Override
-    abstract public String getName();
+    public String getName(){
+        return getName(true);
+    }
 
     /**
      * Set the validator messages for this node.

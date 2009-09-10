@@ -3,6 +3,8 @@
  */
 package com.l7tech.policy.assertion.credential.http;
 
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 /**
  * Gathers HTTP Digest Authentication info from the request.  Implementations are
  * responsible for filling in the correct values in the <code>Authorization</code> header.
@@ -72,6 +74,23 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
      */
     public void setNonceTimeout( int nonceTimeout ) {
         _nonceTimeout = nonceTimeout;
+    }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
+
+        meta.put(AssertionMetadata.SHORT_NAME, "Require HTTP Digest Credentials");
+        meta.put(AssertionMetadata.LONG_NAME, "The requestor must provide credentials using the HTTP DIGEST authentication method.");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
+
+        meta.putNull(AssertionMetadata.PROPERTIES_ACTION_FACTORY);
+
+        meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
+
+        return meta;
     }
 
     protected int _nonceTimeout = DEFAULT_NONCE_TIMEOUT;

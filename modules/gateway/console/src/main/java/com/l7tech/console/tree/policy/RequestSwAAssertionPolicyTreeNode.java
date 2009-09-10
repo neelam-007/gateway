@@ -21,7 +21,7 @@ public class RequestSwAAssertionPolicyTreeNode extends LeafAssertionTreeNode {
         }
     }
 
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "SOAP Request with Attachment";
     }
 

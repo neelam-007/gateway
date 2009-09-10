@@ -206,7 +206,8 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "SAML Assertion");
+        final String assertionName = "Require SAML Token Profile";
+        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
         meta.put(AssertionMetadata.DESCRIPTION, "Gateway checks for the SAML Statements Security properties");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
         meta.put(AssertionMetadata.ASSERTION_FACTORY, new Functions.Unary<RequireWssSaml, RequireWssSaml>(){
@@ -216,14 +217,21 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
             }
         });
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddRequireWssSamlAdvice");
+
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Token Profile Wizard");        
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/Edit16.gif");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.EditRequireWssSamlAction");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequireWssSaml>() {
+        
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, RequireWssSaml, Boolean>() {
             @Override
-            public String call( final RequireWssSaml requestWssSaml ) {
-                return requestWssSaml.describe();
+            public String call(final RequireWssSaml requestWssSaml, final Boolean decorate) {
+                return (decorate)? requestWssSaml.describe(): assertionName;
             }
         });
+
+        meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssSaml");
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.SamlStatementValidator");
 
         return meta;
@@ -245,7 +253,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
             assertion.setAuthorizationStatement((SamlAuthorizationStatement)assertion.getAuthorizationStatement().clone());
         }
 
-        assertion.messageTargetableSupport = new MessageTargetableSupport( messageTargetableSupport );        
+        assertion.messageTargetableSupport = new MessageTargetableSupport( messageTargetableSupport );
 
         return assertion;
     }
@@ -264,6 +272,6 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
             st = "v" + this.getVersion() + " " + st;
         }
 
-        return AssertionUtils.decorateName(this, "Require SAML " + st);
+        return AssertionUtils.decorateName(this, "Require SAML Token " + st);
     }
 }

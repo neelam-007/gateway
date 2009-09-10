@@ -119,22 +119,23 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Require Signed Element");
+        final String assertionName = "Require Signed Element";
+        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
         meta.put(AssertionMetadata.DESCRIPTION, "The message must contain one or more signed elements.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, 100000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequireWssSignedElement>() {
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, RequireWssSignedElement, Boolean>() {
             @Override
-            public String call( final RequireWssSignedElement requestWssIntegrity ) {
-                StringBuilder name = new StringBuilder("Require signed element ");
+            public String call(final RequireWssSignedElement requestWssIntegrity, final Boolean decorate) {
+                StringBuilder name = new StringBuilder(assertionName + " ");
                 if (requestWssIntegrity.getXpathExpression() == null) {
-                    name .append("[XPath expression not set]");
+                    name.append("[XPath expression not set]");
                 } else {
                     name.append(requestWssIntegrity.getXpathExpression().getExpression());
                 }
-                return AssertionUtils.decorateName(requestWssIntegrity, name);
+                return (decorate)? AssertionUtils.decorateName(requestWssIntegrity, name): assertionName;
             }
         });
         meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssSignedElement>(){
@@ -148,6 +149,9 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
                 WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping);            
         }});
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssIntegrity");
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
+        meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
+        
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.XpathBasedAssertionValidator");
 
         return meta;

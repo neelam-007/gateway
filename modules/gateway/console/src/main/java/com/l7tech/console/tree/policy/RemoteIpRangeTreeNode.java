@@ -19,15 +19,18 @@ public class RemoteIpRangeTreeNode extends LeafAssertionTreeNode<RemoteIpRange> 
     public RemoteIpRangeTreeNode(RemoteIpRange assertion) {
         super(assertion);
     }
-    public String getName() {
-        StringBuilder sb = new StringBuilder("IP Address ");
-        sb.append(assertion.isAllowRange() ? "Allowed" : "Forbidden");
+    public String getName(final boolean decorate) {
+        final String assertionName = "Allow / Forbid access to IP Address Range";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append((assertion.isAllowRange())? "Allow": "Forbid");
+        sb.append(" access to IP Address Range");
         sb.append(" [");
         sb.append(assertion.getStartIp());
         sb.append("/");
         sb.append(assertion.getNetworkMask());
         sb.append("]");
-        return sb.toString();
+        return (decorate)? sb.toString(): assertionName;
     }
 
     protected String iconResource(boolean open) {

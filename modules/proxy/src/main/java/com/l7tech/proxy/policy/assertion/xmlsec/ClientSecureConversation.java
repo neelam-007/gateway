@@ -14,8 +14,8 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -32,10 +32,11 @@ import java.util.logging.Logger;
  * Date: Aug 4, 2004<br/>
  * $Id$<br/>
  */
-public class ClientSecureConversation extends ClientAssertion {
+public class ClientSecureConversation extends ClientAssertionWithMetaSupport {
     private SecureConversation data;
 
     public ClientSecureConversation(SecureConversation assertion) {
+        super(assertion);
         this.data = assertion;
     }
 
@@ -114,14 +115,6 @@ public class ClientSecureConversation extends ClientAssertion {
         // Response contained a proven token for this conversation.
         log.log(Level.FINE, "Response contained a proven SecurityContextToken for this session; assertion succeeds.");
         return AssertionStatus.NONE;
-    }
-
-    public String getName() {
-        return "Require valid WS-SecureConversation session";
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 
     private static final Logger log = Logger.getLogger(ClientSecureConversation.class.getName());

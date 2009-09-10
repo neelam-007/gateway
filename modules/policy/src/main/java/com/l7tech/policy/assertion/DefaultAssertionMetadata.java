@@ -112,6 +112,12 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
+        put(PROPERTIES_ACTION_ICON, new MetadataFinder(){
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, "com/l7tech/console/resources/Properties16.gif");
+            }
+        });
+
         put(PALETTE_NODE_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, meta.get(SHORT_NAME));
@@ -119,6 +125,12 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         });
 
         put(PALETTE_NODE_ICON, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, "com/l7tech/console/resources/policy16.gif");
+            }
+        });
+
+        put(PALETTE_NODE_CLIENT_ICON, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "com/l7tech/console/resources/policy16.gif");
             }

@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
 
 import java.net.PasswordAuthentication;
 import java.util.logging.Logger;
@@ -20,10 +20,11 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class ClientHttpBasic extends ClientAssertion {
+public class ClientHttpBasic extends ClientAssertionWithMetaSupport {
     private static final Logger log = Logger.getLogger(ClientHttpBasic.class.getName());
 
     public ClientHttpBasic( HttpBasic data ) {
+        super(data);
         _data = data;
     }
 
@@ -57,24 +58,6 @@ public class ClientHttpBasic extends ClientAssertion {
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
-    }
-
-    /**
-     * @return the human-readable node name that is displayed.
-     */
-    public String getName() {
-        return "Require HTTP Basic Credentials";
-    }
-
-    /**
-     * subclasses override this method specifying the resource name of the
-     * icon to use when this assertion is displayed in the tree view.
-     *
-     * @param open for nodes that can be opened, can have children
-     * @return a string such as "com/l7tech/proxy/resources/tree/assertion.png"
-     */
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/authentication.gif";
     }
 
     protected HttpBasic _data;

@@ -29,11 +29,11 @@ public abstract class XpathBasedAssertionTreeNode<AT extends XpathBasedAssertion
     }
 
     /** Get the basic name of this node, ie "XML Request Security". */
-    public abstract String getBaseName();
+    public abstract String getBaseName(final boolean decorate);
 
     @Override
-    public String getName() {
-        return getBaseName();
+    public String getName(final boolean decorate) {
+        return getBaseName(decorate);
     }
 
     /**

@@ -11,8 +11,7 @@ import javax.swing.*;
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: May 17, 2006<br/>
+ * @author flascell<br/>
  *
  * @see com.l7tech.policy.assertion.Operation
  */
@@ -23,10 +22,10 @@ public class OperationTreeNode extends LeafAssertionTreeNode {
         this.assertion = assertion;
     }
 
-    public String getName() {
-        String tmp = assertion.getOperationName();
-        if (tmp == null) tmp = "undefined";
-        return "WSDL Operation \'" + tmp + "\'";
+    public String getName(final boolean decorate) {
+        final String assertionName = "Evaluate WSDL Operation";
+        final String wsdlName = (assertion.getOperationName() != null)? assertion.getOperationName(): "undefined";
+        return (decorate)? assertionName + " \'" + wsdlName + "\'": assertionName;
     }
 
     protected String iconResource(boolean open) {

@@ -24,6 +24,9 @@ public class EncryptedUsernameTokenAssertion extends WssBasic implements Securit
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME, "Require Encrypted UsernameToken Profile Credentials");
 
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
+        meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
+        
         return meta;
     }
 }

@@ -56,7 +56,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private InputValidator validator;
 
     public LDAPQueryPropertiesDialog(Window owner, LDAPQueryAssertion assertion) throws HeadlessException {
-        super(owner, "LDAP Query Properties");
+        super(owner, assertion);
         this.assertion = assertion;
         initialize();
     }

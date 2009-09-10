@@ -10,7 +10,7 @@ public class HttpTransportTreeNode extends LeafAssertionTreeNode<HttpTransportAs
         super(assertion);
     }
 
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Message received using HTTP(S)";
     }
 

@@ -10,6 +10,8 @@ import com.l7tech.console.security.rbac.FindEntityDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
+import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_ICON;
 
 import javax.swing.*;
 
@@ -29,17 +31,17 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
                     PolicyTreeModel dtm = (PolicyTreeModel) tree.getModel();
                     dtm.assertionTreeNodeChanged(AuthenticationAssertionPolicyNode.this);
                 }
-            });
+            }, assertion);
         }
 
         @Override
         protected String iconResource() {
-            return "com/l7tech/console/resources/Properties16.gif";
+            return assertion.meta().get(PROPERTIES_ACTION_ICON);
         }
 
         @Override
         public String getName() {
-            return "Change Authentication Identity Provider";
+            return assertion.meta().get(PROPERTIES_ACTION_NAME);
         }
     };
 
@@ -47,9 +49,10 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
         super(idass);
     }
 
-    @Override
-    public String getName() {
-        return decorateName("Authenticate against " + idProviderName());
+    public String getName(final boolean decorate) {
+        final String name = "Authenticate against " + idProviderName();
+        if(decorate) return decorateName(name);
+        else return name;
     }
 
     @Override

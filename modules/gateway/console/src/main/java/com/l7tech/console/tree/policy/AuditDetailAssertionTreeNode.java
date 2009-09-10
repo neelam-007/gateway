@@ -24,8 +24,7 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode<AuditDet
         super(assertion);
     }
 
-    @Override
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Audit detail: \"" + assertion.getDetail() + "\"";
     }
 

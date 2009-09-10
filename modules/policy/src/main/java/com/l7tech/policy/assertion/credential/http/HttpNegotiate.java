@@ -4,6 +4,8 @@
 package com.l7tech.policy.assertion.credential.http;
 
 import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 
@@ -22,6 +24,19 @@ public class HttpNegotiate extends HttpCredentialSourceAssertion implements Sets
         return new VariableMetadata[] {
             new VariableMetadata("kerberos.realm", false, false, "kerberos.realm", false, DataType.STRING),
         };
+    }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
+
+        meta.put(AssertionMetadata.SHORT_NAME, "Require Windows Integrated Authentication Credentials");
+        meta.put(AssertionMetadata.DESCRIPTION, "The requestor must provide credentials using Integrated Windows authentication");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
+
+        meta.putNull(AssertionMetadata.PROPERTIES_ACTION_FACTORY);
+        return meta;
     }
 
     public static final String SCHEME = "Negotiate";

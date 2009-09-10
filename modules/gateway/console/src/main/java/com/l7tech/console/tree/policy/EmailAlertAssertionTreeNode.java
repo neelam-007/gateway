@@ -16,7 +16,7 @@ public class EmailAlertAssertionTreeNode extends LeafAssertionTreeNode<EmailAler
         super(assertion);
     }
 
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Send Email Alert";
     }
 

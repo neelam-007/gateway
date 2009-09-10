@@ -11,6 +11,8 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 
 /**
  * Asserts that the requester is a particular User.
@@ -122,6 +124,19 @@ public class SpecificUser extends IdentityAssertion {
         else if (userUid != null)
             sb.append(userUid);
         return sb.toString();
+    }
+
+    @Override
+    public AssertionMetadata meta() {
+        final DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.SHORT_NAME, "Authenticate User or Group");
+        meta.put(AssertionMetadata.DESCRIPTION, "Require user or group identities from an identity provider.");
+        
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/user16.png");
+
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/user16.png");
+        return meta;
     }
 
     protected String userLogin;

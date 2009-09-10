@@ -27,7 +27,7 @@ import java.util.ArrayList;
 public class IdentityNode extends AbstractLeafPaletteNode {
 
     public IdentityNode() {
-        super("Authenticate User or Group", "com/l7tech/console/resources/user16.png");
+        super(new SpecificUser());//doesn't matter either this or the group impl will do
     }
 
     /**

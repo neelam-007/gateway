@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class EditSslAssertionPropertiesDialog extends JDialog {
+public class EditSslAssertionPropertiesDialog extends LegacyAssertionPropertyDialog {
     static final Logger log = Logger.getLogger(EditSslAssertionPropertiesDialog.class.getName());
     private SslAssertion sslAssertion;
     private JCheckBox requireClientCertificateCheckBox;
@@ -34,7 +34,7 @@ public class EditSslAssertionPropertiesDialog extends JDialog {
      * @param parent the parent Frame. May be <B>null</B>
      */
     public EditSslAssertionPropertiesDialog(Frame parent, SslAssertion sslAssertion, boolean readOnly) {
-        super(parent, true);
+        super(parent, sslAssertion, true);
         this.sslAssertion = sslAssertion;
         initialize(readOnly);
         pack();
@@ -43,7 +43,6 @@ public class EditSslAssertionPropertiesDialog extends JDialog {
     }
 
     private void initialize(boolean readOnly) {
-        setTitle("SSL or TLS Transport Properties");
         Container pane = getContentPane();
         pane.setLayout(new BorderLayout());
         /** Set content pane */

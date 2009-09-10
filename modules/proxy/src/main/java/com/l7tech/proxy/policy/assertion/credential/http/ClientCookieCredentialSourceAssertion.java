@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAsserti
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -23,11 +23,12 @@ import java.util.logging.Logger;
 /**
  * @author mike
  */
-public class ClientCookieCredentialSourceAssertion extends ClientAssertion {
+public class ClientCookieCredentialSourceAssertion extends ClientAssertionWithMetaSupport {
     private static final Logger logger = Logger.getLogger(ClientCookieCredentialSourceAssertion.class.getName());
     private final CookieCredentialSourceAssertion assertion;
 
-    public ClientCookieCredentialSourceAssertion(CookieCredentialSourceAssertion assertion) {
+    public ClientCookieCredentialSourceAssertion(final CookieCredentialSourceAssertion assertion) {
+        super(assertion);
         this.assertion = assertion;
     }
 
@@ -53,13 +54,5 @@ public class ClientCookieCredentialSourceAssertion extends ClientAssertion {
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException {
         // no action on response
         return AssertionStatus.NONE;
-    }
-
-    public String getName() {
-        return "Require HTTP Cookie";
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/authentication.gif";
     }
 }

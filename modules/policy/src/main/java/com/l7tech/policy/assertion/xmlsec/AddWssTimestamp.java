@@ -176,7 +176,8 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
-        meta.put(PALETTE_NODE_NAME, "Add Timestamp");
+        final String assertionName = "Add Timestamp";
+        meta.put(PALETTE_NODE_NAME, assertionName);
         meta.put(DESCRIPTION, "Add a Timestamp to the message with an optional signature.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
@@ -187,14 +188,12 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
                 return AddWssTimestamp.newInstance();
             }
         });
-        meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, AddWssTimestamp>() {
+        meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, AddWssTimestamp, Boolean>() {
             @Override
-            public String call( final AddWssTimestamp assertion ) {
-                String qualifier = "";
-                if ( assertion.isSignatureRequired() ) {
-                    qualifier = "signed ";
-                }
-                return AssertionUtils.decorateName(assertion, "Add " + qualifier + "Timestamp");
+            public String call(final AddWssTimestamp assertion, final Boolean decorate) {
+                final String qualifier = (assertion.isSignatureRequired()) ? "signed " : null;
+                return (decorate && qualifier != null) ?
+                        AssertionUtils.decorateName(assertion, "Add " + qualifier + "Timestamp") : assertionName;
             }
         });
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.AddWssTimestampPropertiesAction");

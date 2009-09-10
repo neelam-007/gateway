@@ -100,10 +100,7 @@ public class Advices {
                 put(RemoteIpRange.class, ary(AddRemoteIpRangeAssertionAdvice.class));
                 put(TimeRange.class, ary(AddTimeRangeAssertionAdvice.class));
                 put(RequestSwAAssertion.class, ary(AddRequestSwAAssertionAdvice.class));
-                put(WsTrustCredentialExchange.class, ary(AddWsTrustCredentialExchangeAdvice.class));
                 put(WsFederationPassiveTokenRequest.class, ary(AddWsFederationPassiveTokenRequestAdvice.class));
-                put(XpathCredentialSource.class, ary(AddXpathCredentialSourceAdvice.class));
-                put(SamlBrowserArtifact.class, ary(AddSamlBrowserArtifactAdvice.class));
                 put(Regex.class, ary(RegexAdvice.class));
                 put(HttpFormPost.class, ary(HttpFormPostAdvice.class));
                 put(InverseHttpFormPost.class, ary(InverseHttpFormPostAdvice.class));

@@ -6,6 +6,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.util.EnumTranslator;
+import com.l7tech.util.Functions;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
@@ -185,13 +186,44 @@ public class SslAssertion extends ConfidentialityAssertion {
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(AssertionMetadata.SHORT_NAME, "Set SSL or TLS Transport");
-        meta.put(AssertionMetadata.LONG_NAME, "The incoming request must use SSL transport");
+        meta.put(AssertionMetadata.DESCRIPTION, "The incoming request either must use, optionally use, or is forbidden to use the SSL/TLS transport. Client certificate authentication is optional if 'must use'.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ssl.gif");
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/ssl.gif");
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
                 new WspEnumTypeMapping(Option.class, "optionValue")
         )));
 
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, Assertion, Boolean>(){
+            public String call(Assertion assertion, Boolean decorate) {
+                final String assertionName = "Set SSL or TLS Transport";
+                final String sslOrTls = "SSL or TLS Transport";
+                final String prefix;
+                if (SslAssertion.FORBIDDEN.equals(getOption())){
+                    prefix = "Forbid";
+                }else if (SslAssertion.OPTIONAL.equals(getOption())){
+                    prefix = "Optional";
+                }else{
+                    prefix = "Require";
+                }
+
+                final String retStr;
+                if (isRequireClientAuthentication()) {
+                    retStr = "Require " + sslOrTls + " with Client Certificate Authentication";
+                }else{
+                    retStr = prefix +" "+sslOrTls;
+                }
+
+                return (decorate)? retStr: assertionName;
+            }
+        });
+
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.SslPropertiesAction");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SSL or TLS Transport Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/About16.gif");
+
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/ssl.gif");
+        meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         return meta;
     }
 

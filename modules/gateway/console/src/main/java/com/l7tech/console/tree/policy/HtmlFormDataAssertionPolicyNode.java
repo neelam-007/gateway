@@ -16,7 +16,7 @@ public class HtmlFormDataAssertionPolicyNode extends LeafAssertionTreeNode {
         super(assertion);
     }
 
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Validate data fields in an HTML Form submisssion";
     }
 

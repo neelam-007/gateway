@@ -24,8 +24,7 @@ public class SslTransportNode extends AbstractLeafPaletteNode {
      *                                    false otherwise
      */
     public SslTransportNode(boolean requireClientAuthentication) {
-        super(new SslAssertion().meta().get(PALETTE_NODE_NAME).toString()
-                , new SslAssertion().meta().get(PALETTE_NODE_ICON).toString());
+        super(new SslAssertion());
         this.requireClientAuthentication = requireClientAuthentication;
     }
 

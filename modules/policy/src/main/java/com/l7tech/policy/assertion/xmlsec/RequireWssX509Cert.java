@@ -1,16 +1,12 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.util.Functions;
 
 import java.util.List;
 import java.util.Arrays;
@@ -47,13 +43,25 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "WSS Signature");
-        meta.put(AssertionMetadata.DESCRIPTION, "The soap message must contain a WSS signature with an X509 SecurityToken");
+        final String baseName = "Require WS-Security Signature Credentials";
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.DESCRIPTION, "The SOAP message must contain a WS-Security signature with an X.509 security token.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME, "Require WSS Signature");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "WS-Security Signature Properties");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.WssX509CertPropertiesDialog");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssX509CertValidator");
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssX509Cert");
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
+        meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
+        meta.put(AssertionMetadata.PALETTE_NODE_CLIENT_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
+
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, Assertion, Boolean>(){
+            public String call(Assertion assertion, Boolean decorate) {
+                if(!decorate) return baseName;
+
+                return AssertionUtils.decorateName(assertion, baseName);
+            }
+        });
 
         return meta;
     }

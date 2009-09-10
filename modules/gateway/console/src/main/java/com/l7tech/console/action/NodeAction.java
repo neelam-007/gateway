@@ -38,6 +38,10 @@ public abstract class NodeAction extends SecureAction {
         this(node, null);
     }
 
+    public NodeAction(AbstractTreeNode node, final String name, final String desc, final String img){
+        this(node, null, name, desc, img);
+    }
+
     /**
      * @param lazyActionValuesFlag regardless of value, BaseAction's setActionValues() method will not be called until
      * all of our instance variables required are set
@@ -65,15 +69,28 @@ public abstract class NodeAction extends SecureAction {
         this(node, requiredAssertionLicense, null);
     }
 
+    public NodeAction(AbstractTreeNode node, Class requiredAssertionLicense, final String name, final String desc, final String img){
+        this(node, requiredAssertionLicense, null, name, desc, img);
+    }
+
     public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedOperation attemptedOperation) {
         this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation);
+    }
+
+    public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedOperation attemptedOperation, final String name, final String desc, final String img) {
+        this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation, name, desc, img);
     }
 
     public NodeAction(AbstractTreeNode node, Collection<Class> allowedAssertionLicenses, AttemptedOperation attemptedOperation) {
         super(attemptedOperation, allowedAssertionLicenses);
         this.node = node;
     }
-    
+
+    public NodeAction(AbstractTreeNode node, Collection<Class> allowedAssertionLicenses, AttemptedOperation attemptedOperation, final String name, final String desc, final String img) {
+        super(attemptedOperation, allowedAssertionLicenses, name, desc, img);
+        this.node = node;
+    }
+
     public NodeAction(AbstractTreeNode node, String featureSetNames, AttemptedOperation attemptedOperation) {
         super(featureSetNames, attemptedOperation);
         this.node = node;

@@ -24,7 +24,7 @@ public class PreemptiveCompressionPolicyNode extends LeafAssertionTreeNode<Preem
     /**
      * @return the node name that is displayed
      */
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "XML VPN Client Will Compress Requests";
     }
 

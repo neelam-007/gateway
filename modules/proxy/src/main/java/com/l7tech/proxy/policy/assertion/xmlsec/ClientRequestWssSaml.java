@@ -10,8 +10,8 @@ import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.util.ExceptionUtils;
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 /**
  * Client-side support for the SAML security assertion.
  */
-public class ClientRequestWssSaml extends ClientAssertion {
+public class ClientRequestWssSaml extends ClientAssertionWithMetaSupport {
     private static final Logger logger = Logger.getLogger(ClientRequestWssSaml.class.getName());
     private static final String PROP_SIGN_SAML_SV = "com.l7tech.proxy.signSamlSenderVouchesAssertion";
     private RequireWssSaml data;
@@ -37,6 +37,7 @@ public class ClientRequestWssSaml extends ClientAssertion {
     private final int samlVersion;
 
     public ClientRequestWssSaml(RequireWssSaml data) {
+        super(data);
         this.data = data;
         for (int i = 0; i < data.getSubjectConfirmations().length; i++) {
             String subjconf = data.getSubjectConfirmations()[i];
@@ -136,14 +137,6 @@ public class ClientRequestWssSaml extends ClientAssertion {
     {
         // No action required on response
         return AssertionStatus.NONE;
-    }
-
-    public String getName() {
-        return data.describe();
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 
     private SamlAssertion getSamlAssertion(PolicyApplicationContext context)

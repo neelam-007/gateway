@@ -25,17 +25,19 @@ public class RegexPolicyNode extends LeafAssertionTreeNode<Regex> {
      * @return the node name that is displayed
      */
     @Override
-    public String getName() {
+    public String getName(final boolean decorate) {
+        final String assertionName = "Evaluate Regular Expression";
+        
         Regex regex = asAssertion();
         StringBuilder nameBuffer = new StringBuilder(256);
-        nameBuffer.append("Reqular Expression");
+        nameBuffer.append(assertionName);
 
         if (regex.getRegexName() != null) {
             nameBuffer.append(" - ");
             nameBuffer.append(regex.getRegexName());
         }
 
-        return AssertionUtils.decorateName( regex, nameBuffer);
+        return (decorate)? AssertionUtils.decorateName( regex, nameBuffer): assertionName;
     }
 
     /**

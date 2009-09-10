@@ -6,6 +6,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.action.BridgeRoutingAssertionPropertiesAction;
 import com.l7tech.console.action.HttpRoutingAssertionPropertiesAction;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.AssertionUtils;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -20,8 +21,9 @@ public class BridgeRoutingAssertionTreeNode extends HttpRoutingAssertionTreeNode
     }
 
     @Override
-    public String getName() {
-        return super.getName(" using SecureSpan Bridge");
+    public String getName(final boolean decorate) {
+        final String name = getName(" using SecureSpan Bridge");
+        return (decorate)? AssertionUtils.decorateName(assertion, name): name;
     }
 
     @Override

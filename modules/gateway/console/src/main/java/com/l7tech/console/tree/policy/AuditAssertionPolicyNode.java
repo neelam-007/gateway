@@ -16,7 +16,7 @@ public class AuditAssertionPolicyNode extends LeafAssertionTreeNode<AuditAsserti
         super(assertion);
     }
 
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Audit Assertion";
     }
 

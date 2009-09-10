@@ -22,7 +22,7 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public class EditWsTrustCredentialExchangeAction extends NodeAction {
+public class EditWsTrustCredentialExchangeAction extends NodeActionWithMetaSupport {
     private final WsTrustCredentialExchange wsTrustAssertion;
 
     /**
@@ -33,26 +33,11 @@ public class EditWsTrustCredentialExchangeAction extends NodeAction {
      * @param node the node this action will acto on
      */
     public EditWsTrustCredentialExchangeAction(AbstractTreeNode node) {
-        super(node, WsTrustCredentialExchange.class);
+        super(node, WsTrustCredentialExchange.class, node.asAssertion());
         if (!(node.asAssertion() instanceof WsTrustCredentialExchange)) {
             throw new IllegalArgumentException();
         }
         wsTrustAssertion = (WsTrustCredentialExchange)node.asAssertion();
-    }
-
-    @Override
-    public String getName() {
-        return "WS-Trust Credential Exchange Properties";
-    }
-
-    @Override
-    public String getDescription() {
-        return getName();
-    }
-
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Edit16.gif";
     }
 
     @Override

@@ -6,8 +6,8 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import org.xml.sax.SAXException;
@@ -21,13 +21,14 @@ import java.util.logging.Logger;
 /**
  * This assertion means that the request must provide some xml signature.
  */
-public class ClientRequestWssX509Cert extends ClientAssertion {
+public class ClientRequestWssX509Cert extends ClientAssertionWithMetaSupport {
     private final static Logger logger = Logger.getLogger(ClientRequestWssX509Cert.class.getName());
     private RequireWssX509Cert subject;
 
     private final String PROP_KEYINFOTYPE = this.getClass().getName() + ".keyInfoInclusionType";
 
     public ClientRequestWssX509Cert(RequireWssX509Cert subject) {
+        super(subject);
         this.subject = subject;
     }
     
@@ -68,13 +69,5 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
     {
         // no action on response
         return AssertionStatus.NONE;
-    }
-
-    public String getName() {
-        return "WSS Sign SOAP Request";
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 }

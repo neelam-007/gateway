@@ -328,10 +328,11 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpRequestBuilderAssertionPropertiesEditor");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SamlpRequestBuilderAssertion>() {
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, SamlpRequestBuilderAssertion, Boolean>() {
             @Override
-            public String call(SamlpRequestBuilderAssertion assertion) {
-                StringBuilder sb = new StringBuilder("SAMLP Builder");
+            public String call(final SamlpRequestBuilderAssertion assertion, final Boolean decorate) {
+                final String assertionName = "SAMLP Builder";
+                StringBuilder sb = new StringBuilder(assertionName);
 
                 if (assertion.getAuthenticationStatement() != null)
                     sb.append(" (Authentication)");
@@ -340,7 +341,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
                 else if (assertion.getAttributeStatement() != null)
                     sb.append(" (Attribute Query)");
 
-                return AssertionUtils.decorateName(assertion, sb);
+                return (decorate) ? AssertionUtils.decorateName(assertion, sb) : assertionName;
             }
         });
 

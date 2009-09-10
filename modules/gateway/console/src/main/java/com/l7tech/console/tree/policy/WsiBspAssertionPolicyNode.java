@@ -22,8 +22,8 @@ public class WsiBspAssertionPolicyNode extends LeafAssertionTreeNode<WsiBspAsser
     /**
      * @return the node name that is displayed
      */
-    public String getName() {
-        return "WS-I BSP Compliance";
+    public String getName(final boolean decorate) {
+        return "Enforce WS-I BSP Compliance";
     }
 
     /**

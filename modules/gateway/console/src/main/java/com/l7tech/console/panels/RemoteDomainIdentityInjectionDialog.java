@@ -36,7 +36,7 @@ public class RemoteDomainIdentityInjectionDialog extends AssertionPropertiesEdit
     }};
 
     public RemoteDomainIdentityInjectionDialog(Window owner, RemoteDomainIdentityInjection assertion) {
-        super(owner, "Remote Domain Identity Properties");
+        super(owner, assertion);
         initialize();
         setData(assertion);
     }

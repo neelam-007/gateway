@@ -6,11 +6,7 @@ import com.l7tech.policy.assertion.RequestSizeLimit;
 import javax.swing.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: megery
- * Date: Sep 29, 2005
- * Time: 3:52:29 PM
- * To change this template use File | Settings | File Templates.
+ * @author megery
  */
 public class RequestSizeLimitTreeNode extends LeafAssertionTreeNode{
     /**
@@ -23,7 +19,7 @@ public class RequestSizeLimitTreeNode extends LeafAssertionTreeNode{
         super(assertion);
     }
 
-    public String getName() {
+    public String getName(final boolean decorate) {
         return "Request Size Limit";
     }
 

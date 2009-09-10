@@ -18,8 +18,9 @@ import java.security.GeneralSecurityException;
  * @author alex
  * @version $Revision$
  */
-public class ClientSslAssertion extends ClientAssertion {
+public class ClientSslAssertion extends ClientAssertionWithMetaSupport {
     public ClientSslAssertion( SslAssertion data ) {
+        super(data);
         this.data = data;
     }
 
@@ -48,25 +49,6 @@ public class ClientSslAssertion extends ClientAssertion {
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)  {
         // no action on response
         return AssertionStatus.NONE;
-    }
-
-    /**
-     * @return the node name that is displayed
-     */
-    public String getName() {
-        String ret = "Require SSL Transport";
-        if (SslAssertion.FORBIDDEN.equals(data.getOption()))
-            ret = "Forbid SSL transport";
-        else if (SslAssertion.OPTIONAL.equals(data.getOption()))
-            ret = "Optional SSL transport";
-        if (data.isRequireClientAuthentication()) {
-            ret += " / Requires Client Certificate Authentication";
-        }
-        return ret;
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/ssl.gif";
     }
 
     protected SslAssertion data;

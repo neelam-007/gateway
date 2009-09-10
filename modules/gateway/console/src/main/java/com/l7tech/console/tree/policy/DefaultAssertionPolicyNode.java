@@ -28,6 +28,7 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
 
     public DefaultAssertionPolicyNode(AT assertion) {
         super(assertion);
+        
         //noinspection unchecked
         Functions.Unary< Action, AssertionTreeNode<AT> > factory =
                 (Functions.Unary<Action, AssertionTreeNode<AT>>)
@@ -35,8 +36,7 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         propertiesAction = factory == null ? null : factory.call(this);
     }
 
-    @Override
-    public String getName() {
+    public String getName(final boolean decorate) {
         //noinspection unchecked
         AssertionMetadata meta = asAssertion().meta();
         Object factory = meta.get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
@@ -45,8 +45,11 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
             //noinspection unchecked
             Functions.Unary<String, Assertion> unary = (Functions.Unary<String, Assertion>)factory;
             name = unary.call(asAssertion());
-        } else if (factory != null) {
-            // Very common error to set this to a string instead of a factory, so we'll support it here
+        } else if(factory instanceof Functions.Binary){
+            //noinspection unchecked
+            Functions.Binary<String, Assertion, Boolean> unary = (Functions.Binary<String, Assertion, Boolean>)factory;
+            name = unary.call(asAssertion(), decorate);
+        } else if (factory != null && factory instanceof String) {
             name = addFeatureNames(factory.toString());
         } else {
             Object obj = meta.get(AssertionMetadata.POLICY_NODE_NAME);
