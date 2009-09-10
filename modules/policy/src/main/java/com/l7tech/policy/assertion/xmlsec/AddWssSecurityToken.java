@@ -2,13 +2,7 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.PrivateKeyable;
-import com.l7tech.policy.assertion.PrivateKeyableSupport;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.*;
 import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_NAME;
 import static com.l7tech.policy.assertion.AssertionMetadata.DESCRIPTION;
 import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_ICON;
@@ -124,22 +118,26 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
         this.privatekeyableSupport.copyFrom( other.privatekeyableSupport );
     }
 
+    final static String baseName = "Add Signed Security Token";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<AddWssSecurityToken>(){
+        @Override
+        public String getAssertionName( final AddWssSecurityToken assertion, final boolean decorate) {
+            return (decorate) ? AssertionUtils.decorateName(assertion, baseName) : baseName;
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
-        final String assertionName = "Add Signed Security Token";
-        meta.put(PALETTE_NODE_NAME, assertionName);
+
+        meta.put(PALETTE_NODE_NAME, baseName);
         meta.put(DESCRIPTION, "Add a signed security token to the message.");
         meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(PALETTE_NODE_SORT_PRIORITY, 60000);
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
-        meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, AddWssSecurityToken, Boolean>() {
-            @Override
-            public String call(final AddWssSecurityToken assertion, final Boolean decorate) {
-                return (decorate) ? AssertionUtils.decorateName(assertion, assertionName) : assertionName;
-            }
-        });
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.AddWssSecurityTokenPropertiesAction");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssDecorationAssertionValidator");
 

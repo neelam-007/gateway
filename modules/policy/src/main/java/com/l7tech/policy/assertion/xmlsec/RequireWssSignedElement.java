@@ -1,14 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.assertion.IdentityTargetable;
-import com.l7tech.policy.assertion.IdentityTarget;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.AssertionUtils;
-import com.l7tech.policy.assertion.UsesEntities;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspUpgradeUtilFrom21;
 import com.l7tech.util.Functions;
@@ -115,29 +108,32 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         }
     }
 
+    final static String baseName = "Require Signed Element";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RequireWssSignedElement>(){
+        @Override
+        public String getAssertionName( final RequireWssSignedElement assertion, final boolean decorate) {
+            StringBuilder name = new StringBuilder(baseName + " ");
+            if (assertion.getXpathExpression() == null) {
+                name.append("[XPath expression not set]");
+            } else {
+                name.append(assertion.getXpathExpression().getExpression());
+            }
+            return (decorate)? AssertionUtils.decorateName(assertion, name): baseName;
+        }
+    };
+    
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        final String assertionName = "Require Signed Element";
-        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "The message must contain one or more signed elements.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, 100000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, RequireWssSignedElement, Boolean>() {
-            @Override
-            public String call(final RequireWssSignedElement requestWssIntegrity, final Boolean decorate) {
-                StringBuilder name = new StringBuilder(assertionName + " ");
-                if (requestWssIntegrity.getXpathExpression() == null) {
-                    name.append("[XPath expression not set]");
-                } else {
-                    name.append(requestWssIntegrity.getXpathExpression().getExpression());
-                }
-                return (decorate)? AssertionUtils.decorateName(requestWssIntegrity, name): assertionName;
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssSignedElement>(){
             @Override
             public Set<ValidatorFlag> call(RequireWssSignedElement assertion) {

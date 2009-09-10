@@ -7,6 +7,7 @@ package com.l7tech.proxy.policy.assertion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 import com.l7tech.util.Functions;
 
 public abstract class ClientAssertionWithMetaSupport extends ClientAssertion{
@@ -17,6 +18,7 @@ public abstract class ClientAssertionWithMetaSupport extends ClientAssertion{
         this.assertion = assertion;
     }
 
+    @Override
     public String getName() {
         Object factory = assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
         String name = null;
@@ -24,11 +26,11 @@ public abstract class ClientAssertionWithMetaSupport extends ClientAssertion{
             //noinspection unchecked
             Functions.Unary<String, Assertion> unary = (Functions.Unary<String, Assertion>)factory;
             name = unary.call(assertion);
-        } else if(factory instanceof Functions.Binary){
-            //noinspection unchecked
-            Functions.Binary<String, Assertion, Boolean> unary = (Functions.Binary<String, Assertion, Boolean>)factory;
-            name = unary.call(assertion, true);
-        } else if (factory != null && factory instanceof String) {
+        } else if(factory instanceof AssertionNodeNameFactory){
+            AssertionNodeNameFactory nameFactory = (AssertionNodeNameFactory) factory;
+            name = nameFactory.getAssertionName(assertion, true);
+        }
+        else if (factory != null && factory instanceof String) {
             name = addFeatureNames(factory.toString());
         } else {
             Object obj = assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME);

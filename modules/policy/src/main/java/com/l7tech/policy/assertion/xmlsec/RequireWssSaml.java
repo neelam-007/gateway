@@ -2,13 +2,7 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
-import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions;
 
 /**
@@ -202,12 +196,20 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         return true;
     }
 
+    final static String baseName = "Require SAML Token Profile";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RequireWssSaml>(){
+        @Override
+        public String getAssertionName( final RequireWssSaml assertion, final boolean decorate) {
+            return (decorate)? assertion.describe(): baseName;
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        final String assertionName = "Require SAML Token Profile";
-        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Gateway checks for the SAML Statements Security properties");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
         meta.put(AssertionMetadata.ASSERTION_FACTORY, new Functions.Unary<RequireWssSaml, RequireWssSaml>(){
@@ -222,12 +224,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/Edit16.gif");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.EditRequireWssSamlAction");
         
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, RequireWssSaml, Boolean>() {
-            @Override
-            public String call(final RequireWssSaml requestWssSaml, final Boolean decorate) {
-                return (decorate)? requestWssSaml.describe(): assertionName;
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssSaml");

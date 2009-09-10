@@ -8,6 +8,7 @@ package com.l7tech.policy.assertion.credential;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.xml.WsTrustRequestType;
@@ -29,6 +30,7 @@ public class WsTrustCredentialExchange extends Assertion {
         this.requestType = requestType;
     }
 
+    @Override
     public boolean isCredentialModifier() {
         return true;
     }    
@@ -65,24 +67,28 @@ public class WsTrustCredentialExchange extends Assertion {
         this.issuer = issuer;
     }
 
+    final static String baseName = "Exchange Credentials using WS-Trust";
+    
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<WsTrustCredentialExchange>(){
+        @Override
+        public String getAssertionName( final WsTrustCredentialExchange assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return baseName + " Request to " + assertion.getTokenServiceUrl();
+        }
+    };
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
 
-        final String baseName = "Exchange Credentials using WS-Trust";
+
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "This assertion takes credentials gathered by a preceding credential source assertion and sends them via a WS-Trust RequestSecurityToken  SOAP request to a WS-Trust Security Token Service.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, WsTrustCredentialExchange, Boolean>() {
-            @Override
-            public String call(WsTrustCredentialExchange assertion, Boolean decorate) {
-                if(!decorate) return baseName;
-
-                return baseName + " Request to " + assertion.getTokenServiceUrl();
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddWsTrustCredentialExchangeAdvice");
 

@@ -14,7 +14,6 @@ import com.l7tech.policy.wsp.*;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -316,6 +315,23 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         this.keyId = keyid;
     }
 
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SamlpRequestBuilderAssertion>(){
+        @Override
+        public String getAssertionName( final SamlpRequestBuilderAssertion assertion, boolean decorate) {
+            final String assertionName = "SAMLP Builder";
+            StringBuilder sb = new StringBuilder(assertionName);
+
+            if (assertion.getAuthenticationStatement() != null)
+                sb.append(" (Authentication)");
+            else if (assertion.getAuthorizationStatement() != null)
+                sb.append(" (Authorization Decision)");
+            else if (assertion.getAttributeStatement() != null)
+                sb.append(" (Attribute Query)");
+
+            return (decorate) ? AssertionUtils.decorateName(assertion, sb) : assertionName;
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
@@ -328,22 +344,8 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpRequestBuilderAssertionPropertiesEditor");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, SamlpRequestBuilderAssertion, Boolean>() {
-            @Override
-            public String call(final SamlpRequestBuilderAssertion assertion, final Boolean decorate) {
-                final String assertionName = "SAMLP Builder";
-                StringBuilder sb = new StringBuilder(assertionName);
 
-                if (assertion.getAuthenticationStatement() != null)
-                    sb.append(" (Authentication)");
-                else if (assertion.getAuthorizationStatement() != null)
-                    sb.append(" (Authorization Decision)");
-                else if (assertion.getAttributeStatement() != null)
-                    sb.append(" (Attribute Query)");
-
-                return (decorate) ? AssertionUtils.decorateName(assertion, sb) : assertionName;
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(NameIdentifierInclusionType.class, "nameIdentifierType"),

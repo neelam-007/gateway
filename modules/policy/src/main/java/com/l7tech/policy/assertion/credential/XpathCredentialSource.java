@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
@@ -70,25 +71,28 @@ public class XpathCredentialSource extends XpathBasedAssertion {
         return vars.toArray(new String[vars.size()]);
     }
 
+    final static String baseName = "Require XPath Credentials";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<XpathCredentialSource>(){
+        @Override
+        public String getAssertionName( final XpathCredentialSource assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return baseName + ": login = '" + assertion.getXpathExpression().getExpression() +
+                           "', password = '" + assertion.getPasswordExpression().getExpression() + "'";
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
 
-        final String assertionName = "Require XPath Credentials";
-        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Gateway retrieves login and password from current request using XPath expressions");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, XpathCredentialSource, Boolean>(){
-            public String call(XpathCredentialSource assertion, Boolean decorate) {
-                if(!decorate) return assertionName;
-
-                return assertionName + ": login = '" + assertion.getXpathExpression().getExpression() +
-                               "', password = '" + assertion.getPasswordExpression().getExpression() + "'";
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddXpathCredentialSourceAdvice");
 

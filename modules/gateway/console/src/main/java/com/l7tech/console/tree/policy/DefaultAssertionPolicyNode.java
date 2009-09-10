@@ -7,12 +7,7 @@ import com.l7tech.console.action.SelectMessageTargetAction;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.console.action.EditKeyAliasForAssertion;
 import com.l7tech.console.action.SelectIdentityTargetAction;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.PrivateKeyable;
-import com.l7tech.policy.assertion.IdentityTargetable;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.util.Functions;
 
@@ -36,6 +31,7 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         propertiesAction = factory == null ? null : factory.call(this);
     }
 
+    @Override
     public String getName(final boolean decorate) {
         //noinspection unchecked
         AssertionMetadata meta = asAssertion().meta();
@@ -45,10 +41,9 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
             //noinspection unchecked
             Functions.Unary<String, Assertion> unary = (Functions.Unary<String, Assertion>)factory;
             name = unary.call(asAssertion());
-        } else if(factory instanceof Functions.Binary){
-            //noinspection unchecked
-            Functions.Binary<String, Assertion, Boolean> unary = (Functions.Binary<String, Assertion, Boolean>)factory;
-            name = unary.call(asAssertion(), decorate);
+        } else if(factory instanceof AssertionNodeNameFactory){
+            AssertionNodeNameFactory nameFactory = (AssertionNodeNameFactory) factory;
+            name = nameFactory.getAssertionName(asAssertion(), decorate);
         } else if (factory != null && factory instanceof String) {
             name = addFeatureNames(factory.toString());
         } else {

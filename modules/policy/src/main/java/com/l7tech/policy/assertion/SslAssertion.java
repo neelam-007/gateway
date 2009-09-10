@@ -6,7 +6,6 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.util.EnumTranslator;
-import com.l7tech.util.Functions;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
@@ -181,6 +180,30 @@ public class SslAssertion extends ConfidentialityAssertion {
         return super.toString() + " clientCert=" + isRequireClientAuthentication() + " option=" + getOption();
     }
 
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SslAssertion>(){
+        @Override
+        public String getAssertionName( final SslAssertion assertion, final boolean decorate) {
+            final String assertionName = "Set SSL or TLS Transport";
+            final String sslOrTls = "SSL or TLS Transport";
+            final String prefix;
+            if (SslAssertion.FORBIDDEN.equals(assertion.getOption())){
+                prefix = "Forbid";
+            }else if (SslAssertion.OPTIONAL.equals(assertion.getOption())){
+                prefix = "Optional";
+            }else{
+                prefix = "Require";
+            }
+
+            final String retStr;
+            if (assertion.isRequireClientAuthentication()) {
+                retStr = "Require " + sslOrTls + " with Client Certificate Authentication";
+            }else{
+                retStr = prefix +" "+sslOrTls;
+            }
+
+            return (decorate)? retStr: assertionName;
+        }
+    };
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
@@ -193,29 +216,7 @@ public class SslAssertion extends ConfidentialityAssertion {
                 new WspEnumTypeMapping(Option.class, "optionValue")
         )));
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, Assertion, Boolean>(){
-            public String call(Assertion assertion, Boolean decorate) {
-                final String assertionName = "Set SSL or TLS Transport";
-                final String sslOrTls = "SSL or TLS Transport";
-                final String prefix;
-                if (SslAssertion.FORBIDDEN.equals(getOption())){
-                    prefix = "Forbid";
-                }else if (SslAssertion.OPTIONAL.equals(getOption())){
-                    prefix = "Optional";
-                }else{
-                    prefix = "Require";
-                }
-
-                final String retStr;
-                if (isRequireClientAuthentication()) {
-                    retStr = "Require " + sslOrTls + " with Client Certificate Authentication";
-                }else{
-                    retStr = prefix +" "+sslOrTls;
-                }
-
-                return (decorate)? retStr: assertionName;
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.SslPropertiesAction");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SSL or TLS Transport Properties");

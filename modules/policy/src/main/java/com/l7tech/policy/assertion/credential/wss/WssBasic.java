@@ -6,10 +6,7 @@
 
 package com.l7tech.policy.assertion.credential.wss;
 
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions;
 
 /**
@@ -18,22 +15,26 @@ import com.l7tech.util.Functions;
  */
 public class WssBasic extends WssCredentialSourceAssertion {
 
+    final static String baseName = "Require WS-Security UsernameToken Profile Credentials";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<WssCredentialSourceAssertion>(){
+        @Override
+        public String getAssertionName( final WssCredentialSourceAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return AssertionUtils.decorateName(assertion, baseName);
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        final String baseName = "Require WS-Security UsernameToken Profile Credentials";
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "The requestor must provide BASIC credentials in a WSS Username Token");
         meta.putNull(AssertionMetadata.PROPERTIES_EDITOR_FACTORY);
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, Assertion, Boolean>(){
-            public String call(Assertion assertion, Boolean decorate) {
-                if(!decorate) return baseName;
-                return AssertionUtils.decorateName(assertion, baseName);
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
 

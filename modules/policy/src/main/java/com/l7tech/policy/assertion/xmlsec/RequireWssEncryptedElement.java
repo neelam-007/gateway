@@ -1,9 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.XencUtil;
@@ -79,29 +76,32 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
         this.xencKeyAlgorithm = keyEncryptionAlgorithm;
     }
 
+    final static String baseName = "Require Encrypted Element";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RequireWssEncryptedElement>(){
+        @Override
+        public String getAssertionName( final RequireWssEncryptedElement assertion, final boolean decorate) {
+            StringBuilder name = new StringBuilder(baseName + " ");
+            if (assertion.getXpathExpression() == null) {
+                name.append("[XPath expression not set]");
+            } else {
+                name.append(assertion.getXpathExpression().getExpression());
+            }
+            return (decorate) ? AssertionUtils.decorateName(assertion, name) : baseName;
+        }
+    };
+    
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        final String assertionName = "Require Encrypted Element";
-        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "The message must contain one or more encrypted elements.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, 90000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, RequireWssEncryptedElement, Boolean>() {
-            @Override
-            public String call(final RequireWssEncryptedElement requestWssConfidentiality, final Boolean decorate) {
-                StringBuilder name = new StringBuilder(assertionName + " ");
-                if (requestWssConfidentiality.getXpathExpression() == null) {
-                    name.append("[XPath expression not set]");
-                } else {
-                    name.append(requestWssConfidentiality.getXpathExpression().getExpression());
-                }
-                return (decorate) ? AssertionUtils.decorateName(requestWssConfidentiality, name) : assertionName;
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssEncryptedElement>(){
             @Override
             public Set<ValidatorFlag> call(RequireWssEncryptedElement assertion) {

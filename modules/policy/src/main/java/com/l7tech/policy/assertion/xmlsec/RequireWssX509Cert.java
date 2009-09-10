@@ -39,11 +39,20 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
         return true;
     }
 
+    final static String baseName = "Require WS-Security Signature Credentials";
+    
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RequireWssX509Cert>(){
+        @Override
+        public String getAssertionName( final RequireWssX509Cert assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return AssertionUtils.decorateName(assertion, baseName);
+        }
+    };
+    
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        final String baseName = "Require WS-Security Signature Credentials";
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "The SOAP message must contain a WS-Security signature with an X.509 security token.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
@@ -54,13 +63,7 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, Assertion, Boolean>(){
-            public String call(Assertion assertion, Boolean decorate) {
-                if(!decorate) return baseName;
-
-                return AssertionUtils.decorateName(assertion, baseName);
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         return meta;
     }

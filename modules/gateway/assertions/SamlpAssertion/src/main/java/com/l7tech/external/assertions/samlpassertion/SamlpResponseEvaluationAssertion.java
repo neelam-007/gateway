@@ -1,10 +1,6 @@
 package com.l7tech.external.assertions.samlpassertion;
 
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.variable.DataType;
@@ -14,7 +10,6 @@ import com.l7tech.policy.wsp.ArrayTypeMapping;
 import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -161,6 +156,22 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
         this.keyId = keyid;
     }
 
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SamlpResponseEvaluationAssertion>(){
+        @Override
+        public String getAssertionName( final SamlpResponseEvaluationAssertion assertion, final boolean decorate) {
+            final String assertionName = "SAMLP Evaluator";
+            StringBuilder sb = new StringBuilder(assertionName);
+
+            if (assertion.getAuthenticationStatement() != null)
+                sb.append(" (Authentication)");
+            else if (assertion.getAuthorizationStatement() != null)
+                sb.append(" (Authorization Decision)");
+            else if (assertion.getAttributeStatement() != null)
+                sb.append(" (Attribute Query)");
+
+            return (decorate) ? AssertionUtils.decorateName(assertion, sb) : assertionName;
+        }
+    };
 
     @Override
     public AssertionMetadata meta() {
@@ -170,22 +181,8 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpResponseEvaluationAssertionPropertiesEditor");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, SamlpResponseEvaluationAssertion, Boolean>() {
-            @Override
-            public String call(final SamlpResponseEvaluationAssertion assertion, final Boolean decorate) {
-                final String assertionName = "SAMLP Evaluator";
-                StringBuilder sb = new StringBuilder(assertionName);
 
-                if (assertion.getAuthenticationStatement() != null)
-                    sb.append(" (Authentication)");
-                else if (assertion.getAuthorizationStatement() != null)
-                    sb.append(" (Authorization Decision)");
-                else if (assertion.getAttributeStatement() != null)
-                    sb.append(" (Attribute Query)");
-
-                return (decorate) ? AssertionUtils.decorateName(assertion, sb) : assertionName;
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new BeanTypeMapping(SamlpAuthorizationStatement.class, "samlpAuthorizationInfo"),

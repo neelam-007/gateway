@@ -1,14 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.AssertionUtils;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.IdentityTarget;
-import com.l7tech.policy.assertion.UsesEntities;
-import com.l7tech.policy.assertion.RequestIdentityTargetable;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.migration.Migration;
@@ -142,33 +134,35 @@ public class AddWssUsernameToken extends MessageTargetableAssertion implements S
         return vars.toArray(new String[vars.size()]);
     }
 
+    final static String baseName = "Add WS-Security UsernameToken";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<AddWssUsernameToken>(){
+        @Override
+        public String getAssertionName( final AddWssUsernameToken assertion, final boolean decorate) {
+            StringBuilder nameBuilder = new StringBuilder();
+            nameBuilder.append("Add");
+            if (assertion.isEncrypt()) {
+                nameBuilder.append(" encrypted");
+            }
+            nameBuilder.append(" WS-Security UsernameToken");
+            if (assertion.isDigest()) {
+                nameBuilder.append(" digest");
+            }
+            return (decorate) ? AssertionUtils.decorateName(assertion, nameBuilder) : baseName;
+        }
+    };
+    
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-
-        final String assertionName = "Add WS-Security UsernameToken";
-        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Add a WS-Security UsernameToken to the message.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.AddWssUsernameTokenPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.AddWssUsernameTokenValidator");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, AddWssUsernameToken, Boolean>(){
-            @Override
-            public String call(final AddWssUsernameToken addWssBasic, final Boolean decorate) {
-                StringBuilder nameBuilder = new StringBuilder();
-                nameBuilder.append("Add");
-                if (addWssBasic.isEncrypt()) {
-                    nameBuilder.append(" encrypted");
-                }
-                nameBuilder.append(" WS-Security UsernameToken");
-                if (addWssBasic.isDigest()) {
-                    nameBuilder.append(" digest");
-                }
-                return (decorate) ? AssertionUtils.decorateName(addWssBasic, nameBuilder) : assertionName;
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         return meta;
     }

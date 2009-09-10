@@ -130,35 +130,38 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
         }
     }
 
+    final static String baseName = "Add or Remove WS-Security";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<WsSecurity>(){
+        @Override
+        public String getAssertionName( final WsSecurity assertion, final boolean decorate) {
+            StringBuilder nameBuilder = new StringBuilder();
+
+            if (assertion.isApplyWsSecurity()) {
+                nameBuilder.append("Apply ");
+            }
+
+            nameBuilder.append("WS-Security");
+            if (assertion.isApplyWsSecurity() &&
+                    !Assertion.isResponse(assertion) &&
+                    assertion.getWsSecurityVersion() != null) {
+                nameBuilder.append(" ");
+                nameBuilder.append(assertion.getWsSecurityVersion());
+            }
+
+            return (decorate)? AssertionUtils.decorateName(assertion, nameBuilder): baseName;
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        final String assertionName = "Add or Remove WS-Security";
-        meta.put(AssertionMetadata.SHORT_NAME, assertionName);
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Add, remove or modify the WS-Security related contents of a message.");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.WsSecurityPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, WsSecurity, Boolean>() {
-            @Override
-            public String call(final WsSecurity wsSecurity, final Boolean decorate) {
-                StringBuilder nameBuilder = new StringBuilder();
-
-                if (wsSecurity.isApplyWsSecurity()) {
-                    nameBuilder.append("Apply ");
-                }
-
-                nameBuilder.append("WS-Security");
-                if (wsSecurity.isApplyWsSecurity() &&
-                        !Assertion.isResponse(wsSecurity) &&
-                        wsSecurity.getWsSecurityVersion() != null) {
-                    nameBuilder.append(" ");
-                    nameBuilder.append(wsSecurity.getWsSecurityVersion());
-                }
-
-                return (decorate)? AssertionUtils.decorateName(wsSecurity, nameBuilder): assertionName;
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(
             Collections.<TypeMapping>singleton(new Java5EnumTypeMapping(WsSecurityVersion.class, "wsSecurityVersion"))));
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WsSecurityValidator");        

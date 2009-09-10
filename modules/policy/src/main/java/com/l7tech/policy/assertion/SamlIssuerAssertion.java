@@ -6,7 +6,6 @@ package com.l7tech.policy.assertion;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.util.Functions;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
@@ -238,47 +237,49 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         this.signatureKeyInfoType = signatureKeyInfoType;
     }
 
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SamlIssuerAssertion>(){
+        @Override
+        public String getAssertionName(SamlIssuerAssertion assertion, boolean decorate) {
+            final String assertionName = "Create SAML Assertion";
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Issue ");
+            if (assertion.isSignAssertion()) sb.append("signed ");
+            final String uri = assertion.getSubjectConfirmationMethodUri();
+            if (uri != null) {
+                if (SamlIssuerAssertion.HOK_URIS.contains(uri)) {
+                    sb.append("Holder-of-Key ");
+                } else if (SamlIssuerAssertion.SV_URIS.contains(uri)) {
+                    sb.append("Sender-Vouches ");
+                } else if (SamlIssuerAssertion.BEARER_URIS.contains(uri)) {
+                    sb.append("Bearer-Token ");
+                }
+            }
+
+            sb.append(assertionName);
+
+            EnumSet<DecorationType> dts = assertion.getDecorationTypes();
+            if (dts == null || dts.isEmpty()) return AssertionUtils.decorateName(assertion, sb);
+
+            if (dts.contains(DecorationType.ADD_ASSERTION)) {
+                sb.append(" and add to ");
+                if (dts.contains(DecorationType.SIGN_BODY)) sb.append("signed ");
+                if (dts.contains(DecorationType.REQUEST))
+                    sb.append("request");
+                else
+                    sb.append("response");
+            }
+            return (decorate) ? AssertionUtils.decorateName(assertion, sb) : assertionName;
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.saml.SamlIssuerAssertionPropertiesEditor");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddSamlIssuerAssertionAdvice");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Binary<String, SamlIssuerAssertion, Boolean>() {
-            @Override
-            public String call(final SamlIssuerAssertion sia, final Boolean decorate) {
-                final String assertionName = "Create SAML Assertion";
-
-                StringBuilder sb = new StringBuilder();
-                sb.append("Issue ");
-                if (sia.isSignAssertion()) sb.append("signed ");
-                final String uri = sia.getSubjectConfirmationMethodUri();
-                if (uri != null) {
-                    if (SamlIssuerAssertion.HOK_URIS.contains(uri)) {
-                        sb.append("Holder-of-Key ");
-                    } else if (SamlIssuerAssertion.SV_URIS.contains(uri)) {
-                        sb.append("Sender-Vouches ");
-                    } else if (SamlIssuerAssertion.BEARER_URIS.contains(uri)) {
-                        sb.append("Bearer-Token ");
-                    }
-                }
-
-                sb.append(assertionName);
-
-                EnumSet<DecorationType> dts = sia.getDecorationTypes();
-                if (dts == null || dts.isEmpty()) return AssertionUtils.decorateName(sia, sb);
-
-                if (dts.contains(DecorationType.ADD_ASSERTION)) {
-                    sb.append(" and add to ");
-                    if (dts.contains(DecorationType.SIGN_BODY)) sb.append("signed ");
-                    if (dts.contains(DecorationType.REQUEST))
-                        sb.append("request");
-                    else
-                        sb.append("response");
-                }
-                return (decorate) ? AssertionUtils.decorateName(sia, sb) : assertionName;
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(NameIdentifierInclusionType.class, "nameIdentifierType"),
             new Java5EnumTypeMapping(KeyInfoInclusionType.class, "subjectConfirmationKeyInfoType"),
