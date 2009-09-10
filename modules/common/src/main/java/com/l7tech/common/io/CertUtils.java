@@ -68,8 +68,8 @@ public class CertUtils {
 
     public static final int DEFAULT_X509V1_MAX_PATH_LENGTH = SyspropUtil.getInteger("com.l7tech.pkix.defaultX509v1MaxPathLength", 0);
 
-    public static final String CERT_PROP_CREATION_DATE = "Creation date";
-    public static final String CERT_PROP_EXPIRY_DATE = "Expiry date";
+    public static final String CERT_PROP_NOTBEFORE_DATE = "Validity start date";
+    public static final String CERT_PROP_NOTAFTER_DATE = "Expiry date";
     public static final String CERT_PROP_ISSUED_TO = "Issued to";
     public static final String CERT_PROP_SERIAL_NUMBER = "Serial number";
     public static final String CERT_PROP_ISSUER = "Issuer";
@@ -801,8 +801,8 @@ public class CertUtils {
         List<Pair<String, String>> l = new ArrayList<Pair<String, String>>();
         if (cert == null) return l;
 
-        l.add(new Pair<String, String>(CERT_PROP_CREATION_DATE, nullNa(cert.getNotBefore())));
-        l.add(new Pair<String, String>(CERT_PROP_EXPIRY_DATE, nullNa(cert.getNotAfter())));
+        l.add(new Pair<String, String>(CERT_PROP_NOTBEFORE_DATE, nullNa(cert.getNotBefore())));
+        l.add(new Pair<String, String>(CERT_PROP_NOTAFTER_DATE, nullNa(cert.getNotAfter())));
         l.add(new Pair<String, String>(CERT_PROP_ISSUED_TO, nullNa(cert.getSubjectDN())));
         l.add(new Pair<String, String>(CERT_PROP_SERIAL_NUMBER, nullNa(cert.getSerialNumber())));
         l.add(new Pair<String, String>(CERT_PROP_ISSUER, nullNa(cert.getIssuerDN())));
