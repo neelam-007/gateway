@@ -12,25 +12,25 @@ public abstract class WsFederationPassiveTokenAssertion extends Assertion {
     public WsFederationPassiveTokenAssertion() {
     }
 
-    public WsFederationPassiveTokenAssertion(String url, String contextUrl, String replyUrl, boolean authenticate) {
+    public WsFederationPassiveTokenAssertion(String url, String context, String replyUrl, boolean authenticate) {
         this.ipStsUrl = url;
-        this.contextUrl = contextUrl;
+        this.context = context;
         this.replyUrl = replyUrl;
         this.authenticate = authenticate;
     }
 
-    public WsFederationPassiveTokenAssertion(String url, String contextUrl, String replyUrl) {
+    public WsFederationPassiveTokenAssertion(String url, String context, String replyUrl) {
         this.ipStsUrl = url;
-        this.contextUrl = contextUrl;
+        this.context = context;
         this.replyUrl = replyUrl;
     }
 
-    public String getContextUrl() {
-        return contextUrl;
+    public String getContext() {
+        return context;
     }
 
-    public void setContextUrl(String contextUrl) {
-        this.contextUrl = contextUrl;
+    public void setContext(String context) {
+        this.context = context;
     }
 
     public String getIpStsUrl() {
@@ -66,7 +66,7 @@ public abstract class WsFederationPassiveTokenAssertion extends Assertion {
         this.setIpStsUrl(source.getIpStsUrl());
         this.setAuthenticate(source.isAuthenticate());
         this.setReplyUrl(source.getReplyUrl());
-        this.setContextUrl(source.getContextUrl());
+        this.setContext(source.getContext());
     }
 
     @Override
@@ -93,5 +93,5 @@ public abstract class WsFederationPassiveTokenAssertion extends Assertion {
     private boolean authenticate;
     private String ipStsUrl;
     private String replyUrl; // reply url, the URL on the service server to POST auth to (to get cookie)
-    private String contextUrl; // service url, the thing we will be accessing when authorized
+    private String context; // service url, the thing we will be accessing when authorized
 }

@@ -176,7 +176,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
             params.setPasswordAuthentication(new PasswordAuthentication(username, pass));
 
             // replyUrl is the AUTH POST url not the routing url (could be the same thing)
-            XmlSecurityToken token = FederationPassiveClient.obtainFederationToken(httpClient, params, assertion.getRealm(), assertion.getReplyUrl(), assertion.getContextUrl(), assertion.isTimestamp());
+            XmlSecurityToken token = FederationPassiveClient.obtainFederationToken(httpClient, params, assertion.getRealm(), assertion.getReplyUrl(), assertion.getContext(), assertion.isTimestamp());
             if(token instanceof SamlAssertion) {
                 samlAssertion = (SamlAssertion) token;
             }
@@ -205,7 +205,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
      *
      */
     private void doAuth(PolicyEnforcementContext context, SamlAssertion samlAssertion, boolean allowDeferred) throws AuthRequiredException, StopAndAuditException {
-        doAuth(context, httpClient, samlAssertion, assertion.getReplyUrl(), assertion.getContextUrl(), allowDeferred);
+        doAuth(context, httpClient, samlAssertion, assertion.getReplyUrl(), assertion.getContext(), allowDeferred);
     }
 
     /**

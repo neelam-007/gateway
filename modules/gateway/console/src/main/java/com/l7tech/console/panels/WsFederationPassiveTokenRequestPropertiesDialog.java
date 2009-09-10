@@ -35,7 +35,7 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends LegacyAsser
         timestampCheckBox.setSelected(assertion.isTimestamp());
         replyUrlTextField.setText(assertion.getReplyUrl());
         authenticationCheckBox.setSelected(assertion.isAuthenticate());
-        contextUrlTextField.setText(assertion.getContextUrl());
+        contextUrlTextField.setText(assertion.getContext());
 
         getContentPane().add(mainPanel);
 
@@ -57,7 +57,7 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends LegacyAsser
                 wsFedAssertion.setTimestamp(timestampCheckBox.isSelected());
                 wsFedAssertion.setReplyUrl(replyUrlTextField.getText());
                 wsFedAssertion.setAuthenticate(authenticationCheckBox.isSelected());
-                wsFedAssertion.setContextUrl(contextUrlTextField.getText());
+                wsFedAssertion.setContext(contextUrlTextField.getText());
                 assertionChanged = true;
                 dispose();
             }
