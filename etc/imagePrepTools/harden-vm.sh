@@ -8,6 +8,9 @@ rm -f /var/lib/mysql/ib*
 rm -f /var/lib/mysql/*.log
 
 echo "Cleaning logs..."
+#chmod the log directory (already done in harden) in case anything new has been created on first boot
+chmod o-w /var/log/*
+#clean up the log directory now
 rm -f /var/log/*/*
 find /var/log -maxdepth 1 -type f | grep -v '/btmp$' | xargs rm -f
 service ssg stop
