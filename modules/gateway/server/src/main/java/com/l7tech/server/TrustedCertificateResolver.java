@@ -94,7 +94,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
             if (got != null && got.size() >= 1)
                 return got.get(0).getCertificate();
 
-            return null;
+            return asCert(lookupPrivateKeyByX509Thumbprint(thumbprint));
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
         }
@@ -110,7 +110,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
             if (got != null && got.size() >= 1)
                 return got.get(0).getCertificate();
 
-            return null;
+            return asCert(lookupPrivateKeyBySki(ski));
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
         }
@@ -132,7 +132,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
             List<? extends X509Entity> got = trustedCertManager.findByIssuerAndSerial(issuer, serial);
             if (got != null && got.size() >= 1) return got.get(0).getCertificate();
 
-            return null;
+            return asCert(lookupPrivateKeyByIssuerAndSerial(issuer, serial));
         } catch (FindException e) {
             throw new RuntimeException(e);
         }
@@ -183,6 +183,10 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
         }
 
         return keyCache = new SimpleSecurityTokenResolver(null, infos.toArray(new SignerInfo[infos.size()]));
+    }
+
+    private static X509Certificate asCert(SignerInfo signerInfo) {
+        return signerInfo == null ? null : signerInfo.getCertificate();
     }
 
     @Override

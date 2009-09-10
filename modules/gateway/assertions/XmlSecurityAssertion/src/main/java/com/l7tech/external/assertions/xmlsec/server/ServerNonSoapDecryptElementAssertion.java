@@ -222,8 +222,7 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
             if (issuerVal.length() == 0) throw new MissingRequiredElementException("X509IssuerName was empty");
             final String serialVal = DomUtils.getTextValue(serialEl);
             if (serialVal.length() == 0) throw new MissingRequiredElementException("X509SerialNumber was empty");
-            X509Certificate keyCert = securityTokenResolver.lookupByIssuerAndSerial(new X500Principal(issuerVal), new BigInteger(serialVal));
-            return keyCert == null ? null : securityTokenResolver.lookupPrivateKeyByCert(keyCert);
+            return securityTokenResolver.lookupPrivateKeyByIssuerAndSerial(new X500Principal(issuerVal), new BigInteger(serialVal));
         } else {
             throw new KeyInfoElement.UnsupportedKeyInfoFormatException("KeyInfo X509Data was not in a supported format");
         }
