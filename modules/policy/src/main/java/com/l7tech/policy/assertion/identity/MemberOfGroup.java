@@ -93,18 +93,6 @@ public class MemberOfGroup extends IdentityAssertion {
         return super.toString() + " " + getGroupName();
     }
 
-    @Override
-    public AssertionMetadata meta() {
-        final DefaultAssertionMetadata meta = defaultMeta();
-
-        meta.put(AssertionMetadata.SHORT_NAME, "Authenticate User or Group");
-        //the value from SpecificUser is used in the palette for both description and icon
-        meta.put(AssertionMetadata.DESCRIPTION, "Require user or group identities from an identity provider.");
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/user16.png");
-
-        return meta;
-    }
-
     protected String _groupName;
     protected String groupId;
 }

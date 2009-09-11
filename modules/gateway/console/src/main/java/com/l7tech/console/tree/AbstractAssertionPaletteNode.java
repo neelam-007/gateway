@@ -9,9 +9,7 @@ import javax.swing.tree.MutableTreeNode;
 import java.util.*;
 
 /**
- * User: megery
- * Date: Mar 8, 2006
- * Time: 4:23:22 PM
+ * @author megery
  */
 public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
     protected String descriptionText = null;

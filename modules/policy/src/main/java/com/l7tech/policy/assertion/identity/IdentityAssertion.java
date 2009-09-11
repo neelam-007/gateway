@@ -6,10 +6,7 @@ package com.l7tech.policy.assertion.identity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.policy.assertion.UsesEntities;
-import com.l7tech.policy.assertion.IdentityTagable;
-import com.l7tech.policy.assertion.IdentityTarget;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
+import com.l7tech.policy.assertion.*;
 
 /**
  * Subclasses of IdentityAssertion are used to specify that the entity making
@@ -88,4 +85,18 @@ public abstract class IdentityAssertion extends MessageTargetableAssertion imple
      * @return The identity that this assertion asserts.
      */
     public abstract IdentityTarget getIdentityTarget();
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.SHORT_NAME, "Authenticate User or Group");
+        meta.put(AssertionMetadata.DESCRIPTION, "Require user or group identities from an identity provider.");
+
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/user16.png");
+
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/user16.png");
+
+        return meta;
+    }
 }

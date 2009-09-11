@@ -11,8 +11,9 @@ public class HttpBasic extends HttpCredentialSourceAssertion {
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{ "accessControl"});
         meta.put(AssertionMetadata.SHORT_NAME, "Require HTTP Basic Credentials");
-        meta.put(AssertionMetadata.LONG_NAME, "The requestor must provide credentials using the HTTP BASIC authentication method.");
+        meta.put(AssertionMetadata.DESCRIPTION, "The requestor must provide credentials using the HTTP BASIC authentication method.");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
 

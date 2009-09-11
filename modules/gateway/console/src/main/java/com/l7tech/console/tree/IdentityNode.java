@@ -31,11 +31,23 @@ public class IdentityNode extends AbstractLeafPaletteNode {
     }
 
     /**
+     * This palette node has allowed the super impelentation to return null, however we want the descrioption
+     * from any implementation of IdentityAssertion's meta data.
+     * @return
+     */
+    @Override
+    public Assertion asAssertion() {
+        //type is not important
+        return new SpecificUser();
+    }
+
+    /**
      * Return assertions representation of the node. This returns
      * the array of selected users and groups
      *
      * @return the assertion corresponding to this node or null
      */
+    @Override
     public Assertion[] asAssertions() {
         Frame f = TopComponents.getInstance().getTopParent();
         Options options = new Options();
@@ -66,6 +78,7 @@ public class IdentityNode extends AbstractLeafPaletteNode {
         }
     }
 
+    @Override
     protected boolean isEnabledByLicense() {
         return Registry.getDefault().getLicenseManager().isAuthenticationEnabled();
     }

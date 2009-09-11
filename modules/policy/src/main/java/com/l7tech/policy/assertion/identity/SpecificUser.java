@@ -126,19 +126,6 @@ public class SpecificUser extends IdentityAssertion {
         return sb.toString();
     }
 
-    @Override
-    public AssertionMetadata meta() {
-        final DefaultAssertionMetadata meta = defaultMeta();
-
-        meta.put(AssertionMetadata.SHORT_NAME, "Authenticate User or Group");
-        meta.put(AssertionMetadata.DESCRIPTION, "Require user or group identities from an identity provider.");
-        
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/user16.png");
-
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/user16.png");
-        return meta;
-    }
-
     protected String userLogin;
     protected String userUid;
     private String userName;

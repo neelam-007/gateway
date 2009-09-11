@@ -42,22 +42,28 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     public LDAPQueryAssertion() {
     }
 
+    private final static String baseName = "Query LDAP";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<LDAPQueryAssertion>(){
+        @Override
+        public String getAssertionName( final LDAPQueryAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return baseName + " " + assertion.getSearchFilter();
+
+        }
+    };
+
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        final String assertionName = "Query LDAP";
-        meta.put(SHORT_NAME, assertionName);
+        meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Retrieve attributes from an LDAP directory server and store them in context variables.");
         meta.put(PROPERTIES_ACTION_NAME, "LDAP Query Properties");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "accessControl" });
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, LDAPQueryAssertion>() {
-            public String call(LDAPQueryAssertion assertion) {
-                return assertionName + " " + assertion.getSearchFilter();
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.ldapquery.server.ServerLDAPQueryAssertion");
