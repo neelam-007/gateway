@@ -8,7 +8,6 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.util.Functions;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -159,6 +158,7 @@ public class AddWssUsernameToken extends MessageTargetableAssertion implements S
         meta.put(AssertionMetadata.DESCRIPTION, "Add a WS-Security UsernameToken to the message.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.AddWssUsernameTokenPropertiesDialog");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "WS-Security UsernameToken Properties");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.AddWssUsernameTokenValidator");

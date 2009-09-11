@@ -21,15 +21,17 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
 
     //- PUBLIC
 
-    public NcesValidatorAssertionPropertiesDialog(Window owner) {
-        super(owner, "NCES Validator Properties");
+    public NcesValidatorAssertionPropertiesDialog(Window owner, NcesValidatorAssertion assertion) {
+        super(owner, assertion);
         initialize();
     }
 
+    @Override
     public boolean isConfirmed() {
         return ok;
     }
 
+    @Override
     public void setData(NcesValidatorAssertion assertion) {
         this.assertion = assertion;
         targetMessagePanel.setModel(assertion);
@@ -39,6 +41,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
         trustedCertIssuersPanel.setCertificateInfos( assertion.getTrustedIssuerCertificateInfo() );
     }
 
+    @Override
     public NcesValidatorAssertion getData(NcesValidatorAssertion assertion) {
         targetMessagePanel.updateModel(assertion);
         assertion.setSamlRequired(samlCheckbox.isSelected());
@@ -74,6 +77,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
 
     private void initialize() {
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok = true;
                 targetMessagePanel.updateModel(assertion);
@@ -82,6 +86,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok = false;
                 dispose();
@@ -90,6 +95,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
 
         targetMessagePanelHolder.add(targetMessagePanel);
         targetMessagePanel.addPropertyChangeListener("valid", new PropertyChangeListener() {
+            @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 okButton.setEnabled(Boolean.TRUE.equals(evt.getNewValue()));
             }
@@ -123,6 +129,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
             names.put("validation.option.default","Use Default");
         }
 
+        @Override
         public Component getListCellRendererComponent( JList list,
                                                        Object value,
                                                        int index,
@@ -156,7 +163,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
     }
 
     public static void main(String[] args) {
-        NcesValidatorAssertionPropertiesDialog dlg = new NcesValidatorAssertionPropertiesDialog(new JFrame());
+        NcesValidatorAssertionPropertiesDialog dlg = new NcesValidatorAssertionPropertiesDialog(new JFrame(), new NcesValidatorAssertion());
         dlg.setData(new NcesValidatorAssertion());
         dlg.pack();
         dlg.setVisible(true);

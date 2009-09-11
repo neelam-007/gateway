@@ -56,6 +56,7 @@ public class SslAssertion extends ConfidentialityAssertion {
             return _keyName;
         }
 
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof Option)) return false;
@@ -68,6 +69,7 @@ public class SslAssertion extends ConfidentialityAssertion {
             return true;
         }
 
+        @Override
         public int hashCode() {
             int result;
             result = _numeric;
@@ -75,6 +77,7 @@ public class SslAssertion extends ConfidentialityAssertion {
             return result;
         }
 
+        @Override
         public String toString() {
             return _keyName;
         }
@@ -82,10 +85,12 @@ public class SslAssertion extends ConfidentialityAssertion {
         // WspEnumTypeMapping finds this method by reflection
         public static EnumTranslator getEnumTranslator() {
             return new EnumTranslator() {
+                @Override
                 public Object stringToObject(String s) throws IllegalArgumentException {
                     return SslAssertion.Option.forKeyName(s);
                 }
 
+                @Override
                 public String objectToString(Object o) throws ClassCastException {
                     return ((SslAssertion.Option)o).getKeyName();
                 }
@@ -100,6 +105,7 @@ public class SslAssertion extends ConfidentialityAssertion {
      *
      * @return true if credential source, false otherwise
      */
+    @Override
     public boolean isCredentialSource() {
         return requireClientAuthentication && _option.equals(REQUIRED);
     }
@@ -176,6 +182,7 @@ public class SslAssertion extends ConfidentialityAssertion {
         }
     }
 
+    @Override
     public String toString() {
         return super.toString() + " clientCert=" + isRequireClientAuthentication() + " option=" + getOption();
     }
@@ -205,11 +212,12 @@ public class SslAssertion extends ConfidentialityAssertion {
         }
     };
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(AssertionMetadata.SHORT_NAME, "Set SSL or TLS Transport");
-        meta.put(AssertionMetadata.DESCRIPTION, "The incoming request either must use, optionally use, or is forbidden to use the SSL/TLS transport. Client certificate authentication is optional if 'must use'.");
+        meta.put(AssertionMetadata.DESCRIPTION, "The incoming request must either use, optionally use, or is forbidden to use SSL/TLS transport. Client certificate authentication is optional if SSL / TLS is required.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ssl.gif");
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(

@@ -898,8 +898,8 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(SHORT_NAME, "XACML Request Builder");
-        meta.put(LONG_NAME, "Generate XACML Requests");
+        meta.put(SHORT_NAME, "Create XACML Request");
+        meta.put(DESCRIPTION, "Build a XACML request and place it in the specified target.");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
@@ -907,6 +907,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.console.XacmlRequestBuilderAssertionValidator" );
 
+        meta.put(PROPERTIES_ACTION_NAME, "XACML Request Properties");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.console.XacmlRequestBuilderDialog");
 
         meta.put(FEATURE_SET_NAME, "(fromClass)");

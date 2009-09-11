@@ -17,35 +17,11 @@ import java.awt.*;
 /**
  * Edits the {@link com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken} properties.
  */
-public class AddWssSecurityTokenPropertiesAction extends NodeAction {
+public class AddWssSecurityTokenPropertiesAction extends NodeActionWithMetaSupport {
     static final Logger log = Logger.getLogger(AddWssSecurityTokenPropertiesAction.class.getName());
 
     public AddWssSecurityTokenPropertiesAction(AbstractTreeNode node) {
-        super(node, AddWssSecurityToken.class);
-    }
-
-    /**
-     * @return the action name
-     */
-    @Override
-    public String getName() {
-        return "Add Security Token Properties";
-    }
-
-    /**
-     * @return the aciton description
-     */
-    @Override
-    public String getDescription() {
-        return "View/Edit Add Security Token Properties";
-    }
-
-    /**
-     * specify the resource name for this action
-     */
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/About16.gif";
+        super(node, AddWssSecurityToken.class, node.asAssertion());
     }
 
     /**

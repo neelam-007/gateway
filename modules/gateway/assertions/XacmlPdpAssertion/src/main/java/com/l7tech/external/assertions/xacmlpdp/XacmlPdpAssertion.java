@@ -15,10 +15,7 @@ import java.util.*;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
- * User: njordan
- * Date: 13-Mar-2009
- * Time: 5:21:36 PM
- * To change this template use File | Settings | File Templates.
+ * @author njordan
  */
 public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsVariables {
     public static final String CPROP_XACML_POLICY_CACHE_MAX_ENTRIES = "xacml.pdp.policyCache.maxEntries";
@@ -163,8 +160,8 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(SHORT_NAME, "XACML PDP Assertion");
-        meta.put(LONG_NAME, "Evaluate a XACML access request");
+        meta.put(SHORT_NAME, "Evaluate XACML Policy");
+        meta.put(DESCRIPTION, "Evaluate a XACML policy and render an authorization decision for a resource.");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
@@ -182,6 +179,7 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
         });
         meta.put(CLUSTER_PROPERTIES, props);
 
+        meta.put(PROPERTIES_ACTION_NAME, "XACML Policy Properties");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.console.XacmlPdpPropertiesDialog");
 
         meta.put(FEATURE_SET_NAME, "(fromClass)");

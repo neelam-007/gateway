@@ -156,11 +156,13 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
         this.keyId = keyid;
     }
 
+    final static String baseName = "Evaluate SAML Protocol Message";
+
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SamlpResponseEvaluationAssertion>(){
         @Override
         public String getAssertionName( final SamlpResponseEvaluationAssertion assertion, final boolean decorate) {
-            final String assertionName = "SAMLP Evaluator";
-            StringBuilder sb = new StringBuilder(assertionName);
+            if(!decorate) return baseName;
+            StringBuilder sb = new StringBuilder(baseName);
 
             if (assertion.getAuthenticationStatement() != null)
                 sb.append(" (Authentication)");
@@ -169,7 +171,7 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
             else if (assertion.getAttributeStatement() != null)
                 sb.append(" (Attribute Query)");
 
-            return (decorate) ? AssertionUtils.decorateName(assertion, sb) : assertionName;
+            return AssertionUtils.decorateName(assertion, sb);
         }
     };
 
@@ -177,9 +179,15 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
+
+        // Set description for GUI
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.LONG_NAME, "Evaluate a SAML Protocol response.");
+        
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Protocol Response Wizard");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpResponseEvaluationAssertionPropertiesEditor");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
@@ -190,9 +198,6 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
         )));
         
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, SamlpResponseEvaluationAssertionValidator.class.getName());
-        // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "SAMLP Evaluator");
-        meta.put(AssertionMetadata.LONG_NAME, "Evaluate a SAMLP response message");
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:FtpCredential" rather than "set:modularAssertions"

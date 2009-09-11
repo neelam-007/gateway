@@ -10,7 +10,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_FOLDERS;
 import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_SORT_PRIORITY;
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.util.Functions;
 
 /**
  * Creates a Security Token element and adds it to the SOAP security header in the target message.
@@ -139,6 +138,8 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.AddWssSecurityTokenPropertiesAction");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Signed Security Token Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/About16.gif");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssDecorationAssertionValidator");
 
         return meta;

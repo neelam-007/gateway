@@ -9,6 +9,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.JButton;
 import java.awt.*;
@@ -29,21 +30,17 @@ public class SamlPolicyAssertionWizard extends Wizard {
     /**
      * Creates new wizard
      */
-    public SamlPolicyAssertionWizard(SamlPolicyAssertion assertion, Frame parent, WizardStepPanel panel, boolean issueMode, boolean readOnly) {
+    public SamlPolicyAssertionWizard(SamlPolicyAssertion assertion, Frame parent, WizardStepPanel panel, boolean readOnly) {
         super(parent, panel);
         if (assertion == null) {
             throw new IllegalArgumentException();
         }
         this.readOnly = readOnly;
         wizardInput = assertion;
-        if (issueMode) {
-            setTitle("SAML Issuer Assertion Wizard");
-        } else {
-            setTitle("SAML Constraints Wizard");
-        }
-
+        setTitle(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
 
         getButtonHelp().addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(SamlPolicyAssertionWizard.this);
             }

@@ -42,7 +42,7 @@ public class AddRequireWssSamlAdvice implements Advice {
                         new SubjectConfirmationNameIdentifierWizardStepPanel(
                           new ConditionsWizardStepPanel(null)))))))));
 
-        final Wizard w = new SamlPolicyAssertionWizard(assertion, f, p, false, false);
+        final Wizard w = new SamlPolicyAssertionWizard(assertion, f, p, false);
         w.addWizardListener(new WizardAdapter() {
             @Override
             public void wizardFinished(WizardEvent e) {

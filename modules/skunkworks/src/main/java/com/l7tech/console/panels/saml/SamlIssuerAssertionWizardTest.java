@@ -24,11 +24,12 @@ public class SamlIssuerAssertionWizardTest extends JFrame {
                                 new ConditionsWizardStepPanel(
                                         new SamlSignatureStepPanel(null, true), true, true), true), true), true), true), true), true), true);
         SamlIssuerAssertion assertion = new SamlIssuerAssertion();
-        Wizard w = new SamlPolicyAssertionWizard(assertion, frame, p, true, false);
+        Wizard w = new SamlPolicyAssertionWizard(assertion, frame, p, false);
         w.pack();
         w.setVisible(true);
         w.addWindowListener(
           new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 System.exit(0);
             }

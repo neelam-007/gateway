@@ -47,13 +47,14 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
     private boolean validOtherMessageVariable= true;
 
     private final RunOnChangeListener enableDisableListener = new RunOnChangeListener(new Runnable() {
+        @Override
         public void run() {
             enableDisable();
         }
     });
 
     public NcesDecoratorAssertionPropertiesDialog(Window owner, final NcesDecoratorAssertion assertion) {
-        super(owner, "NCES Decorator Properties");
+        super(owner, assertion);
         this.assertion = assertion;
         initialize();
     }
@@ -98,6 +99,7 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         }
 
         targetMessagePanel.addPropertyChangeListener("valid", new PropertyChangeListener() {
+            @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 validOtherMessageVariable = (Boolean)evt.getNewValue();
                 enableDisable();
@@ -125,6 +127,7 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         responseImmediateCheckBox.setSelected(!assertion.isDeferDecoration());
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 assertion.setMessageIdUriPrefix(uuidUriPrefixTextField.getText());
                 assertion.setNodeBasedUuid(macBasedUuidRadioButton.isSelected());
@@ -161,6 +164,7 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok = false;
                 dispose();
@@ -198,17 +202,21 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
 
     boolean ok = false;
 
+    @Override
     public JDialog getDialog() {
         return this;
     }
 
+    @Override
     public boolean isConfirmed() {
         return ok;
     }
 
+    @Override
     public void setData(NcesDecoratorAssertion assertion) {
     }
 
+    @Override
     public NcesDecoratorAssertion getData(NcesDecoratorAssertion assertion) {
         return assertion;
     }

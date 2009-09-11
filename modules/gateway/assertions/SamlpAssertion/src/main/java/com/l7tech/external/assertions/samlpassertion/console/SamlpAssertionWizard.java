@@ -9,6 +9,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
 import java.awt.*;
@@ -49,13 +50,10 @@ public class SamlpAssertionWizard extends Wizard {
         this.mode = mode;
 //        setTitle(getDialogTitle());
 
-        if (AssertionMode.REQUEST == mode) {
-            setTitle("SAMLP Builder Wizard");
-        } else {
-            setTitle("SAMLP Evaluator Wizard");
-        }
+        setTitle(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
 
         getButtonHelp().addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(SamlpAssertionWizard.this);
             }

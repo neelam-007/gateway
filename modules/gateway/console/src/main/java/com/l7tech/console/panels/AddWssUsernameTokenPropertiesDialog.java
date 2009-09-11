@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.xmlsec.AddWssUsernameToken;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.gui.util.RunOnChangeListener;
 
 import javax.swing.*;
@@ -17,7 +18,7 @@ public class AddWssUsernameTokenPropertiesDialog extends AssertionPropertiesOkCa
     //- PUBLIC
 
     public AddWssUsernameTokenPropertiesDialog( final Window parent, final AddWssUsernameToken assertion ) {
-        super( AddWssUsernameToken.class, parent, bundle.getString("dialog.title"), true );
+        super( AddWssUsernameToken.class, parent, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString(), true );
         initComponents();
         setData(assertion);
     }

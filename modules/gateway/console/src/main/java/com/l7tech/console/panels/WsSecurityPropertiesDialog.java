@@ -31,7 +31,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     //- PUBLIC
 
     public WsSecurityPropertiesDialog( Window parent, WsSecurity assertion ) {
-        super(WsSecurity.class, parent, bundle.getString("dialog.title"), true);
+        super(WsSecurity.class, parent, assertion, true);
         initComponents();
         setData(assertion);
     }

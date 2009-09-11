@@ -237,10 +237,12 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         this.signatureKeyInfoType = signatureKeyInfoType;
     }
 
+    final static String baseName = "Create SAML Token";
+
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SamlIssuerAssertion>(){
         @Override
         public String getAssertionName(SamlIssuerAssertion assertion, boolean decorate) {
-            final String assertionName = "Create SAML Assertion";
+            if(!decorate) return baseName;
 
             StringBuilder sb = new StringBuilder();
             sb.append("Issue ");
@@ -256,7 +258,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
                 }
             }
 
-            sb.append(assertionName);
+            sb.append(baseName);
 
             EnumSet<DecorationType> dts = assertion.getDecorationTypes();
             if (dts == null || dts.isEmpty()) return AssertionUtils.decorateName(assertion, sb);
@@ -269,7 +271,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
                 else
                     sb.append("response");
             }
-            return (decorate) ? AssertionUtils.decorateName(assertion, sb) : assertionName;
+            return AssertionUtils.decorateName(assertion, sb);
         }
     };
 
@@ -277,6 +279,9 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
+        meta.put(AssertionMetadata.SHORT_NAME, "Create SAML Token");
+        meta.put(AssertionMetadata.DESCRIPTION, "Create and optionally sign a SAML token.");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Token Properties");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.saml.SamlIssuerAssertionPropertiesEditor");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddSamlIssuerAssertionAdvice");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
@@ -286,7 +291,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
             new Java5EnumSetTypeMapping(EnumSet.class, DecorationType.class, "decorationTypes")
         )));
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, SamlIssuerAssertionValidator.class.getName());
-        meta.put(AssertionMetadata.SHORT_NAME, "SAML Issuer");
+
         return meta;
     }
 

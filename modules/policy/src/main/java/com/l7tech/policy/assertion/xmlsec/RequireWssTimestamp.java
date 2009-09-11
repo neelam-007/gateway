@@ -121,7 +121,7 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RequireWssTimestamp>(){
         @Override
         public String getAssertionName( final RequireWssTimestamp assertion, final boolean decorate) {
-            final String decoratedName = (assertion.isSignatureRequired()) ? "Require signed Timestamp" : baseName;
+            final String decoratedName = (assertion.isSignatureRequired()) ? "Require Signed Timestamp" : baseName;
             return (decorate)? AssertionUtils.decorateName(assertion, decoratedName): baseName;
         }
     };
@@ -136,6 +136,7 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(PALETTE_NODE_SORT_PRIORITY, 68000);
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(PROPERTIES_ACTION_NAME, "Timestamp Properties");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RequireWssTimestampDialog");
         meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssTimestamp>(){
             @Override
@@ -154,6 +155,7 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
             }
         });
         meta.put(CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssTimestamp");
+        meta.put(USED_BY_CLIENT, Boolean.TRUE);
 
         return meta;
     }

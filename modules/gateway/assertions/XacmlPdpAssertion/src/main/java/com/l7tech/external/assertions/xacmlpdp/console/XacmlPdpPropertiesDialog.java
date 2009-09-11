@@ -117,7 +117,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     private boolean confirmed;
 
     public XacmlPdpPropertiesDialog( final Frame owner, final XacmlPdpAssertion a ) {
-        super(owner, resources.getString( "dialog.title" ) );
+        super(owner, a );
         assertion = a;
         initComponents();
         enableDisableComponents();

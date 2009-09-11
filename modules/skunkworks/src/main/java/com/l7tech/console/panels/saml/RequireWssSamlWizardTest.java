@@ -24,11 +24,12 @@ public class RequireWssSamlWizardTest extends JFrame {
                     new ConditionsWizardStepPanel(null))))));
         RequireWssSaml assertion;
         assertion = new RequireWssSaml();
-        Wizard w = new SamlPolicyAssertionWizard(assertion, frame, p, false, false);
+        Wizard w = new SamlPolicyAssertionWizard(assertion, frame, p, false);
         w.pack();
         w.setVisible(true);
         w.addWindowListener(
           new WindowAdapter() {
+              @Override
             public void windowClosing(WindowEvent e) {
                 System.exit(0);
             }

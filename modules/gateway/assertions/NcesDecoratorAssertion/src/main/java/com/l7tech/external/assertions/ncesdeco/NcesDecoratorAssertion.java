@@ -179,6 +179,17 @@ public class NcesDecoratorAssertion
         this.deferDecoration = deferDecoration;
     }
 
+    final static String baseName = "Apply NCES Elements to Message";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<NcesDecoratorAssertion>(){
+        @Override
+        public String getAssertionName( final NcesDecoratorAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return AssertionUtils.decorateName(assertion, baseName);
+        }
+    };
+
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -186,7 +197,8 @@ public class NcesDecoratorAssertion
             return meta;
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "NCES Decorator");
+        final String baseName = "Apply NCES Elements to Message";
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
@@ -197,8 +209,9 @@ public class NcesDecoratorAssertion
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ncesdeco.console.NcesDecoratorAssertionPropertiesDialog");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME, "Add NCES Elements");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "NCES Elements Properties");
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
         )));
 

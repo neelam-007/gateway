@@ -7,8 +7,8 @@ import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -21,8 +21,9 @@ import java.security.cert.X509Certificate;
  *
  * $Id$
  */
-public class ClientRequestWssReplayProtection extends ClientAssertion {
+public class ClientRequestWssReplayProtection extends ClientAssertionWithMetaSupport {
     public ClientRequestWssReplayProtection(WssReplayProtection data) {
+        super(data);
         this.requestWssReplayProtection = data;
         if (data == null) {
             throw new IllegalArgumentException("security elements is null");
@@ -35,6 +36,7 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
      * @param context
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException, BadCredentialsException,
             GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException,
@@ -46,6 +48,7 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         context.getPendingDecorations().put(this, new ClientDecorator() {
+            @Override
             public AssertionStatus decorateRequest(PolicyApplicationContext context)
                     throws OperationCanceledException, GeneralSecurityException,
                     KeyStoreCorruptException, BadCredentialsException, ClientCertificateException,
@@ -85,17 +88,10 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
-    }
-
-    public String getName() {
-        return "Request WSS Replay Protection";
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 
     protected WssReplayProtection requestWssReplayProtection;

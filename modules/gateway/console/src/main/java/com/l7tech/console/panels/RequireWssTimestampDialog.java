@@ -4,17 +4,16 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
+import com.l7tech.policy.assertion.AssertionMetadata;
 
 import java.awt.*;
-import java.util.ResourceBundle;
 
 /**
  * @author alex
  */
 public class RequireWssTimestampDialog extends AssertionOkCancelDialog<RequireWssTimestamp> {
-    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequireWssTimestampDialog");
 
     public RequireWssTimestampDialog(Frame owner, RequireWssTimestamp assertion) {
-        super(owner, resources.getString("dialog.title"), new RequireWssTimestampPanel(assertion), assertion);
+        super(owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString(), new RequireWssTimestampPanel(assertion), assertion);
     }
 }

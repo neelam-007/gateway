@@ -23,14 +23,17 @@ public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesE
     public SamlIssuerAssertionPropertiesEditor() {
     }
 
+    @Override
     public JDialog getDialog() {
         return wizard;
     }
 
+    @Override
     public boolean isConfirmed() {
         return confirmed;
     }
 
+    @Override
     public void setData(SamlIssuerAssertion assertion) {
         this.assertion = assertion;
 
@@ -45,7 +48,7 @@ public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesE
                                 new ConditionsWizardStepPanel(
                                     new SamlSignatureStepPanel(null, true), true, true), true, true), true), true), true), true), true), true);
 
-        SamlPolicyAssertionWizard wiz = new SamlPolicyAssertionWizard(assertion, TopComponents.getInstance().getTopParent(), p, true, readOnly);
+        SamlPolicyAssertionWizard wiz = new SamlPolicyAssertionWizard(assertion, TopComponents.getInstance().getTopParent(), p, readOnly);
         wiz.addWizardListener(new WizardAdapter() {
             @Override
             public void wizardFinished(WizardEvent e) { confirmed = true; }
@@ -54,10 +57,12 @@ public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesE
         wizard = wiz;
     }
 
+    @Override
     public SamlIssuerAssertion getData(SamlIssuerAssertion assertion) {
         return this.assertion;
     }
 
+    @Override
     public Object getParameter( final String name ) {
         Object value = null;
 
@@ -68,6 +73,7 @@ public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesE
         return value;
     }
 
+    @Override
     public void setParameter( final String name, Object value ) {
         if ( PARAM_READONLY.equals( name ) && value instanceof Boolean ) {
             readOnly = (Boolean) value;

@@ -64,6 +64,17 @@ public class NcesValidatorAssertion extends MessageTargetableAssertion implement
     //
     private static final String META_INITIALIZED = NcesValidatorAssertion.class.getName() + ".metadataInitialized";
 
+    final static String baseName = "Validate Against NCES Requirements";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<NcesValidatorAssertion>(){
+        @Override
+        public String getAssertionName( final NcesValidatorAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return AssertionUtils.decorateName(assertion, baseName);
+        }
+    };
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -78,8 +89,8 @@ public class NcesValidatorAssertion extends MessageTargetableAssertion implement
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "NCES Validator");
-        meta.put(AssertionMetadata.LONG_NAME, "Validate Message for NCES Compliance");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.LONG_NAME, "Validate Message for NCES Compliance.");
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
@@ -89,15 +100,15 @@ public class NcesValidatorAssertion extends MessageTargetableAssertion implement
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
-
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:NcesValidator" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.external.assertions.ncesval.NcesValidatorAssertionValidator");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "NCES Validator Properties");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ncesval.console.NcesValidatorAssertionPropertiesDialog");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);

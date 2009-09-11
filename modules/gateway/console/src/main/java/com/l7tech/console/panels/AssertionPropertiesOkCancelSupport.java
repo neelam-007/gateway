@@ -27,7 +27,7 @@ public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> e
         this.beanClass = beanClass;
     }
 
-    protected AssertionPropertiesOkCancelSupport(Class<? extends AT> beanClass, final Assertion assertion, Window owner, boolean modal) {
+    protected AssertionPropertiesOkCancelSupport(Class<? extends AT> beanClass, Window owner, final Assertion assertion, boolean modal) {
         super(owner, assertion, modal ? AssertionPropertiesOkCancelSupport.DEFAULT_MODALITY_TYPE : ModalityType.MODELESS);
         this.beanClass = beanClass;
     }
@@ -96,6 +96,7 @@ public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> e
      */
     protected ActionListener createCancelAction() {
         return new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 AssertionPropertiesOkCancelSupport.this.dispose();
             }
@@ -113,6 +114,7 @@ public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> e
      */
     protected ActionListener createOkAction() {
         return new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 try {
                     getData(createBean());
@@ -194,8 +196,10 @@ public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> e
      *         Never null.
      * @throws ValidationException if the data cannot be collected because of a validation error.
      */
+    @Override
     public abstract AT getData(AT assertion) throws ValidationException;
 
+    @Override
     public boolean isConfirmed() {
         return confirmed;
     }

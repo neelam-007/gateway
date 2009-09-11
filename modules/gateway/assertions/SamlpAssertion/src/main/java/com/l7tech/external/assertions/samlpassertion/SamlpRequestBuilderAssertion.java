@@ -315,11 +315,13 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         this.keyId = keyid;
     }
 
+    final static String baseName = "Build SAML Protocol Message";
+
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SamlpRequestBuilderAssertion>(){
         @Override
         public String getAssertionName( final SamlpRequestBuilderAssertion assertion, boolean decorate) {
-            final String assertionName = "SAMLP Builder";
-            StringBuilder sb = new StringBuilder(assertionName);
+            if(!decorate) return baseName;
+            StringBuilder sb = new StringBuilder(baseName);
 
             if (assertion.getAuthenticationStatement() != null)
                 sb.append(" (Authentication)");
@@ -328,7 +330,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
             else if (assertion.getAttributeStatement() != null)
                 sb.append(" (Attribute Query)");
 
-            return (decorate) ? AssertionUtils.decorateName(assertion, sb) : assertionName;
+            return AssertionUtils.decorateName(assertion, sb);
         }
     };
 
@@ -339,10 +341,15 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
         //   misc, audit, policyLogic, threatProtection
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
-//        meta.put(AssertionMetadata.PALETTE_NODE_NAME, "SAMLP Request Builder");
+
+        // Set description for GUI
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.LONG_NAME, "Create a SAML Protocol request.");
+        
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Protocol Message Wizard");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpRequestBuilderAssertionPropertiesEditor");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
@@ -356,10 +363,6 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         )));
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, SamlpRequestBuilderAssertionValidator.class.getName());
-        // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "SAMLP Builder");
-        meta.put(AssertionMetadata.LONG_NAME, "Create a SAMLP request message");
-
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:FtpCredential" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");

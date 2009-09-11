@@ -20,35 +20,11 @@ import java.awt.*;
 /**
  * Edits the {@link com.l7tech.policy.assertion.xmlsec.AddWssTimestamp} properties.
  */
-public class AddWssTimestampPropertiesAction extends NodeAction {
+public class AddWssTimestampPropertiesAction extends NodeActionWithMetaSupport {
     static final Logger log = Logger.getLogger(AddWssTimestampPropertiesAction.class.getName());
 
     public AddWssTimestampPropertiesAction(AbstractTreeNode node) {
-        super(node, AddWssTimestamp.class);
-    }
-
-    /**
-     * @return the action name
-     */
-    @Override
-    public String getName() {
-        return "Add Timestamp Properties";
-    }
-
-    /**
-     * @return the aciton description
-     */
-    @Override
-    public String getDescription() {
-        return "View/Edit Add Timestamp Properties";
-    }
-
-    /**
-     * specify the resource name for this action
-     */
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/About16.gif";
+        super(node, AddWssTimestamp.class, node.asAssertion());
     }
 
     /**

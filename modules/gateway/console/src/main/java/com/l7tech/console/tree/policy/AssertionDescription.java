@@ -29,16 +29,6 @@ public abstract class AssertionDescription {
     }
 
     /**
-     * @return the long description for the assertion
-     */
-    public String getLongDescription() {
-        String longDesc = getLongDescriptionFromResource();
-        if (longDesc == null || longDesc.length() < 1) longDesc = (String)assertion.meta().get(AssertionMetadata.LONG_NAME);
-        if (longDesc == null) longDesc = "";
-        return MessageFormat.format(longDesc, parameters());
-    }
-
-    /**
      * @return long description from the resource file, or null if not found.
      */
     private String getLongDescriptionFromResource() {

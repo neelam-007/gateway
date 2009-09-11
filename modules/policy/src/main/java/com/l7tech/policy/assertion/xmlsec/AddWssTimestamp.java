@@ -200,6 +200,9 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
         });
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.AddWssTimestampPropertiesAction");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Timestamp Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/About16.gif");
+        
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.AddWssTimestampAssertionValidator");
 
         return meta;

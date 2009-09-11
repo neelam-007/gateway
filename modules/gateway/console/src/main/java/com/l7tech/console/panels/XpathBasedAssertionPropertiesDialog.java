@@ -680,13 +680,13 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         String title = null;
         if (assertion instanceof RequireWssEncryptedElement) {
             description = "Select encrypted elements:";
-            title = "Require Encrypted " + ((RequireWssEncryptedElement)assertion).getTargetName() + " Element Properties";
+            title = "Encrypted " + ((RequireWssEncryptedElement)assertion).getTargetName() + " Element Properties";
         } else if (assertion instanceof WssEncryptElement) {
             description = "Select elements to encrypt:";
             title = "Encrypt " + ((WssEncryptElement)assertion).getTargetName() + " Element Properties";
         } else if (assertion instanceof RequireWssSignedElement) {
             description = "Select signed elements:";
-            title = "Require Signed " + ((RequireWssSignedElement)assertion).getTargetName() + " Element Properties";
+            title = "Signed " + ((RequireWssSignedElement)assertion).getTargetName() + " Element Properties";
         } else if (assertion instanceof WssSignElement) {
             description = "Select elements to sign:";
             title = "Sign " + ((WssSignElement)assertion).getTargetName() + " Element Properties";
