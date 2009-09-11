@@ -5,12 +5,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-
+import java.util.Arrays;
 import javax.xml.namespace.QName;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 import com.l7tech.server.audit.LogOnlyAuditor;
@@ -24,31 +20,22 @@ import com.l7tech.common.io.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.junit.Test;
+import org.junit.Assert;
 
 /**
  * Test the WsAddressingAssertion.
  */
-public class ServerWsAddressingAssertionTest extends TestCase {
+public class ServerWsAddressingAssertionTest {
 
     private static final Logger logger = Logger.getLogger(ServerWsAddressingAssertionTest.class.getName());
     private static final String ADDRESSING_NAMESPACE = "http://www.w3.org/2005/08/addressing";
     private static final String ADDRESSING_NAMESPACE_200408 = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
 
-    public ServerWsAddressingAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerWsAddressingAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
     /**
      * Test find from SignedElements
      */
+    @Test
     public void testWsAddressingSigned() throws Exception {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
@@ -57,20 +44,23 @@ public class ServerWsAddressingAssertionTest extends TestCase {
         // build test signed elements
         Document testDoc = XmlUtil.stringToDocument(MESSAGE);
         Element header = SoapUtil.getOrMakeHeader(testDoc);
-        List<SignedElement> signed = new ArrayList();
+        List<SignedElement> signed = new ArrayList<SignedElement>();
         Node node = header.getFirstChild();
         while ( node != null ) {
             if (node.getNodeType() == Node.ELEMENT_NODE)  {
                 final Element element = (Element) node;
                 signed.add(new SignedElement(){
+                    @Override
                     public SigningSecurityToken getSigningSecurityToken() {
                         return null;
                     }
 
+                    @Override
                     public Element asElement() {
                         return element;
                     }
 
+                    @Override
                     public Element getSignatureElement() {
                         return null;
                     }
@@ -80,22 +70,24 @@ public class ServerWsAddressingAssertionTest extends TestCase {
         }
 
         // eval
-        Map<QName,String> properties = new HashMap();
-        SignedElement[] signedElements = signed.toArray(new SignedElement[0]);
-        swsaa.populateAddressingFromSignedElements(signedElements, properties);
+        Map<QName,String> properties = new HashMap<QName,String>();
+        List<Element> elements = new ArrayList<Element>();
+        SignedElement[] signedElements = signed.toArray(new SignedElement[signed.size()]);
+        swsaa.populateAddressingFromSignedElements(signedElements, properties, elements);
 
         // validate
-        assertEquals("Addressing:FaultTo", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous1", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"FaultTo")));
-        assertEquals("Addressing:Action", "http://warehouse.acme.com/ws/listProducts", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"Action")));
-        assertEquals("Addressing:MessageID", "uuid:6B29FC40-CA47-1067-B31D-00DD010662DA", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"MessageID")));
-        assertEquals("Addressing:To", "http://fish.l7tech.com:8080/warehouse", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"To")));
-        assertEquals("Addressing:ReplyTo", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous2", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"ReplyTo")));
-        assertEquals("Addressing:From", "http://fish.l7tech.com:8080/warehousesender", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"From")));
+        Assert.assertEquals("Addressing:FaultTo", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous1", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"FaultTo")));
+        Assert.assertEquals("Addressing:Action", "http://warehouse.acme.com/ws/listProducts", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"Action")));
+        Assert.assertEquals("Addressing:MessageID", "uuid:6B29FC40-CA47-1067-B31D-00DD010662DA", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"MessageID")));
+        Assert.assertEquals("Addressing:To", "http://fish.l7tech.com:8080/warehouse", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"To")));
+        Assert.assertEquals("Addressing:ReplyTo", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous2", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"ReplyTo")));
+        Assert.assertEquals("Addressing:From", "http://fish.l7tech.com:8080/warehousesender", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"From")));
     }
 
     /**
      * Test find from ElementCursor
      */
+    @Test
     public void testWsAddressing() throws Exception {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
@@ -105,21 +97,24 @@ public class ServerWsAddressingAssertionTest extends TestCase {
         Document testDoc = XmlUtil.stringToDocument(MESSAGE);
 
         // eval
-        Map<QName,String> properties = new HashMap();
-        swsaa.populateAddressingFromMessage(new DomElementCursor(testDoc), properties);
+        Map<QName,String> properties = new HashMap<QName,String>();
+        List<Element> elements = new ArrayList<Element>();
+        swsaa.populateAddressingFromMessage(new DomElementCursor(testDoc), properties, elements);
 
         // validate
-        assertEquals("Addressing:FaultTo", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous1", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"FaultTo")));
-        assertEquals("Addressing:Action", "http://warehouse.acme.com/ws/listProducts", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"Action")));
-        assertEquals("Addressing:MessageID", "uuid:6B29FC40-CA47-1067-B31D-00DD010662DA", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"MessageID")));
-        assertEquals("Addressing:To", "http://fish.l7tech.com:8080/warehouse", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"To")));
-        assertEquals("Addressing:ReplyTo", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous2", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"ReplyTo")));
-        assertEquals("Addressing:From", "http://fish.l7tech.com:8080/warehousesender", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"From")));
+        Assert.assertEquals("Addressing:FaultTo", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous1", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"FaultTo")));
+        Assert.assertEquals("Addressing:Action", "http://warehouse.acme.com/ws/listProducts", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"Action")));
+        Assert.assertEquals("Addressing:MessageID", "uuid:6B29FC40-CA47-1067-B31D-00DD010662DA", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"MessageID")));
+        Assert.assertEquals("Addressing:To", "http://fish.l7tech.com:8080/warehouse", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"To")));
+        Assert.assertEquals("Addressing:ReplyTo", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous2", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"ReplyTo")));
+        Assert.assertEquals("Addressing:From", "http://fish.l7tech.com:8080/warehousesender", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"From")));
+        Assert.assertEquals("Addressing elements", 6, elements.size());
     }
 
     /**
      * Test variables set correctly
      */
+    @Test
     public void testSetVariables() throws Exception {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
@@ -127,7 +122,7 @@ public class ServerWsAddressingAssertionTest extends TestCase {
         ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger));
 
         // build test data
-        Map<QName,String> properties = new HashMap();
+        Map<QName,String> properties = new HashMap<QName,String>();
         properties.put(new QName(ADDRESSING_NAMESPACE_200408,"Action"), "a");
         properties.put(new QName(ADDRESSING_NAMESPACE_200408,"To"), "b");
         properties.put(new QName(ADDRESSING_NAMESPACE_200408,"From"), "c");
@@ -136,26 +131,30 @@ public class ServerWsAddressingAssertionTest extends TestCase {
         properties.put(new QName(ADDRESSING_NAMESPACE_200408,"ReplyTo"), "f");
 
         // eval
-        final Map<String,String> varMap = new HashMap();
-        swsaa.setVariables(properties, ADDRESSING_NAMESPACE_200408, new Functions.BinaryVoid<String,String>(){
-            public void call(String name, String value) {
+        final Map<String,Object> varMap = new HashMap<String,Object>();
+        final List<Element> elements = new ArrayList<Element>();
+        swsaa.setVariables(properties, elements, ADDRESSING_NAMESPACE_200408, new Functions.BinaryVoid<String,Object>(){
+            @Override
+            public void call(String name, Object value) {
                 varMap.put(name,value);   
             }
         });
 
         // validate
-        assertEquals("FaultTo", "e", varMap.get("PreFix.faultto"));
-        assertEquals("Action", "a", varMap.get("PreFix.action"));
-        assertEquals("MessageID", "d", varMap.get("PreFix.messageid"));
-        assertEquals("To", "b", varMap.get("PreFix.to"));
-        assertEquals("ReplyTo", "f", varMap.get("PreFix.replyto"));
-        assertEquals("From", "c", varMap.get("PreFix.from"));
-        assertEquals("Namespace", ADDRESSING_NAMESPACE_200408, varMap.get("PreFix.namespace"));
+        Assert.assertEquals("FaultTo", "e", varMap.get("PreFix.faultto"));
+        Assert.assertEquals("Action", "a", varMap.get("PreFix.action"));
+        Assert.assertEquals("MessageID", "d", varMap.get("PreFix.messageid"));
+        Assert.assertEquals("To", "b", varMap.get("PreFix.to"));
+        Assert.assertEquals("ReplyTo", "f", varMap.get("PreFix.replyto"));
+        Assert.assertEquals("From", "c", varMap.get("PreFix.from"));
+        Assert.assertEquals("Namespace", ADDRESSING_NAMESPACE_200408, varMap.get("PreFix.namespace"));
+        Assert.assertTrue("Elements", Arrays.equals(new Element[0], (Element[])varMap.get("PreFix.elements")));
     }
 
     /**
      * Test setting of vars only in selected namespace
      */
+    @Test
     public void testSetVariablesForNamespace() throws Exception {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
@@ -163,7 +162,7 @@ public class ServerWsAddressingAssertionTest extends TestCase {
         ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger));
 
         // build test data
-        Map<QName,String> properties = new HashMap();
+        Map<QName,String> properties = new HashMap<QName,String>();
         properties.put(new QName(ADDRESSING_NAMESPACE_200408,"Action"), "a");
         properties.put(new QName(ADDRESSING_NAMESPACE_200408,"To"), "b");
         properties.put(new QName(ADDRESSING_NAMESPACE_200408,"From"), "c");
@@ -178,21 +177,23 @@ public class ServerWsAddressingAssertionTest extends TestCase {
         properties.put(new QName(ADDRESSING_NAMESPACE,"ReplyTo"), "l");
 
         // eval
-        final Map<String,String> varMap = new HashMap();
-        swsaa.setVariables(properties, ADDRESSING_NAMESPACE, new Functions.BinaryVoid<String,String>(){
-            public void call(String name, String value) {
+        final Map<String,Object> varMap = new HashMap<String,Object>();
+        final List<Element> elements = new ArrayList<Element>();
+        swsaa.setVariables(properties, elements, ADDRESSING_NAMESPACE, new Functions.BinaryVoid<String,Object>(){
+            @Override
+            public void call(String name, Object value) {
                 varMap.put(name,value);
             }
         });
 
         // validate
-        assertEquals("FaultTo", "k", varMap.get("PreFix.faultto"));
-        assertEquals("Action", "g", varMap.get("PreFix.action"));
-        assertEquals("MessageID", "j", varMap.get("PreFix.messageid"));
-        assertEquals("To", "h", varMap.get("PreFix.to"));
-        assertEquals("ReplyTo", "l", varMap.get("PreFix.replyto"));
-        assertEquals("From", "i", varMap.get("PreFix.from"));
-        assertEquals("Namespace", ADDRESSING_NAMESPACE, varMap.get("PreFix.namespace"));
+        Assert.assertEquals("FaultTo", "k", varMap.get("PreFix.faultto"));
+        Assert.assertEquals("Action", "g", varMap.get("PreFix.action"));
+        Assert.assertEquals("MessageID", "j", varMap.get("PreFix.messageid"));
+        Assert.assertEquals("To", "h", varMap.get("PreFix.to"));
+        Assert.assertEquals("ReplyTo", "l", varMap.get("PreFix.replyto"));
+        Assert.assertEquals("From", "i", varMap.get("PreFix.from"));
+        Assert.assertEquals("Namespace", ADDRESSING_NAMESPACE, varMap.get("PreFix.namespace"));
    }
 
     private static final String MESSAGE =

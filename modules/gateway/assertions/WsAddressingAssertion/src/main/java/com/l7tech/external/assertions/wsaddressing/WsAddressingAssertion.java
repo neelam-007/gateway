@@ -35,6 +35,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
     public static final String VAR_SUFFIX_REPLYTO= "replyto";
     public static final String VAR_SUFFIX_FAULTTO = "faultto";
     public static final String VAR_SUFFIX_NAMESPACE = "namespace";
+    public static final String VAR_SUFFIX_ELEMENTS = "elements";
 
     /**
      * Create a WS-Addressing assertion with default values;
@@ -51,7 +52,8 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
             VAR_SUFFIX_FROM,
             VAR_SUFFIX_REPLYTO,
             VAR_SUFFIX_FAULTTO,
-            VAR_SUFFIX_NAMESPACE
+            VAR_SUFFIX_NAMESPACE,
+            VAR_SUFFIX_ELEMENTS    
         };
     }
 
@@ -156,6 +158,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
                 new VariableMetadata(prefix + "." + VAR_SUFFIX_REPLYTO, false, false, null, false, DataType.STRING),
                 new VariableMetadata(prefix + "." + VAR_SUFFIX_FAULTTO, false, false, null, false, DataType.STRING),
                 new VariableMetadata(prefix + "." + VAR_SUFFIX_NAMESPACE, false, false, null, false, DataType.STRING),
+                new VariableMetadata(prefix + "." + VAR_SUFFIX_ELEMENTS, false, true, null, false, DataType.ELEMENT),
             };
         } else {
             return new VariableMetadata[0];

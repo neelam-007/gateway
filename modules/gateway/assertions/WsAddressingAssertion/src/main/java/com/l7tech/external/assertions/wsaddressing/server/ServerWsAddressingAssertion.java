@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
@@ -18,6 +19,7 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.*;
 import com.l7tech.xml.ElementCursor;
+import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
@@ -28,6 +30,10 @@ import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,6 +46,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private final String otherNamespaceUri = assertion.getEnableOtherNamespace();
     private final String[] acceptableNamespaces;
     private final SecurityTokenResolver securityTokenResolver;
+    private Boolean elementsVariableUsed;
 
     {
         if (otherNamespaceUri != null && otherNamespaceUri.length() > 0) {
@@ -80,30 +87,31 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         }
 
         try {
-            Map<QName, String> addressingProperties = new HashMap<QName,String>();
+            final Map<QName, String> addressingProperties = new HashMap<QName,String>();
+            final List<Element> addressingElements = isElementsVariableUsed() ? new ArrayList<Element>() : null;
             if ( assertion.isRequireSignature() ) {
-                populateAddressingFromSignedElements(getSignedElements(context.getAuthenticationContext(msg), msg, messageDescription), addressingProperties);
+                populateAddressingFromSignedElements(getSignedElements(context.getAuthenticationContext(msg), msg, messageDescription), addressingProperties, addressingElements);
             } else {
-                populateAddressingFromMessage(getElementCursor(msg), addressingProperties);
+                populateAddressingFromMessage(getElementCursor(msg), addressingProperties, addressingElements);
             }
 
             if ( assertion.isEnableWsAddressing10() && addressingPresent(addressingProperties, SoapConstants.WSA_NAMESPACE_10) ) {
                 if ( assertion.getVariablePrefix() != null) {
-                    setVariables(addressingProperties, SoapConstants.WSA_NAMESPACE_10, context);
+                    setVariables(addressingProperties, addressingElements, SoapConstants.WSA_NAMESPACE_10, context);
                 }
 
                 auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
                 status = AssertionStatus.NONE;
             } else if ( assertion.isEnableWsAddressing200408() && addressingPresent(addressingProperties, NS_WS_ADDRESSING_200408) ) {
                 if ( assertion.getVariablePrefix() != null) {
-                    setVariables(addressingProperties, NS_WS_ADDRESSING_200408, context);
+                    setVariables(addressingProperties, addressingElements, NS_WS_ADDRESSING_200408, context);
                 }
 
                 auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
                 status = AssertionStatus.NONE;
             } else if (otherNamespaceUri != null && otherNamespaceUri.length() > 0 && addressingPresent(addressingProperties, otherNamespaceUri) ) {
                 if ( assertion.getVariablePrefix() != null) {
-                    setVariables(addressingProperties, otherNamespaceUri, context);
+                    setVariables(addressingProperties, addressingElements, otherNamespaceUri, context);
                 }
 
                 auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
@@ -140,7 +148,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
      * Populate the given addressing properties using an element cursor
      */
     protected void populateAddressingFromMessage(final ElementCursor cursor,
-                                                 final Map<QName, String> addressingProperties)
+                                                 final Map<QName, String> addressingProperties,
+                                                 final Collection<Element> elements )
             throws AddressingProcessingException, IOException {
         try {
             if ( moveToSoapHeader(cursor) ) {
@@ -161,6 +170,10 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                                 } else {
                                     addressingProperties.put(name, ec.getTextValue());
                                 }
+
+                                if ( elements != null ) {
+                                    elements.add( ec.asDomElement() );
+                                }
                             }
                         }
                     }
@@ -176,7 +189,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
      * Populate the given addressing properties using signed elements
      */
     protected void populateAddressingFromSignedElements(final SignedElement[] signedElements,
-                                                        final Map<QName, String> addressingProperties)
+                                                        final Map<QName, String> addressingProperties,
+                                                        final Collection<Element> elements )
             throws AddressingProcessingException, IOException {
         for (SignedElement signedElement : signedElements ) {
             Element element = signedElement.asElement();
@@ -197,6 +211,10 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 } else {
                     addressingProperties.put(name, DomUtils.getTextValue(element));
                 }
+
+                if ( elements != null ) {
+                    elements.add( element );
+                }
             }
         }
     }
@@ -205,8 +223,9 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
      * Set context variables from the given addressing properties
      */
     protected void setVariables(final Map<QName, String> addressingProperties,
+                                final Collection<Element> elements,
                                 final String namespace,
-                                final Functions.BinaryVoid<String,String> setter) {
+                                final Functions.BinaryVoid<String,Object> setter) {
 
         for (Map.Entry<QName,String> entry : addressingProperties.entrySet() ) {
             if ( namespace.equals(entry.getKey().getNamespaceURI()) ) {
@@ -216,7 +235,15 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             }
         }
 
+        Element[] elementArray;
+        if ( elements != null ) {
+            elementArray = elements.toArray( new Element[elements.size()] );
+        } else {
+            elementArray = new Element[0];
+        }
+
         setter.call(assertion.getVariablePrefix() + "." + WsAddressingAssertion.VAR_SUFFIX_NAMESPACE, namespace);
+        setter.call(assertion.getVariablePrefix() + "." + WsAddressingAssertion.VAR_SUFFIX_ELEMENTS, elementArray);
     }
 
     //- PRIVATE
@@ -275,10 +302,39 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
      */
     private ElementCursor getElementCursor(final Message msg) throws IOException {
         try {
-            return msg.getXmlKnob().getElementCursor();
+            if ( isElementsVariableUsed() ) { // then we need a DOM cursor
+                return new DomElementCursor( msg.getXmlKnob().getDocumentReadOnly() );
+            } else {
+                return msg.getXmlKnob().getElementCursor();
+            }
         } catch (SAXException se) {
              throw new CausedIOException(se);    
         }
+    }
+
+    /**
+     * Is the elements variable used later in the policy?
+     */
+    private boolean isElementsVariableUsed() {
+        boolean elementsVariableUsed = false;
+
+        if ( this.elementsVariableUsed != null ) {
+            elementsVariableUsed = this.elementsVariableUsed;
+        } else {
+            if ( assertion.getVariablePrefix() != null ) {
+                final String elementsVariableName = assertion.getVariablePrefix() + "." + WsAddressingAssertion.VAR_SUFFIX_ELEMENTS;
+                Set<String> vars = PolicyVariableUtils.getVariablesUsedBySuccessors(assertion);
+                for ( String var : vars ) {
+                    if ( var != null && var.equalsIgnoreCase( elementsVariableName )) {
+                        elementsVariableUsed = true;
+                        break;
+                    }
+                }
+            }
+            this.elementsVariableUsed = elementsVariableUsed;                
+        }
+
+        return elementsVariableUsed;
     }
 
     /**
@@ -364,11 +420,12 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
      * Set context variables from the given addressing properties 
      */
     private void setVariables(final Map<QName, String> addressingProperties,
+                              final Collection<Element> elements,
                               final String namespace,
-                              final PolicyEnforcementContext context) {
-        setVariables(addressingProperties, namespace, new Functions.BinaryVoid<String,String>(){
+                              final PolicyEnforcementContext context ) {
+        setVariables(addressingProperties, elements, namespace, new Functions.BinaryVoid<String,Object>(){
             @Override
-            public void call(String name, String value) {
+            public void call(String name, Object value) {
                 context.setVariable(name, value);
             }
         });
