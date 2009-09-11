@@ -403,7 +403,7 @@ public interface AssertionMetadata {
      * TypeMappingFinder instance.  TypeMappingFinder to add to the visitor to use for unrecognized types
      * or external names while freezing or thawing instances of this assertion.
      * <p/>
-     * If null, now new types will be recognized while freezing or thawing instances of this assertion.
+     * If null, no new types will be recognized while freezing or thawing instances of this assertion.
      * <p/>
      * The default value is null.
      */
