@@ -83,6 +83,8 @@ public interface AssertionMetadata {
      * String file path.  Icon to display for the client policy node for this assertion in the XML VPN Client
      * Defaults to "com/l7tech/proxy/resources/tree/policy16.gif", which is a picture of a small piece of paper with
      * writing, and is always available on the VPN Client
+     *
+     * This key was introduced in SecureSpan Gateway version 5.1.
      */
     String CLIENT_ASSERTION_POLICY_ICON = "clientAssertionPolicyIcon";
     
@@ -105,6 +107,8 @@ public interface AssertionMetadata {
     /**
      * String. Path of image icon to use for the action.
      * Defaults to com/l7tech/console/resources/Properties16.gif
+     *
+     * This key was introduced in SecureSpan Gateway version 5.1.
      */
     String PROPERTIES_ACTION_ICON = "propertiesActionIcon";
 
