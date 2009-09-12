@@ -9,11 +9,8 @@ import com.l7tech.console.action.XpathBasedAssertionPropertiesAction;
 import com.l7tech.console.action.SelectIdentityTargetAction;
 import com.l7tech.console.action.SelectMessageTargetAction;
 import com.l7tech.console.action.SelectIdentityTargetAction;
-import com.l7tech.policy.assertion.PrivateKeyable;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.IdentityTargetable;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.IdentityTargetable;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 
 import javax.swing.*;
@@ -28,12 +25,12 @@ public abstract class XpathBasedAssertionTreeNode<AT extends XpathBasedAssertion
         super(assertion);
     }
 
-    /** Get the basic name of this node, ie "XML Request Security". */
-    public abstract String getBaseName(final boolean decorate);
-
     @Override
     public String getName(final boolean decorate) {
-        return getBaseName(decorate);
+        Object o = assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
+        if(! (o instanceof AssertionNodeNameFactory)) throw new IllegalStateException("Invalid value for meta data found");
+        AssertionNodeNameFactory factory = (AssertionNodeNameFactory)o;        
+        return factory.getAssertionName(assertion, decorate);
     }
 
     /**

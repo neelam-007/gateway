@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 /**
  * Action for editing XML security assertion properties
  */
-public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
+public abstract class XpathBasedAssertionPropertiesAction extends NodeActionWithMetaSupport {
     static final Logger log = Logger.getLogger(XpathBasedAssertionPropertiesAction.class.getName());
 
     public static XpathBasedAssertionPropertiesAction actionForNode(XpathBasedAssertionTreeNode node) {
@@ -35,23 +35,7 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
     }
 
     protected XpathBasedAssertionPropertiesAction(XpathBasedAssertionTreeNode node, Class<? extends XpathBasedAssertion> concreteAssertionClass) {
-        super(node, concreteAssertionClass);
-    }
-
-    /**
-     * @return the aciton description
-     */
-    @Override
-    public String getDescription() {
-        return getName();
-    }
-
-    /**
-     * specify the resource name for this action
-     */
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif";
+        super(node, concreteAssertionClass, node.asAssertion());
     }
 
     /**

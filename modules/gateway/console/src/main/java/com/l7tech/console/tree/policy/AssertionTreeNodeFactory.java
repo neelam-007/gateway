@@ -73,7 +73,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(FaultLevel.class, FaultLevelTreeNode.class);
         assertionMap.put(Operation.class, OperationTreeNode.class);
         assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);
-        assertionMap.put(HtmlFormDataAssertion.class, HtmlFormDataAssertionPolicyNode.class);
         assertionMap.put(Include.class, IncludeAssertionPolicyNode.class);
         assertionMap.put(PreemptiveCompression.class, PreemptiveCompressionPolicyNode.class);
     }

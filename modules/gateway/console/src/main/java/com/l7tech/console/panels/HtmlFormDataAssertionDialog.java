@@ -26,7 +26,7 @@ import java.util.Arrays;
  * @since SecureSpan 3.7
  * @see HtmlFormDataAssertion
  */
-public class HtmlFormDataAssertionDialog extends JDialog implements TableModelListener {
+public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog implements TableModelListener {
 
     /**
      * Custom cell renderer for the HTML Form field table. The main customizations
@@ -358,7 +358,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
     private boolean readonly;
 
     public HtmlFormDataAssertionDialog(Frame owner, final HtmlFormDataAssertion assertion, boolean readonly) throws HeadlessException {
-        super(owner, "HTML Form Data Properties", true);
+        super(owner, assertion, true);
         _assertion = assertion;
         this.readonly = readonly;
 

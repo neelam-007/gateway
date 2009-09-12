@@ -8,16 +8,11 @@ import com.l7tech.policy.assertion.ResponseXpathAssertion;
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Sep 22, 2004<br/>
+ * @author flascell<br/>
  * $Id$
  */
 public class ResponseXpathPropertiesAction extends XpathBasedAssertionPropertiesAction {
     public ResponseXpathPropertiesAction(ResponseXpathPolicyTreeNode node) {
         super(node, ResponseXpathAssertion.class);
-    }
-
-    public String getName() {
-        return "Evaluate Response XPath Properties";
     }
 }

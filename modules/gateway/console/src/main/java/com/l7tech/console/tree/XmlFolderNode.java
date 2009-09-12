@@ -23,14 +23,11 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
     protected void doLoadChildren() {
         int index = 0;
         children = null;
-        insert(new RequestXpathPaletteNode(), index++);
-        insert(new ResponseXpathPaletteNode(), index++);
         insert(new SchemaValidationPaletteNode(), index++);
         insert(new XslTransformationPaletteNode(), index++);
         insert(new RequestSwAAssertionPaletteNode(), index++);
         insert(new RegexNode(), index++);
         insert(new OperationPaletteNode(), index++);
-        insert(new HtmlFormDataAssertionPaletteNode(), index++);
         insert(new HttpFormPostNode(), index++);
         insert(new InverseHttpFormPostNode(), index++);
         insert(new WsiBspPaletteNode(), index++);

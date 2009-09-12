@@ -692,10 +692,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             title = "Sign " + ((WssSignElement)assertion).getTargetName() + " Element Properties";
         } else if (assertion instanceof ResponseXpathAssertion) {
             description = "Select the response path to evaluate:";
-            title = "Evaluate Response XPath Properties";
+            title = assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString();
         } else if (assertion instanceof RequestXpathAssertion) {
             description = "Select the request path to evaluate:";
-            title = "Evaluate Request XPath Properties";
+            title = assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString();
         }
 
         boolean processPrefix = false;
