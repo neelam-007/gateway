@@ -63,6 +63,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         return delegates.remove(classLoader);
     }
 
+    @Override
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
         Class<?> found = null;
         try {
@@ -86,6 +87,18 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         byte[] bytecode = getResourceBytesFromNestedJars(path, hidePrivate);
         if (bytecode == null)
             return null;
+
+        // Check package and define if required
+        // TODO package sealing support?
+        int i = name.lastIndexOf( '.' );
+        if ( i != -1 ) {
+            String pkgname = name.substring( 0, i );
+            Package pkg = getPackage( pkgname );
+            if ( pkg == null ) {
+                definePackage( pkgname, null, null, null, null, null, null, null );
+            }
+        }
+
         return defineClass(name, bytecode, 0, bytecode.length);
     }
 
@@ -164,6 +177,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         return null;
     }
 
+    @Override
     public URL findResource(final String name) {
         URL url = super.findResource(name);
         if (url == null)
@@ -200,9 +214,12 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     private URL makeResourceUrl(NestedZipFile nested, String name, final byte[] bytes) {
         try {
             return new URL(NR_PROTO, null, -1, moduleName + '!' + nested.getEntryName() + '!' + name, new URLStreamHandler() {
+                @Override
                 protected URLConnection openConnection(URL url) throws IOException {
                     return new URLConnection(url) {
+                        @Override
                         public void connect() throws IOException { }
+                        @Override
                         public InputStream getInputStream() throws IOException {
                             return new ByteArrayInputStream(bytes);
                         }
@@ -215,6 +232,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         }
     }
 
+    @Override
     public Enumeration<URL> findResources(final String name) throws IOException {
         List<URL> urls = new ArrayList<URL>();
         Enumeration<URL> resen = super.findResources(name);
@@ -279,6 +297,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         AssertionModuleClassLoader.registry = registry;
     }
 
+    @Override
     public void close() throws IOException {
         onModuleUnloaded();
         Set<NestedZipFile> toClose = new HashSet<NestedZipFile>(nestedJarFiles.keySet());
