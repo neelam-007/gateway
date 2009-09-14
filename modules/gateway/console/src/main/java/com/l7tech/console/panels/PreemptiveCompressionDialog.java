@@ -8,15 +8,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 /**
- * [todo jdoc this class]
- * <p/>
- * <p/>
- * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Jun 9, 2008<br/>
+ * @author flascell<br/>
  */
-public class PreemptiveCompressionDialog extends JDialog {
+public class PreemptiveCompressionDialog extends LegacyAssertionPropertyDialog {
     private JPanel mainPanel;
     private JButton cancelButton;
     private JButton OKButton;
@@ -26,7 +21,7 @@ public class PreemptiveCompressionDialog extends JDialog {
     private boolean oked = false;
 
     public PreemptiveCompressionDialog(Frame owner, PreemptiveCompression assertion, boolean readOnly) {
-        super(owner, "Configure Preemptive Compression", true);
+        super(owner, assertion, true);
         this.assertion = assertion;
         this.readOnly = readOnly;
         initialize();
@@ -36,6 +31,7 @@ public class PreemptiveCompressionDialog extends JDialog {
         getContentPane().add(mainPanel);
 
         OKButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 assertion.setServerSideCheck(serverSideCheck.isSelected());
                 oked = true;
@@ -44,6 +40,7 @@ public class PreemptiveCompressionDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }

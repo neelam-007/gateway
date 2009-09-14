@@ -20,6 +20,7 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
     /**
      * subclasses override this method
      */
+    @Override
     protected void doLoadChildren() {
         int index = 0;
         children = null;
@@ -32,7 +33,6 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
         insert(new InverseHttpFormPostNode(), index++);
         insert(new WsiBspPaletteNode(), index++);
         insert(new WsiSamlPaletteNode(), index++);
-        insert(new PreemptiveCompressionPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);
         index = insertMatchingCustomAssertions(index, Category.MESSAGE);
         insertMatchingCustomAssertions(index, Category.MSG_VAL_XSLT);

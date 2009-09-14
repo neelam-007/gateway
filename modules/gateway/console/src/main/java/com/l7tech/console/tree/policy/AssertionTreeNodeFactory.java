@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
-import com.l7tech.policy.assertion.transport.PreemptiveCompression;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.util.ConstructorInvocation;
@@ -74,7 +73,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(Operation.class, OperationTreeNode.class);
         assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);
         assertionMap.put(Include.class, IncludeAssertionPolicyNode.class);
-        assertionMap.put(PreemptiveCompression.class, PreemptiveCompressionPolicyNode.class);
     }
 
     /**
@@ -162,10 +160,12 @@ public class AssertionTreeNodeFactory {
          * 
          * @param open for nodes that can be opened, can have children
          */
+        @Override
         protected String iconResource(boolean open) {
             return "com/l7tech/console/resources/unknown.gif";
         }
 
+        @Override
         public String getName(final boolean decorate) {
             return name;
         }
