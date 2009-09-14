@@ -61,7 +61,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(AuditDetailAssertion.class, AuditDetailAssertionTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenExchange.class, WsFederationPassiveTokenRequestTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenRequest.class, WsFederationPassiveTokenRequestTreeNode.class);
-        assertionMap.put(Regex.class, RegexPolicyNode.class);
         assertionMap.put(ThroughputQuota.class, ThroughputQuotaTreeNode.class);
         assertionMap.put(HttpFormPost.class, HttpFormPostPolicyNode.class);
         assertionMap.put(InverseHttpFormPost.class, InverseHttpFormPostPolicyNode.class);

@@ -4,7 +4,6 @@ import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.panels.RegexDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.RegexPolicyNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -25,35 +24,11 @@ import java.util.logging.Logger;
  *
  * @author Emil Marceta
  */
-public class RegexPropertiesAction extends NodeAction {
+public class RegexPropertiesAction extends NodeActionWithMetaSupport {
     static final Logger log = Logger.getLogger(RegexPropertiesAction.class.getName());
 
-    public RegexPropertiesAction(RegexPolicyNode node) {
-        super(node, Regex.class);
-    }
-
-    /**
-     * @return the action name
-     */
-    @Override
-    public String getName() {
-        return "Regular Expression Properties";
-    }
-
-    /**
-     * @return the aciton description
-     */
-    @Override
-    public String getDescription() {
-        return "View/Edit Regular Expression";
-    }
-
-    /**
-     * specify the resource name for this action
-     */
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif";
+    public RegexPropertiesAction(AssertionTreeNode node) {
+        super(node, Regex.class, node.asAssertion());
     }
 
     /**

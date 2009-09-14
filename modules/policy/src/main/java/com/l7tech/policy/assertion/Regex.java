@@ -16,7 +16,6 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * @author emil
- * @version Mar 21, 2005
  */
 public class Regex extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
     private String regex;
@@ -197,10 +196,53 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
         return ArrayUtils.concat(super.getVariablesUsed(), Syntax.getReferencedNames(replacement));
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         if (captureVar == null) return new VariableMetadata[0];
         return new VariableMetadata[] {
                 new VariableMetadata(captureVar, false, true, captureVar, true, DataType.STRING),
         };
+    }
+
+    private final static String baseName = "Evaluate Regular Expression";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<Regex>(){
+        @Override
+        public String getAssertionName( final Regex assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            StringBuilder nameBuffer = new StringBuilder(256);
+            nameBuffer.append(baseName);
+
+            if (assertion.getRegexName() != null) {
+                nameBuffer.append(" - ");
+                nameBuffer.append(assertion.getRegexName());
+            } else{
+                //if display name is not set, default to the regular expression
+                nameBuffer.append(" - ");
+                nameBuffer.append(assertion.getRegex());
+            }
+
+            return AssertionUtils.decorateName( assertion, nameBuffer);
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml"});
+
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.DESCRIPTION, "Evaluate a regular expression against the target message.");
+        
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/regex16.gif");
+
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.RegexPropertiesAction");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Regular Expression Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/Properties16.gif");
+        return meta;
     }
 }

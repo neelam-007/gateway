@@ -25,10 +25,9 @@ import java.util.regex.PatternSyntaxException;
 
 /**
  * @author emil
- * @version 22-Mar-2005
  */
-public class RegexDialog extends JDialog {
-    private static final String DIALOG_TITLE = "Regular Expression Assertion";
+public class RegexDialog extends LegacyAssertionPropertyDialog {
+    private final String dialogTitleFromMeta;
 
     private JPanel mainPanel;
     private JButton cancelButton;
@@ -63,8 +62,8 @@ public class RegexDialog extends JDialog {
     private final boolean readOnly;
 
     public RegexDialog(Frame owner, Regex regexAssertion, boolean postRouting, boolean readOnly) throws HeadlessException {
-        super(owner, true);
-        setTitle(DIALOG_TITLE);
+        super(owner,regexAssertion, true);
+        dialogTitleFromMeta = this.getTitle();
         if (regexAssertion == null) {
             throw new IllegalArgumentException();
         }
@@ -111,7 +110,7 @@ public class RegexDialog extends JDialog {
             }
         });
 
-        InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
+        InputValidator inputValidator = new InputValidator(this, dialogTitleFromMeta);
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
