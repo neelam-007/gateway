@@ -16,8 +16,6 @@ import java.util.*;
  */
 public class RemoveElementPropertiesDialog extends AssertionPropertiesEditorSupport<RemoveElement> {
 
-    private static final ResourceBundle bundle = ResourceBundle.getBundle( RemoveElementPropertiesDialog.class.getName() );
-
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -26,7 +24,7 @@ public class RemoveElementPropertiesDialog extends AssertionPropertiesEditorSupp
     private boolean confirmed = false;
 
     public RemoveElementPropertiesDialog( final Window owner, final RemoveElement assertion ) {
-        super(owner, bundle.getString("dialog.title"));
+        super(owner, assertion);
         setData(assertion);
         initialize();
     }
@@ -38,6 +36,7 @@ public class RemoveElementPropertiesDialog extends AssertionPropertiesEditorSupp
 
         _nodeSetVar.setDocument(new MaxLengthDocument(128));
         _nodeSetVar.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable(){
+            @Override
             public void run() {
                 updateEnabledState();
             }
