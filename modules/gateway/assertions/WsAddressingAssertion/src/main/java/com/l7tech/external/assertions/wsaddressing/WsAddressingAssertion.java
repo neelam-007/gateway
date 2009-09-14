@@ -231,14 +231,30 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private IdentityTarget identityTarget;
 
+    private final static String baseName ="Require WS-Addressing";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<WsAddressingAssertion>(){
+        @Override
+        public String getAssertionName( final WsAddressingAssertion assertion, final boolean decorate) {
+            StringBuilder sb = new StringBuilder("Require ");
+
+            if ( assertion.isRequireSignature() ) {
+                sb.append("signed ");
+            }
+
+            sb.append("WS-Addressing");
+
+            return (decorate)? AssertionUtils.decorateName(assertion, sb): baseName;
+        }
+    };
 
     /**
      * Populate the given metadata.
      */
     private void populateMeta(final DefaultAssertionMetadata meta) {
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Require WS-Addressing");
-        meta.put(AssertionMetadata.LONG_NAME, "Require WS-Addressing in the request message.");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.DESCRIPTION, "Require WS-Addressing with optional signing.");
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
@@ -246,21 +262,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xml" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Information16.gif");
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, WsAddressingAssertion>() {
-            @Override
-            public String call(WsAddressingAssertion addressingAssertion) {
-                StringBuilder sb = new StringBuilder("Require ");
-
-                if ( addressingAssertion.isRequireSignature() ) {
-                    sb.append("signed ");
-                }
-
-                sb.append("WS-Addressing");
-
-                return AssertionUtils.decorateName(addressingAssertion, sb);
-            }
-        });
-
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, WsAddressingAssertion>(){
             @Override
             public Set<ValidatorFlag> call(WsAddressingAssertion assertion) {
@@ -278,15 +280,14 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
             }
         });
 
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "WS-Addressing Properties");
+        
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.external.assertions.wsaddressing.WsAddressingAssertionValidator");
-
-        meta.put(AssertionMetadata.USED_BY_CLIENT, true);
-
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
-        // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Information16.gif");
+        meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/Information16.gif");
+        meta.put(AssertionMetadata.USED_BY_CLIENT, true);
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:WsAddressing" rather than "set:modularAssertions"

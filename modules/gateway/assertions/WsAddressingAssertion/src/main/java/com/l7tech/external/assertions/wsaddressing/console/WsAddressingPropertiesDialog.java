@@ -15,7 +15,6 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ResourceBundle;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 
@@ -23,8 +22,6 @@ import java.beans.PropertyChangeEvent;
  * Properties dialog for WS-Addressing assertion.
  */
 public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSupport<WsAddressingAssertion> {
-    private static final ResourceBundle resources;
-
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -42,14 +39,11 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
     private boolean targetMessageOk;
     private boolean ok;
     private final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
+        @Override
         public void run() {
             configureView();
         }
     });
-
-    static {
-        resources = ResourceBundle.getBundle("com/l7tech/external/assertions/wsaddressing/console/resources/WsAddressingPropertiesDialog");
-    }
 
     /**
      * Create a new dialog with the given owner and data.
@@ -59,15 +53,17 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
      */
     public WsAddressingPropertiesDialog(final Window owner,
                                         final WsAddressingAssertion assertion)  {
-        super(owner, resources.getString("title.text"));
+        super(owner, assertion);
         init();
         setData(assertion);
     }
 
+    @Override
     public void setData(final WsAddressingAssertion assertion) {
         initData(assertion);
     }
 
+    @Override
     public WsAddressingAssertion getData(final WsAddressingAssertion assertion) {
         saveData(assertion);
         return assertion;
@@ -78,6 +74,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
      *
      * @return True if exited with success
      */
+    @Override
     public boolean isConfirmed() {
         return ok;
     }
@@ -108,6 +105,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
 
         targetMessagePanelHolder.add( targetMessagePanel );
         targetMessagePanel.addPropertyChangeListener("valid", new PropertyChangeListener() {
+            @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 targetMessageOk = Boolean.TRUE.equals(evt.getNewValue());
                 configureView();
@@ -115,12 +113,14 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         });
 
         buttonOK.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onOK();
             }
         });
 
         buttonCancel.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
@@ -130,6 +130,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         wsAddressing082004CheckBox.addActionListener(changeListener);
         otherNamespaceCheckBox.addActionListener(changeListener);
         otherNamespaceCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if (otherNamespaceCheckBox.isSelected()) {
                     otherNamespaceTextField.requestFocusInWindow();
@@ -195,10 +196,12 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         TextComponentPauseListenerManager.registerPauseListener(
             variablePrefixTextField,
             new PauseListener() {
+                @Override
                 public void textEntryPaused(JTextComponent component, long msecs) {
                     configureView();
                 }
 
+                @Override
                 public void textEntryResumed(JTextComponent component) {
                     clearVariablePrefixStatus();
                 }

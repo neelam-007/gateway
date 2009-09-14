@@ -20,7 +20,7 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -32,21 +32,15 @@ import java.util.Map;
 /**
  * @author alex
  */
-public class ClientWsAddressingAssertion extends ClientAssertion {
+public class ClientWsAddressingAssertion extends ClientAssertionWithMetaSupport {
     private final WsAddressingAssertion assertion;
 
     public ClientWsAddressingAssertion(WsAddressingAssertion assertion) {
+        super(assertion);
         this.assertion = assertion;
     }
 
-    public String getName() {
-        return "WS-Addressing";
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
-    }
-
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
         // No useful SSB behaviour if target != request
         if (assertion.getTarget() != TargetMessageType.REQUEST) return AssertionStatus.NONE;
@@ -81,6 +75,7 @@ public class ClientWsAddressingAssertion extends ClientAssertion {
         return ns;
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException {
         // Find and strip any MessageID headers from the response.
         Message response = context.getResponse();
