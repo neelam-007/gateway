@@ -200,7 +200,7 @@ public class HexUtils {
         } else if ( hex >= 'a' && hex <= 'f' ) {
             return (byte)(hex - 'a' + 10 );
         } else if ( hex >= 'A' && hex <= 'F' ) {
-            return (byte)(hex - 'F' + 10 );
+            return (byte)(hex - 'A' + 10 );
         } else {
             throw new IOException( "Invalid hex digit " + hex );
         }
