@@ -59,4 +59,32 @@ public class HttpFormPost extends Assertion {
             this.contentType = contentType;
         }
     }
+
+    private final static String baseName = "Translate HTTP Form to MIME";
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<HttpFormPost>(){
+        @Override
+        public String getAssertionName( final HttpFormPost assertion, final boolean decorate) {
+            return baseName;
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml"});
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.DESCRIPTION, "Translate a POSTed HTTP Form submission into a multipart MIME message suitable for processing by the Gateway.");
+
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/network.gif");
+
+        //not needed at the moment, but setting up in case this assertion's name needs to be decorated
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.HttpFormPostPropertiesAction");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "HTTP Form to MIME Translation Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/network.gif");
+
+        return meta;
+    }
 }

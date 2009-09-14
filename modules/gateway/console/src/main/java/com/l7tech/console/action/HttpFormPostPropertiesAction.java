@@ -4,7 +4,6 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.HttpFormPostDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.HttpFormPostPolicyNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.HttpFormPost;
@@ -19,35 +18,11 @@ import java.awt.*;
  * {@link com.l7tech.policy.assertion.HttpFormPost} assertion
  * properties.
  */
-public class HttpFormPostPropertiesAction extends NodeAction {
+public class HttpFormPostPropertiesAction extends NodeActionWithMetaSupport {
     static final Logger log = Logger.getLogger(HttpFormPostPropertiesAction.class.getName());
 
-    public HttpFormPostPropertiesAction(HttpFormPostPolicyNode node) {
-        super(node, HttpFormPost.class);
-    }
-
-    /**
-     * @return the action name
-     */
-    @Override
-    public String getName() {
-        return "HTTP Form to MIME Translation Properties";
-    }
-
-    /**
-     * @return the aciton description
-     */
-    @Override
-    public String getDescription() {
-        return "View/Edit HTTP Form POST to MIME Translation Properties";
-    }
-
-    /**
-     * specify the resource name for this action
-     */
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/network.gif";
+    public HttpFormPostPropertiesAction(AssertionTreeNode node) {
+        super(node, HttpFormPost.class, node.asAssertion());
     }
 
     /**
@@ -67,6 +42,7 @@ public class HttpFormPostPropertiesAction extends NodeAction {
         hfpd.pack();
         Utilities.centerOnScreen(hfpd);
         DialogDisplayer.display(hfpd, new Runnable() {
+            @Override
             public void run() {
                 if (hfpd.isAssertionModified()) assertionChanged();
             }

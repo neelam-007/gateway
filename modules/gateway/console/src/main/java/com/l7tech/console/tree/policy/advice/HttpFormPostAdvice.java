@@ -16,6 +16,7 @@ import java.awt.*;
  * <p/>
  */
 public class HttpFormPostAdvice implements Advice {
+    @Override
     public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof HttpFormPost)) {
@@ -29,6 +30,7 @@ public class HttpFormPostAdvice implements Advice {
         hfpd.pack();
         Utilities.centerOnScreen(hfpd);
         DialogDisplayer.display(hfpd, new Runnable() {
+            @Override
             public void run() {
                 if (hfpd.isAssertionModified()) {
                     pc.proceed();

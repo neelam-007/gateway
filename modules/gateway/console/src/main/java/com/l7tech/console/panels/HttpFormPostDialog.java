@@ -19,7 +19,7 @@ import java.util.ArrayList;
 /**
  * Used for editing the {@link com.l7tech.policy.assertion.HttpFormPost} assertion.
  */
-public class HttpFormPostDialog extends JDialog {
+public class HttpFormPostDialog extends LegacyAssertionPropertyDialog {
     private JList fieldList;
     private JButton removeButton;
     private JButton modifyButton;
@@ -36,7 +36,7 @@ public class HttpFormPostDialog extends JDialog {
     private Frame ownerFrame;
 
     public HttpFormPostDialog(Frame owner, HttpFormPost ass, boolean readOnly) throws HeadlessException {
-        super(owner, "HTTP Form to MIME Translation Properties", true);
+        super(owner, ass, true);
         this.ownerFrame = owner;
         this.assertion = ass;
         fieldListModel = new DefaultListModel();
@@ -49,6 +49,7 @@ public class HttpFormPostDialog extends JDialog {
         enableButtons();
 
         fieldList.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     modify();
@@ -57,12 +58,14 @@ public class HttpFormPostDialog extends JDialog {
         });
 
         fieldList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableButtons();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 assertionModified = false;
                 dispose();
@@ -71,6 +74,7 @@ public class HttpFormPostDialog extends JDialog {
 
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ArrayList infos = new ArrayList();
                 StringBuffer invalidContentTypes = new StringBuffer();
@@ -98,6 +102,7 @@ public class HttpFormPostDialog extends JDialog {
         });
 
         moveUpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int pos = fieldList.getSelectedIndex();
                 if (pos < 1) return;
@@ -110,6 +115,7 @@ public class HttpFormPostDialog extends JDialog {
         });
 
         moveDownButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int pos = fieldList.getSelectedIndex();
                 if (pos > fieldListModel.getSize() - 2) return;
@@ -122,8 +128,10 @@ public class HttpFormPostDialog extends JDialog {
         });
 
         addButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 edit(new HttpFormPost.FieldInfo(), new Functions.UnaryVoid<HttpFormPost.FieldInfo>() {
+                    @Override
                     public void call(HttpFormPost.FieldInfo fi) {
                         if (fi != null) {
                             fieldListModel.addElement(new FieldInfoListElement(fi));
@@ -134,12 +142,14 @@ public class HttpFormPostDialog extends JDialog {
         });
 
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 fieldListModel.removeElement(fieldList.getSelectedValue());
             }
         });
 
         modifyButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 modify();
             }
@@ -154,6 +164,7 @@ public class HttpFormPostDialog extends JDialog {
         if (el == null) return;
         HttpFormPost.FieldInfo fi = el.fieldInfo;
         edit(fi, new Functions.UnaryVoid<HttpFormPost.FieldInfo>() {
+            @Override
             public void call(HttpFormPost.FieldInfo edited) {
                 if (edited != null) {
                     el.fieldInfo = edited;
@@ -169,6 +180,7 @@ public class HttpFormPostDialog extends JDialog {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 result.call(dlg.isChanged() ? dlg.getFieldInfo() : null);
             }
@@ -201,6 +213,7 @@ public class HttpFormPostDialog extends JDialog {
             return valid;
         }
 
+        @Override
         public String toString() {
             return (fieldListModel.indexOf(this) + 1) + ": " +
                    fieldInfo.getFieldname() + " (" + fieldInfo.getContentType() + ")";
