@@ -6,6 +6,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspUpgradeUtilFrom21;
 import com.l7tech.util.Functions;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.migration.Migration;
@@ -70,9 +71,9 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
     public VariableMetadata[] getVariablesSet() {
         final List<VariableMetadata> vars = new ArrayList<VariableMetadata>();
         if ( isSetVariables() ){
-            vars.add(new VariableMetadata(prefixVariable(VAR_SIGNATURE_ELEMENT), false, false, prefixVariable(VAR_SIGNATURE_ELEMENT), false));
+            vars.add(new VariableMetadata(prefixVariable(VAR_SIGNATURE_ELEMENT), false, false, prefixVariable(VAR_SIGNATURE_ELEMENT), false, DataType.ELEMENT));
             vars.add(new VariableMetadata(prefixVariable(VAR_TOKEN_TYPE), false, false, prefixVariable(VAR_TOKEN_TYPE), false));
-            vars.add(new VariableMetadata(prefixVariable(VAR_TOKEN_ELEMENT), false, false, prefixVariable(VAR_TOKEN_ELEMENT), false));
+            vars.add(new VariableMetadata(prefixVariable(VAR_TOKEN_ELEMENT), false, false, prefixVariable(VAR_TOKEN_ELEMENT), false, DataType.ELEMENT));
             vars.add(new VariableMetadata(prefixVariable(VAR_TOKEN_ATTRIBUTES), false, false, prefixVariable(VAR_TOKEN_ATTRIBUTES), false));
         }
         return vars.toArray(new VariableMetadata[vars.size()]);
