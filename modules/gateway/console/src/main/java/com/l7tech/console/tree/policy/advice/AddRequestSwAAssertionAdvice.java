@@ -48,6 +48,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
      *
      * @param pc The policy change.
      */
+    @Override
     public void proceed(PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 ||
@@ -58,7 +59,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
         final PublishedService service = pc.getService();
         if (service == null || !(service.isSoap())) {
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
-                    "The 'SOAP Request with Attachment' assertion is not supported by non-SOAP services or policies not attached to a WSDL.", null);
+                    "The 'Validate SOAP Attachments' assertion is not supported by non-SOAP services or policies not attached to a WSDL.", null);
             return;
         }
 
@@ -146,6 +147,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
         final Wsdl wsdl = service.parsedWsdl();
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
         SoapMessageGenerator sg = new SoapMessageGenerator(null, new Wsdl.UrlGetter() {
+                @Override
                 public String get(String url) throws IOException {
                     return Registry.getDefault().getServiceManager().resolveWsdlTarget(url);
                 }

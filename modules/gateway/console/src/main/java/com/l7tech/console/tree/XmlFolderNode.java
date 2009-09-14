@@ -26,7 +26,6 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
         children = null;
         insert(new SchemaValidationPaletteNode(), index++);
         insert(new XslTransformationPaletteNode(), index++);
-        insert(new RequestSwAAssertionPaletteNode(), index++);
         insert(new OperationPaletteNode(), index++);
         insert(new HttpFormPostNode(), index++);
         insert(new InverseHttpFormPostNode(), index++);

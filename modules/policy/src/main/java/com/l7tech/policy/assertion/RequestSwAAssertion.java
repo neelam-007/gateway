@@ -132,6 +132,7 @@ public class RequestSwAAssertion extends SwAAssertion {
         return requireSig;
     }
 
+    @Override
     public Object clone() {
         RequestSwAAssertion clone = (RequestSwAAssertion) super.clone();
         clone.bindings = (Map) ((LinkedHashMap)bindings).clone();
@@ -146,10 +147,32 @@ public class RequestSwAAssertion extends SwAAssertion {
         return clone;
     }
 
+    private final static String baseName = "Validate SOAP Attachments";
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RequestSwAAssertion>(){
+        @Override
+        public String getAssertionName( final RequestSwAAssertion assertion, final boolean decorate) {
+            return baseName;
+        }
+    };
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml"});
+        
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.DESCRIPTION, "The request must fulfill the specified attachment requirements.");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+
+        //not needed right now, but in place in case this String needs to be decorated in the future
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SOAP Attachment Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.RequestSwAAssertionPropertiesAction");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/Properties16.gif");
+        
         meta.put(AssertionMetadata.FEATURE_SET_FACTORY, new Functions.Unary<Set<String>,Assertion>(){
+            @Override
             public Set<String> call(final Assertion assertion) {
                 Set features = Collections.emptySet();
 

@@ -33,8 +33,7 @@ import java.util.List;
  * <p> @author fpang </p>
  * $Id$
  */
-public class RequestSwAAssertionDialog extends JDialog {
-    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestSwAPropertiesDialog", Locale.getDefault());
+public class RequestSwAAssertionDialog extends LegacyAssertionPropertyDialog {
     private static final String LICENSE_FEATURE_SIGNING = "feature:SignedAttachments";
 
     private JButton cancelButton;
@@ -60,7 +59,7 @@ public class RequestSwAAssertionDialog extends JDialog {
      *
      */
     public RequestSwAAssertionDialog(Frame parent, RequestSwAAssertion assertion) {
-        super(parent, resources.getString("window.title"), true);
+        super(parent, assertion, true);
         this.originalAssertion = assertion;
         this.assertion = (RequestSwAAssertion) originalAssertion.clone();
         this.enableSigning = ConsoleLicenseManager.getInstance().isFeatureEnabled(LICENSE_FEATURE_SIGNING);
@@ -91,6 +90,7 @@ public class RequestSwAAssertionDialog extends JDialog {
              * The code written for this method performs the operations
              * that need to occur when an item is selected (or deselected).
              */
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     selectedOperationForBinding = -1;
@@ -109,7 +109,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         extraAttachmentsScrollPane.getViewport().setBackground(Color.white);
 
         okButton.addActionListener(new ActionListener() {
-
+            @Override
             public void actionPerformed(ActionEvent e) {
                 // update from controls
                 if (selectedOperationForBinding >= 0) {
@@ -134,13 +134,14 @@ public class RequestSwAAssertionDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
-
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
         });
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 dispose();
             }
@@ -291,6 +292,7 @@ public class RequestSwAAssertionDialog extends JDialog {
      */
     private void fireEventAssertionChanged(final Assertion a) {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 int[] indices = new int[a.getParent().getChildren().indexOf(a)];
                 PolicyEvent event = new
@@ -308,6 +310,7 @@ public class RequestSwAAssertionDialog extends JDialog {
             mimePartsTable = new MimePartsTable(enableSigning);
             final ButtonCellEditor editor = ButtonCellEditor.attach(mimePartsTable, 1);
             editor.getButton().addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     // put some nicer dialog
                     JOptionPane.showMessageDialog(RequestSwAAssertionDialog.this,
@@ -340,6 +343,7 @@ public class RequestSwAAssertionDialog extends JDialog {
                      * Called whenever the value of the selection changes.
                      * @param e the event that characterizes the change.
                      */
+                    @Override
                     public void valueChanged(ListSelectionEvent e) {
                         int row = bindingOperationsTable.getSelectedRow();
                         if(row >= 0) {
@@ -372,6 +376,7 @@ public class RequestSwAAssertionDialog extends JDialog {
             return bindingOperationsTableModel;
 
         bindingOperationsTableModel = new SortedSingleColumnTableModel(new Comparator() {
+            @Override
             public int compare(Object o1, Object o2) {
                 BindingOperationInfo e1 = (BindingOperationInfo)o1;
                 BindingOperationInfo e2 = (BindingOperationInfo)o2;
@@ -386,6 +391,7 @@ public class RequestSwAAssertionDialog extends JDialog {
     }
 
     private final ListCellRenderer bindingListRender = new DefaultListCellRenderer() {
+        @Override
         public Component getListCellRendererComponent(
                 JList list,
                 Object value,
@@ -413,6 +419,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         /* This is the only method defined by ListCellRenderer.  We just
         * reconfigure the Jlabel each time we're called.
         */
+        @Override
         public Component
                 getTableCellRendererComponent(JTable table,
                                               Object value,
@@ -436,6 +443,7 @@ public class RequestSwAAssertionDialog extends JDialog {
     };
 
     private Set bindingsList = new TreeSet(new Comparator() {
+        @Override
         public int compare(Object o1, Object o2) {
             BindingInfo p1 = (BindingInfo)o1;
             BindingInfo p2 = (BindingInfo)o2;
