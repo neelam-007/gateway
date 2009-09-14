@@ -15,7 +15,7 @@ import java.util.ArrayList;
 /**
  * Used for editing the {@link com.l7tech.policy.assertion.HttpFormPost} assertion.
  */
-public class InverseHttpFormPostDialog extends JDialog {
+public class InverseHttpFormPostDialog extends LegacyAssertionPropertyDialog {
     private JList fieldList;
     private JButton removeButton;
     private JButton modifyButton;
@@ -32,7 +32,7 @@ public class InverseHttpFormPostDialog extends JDialog {
     private Frame ownerFrame;
 
     public InverseHttpFormPostDialog(Frame owner, InverseHttpFormPost ass, boolean readOnly) throws HeadlessException {
-        super(owner, "MIME to HTTP Form Translation Properties", true);
+        super(owner, ass, true);
         this.ownerFrame = owner;
         this.assertion = ass;
         fieldListModel = new DefaultComboBoxModel(wrap(ass.getFieldNames()));
@@ -41,6 +41,7 @@ public class InverseHttpFormPostDialog extends JDialog {
         enableButtons();
 
         fieldList.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     modify();
@@ -49,12 +50,14 @@ public class InverseHttpFormPostDialog extends JDialog {
         });
 
         fieldList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableButtons();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 assertionModified = false;
                 dispose();
@@ -63,6 +66,7 @@ public class InverseHttpFormPostDialog extends JDialog {
 
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ArrayList names = new ArrayList();
                 for (int i = 0; i < fieldListModel.getSize(); i++) {
@@ -76,6 +80,7 @@ public class InverseHttpFormPostDialog extends JDialog {
         });
 
         moveUpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int pos = fieldList.getSelectedIndex();
                 if (pos < 1) return;
@@ -88,6 +93,7 @@ public class InverseHttpFormPostDialog extends JDialog {
         });
 
         moveDownButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int pos = fieldList.getSelectedIndex();
                 if (pos > fieldListModel.getSize() - 2) return;
@@ -100,6 +106,7 @@ public class InverseHttpFormPostDialog extends JDialog {
         });
 
         addButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 String fieldname = edit("");
                 if (fieldname != null && fieldname.length() > 0) {
@@ -109,12 +116,14 @@ public class InverseHttpFormPostDialog extends JDialog {
         });
 
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 fieldListModel.removeElement(fieldList.getSelectedValue());
             }
         });
 
         modifyButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 modify();
             }
@@ -162,6 +171,7 @@ public class InverseHttpFormPostDialog extends JDialog {
             this.fieldname = fieldname;
         }
 
+        @Override
         public String toString() {
             return (fieldListModel.getIndexOf(this) + 1) + ": " + fieldname;
         }
