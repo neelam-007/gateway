@@ -146,6 +146,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
 
         Utilities.setDoubleClickAction(mappingTable, editButton);
         modelToView();
+        enableDisableCache();
         validator.validate();
     }
 
