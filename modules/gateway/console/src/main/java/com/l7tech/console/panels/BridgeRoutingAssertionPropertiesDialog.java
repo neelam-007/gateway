@@ -20,6 +20,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.BridgeRoutingAssertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.cert.TrustedCert;
@@ -41,7 +42,7 @@ import java.util.logging.Logger;
 /**
  * Allows properties of a {@link com.l7tech.policy.assertion.BridgeRoutingAssertion} to be edited.
  */
-public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
+public class BridgeRoutingAssertionPropertiesDialog extends LegacyAssertionPropertyDialog {
     private static final Logger logger = Logger.getLogger(BridgeRoutingAssertionPropertiesDialog.class.getName());
 
     private JPanel rootPanel;
@@ -78,14 +79,14 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
                                                   final Policy policy,
                                                   final Wsdl wsdl,
                                                   final boolean readOnly) {
-        super(owner, true);
-        setTitle("Bridge Routing Assertion Properties");
+        super(owner, a, true);
         this.assertion = a;
-        inputValidator = new InputValidator(this, "Bridge Routing Assertion Properties");
+        inputValidator = new InputValidator(this, a.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
 
         setContentPane(rootPanel);
 
         buttonHttpProperties.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 // Make a temporary copy for the routing assertion dialog, and remember the changes only if it was Ok'ed
                 // (but do not actually copy them into the live assertion until the outer dialog is Ok'ed)  (Bug #3617)
@@ -104,6 +105,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
                 Utilities.centerOnScreen(httpDialog);
                 DialogDisplayer.display(httpDialog, new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             if (httpDialog.isConfirmed()) {
@@ -122,6 +124,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         buttonOk.setEnabled( !readOnly );
         inputValidator.attachToButton(buttonOk, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
 
                 //validate policy xml to be sure it's valid
@@ -134,12 +137,14 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         });
 
         buttonCancel.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 BridgeRoutingAssertionPropertiesDialog.this.dispose();
             }
         });
 
         ActionListener updateEnableStates = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateEnableStates();
             }
@@ -165,6 +170,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
                             m.add(new JSeparator());
                             JMenuItem reformXml = new JMenuItem("Reformat All XML");
                             reformXml.addActionListener(new ActionListener() {
+                                @Override
                                 public void actionPerformed(ActionEvent e) {
                                     String xml = tc.getText();
                                     try {
@@ -217,6 +223,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         newServerCert.addActionListener( new NewTrustedCertificateAction(certListener, "Add"));
 
         selectCert.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 CertSearchPanel sp = new CertSearchPanel(BridgeRoutingAssertionPropertiesDialog.this, false, true);
                 sp.addCertListener(certListener);
@@ -227,6 +234,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         });
 
         inputValidator.addRule(new InputValidator.ComponentValidationRule(trustedCertTable) {
+            @Override
             public String getValidationError() {
                 if (rbServerCertManual.isSelected()) {
                     if (serverCert == null)
@@ -337,6 +345,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         if (a == null) return;
         if (a.getParent() == null || a.getParent().getChildren() == null) return;
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 int[] indices = new int[a.getParent().getChildren().indexOf(a)];
                 PolicyEvent event = new PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
@@ -357,6 +366,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
     }
 
     private CertListener certListener = new CertListenerAdapter() {
+        @Override
         public void certSelected(CertEvent e) {
                 serverCert = e.getCert();
                 if (serverCert != null) updateTrustedCertTable();

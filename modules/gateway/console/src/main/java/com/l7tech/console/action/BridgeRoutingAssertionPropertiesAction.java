@@ -13,7 +13,6 @@ import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.BridgeRoutingAssertionPropertiesDialog;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.BridgeRoutingAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
@@ -29,32 +28,11 @@ import java.util.logging.Logger;
 /**
  * Action for showing {@link com.l7tech.policy.assertion.BridgeRoutingAssertion} properties dialog.
  */
-public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
+public class BridgeRoutingAssertionPropertiesAction extends NodeActionWithMetaSupport {
     private static final Logger log = Logger.getLogger(BridgeRoutingAssertionPropertiesAction.class.getName());
 
-    public BridgeRoutingAssertionPropertiesAction(BridgeRoutingAssertionTreeNode node) {
-        super(node, BridgeRoutingAssertion.class);
-    }
-
-    /**
-     * @return the action name
-     */
-    public String getName() {
-        return "Bridge Routing Properties";
-    }
-
-    /**
-     * @return the aciton description
-     */
-    public String getDescription() {
-        return "View and edit bridge routing properties";
-    }
-
-    /**
-     * specify the resource name for this action
-     */
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif";
+    public BridgeRoutingAssertionPropertiesAction(AssertionTreeNode node) {
+        super(node, BridgeRoutingAssertion.class, node.asAssertion());
     }
 
     /**
@@ -63,6 +41,7 @@ public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
                 Frame f = TopComponents.getInstance().getTopParent();
                 final BridgeRoutingAssertionPropertiesDialog d;
@@ -94,6 +73,7 @@ public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {
+        @Override
         public void assertionsChanged(PolicyEvent e) {
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {

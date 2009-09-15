@@ -11,10 +11,7 @@ import com.l7tech.console.table.HttpHeaderRuleTableHandler;
 import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.console.table.HttpRuleTableHandler;
 import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.BridgeRoutingAssertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.variable.*;
@@ -46,7 +43,7 @@ import java.util.logging.Logger;
  *  <li><a href="http://sarek.l7tech.com/mediawiki/index.php?title=XML_Variables">XML Variables</a> (4.3)
  * </ul>
  */
-public class HttpRoutingAssertionDialog extends JDialog {
+public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private static class MsgSrcComboBoxItem {
         private final String _variableName;
@@ -146,9 +143,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
      * Creates new form ServicePanel
      */
     public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion assertion, Policy policy, Wsdl wsdl, boolean readOnly) {
-        super(owner, true);
-        setTitle(resources.getString("dialog.title"));
-        inputValidator = new InputValidator(this, resources.getString("dialog.title"));
+        super(owner, assertion, true);
+        inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         this.assertion = assertion;
         this.policy = policy;
         this.wsdl = wsdl;
@@ -176,6 +172,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         ipListPanel.alsoEnableDiffURLS();
 
         ipListPanel.registerStateCallback(new IpListPanel.StateCallback() {
+            @Override
             public void stateChanged(int newState) {
                 if (newState == IpListPanel.CUSTOM_URLS) {
                     urlPanel.setEnabled(false);
@@ -235,6 +232,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     void fireEventAssertionChanged(final Assertion a) {
         SwingUtilities.invokeLater(
           new Runnable() {
+              @Override
               public void run() {
                   if (a == null) return;
                   if (a.getParent() == null || a.getParent().getChildren() == null) return;
@@ -264,6 +262,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(readTimeoutSpinner, "Read timeout"));
 
         ActionListener enableSpinners = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 connectTimeoutSpinner.setEnabled(!connectTimeoutDefaultCheckBox.isSelected());
                 readTimeoutSpinner.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
@@ -281,6 +280,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         methodGroup.add(this.authWindowsIntegratedRadio);
 
         final ChangeListener radioChangeListener = new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 updateAuthMethod();
             }
@@ -305,6 +305,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         ButtonGroup wssButtons = new ButtonGroup();
         ActionListener disenableCombo = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 wssPromoteActorCombo.setEnabled(wssPromoteRadio.isSelected());
             }
@@ -316,6 +317,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
         defaultUrlButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 String serviceURI;
                 if (wsdl != null) {
@@ -330,6 +332,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         populateReqMsgSrcComboBox();
 
         resMsgDestVariableRadioButton.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 validateResMsgDest();
             }
@@ -337,10 +340,12 @@ public class HttpRoutingAssertionDialog extends JDialog {
         TextComponentPauseListenerManager.registerPauseListener(
                 resMsgDestVariableTextField,
                 new PauseListener() {
+                    @Override
                     public void textEntryPaused(JTextComponent component, long msecs) {
                         validateResMsgDest();
                     }
 
+                    @Override
                     public void textEntryResumed(JTextComponent component) {
                         clearResMsgDestVariableStatus();
                     }
@@ -361,6 +366,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         okButton.setEnabled( !readOnly );
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
@@ -405,6 +411,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         requestHttpRulesTableHandler = new HttpHeaderRuleTableHandler(reqHeadersTable, reqHeadersAdd, reqHeadersRemove, editReqHrButton,
                                                                  assertion.getRequestHeaderRules());
         ActionListener tablestate = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if (reqHeadersCustomize.isSelected()) {
                     reqHeadersTable.setEnabled(true);
@@ -448,6 +455,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                                                                            reqParamsRemove, editReqPmButton,
                                                                            assertion.getRequestParamRules());
             tablestate = new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     if (reqParamsCustomize.isSelected()) {
                         reqParamsTable.setEnabled(true);
@@ -484,6 +492,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         responseHttpRulesTableHandler = new HttpHeaderRuleTableHandler(resHeadersTable, resHeadersAdd, resHeadersDelete,
                                                                        editResHrButton, assertion.getResponseHeaderRules());
         tablestate = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if (resHeadersCustomize.isSelected()) {
                     resHeadersTable.setEnabled(true);

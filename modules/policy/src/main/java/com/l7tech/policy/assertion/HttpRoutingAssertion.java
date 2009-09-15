@@ -8,6 +8,7 @@ package com.l7tech.policy.assertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -490,6 +491,41 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     public void setKrbUseGatewayKeytab(boolean krbUseGatewayKeytab) {
         this.krbUseGatewayKeytab = krbUseGatewayKeytab;
+    }
+
+    final static String baseName = "Route via HTTP(S)";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<HttpRoutingAssertion>(){
+        @Override
+        public String getAssertionName( final HttpRoutingAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            StringBuffer assertionName = new StringBuffer("Route via HTTP");
+            String url = assertion.getProtectedServiceUrl();
+            if(url != null){
+                if(url.startsWith("https")) assertionName.append("S");
+                assertionName.append(" to ").append(url);
+            }
+            return AssertionUtils.decorateName(assertion, assertionName.toString());
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"routing"});
+        
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "The incoming message will be routed via http(s) to the protected service at the designated URL.      ");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
+
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.HttpRoutingAssertionPropertiesAction");
+        meta.put(PROPERTIES_ACTION_NAME, "HTTP(S) Routing Properties");
+
+        return meta;
     }
 
     public static String getVarHttpRoutingUrlHost() {

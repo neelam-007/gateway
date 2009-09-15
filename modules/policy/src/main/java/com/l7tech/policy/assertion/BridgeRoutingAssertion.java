@@ -6,6 +6,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
@@ -170,6 +171,35 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
         BridgeRoutingAssertion bra = (BridgeRoutingAssertion) super.clone();
         bra.setClientPolicyProperties( new LinkedHashMap<String,String>(clientPolicyProperties) );
         return bra;
+    }
+
+    final static String baseName = "Route via SecureSpan XVC";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<HttpRoutingAssertion>(){
+        @Override
+        public String getAssertionName( final HttpRoutingAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            StringBuffer assertionName = new StringBuffer(baseName);
+            String url = assertion.getProtectedServiceUrl();
+            if(url != null){
+                assertionName.append(" to ").append(url);
+            }
+            return AssertionUtils.decorateName(assertion, assertionName.toString());
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = (DefaultAssertionMetadata) super.meta();
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "The incoming message will be routed to the protected service using bridged routing.");
+        
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(PROPERTIES_ACTION_NAME, "SecureSpan XVC Routing Properties");
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.BridgeRoutingAssertionPropertiesAction");
+
+        return meta;
     }
 
     //- PRIVATE

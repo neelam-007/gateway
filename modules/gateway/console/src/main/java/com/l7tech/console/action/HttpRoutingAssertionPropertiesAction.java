@@ -9,7 +9,6 @@ import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.HttpRoutingAssertionDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.HttpRoutingAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
@@ -27,32 +26,11 @@ import java.awt.*;
  * The <code>HttpRoutingAssertionPropertiesAction</code> edits the
  * protected service properties.
  */
-public class HttpRoutingAssertionPropertiesAction extends NodeAction {
+public class HttpRoutingAssertionPropertiesAction extends NodeActionWithMetaSupport {
     static final Logger log = Logger.getLogger(HttpRoutingAssertionPropertiesAction.class.getName());
 
-    public HttpRoutingAssertionPropertiesAction(HttpRoutingAssertionTreeNode node) {
-        super(node, HttpRoutingAssertion.class);
-    }
-
-    /**
-     * @return the action name
-     */
-    public String getName() {
-        return "Routing Properties";
-    }
-
-    /**
-     * @return the aciton description
-     */
-    public String getDescription() {
-        return "View and edit routing properties";
-    }
-
-    /**
-     * specify the resource name for this action
-     */
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif";
+    public HttpRoutingAssertionPropertiesAction(AssertionTreeNode node) {
+        super(node, HttpRoutingAssertion.class, node.asAssertion());
     }
 
     /**
@@ -61,8 +39,10 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 Frame f = TopComponents.getInstance().getTopParent();
                 HttpRoutingAssertionDialog d;
@@ -96,6 +76,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {
+        @Override
         public void assertionsChanged(PolicyEvent e) {
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {
