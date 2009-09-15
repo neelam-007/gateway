@@ -15,12 +15,10 @@ import java.awt.event.ActionEvent;
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: May 17, 2006<br/>
+ * @author flascell
  * @see Operation
  */
-public class WSDLOperationPropertiesDialog extends JDialog {
-    private static final String TITLE = "WSDL Operation Assertion Properties";
+public class WSDLOperationPropertiesDialog extends LegacyAssertionPropertyDialog {
     private Operation assertion;
     public boolean oked = false;
     private JPanel mainPanel;
@@ -31,7 +29,7 @@ public class WSDLOperationPropertiesDialog extends JDialog {
     private final String[] possibleOperationNames;
 
     public WSDLOperationPropertiesDialog(Frame owner, Operation assertion, String[] possibleOperationNames) throws HeadlessException {
-        super(owner, TITLE, true);
+        super(owner, assertion, true);
         this.assertion = assertion;
         this.possibleOperationNames = possibleOperationNames;
         initialize();
@@ -42,29 +40,34 @@ public class WSDLOperationPropertiesDialog extends JDialog {
         Utilities.equalizeButtonSizes(new AbstractButton[] {okButton, cancelButton, helpButton});
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
 
         helpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 help();
             }
         });
 
         Utilities.setEnterAction(this, new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
         Utilities.setEscAction(this, new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
