@@ -58,15 +58,16 @@ public class WsspAssertion extends Assertion {
         return in == null || "null".equals(in.toString()) ? null : in;
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "WS-Security Policy Compliance");
-        meta.put(AssertionMetadata.LONG_NAME, "WS-Security Policy Compliance");
-        meta.put(AssertionMetadata.DESCRIPTION, "Restrict the policy to contain only assertions compatible with WS-SecurityPolicy");
+        meta.put(AssertionMetadata.SHORT_NAME, "Enforce WS-Security Policy Compliance");
+        meta.put(AssertionMetadata.DESCRIPTION, "Restrict the policy to contain only assertions compatible with WS-SecurityPolicy.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/policy16.gif");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xml" });
 
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "WS-Security Policy Properties");
         if (ALLOW_OVERRIDE_GENERATED_XML) {
             meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.WsspAssertionPropertiesDialog");
         } else {

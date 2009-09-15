@@ -21,17 +21,19 @@ public class WsspAssertionPropertiesDialog extends AssertionPropertiesOkCancelSu
     private JTextArea outputPolicyTextArea;
 
     public WsspAssertionPropertiesDialog(Frame parent, WsspAssertion assertion) {
-        super(WsspAssertion.class, parent, "WS-Security Policy Properties", true);
+        super(WsspAssertion.class, parent, assertion, true);
         initComponents();
         setData(assertion);
     }
 
+    @Override
     protected void initComponents() {
         super.initComponents();
         Utilities.enableGrayOnDisabled(basePolicyTextArea);
         Utilities.enableGrayOnDisabled(inputPolicyTextArea);
         Utilities.enableGrayOnDisabled(outputPolicyTextArea);
         final ActionListener fieldEnabler = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateTextAreaEnableStates();
             }
@@ -47,10 +49,12 @@ public class WsspAssertionPropertiesDialog extends AssertionPropertiesOkCancelSu
         outputPolicyTextArea.setEnabled(!cbGenOutputPolicy.isSelected());
     }
 
+    @Override
     protected JPanel createPropertyPanel() {
         return mainPanel;
     }
 
+    @Override
     public void setData(WsspAssertion assertion) {
         final String basePolicy = assertion.getBasePolicyXml();
         final String inputPolicy = assertion.getInputPolicyXml();
@@ -64,6 +68,7 @@ public class WsspAssertionPropertiesDialog extends AssertionPropertiesOkCancelSu
         updateTextAreaEnableStates();
     }
 
+    @Override
     public WsspAssertion getData(WsspAssertion assertion) throws ValidationException {
         assertion.setBasePolicyXml(cbGenBasePolicy.isSelected() ? null : basePolicyTextArea.getText());
         assertion.setInputPolicyXml(cbGenInputPolicy.isSelected() ? null : inputPolicyTextArea.getText());
