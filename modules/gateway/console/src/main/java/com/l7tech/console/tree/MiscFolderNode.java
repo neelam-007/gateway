@@ -8,8 +8,7 @@ import com.l7tech.policy.assertion.ext.Category;
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 19, 2004<br/>
+ * @author flascell<br/>
  * $Id$
  */
 public class MiscFolderNode extends AbstractPaletteFolderNode {
@@ -27,7 +26,6 @@ public class MiscFolderNode extends AbstractPaletteFolderNode {
         int index = 0;
         children = null;
         insert( new TimeRangePaletteNode(), index++ );
-        insert( new RemoteIpRangePaletteNode(), index++ );
         insert( new ThroughputQuotaPaletteNode(), index++ );
         index = insertMatchingModularAssertions(index);
         insertMatchingCustomAssertions(index, Category.AVAILABILITY);

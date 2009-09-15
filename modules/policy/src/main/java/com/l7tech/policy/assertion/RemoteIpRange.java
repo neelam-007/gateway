@@ -3,6 +3,7 @@ package com.l7tech.policy.assertion;
 import java.util.StringTokenizer;
 
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -133,6 +134,44 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
         this.ipSourceContextVariable = ipSourceContextVariable;
     }
 
+    private final static String baseName = "Restrict Access to IP Address Range";
+    
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RemoteIpRange>(){
+        @Override
+        public String getAssertionName( final RemoteIpRange assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            StringBuilder sb = new StringBuilder();
+            sb.append((assertion.isAllowRange())? "Allow": "Forbid");
+            sb.append(" access to IP Address Range");
+            sb.append(" [");
+            sb.append(assertion.getStartIp());
+            sb.append("/");
+            sb.append(assertion.getNetworkMask());
+            sb.append("]");
+            return sb.toString();
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"misc"});
+
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Restrict or allow service access based on the IP address of the Web service or XML application requestor.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/network.gif");
+
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.RemoteIpRangePropertiesAction");
+        meta.put(PROPERTIES_ACTION_NAME, "IP Address Range Properties");
+
+        return meta;
+    }
+
     private String startIp;
     private int networkMask;
     private boolean allowRange;
@@ -142,6 +181,7 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
     private final static int MAX_IP_VALUE = 255;
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Override
     public String[] getVariablesUsed() {
         if (ipSourceContextVariable == null || ipSourceContextVariable.length() < 1) {
             return new String[0];

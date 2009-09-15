@@ -19,10 +19,9 @@ import java.util.StringTokenizer;
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 20, 2004<br/>
+ * @author flascell<br/>
  */
-public class RemoteIpRangePropertiesDialog extends JDialog {
+public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JButton helpButton;
@@ -42,7 +41,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private JTextField contextVarField;
 
     public RemoteIpRangePropertiesDialog(Frame owner, boolean modal, boolean readOnly, RemoteIpRange subject) {
-        super(owner, modal);
+        super(owner, subject, modal);
         this.subject = subject;
         initialize(readOnly);
         oked = false;
@@ -61,7 +60,6 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         setContentPane(mainPanel);
         okButton.setEnabled( !readOnly );
         Utilities.equalizeButtonSizes(new AbstractButton[] {okButton, cancelButton, helpButton});
-        setTitle(resources.getString("window.title"));
         Utilities.setEscKeyStrokeDisposes(this);
 
         includeExcludeCombo.setModel(new DefaultComboBoxModel(new String[] {
@@ -198,21 +196,25 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
 
     private void setCallbacks() {
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
         helpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(RemoteIpRangePropertiesDialog.this);
             }
         });
         tcpRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 contextVarRadio.setSelected(!tcpRadio.isSelected());
                 contextVarField.setEnabled(!tcpRadio.isSelected());
@@ -220,6 +222,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
             }
         });
         contextVarRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 tcpRadio.setSelected(!contextVarRadio.isSelected());
                 contextVarField.setEnabled(contextVarRadio.isSelected());
