@@ -6,9 +6,8 @@
  */
 package com.l7tech.policy.assertion.sla;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
@@ -192,12 +191,14 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
         this.counterStrategy = counterStrategy;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (counterName == null) return new String[0];
         return Syntax.getReferencedNames(counterName);
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
          return new VariableMetadata[] {
             // Note default prefixes are used here for property lookup purposes
@@ -207,5 +208,53 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
             new VariableMetadata(userVariable(), false, false, DEFAULT_VAR_PREFIX + "." + VAR_SUFFIX_USER, false, DataType.STRING),
             new VariableMetadata(maxVariable(), false, false, DEFAULT_VAR_PREFIX + "." + VAR_SUFFIX_MAX, false, DataType.INTEGER),
         };
+    }
+
+    private static String timeUnitStr(int timeUnit) {
+        switch (timeUnit) {
+            case ThroughputQuota.PER_SECOND: return "second";
+            case ThroughputQuota.PER_MINUTE: return "minute";
+            case ThroughputQuota.PER_HOUR: return "hour";
+            case ThroughputQuota.PER_DAY: return "day";
+            case ThroughputQuota.PER_MONTH: return "month";
+            default: return "something";
+        }
+    }
+    
+    private final static String baseName = "Apply Throughput Quota";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ThroughputQuota>(){
+        @Override
+        public String getAssertionName( final ThroughputQuota assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            final StringBuffer buffer = new StringBuffer(baseName);
+            if (assertion.getCounterStrategy() == ThroughputQuota.DECREMENT) {
+                buffer.append(": Decrement counter " + assertion.getCounterName());
+            } else {
+                buffer.append(": " + assertion.getCounterName() + ": " +
+                           assertion.getQuota() + " per " + timeUnitStr(assertion.getTimeUnit()));
+            }
+            return buffer.toString();
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"misc"});
+
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Limit the number of service requests permitted within a predetermined time period.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/policy16.gif");
+
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.ThroughputQuotaPropertiesAction");
+        meta.put(PROPERTIES_ACTION_NAME, "Throughput Quota Properties");
+        
+        return meta;
     }
 }

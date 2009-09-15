@@ -33,7 +33,7 @@ import java.util.logging.Level;
  *
  * @author flascelles@layer7-tech.com
  */
-public class ThroughputQuotaForm extends JDialog {
+public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     private JPanel mainPanel;
     private JButton okButton;
     private JButton cancelButton;
@@ -59,8 +59,7 @@ public class ThroughputQuotaForm extends JDialog {
     private JLabel varPrefixStatusLabel;
 
     public ThroughputQuotaForm(Frame owner, ThroughputQuota subject, Assertion policyRoot, boolean readOnly) {
-        super(owner, true);
-        setTitle("Throughput Quota Assertion");
+        super(owner, subject, true);
         if (subject == null) throw new IllegalArgumentException("subject cannot be null");
         this.subject = subject;
         this.policyRoot = policyRoot;
@@ -85,6 +84,7 @@ public class ThroughputQuotaForm extends JDialog {
         TextComponentPauseListenerManager.registerPauseListener(
             varPrefixField,
             new PauseListener() {
+                @Override
                 public void textEntryPaused(JTextComponent component, long msecs) {
                     if(validateVariablePrefix()) {
                         okButton.setEnabled(true);
@@ -93,6 +93,7 @@ public class ThroughputQuotaForm extends JDialog {
                     }
                 }
 
+                @Override
                 public void textEntryResumed(JTextComponent component) {
                     clearVariablePrefixStatus();
                 }
@@ -171,18 +172,21 @@ public class ThroughputQuotaForm extends JDialog {
         }
 
         decrementRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 quotaValueField.setEnabled(false);
                 quotaUnitCombo.setEnabled(false);
             }
         });
         alwaysIncrementRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 quotaValueField.setEnabled(true);
                 quotaUnitCombo.setEnabled(true);
             }
         });
         incrementOnSuccessRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 quotaValueField.setEnabled(true);
                 quotaUnitCombo.setEnabled(true);
@@ -191,18 +195,21 @@ public class ThroughputQuotaForm extends JDialog {
 
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
 
         helpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 help();
             }

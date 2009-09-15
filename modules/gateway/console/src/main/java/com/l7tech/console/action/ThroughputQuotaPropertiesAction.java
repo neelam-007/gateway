@@ -4,7 +4,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.ThroughputQuotaTreeNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.ThroughputQuotaForm;
 import com.l7tech.gui.util.Utilities;
@@ -18,26 +18,11 @@ import java.util.logging.Logger;
 /**
  * Action to edit the properties of an ThroughputQuota assertion
  */
-public class ThroughputQuotaPropertiesAction extends SecureAction {
+public class ThroughputQuotaPropertiesAction extends NodeActionWithMetaSupport {
 
-    public ThroughputQuotaPropertiesAction(ThroughputQuotaTreeNode subject) {
-        super(null, ThroughputQuota.class);
+    public ThroughputQuotaPropertiesAction(AssertionTreeNode<ThroughputQuota> subject) {
+        super(null, ThroughputQuota.class, subject.asAssertion());
         this.subject = subject;
-    }
-
-    @Override
-    public String getName() {
-        return "Throughput Quota Properties";
-    }
-
-    @Override
-    public String getDescription() {
-        return "View / Edit properties of a Throughput Quota Assertion";
-    }
-
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     @Override
@@ -47,6 +32,7 @@ public class ThroughputQuotaPropertiesAction extends SecureAction {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (dlg.wasOKed()) {
                     JTree tree = TopComponents.getInstance().getPolicyTree();
@@ -62,5 +48,5 @@ public class ThroughputQuotaPropertiesAction extends SecureAction {
     }
 
     private final Logger log = Logger.getLogger(getClass().getName());
-    private ThroughputQuotaTreeNode subject;
+    private AssertionTreeNode<ThroughputQuota> subject;
 }
