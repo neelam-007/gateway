@@ -23,18 +23,20 @@ public class EchoRoutingAssertion extends RoutingAssertion implements RoutingAss
         setCurrentSecurityHeaderHandling(CLEANUP_CURRENT_SECURITY_HEADER);
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(SHORT_NAME, "Echo Routing Assertion");
-        meta.put(LONG_NAME, "Echo request to response");
-
-        meta.put(PALETTE_NODE_NAME, "Echo Routing Assertion");
-        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "routing" });
 
-        meta.put(POLICY_NODE_NAME, "Echo request to response");
+        meta.put(SHORT_NAME, "Copy Request Message to Response");
+        meta.put(DESCRIPTION, "Copy the request to the response.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
+
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+
+        meta.put(PROPERTIES_ACTION_NAME, "Request to Response Properties");
 
         meta.put(WSP_EXTERNAL_NAME, "EchoRoutingAssertion"); // keep same WSP name as pre-3.7 (Bug #3605)
         final TypeMapping typeMapping = (TypeMapping)meta.get(WSP_TYPE_MAPPING_INSTANCE);

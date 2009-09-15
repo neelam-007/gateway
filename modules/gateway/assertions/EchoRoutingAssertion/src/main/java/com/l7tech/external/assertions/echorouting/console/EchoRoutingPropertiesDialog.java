@@ -34,7 +34,7 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
      * @param a      assertion to edit
      */
     public EchoRoutingPropertiesDialog(Window owner, EchoRoutingAssertion a) {
-        super(owner, "Echo Routing Properties");
+        super(owner, a);
         assertion = a;
         initComponents();
         initFormData();
@@ -94,6 +94,7 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
 
         SwingUtilities.invokeLater(
           new Runnable() {
+              @Override
               public void run() {
                   int[] indices = new int[parent.getChildren().indexOf(a)];
                   PolicyEvent event = new
@@ -125,6 +126,7 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
         RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 getData(assertion);
                 fireEventAssertionChanged(assertion);
@@ -134,6 +136,7 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 EchoRoutingPropertiesDialog.this.dispose();
             }
@@ -144,15 +147,18 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
     }
 
+    @Override
     public boolean isConfirmed() {
         return wasOkButtonPressed;
     }
 
+    @Override
     public void setData(EchoRoutingAssertion assertion) {
         this.assertion = assertion;
         initFormData();
     }
 
+    @Override
     public EchoRoutingAssertion getData(EchoRoutingAssertion assertion) {
         RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
         assertion.setGroupMembershipStatement(false);
