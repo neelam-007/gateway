@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 @SuppressWarnings( { "UnnecessaryUnboxing", "UnnecessaryBoxing" } )
-public class JmsRoutingAssertionDialog extends JDialog {
+public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     //- PUBLIC
 
@@ -44,8 +44,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
      * Creates new form ServicePanel
      */
     public JmsRoutingAssertionDialog(Frame owner, JmsRoutingAssertion a, boolean readOnly) {
-        super(owner, true);
-        setTitle(DIALOG_TITLE);
+        super(owner, a, true);
         assertion = a;
         initComponents(readOnly);
         initFormData();
@@ -95,7 +94,6 @@ public class JmsRoutingAssertionDialog extends JDialog {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(JmsRoutingAssertionDialog.class.getName());
-    private static final String DIALOG_TITLE = "JMS Routing Properties";
 
     // model, etc
     private JmsRoutingAssertion assertion;
@@ -137,6 +135,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
 
         SwingUtilities.invokeLater(
           new Runnable() {
+              @Override
               public void run() {
                   int[] indices = new int[parent.getChildren().indexOf(a)];
                   PolicyEvent event = new
@@ -177,10 +176,11 @@ public class JmsRoutingAssertionDialog extends JDialog {
         secButtonGroup.add(authSamlRadio);
         samlVersionComboBox.setModel(new DefaultComboBoxModel(new String[]{"1.1", "2.0"}));
         samlExpiryInMinutesSpinner.setModel(new SpinnerNumberModel(5, 1, 120, 1));
-        InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
+        InputValidator inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(samlExpiryInMinutesSpinner, "Ticket expiry"));
 
         authSamlRadio.addChangeListener(new ChangeListener(){
+            @Override
             public void stateChanged(ChangeEvent e) {
                 samlPanel.setVisible(authSamlRadio.isSelected());
                 samlExpiryInMinutesSpinner.setEnabled(authSamlRadio.isSelected());
@@ -193,6 +193,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
         newQueueButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 JmsEndpoint ep = newlyCreatedEndpoint;
                 JmsConnection conn = newlyCreatedConnection;
@@ -200,6 +201,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
                 pd.pack();
                 Utilities.centerOnScreen(pd);
                 DialogDisplayer.display(pd, new Runnable() {
+                    @Override
                     public void run() {
                         if (!pd.isCanceled()) {
                             newlyCreatedEndpoint = pd.getEndpoint();
@@ -214,6 +216,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
 
         okButton.setEnabled( !readOnly );
         inputValidator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 RoutingDialogUtils.configSecurityHeaderHandling(assertion, RoutingAssertion.CLEANUP_CURRENT_SECURITY_HEADER, secHdrButtons);
 
@@ -249,6 +252,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 JmsRoutingAssertionDialog.this.dispose();
             }
@@ -321,6 +325,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
 
         public JmsMessagePropertiesPanel() {
             passThruAllRadioButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     Utilities.setEnabled(customPanel, false);
                     customTable.clearSelection();
@@ -328,6 +333,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
             });
 
             customizeRadioButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     Utilities.setEnabled(customPanel, true);
                     removeButton.setEnabled(false);
@@ -349,6 +355,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
             customTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
             customTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+                @Override
                 public void valueChanged(ListSelectionEvent e) {
                     final int numSelected = customTable.getSelectedRows().length;
                     removeButton.setEnabled(numSelected >= 1);
@@ -357,12 +364,15 @@ public class JmsRoutingAssertionDialog extends JDialog {
             });
 
             customTable.addKeyListener(new KeyListener() {
+                @Override
                 public void keyPressed(KeyEvent e) {
                     if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                         editSelectedRow();
                     }
                 }
+                @Override
                 public void keyTyped(KeyEvent e) {}
+                @Override
                 public void keyReleased(KeyEvent e) {}
             });
 
@@ -389,6 +399,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
             });
 
             addButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     JmsMessagePropertyDialog editor = new JmsMessagePropertyDialog(JmsRoutingAssertionDialog.this, getExistingNames(), null);
                     editor.pack();
@@ -402,6 +413,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
             });
 
             removeButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     int[] selectedrows = customTable.getSelectedRows();
                     if (selectedrows != null && selectedrows.length > 0) {
@@ -413,6 +425,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
             });
 
             editButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     editSelectedRow();
                 }

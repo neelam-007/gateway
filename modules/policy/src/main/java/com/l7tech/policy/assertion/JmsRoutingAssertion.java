@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.JmsEndpointHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Holds information needed to route a message to an outbound JMS destination.
@@ -120,6 +121,23 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
             endpointOid = newEntityHeader.getOid();
             endpointName = newEntityHeader.getName();
         }
+    }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"routing"});
+
+        meta.put(SHORT_NAME, "Route via JMS");
+        meta.put(DESCRIPTION, "The incoming message will be routed via JMS to the protected service.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
+
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.JmsRoutingAssertionPropertiesAction");
+        meta.put(PROPERTIES_ACTION_NAME, "JMS Routing Properties");
+        
+        return meta;
     }
 
     private Long endpointOid = null;

@@ -23,7 +23,6 @@ public class RoutingFolderNode extends AbstractPaletteFolderNode {
     protected void doLoadChildren() {
         int index = 0;
         children = null;
-        insert(new JmsRoutingNode(), index++);
         // insert(new SmtpRoutingNode(), index++);
         index = insertMatchingModularAssertions(index);
         insertMatchingCustomAssertions(index, Category.ROUTING);

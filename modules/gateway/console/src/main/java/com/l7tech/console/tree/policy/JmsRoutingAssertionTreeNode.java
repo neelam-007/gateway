@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
@@ -20,23 +21,25 @@ import java.util.Arrays;
  * 
  * @author <a href="mailto:mlyons@layer7-tech.com">Mike Lyons</a>
  */
-public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
+public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsRoutingAssertion> {
 
-    public JmsRoutingAssertionTreeNode(RoutingAssertion assertion) {
+    public JmsRoutingAssertionTreeNode(JmsRoutingAssertion assertion) {
         super(assertion);
     }
 
     /**
      * @return the node name that is displayed
      */
+    @Override
     public String getName(final boolean decorate) {
-        final String assertionName = "Route via JMS";
-        final String name = "Route to JMS Queue ";
-        JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
+        final JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
+        final String assertionName = ass.meta().get(AssertionMetadata.SHORT_NAME).toString();
+        if(!decorate) return assertionName;
+
         String actor = SecurityHeaderAddressableSupport.getActorSuffix(ass);
 
         if (ass.getEndpointOid() == null) {
-            return name + "(Not Yet Specified)" + actor;
+            return assertionName + " (Not Yet Specified)" + actor;
         }
         String endpointName;
         try {
@@ -49,7 +52,7 @@ public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
         } catch(FindException e) {
             endpointName = ass.getEndpointName();
         }
-        return (decorate)? name + (endpointName == null ? "(unnamed)" : endpointName) + actor: assertionName;
+        return assertionName +" Queue " + (endpointName == null ? "(unnamed)" : endpointName) + actor;
     }
 
     /**
@@ -66,23 +69,4 @@ public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
-
-    /**
-     * Gets the default action for this node.
-     * 
-     * @return <code>null</code> indicating there should be none default action
-     */
-    public Action getPreferredAction() {
-        return new JmsRoutingAssertionPropertiesAction(this);
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     * 
-     * @param open for nodes that can be opened, can have children
-     */
-    protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/server16.gif";
-    }
-
 }
