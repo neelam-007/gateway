@@ -10,7 +10,7 @@ import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.TimeRangePropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.TimeRangeTreeNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.TimeRange;
 
@@ -21,25 +21,10 @@ import java.util.logging.Level;
 /**
  * Action for viewing or editing the properties of a TimeRange assertion.
  */
-public class TimeRangePropertiesAction extends SecureAction {
-    public TimeRangePropertiesAction(TimeRangeTreeNode subject) {
-        super(null, TimeRange.class);
+public class TimeRangePropertiesAction extends NodeActionWithMetaSupport {
+    public TimeRangePropertiesAction(AssertionTreeNode<TimeRange> subject) {
+        super(null, TimeRange.class, subject.asAssertion());
         this.subject = subject;
-    }
-
-    @Override
-    public String getName() {
-        return "Time/Day Availability Properties";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Change the properties of the time and day availability assertion.";
-    }
-
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     @Override
@@ -66,5 +51,5 @@ public class TimeRangePropertiesAction extends SecureAction {
         }
     };
 
-    private TimeRangeTreeNode subject;
+    private AssertionTreeNode<TimeRange> subject;
 }

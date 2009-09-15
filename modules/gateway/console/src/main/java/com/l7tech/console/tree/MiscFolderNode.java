@@ -25,7 +25,6 @@ public class MiscFolderNode extends AbstractPaletteFolderNode {
     protected void doLoadChildren() {
         int index = 0;
         children = null;
-        insert( new TimeRangePaletteNode(), index++ );
         index = insertMatchingModularAssertions(index);
         insertMatchingCustomAssertions(index, Category.AVAILABILITY);
     }

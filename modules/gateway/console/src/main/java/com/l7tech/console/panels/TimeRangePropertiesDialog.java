@@ -3,10 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.policy.assertion.TimeRange;
-import com.l7tech.policy.assertion.TimeOfDayRange;
-import com.l7tech.policy.assertion.TimeOfDay;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
@@ -25,15 +22,14 @@ import java.util.*;
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 16, 2004<br/>
+ * @author flascell<br/>
  * $Id$<br/>
  *
  */
-public class TimeRangePropertiesDialog extends JDialog {
+public class TimeRangePropertiesDialog extends LegacyAssertionPropertyDialog {
 
     public TimeRangePropertiesDialog(Frame owner, boolean modal, boolean readOnly, TimeRange assertion) {
-        super(owner, modal);
+        super(owner, assertion, modal);
         this.readOnly = readOnly;
         this.assertion = assertion;
         initialize();
@@ -57,6 +53,7 @@ public class TimeRangePropertiesDialog extends JDialog {
         wasoked = true;
         SwingUtilities.invokeLater(
           new Runnable() {
+              @Override
               public void run() {
                   EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
                   if (listeners != null && listeners.length > 0) {
@@ -98,9 +95,8 @@ public class TimeRangePropertiesDialog extends JDialog {
                              resources.getString("week.friday"),
                              resources.getString("week.saturday")};
 
-        inputValidator = new InputValidator(this, resources.getString("window.title"));
+        inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
 
-        setTitle(resources.getString("window.title"));
         Container contents = getContentPane();
         contents.setLayout(new BorderLayout(0,0));
         contents.add(makeGlobalPanel(), BorderLayout.CENTER);
@@ -225,58 +221,69 @@ public class TimeRangePropertiesDialog extends JDialog {
 
     private void setCallbacks() {
         inputValidator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
         helpButton.addActionListener( new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(TimeRangePropertiesDialog.this);
             }
         });
 
         enableTimeOfDay.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 toggleTimeOfDay();
             }
         });
 
         enableDayOfWeek.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 toggleDayOfWeek();
             }
         });
         startHr.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 refreshStartUTCLabel();
             }
         });
         endHr.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 refreshEndUTCLabel();
             }
         });
         startMin.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 refreshStartUTCLabel();
             }
         });
         endMin.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 refreshEndUTCLabel();
             }
         });
         startSec.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 refreshStartUTCLabel();
             }
         });
         endSec.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 refreshEndUTCLabel();
             }

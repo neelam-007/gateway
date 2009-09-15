@@ -1,5 +1,9 @@
 package com.l7tech.policy.assertion;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+
+import java.util.Calendar;
+
 /**
  * The time range assertion performs authorization based on the time of day and
  * day of week at which the ssg receives a requests. This allows the ssg administrator
@@ -12,8 +16,7 @@ package com.l7tech.policy.assertion;
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 18, 2004<br/>
+ * @author flascell<br/>
  * $Id$
  * 
  */
@@ -135,6 +138,89 @@ public class TimeRange extends Assertion {
         this.endDayOfWeek = endDayOfWeek;
     }
 
+    private final static String baseName = "Limit Availability to Time/Days";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<TimeRange>(){
+        @Override
+        public String getAssertionName( final TimeRange assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            final StringBuffer buffer = new StringBuffer("Limit Availability to: ");
+
+            if (!assertion.isControlDay() && !assertion.isControlTime()){
+                buffer.append("No Availability Defined");
+                return buffer.toString();
+            }
+
+            if (assertion.isControlDay()) {
+                buffer.append(week[assertion.getStartDayOfWeek()-1] +
+                            " through " + week[assertion.getEndDayOfWeek()-1] + " ");
+            }
+
+            if (assertion.isControlTime() && assertion.getTimeRange() != null) {
+                TimeOfDayRange tr = assertion.getTimeRange();
+                buffer.append("from " + timeToString(utcToLocalTime(tr.getFrom())) + " to " +
+                                      timeToString(utcToLocalTime(tr.getTo())));
+            }
+            return buffer.toString();
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"misc"});
+
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Restrict service access by time of day and/or day of week.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/time.gif");
+        
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.TimeRangePropertiesAction");
+        meta.put(PROPERTIES_ACTION_NAME, "Time/Day Availability Properties");
+        return meta;
+    }
+
+    private static String timeToString(TimeOfDay tod) {
+        return (tod.getHour() < 10 ? "0" : "") + tod.getHour() +
+               (tod.getMinute() < 10 ? ":0" : ":") + tod.getMinute() +
+               (tod.getSecond() < 10 ? ":0" : ":") + tod.getSecond();
+    }
+
+    private static TimeOfDay utcToLocalTime(TimeOfDay utc) {
+        int totOffsetInMin = Calendar.getInstance().getTimeZone().getOffset(System.currentTimeMillis()) / (1000*60);
+        int hroffset = totOffsetInMin/60;
+        int minoffset = totOffsetInMin%60;
+        int utchr = utc.getHour() + hroffset;
+        int utcmin = utc.getMinute() + minoffset;
+        while (utcmin >= 60) {
+            ++utchr;
+            utcmin -= 60;
+        }
+        while (utchr >= 24) {
+            utchr -= 24;
+        }
+        while (utcmin < 0) {
+            --utchr;
+            utcmin += 60;
+        }
+        while (utchr < 0) {
+            utchr += 24;
+        }
+        return new TimeOfDay(utchr, utcmin, utc.getSecond());
+    }
+
+    private static final String[] week = {"Sunday",
+                                          "Monday",
+                                          "Tuesday",
+                                          "Wednesday",
+                                          "Thursday",
+                                          "Friday",
+                                          "Saturday"};
+    
     private boolean controlTime;
     private boolean controlDay;
     private TimeOfDayRange timeRange;
