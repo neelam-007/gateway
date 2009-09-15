@@ -1385,7 +1385,9 @@ public class SoapUtil extends SoapConstants {
             }
         }
 
-        bindingOperations = matchOperationsWithSoapBody(context.getPayload(), bindingOperations, context.getWsdl());
+        if ( context.getPayload() != null ) {
+            bindingOperations = matchOperationsWithSoapBody(context.getPayload(), bindingOperations, context.getWsdl());
+        }
         if (bindingOperations == null || bindingOperations.size() < 1) {
             log.info("request payload did not match any operation in the wsdl." +
                      " perhaps the request is not valid for this wsdl");
@@ -1688,16 +1690,22 @@ public class SoapUtil extends SoapConstants {
 
     public static Operation getOperation(final Wsdl wsdl, final Message request)
             throws IOException, SAXException, InvalidDocumentFormatException {
-        final XmlKnob requestXml = (XmlKnob)request.getKnob(XmlKnob.class);
+        final XmlKnob requestXml = request.getKnob(XmlKnob.class);
         if (requestXml == null) {
-            log.info("Can't get operation for non-XML message");
+            log.fine("Can't get operation for non-XML message");
+            return null;
+        }
+        if (wsdl == null) {
+            log.fine("Can't get operation without WSDL");
             return null;
         }
         OperationSearchContext context = new OperationSearchContext() {
+            @Override
             public Wsdl getWsdl() {
                 return wsdl;
             }
 
+            @Override
             public Element getPayload() throws InvalidDocumentFormatException, IOException, SAXException {
                 if (payload == null) {
                     Document requestDoc = requestXml.getDocumentReadOnly();
@@ -1706,9 +1714,10 @@ public class SoapUtil extends SoapConstants {
                 return payload;
             }
 
+            @Override
             public boolean hasHttpRequestKnob() throws IOException {
                 if (hasHttpRequestKnob == null) {
-                    HttpRequestKnob requestHttp = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
+                    HttpRequestKnob requestHttp = request.getKnob(HttpRequestKnob.class);
                     if (requestHttp == null) {
                         hasHttpRequestKnob = Boolean.FALSE;
                     } else {
@@ -1719,6 +1728,7 @@ public class SoapUtil extends SoapConstants {
                 return hasHttpRequestKnob;
             }
 
+            @Override
             public String getSoapaction() {
                 return saction;
             }
