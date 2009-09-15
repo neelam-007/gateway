@@ -86,7 +86,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
      * @param a      assertion to edit
      */
     public FtpRoutingPropertiesDialog(Window owner, FtpRoutingAssertion a) {
-        super(owner, "FTP(S) Routing Properties");
+        super(owner, a);
         _assertion = a;
         initComponents();
         initFormData();
@@ -129,6 +129,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
 
         SwingUtilities.invokeLater(
           new Runnable() {
+              @Override
               public void run() {
                   int[] indices = new int[parent.getChildren().indexOf(a)];
                   PolicyEvent event = new
@@ -154,6 +155,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         Utilities.setEscKeyStrokeDisposes(this);
 
         final ActionListener securityListener = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableComponents();
                 setDefaultPortNumber();
@@ -164,13 +166,17 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         _ftpsImplicitRadioButton.addActionListener(securityListener);
 
         _hostNameTextField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) { enableOrDisableComponents(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { enableOrDisableComponents(); }
+            @Override
             public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
         });
 
         _portNumberTextField.setDocument(new NumberField(5));
         _portNumberTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
             public void run() {
                 enableOrDisableComponents();
             }
@@ -179,6 +185,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         _timeoutTextField.setDocument(new NumberField(6));
 
         final ActionListener filenameListener = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 _filenamePatternTextField.setEnabled(_filenamePatternRadioButton.isSelected());
                 enableOrDisableComponents();
@@ -188,13 +195,17 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         _filenamePatternRadioButton.addActionListener(filenameListener);
 
         _filenamePatternTextField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) { enableOrDisableComponents(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { enableOrDisableComponents(); }
+            @Override
             public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
         });
         Utilities.enableGrayOnDisabled(_filenamePatternTextField);
 
         final ActionListener credentialsListener = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableComponents();
             }
@@ -203,19 +214,24 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         _credentialsSpecifyRadioButton.addActionListener(credentialsListener);
 
         _userNameTextField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) { enableOrDisableComponents(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { enableOrDisableComponents(); }
+            @Override
             public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
         });
         Utilities.enableGrayOnDisabled(_userNameTextField);
         Utilities.enableGrayOnDisabled(_passwordField);
 
         _useClientCertCheckBox.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 enableOrDisableComponents();
             }
         });
         _clientCertsComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableComponents();
             }
@@ -224,12 +240,14 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
         _testButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 testConnection();
             }
         });
 
         _okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 getData(_assertion);
                 fireEventAssertionChanged(_assertion);
@@ -239,6 +257,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         });
 
         _cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 FtpRoutingPropertiesDialog.this.dispose();
             }
@@ -337,16 +356,19 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         return portStatusLabelVisible;
     }
 
+    @Override
     public boolean isConfirmed() {
         return _wasOkButtonPressed;
     }
 
+    @Override
     public void setData(FtpRoutingAssertion assertion) {
         this._assertion = assertion;
         initFormData();
     }
 
     /** Copies view into model. */
+    @Override
     public FtpRoutingAssertion getData(FtpRoutingAssertion assertion) {
         if (_ftpUnsecuredRadioButton.isSelected()) {
             assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
@@ -423,6 +445,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             Utilities.centerOnScreen(cancelDialog);
 
             Callable<Boolean> callable = new Callable<Boolean>() {
+                @Override
                 public Boolean call() throws Exception {
                     final FtpRoutingAssertion a = getData(new FtpRoutingAssertion());
                     final boolean isFtps = a.getSecurity() == FtpSecurity.FTPS_EXPLICIT || a.getSecurity() == FtpSecurity.FTPS_IMPLICIT;

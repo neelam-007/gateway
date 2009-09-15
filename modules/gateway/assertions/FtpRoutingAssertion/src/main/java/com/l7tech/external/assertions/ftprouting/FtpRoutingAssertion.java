@@ -5,11 +5,8 @@
 package com.l7tech.external.assertions.ftprouting;
 
 import com.l7tech.util.Functions;
-import com.l7tech.policy.assertion.AssertionMetadata;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -200,31 +197,38 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         _userName = userName;
     }
 
+    private final static String baseName = "Route via FTP(S)"; 
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<FtpRoutingAssertion>(){
+        @Override
+        public String getAssertionName( final FtpRoutingAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            final StringBuilder sb = new StringBuilder("Route via FTP");
+            if (assertion.getSecurity() == FtpSecurity.FTPS_EXPLICIT ||
+                assertion.getSecurity() == FtpSecurity.FTPS_IMPLICIT) {
+                sb.append("S");
+            }
+            sb.append(" Server ");
+            sb.append(assertion.getHostName());
+            return sb.toString();
+        }
+    };
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(SHORT_NAME, "FTP(S) Routing Assertion");
-        meta.put(LONG_NAME, "Route request to FTP server");
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Route requests from the Gateway to a backend FTP(S) server, using passive mode FTP.");
 
-        meta.put(PALETTE_NODE_NAME, "FTP(S) Routing Assertion");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "routing" });
 
-        meta.put(POLICY_NODE_NAME, "Route request to FTP(S) server");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, FtpRoutingAssertion>() {
-            public String call(FtpRoutingAssertion assertion) {
-                final StringBuilder sb = new StringBuilder("Route request to FTP");
-                if (assertion.getSecurity() == FtpSecurity.FTPS_EXPLICIT ||
-                    assertion.getSecurity() == FtpSecurity.FTPS_IMPLICIT) {
-                    sb.append("S");
-                }
-                sb.append(" server ");
-                sb.append(assertion.getHostName());
-                return sb.toString();
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
+        meta.put(PROPERTIES_ACTION_NAME, "FTP(S) Routing Properties");
         meta.put(WSP_EXTERNAL_NAME, "FtpRoutingAssertion");
         final TypeMapping typeMapping = (TypeMapping)meta.get(WSP_TYPE_MAPPING_INSTANCE);
         meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
