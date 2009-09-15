@@ -73,8 +73,14 @@ public final class PolicyVariableUtils {
         return vars;
     }
 
+    /**
+     * Get the variables that are known to be used by successor assertions.
+     *
+     * @param assertion The assertion to process.
+     * @return The Set of variables names (case insensitive), may be empty but never null.
+     */
     public static Set<String> getVariablesUsedBySuccessors( Assertion assertion ) {
-        Set<String> vars = new HashSet<String>();
+        Set<String> vars = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
         if ( assertion != null ) {
             CompositeAssertion parent = assertion.getParent();

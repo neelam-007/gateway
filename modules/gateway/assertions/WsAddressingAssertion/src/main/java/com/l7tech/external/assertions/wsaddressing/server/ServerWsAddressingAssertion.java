@@ -324,12 +324,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             if ( assertion.getVariablePrefix() != null ) {
                 final String elementsVariableName = assertion.getVariablePrefix() + "." + WsAddressingAssertion.VAR_SUFFIX_ELEMENTS;
                 Set<String> vars = PolicyVariableUtils.getVariablesUsedBySuccessors(assertion);
-                for ( String var : vars ) {
-                    if ( var != null && var.equalsIgnoreCase( elementsVariableName )) {
-                        elementsVariableUsed = true;
-                        break;
-                    }
-                }
+                elementsVariableUsed = vars.contains( elementsVariableName );
             }
             this.elementsVariableUsed = elementsVariableUsed;                
         }
