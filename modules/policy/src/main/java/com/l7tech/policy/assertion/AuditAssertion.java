@@ -6,6 +6,8 @@
 
 package com.l7tech.policy.assertion;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+
 import java.util.logging.Level;
 
 /**
@@ -83,4 +85,31 @@ public class AuditAssertion extends Assertion {
         Level.INFO.getName(),
         Level.WARNING.getName(),
     };
+
+    private final static String baseName = "Audit Messages in Policy";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<AuditAssertion>(){
+        @Override
+        public String getAssertionName( final AuditAssertion assertion, final boolean decorate) {
+            return baseName;
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"audit"});
+
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Set the audit level for the policy and optionally record request and response messages.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Edit16.gif");
+
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.AuditAssertionPropertiesAction");
+        meta.put(PROPERTIES_ACTION_NAME, "Audit Properties");
+        return meta;
+    }
 }

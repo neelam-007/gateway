@@ -14,7 +14,7 @@ import java.util.logging.Level;
 /**
  * Dialog for editing the properties of an {@link AuditAssertion}.
  */
-public class AuditAssertionDialog extends JDialog {
+public class AuditAssertionDialog extends LegacyAssertionPropertyDialog {
     private JPanel mainPanel;
     private JButton cancelButton;
     private JButton okButton;
@@ -31,7 +31,7 @@ public class AuditAssertionDialog extends JDialog {
     private Level currentServerThreshold;
 
     public AuditAssertionDialog(Frame owner, AuditAssertion ass, String serverThreshold, boolean readOnly) throws HeadlessException {
-        super(owner, "Audit Assertion Properties", true);
+        super(owner, ass, true);
         this.assertion = ass;
         currentServerThreshold = Level.parse(serverThreshold);
 
@@ -51,6 +51,7 @@ public class AuditAssertionDialog extends JDialog {
         okButton.setEnabled(!readOnly);
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 assertion.setLevel((String) levelCombo.getSelectedItem());
                 assertion.setSaveRequest(saveRequestCheckbox.isSelected());
@@ -61,6 +62,7 @@ public class AuditAssertionDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 modified = false;
                 dispose();
@@ -68,6 +70,7 @@ public class AuditAssertionDialog extends JDialog {
         });
 
         levelCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateThresholdLabel();
             }

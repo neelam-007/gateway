@@ -52,7 +52,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(ResponseXpathAssertion.class, ResponseXpathPolicyTreeNode.class);
         assertionMap.put(EmailAlertAssertion.class, EmailAlertAssertionTreeNode.class);
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
-        assertionMap.put(AuditAssertion.class, AuditAssertionPolicyNode.class);
         assertionMap.put(AuditDetailAssertion.class, AuditDetailAssertionTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenExchange.class, WsFederationPassiveTokenRequestTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenRequest.class, WsFederationPassiveTokenRequestTreeNode.class);

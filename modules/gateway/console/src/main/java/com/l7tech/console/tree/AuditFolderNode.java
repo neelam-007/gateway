@@ -17,10 +17,10 @@ public class AuditFolderNode extends AbstractPaletteFolderNode {
     /**
      * subclasses override this method
      */
+    @Override
     protected void doLoadChildren() {
         int index = 0;
         children = null;
-        insert( new AuditAssertionPaletteNode(), index++ );
         insert( new AuditDetailAssertionPaletteNode(), index++ );
         insert( new EmailAlertAssertionPaletteNode(), index++ );
         insert(new FaultLevelPaletteNode(), index++);
