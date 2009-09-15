@@ -4,7 +4,6 @@ import com.l7tech.console.panels.SchemaValidationPropertiesDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
@@ -29,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class SchemaValidationPropertiesAction extends NodeActionWithMetaSupport {
 
-    public SchemaValidationPropertiesAction(AssertionTreeNode node) {
+    public SchemaValidationPropertiesAction(AssertionTreeNode<SchemaValidation> node) {
         super(null, SchemaValidation.class, node.asAssertion());
         this.node = node;
     }
@@ -91,5 +90,5 @@ public class SchemaValidationPropertiesAction extends NodeActionWithMetaSupport 
     }
 
     private final Logger log = Logger.getLogger(getClass().getName());
-    private AssertionTreeNode node;
+    private AssertionTreeNode<SchemaValidation> node;
 }

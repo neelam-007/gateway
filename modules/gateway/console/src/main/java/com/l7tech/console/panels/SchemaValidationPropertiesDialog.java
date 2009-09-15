@@ -134,9 +134,9 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
     private volatile TargetMessageType inferredTargetMessageType;
 
-    public SchemaValidationPropertiesDialog(Frame owner, AssertionTreeNode node, TargetMessageType inferredTarget) {
+    public SchemaValidationPropertiesDialog(Frame owner, AssertionTreeNode<SchemaValidation> node, TargetMessageType inferredTarget) {
         super(owner, node.asAssertion(), true);
-        final SchemaValidation assertion = (SchemaValidation) node.asAssertion();
+        final SchemaValidation assertion = node.asAssertion();
         if (assertion == null) throw new IllegalArgumentException("Schema Validation Node == null");
         try {
             this.service = node.getService();

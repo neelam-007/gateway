@@ -25,9 +25,9 @@ import java.util.logging.Level;
  * @author flascell<br/>
  */
 public class OperationPropertiesAction extends NodeActionWithMetaSupport {
-    private final AssertionTreeNode subject;
+    private final AssertionTreeNode<Operation> subject;
 
-    public OperationPropertiesAction(AssertionTreeNode node) {
+    public OperationPropertiesAction(AssertionTreeNode<Operation> node) {
         super(node, Operation.class, node.asAssertion());
         this.subject = node;
     }
@@ -61,7 +61,7 @@ public class OperationPropertiesAction extends NodeActionWithMetaSupport {
             return;
         }
 
-        final WSDLOperationPropertiesDialog dlg = new WSDLOperationPropertiesDialog(f, (Operation)subject.asAssertion(), operations);
+        final WSDLOperationPropertiesDialog dlg = new WSDLOperationPropertiesDialog(f, subject.asAssertion(), operations);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

@@ -7,7 +7,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.WsiSamlPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.WsiSamlAssertionPolicyNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.WsiSamlAssertion;
 
@@ -19,30 +19,13 @@ import java.util.logging.Logger;
 /**
  * Edit properties action for WSI-SAML Token Profile assertion.
  */
-public class WsiSamlAssertionPropertiesAction extends SecureAction {
+public class WsiSamlAssertionPropertiesAction extends NodeActionWithMetaSupport {
 
     //- PUBLIC
 
-    public WsiSamlAssertionPropertiesAction(WsiSamlAssertionPolicyNode node) {
-        super(null, WsiSamlAssertion.class);
+    public WsiSamlAssertionPropertiesAction(AssertionTreeNode node) {
+        super(null, WsiSamlAssertion.class, node.asAssertion());
         this.node = node;
-    }
-
-    @Override
-    public String getName() {
-        return "WSI-SAML Properties";
-    }
-
-    @Override
-    public String getDescription() {
-        return "View/Edit properties of the WS-I SAML assertion.";
-    }
-
-    //- PROTECTED
-
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     @Override
@@ -52,6 +35,7 @@ public class WsiSamlAssertionPropertiesAction extends SecureAction {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if(dlg.isAssertionChanged()) {
                     JTree tree = TopComponents.getInstance().getPolicyTree();
@@ -70,5 +54,5 @@ public class WsiSamlAssertionPropertiesAction extends SecureAction {
 
     private final Logger log = Logger.getLogger(getClass().getName());
 
-    private WsiSamlAssertionPolicyNode node;
+    private AssertionTreeNode<WsiSamlAssertion> node;
 }

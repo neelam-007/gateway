@@ -16,12 +16,12 @@ import com.l7tech.console.event.PolicyListener;
  * @author $Author$
  * @version $Revision$
  */
-public class WsiSamlPropertiesDialog extends JDialog {
+public class WsiSamlPropertiesDialog extends LegacyAssertionPropertyDialog {
 
     //- PUBLIC
 
     public WsiSamlPropertiesDialog(WsiSamlAssertion assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
-        super(owner, "Configure WS-I SAML Token Profile properties", modal);
+        super(owner, assertion, modal);
         this.wsiSamlAssertion = assertion;
 
         checkRequestMessagesCheckBox.setSelected(wsiSamlAssertion.isCheckRequestMessages());
@@ -55,6 +55,7 @@ public class WsiSamlPropertiesDialog extends JDialog {
         getContentPane().add(mainPanel);
 
         RunOnChangeListener rocl = new RunOnChangeListener(new Runnable(){
+            @Override
             public void run() {
                 updateControls();
             }
@@ -64,6 +65,7 @@ public class WsiSamlPropertiesDialog extends JDialog {
 
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 boolean requestAudit = reqAuditRadioButton.isSelected() || reqAuditFailRadioButton.isSelected();
                 boolean responseAudit = resAuditRadioButton.isSelected() || resAuditFailRadioButton.isSelected();
@@ -83,6 +85,7 @@ public class WsiSamlPropertiesDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 wsiSamlAssertion = null;
                 dispose();
@@ -100,7 +103,6 @@ public class WsiSamlPropertiesDialog extends JDialog {
 
     private WsiSamlAssertion wsiSamlAssertion;
     private boolean assertionChanged = false;
-    private PolicyListener listener;
 
     private final ButtonGroup requestButtonGroup;
     private final ButtonGroup responseButtonGroup;
