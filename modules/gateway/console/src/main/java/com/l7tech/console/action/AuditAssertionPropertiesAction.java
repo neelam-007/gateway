@@ -14,11 +14,13 @@ import com.l7tech.policy.assertion.AuditAssertion;
 
 import javax.swing.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Display properties dialog for AuditAssertion.
  */
 public class AuditAssertionPropertiesAction extends NodeActionWithMetaSupport {
+    static final Logger log = Logger.getLogger(AuditAssertionPropertiesAction.class.getName());
     private final AssertionTreeNode<AuditAssertion> subject;
 
     public AuditAssertionPropertiesAction(AssertionTreeNode<AuditAssertion> subject) {

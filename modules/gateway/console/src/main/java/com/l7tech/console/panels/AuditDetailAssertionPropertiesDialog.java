@@ -19,7 +19,7 @@ import java.util.logging.Level;
  * User: flascell<br/>
  * Date: Jan 19, 2006<br/>
  */
-public class AuditDetailAssertionPropertiesDialog extends JDialog {
+public class AuditDetailAssertionPropertiesDialog extends LegacyAssertionPropertyDialog {
     private JPanel mainPanel;
     private JTextArea detailTextArea;
     private JComboBox levelComboBox;
@@ -32,19 +32,21 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
     private static abstract class ComboAction extends AbstractAction implements ActionListener { }
 
     private final ComboAction okAction = new ComboAction() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             ok();
         }
     };
 
     private final ComboAction cancelAction = new ComboAction() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             cancel();
         }
     };
 
     public AuditDetailAssertionPropertiesDialog(Frame owner, AuditDetailAssertion assertion, boolean readOnly) {
-        super(owner, true);
+        super(owner, assertion, true);
         this.readOnly = readOnly;
         this.assertion = assertion;
         initialize();
@@ -64,8 +66,11 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
         levelComboBox.setSelectedItem(assertion.getLevel());
         detailTextArea.setText(assertion.getDetail());
         detailTextArea.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) { enableButtons(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { enableButtons(); }
+            @Override
             public void changedUpdate(DocumentEvent e) { enableButtons(); }
         });
 

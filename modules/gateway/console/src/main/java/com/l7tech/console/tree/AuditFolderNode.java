@@ -21,7 +21,6 @@ public class AuditFolderNode extends AbstractPaletteFolderNode {
     protected void doLoadChildren() {
         int index = 0;
         children = null;
-        insert( new AuditDetailAssertionPaletteNode(), index++ );
         insert( new EmailAlertAssertionPaletteNode(), index++ );
         insert(new FaultLevelPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);
