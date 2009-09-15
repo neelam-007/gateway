@@ -6,6 +6,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.variable.Syntax;
 import org.xml.sax.SAXException;
 
@@ -19,8 +20,7 @@ import java.io.IOException;
  * Config dialog for HardcodedResponseAssertion.
  */
 public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<HardcodedResponseAssertion> {
-    private static final String TITLE = "Template Response Properties";
-    private final InputValidator validator = new InputValidator(this, TITLE);
+    private final InputValidator validator;
     private JPanel mainPanel;
     private JButton cancelButton;
     private JButton okButton;
@@ -35,7 +35,8 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
     private boolean confirmed = false;
 
     public HardcodedResponseDialog(Window owner, HardcodedResponseAssertion assertion) throws HeadlessException {
-        super(owner, TITLE);
+        super(owner, assertion);
+        validator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         doInit(assertion);
     }
 
@@ -48,12 +49,14 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
 
         validator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doSave();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doCancel();
             }
@@ -145,15 +148,18 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
         return assertion;
     }
 
+    @Override
     public boolean isConfirmed() {
         return confirmed;
     }
 
+    @Override
     public void setData(HardcodedResponseAssertion assertion) {
         this.assertion = assertion;
         updateView();
     }
 
+    @Override
     public HardcodedResponseAssertion getData(HardcodedResponseAssertion assertion) {
         return getAssertion();
     }
@@ -165,6 +171,7 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
 
     private InputValidator.ValidationRule getVariableValidationRule() {
         return new InputValidator.ValidationRule(){
+            @Override
             public String getValidationError() {
                 String error = null;
 
