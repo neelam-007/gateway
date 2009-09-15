@@ -2,10 +2,8 @@ package com.l7tech.external.assertions.ratelimit;
 
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -33,6 +31,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     private int maxConcurrency = 0;
     private boolean hardLimit = false;
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(getCounterName());
@@ -118,10 +117,62 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     public static final String PARAM_MAX_NAP_TIME = "ratelimitMaxNapTime";
     public static final String PARAM_MAX_TOTAL_SLEEP_TIME = "ratelimitMaxTotalSleepTime";
 
+    private final static String baseName = "Apply Rate Limit";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RateLimitAssertion>(){
+        @Override
+        public String getAssertionName( final RateLimitAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            int concurrency = assertion.getMaxConcurrency();
+            StringBuffer sb = new StringBuffer(baseName + ": ");
+            sb.append(assertion.isHardLimit() ? "up to " : "average ");
+            sb.append(assertion.getMaxRequestsPerSecond()).
+                    append(" msg/sec");
+            if (assertion.isShapeRequests()) sb.append(", shaped,");
+
+            final String counterName = assertion.getCounterName();
+            String prettyName = PresetInfo.findCounterNameKey(counterName, null);
+
+            sb.append(" per ").append(prettyName != null ? prettyName : ("\"" + counterName + "\""));
+            if (concurrency > 0) sb.append(" (concurrency ").append(concurrency).append(")");
+            return sb.toString();
+        }
+    };
+
+
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
+
+        // Request to appear in "misc" ("Service Availability") palette folder
+        meta.put(PALETTE_FOLDERS, new String[] { "misc" });
+        
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Enforce a maximum transactions per second that may pass through this assertion.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
+
+        meta.put(PROPERTIES_ACTION_NAME, "Rate Limit Properties");
+        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        // Customize newly-created assertions so they have a nice counter name
+        meta.put(ASSERTION_FACTORY, new Functions.Unary<RateLimitAssertion, RateLimitAssertion>() {
+            @Override
+            public RateLimitAssertion call(RateLimitAssertion rlaVariantPrototype) {
+                RateLimitAssertion rla = new RateLimitAssertion();
+                rla.setCounterName(PresetInfo.makeDefaultCounterName());
+                return rla;
+            }
+        });
+
+        // request default feature set name for our class name, since we are a known optional module
+        // that is, we want our required feature set to be "assertion:RateLimit" rather than "set:modularAssertions"
+        meta.put(FEATURE_SET_NAME, "(fromClass)");
 
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<String, String[]>();
@@ -141,51 +192,8 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
                 "Maximum total time a request subject to traffic shaping will wait before giving up and failing (Milliseconds)",
                 "18371"
         });
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
-        // Set description for GUI
-        meta.put(AssertionMetadata.LONG_NAME, "Enforce a maximum transactions per second that may pass through this assertion");
-
-        // Request to appear in "misc" ("Service Availability") palette folder
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
-
-        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-
-        // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RateLimitAssertion>() {
-            public String call(RateLimitAssertion ass) {
-                int concurrency = ass.getMaxConcurrency();
-                StringBuffer sb = new StringBuffer("Rate Limit: ");
-                sb.append(ass.isHardLimit() ? "up to " : "average ");
-                sb.append(ass.getMaxRequestsPerSecond()).
-                        append(" msg/sec");
-                if (ass.isShapeRequests()) sb.append(", shaped,");
-
-                final String counterName = ass.getCounterName();
-                String prettyName = PresetInfo.findCounterNameKey(counterName, null);
-
-                sb.append(" per ").append(prettyName != null ? prettyName : ("\"" + counterName + "\""));
-                if (concurrency > 0) sb.append(" (concurrency ").append(concurrency).append(")");
-                return sb.toString();
-            }
-        });
-
-        // Customize newly-created assertions so they have a nice counter name
-        meta.put(AssertionMetadata.ASSERTION_FACTORY, new Functions.Unary<RateLimitAssertion, RateLimitAssertion>() {
-            public RateLimitAssertion call(RateLimitAssertion rlaVariantPrototype) {
-                RateLimitAssertion rla = new RateLimitAssertion();
-                rla.setCounterName(PresetInfo.makeDefaultCounterName());
-                return rla;
-            }
-        });
-
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:RateLimit" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-
+        meta.put(CLUSTER_PROPERTIES, props);
+        
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

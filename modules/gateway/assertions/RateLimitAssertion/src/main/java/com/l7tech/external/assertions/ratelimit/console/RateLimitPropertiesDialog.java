@@ -36,7 +36,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
 
 
     public RateLimitPropertiesDialog(Window owner, RateLimitAssertion rla) throws HeadlessException {
-        super(owner, "Rate Limit Properties");
+        super(owner, rla);
         initialize(rla);
     }
 
@@ -51,6 +51,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.PresetInfo.DEFAULT_CONCURRENCY_LIMIT));
 
         ActionListener concListener = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateConcurrencyEnableState();
             }
@@ -60,6 +61,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
 
         counterCb.setModel(new DefaultComboBoxModel(new Vector<String>(RateLimitAssertion.PresetInfo.counterNameTypes.keySet())));
         counterCb.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateCounterNameEnableState();
             }
@@ -73,6 +75,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         if (rla != null) setData(rla);
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand().equals(okButton.getActionCommand())) {
             if (!checkValidity())
@@ -136,6 +139,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         return null == err;
     }
 
+    @Override
     public void setData(RateLimitAssertion rla) {
         String rawCounterName = rla.getCounterName();
 
@@ -168,6 +172,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         updateCounterNameEnableState();
     }
 
+    @Override
     public RateLimitAssertion getData(RateLimitAssertion rla) {
         String counterNameKey = (String)counterCb.getSelectedItem();
         String rawCounterName = RateLimitAssertion.PresetInfo.findRawCounterName(counterNameKey, uuid[0], counterNameField.getText().trim());
@@ -182,6 +187,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     /**
      * @return true if the dialog was dismissed by the user pressing the Ok button.
      */
+    @Override
     public boolean isConfirmed() {
         return confirmed;
     }
