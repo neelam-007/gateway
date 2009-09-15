@@ -7,7 +7,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.XslTransformationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.XslTransformationTreeNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
@@ -19,26 +19,11 @@ import java.util.logging.Logger;
 /**
  * Action for viewing or editing the properties of a Xsl Transformation Assertion node.
  */
-public class XslTransformationPropertiesAction extends SecureAction {
+public class XslTransformationPropertiesAction extends NodeActionWithMetaSupport {
 
-    public XslTransformationPropertiesAction(XslTransformationTreeNode node) {
-        super(null, XslTransformation.class);
+    public XslTransformationPropertiesAction(AssertionTreeNode node) {
+        super(null, XslTransformation.class ,node.asAssertion());
         this.node = node;
-    }
-
-    @Override
-    public String getName() {
-        return "XSL Transformation Properties";
-    }
-
-    @Override
-    public String getDescription() {
-        return "View/Edit properties of the xsl transformation assertion.";
-    }
-
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     @Override
@@ -49,6 +34,7 @@ public class XslTransformationPropertiesAction extends SecureAction {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (!dlg.wasOKed()) {
                     return;
@@ -66,5 +52,5 @@ public class XslTransformationPropertiesAction extends SecureAction {
     }
 
     private final Logger log = Logger.getLogger(getClass().getName());
-    private XslTransformationTreeNode node;
+    private AssertionTreeNode<XslTransformation> node;
 }

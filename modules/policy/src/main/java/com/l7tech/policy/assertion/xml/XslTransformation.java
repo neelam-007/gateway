@@ -4,10 +4,8 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.UsesResourceInfo;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.variable.Syntax;
@@ -171,6 +169,43 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
         this.varsUsed = vars.toArray(new String[vars.size()]);
 
         return varsUsed;
+    }
+
+    private final static String baseName = "Apply XSL Transformation";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<XslTransformation>(){
+        @Override
+        public String getAssertionName( final XslTransformation assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            StringBuilder nodeName = new StringBuilder(baseName);
+
+            final String tname = assertion.getTransformName();
+            if (tname != null && tname.length() > 0 && tname.trim().length() > 0) {
+                nodeName.append(" - ").append(tname);
+            }
+            return AssertionUtils.decorateName(assertion, nodeName);
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String []{"xml"});
+
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "XSL Transformation of a SOAP message.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
+
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.XslTransformationPropertiesAction");
+        meta.put(PROPERTIES_ACTION_NAME, "XSL Transformation Properties");
+
+        return meta;
+
     }
 
     private transient volatile String[] varsUsed;
