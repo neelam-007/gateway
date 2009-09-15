@@ -24,7 +24,6 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
     protected void doLoadChildren() {
         int index = 0;
         children = null;
-        insert(new SchemaValidationPaletteNode(), index++);
         insert(new XslTransformationPaletteNode(), index++);
         insert(new OperationPaletteNode(), index++);
         insert(new WsiBspPaletteNode(), index++);

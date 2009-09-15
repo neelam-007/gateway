@@ -33,6 +33,7 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
         super(assertion);
     }
 
+    @Override
     protected void doLoadChildren() {
     }
 
@@ -54,6 +55,7 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
      *
      * @param node the node to receive
      */
+    @Override
     public boolean receive(AbstractTreeNode node) {
         if (super.receive(node)) return true;
         
@@ -87,6 +89,7 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
      * @param draggingNode the node to accept
      * @return true if policy template node
      */
+    @Override
     public boolean accept(AbstractTreeNode draggingNode) {
         return super.accept(draggingNode) &&
                 (draggingNode instanceof PolicyTemplateNode || getParent() != null) &&

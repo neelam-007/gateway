@@ -50,7 +50,6 @@ public class AssertionTreeNodeFactory {
 
         assertionMap.put(RequestXpathAssertion.class, RequestXpathPolicyTreeNode.class);
         assertionMap.put(ResponseXpathAssertion.class, ResponseXpathPolicyTreeNode.class);
-        assertionMap.put(SchemaValidation.class, SchemaValidationTreeNode.class);
         assertionMap.put(XslTransformation.class, XslTransformationTreeNode.class);
         assertionMap.put(TimeRange.class, TimeRangeTreeNode.class);
         assertionMap.put(EmailAlertAssertion.class, EmailAlertAssertionTreeNode.class);

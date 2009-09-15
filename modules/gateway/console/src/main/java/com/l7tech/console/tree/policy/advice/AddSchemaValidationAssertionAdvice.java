@@ -18,8 +18,7 @@ import java.awt.*;
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 9, 2004<br/>
+ * @author flascell<br/>
  * $Id$<br/>
  *
  */
@@ -33,12 +32,12 @@ public class AddSchemaValidationAssertionAdvice extends AddContextSensitiveAsser
         
         SchemaValidation assertion = (SchemaValidation)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        //SchemaValidationTreeNode fakenode = new SchemaValidationTreeNode(assertion);
         final SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(mw, assertion, pc.getService());
         // show the dialog
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 // make sure a schema was entered
                 if (dlg.isChangesCommitted()) {

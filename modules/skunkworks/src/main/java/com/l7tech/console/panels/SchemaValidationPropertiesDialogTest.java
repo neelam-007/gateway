@@ -10,7 +10,6 @@ package com.l7tech.console.panels;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
-import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.registry.RegistryStub;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
@@ -52,7 +51,7 @@ public class SchemaValidationPropertiesDialogTest {
         SchemaValidation sass = new SchemaValidation();
         AssertionTreeNode tn = AssertionTreeNodeFactory.asTreeNode(sass);
 
-        SchemaValidationPropertiesDialog d = new SchemaValidationPropertiesDialog(null, (SchemaValidationTreeNode)tn, ps, null);
+        SchemaValidationPropertiesDialog d = new SchemaValidationPropertiesDialog(null, tn, null);
 
         d.setModal(true);
         d.pack();

@@ -6,10 +6,7 @@ package com.l7tech.policy.assertion.xml;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.assertion.AssertionResourceType;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
-import com.l7tech.policy.assertion.UsesResourceInfo;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.variable.Syntax;
@@ -59,10 +56,12 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
     }
 
     @Migration(mapName = MigrationMappingSelection.REQUIRED, mapValue = MigrationMappingSelection.NONE, resolver = PropertyResolver.Type.SCHEMA_ENTRY)
+    @Override
     public AssertionResourceInfo getResourceInfo() {
         return resourceInfo;
     }
 
+    @Override
     public void setResourceInfo(AssertionResourceInfo sri) {
         this.resourceInfo = sri;
     }
@@ -86,5 +85,40 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
             vars.addAll(Arrays.asList(Syntax.getReferencedNames(suri.getUrl())));
         }
         return vars.toArray(new String[vars.size()]);
+    }
+
+    private final static String baseName = "Validate XML Schema";
+    
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SchemaValidation>(){
+        @Override
+        public String getAssertionName( final SchemaValidation assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            return AssertionUtils.decorateName(assertion, baseName);
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml", "threatProtection"});
+
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.DESCRIPTION, "<html>Schema Validation can be used to protect against the following threats: " +
+                "<ul> " +
+                "<li><b>XML Parameter Tampering</b> - Validates all XML parameters in the request to ensure conformance to the Schema</li> " +
+                "<li><b>XDoS Attacks</b> - Ensures that the message structure and content are correct</li> " +
+                "</ul> " +
+                "</html>");
+
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
+
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.SchemaValidationPropertiesAction");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "XML Schema Validation Properties");
+
+        return meta;
     }
 }

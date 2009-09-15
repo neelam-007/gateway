@@ -11,7 +11,7 @@ import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.schema.SchemaEntry;
@@ -21,6 +21,7 @@ import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
@@ -66,7 +67,7 @@ import java.util.logging.Logger;
 /**
  * A dialog to view / configure the properties of a schema validation assertion.
  */
-public class SchemaValidationPropertiesDialog extends JDialog {
+public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDialog {
     private static final Logger logger = Logger.getLogger(SchemaValidationPropertiesDialog.class.getName());
     private static final ResourceBundle resources =
             ResourceBundle.getBundle("com.l7tech.console.resources.SchemaValidationPropertiesDialog", Locale.getDefault());
@@ -133,19 +134,23 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     private volatile TargetMessageType inferredTargetMessageType;
 
-    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service, TargetMessageType inferredTarget) {
-        super(owner, true);
-        final SchemaValidation assertion = node.asAssertion();
+    public SchemaValidationPropertiesDialog(Frame owner, AssertionTreeNode node, TargetMessageType inferredTarget) {
+        super(owner, node.asAssertion(), true);
+        final SchemaValidation assertion = (SchemaValidation) node.asAssertion();
         if (assertion == null) throw new IllegalArgumentException("Schema Validation Node == null");
+        try {
+            this.service = node.getService();
+        } catch (FindException e) {
+            throw new IllegalStateException("Service not found", e);
+        }
         this.readOnly = !node.canEdit();
         schemaValidationAssertion = assertion;
-        this.service = service;
         this.inferredTargetMessageType = inferredTarget;
         initialize();
     }
 
     public SchemaValidationPropertiesDialog(Frame owner, SchemaValidation assertion, PublishedService service) {
-        super(owner, true);
+        super(owner, assertion, true);
         if (assertion == null) {
             throw new IllegalArgumentException("Schema Validation == null");
         }
@@ -158,8 +163,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     private void initialize() {
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
-
-        setTitle(resources.getString("window.title"));
 
         // create controls
         allocControls();
@@ -209,32 +212,38 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
         // create callbacks
         cbSchemaLocation.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateModeComponents();
             }
         });
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
         helpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(SchemaValidationPropertiesDialog.this);
             }
         });
         readFromWsdlButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 readFromWsdl();
             }
         });
         editGlobalXMLSchemasButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 launchGlobalSchemasDlg();
             }
@@ -243,6 +252,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         readFromWsdlButton.setEnabled(wsdlExtractSupported());
         readFromWsdlButton.setToolTipText("Extract schema from WSDL; available for 'document/literal' style services");
         readUrlButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final OkCancelDialog dlg = new OkCancelDialog(SchemaValidationPropertiesDialog.this,
                                                         resources.getString("urlDialog.title"),
@@ -251,6 +261,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
                 DialogDisplayer.display(dlg, new Runnable() {
+                    @Override
                     public void run() {
                         String url = (String)dlg.getValue();
                         if (url != null) {
@@ -266,12 +277,14 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         });
 
         readFileButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 readFromFile();
             }
         });
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 modelToView();
                 updateModeComponents();
@@ -367,6 +380,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 reloadGlobalSchemaList();
             }
@@ -690,6 +704,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private void cancel() {
         SchemaValidationPropertiesDialog.this.dispose();
     }
+
+    @Override
     public void dispose() {
         xmlContainer.dispose();
         super.dispose();
@@ -722,6 +738,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         schemafromwsdlchooser.pack();
         Utilities.centerOnScreen(schemafromwsdlchooser);
         DialogDisplayer.display(schemafromwsdlchooser, new Runnable() {
+            @Override
             public void run() {
                 String result = schemafromwsdlchooser.getOkedSchema();
                 if (result != null) {
@@ -735,6 +752,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     private void readFromFile() {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser fc) {
                 doRead(fc);
             }
