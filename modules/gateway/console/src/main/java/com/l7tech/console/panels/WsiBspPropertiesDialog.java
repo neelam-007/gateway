@@ -16,12 +16,12 @@ import com.l7tech.gui.util.Utilities;
  * @author $Author$
  * @version $Revision$
  */
-public class WsiBspPropertiesDialog extends JDialog {
+public class WsiBspPropertiesDialog extends LegacyAssertionPropertyDialog {
 
     //- PUBLIC
 
     public WsiBspPropertiesDialog(WsiBspAssertion assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
-        super(owner, "Configure WS-I BSP properties", modal);
+        super(owner, assertion, modal);
         this.wsiBspAssertion = assertion;
 
         checkRequestMessagesCheckBox.setSelected(wsiBspAssertion.isCheckRequestMessages());
@@ -55,6 +55,7 @@ public class WsiBspPropertiesDialog extends JDialog {
         getContentPane().add(mainPanel);
 
         RunOnChangeListener rocl = new RunOnChangeListener(new Runnable(){
+            @Override
             public void run() {
                 updateControls();
             }
@@ -64,6 +65,7 @@ public class WsiBspPropertiesDialog extends JDialog {
 
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 boolean requestAudit = reqAuditRadioButton.isSelected() || reqAuditFailRadioButton.isSelected();
                 boolean responseAudit = resAuditRadioButton.isSelected() || resAuditFailRadioButton.isSelected();
@@ -83,6 +85,7 @@ public class WsiBspPropertiesDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 wsiBspAssertion = null;
                 dispose();
@@ -100,7 +103,6 @@ public class WsiBspPropertiesDialog extends JDialog {
 
     private WsiBspAssertion wsiBspAssertion;
     private boolean assertionChanged = false;
-    private PolicyListener listener;
 
     private final ButtonGroup requestButtonGroup;
     private final ButtonGroup responseButtonGroup;

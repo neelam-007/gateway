@@ -62,7 +62,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(ThroughputQuota.class, ThroughputQuotaTreeNode.class);
         assertionMap.put(CommentAssertion.class, CommentAssertionPolicyNode.class);
         assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);
-        assertionMap.put(WsiBspAssertion.class, WsiBspAssertionPolicyNode.class);
         assertionMap.put(WsiSamlAssertion.class, WsiSamlAssertionPolicyNode.class);
         assertionMap.put(FaultLevel.class, FaultLevelTreeNode.class);
         assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);

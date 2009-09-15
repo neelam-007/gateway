@@ -82,6 +82,23 @@ public class WsiBspAssertion extends Assertion {
         this.failOnNonCompliantResponse = failOnNonCompliantResponse;
     }
 
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml"});
+
+        meta.put(AssertionMetadata.SHORT_NAME, "Enforce WS-I BSP Compliance");
+        meta.put(AssertionMetadata.DESCRIPTION, "Check the request or response for compliance with the WS-I Basic Security Profile 1.0 specification.");
+
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/policy16.gif");
+
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.WsiBspAssertionPropertiesAction");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "WS-I BSP Compliance Properties");
+        
+        return meta;
+    }
+
     //- PRIVATE
 
     private boolean checkRequestMessages;
