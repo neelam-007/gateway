@@ -1,11 +1,13 @@
 package com.l7tech.gui.widgets;
 
+import com.l7tech.util.Functions;
+
 import javax.swing.*;
-import java.util.List;
-import java.util.ArrayList;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A ListModel that holds a number of JCheckBox elements as its list entries.
@@ -87,6 +89,36 @@ public class  JCheckBoxListModel extends AbstractListModel {
         entryModel.setRollover(false);
         entry.setSelected(!entry.isSelected());
         fireContentsChanged(this, index, index);
+    }
+
+    /**
+     * Configure all checkbox states.
+     *
+     * @param checker a checker that will be given a JCheckBox instance to examine, along with its position in the list.
+     *        The checker should return "true" if the checkbox should be checked, "false" if it should be unchecked,
+     *        or null to leave the current state unchanged. The checker should <b>not</b> modify the JCheckBox itself.
+     */
+    public void visitEntries(Functions.Binary<Boolean,Integer,JCheckBox> checker) {
+        if (armedEntry >= 0) disarm();
+        int highest = Integer.MIN_VALUE;
+        int lowest = Integer.MAX_VALUE;
+        for (int index = 0; index < entries.size(); ++index) {
+            JCheckBox entry = entries.get(index);
+            final boolean wasChecked = entry.isSelected();
+            final Boolean wantChecked = checker.call(index, entry);
+            if (wantChecked != null && wasChecked != wantChecked) {
+                ButtonModel entryModel = entry.getModel();
+                entryModel.setArmed(false);
+                entryModel.setRollover(false);
+                entry.setSelected(wantChecked);
+                if (index > highest)
+                    highest = index;
+                if (index < lowest)
+                    lowest = index;
+            }
+        }
+        if (highest < Integer.MAX_VALUE)
+            fireContentsChanged(this, lowest, highest);
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.l7tech.security.xml;
 
+import java.util.EnumSet;
+
 /**
  * All supported crypto algorithms used in the gateway for XML/message based security.  Along with each algorithm
  * identifier is the corresponding message digest identifier.  This enum should be the only place in the code
@@ -135,5 +137,21 @@ public enum SupportedSignatureMethods {
                 return m;
         }
         throw new IllegalArgumentException("Unsupported algorithm: " + algorithm);
+    }
+
+    /**
+     * Get a list of signature methods that it would be reasonable to enable by default.
+     *
+     * @return an EnumSet of signature methods that were considered safe to use at the time this code was last updated.
+     */
+    public static EnumSet<SupportedSignatureMethods> getDefaultMethods() {
+        return EnumSet.of(
+                //RSA_SHA1, 
+                //DSA_SHA1,
+                RSA_SHA256,
+                //ECDSA_SHA1,
+                ECDSA_SHA256,
+                ECDSA_SHA384,
+                ECDSA_SHA512);
     }
 }

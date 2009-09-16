@@ -1,19 +1,23 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions;
 
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 /**
- *
+ * An assertion that can gather arbitrary context variables as credentials, if they are X509Certificates
+ * or SecurityTokens.
  */
-public class VariableCredentialSourceAssertion extends SecurityHeaderAddressableSupport implements MessageTargetable, UsesVariables {
+public class VariableCredentialSourceAssertion extends MessageTargetableAssertion {
     private static final String META_INITIALIZED = VariableCredentialSourceAssertion.class.getName() + ".metadataInitialized";
 
-    private final MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport(TargetMessageType.REQUEST);
     private String variableName;
 
     public VariableCredentialSourceAssertion() {
+        super(TargetMessageType.REQUEST);
     }
 
     public String getVariableName() {
@@ -26,32 +30,11 @@ public class VariableCredentialSourceAssertion extends SecurityHeaderAddressable
 
     @Override
     public String[] getVariablesUsed() {
-        return variableName == null ? new String[0] : new String[] { variableName };
-    }
-
-    @Override
-    public TargetMessageType getTarget() {
-        return messageTargetableSupport.getTarget();
-    }
-
-    @Override
-    public void setTarget(TargetMessageType target) {
-        messageTargetableSupport.setTarget(target);
-    }
-
-    @Override
-    public String getOtherTargetMessageVariable() {
-        return messageTargetableSupport.getOtherTargetMessageVariable();
-    }
-
-    @Override
-    public void setOtherTargetMessageVariable(String otherMessageVariable) {
-        messageTargetableSupport.setOtherTargetMessageVariable(otherMessageVariable);
-    }
-
-    @Override
-    public String getTargetName() {
-        return messageTargetableSupport.getTargetName();
+        List<String> variables = new ArrayList<String>();
+        variables.addAll( Arrays.asList( super.getVariablesUsed() ) );
+        if (variableName != null)
+            variables.add(variableName);
+        return variables.toArray( new String[variables.size()] );
     }
 
     @Override
