@@ -40,7 +40,7 @@ public class SelectElementAssertion extends NonSoapSecurityAssertionBase impleme
         meta.put(AssertionMetadata.SHORT_NAME, "Select Single Element");
         meta.put(META_PROP_VERB, "select");
         meta.put(AssertionMetadata.DESCRIPTION, "Select a single Element with an XPath expression and store it in an Element context variable, perhaps for use with a subsequent Index Lookup by Item.");
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
+        //meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"}); // Bug #7789 - do not show this assertion in the palette
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, -990);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.SelectElementAssertionPropertiesDialog");
 
