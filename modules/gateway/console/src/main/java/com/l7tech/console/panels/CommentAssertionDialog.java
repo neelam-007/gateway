@@ -9,7 +9,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
-public class CommentAssertionDialog extends JDialog {
+public class CommentAssertionDialog extends LegacyAssertionPropertyDialog {
     private final CommentAssertion assertion;
     private final boolean readOnly;
     private boolean assertionModified;
@@ -21,13 +21,14 @@ public class CommentAssertionDialog extends JDialog {
     public CommentAssertionDialog(Frame owner, final CommentAssertion assertion, final boolean readOnly)
             throws HeadlessException
     {
-        super(owner, "Comment Assertion Properties", true);
+        super(owner, assertion, true);
         this.assertion = assertion;
         this.readOnly = readOnly;
 
         commentField.setText(assertion.getComment());
 
         okButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 assertionModified = true;
                 assertion.setComment(commentField.getText());
@@ -36,6 +37,7 @@ public class CommentAssertionDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 assertionModified = false;
                 dispose();
@@ -43,8 +45,11 @@ public class CommentAssertionDialog extends JDialog {
         });
 
         commentField.getDocument().addDocumentListener(new DocumentListener(){
+            @Override
             public void insertUpdate(DocumentEvent e) { enableButtons(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { enableButtons(); }
+            @Override
             public void changedUpdate(DocumentEvent e) { enableButtons(); }
         });
 

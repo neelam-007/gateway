@@ -50,7 +50,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenExchange.class, WsFederationPassiveTokenRequestTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenRequest.class, WsFederationPassiveTokenRequestTreeNode.class);
-        assertionMap.put(CommentAssertion.class, CommentAssertionPolicyNode.class);
         assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);
         assertionMap.put(FaultLevel.class, FaultLevelTreeNode.class);
         assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);

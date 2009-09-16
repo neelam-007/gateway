@@ -3,7 +3,6 @@ package com.l7tech.console.action;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.CommentAssertionPolicyNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.CommentAssertionDialog;
@@ -18,32 +17,11 @@ import java.awt.*;
  * The <code>CommentAssertionPropertiesAction</code> edits the
  * {@link com.l7tech.policy.assertion.CommentAssertion} properties.
  */
-public class CommentAssertionPropertiesAction extends NodeAction {
+public class CommentAssertionPropertiesAction extends NodeActionWithMetaSupport {
     static final Logger log = Logger.getLogger(CommentAssertionPropertiesAction.class.getName());
 
-    public CommentAssertionPropertiesAction(CommentAssertionPolicyNode node) {
-        super(node, CommentAssertion.class);
-    }
-
-    /**
-     * @return the action name
-     */
-    public String getName() {
-        return "Comment Assertion Properties";
-    }
-
-    /**
-     * @return the aciton description
-     */
-    public String getDescription() {
-        return "View/Edit Comment Assertion Properties";
-    }
-
-    /**
-     * specify the resource name for this action
-     */
-    protected String iconResource() {
-        return "com/l7tech/console/resources/About16.gif";
+    public CommentAssertionPropertiesAction(AssertionTreeNode node) {
+        super(node, CommentAssertion.class, node.asAssertion());
     }
 
     /**
@@ -53,6 +31,7 @@ public class CommentAssertionPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         CommentAssertion ca = (CommentAssertion)node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
@@ -61,6 +40,7 @@ public class CommentAssertionPropertiesAction extends NodeAction {
         cad.pack();
         Utilities.centerOnScreen(cad);
         DialogDisplayer.display(cad, new Runnable() {
+            @Override
             public void run() {
                 if (cad.isAssertionModified()) assertionChanged();
             }
