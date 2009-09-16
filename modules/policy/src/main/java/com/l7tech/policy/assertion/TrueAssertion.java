@@ -6,6 +6,7 @@
 
 package com.l7tech.policy.assertion;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 
 /**
@@ -30,4 +31,20 @@ public class TrueAssertion extends Assertion {
     public static TrueAssertion getInstance() {
         return INSTANCE;
     }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
+
+        meta.put(SHORT_NAME, "Continue Processing");
+        meta.put(DESCRIPTION, "Evaluate to true and continue processing.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
+
+        meta.putNull(PROPERTIES_ACTION_FACTORY);
+        return meta;
+    }
+    
 }
