@@ -6,10 +6,8 @@
 
 package com.l7tech.external.assertions.snmptrap;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -119,6 +117,7 @@ public class SnmpTrapAssertion extends Assertion implements UsesVariables {
         this.errorMessage = errorMessage;
     }
 
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer(super.toString());
         sb.append(" to host ");
@@ -131,26 +130,37 @@ public class SnmpTrapAssertion extends Assertion implements UsesVariables {
         return sb.toString();
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(errorMessage);
     }
 
+    private final static String baseName = "Send SNMP Trap";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SnmpTrapAssertion>(){
+        @Override
+        public String getAssertionName( final SnmpTrapAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return baseName + " to " + assertion.getTargetHostname();
+        }
+    };
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Send SNMP Trap");
-        meta.put(AssertionMetadata.LONG_NAME, "Send SNMP Trap");
-        meta.put(AssertionMetadata.DESCRIPTION, "Sends an SNMP trap to a specified Simple Network Management Protocol server.");
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Sends an SNMP trap to a specified Simple Network Management Protocol server.");
 
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "audit" });
-        meta.put(AssertionMetadata.PALETTE_NODE_NAME, "Send SNMP Trap");
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Edit16.gif");
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Edit16.gif");
+        meta.put(PALETTE_FOLDERS, new String[] { "audit" });
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Edit16.gif");
+        meta.put(FEATURE_SET_NAME, "(fromClass)");
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
 
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SNMP Trap Properties");
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(PROPERTIES_ACTION_NAME, "SNMP Trap Properties");
 
         return meta;
     }

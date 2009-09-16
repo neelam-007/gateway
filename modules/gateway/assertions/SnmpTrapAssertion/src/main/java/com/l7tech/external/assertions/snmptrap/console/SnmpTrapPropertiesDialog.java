@@ -21,9 +21,7 @@ import java.awt.event.ActionListener;
  * Properties dialog for {@link SnmpTrapAssertion}.
  */
 public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<SnmpTrapAssertion> {
-    public static final String TITLE = "SNMP Properties";
-
-    private final InputValidator validator = new InputValidator(this, TITLE);
+    private final InputValidator validator;
     private JPanel rootPanel;
     private JRadioButton rbDefaultPort;
     private JTextField portField;
@@ -40,7 +38,8 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
     private boolean confirmed = false;
 
     public SnmpTrapPropertiesDialog(Window owner, SnmpTrapAssertion assertion) throws HeadlessException {
-        super(owner, TITLE);
+        super(owner, assertion);
+        validator = new InputValidator(this, getTitle());
         this.owner = owner;
         if (assertion == null) throw new NullPointerException();
         init(assertion);
@@ -57,6 +56,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
 
         validator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if (check()) {
                     confirmed = true;
@@ -67,6 +67,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         //validator.disableButtonWhenInvalid(okButton);
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 confirmed = false;
                 dispose();
@@ -74,6 +75,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         });
 
         ActionListener checkAction = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 portField.setEnabled(rbCustomPort.isSelected());
                 validator.validate();
@@ -106,6 +108,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         return true;
     }
 
+    @Override
     public SnmpTrapAssertion getData(SnmpTrapAssertion assertion) {
         assertion.setCommunity(communityField.getText());
         assertion.setTargetHostname(hostnameField.getText());
@@ -127,6 +130,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         }
     }
 
+    @Override
     public void setData(SnmpTrapAssertion assertion) {
         portField.setText(Integer.toString(assertion.getTargetPort()));
         final boolean dp = assertion.getTargetPort() == SnmpTrapAssertion.DEFAULT_PORT;
@@ -140,6 +144,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         validator.validate();
     }
 
+    @Override
     public boolean isConfirmed() {
         return confirmed;
     }
