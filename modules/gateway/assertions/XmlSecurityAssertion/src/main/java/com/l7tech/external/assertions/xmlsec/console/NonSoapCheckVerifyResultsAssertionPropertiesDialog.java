@@ -36,6 +36,8 @@ public class NonSoapCheckVerifyResultsAssertionPropertiesDialog extends NonSoapS
     private JPanel createExtraPanel() {
         java.util.List<JCheckBox> sigBoxes = new ArrayList<JCheckBox>();
         for (SupportedSignatureMethods sm : SupportedSignatureMethods.values()) {
+            if ("HMAC".equals(sm.getKeyAlgorithmName())) // Omit HMAC (Bug #7787)
+                continue;
             sigBoxes.add(new JCheckBox(sm.getDisplayName()));
             digestMethods.put(sm.getMessageDigestIdentifier(), sm.getDigestAlgorithmName());
         }

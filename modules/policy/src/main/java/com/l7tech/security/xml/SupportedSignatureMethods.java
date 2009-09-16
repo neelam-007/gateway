@@ -54,7 +54,7 @@ public enum SupportedSignatureMethods {
     }
 
     /**
-     * @return the key algorithm name for signature methods that sign with private keys, ie "EC", "DSA", or "RSA"; or the string "SecretKey" for HMAC signature methods 
+     * @return the key algorithm name for signature methods that sign with private keys, ie "EC", "DSA", or "RSA"; or the string "HMAC" for HMAC signature methods
      */
     public String getKeyAlgorithmName() {
         return keyAlg;

@@ -159,7 +159,7 @@ public class DsigUtilTest {
 
         for (String hash : hashes) {
             for (Key key : keys) {
-                String wantKeyAlg = key instanceof SecretKey ? "SecretKey" : key.getAlgorithm();
+                String wantKeyAlg = key instanceof SecretKey ? "HMAC" : key.getAlgorithm();
 
                 try {
                     SupportedSignatureMethods method = DsigUtil.getSignatureMethodForSignerPrivateKey(key, hash);
