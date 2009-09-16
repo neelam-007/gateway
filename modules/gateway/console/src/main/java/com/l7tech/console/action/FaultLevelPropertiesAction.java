@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.FaultLevelTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.FaultLevelPropertiesDialog;
 import com.l7tech.policy.assertion.FaultLevel;
@@ -18,32 +19,16 @@ import java.util.logging.Level;
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: May 4, 2006<br/>
+ * @author flascell<br/>
  *
  * @see com.l7tech.policy.assertion.FaultLevel
  */
-public class FaultLevelPropertiesAction extends SecureAction {
-    private FaultLevelTreeNode subject;
+public class FaultLevelPropertiesAction extends NodeActionWithMetaSupport {
+    private AssertionTreeNode subject;
 
-    public FaultLevelPropertiesAction(FaultLevelTreeNode subject) {
-        super(null, FaultLevel.class);
+    public FaultLevelPropertiesAction(AssertionTreeNode subject) {
+        super(null, FaultLevel.class, subject.asAssertion());
         this.subject = subject;
-    }
-
-    @Override
-    public String getName() {
-        return "Fault Level Properties";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Change the properties of the Fault Level assertion.";
-    }
-
-    @Override
-    protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     @Override
@@ -53,6 +38,7 @@ public class FaultLevelPropertiesAction extends SecureAction {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (dlg.oked) {
                     JTree tree = TopComponents.getInstance().getPolicyTree();

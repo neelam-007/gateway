@@ -4,6 +4,7 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.objectmodel.migration.Migration;
@@ -72,29 +73,29 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
             return meta;
 
         // Cluster properties used by this assertion
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, new HashMap<String, String[]>());
+        meta.put(CLUSTER_PROPERTIES, new HashMap<String, String[]>());
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Subscribe to ESM Resource");
-        meta.put(AssertionMetadata.DESCRIPTION, "Subscribe to ESM Resource");
+        meta.put(SHORT_NAME, "Subscribe to ESM Resource");
+        meta.put(DESCRIPTION, "Send subscription requests to a specified resource based on the ESM specification.");
 
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] {"audit"});
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
+        meta.put(PALETTE_FOLDERS, new String[] {"audit"});
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
 
-        meta.put(AssertionMetadata.POLICY_NODE_CLASSNAME, "com.l7tech.external.assertions.esm.console.EsmSubscriptionAssertionPolicyNode");
+        meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.external.assertions.esm.console.EsmSubscriptionAssertionPolicyNode");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
 
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, EsmSubscriptionAssertion.Validator.class.getName());
+        meta.put(POLICY_VALIDATOR_CLASSNAME, EsmSubscriptionAssertion.Validator.class.getName());
 
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "ESM Subscription Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "ESM Subscription Properties");
         //set the routing assertion flag
-        meta.put(AssertionMetadata.IS_ROUTING_ASSERTION, Boolean.TRUE);
+        meta.put(IS_ROUTING_ASSERTION, Boolean.TRUE);
 
         // request default feature set name for our claslss name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:Bogus" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

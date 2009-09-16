@@ -3,36 +3,23 @@
  */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.action.FaultLevelPropertiesAction;
 import com.l7tech.policy.assertion.FaultLevel;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.xml.soap.SoapVersion;
 
-import javax.swing.*;
-
 /**
  * Node in the policy tree that represents the {@link FaultLevel} assertion
  */
-public class FaultLevelTreeNode extends LeafAssertionTreeNode {
+public class FaultLevelTreeNode extends DefaultAssertionPolicyNode<FaultLevel> {
     public FaultLevelTreeNode(FaultLevel assertion) {
         super(assertion);
     }
 
-    public String getName(final boolean decorate) {
-        return "Override SOAP Fault";
-    }
 
-    protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/disconnect.gif";
-    }
-
-    public Action getPreferredAction() {
-        return new FaultLevelPropertiesAction(this);
-    }
-
+    @Override
     public void serviceChanged(PublishedService service) {
         if ( service != null ){
-            ((FaultLevel)assertion).setSoap12(service.getSoapVersion() == SoapVersion.SOAP_1_2);
+            assertion.setSoap12(service.getSoapVersion() == SoapVersion.SOAP_1_2);
         }
     }
 }

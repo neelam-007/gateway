@@ -29,7 +29,6 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
         insertModularAssertionByType( index++, CodeInjectionProtectionAssertion.class );
         insert( new RequestSizeLimitPaletteNode(), index++ );
         insertModularAssertionByType( index++, OversizedTextAssertion.class );
-        //insert(new FaultLevelPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);
         insertMatchingCustomAssertions(index, Category.THREAT_PROT);
     }

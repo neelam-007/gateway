@@ -40,9 +40,7 @@ import org.xml.sax.SAXException;
  *
  * @see com.l7tech.policy.assertion.FaultLevel
  */
-public class FaultLevelPropertiesDialog extends JDialog {
-    private static final String TITLE = "Fault Level Properties";
-
+public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
     private static final String DROP_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
                               "drop the connection with the requestor without returning anything.</p></html>";
     private static final String GEN_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
@@ -189,12 +187,13 @@ public class FaultLevelPropertiesDialog extends JDialog {
     private JButton helpButton;
 
     public FaultLevelPropertiesDialog(Frame owner, FaultLevel subject, boolean readOnly) {
-        super(owner, TITLE, true);
+        super(owner, subject, true);
         this.assertion = subject;
         initialize(readOnly);
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
+    @Override
     protected void processWindowEvent(WindowEvent e) {
         super.processWindowEvent(e);
         switch(e.getID()) {
@@ -219,6 +218,7 @@ public class FaultLevelPropertiesDialog extends JDialog {
                           }));
 
         levelBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onComboSelection();
             }
@@ -226,29 +226,34 @@ public class FaultLevelPropertiesDialog extends JDialog {
 
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
 
         helpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 help();
             }
         });
 
         Utilities.setEnterAction(this, new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
         Utilities.setEscAction(this, new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
@@ -371,6 +376,7 @@ public class FaultLevelPropertiesDialog extends JDialog {
             this.level = level;
             this.levelname = levelname;
         }
+        @Override
         public String toString() {
             return levelname;
         }
