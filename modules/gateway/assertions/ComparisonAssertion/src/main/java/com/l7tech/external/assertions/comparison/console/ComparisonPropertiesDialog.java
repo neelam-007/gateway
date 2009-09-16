@@ -8,6 +8,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.comparison.*;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -51,20 +52,23 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
     };
 
     public ComparisonPropertiesDialog(Window owner, ComparisonAssertion assertion) throws HeadlessException {
-        super(owner, ComparisonAssertion.resources.getString("dialog.title"));
+        super(owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         this.assertion = assertion;
         init();
     }
 
+    @Override
     public boolean isConfirmed() {
         return ok;
     }
 
+    @Override
     public void setData(ComparisonAssertion assertion) {
         this.assertion = assertion;
         updateModel();
     }
 
+    @Override
     public ComparisonAssertion getData(ComparisonAssertion assertion) {
         return assertion;
     }
@@ -103,8 +107,11 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
 
         expressionField.setText(assertion.getExpression1());
         expressionField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) { enableButtons(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { enableButtons(); }
+            @Override
             public void changedUpdate(DocumentEvent e) { enableButtons(); }
         });
 
@@ -118,6 +125,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
             }
         });
         predicatesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableButtons();
             }
@@ -127,8 +135,10 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         dataTypeComboBox.setSelectedItem(dtp == null ? DataType.UNKNOWN : dtp.getType());
 
         addPredicateButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 DialogDisplayer.showInputDialog(ComparisonPropertiesDialog.this, ComparisonAssertion.resources.getString("predicateSelection.text"), ComparisonAssertion.resources.getString("predicateSelection.title"), JOptionPane.QUESTION_MESSAGE, null, VALUES, BINARY, new DialogDisplayer.InputListener() {
+                    @Override
                     public void reportResult(Object option) {
                         PredicateSelection sel = (PredicateSelection) option;
                         if (sel == null) return;
@@ -147,12 +157,14 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         });
 
         editPredicateButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 editSelected();
             }
         });
 
         removePredicateButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int sel = predicatesTable.getSelectionModel().getMinSelectionIndex();
                 if (sel < 0 || sel > predicates.size()-1) return;
@@ -162,6 +174,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         });
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateModel();
                 ok = true;
@@ -170,6 +183,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok = false;
                 dispose();
@@ -230,6 +244,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         Utilities.centerOnScreen(dlg);
         dlg.pack();
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (dlg.wasOKed()) {
                     if (pos < 0) predicates.add(predicate);
@@ -241,14 +256,17 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
 
 
     private class PredicatesTableModel extends AbstractTableModel {
+        @Override
         public int getRowCount() {
             return predicates.size();
         }
 
+        @Override
         public int getColumnCount() {
             return 1; // TODO make room for pretty version
         }
 
+        @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             if (rowIndex > predicates.size()) return null;
             return predicates.get(rowIndex); // TODO make this prettier

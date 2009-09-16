@@ -6,10 +6,7 @@ package com.l7tech.external.assertions.comparison.server;
 import com.l7tech.external.assertions.comparison.*;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -44,8 +41,8 @@ public class ServerComparisonAssertionTest {
     public void testString() throws Exception {
         AssertionRegistry.installEnhancedMetadataDefaults();
         ComparisonAssertion comp = make();
-        Functions.Unary<String, Assertion> funky = (Functions.Unary<String, Assertion>) comp.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
-        assertEquals("policy node name", funky.call(comp), "Proceed if ${asdf} is an Integer, is equal to 12345, contains 234 (case sensitive), has at least 1 value and has exactly 5 characters");
+        AssertionNodeNameFactory funky = (AssertionNodeNameFactory) comp.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
+        assertEquals("policy node name", funky.getAssertionName(comp, true), "Compare Expression: ${asdf} is an Integer, is equal to 12345, contains 234 (case sensitive), has at least 1 value and has exactly 5 characters");
     }
 
     private ComparisonAssertion make() {

@@ -3,10 +3,8 @@ package com.l7tech.external.assertions.comparison;
 import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.Functions;
 import com.l7tech.external.assertions.comparison.wsp.EqualityRenamedToComparison;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.*;
@@ -39,6 +37,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
      * {@link BinaryPredicate#getRightValue()} values of our {@link #predicates}. (Only {@link BinaryPredicate} supports the
      * use of variables on the right-hand side of the equation)
      */
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         StringBuilder sb = new StringBuilder(leftValue == null ? "" : leftValue);
@@ -135,51 +134,60 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         if (check()) compat().setCaseSensitive(caseSensitive);
     }
 
+    private final static String baseName = "Compare Expression";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ComparisonAssertion>(){
+        @Override
+        public String getAssertionName( final ComparisonAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            StringBuffer name = new StringBuffer(baseName).append(": ");
+            name.append(assertion.getExpression1()).append(" ");
+
+            Predicate [] predicatesLocal = assertion.getPredicates();
+            for (int i = 0; i < predicatesLocal.length; i++) {
+                Predicate pred = predicatesLocal[i];
+                name.append(pred.toString());
+
+                if (i == predicatesLocal.length-2)
+                    name.append(" and ");
+                else if (i < predicatesLocal.length-1)
+                    name.append(", ");
+            }
+
+            return name.toString();
+            
+        }
+    };
+    
+    @Override
     public AssertionMetadata meta() {
         clearCachedMetadata(getClass().getName());
         DefaultAssertionMetadata meta = super.defaultMeta();
-        meta.put(AssertionMetadata.LONG_NAME, "Evaluate an expression that may include variables against various rules");
 
         // Request to appear in "misc" ("Service Availability") palette folder
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
+        meta.put(PALETTE_FOLDERS, new String[] { "policyLogic" });
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
+        
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Evaluate an expression against a series of rules during the runtime processing of a policy.");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
 
-        meta.put(AssertionMetadata.WSP_EXTERNAL_NAME, "ComparisonAssertion");
-
-        meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.comparison.server.ServerComparisonAssertion");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.comparison.console.ComparisonPropertiesDialog");
-
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.comparison.console.ComparisonPropertiesDialog");
+        meta.put(PROPERTIES_ACTION_NAME, "Compare Expression Properties");
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:Comparison" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-
-        final ResourceBundle res = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.ComparisonAssertion");
+        meta.put(FEATURE_SET_NAME, "(fromClass)");
 
         // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/check16.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, ComparisonAssertion>() {
-            public String call(ComparisonAssertion ass) {
-                StringBuffer name = new StringBuffer(res.getString("proceed")).append(" ");
-                name.append(ass.getExpression1()).append(" ");
+        meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/check16.gif");
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
-                for (int i = 0; i < predicates.length; i++) {
-                    Predicate pred = predicates[i];
-                    name.append(pred.toString());
+        meta.put(WSP_EXTERNAL_NAME, "ComparisonAssertion");
 
-                    if (i == predicates.length-2)
-                        name.append(" and ");
-                    else if (i < predicates.length-1) 
-                        name.append(", ");
-                }
-                
-                return name.toString();
-            }
-        });
-
-        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(ComparisonOperator.class, "operator"),
             new ArrayTypeMapping(new Predicate[0], "predicates"),
             new AbstractClassTypeMapping(Predicate.class, "predicate"),
@@ -192,10 +200,12 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
             new BeanTypeMapping(EmptyPredicate.class, "empty")
         )));
 
-        meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
+        meta.put(WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
             put(EqualityRenamedToComparison.equalityCompatibilityMapping.getExternalName(), EqualityRenamedToComparison.equalityCompatibilityMapping);
         }});
 
+        meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.comparison.server.ServerComparisonAssertion");
+        
         return meta;
     }
 
