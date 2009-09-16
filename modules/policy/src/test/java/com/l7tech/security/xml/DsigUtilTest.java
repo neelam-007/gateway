@@ -159,7 +159,7 @@ public class DsigUtilTest {
 
         for (String hash : hashes) {
             for (Key key : keys) {
-                String wantKeyAlg = key instanceof SecretKey ? "HMAC" : key.getAlgorithm();
+                String wantKeyAlg = key instanceof SecretKey ? "SecretKey" : key.getAlgorithm();
 
                 try {
                     SupportedSignatureMethods method = DsigUtil.getSignatureMethodForSignerPrivateKey(key, hash);
@@ -167,8 +167,8 @@ public class DsigUtilTest {
                     assertEquals(method.getDigestAlgorithmName(), hash);
 
                 } catch (SignatureException e) {
-                    assertNull("getSignatureMethodForSignerPrivateKey() should only throw SignatureException if the requested combination is not supported",
-                            SupportedSignatureMethods.fromKeyAndMessageDigest(wantKeyAlg, hash));
+                    if (null != SupportedSignatureMethods.fromKeyAndMessageDigest(wantKeyAlg, hash)) 
+                        throw new RuntimeException("getSignatureMethodForSignerPrivateKey() should only throw SignatureException if the requested combination is not supported", e);
                 }
             }
         }

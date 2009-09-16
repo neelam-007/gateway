@@ -14,7 +14,7 @@ public enum SupportedSignatureMethods {
     /** DSA with SHA-1 (defaults from XSS4J) */
     DSA_SHA1("DSA", "SHA-1", "http://www.w3.org/2000/09/xmldsig#dsa-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
     /** HMAC with SHA-1 (defaults from XSS4J) */
-    HMAC_SHA1("HMAC", "SHA-1", "http://www.w3.org/2000/09/xmldsig#hmac-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
+    HMAC_SHA1("SecretKey", "SHA-1", "http://www.w3.org/2000/09/xmldsig#hmac-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
     /** RSA with SHA-256 extension*/
     RSA_SHA256("RSA", "SHA-256", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", "http://www.w3.org/2001/04/xmlenc#sha256"),
     /** ECDSA with SHA-1 (Suite-B crypto support) */
@@ -54,7 +54,7 @@ public enum SupportedSignatureMethods {
     }
 
     /**
-     * @return the key algorithm name for signature methods that sign with private keys, ie "EC", "DSA", or "RSA"; or the string "HMAC" for HMAC signature methods
+     * @return the key algorithm name for signature methods that sign with private keys, ie "EC", "DSA", or "RSA"; or the string "SecretKey" for HMAC signature methods
      */
     public String getKeyAlgorithmName() {
         return keyAlg;
