@@ -8,10 +8,7 @@ public class EsmMetricsAssertionPolicyNode extends DefaultAssertionPolicyNode<Es
         super(assertion);
     }
 
-    public String getName() {
-        return "ESM Metrics Assertion";
-    }
-
+    @Override
     public boolean canDelete() {
         return true;
     }

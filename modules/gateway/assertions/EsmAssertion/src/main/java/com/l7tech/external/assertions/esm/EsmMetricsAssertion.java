@@ -5,7 +5,6 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME;
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_EXTERNAL_NAME;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.UsesVariables;
@@ -27,6 +26,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
     private static final String QOSMW	= "http://metadata.dod.mil/mdr/ns/netops/esm/qosmw";
 
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return new String[0]; //Syntax.getReferencedNames(...);
@@ -37,6 +37,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
     //
     private static final String META_INITIALIZED = EsmMetricsAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -47,7 +48,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "ESM Metrics");
+        meta.put(AssertionMetadata.SHORT_NAME, "Collect ESM Metrics");
 
         // This is a pseudo-assertion and so should appear in no palette folders
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] {"audit"});
@@ -63,9 +64,6 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, EsmMetricsAssertion.Validator.class.getName());
 
-        // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/server16.gif");
-        meta.put(POLICY_NODE_NAME, "ESM Assertion");
         // request default feature set name for our claslss name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:Bogus" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
@@ -85,6 +83,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
             this.assertion = assertion;
         }
 
+        @Override
         public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
 
             // check to see if it's an XML service, display appropriate warning
