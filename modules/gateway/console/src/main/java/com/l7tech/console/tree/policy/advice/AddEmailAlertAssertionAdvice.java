@@ -15,6 +15,7 @@ import java.awt.*;
  * an administrator for a value.
  */
 public class AddEmailAlertAssertionAdvice implements Advice {
+    @Override
     public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof EmailAlertAssertion)) {
@@ -28,6 +29,7 @@ public class AddEmailAlertAssertionAdvice implements Advice {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 // check that user oked this dialog
                 if (dlg.getResult() != null) {

@@ -5,10 +5,8 @@
 package com.l7tech.policy.assertion.alert;
 
 import com.l7tech.util.HexUtils;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -196,17 +194,41 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         this.authPassword = authPassword;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(this.messageString());
     }
 
+    private final static String baseName = "Send Email Alert";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<EmailAlertAssertion>(){
+        @Override
+        public String getAssertionName( final EmailAlertAssertion assertion, final boolean decorate) {
+            return baseName;            
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+
+        meta.put(PALETTE_FOLDERS, new String[]{"audit"});
+
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Send an email message to predetermined recipients.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Edit16.gif");
+
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.EmailAlertAssertionPropertiesAction");
+        meta.put(PROPERTIES_ACTION_NAME, "Email Alert Properties");
+
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
                 new Java5EnumTypeMapping(Protocol.class, "Protocol")
         )));
+
         return meta;
     }
 }

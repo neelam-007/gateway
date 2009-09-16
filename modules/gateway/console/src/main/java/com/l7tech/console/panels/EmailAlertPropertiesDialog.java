@@ -12,6 +12,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.email.EmailTestException;
 
@@ -21,16 +22,13 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Collection;
-import java.util.Vector;
 import java.util.ArrayList;
 
 /**
  * Properties dialog for {@link com.l7tech.policy.assertion.alert.EmailAlertAssertion}.
  */
-public class EmailAlertPropertiesDialog extends JDialog {
-    public static final String TITLE = "Email Alert Properties";
-    private final InputValidator validator = new InputValidator(this, TITLE);
+public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
+    private final InputValidator validator;
     private JPanel mainPanel;
     private JTextField toAddressesField;
     private JTextField fromAddressField;
@@ -61,22 +59,9 @@ public class EmailAlertPropertiesDialog extends JDialog {
      * @param ass The backing EmailAlertAssertion object
      * @throws HeadlessException
      */
-    public EmailAlertPropertiesDialog(Dialog owner, EmailAlertAssertion ass, boolean readOnly) throws HeadlessException {
-        super(owner, TITLE, true);
-        this.readOnly = readOnly;
-        this.assertion = ass;
-        initialize();
-    }
-
-    /**
-     * Creates a new EmailAlertPropertiesDialog object backed by the provided EmailAlertAssertion object.
-     *
-     * @param owner The window that owns this dialog
-     * @param ass The backing EmailAlertAssertion object
-     * @throws HeadlessException
-     */
     public EmailAlertPropertiesDialog(Frame owner, EmailAlertAssertion ass, boolean readOnly) throws HeadlessException {
-        super(owner, TITLE, true);
+        super(owner, ass, true);
+        validator = new InputValidator(this, ass.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         this.readOnly = readOnly;
         this.assertion = ass;
         initialize();
@@ -91,6 +76,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
 
         validator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
 
                 //validate fields
@@ -113,6 +99,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 confirmed = false;
                 dispose();
@@ -120,6 +107,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         });
 
         sendTestEmailButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
 
                 //validate fields
@@ -136,6 +124,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
                 }
 
                 DialogDisplayer.showConfirmDialog(sendTestEmailButton, constructRecipientEmailMessage(), "Confirm Email Test", JOptionPane.OK_CANCEL_OPTION, new DialogDisplayer.OptionListener(){
+                    @Override
                     public void reportResult(int option) {
                         if ( option == JOptionPane.OK_OPTION ) {
                             try{
@@ -182,6 +171,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
 
         protocolCombo.setModel(new DefaultComboBoxModel(Protocol.values()));
         protocolCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 EmailAlertAssertion.Protocol proto = (EmailAlertAssertion.Protocol) protocolCombo.getSelectedItem();
                 if (proto == Protocol.PLAIN || proto == Protocol.STARTTLS) {
@@ -194,6 +184,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         });
 
         authenticateCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateEnableDisableState();
             }
@@ -208,8 +199,11 @@ public class EmailAlertPropertiesDialog extends JDialog {
 
         updateEnableDisableState();
         final DocumentListener dl = new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent e) { updateEnableDisableState(); }
+            @Override
             public void insertUpdate(DocumentEvent e) { updateEnableDisableState(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { updateEnableDisableState(); }
         };
         hostField.getDocument().addDocumentListener(dl);
@@ -224,6 +218,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
 
     /**
      * Sets the fields to the values from the EmailAlertAssertion object.
+     * @param assertion
      */
     private void modelToView(final EmailAlertAssertion assertion) {
         protocolCombo.setSelectedItem(assertion.getProtocol());
