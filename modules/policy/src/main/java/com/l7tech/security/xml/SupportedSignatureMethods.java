@@ -1,8 +1,5 @@
 package com.l7tech.security.xml;
 
-import com.ibm.xml.dsig.SignatureMethod;
-import com.ibm.xml.dsig.XSignature;
-
 /**
  * All supported crypto algorithms used in the gateway for XML/message based security.  Along with each algorithm
  * identifier is the corresponding message digest identifier.  This enum should be the only place in the code
@@ -13,15 +10,15 @@ import com.ibm.xml.dsig.XSignature;
 public enum SupportedSignatureMethods {
 
     /** RSA with SHA-1 (defaults from XSS4J) */
-    RSA_SHA1("RSA", "SHA-1", SignatureMethod.RSA, XSignature.SHA1),
+    RSA_SHA1("RSA", "SHA-1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
     /** DSA with SHA-1 (defaults from XSS4J) */
-    DSA_SHA1("DSA", "SHA-1", SignatureMethod.DSA, XSignature.SHA1),
+    DSA_SHA1("DSA", "SHA-1", "http://www.w3.org/2000/09/xmldsig#dsa-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
     /** HMAC with SHA-1 (defaults from XSS4J) */
-    HMAC_SHA1("HMAC", "SHA-1", SignatureMethod.HMAC, XSignature.SHA1),
+    HMAC_SHA1("HMAC", "SHA-1", "http://www.w3.org/2000/09/xmldsig#hmac-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
     /** RSA with SHA-256 extension*/
     RSA_SHA256("RSA", "SHA-256", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", "http://www.w3.org/2001/04/xmlenc#sha256"),
     /** ECDSA with SHA-1 (Suite-B crypto support) */
-    ECDSA_SHA1("EC", "SHA-1", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", XSignature.SHA1),
+    ECDSA_SHA1("EC", "SHA-1", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
     /** ECDSA with SHA-256 (Suite-B crypto support) */
     ECDSA_SHA256("EC", "SHA-256", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256", "http://www.w3.org/2001/04/xmlenc#sha256"),
     /** ECDSA with SHA-384 (Suite-B crypto support) */
