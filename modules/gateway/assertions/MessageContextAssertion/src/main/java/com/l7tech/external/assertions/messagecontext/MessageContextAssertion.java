@@ -4,8 +4,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.WSP_EXTERNAL_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.ArrayTypeMapping;
@@ -50,6 +49,7 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
         this.mappings = mappings;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (mappings.length == 0) return new String[0];
@@ -62,6 +62,7 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
         return variableList.toArray(new String[variableList.size()]); 
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -70,41 +71,38 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<String, String[]>();
 
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
+        meta.put(CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Message Context Assertion");
-        meta.put(AssertionMetadata.LONG_NAME, "Message Context Assertion");
+        meta.put(SHORT_NAME, "Capture Identity of Requestor");
+        meta.put(DESCRIPTION, "Record contextual information about the current request by capturing the IP address, authenticated user ID, or from a context variable.");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
         //   misc, audit, policyLogic, threatProtection 
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "audit" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/messageContextAssertion.png");
+        meta.put(PALETTE_FOLDERS, new String[] { "audit" });
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/messageContextAssertion.png");
 
-        meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.messagecontext.server.ServerMessageContextAssertion");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.messagecontext.console.MessageContextAssertionPropertiesDialog");
-
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.messagecontext.console.MessageContextAssertionPropertiesDialog");
+        meta.put(PROPERTIES_ACTION_NAME, "Requestor Identity Properties");
         // Enable automatically poping up the assertion properties dialog
         //meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, MessageContextAssertion.Validator.class.getName());
-
-        // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/messageContextAssertion.png");
-        meta.put(POLICY_NODE_NAME, "Message Context Assertion");
+        meta.put(POLICY_VALIDATOR_CLASSNAME, MessageContextAssertion.Validator.class.getName());
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:MessageContext" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(WSP_EXTERNAL_NAME, "MessageContextAssertion");
         meta.put(META_INITIALIZED, Boolean.TRUE);
 
-        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new BeanTypeMapping(MessageContextMapping.class, "mappingInfo"),
             new ArrayTypeMapping(new MessageContextMapping[0], "mappingInfoArray"),
             new Java5EnumTypeMapping(MessageContextMapping.MappingType.class, "mappingType")
         )));
+
+        meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.messagecontext.server.ServerMessageContextAssertion");
 
         return meta;
     }
@@ -116,6 +114,7 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
             this.assertion = assertion;
         }
 
+        @Override
         public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
             // Get all MCAs from the current MCA to the last MCA.
             Assertion[] assertions = path.getPath();

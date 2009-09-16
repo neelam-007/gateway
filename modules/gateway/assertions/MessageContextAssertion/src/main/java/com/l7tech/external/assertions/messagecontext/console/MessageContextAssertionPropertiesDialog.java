@@ -45,7 +45,7 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
     private boolean ok = false;
 
     public MessageContextAssertionPropertiesDialog(Window owner, MessageContextAssertion assertion) {
-        super(owner, resources.getString("mca.properties.dialog.title"));
+        super(owner, assertion);
         this.assertion = assertion;
         mappings.addAll(Arrays.asList(assertion.getMappings()));
         initialize();
@@ -55,12 +55,14 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         initMessageContextMappingTable();
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok = false;
                 dispose();
@@ -68,10 +70,12 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         });
 
         addButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final ConfigureMessageContextMappingDialog dlg
                     = new ConfigureMessageContextMappingDialog(TopComponents.getInstance().getTopParent(), null);
                 DialogDisplayer.display(dlg, new Runnable() {
+                    @Override
                     public void run() {
                         if (dlg.wasOKed()) {
                             updatedRowPosition = mappingTable.getSelectedRow() + 1;
@@ -84,6 +88,7 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         });
 
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int idx = mappingTable.getSelectedRow();
                 Object[] options = {resources.getString("button.remove"), resources.getString("button.cancel")};
@@ -100,12 +105,14 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         });
 
         propertiesButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final int idx = mappingTable.getSelectedRow();
                 MessageContextMapping currentMapping = mappings.get(idx);
                 final ConfigureMessageContextMappingDialog dlg
                     = new ConfigureMessageContextMappingDialog(MessageContextAssertionPropertiesDialog.this, currentMapping);
                 DialogDisplayer.display(dlg, new Runnable() {
+                    @Override
                     public void run() {
                         if (dlg.wasOKed()) {
                             updatedRowPosition = idx;
@@ -125,6 +132,7 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         mappingTable.setModel(getMessageContextMappingTableModel());
         mappingTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         mappingTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisableButtons();
             }
@@ -140,20 +148,24 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
     }
 
     private class MessageContextMappingTableModel extends AbstractTableModel {
+        @Override
         public int getColumnCount() {
             return MAX_NUM_OF_TABLE_COLUMNS;
         }
 
+        @Override
         public void fireTableDataChanged() {
             super.fireTableDataChanged();
             enableOrDisableButtons();
             mappingTable.getSelectionModel().setSelectionInterval(updatedRowPosition, updatedRowPosition);
         }
 
+        @Override
         public int getRowCount() {
             return mappings.size();
         }
 
+        @Override
         public String getColumnName(int col) {
             switch (col) {
                 case 0:
@@ -167,10 +179,12 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
             }
         }
 
+        @Override
         public boolean isCellEditable(int row, int col) {
             return false;
         }
 
+        @Override
         public Object getValueAt(int row, int col) {
             switch (col) {
                 case 0:
@@ -202,14 +216,17 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         dispose();
     }
 
+    @Override
     public boolean isConfirmed() {
         return ok;
     }
 
+    @Override
     public void setData(MessageContextAssertion assertion) {
         this.assertion = assertion;
     }
 
+    @Override
     public MessageContextAssertion getData(MessageContextAssertion assertion) {
         return assertion;
     }
