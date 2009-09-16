@@ -5,6 +5,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.esm.EsmSubscriptionAssertion;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.MessageFormat;
@@ -19,6 +20,13 @@ public class EsmSubscriptionAssertionPolicyNode extends DefaultAssertionPolicyNo
         super(assertion);
     }
 
+    /**
+     * Note: this getName is used only in the policy window. It overrides the default getName in
+     * DefaultAssertionPolicyNode, which delegates to getName(boolean). The validator name of this assertion will come
+     * from calling getName(false) which is implemented by super
+     * @return the name to display in the policy window
+     */
+    @Override
     public String getName() {
         String policyGuid = assertion.getNotificationPolicyGuid();
         String polName = "no notification policy selected";
@@ -36,9 +44,11 @@ public class EsmSubscriptionAssertionPolicyNode extends DefaultAssertionPolicyNo
                 logger.warning("Could not find a policy with guid '" + policyGuid + "'");
             }
         }
-        return MessageFormat.format("ESM Subscription Assertion ({0})",polName);
+        String assertionName = assertion.meta().get(AssertionMetadata.SHORT_NAME).toString();
+        return MessageFormat.format(assertionName + " ({0})", polName);
     }
 
+    @Override
     public boolean canDelete() {
         return true;
     }

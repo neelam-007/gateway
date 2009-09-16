@@ -4,7 +4,6 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.objectmodel.migration.Migration;
@@ -22,6 +21,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
     private transient Policy notificationPolicy;    
     private static final String ESMSM = "http://metadata.dod.mil/mdr/ns/netops/esm/esmsm";
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return new String[0]; //Syntax.getReferencedNames(...);
@@ -40,14 +40,17 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
         this.notificationPolicyGuid = notificationPolicyGuid;
     }
 
+    @Override
     public Policy retrieveFragmentPolicy() {
         return notificationPolicy;
     }
 
+    @Override
     public void replaceFragmentPolicy(Policy policy) {
         notificationPolicy = policy;
     }
 
+    @Override
     public String retrievePolicyGuid() {
         return notificationPolicyGuid;
     }
@@ -62,6 +65,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
         notificationPolicy = esmAssertion.retrieveFragmentPolicy();
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -71,14 +75,12 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, new HashMap<String, String[]>());
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "ESM Subscription");
+        meta.put(AssertionMetadata.SHORT_NAME, "Subscribe to ESM Resource");
+        meta.put(AssertionMetadata.DESCRIPTION, "Subscribe to ESM Resource");
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] {"audit"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
 
-        // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/server16.gif");
-        meta.put(POLICY_NODE_NAME, "ESM Subscription Assertion");
         meta.put(AssertionMetadata.POLICY_NODE_CLASSNAME, "com.l7tech.external.assertions.esm.console.EsmSubscriptionAssertionPolicyNode");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
@@ -86,6 +88,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, EsmSubscriptionAssertion.Validator.class.getName());
 
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "ESM Subscription Properties");
         //set the routing assertion flag
         meta.put(AssertionMetadata.IS_ROUTING_ASSERTION, Boolean.TRUE);
 
@@ -104,6 +107,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
 
         }
 
+        @Override
         public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
             String polGuid = assertion.getNotificationPolicyGuid();
             if (polGuid == null || "".equals(polGuid))

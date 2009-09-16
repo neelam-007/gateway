@@ -34,8 +34,8 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
 
     private DefaultComboBoxModel listModel;
 
-    public EsmSubscriptionPropertiesDialog(Window owner) {
-        super(owner, "ESM Subscription Properties");
+    public EsmSubscriptionPropertiesDialog(Window owner, EsmSubscriptionAssertion assertion) {
+        super(owner, assertion);
         initialise();
     }
 
@@ -47,12 +47,14 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
         createListModel();
         
         policyList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableDisable();
             }
         });
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok = true;
                 viewToModel();
@@ -61,6 +63,7 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok = false;
                 dispose();
@@ -68,6 +71,7 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
         });
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 enableDisable();
             }
@@ -94,6 +98,7 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
 
         // Sort the policies in alphabetical order
         Collections.sort(notificationPolicyHeaders, new Comparator<PolicyHeaderWrapper>() {
+            @Override
             public int compare(PolicyHeaderWrapper o1, PolicyHeaderWrapper o2) {
                 if(o1.getHeader() == null && o2.getHeader() != null) {
                     return -1;
@@ -150,16 +155,19 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
         }
     }
 
+    @Override
     public boolean isConfirmed() {
         return ok;
     }
 
+    @Override
     public void setData(EsmSubscriptionAssertion assertion) {
         this.assertion = assertion;
         createListModel();
         modelToView();
     }
 
+    @Override
     public EsmSubscriptionAssertion getData(EsmSubscriptionAssertion assertion) {
         return assertion;
     }
@@ -178,6 +186,7 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
             this.header = header;
         }
 
+        @Override
         public String toString() {
             if (header != null) {
                 return header.getName();
@@ -186,6 +195,7 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
             }
         }
 
+        @Override
         public boolean equals(Object obj) {
             return obj instanceof PolicyHeaderWrapper && header != null && header.equals(((PolicyHeaderWrapper) obj).getHeader());
         }
