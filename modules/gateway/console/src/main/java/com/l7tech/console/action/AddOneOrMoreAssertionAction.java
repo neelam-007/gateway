@@ -33,32 +33,11 @@ public class AddOneOrMoreAssertionAction extends PolicyUpdatingAssertionAction {
     }
 
     public AddOneOrMoreAssertionAction(AssertionTreeNode treeNode, int insertPosition) {
-        super(treeNode, OneOrMoreAssertion.class);
+        super(treeNode, OneOrMoreAssertion.class, new OneOrMoreAssertion());
         if (!(treeNode.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }
         this.insertPosition = insertPosition;
-    }
-
-    /**
-     * @return the action name
-     */
-    public String getName() {
-        return "Add 'One or More' Assertion";
-    }
-
-    /**
-     * @return the aciton description
-     */
-    public String getDescription() {
-        return "Add a 'one or more' assertion folder to the policy";
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     */
-    protected String iconResource() {
-        return "com/l7tech/console/resources/folder.gif";
     }
 
     /**
@@ -68,8 +47,10 @@ public class AddOneOrMoreAssertionAction extends PolicyUpdatingAssertionAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 JTree tree =
                   (JTree)TopComponents.

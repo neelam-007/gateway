@@ -33,6 +33,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * Clone this composite and all it's children.
      * The clone will have copies of the children but no parent.
      */
+    @Override
     public Object clone() {
         CompositeAssertion n = (CompositeAssertion) super.clone();
         n.setChildren(copyAndReparentChildren(n, children));
@@ -88,6 +89,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         super.treeChanged();
     }
 
+    @Override
     public void treeChanged() {
         for (Iterator i = children.iterator(); i.hasNext();) {
             Assertion kid = (Assertion)i.next();
@@ -97,6 +99,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         super.treeChanged();
     }
 
+    @Override
     protected int renumber(int newStartingOrdinal) {
         int n = super.renumber(newStartingOrdinal);
         for (Iterator i = children.iterator(); i.hasNext();) {
@@ -108,6 +111,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         return n;
     }
 
+    @Override
     public Assertion getAssertionWithOrdinal(int ordinal) {
         if (getOrdinal() == ordinal)
             return this;
@@ -192,6 +196,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         setChildren(newKids);
     }
 
+    @Override
     public String toIndentedString(int indentLevel) {
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < indentLevel; ++i)
@@ -205,6 +210,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         return b.toString();
     }
 
+    @Override
     public String toString() {
         return toIndentedString(0);
     }

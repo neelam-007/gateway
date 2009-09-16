@@ -13,9 +13,4 @@ public class AllAssertionTreeNode extends CompositeAssertionTreeNode<AllAssertio
     public AllAssertionTreeNode(AllAssertion assertion) {
         super(assertion);
     }
-
-    public String getName(final boolean decorate) {
-        return "All assertions must evaluate to true";
-    }
-
 }

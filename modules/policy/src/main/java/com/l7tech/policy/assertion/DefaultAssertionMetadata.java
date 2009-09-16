@@ -57,6 +57,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
      */
     private static final Map defaultGetters = Collections.synchronizedMap(new HashMap() {{
         put(BASE_NAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 String className = meta.getAssertionClass().getName();
                 return cache(meta, key, Assertion.getBaseName(className));
@@ -64,6 +65,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         });
 
         put(BASE_PACKAGE, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 String pack = getPackageName(meta.getAssertionClass().getName());
                 if (pack.startsWith(".")) // can't happen
@@ -94,18 +96,21 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         put(CLIENT_ASSERTION_CLASSNAME, null);
 
         put(CLIENT_ASSERTION_TARGETS,  new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, new String[]{"request"});
             }
         });
 
         put(PROPERTIES_ACTION_NAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, toTitleCaps((String)meta.get(SHORT_NAME)) + " Properties");
             }
         });
 
         put(PROPERTIES_ACTION_DESC, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 String shortName = (String)meta.get(SHORT_NAME);
                 return cache(meta, key, "Change the properties of the " + shortName + " assertion.");
@@ -113,36 +118,42 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         });
 
         put(PROPERTIES_ACTION_ICON, new MetadataFinder(){
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "com/l7tech/console/resources/Properties16.gif");
             }
         });
 
         put(PALETTE_NODE_NAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, meta.get(SHORT_NAME));
             }
         });
 
         put(PALETTE_NODE_ICON, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "com/l7tech/console/resources/policy16.gif");
             }
         });
 
         put(CLIENT_ASSERTION_POLICY_ICON, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "com/l7tech/proxy/resources/tree/policy16.gif");
             }
         });
 
         put(PALETTE_NODE_SORT_PRIORITY, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, 0);
             }
         });
 
         put(PALETTE_NODE_CLASSNAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "PaletteNode");
             }
@@ -153,6 +164,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         put(ASSERTION_FACTORY, null); // installed by AssertionRegistry because it relies on non-API classes
 
         put(POLICY_NODE_NAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, meta.get(SHORT_NAME));
             }
@@ -161,12 +173,14 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         put(POLICY_NODE_NAME_FACTORY, null); // installed by AssertionRegistry because it relies on non-API classes
 
         put(POLICY_NODE_ICON, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, meta.get(PALETTE_NODE_ICON));
             }
         });
 
         put(POLICY_NODE_CLASSNAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "PolicyNode");
             }
@@ -175,6 +189,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         put(POLICY_NODE_FACTORY, null); // installed by ConsoleAssertionRegistry because it relies on console classes
 
         put(POLICY_ADVICE_CLASSNAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "Advice");
             }
@@ -183,12 +198,14 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         put(POLICY_ADVICE_INSTANCE, null); // installed by ConsoleAssertionRegistry because it relies on console classes
 
         put(POLICY_VALIDATOR_CLASSNAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, basepack(meta) + ".policy." + basename(meta) + "AssertionValidator");
             }
         });
 
         put(PROPERTIES_ACTION_CLASSNAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "PropertiesAction");
             }
@@ -197,6 +214,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         put(PROPERTIES_ACTION_FACTORY, null); // installed by ConsoleAssertionRegistry because it relies on console classes
 
         put(PROPERTIES_EDITOR_CLASSNAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "PropertiesDialog");
             }
@@ -205,12 +223,14 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         put(PROPERTIES_EDITOR_FACTORY, null); // installed by ConsoleAssertionRegistry because it relies on console classes
 
         put(PROPERTIES_EDITOR_SUPPRESS_SHEET_DISPLAY, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return Boolean.FALSE;
             }
         });
 
         put(WSP_TYPE_MAPPING_CLASSNAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, basepack(meta) + ".wsp." + basename(meta) + "AssertionMapping");
             }
@@ -219,6 +239,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         put(WSP_TYPE_MAPPING_INSTANCE, null); // installed by AssertionRegistry because it touches non-API classes
 
         put(WSP_EXTERNAL_NAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 String base = (String)meta.get(BASE_NAME);
                 base = badlocalnamechars.matcher(base).replaceAll("_");
@@ -227,12 +248,14 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         });
 
         put(WSP_SUBTYPE_FINDER, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return null;
             }
         });
 
         put(WSP_COMPATIBILITY_MAPPINGS, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return null;
             }
@@ -241,6 +264,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         // Default finder for usedByClient.  AssertionRegistry upgrades this to a smarter one that knows
         // how to check AllAssertions.BRIDGE_EVERYTHING.
         put(USED_BY_CLIENT, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, Boolean.FALSE);
             }
@@ -248,6 +272,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         // Default finder for shortName.  This looks at the asertion class name, and changes (ie) FooBarAssertion into "Foo Bar".
         put(SHORT_NAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, camelSplitter.matcher((CharSequence)meta.get(BASE_NAME)).replaceAll(" "));
             }
@@ -255,6 +280,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         // Default finder for longName.  This looks at the assertion class name, and changes (ie) FooBarAssertion into "Foo Bar Assertion".
         put(LONG_NAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, meta.get(SHORT_NAME) + " Assertion");
             }
@@ -262,26 +288,30 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         // Default finder for description.  The SSM replaces this with a smarter one that looks in properties files.
         put(DESCRIPTION, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
-                Object longName = meta.get(LONG_NAME);                
+                Object longName = meta.get(LONG_NAME);
                 String value = longName == null ? "This is the " + meta.get(SHORT_NAME) + " assertion." : longName.toString();
                 return cache(meta, key, value);
             }
         });
 
         put(PROPERTIES_FILE, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, basepack(meta) + ".console.resources." + basename(meta) + "Assertion.properties");
             }
         });
 
         put(VARIANT_PROTOTYPES, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, new Assertion[0]);
             }
         });
 
         put(PALETTE_FOLDERS, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, new String[] { });
             }
@@ -290,18 +320,21 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         // Default finder for featureSetName.  AssertionRegistry upgrades this to a smarter one that knows
         // how to check AllAssertions.SERIALIZABLE_EVERYTHING.
         put(FEATURE_SET_NAME, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return null;
             }
         });
 
         put(CLUSTER_PROPERTIES, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, new HashMap());
             }
         });
 
         put("", new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return null;
             }
@@ -309,6 +342,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         //default holder value for routing assertion
         put(IS_ROUTING_ASSERTION, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, Boolean.FALSE);
             }
@@ -405,6 +439,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         return prototype;
     }
 
+    @Override
     public Class getAssertionClass() {
         return prototype.getClass();
     }
@@ -447,6 +482,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         return got instanceof Integer ? ((Integer)got).intValue() : 0;
     }
 
+    @Override
     public Object get(String key) {
         Object got = get(properties, key);
         if (NO_VALUE == got)

@@ -41,32 +41,11 @@ public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
     }
 
     public AddIdentityAssertionAction(AssertionTreeNode node, int inserPosition) {
-        super(node, LIC_AUTH_ASSERTIONS);
+        super(node, LIC_AUTH_ASSERTIONS, new SpecificUser()/*this or group not important*/);
         if (!(node.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }
         this.inserPosition = inserPosition;
-    }
-
-    /**
-     * @return the action name
-     */
-    public String getName() {
-        return "Add User or Group";
-    }
-
-    /**
-     * @return the aciton description
-     */
-    public String getDescription() {
-        return "Add a user or group to the policy";
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     */
-    protected String iconResource() {
-        return "com/l7tech/console/resources/user16.png";
     }
 
     /**
@@ -76,8 +55,10 @@ public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 Frame f = TopComponents.getInstance().getTopParent();
                 Options options = new Options();

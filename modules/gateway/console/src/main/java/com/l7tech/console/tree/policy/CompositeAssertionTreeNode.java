@@ -141,4 +141,9 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
         list.add(a);
         return list.toArray(new Action[list.size()]);
     }
+
+    @Override
+    public String getName(boolean decorate) {
+        return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate);
+    }
 }

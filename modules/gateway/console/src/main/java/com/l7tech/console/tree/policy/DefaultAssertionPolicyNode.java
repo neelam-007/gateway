@@ -33,27 +33,30 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
 
     @Override
     public String getName(final boolean decorate) {
+        return getNameFromMeta(asAssertion(), decorate);
+    }
+
+    public static <AT extends Assertion> String getNameFromMeta(final AT assertion, final boolean decorate){
         //noinspection unchecked
-        AssertionMetadata meta = asAssertion().meta();
+        AssertionMetadata meta = assertion.meta();
         Object factory = meta.get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
         String name = null;
         if (factory instanceof Functions.Unary) {
             //noinspection unchecked
             Functions.Unary<String, Assertion> unary = (Functions.Unary<String, Assertion>)factory;
-            name = unary.call(asAssertion());
+            name = unary.call(assertion);
         } else if(factory instanceof AssertionNodeNameFactory){
             AssertionNodeNameFactory nameFactory = (AssertionNodeNameFactory) factory;
-            name = nameFactory.getAssertionName(asAssertion(), decorate);
+            name = nameFactory.getAssertionName(assertion, decorate);
         } else if (factory != null && factory instanceof String) {
-            name = addFeatureNames(factory.toString());
+            name = addFeatureNames(assertion, factory.toString());
         } else {
             Object obj = meta.get(AssertionMetadata.POLICY_NODE_NAME);
             if (obj != null)
-                name = addFeatureNames(obj.toString());
+                name = addFeatureNames(assertion, obj.toString());
         }
-        return name != null ? name : asAssertion().getClass().getName();
+        return name != null ? name : assertion.getClass().getName();
     }
-
     /**
      * Add any prefixes and suffixes to a static name based on supported features (like SecurityHeaderAddressable).
      * <p/>
@@ -62,9 +65,8 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
      * @param name
      * @return the name, possibly with one or more prefixes or suffixes added.
      */
-    protected String addFeatureNames(String name) {
-        AT ass = asAssertion();
-        return AssertionUtils.decorateName(ass, name);
+    protected static <AT extends Assertion> String addFeatureNames(final AT assertion, final String name) {
+        return AssertionUtils.decorateName(assertion, name);
     }
 
     @Override

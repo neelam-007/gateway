@@ -9,6 +9,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
+import java.util.Collection;
+
 public abstract class NodeActionWithMetaSupport extends NodeAction{
 
     private final AssertionMetadata metaData;
@@ -23,6 +25,14 @@ public abstract class NodeActionWithMetaSupport extends NodeAction{
 
     public NodeActionWithMetaSupport(AbstractTreeNode node, final Assertion assertion) {
         super(node, 
+                getMetaFromAssertion(PROPERTIES_ACTION_NAME, assertion),
+                getMetaFromAssertion(PROPERTIES_ACTION_DESC, assertion),
+                getMetaFromAssertion(PROPERTIES_ACTION_ICON, assertion));
+        metaData = assertion.meta();
+    }
+
+    public NodeActionWithMetaSupport(AbstractTreeNode node, Collection<Class> allowedAssertionLicenses, final Assertion assertion) {
+        super(node, allowedAssertionLicenses, null, 
                 getMetaFromAssertion(PROPERTIES_ACTION_NAME, assertion),
                 getMetaFromAssertion(PROPERTIES_ACTION_DESC, assertion),
                 getMetaFromAssertion(PROPERTIES_ACTION_ICON, assertion));

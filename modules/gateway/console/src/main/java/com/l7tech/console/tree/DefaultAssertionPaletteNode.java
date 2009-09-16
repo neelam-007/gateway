@@ -12,8 +12,7 @@ public class DefaultAssertionPaletteNode<AT extends Assertion> extends AbstractL
     final AT prototype;
 
     public DefaultAssertionPaletteNode(AT prototype) {
-        super((String)prototype.meta().get(AssertionMetadata.PALETTE_NODE_NAME), 
-              (String)prototype.meta().get(AssertionMetadata.PALETTE_NODE_ICON));
+        super(prototype);
         this.prototype = prototype;
     }
 

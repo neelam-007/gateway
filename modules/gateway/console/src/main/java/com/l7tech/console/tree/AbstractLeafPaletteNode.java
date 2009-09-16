@@ -2,8 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_NAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_ICON;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Base class for leaf nodes (no children) with icons.
@@ -36,6 +35,7 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
      *
      * @return true as this is a leaf
      */
+    @Override
     public boolean isLeaf() {
         return true;
     }
@@ -45,6 +45,7 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
      *
      * @return false since this is a leaf
      */
+    @Override
     public boolean getAllowsChildren() {
         return false;
     }
@@ -54,6 +55,7 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
      *
      * @return the node name that is displayed
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -63,8 +65,9 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
     /**
      * subclasses override this method specifying the resource name
      *
-     * @param open for nodes that can be opened, can have children
+     * @param open not applicable to palette nodes
      */
+    @Override
     protected String iconResource(boolean open) {
         return iconResource;
     }

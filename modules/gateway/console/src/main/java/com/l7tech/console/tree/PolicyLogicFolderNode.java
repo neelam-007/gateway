@@ -23,12 +23,11 @@ public class PolicyLogicFolderNode extends AbstractPaletteFolderNode {
     /**
      * subclasses override this method
      */
+    @Override
     protected void doLoadChildren() {
         int index = 0;
         children = null;
         insert(new CommentAssertionPaletteNode(), index++);
-        insert(new OneOrMoreNode(), index++);
-        insert(new AllNode(), index++);
         insert(new TrueAssertionPaletteNode(), index++);
         insert(new FalseAssertionPaletteNode(), index++);
         insert(new SetVariableAssertionPaletteNode(), index++);

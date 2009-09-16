@@ -13,11 +13,4 @@ public class OneOrMoreAssertionTreeNode extends CompositeAssertionTreeNode<OneOr
     public OneOrMoreAssertionTreeNode(OneOrMoreAssertion assertion) {
         super(assertion);
     }
-
-    /**
-     * @return the node name that is displayed
-     */
-    public String getName(final boolean decorate) {
-        return "At least one assertion must evaluate to true";
-    }
 }

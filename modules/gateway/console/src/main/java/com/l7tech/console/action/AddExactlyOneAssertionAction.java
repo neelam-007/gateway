@@ -27,41 +27,22 @@ public class AddExactlyOneAssertionAction extends PolicyUpdatingAssertionAction 
      * @param n the assertion tree node must be composite
      */
     public AddExactlyOneAssertionAction(AssertionTreeNode n) {
-        super(n, ExactlyOneAssertion.class);
+        super(n, ExactlyOneAssertion.class, new ExactlyOneAssertion());
         if (!(n.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }
     }
 
-    /**
-     * @return the action name
-     */
-    public String getName() {
-        return "Add 'exactly one' assertion";
-    }
-
-    /**
-     * @return the aciton description
-     */
-    public String getDescription() {
-        return "Add 'exactly one' assertion folder to the policy assertion tree";
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     */
-    protected String iconResource() {
-        return "com/l7tech/console/resources/folder.gif";
-    }
-
-    /** Actually perform the action.
+     /** Actually perform the action.
      * This is the method which should be called programmatically.
 
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 JTree tree =
                   (JTree)TopComponents.

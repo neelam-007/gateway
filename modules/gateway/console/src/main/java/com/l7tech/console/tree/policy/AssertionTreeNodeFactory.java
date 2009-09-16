@@ -37,9 +37,6 @@ public class AssertionTreeNodeFactory {
     static {
         assertionMap.put(SpecificUser.class, SpecificUserAssertionTreeNode.class);
         assertionMap.put(MemberOfGroup.class, MemberOfGroupAssertionTreeNode.class);
-        assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
-        assertionMap.put(ExactlyOneAssertion.class, ExactlyOneAssertionTreeNode.class);
-        assertionMap.put(AllAssertion.class, AllAssertionTreeNode.class);
         assertionMap.put(TrueAssertion.class, TrueAssertionPolicyNode.class);
         assertionMap.put(FalseAssertion.class, FalseAssertionPolicyNode.class);
 

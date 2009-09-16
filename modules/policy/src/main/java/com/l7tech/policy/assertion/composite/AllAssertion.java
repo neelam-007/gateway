@@ -3,6 +3,11 @@
  */
 package com.l7tech.policy.assertion.composite;
 
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_ICON;
+
 import java.util.List;
 
 /**
@@ -25,4 +30,24 @@ public final class AllAssertion extends CompositeAssertion {
     public boolean isRoot() {
         return getParent() == null;
     }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
+        meta.put(PALETTE_NODE_CLASSNAME, "com.l7tech.console.tree.AllNode");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/folder.gif");
+
+        meta.put(SHORT_NAME, "All assertions must evaluate to true");
+        meta.put(DESCRIPTION, "All child assertions must evaluate to true.");
+
+        meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.AllAssertionTreeNode");
+
+        meta.put(PROPERTIES_ACTION_NAME, "Add 'All…' Folder");
+        meta.put(PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/folder.gif");
+
+        return meta;
+    }
+
 }

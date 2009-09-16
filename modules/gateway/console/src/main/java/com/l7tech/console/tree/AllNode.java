@@ -13,7 +13,7 @@ public class AllNode extends AbstractLeafPaletteNode {
      * construct the <CODE>ResponseRegexNode</CODE> instance.
      */
     public AllNode() {
-        super("All assertions must evaluate to true", "com/l7tech/console/resources/folder.gif");
+        super(new AllAssertion());
     }
 
     /**
@@ -22,6 +22,7 @@ public class AllNode extends AbstractLeafPaletteNode {
      *
      * @return the popup menu
      */
+    @Override
     public Assertion asAssertion() {
         return new AllAssertion();
     }
