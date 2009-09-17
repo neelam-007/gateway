@@ -37,8 +37,6 @@ public class AssertionTreeNodeFactory {
     static {
         assertionMap.put(SpecificUser.class, SpecificUserAssertionTreeNode.class);
         assertionMap.put(MemberOfGroup.class, MemberOfGroupAssertionTreeNode.class);
-        assertionMap.put(TrueAssertion.class, TrueAssertionPolicyNode.class);
-        assertionMap.put(FalseAssertion.class, FalseAssertionPolicyNode.class);
 
         assertionMap.put(RoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
         assertionMap.put(HttpRoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
@@ -52,7 +50,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(WsFederationPassiveTokenRequest.class, WsFederationPassiveTokenRequestTreeNode.class);
         assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);
         assertionMap.put(FaultLevel.class, FaultLevelTreeNode.class);
-        assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);
         assertionMap.put(Include.class, IncludeAssertionPolicyNode.class);
     }
 

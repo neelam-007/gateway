@@ -34,7 +34,7 @@ import java.util.TreeSet;
  *  <li><a href="http://sarek.l7tech.com/mediawiki/index.php?title=XML_Variables">XML Variables</a> (4.3)
  * </ul>
  */
-public class SetVariableAssertionDialog extends JDialog {
+public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private static class DataTypeComboBoxItem {
         private final DataType _dataType;
@@ -74,7 +74,7 @@ public class SetVariableAssertionDialog extends JDialog {
     }
 
     public SetVariableAssertionDialog(Frame owner, final boolean readOnly, final SetVariableAssertion assertion, final Assertion contextAssertion) throws HeadlessException {
-        super(owner, "Set Variable", true);
+        super(owner, assertion, true);
         this.readOnly = readOnly;
 
         _expressionStatusBorder = _expressionStatusScrollPane.getBorder();
@@ -91,6 +91,7 @@ public class SetVariableAssertionDialog extends JDialog {
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.STRING));
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.MESSAGE));
         _dataTypeComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 _contentTypeTextField.setEnabled(getSelectedDataType() == DataType.MESSAGE);
                 validateFields();
@@ -100,10 +101,12 @@ public class SetVariableAssertionDialog extends JDialog {
         TextComponentPauseListenerManager.registerPauseListener(
                 _variableNameTextField,
                 new PauseListener() {
+                    @Override
                     public void textEntryPaused(JTextComponent component, long msecs) {
                         validateFields();
                     }
 
+                    @Override
                     public void textEntryResumed(JTextComponent component) {
                         clearVariableNameStatus();
                     }
@@ -112,10 +115,12 @@ public class SetVariableAssertionDialog extends JDialog {
         TextComponentPauseListenerManager.registerPauseListener(
                 _contentTypeTextField,
                 new PauseListener() {
+                    @Override
                     public void textEntryPaused(JTextComponent component, long msecs) {
                         validateFields();
                     }
 
+                    @Override
                     public void textEntryResumed(JTextComponent component) {
                         clearContentTypeStatus();
                     }
@@ -124,10 +129,12 @@ public class SetVariableAssertionDialog extends JDialog {
         TextComponentPauseListenerManager.registerPauseListener(
                 _expressionTextArea,
                 new PauseListener() {
+                    @Override
                     public void textEntryPaused(JTextComponent component, long msecs) {
                         validateFields();
                     }
 
+                    @Override
                     public void textEntryResumed(JTextComponent component) {
                         clearExpressionStatus();
                     }
@@ -135,6 +142,7 @@ public class SetVariableAssertionDialog extends JDialog {
                 500);
 
         _cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 _assertionModified = false;
                 dispose();
@@ -142,6 +150,7 @@ public class SetVariableAssertionDialog extends JDialog {
         });
 
         _okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 assertion.setVariableToSet(_variableNameTextField.getText());
 

@@ -27,8 +27,6 @@ public class PolicyLogicFolderNode extends AbstractPaletteFolderNode {
     protected void doLoadChildren() {
         int index = 0;
         children = null;
-        insert(new FalseAssertionPaletteNode(), index++);
-        insert(new SetVariableAssertionPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);
         insertMatchingCustomAssertions(index, Category.LOGIC);
     }

@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.util.HexUtils;
 import com.l7tech.policy.variable.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -118,11 +119,13 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         _lineBreak = lineBreak;
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         if (_variableToSet == null) return new VariableMetadata[0];
         return new VariableMetadata[] { getMetadata() };
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (_base64Expression == null) return new String[0];
@@ -136,4 +139,53 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         }
         return _meta;
     }
+
+    private final static String baseName = "Set Context Variable";
+    private static final int MAX_DISPLAY_LENGTH = 40;
+    
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SetVariableAssertion>(){
+        @Override
+        public String getAssertionName( final SetVariableAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            StringBuffer name = new StringBuffer(baseName + " ");
+            name.append(assertion.getVariableToSet());
+            name.append(" as ");
+            name.append(assertion.getDataType().getName());
+            name.append(" to");
+            final String expression = assertion.expression();
+            if (expression.length() == 0) {
+                name.append(" empty");
+            } else if (expression.length() <= MAX_DISPLAY_LENGTH) {
+                name.append(": ");
+                name.append(expression);
+            } else {
+                name.append(": ");
+                name.append(expression, 0, MAX_DISPLAY_LENGTH - 1);
+                name.append("...");
+            }
+            return name.toString();
+        }
+    };
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
+
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Create custom context variables.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
+
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.SetVariableAssertionPropertiesAction");
+        meta.put(PROPERTIES_ACTION_NAME, "Context Variable Properties");
+        meta.put(PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/About16.gif");
+        
+        return meta;
+    }
+
 }

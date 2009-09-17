@@ -6,6 +6,7 @@
 
 package com.l7tech.policy.assertion;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 
 /**
@@ -24,4 +25,18 @@ public class FalseAssertion extends Assertion {
     public static FalseAssertion getInstance() {
         return INSTANCE;
     }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
+
+        meta.put(SHORT_NAME, "Stop Processing");
+        meta.put(DESCRIPTION, "Evaluate to false and stop processing this branch of the policy.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Stop16.gif");
+        return meta;
+    }
+    
 }
