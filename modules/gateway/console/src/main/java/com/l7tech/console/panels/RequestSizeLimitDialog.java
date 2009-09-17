@@ -11,14 +11,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * Created by IntelliJ IDEA.
- * User: megery
- * Date: Sep 29, 2005
- * Time: 2:32:47 PM
+ * @author megery
  */
-public class RequestSizeLimitDialog extends JDialog {
-    private static final String TITLE = "Request Size Limit";
-    private final InputValidator validator = new InputValidator(this, TITLE);
+public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
+    private final InputValidator validator;
     private JPanel mainPanel;
     private JButton cancelButton;
     private JButton okButton;
@@ -30,7 +26,8 @@ public class RequestSizeLimitDialog extends JDialog {
     private boolean confirmed = false;
 
     public RequestSizeLimitDialog(Frame owner, RequestSizeLimit assertion, boolean modal, boolean readOnly) throws HeadlessException {
-        super(owner, TITLE, modal);
+        super(owner, assertion, modal);
+        validator = new InputValidator(this, getTitle());
         doInit(assertion, readOnly);
     }
 
@@ -43,12 +40,14 @@ public class RequestSizeLimitDialog extends JDialog {
 
         okButton.setEnabled( !readOnly );
         validator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doSave();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doCancel();
             }

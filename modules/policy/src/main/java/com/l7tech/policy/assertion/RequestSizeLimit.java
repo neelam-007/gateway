@@ -6,6 +6,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Assertion for limiting request size.
@@ -45,4 +46,21 @@ public class RequestSizeLimit extends Assertion {
     public void setEntireMessage(boolean entireMessage) {
         this.entireMessage = entireMessage;
     }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(PALETTE_FOLDERS, new String[]{"threatProtection"});
+
+        meta.put(SHORT_NAME, "Limit Request Size");
+        meta.put(DESCRIPTION, "Enable a size limit for the entire message or just the XML portion of the message.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/MessageLength-16x16.gif");
+
+        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.RequestSizeLimitDialogAction");
+        meta.put(PROPERTIES_ACTION_NAME, "Request Size Limit Properties");
+        return meta;
+    }
+
 }
