@@ -126,6 +126,7 @@ public class JDBCQueryAssertion extends Assertion implements UsesVariables, Sets
     private static final String DEFAULT_VARIABLE_PREFIX = "jdbcQuery";
     public static final String VAR_COUNT_SUFFIX = "count";
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         ArrayList<VariableMetadata> varMeta = new ArrayList<VariableMetadata>();
 
@@ -140,6 +141,7 @@ public class JDBCQueryAssertion extends Assertion implements UsesVariables, Sets
         return varMeta.toArray(new VariableMetadata[varMeta.size()]);
     }
 
+    @Override
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(connectionUrl + driver + user + sql + variablePrefix);
     }
@@ -150,7 +152,8 @@ public class JDBCQueryAssertion extends Assertion implements UsesVariables, Sets
     private static final String META_INITIALIZED = JDBCQueryAssertion.class.getName() + ".metadataInitialized";
 
     public static final String MAX_RECORDS_CLUSTER_PROP = "jdbcQuery.maxRecords";
-    
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -167,7 +170,7 @@ public class JDBCQueryAssertion extends Assertion implements UsesVariables, Sets
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "JDBC Query");
-        meta.put(AssertionMetadata.LONG_NAME, "Query a backend database via JDBC.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Query a backend database via JDBC.");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 

@@ -31,6 +31,7 @@ public class CacheStorageAssertion extends Assertion implements UsesVariables {
 
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Override
     public String[] getVariablesUsed() {
         List<String> ret = new ArrayList<String>();
         if (cacheId != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(cacheId)));
@@ -152,13 +153,14 @@ public class CacheStorageAssertion extends Assertion implements UsesVariables {
     //
     private static final String META_INITIALIZED = CacheLookupAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
         meta.put(AssertionMetadata.SHORT_NAME, "Cache Storage");
-        meta.put(AssertionMetadata.LONG_NAME, "Store value in cache");
+        meta.put(AssertionMetadata.DESCRIPTION, "Store value in cache");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/store16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");

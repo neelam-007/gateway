@@ -69,11 +69,13 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
         this.outputVariable = outputVariable;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return inputVariable == null ? EMPTY_STRING : new String[] { inputVariable };
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return outputVariable == null ? EMPTY_VARIABLE_METADATA : new VariableMetadata[] {
                 new VariableMetadata(outputVariable, false, true, outputVariable, true, DataType.UNKNOWN)
@@ -85,6 +87,7 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
     //
     private static final String META_INITIALIZED = SplitAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         final DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -92,9 +95,10 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Split Variable");
-        meta.put(AssertionMetadata.LONG_NAME, "Split a single-valued context variable into a multi-valued context variable.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Split a single-valued context variable into a multi-valued context variable.");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SplitAssertion>() {
+            @Override
             public String call(SplitAssertion assertion) {
                 return "Split variable " + assertion.getInputVariable() + " into " + assertion.getOutputVariable() + " on " + assertion.getSplitPattern();
             }
@@ -132,6 +136,7 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
             }
         }
 
+        @Override
         public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
             if (message != null)
                 result.addWarning((new PolicyValidatorResult.Warning(assertion, path, message, null)));

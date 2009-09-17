@@ -20,6 +20,7 @@ public class FtpCredentialAssertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(FtpCredentialAssertion.class.getName());
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Override
     public String[] getVariablesUsed() {
         return new String[0]; //ExpandVariables.getReferencedNames(...);
     }
@@ -29,6 +30,7 @@ public class FtpCredentialAssertion extends Assertion implements UsesVariables {
      *
      * @return true
      */
+    @Override
     public boolean isCredentialSource() {
         return true;
     }
@@ -38,6 +40,7 @@ public class FtpCredentialAssertion extends Assertion implements UsesVariables {
     //
     private static final String META_INITIALIZED = FtpCredentialAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
 
@@ -45,7 +48,7 @@ public class FtpCredentialAssertion extends Assertion implements UsesVariables {
     
             // Set description for GUI
             meta.put(AssertionMetadata.SHORT_NAME, "Require FTP Credentials");
-            meta.put(AssertionMetadata.LONG_NAME, "The requestor must provide credentials using FTP authentication");
+            meta.put(AssertionMetadata.DESCRIPTION, "The requestor must provide credentials using FTP authentication");
 
             // Add to palette folder(s)
             //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,

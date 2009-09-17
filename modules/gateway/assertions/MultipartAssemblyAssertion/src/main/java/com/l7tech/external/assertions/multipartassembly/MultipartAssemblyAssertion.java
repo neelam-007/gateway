@@ -40,6 +40,7 @@ public class MultipartAssemblyAssertion extends Assertion implements UsesVariabl
         this.variablePrefix = variablePrefix;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return new String[] {
@@ -54,6 +55,7 @@ public class MultipartAssemblyAssertion extends Assertion implements UsesVariabl
     //
     private static final String META_INITIALIZED = MultipartAssemblyAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -61,10 +63,10 @@ public class MultipartAssemblyAssertion extends Assertion implements UsesVariabl
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Multipart Assembly");
-        meta.put(AssertionMetadata.LONG_NAME, "Wrap a message in a multipart envelope and add attachments");
         meta.put(AssertionMetadata.DESCRIPTION, "Wraps a message in a multipart envelope and adds attachments specified in context variables, each expected to contain an array.");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary< String, MultipartAssemblyAssertion >() {
+            @Override
             public String call(MultipartAssemblyAssertion assertion) {
                 return assertion.isActOnRequest()
                         ? "Multipart Assembly into Request"

@@ -46,8 +46,10 @@ public class AssertionMetadataTest extends TestCase {
         assertNotNull(am);
 
         assertEquals("UncustomizedMetadata", am.get(BASE_NAME));
+        assertEquals("Uncustomized Metadata", am.get(SHORT_NAME));
         assertEquals("com.l7tech.policy.testuncust", am.get(BASE_PACKAGE));
         assertEquals("Uncustomized Metadata Assertion", am.get(LONG_NAME));
+        assertEquals("Uncustomized Metadata Assertion", am.get(DESCRIPTION));
         assertEquals("Uncustomized Metadata", am.get(SHORT_NAME));
         assertEquals(Boolean.FALSE, am.get(USED_BY_CLIENT));
         assertEquals("com.l7tech.policy.testuncust.wsp.UncustomizedMetadataAssertionMapping", am.get(WSP_TYPE_MAPPING_CLASSNAME));

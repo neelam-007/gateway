@@ -25,6 +25,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
     public static final String DEFAULT_VAR_PREFIX = "authenticatedUser";
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Override
     public String[] getVariablesUsed() {
         return new String[0];
     }
@@ -46,6 +47,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
     }
 
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
+    @Override
     public EntityHeader[] getEntitiesUsed() {
         if(identityProviderOid > 0) {
             return new EntityHeader[] {new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null)};
@@ -54,6 +56,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
         }
     }
 
+    @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if(oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && oldEntityHeader.getOid() == identityProviderOid &&
                 newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG))
@@ -71,6 +74,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
         this.lookupAttributes = lookupAttributes;
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         if (lookupAttributes == null || lookupAttributes.length == 0) return new VariableMetadata[0];
         String vp = variablePrefix;
@@ -88,6 +92,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
     //
     private static final String META_INITIALIZED = IdentityAttributesAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -95,7 +100,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Extract Attributes for Authenticated User");
-        meta.put(AssertionMetadata.LONG_NAME, "Set Context Variables based on attributes of the authenticated user");
+        meta.put(AssertionMetadata.DESCRIPTION, "Set Context Variables based on attributes of the authenticated user");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Identity Attributes Properties");
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.idattr.console.IdentityAttributesAssertionDialog");

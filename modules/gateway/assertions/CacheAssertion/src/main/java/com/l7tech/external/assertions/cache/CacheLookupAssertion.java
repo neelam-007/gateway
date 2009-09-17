@@ -27,6 +27,7 @@ public class CacheLookupAssertion extends Assertion implements UsesVariables, Se
 
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Override
     public String[] getVariablesUsed() {
         List<String> ret = new ArrayList<String>();
         if (cacheId != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(cacheId)));
@@ -34,6 +35,7 @@ public class CacheLookupAssertion extends Assertion implements UsesVariables, Se
         return ret.toArray(new String[ret.size()]);
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return targetVariableName != null ? new VariableMetadata[] { new VariableMetadata(targetVariableName) } : new VariableMetadata[0];
     }
@@ -132,13 +134,14 @@ public class CacheLookupAssertion extends Assertion implements UsesVariables, Se
     //
     private static final String META_INITIALIZED = CacheLookupAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
         meta.put(AssertionMetadata.SHORT_NAME, "Cache Lookup");
-        meta.put(AssertionMetadata.LONG_NAME, "Look up value in cache");
+        meta.put(AssertionMetadata.DESCRIPTION, "Look up value in cache");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/load16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");

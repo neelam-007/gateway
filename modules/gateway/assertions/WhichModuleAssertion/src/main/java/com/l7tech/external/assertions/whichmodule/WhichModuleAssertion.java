@@ -48,6 +48,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         this.assertionXml = assertionXml;
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
                 new VariableMetadata("module.exists", false, false, null, false, DataType.BOOLEAN),
@@ -60,7 +61,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.LONG_NAME, "Gets info about the module that offers the specified assertion (identified by its XML representation); fails if it is unrecognized");
+        meta.put(AssertionMetadata.DESCRIPTION, "Gets info about the module that offers the specified assertion (identified by its XML representation); fails if it is unrecognized");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ServerLogs.gif");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
@@ -82,6 +83,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
             this.assertionRegistry = (ServerAssertionRegistry)context.getBean("assertionRegistry", ServerAssertionRegistry.class);
         }
 
+        @Override
         public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
             try {
                 Assertion ass = wspReader.parseStrictly(getAssertion().getAssertionXml(), WspReader.INCLUDE_DISABLED);
@@ -138,6 +140,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
             getRootPane().setDefaultButton(ok);
 
             ActionListener al = new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     confirmed = e.getActionCommand().equals(ok.getActionCommand());
                     PropDialog.this.dispose();
@@ -154,10 +157,12 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
             return p;
         }
 
+        @Override
         public boolean isConfirmed() {
             return confirmed;
         }
 
+        @Override
         public void setData(WhichModuleAssertion assertion) {
             String xml = assertion.getAssertionXml();
             try {
@@ -170,6 +175,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
             field.setText(xml);
         }
 
+        @Override
         public WhichModuleAssertion getData(WhichModuleAssertion assertion) {
             assertion.setAssertionXml(field.getText());
             return assertion;
@@ -194,6 +200,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
             }
         }
 
+        @Override
         public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
             if (xmlProblem != null)
                 result.addError(

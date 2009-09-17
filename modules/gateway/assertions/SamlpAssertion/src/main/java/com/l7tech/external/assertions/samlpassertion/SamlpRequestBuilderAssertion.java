@@ -344,7 +344,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.LONG_NAME, "Create a SAML Protocol request.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Create a SAML Protocol request.");
         
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
 

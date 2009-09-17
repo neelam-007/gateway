@@ -34,6 +34,7 @@ public class StripPartsAssertion extends Assertion {
     //
     private static final String META_INITIALIZED = StripPartsAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -41,10 +42,10 @@ public class StripPartsAssertion extends Assertion {
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Strip Parts");
-        meta.put(AssertionMetadata.LONG_NAME, "Strips all MIME multipart parts except the XML part.");
         meta.put(AssertionMetadata.DESCRIPTION, "If the message is multipart, converts it to a single part message by throwing away all but the XML part.");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary< String, StripPartsAssertion >() {
+            @Override
             public String call(StripPartsAssertion assertion) {
                 return assertion.isActOnRequest()
                         ? "Strip Parts from Request"

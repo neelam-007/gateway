@@ -82,7 +82,7 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
 
         meta.put(AssertionMetadata.SHORT_NAME, "Require HTTP Digest Credentials");
-        meta.put(AssertionMetadata.LONG_NAME, "The requestor must provide credentials using the HTTP DIGEST authentication method.");
+        meta.put(AssertionMetadata.DESCRIPTION, "The requestor must provide credentials using the HTTP DIGEST authentication method.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
 

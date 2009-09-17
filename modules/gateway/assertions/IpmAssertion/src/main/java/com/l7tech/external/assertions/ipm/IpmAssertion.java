@@ -115,12 +115,14 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
     }
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Override
     public String[] getVariablesUsed() {
         List<String> ret = new ArrayList<String>();
         ret.add(sourceVariableName);
         return ret.toArray(new String[ret.size()]);
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return targetVariableName == null ? new VariableMetadata[0] : new VariableMetadata[] {
                 new VariableMetadata(targetVariableName, false, false, targetVariableName, true, DataType.STRING),
@@ -136,6 +138,7 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
     public static final String PARAM_IPM_MAXBUFFERS = "ipmMaxBuffers";
     public static final String PARAM_IPM_SHAREBYTEBUFFERS = "ipmSharedByteBuffers";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -160,7 +163,7 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "IPM To XML");
-        meta.put(AssertionMetadata.LONG_NAME, "Expands an IPM data buffer into XML using a configured template.  " +
+        meta.put(AssertionMetadata.DESCRIPTION, "Expands an IPM data buffer into XML using a configured template.  " +
                                               "The IPM data is read from a variable, and the output is saved in " +
                                               "a different variable.");
 

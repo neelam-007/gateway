@@ -63,11 +63,13 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
         this.outputVariable = outputVariable;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return inputVariable == null ? EMPTY_STRING : new String[] { inputVariable };
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return outputVariable == null ? EMPTY_VARIABLE_METADATA : new VariableMetadata[] {
                 new VariableMetadata(outputVariable, false, true, outputVariable, true, DataType.STRING)
@@ -79,6 +81,7 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
     //
     private static final String META_INITIALIZED = JoinAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -86,9 +89,10 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Join Variable");
-        meta.put(AssertionMetadata.LONG_NAME, "Join a multi-valued context variable into a single-valued context variable.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Join a multi-valued context variable into a single-valued context variable.");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, JoinAssertion>() {
+            @Override
             public String call(JoinAssertion assertion) {
                 return "Join variable " + assertion.getInputVariable() + " into " + assertion.getOutputVariable() + " using \"" + assertion.getJoinSubstring() + '"';
             }

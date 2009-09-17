@@ -90,7 +90,7 @@ public class NcesValidatorAssertion extends MessageTargetableAssertion implement
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.LONG_NAME, "Validate Message for NCES Compliance.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Validate Message for NCES Compliance.");
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,

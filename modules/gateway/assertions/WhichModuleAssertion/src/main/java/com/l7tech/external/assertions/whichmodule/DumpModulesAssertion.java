@@ -18,15 +18,17 @@ import java.util.Set;
 public class DumpModulesAssertion extends Assertion implements SetsVariables {
     private static final String OUTVAR = "modules";
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
                 new VariableMetadata(OUTVAR, false, true, null, false, DataType.STRING),
         };
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.LONG_NAME, "Gets info about all currently loaded modules");
+        meta.put(AssertionMetadata.DESCRIPTION, "Gets info about all currently loaded modules");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ServerRegistry.gif");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, getClass().getName() + "$ServerImpl");
@@ -50,6 +52,7 @@ public class DumpModulesAssertion extends Assertion implements SetsVariables {
             this.assertionRegistry = (ServerAssertionRegistry)context.getBean("assertionRegistry", ServerAssertionRegistry.class);
         }
 
+        @Override
         public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
             Set<AssertionModule> mods = assertionRegistry.getLoadedModules();

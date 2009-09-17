@@ -23,6 +23,7 @@ public class CaWsdmAssertion extends Assertion implements SetsVariables {
     protected static final Logger logger = Logger.getLogger(CaWsdmAssertion.class.getName());
     public static final String VAR_ENABLED = "wsdm.enabled";
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
                 new VariableMetadata(VAR_ENABLED, false, false, null, false, DataType.BOOLEAN),
@@ -34,6 +35,7 @@ public class CaWsdmAssertion extends Assertion implements SetsVariables {
     //
     private static final String META_INITIALIZED = CaWsdmAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -42,6 +44,7 @@ public class CaWsdmAssertion extends Assertion implements SetsVariables {
         // Cluster properties used by this assertion.  Behind an inner class because the CaWsdm code will
         // only load within the SSG.  (The SSM uses assertion metadata but never queries for CLUSTER_PROPERTIES.)
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 Map<String, String[]> props = new HashMap<String, String[]>();
                 CaWsdmPropertiesAdaptor.addClusterPropertiesMetadata(props);
@@ -51,7 +54,7 @@ public class CaWsdmAssertion extends Assertion implements SetsVariables {
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "CA WSDM Observer Status");
-        meta.put(AssertionMetadata.LONG_NAME, "Check the status of the CA WSDM Observer");
+        meta.put(AssertionMetadata.DESCRIPTION, "Check the status of the CA WSDM Observer");
 
         // This is a pseudo-assertion and so should appear in no palette folders
         meta.putNull(AssertionMetadata.PALETTE_FOLDERS);
@@ -72,6 +75,7 @@ public class CaWsdmAssertion extends Assertion implements SetsVariables {
         // Hook up a classloader delegate so we can produce a virtual WsdmSOMMA_Basic.properties file
         // Behind an inner class because it will only work within the Gateway
         meta.put(AssertionMetadata.MODULE_CLASS_LOADER_DELEGATE_INSTANCE, new MetadataFinder() {
+            @Override
             public Object get(AssertionMetadata meta, String key) {
                 return new CaWsdmSommaPropertiesClassLoader();
             }

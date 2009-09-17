@@ -131,7 +131,6 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
         //Note that PALETTE_FOLDERS is not defined. This is because the assertion is explicitly added to it's FolderNode
         //in ThreatProtectionFolderNode
         meta.put(SHORT_NAME, baseName);
-        meta.put(LONG_NAME, "Code Injection Protection");
         meta.put(DESCRIPTION, "Provides basic threat protection against attacks on web applications by blocking malicious code injection.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/RedYellowShield16.gif");
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);

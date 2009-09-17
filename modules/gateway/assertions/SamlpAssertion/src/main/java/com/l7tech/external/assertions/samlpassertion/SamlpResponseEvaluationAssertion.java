@@ -182,7 +182,7 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.LONG_NAME, "Evaluate a SAML Protocol response.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Evaluate a SAML Protocol response.");
         
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
 

@@ -16,6 +16,7 @@ public class MapPartsAssertion extends Assertion implements SetsVariables {
     protected static final Logger logger = Logger.getLogger(MapPartsAssertion.class.getName());
     public static final String REQUEST_PARTS_CONTENT_IDS = "request.parts.contentIds";
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
                 new VariableMetadata(REQUEST_PARTS_CONTENT_IDS, false, true, null, true, DataType.STRING),
@@ -27,6 +28,7 @@ public class MapPartsAssertion extends Assertion implements SetsVariables {
     //
     private static final String META_INITIALIZED = MapPartsAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -34,7 +36,7 @@ public class MapPartsAssertion extends Assertion implements SetsVariables {
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Map Part IDs");
-        meta.put(AssertionMetadata.LONG_NAME, "Map multipart content IDs");
+        meta.put(AssertionMetadata.DESCRIPTION, "Map multipart content IDs");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 

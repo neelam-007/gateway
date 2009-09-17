@@ -56,10 +56,12 @@ public class ScriptAssertion extends Assertion {
 
         public static EnumTranslator getEnumTranslator() {
             return new EnumTranslator() {
+                @Override
                 public Object stringToObject(String s) throws IllegalArgumentException {
                     return Language.valueOf(s);
                 }
 
+                @Override
                 public String objectToString(Object o) throws ClassCastException {
                     return o.toString();
                 }
@@ -113,6 +115,7 @@ public class ScriptAssertion extends Assertion {
     //
     private static final String META_INITIALIZED = ScriptAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -120,7 +123,7 @@ public class ScriptAssertion extends Assertion {
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Custom Script");
-        meta.put(AssertionMetadata.LONG_NAME, "Custom Script Assertion");
+        meta.put(AssertionMetadata.DESCRIPTION, "Custom Script Assertion");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 

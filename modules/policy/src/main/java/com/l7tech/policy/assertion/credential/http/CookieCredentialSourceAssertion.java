@@ -26,6 +26,7 @@ public class CookieCredentialSourceAssertion extends Assertion {
         this.cookieName = cookieName;
     }
 
+    @Override
     public boolean isCredentialSource() {
         return true;
     }
@@ -47,7 +48,7 @@ public class CookieCredentialSourceAssertion extends Assertion {
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
 
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.LONG_NAME, "Gather credentials in the form of an HTTP session cookie.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Gather credentials in the form of an HTTP session cookie.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
