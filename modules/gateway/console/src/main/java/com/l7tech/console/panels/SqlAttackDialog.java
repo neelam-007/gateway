@@ -12,10 +12,7 @@ import java.util.*;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
- * User: megery
- * Date: Sep 28, 2005
- * Time: 9:42:34 AM
+ * @author megery
  */
 public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackAssertion> {
     private static final String PROTECTION_KEY = "PROT.KEY";
@@ -32,7 +29,7 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     private List<JCheckBox> attacks;
 
     public SqlAttackDialog( final Window owner, final SqlAttackAssertion assertion) {
-        super(owner, "Configure SQL Attack Protection");
+        super(owner, assertion);
         doInit(assertion);
     }
 

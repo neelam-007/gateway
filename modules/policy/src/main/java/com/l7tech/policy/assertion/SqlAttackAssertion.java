@@ -7,6 +7,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.util.Functions;
 import com.l7tech.policy.validator.ValidatorFlag;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 import java.util.*;
 
@@ -53,17 +54,30 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
     public SqlAttackAssertion() {
     }
 
+    private final static String baseName = "Protect Against SQL Attacks";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SqlAttackAssertion>(){
+        @Override
+        public String getAssertionName( final SqlAttackAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return AssertionUtils.decorateName(assertion, baseName);
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.SHORT_NAME, "SQL Attack Protection");
-        meta.put(AssertionMetadata.LONG_NAME, "Enable protection against SQL attacks");
-        meta.put(AssertionMetadata.DESCRIPTION, "<html>Helps prevent <b>malicious code injection</b> and <b>common SQL injection</b> attacks by blocking common SQL exploits from reaching protected web services. </html>");
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.SqlAttackDialog");
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.SqlAttackAssertionValidator");
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, SqlAttackAssertion>(){
+        //Note PALETTE_FOLDERS is not defined as this assertion is added by type in ThreadProtectionFolderNode
+        meta.put(SHORT_NAME, baseName);
+//        meta.put(AssertionMetadata.LONG_NAME, "Enable protection against SQL attacks.");
+        meta.put(DESCRIPTION, "<html>Helps prevent <b>malicious code injection</b> and <b>common SQL injection</b> attacks by blocking common SQL exploits from reaching protected web services. </html>");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.SqlAttackDialog");
+        meta.put(PROPERTIES_ACTION_NAME, "SQL Attack Protection Properties");        
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.SqlAttackAssertionValidator");
+        meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, SqlAttackAssertion>(){
             @Override
             public Set<ValidatorFlag> call(SqlAttackAssertion assertion) {
                 return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
