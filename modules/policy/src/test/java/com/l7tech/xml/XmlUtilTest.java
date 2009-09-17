@@ -6,10 +6,7 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -460,6 +457,12 @@ public class XmlUtilTest {
     @BugNumber(7685)
     public void testDoctypeParserInfiniteLoop_doctypeAllowingParser() throws IOException, SAXException {
         XmlUtil.parse(new ByteArrayInputStream(HexUtils.decodeBase64(BUG_7685_DOCTYPE_INFINITE_LOOP_SPLOIT_BASE64)), true);
+    }
+
+    @Test
+    public void testElementImplDoesNotOverrideEqualsOrHashCode() throws Exception {
+        final Class<? extends Element> elementImplClass = XmlUtil.stringAsDocument("<foo/>").getDocumentElement().getClass();
+        assertFalse(MethodUtil.isEqualsOrHashCodeOverridden(elementImplClass));
     }
 
     public static final String XML_WITH_LEADING_WHITESPACE =
