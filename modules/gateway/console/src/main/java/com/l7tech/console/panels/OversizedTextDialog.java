@@ -40,9 +40,9 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
     private JTextField attrNameLengthField;
 
     public OversizedTextDialog(Window owner, OversizedTextAssertion assertion) throws HeadlessException {
-        super(owner, "Configure Document Structure Threat Protection");
+        super(owner, assertion);
         this.assertion = assertion;
-        this.validator = new InputValidator(this, "Document Structure Threats");
+        this.validator = new InputValidator(this, getTitle());
         doInit();
     }
 

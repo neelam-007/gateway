@@ -8,6 +8,7 @@ package com.l7tech.policy.assertion;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import static com.l7tech.policy.assertion.annotation.HardwareAccelerated.Type.TOKENSCAN;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.Functions;
 
@@ -172,15 +173,28 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
         return XPATH_PAYLOAD_START + (maxPayloads + 1) + XPATH_PAYLOAD_END;
     }
 
+    private final static String baseName = "Protect Against Document Structure Threats";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<OversizedTextAssertion>(){
+        @Override
+        public String getAssertionName( final OversizedTextAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return AssertionUtils.decorateName(assertion, baseName);
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.SHORT_NAME, "Document Structure Threats");
-        meta.put(AssertionMetadata.LONG_NAME, "Enable protection against oversized nodes, overdeep nesting, and trailers");
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/OversizedElement16.gif");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.OversizedTextDialog");
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, OversizedTextAssertion>(){
+        //Note PALETTE_FOLDERS is not defined, as this assertion is inserted by type into ThreadProtectionFolderNode
+        meta.put(SHORT_NAME, baseName);
+        meta.put(LONG_NAME, "Enable protection against oversized nodes, overdeep nesting, and trailers.");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/OversizedElement16.gif");
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.OversizedTextDialog");
+        meta.put(PROPERTIES_ACTION_NAME, "Document Structure Threat Protection Properties");
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, OversizedTextAssertion>(){
             @Override
             public Set<ValidatorFlag> call(OversizedTextAssertion assertion) {
                 return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
