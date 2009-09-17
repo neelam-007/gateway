@@ -57,12 +57,14 @@ public class RequestWssKerberos extends SecurityHeaderAddressableSupport impleme
         return true;
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
             new VariableMetadata("kerberos.realm", false, false, "kerberos.realm", false, DataType.STRING),
         };
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 

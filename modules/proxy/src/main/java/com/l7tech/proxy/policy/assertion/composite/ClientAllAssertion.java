@@ -35,6 +35,7 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
      * @param context
      * @return the AssertionStatus.NONE if no child returned an error; the rightmost-child error otherwise.
      */
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
         mustHaveChildren(data);
         AssertionStatus result = AssertionStatus.NONE;
@@ -49,6 +50,7 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
         return result;
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException,
             IOException, ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException
@@ -64,10 +66,6 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
             }
         }
         return result;
-    }
-
-    public String getName() {
-        return "All assertions must evaluate to true";
     }
 
     protected AllAssertion data;

@@ -8,6 +8,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.action.AddIdentityAssertionAction;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionServiceChangeListener;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.objectmodel.FindException;
 
@@ -121,10 +122,8 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      */
     @Override
     protected String iconResource(boolean open) {
-        if (open)
-            return "com/l7tech/console/resources/folderOpen.gif";
-
-        return "com/l7tech/console/resources/folder.gif";
+        if (open) return assertion.meta().get(AssertionMetadata.POLICY_NODE_ICON);
+        return assertion.meta().get(AssertionMetadata.POLICY_NODE_ICON_OPEN);
     }
 
     /**

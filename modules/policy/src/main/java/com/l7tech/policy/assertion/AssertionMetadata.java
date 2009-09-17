@@ -84,10 +84,20 @@ public interface AssertionMetadata {
      * Defaults to "com/l7tech/proxy/resources/tree/policy16.gif", which is a picture of a small piece of paper with
      * writing, and is always available on the VPN Client
      *
-     * This key was introduced in SecureSpan Gateway version 5.1.
+     * This key was introduced in SecureSpan Gateway version 5.2.
      */
     String CLIENT_ASSERTION_POLICY_ICON = "clientAssertionPolicyIcon";
-    
+
+    /**
+     * String file path.  Icon to display for the client policy node for this assertion in the XML VPN Client
+     * when it is open.
+     *
+     * Defaults to CLIENT_ASSERTION_POLICY_ICON
+     *
+     * This key was introduced in SecureSpan Gateway version 5.2.
+     */
+    String CLIENT_ASSERTION_POLICY_ICON_OPEN = "clientAssertionPolicyIconOpen";
+
     /**
      * String.  Name to display on "Properties..." pop-up menu action if using the DefaultAssertionPropertiesAction.
      * Also name to display on the properties dialog window
@@ -208,9 +218,16 @@ public interface AssertionMetadata {
     /**
      * String file path.  Icon to display for the policy node for this assertion, if using DefaultAssertionPolicyNode.
      * Defaults to PALETTE_NODE_ICON.
-     * //todo [Donal] this should be removed as the policy icon should always match the palette
      */
     String POLICY_NODE_ICON = "policyNodeIcon";
+
+    /**
+     * String file path.  Icon to display for policy node for this assertion, when it's open.
+     * Defaults to PALETTE_NODE_ICON
+     *
+     * This key was introduced in SecureSpan Gateway version 5.2.
+     */
+    String POLICY_NODE_ICON_OPEN = "policyNodeIconOpen";
 
     /**
      * String classname.  Name of AssertionTreeNode subclass to use when creating tree nodes for this assertion.

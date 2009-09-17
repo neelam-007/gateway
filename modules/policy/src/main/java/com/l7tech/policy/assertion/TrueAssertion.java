@@ -44,6 +44,8 @@ public class TrueAssertion extends Assertion {
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
 
         meta.putNull(PROPERTIES_ACTION_FACTORY);
+
+        meta.put(USED_BY_CLIENT, Boolean.TRUE);
         return meta;
     }
     

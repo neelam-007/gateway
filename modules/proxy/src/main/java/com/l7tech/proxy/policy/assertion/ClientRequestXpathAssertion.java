@@ -32,6 +32,7 @@ public class ClientRequestXpathAssertion extends ClientXpathAssertion {
         super(requestXpathAssertion, true);
     }
 
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException, SAXException, IOException {
         final XpathExpression xpathExpression = getXpathExpression();
         // Match the Original _undecorated_ document always, so operation-specific paths are deterministic
@@ -52,6 +53,7 @@ public class ClientRequestXpathAssertion extends ClientXpathAssertion {
         }
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws PolicyAssertionException, IOException, SAXException {
         return decorateRequest(context); // make sure we follow the same policy path when processing the response
     }

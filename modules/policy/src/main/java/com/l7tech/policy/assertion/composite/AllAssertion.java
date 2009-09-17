@@ -38,6 +38,7 @@ public final class AllAssertion extends CompositeAssertion {
         meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
         meta.put(PALETTE_NODE_CLASSNAME, "com.l7tech.console.tree.AllNode");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/folder.gif");
+        meta.put(POLICY_NODE_ICON_OPEN, "com/l7tech/console/resources/folderOpen.gif");
 
         meta.put(SHORT_NAME, "All assertions must evaluate to true");
         meta.put(DESCRIPTION, "All child assertions must evaluate to true.");
@@ -47,6 +48,10 @@ public final class AllAssertion extends CompositeAssertion {
         meta.put(PROPERTIES_ACTION_NAME, "Add 'All…' Folder");
         meta.put(PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/folder.gif");
 
+        meta.put(CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/folder.gif");
+        meta.put(CLIENT_ASSERTION_POLICY_ICON_OPEN, "com/l7tech/proxy/resources/tree/folderOpen.gif");
+        meta.put(USED_BY_CLIENT, Boolean.TRUE);
+        
         return meta;
     }
 

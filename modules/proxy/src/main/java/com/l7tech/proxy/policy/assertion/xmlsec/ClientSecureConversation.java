@@ -40,6 +40,7 @@ public class ClientSecureConversation extends ClientAssertionWithMetaSupport {
         this.data = assertion;
     }
 
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException,
             GeneralSecurityException, ClientCertificateException, IOException, SAXException,
@@ -52,6 +53,7 @@ public class ClientSecureConversation extends ClientAssertionWithMetaSupport {
 
         // Configure outbound decoration to use WS-SecureConversation
         context.getPendingDecorations().put(this, new ClientDecorator() {
+            @Override
             public AssertionStatus decorateRequest(PolicyApplicationContext context) {
                 DecorationRequirements wssReqs = context.getWssRequirements(data);
                 wssReqs.setSignTimestamp();
@@ -63,6 +65,7 @@ public class ClientSecureConversation extends ClientAssertionWithMetaSupport {
         return AssertionStatus.NONE;
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
             IOException, SAXException, ResponseValidationException, KeyStoreCorruptException,

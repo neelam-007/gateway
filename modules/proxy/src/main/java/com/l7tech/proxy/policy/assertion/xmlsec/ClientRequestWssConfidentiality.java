@@ -46,6 +46,7 @@ public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertio
      * @param context
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException, BadCredentialsException,
                    GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException,
@@ -81,19 +82,9 @@ public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertio
         }
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
-    }
-
-    public String getName() {
-        String str = "";
-        if (data != null && data.getXpathExpression() != null)
-            str = " matching XPath expression \"" + data.getXpathExpression().getExpression() + '"';
-        return "Request WSS Confidentiality - encrypt elements" + str;
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 }

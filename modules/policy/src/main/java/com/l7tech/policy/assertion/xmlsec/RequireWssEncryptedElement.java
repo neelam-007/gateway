@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.XencUtil;
@@ -95,22 +96,24 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.DESCRIPTION, "The message must contain one or more encrypted elements.");
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
-        meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, 90000);
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Encrypted Element Properties");
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssEncryptedElement>(){
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "The message must contain one or more encrypted elements.");
+        meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
+        meta.put(PALETTE_NODE_SORT_PRIORITY, 90000);
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
+        meta.put(PROPERTIES_ACTION_NAME, "Encrypted Element Properties");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssEncryptedElement>(){
             @Override
             public Set<ValidatorFlag> call(RequireWssEncryptedElement assertion) {
                 return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
             }
         });
-        meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssConfidentiality");
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.RequireWssEncryptedElementValidator");
+        meta.put(CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssConfidentiality");
+        meta.put(CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
+        meta.put(USED_BY_CLIENT, Boolean.TRUE);
+        meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.RequireWssEncryptedElementValidator");
 
         return meta;
     }

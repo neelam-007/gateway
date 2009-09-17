@@ -12,8 +12,8 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -23,20 +23,23 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public class ClientRequestWssTimestamp extends ClientAssertion {
+public class ClientRequestWssTimestamp extends ClientAssertionWithMetaSupport {
     private static final Logger logger = Logger.getLogger(ClientRequestWssTimestamp.class.getName());
 
     private final RequireWssTimestamp assertion;
 
     public ClientRequestWssTimestamp(RequireWssTimestamp assertion) {
+        super(assertion);
         this.assertion = assertion;
     }
 
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
         // No useful SSB behaviour when target != request
         if (assertion.getTarget() != TargetMessageType.REQUEST) return AssertionStatus.NONE;
 
         context.getPendingDecorations().put(this, new ClientDecorator() {
+            @Override
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
                 DecorationRequirements wssReqs = context.getWssRequirements(assertion);
                 if (assertion.isSignatureRequired())
@@ -47,17 +50,9 @@ public class ClientRequestWssTimestamp extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
     }
-
-    public String getName() {
-        return "Request Timestamp";
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
-    }
-
 }

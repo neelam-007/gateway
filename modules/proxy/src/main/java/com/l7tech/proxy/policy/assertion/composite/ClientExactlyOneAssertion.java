@@ -68,9 +68,5 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
         return result;
     }
 
-    public String getName() {
-        return "Exactly one assertion must evaluate to true";
-    }
-
     protected ExactlyOneAssertion data;
 }

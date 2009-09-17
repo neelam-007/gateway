@@ -35,6 +35,7 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
      * @param context
      * @return the AssertionStatus.NONE if at least one child succeeded; the rightmost-child error otherwise.
      */
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
         mustHaveChildren(data);
         AssertionStatus result = AssertionStatus.FAILED;
@@ -49,6 +50,7 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
         return result;
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException,
             ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException
@@ -64,10 +66,6 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
         if (result != AssertionStatus.NONE)
             rollbackPendingDecorations(context);
         return result;
-    }
-
-    public String getName() {
-        return "One or more assertions must evaluate to true";
     }
 
     protected OneOrMoreAssertion data;

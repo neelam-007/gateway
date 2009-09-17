@@ -145,6 +145,13 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
+        put(CLIENT_ASSERTION_POLICY_ICON_OPEN, new MetadataFinder() {
+            @Override
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, meta.get(CLIENT_ASSERTION_POLICY_ICON));
+            }
+        });
+
         put(PALETTE_NODE_SORT_PRIORITY, new MetadataFinder() {
             @Override
             public Object get(AssertionMetadata meta, String key) {
@@ -173,6 +180,13 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         put(POLICY_NODE_NAME_FACTORY, null); // installed by AssertionRegistry because it relies on non-API classes
 
         put(POLICY_NODE_ICON, new MetadataFinder() {
+            @Override
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, meta.get(PALETTE_NODE_ICON));
+            }
+        });
+
+        put(POLICY_NODE_ICON_OPEN, new MetadataFinder() {
             @Override
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, meta.get(PALETTE_NODE_ICON));

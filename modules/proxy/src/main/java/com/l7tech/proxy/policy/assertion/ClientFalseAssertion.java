@@ -14,29 +14,20 @@ import com.l7tech.proxy.message.PolicyApplicationContext;
  * @author alex
  * @version $Revision$
  */
-public class ClientFalseAssertion extends ClientAssertion {
+public class ClientFalseAssertion extends ClientAssertionWithMetaSupport {
     public ClientFalseAssertion( FalseAssertion ass ) {
+        super(ass);
         // meaningless
     }
 
-    public ClientFalseAssertion() {
-        // meaningless
-    }
-
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context) {
         return AssertionStatus.FALSIFIED;
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
-    }
-
-    public String getName() {
-        return "Automatic failure";
-    }
-
-    public String iconResource(boolean open) {
-        return null;
     }
 }

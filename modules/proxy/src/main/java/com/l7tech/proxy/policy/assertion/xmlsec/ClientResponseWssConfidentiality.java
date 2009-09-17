@@ -11,7 +11,6 @@ import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.xpath.XpathExpression;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.jaxen.JaxenException;
@@ -37,6 +36,7 @@ public class ClientResponseWssConfidentiality extends ClientDomXpathBasedAsserti
         super(data);
     }
 
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws GeneralSecurityException,
             OperationCanceledException, BadCredentialsException,
@@ -46,6 +46,7 @@ public class ClientResponseWssConfidentiality extends ClientDomXpathBasedAsserti
         return AssertionStatus.NONE;
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
         if (!data.getRecipientContext().localRecipient()) {
@@ -111,17 +112,5 @@ public class ClientResponseWssConfidentiality extends ClientDomXpathBasedAsserti
         } catch (Exception e) {
             throw new ResponseValidationException("Unable to undecorate response: " + ExceptionUtils.getMessage(e), e);
         }
-    }
-
-    public String getName() {
-        String str = "";
-        XpathExpression xpe = data.getXpathExpression();
-        if (xpe != null)
-            str = " matching XPath expression \"" + xpe.getExpression() + "\"";
-        return "Response WSS Confidentiality: encrypt elements" + str;
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 }

@@ -155,6 +155,7 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
             }
         });
         meta.put(CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssTimestamp");
+        meta.put(CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
         meta.put(USED_BY_CLIENT, Boolean.TRUE);
 
         return meta;

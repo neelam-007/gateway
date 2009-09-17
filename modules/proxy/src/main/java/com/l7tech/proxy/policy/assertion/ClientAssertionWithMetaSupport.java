@@ -12,7 +12,7 @@ import com.l7tech.util.Functions;
 
 public abstract class ClientAssertionWithMetaSupport extends ClientAssertion{
 
-    private final Assertion assertion;
+    protected final Assertion assertion;
 
     public ClientAssertionWithMetaSupport(final Assertion assertion){
         this.assertion = assertion;
@@ -53,9 +53,10 @@ public abstract class ClientAssertionWithMetaSupport extends ClientAssertion{
         return AssertionUtils.decorateName(assertion, name);
     }
     
+    @Override
     public String iconResource(boolean open) {
-        final String s = (String)assertion.meta().get(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON);
-        return s != null ? s : "com/l7tech/console/resources/policy16.gif";
+        if(open) return assertion.meta().get(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON_OPEN).toString();
+        return assertion.meta().get(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON).toString();
     }
 
 }

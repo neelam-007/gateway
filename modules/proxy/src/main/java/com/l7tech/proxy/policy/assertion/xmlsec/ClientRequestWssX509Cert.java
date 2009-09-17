@@ -32,6 +32,7 @@ public class ClientRequestWssX509Cert extends ClientAssertionWithMetaSupport {
         this.subject = subject;
     }
     
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException,
             OperationCanceledException, GeneralSecurityException, ClientCertificateException,
             IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException,
@@ -45,6 +46,7 @@ public class ClientRequestWssX509Cert extends ClientAssertionWithMetaSupport {
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         context.getPendingDecorations().put(this, new ClientDecorator() {
+            @Override
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException
             {
                 DecorationRequirements wssReqs = context.getWssRequirements(subject);
@@ -63,6 +65,7 @@ public class ClientRequestWssX509Cert extends ClientAssertionWithMetaSupport {
         return AssertionStatus.NONE;
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws BadCredentialsException,
             OperationCanceledException, GeneralSecurityException, IOException, SAXException,
             ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException

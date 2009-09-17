@@ -29,6 +29,7 @@ public class ClientUnknownAssertion extends UnimplementedClientAssertion {
         return source != null && source instanceof UnknownAssertion && ((UnknownAssertion)source).getDetailMessage() != null;
     }
 
+    @Override
     public String getShortName() {
         return getDesc();
     }

@@ -36,6 +36,7 @@ public class FalseAssertion extends Assertion {
         meta.put(DESCRIPTION, "Evaluate to false and stop processing this branch of the policy.");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Stop16.gif");
+        meta.put(USED_BY_CLIENT, Boolean.TRUE);
         return meta;
     }
     

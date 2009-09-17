@@ -35,6 +35,7 @@ public class UnimplementedClientAssertion extends ClientAssertion {
         this.source = source;
     }
 
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
             ClientCertificateException, IOException, SAXException
@@ -43,6 +44,7 @@ public class UnimplementedClientAssertion extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException,
             SAXException, ResponseValidationException
@@ -59,10 +61,12 @@ public class UnimplementedClientAssertion extends ClientAssertion {
         }
     }
 
+    @Override
     public String getName() {
         return "Unsupported assertion (will ignore): " + getShortName();
     }
 
+    @Override
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/unknown.gif";
     }

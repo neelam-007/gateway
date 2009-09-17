@@ -61,6 +61,7 @@ public abstract class XpathBasedAssertion extends Assertion implements Assertion
         return varlist.toArray(new String[varlist.size()]);
     }
 
+    @Override
     public String toString() {
         XpathExpression x = getXpathExpression();
         StringBuffer sb = new StringBuffer(super.toString());
@@ -89,6 +90,7 @@ public abstract class XpathBasedAssertion extends Assertion implements Assertion
         return soapVersion;
     }
 
+    @Override
     public void updateSoapVersion(SoapVersion soapVersion) {
         this.soapVersion = soapVersion;
 
