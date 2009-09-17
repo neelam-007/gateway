@@ -42,7 +42,7 @@ public class CodeInjectionProtectionAssertionDialog extends AssertionPropertiesE
     private boolean _confirmed;
 
     public CodeInjectionProtectionAssertionDialog(final Window owner, final CodeInjectionProtectionAssertion assertion) throws HeadlessException {
-        super(owner, "Code Injection Protection");
+        super(owner, assertion);
         _assertion = assertion;
 
         _requestRadioButton.addItemListener(new ItemListener() {

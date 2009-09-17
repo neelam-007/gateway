@@ -5,6 +5,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.util.Functions;
 import com.l7tech.policy.validator.ValidatorFlag;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 import java.util.Set;
 import java.util.EnumSet;
@@ -114,16 +115,30 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
         }
     }
 
+    private final static String baseName = "Protect Against Code Injection";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<CodeInjectionProtectionAssertion>(){
+        @Override
+        public String getAssertionName( final CodeInjectionProtectionAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return AssertionUtils.decorateName(assertion, baseName);
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.SHORT_NAME, "Code Injection Protection");
-        meta.put(AssertionMetadata.LONG_NAME, "Code Injection Protection");
-        meta.put(AssertionMetadata.DESCRIPTION, "Provides basic threat protection against attacks on web applications by blocking malicious code injection.");
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/RedYellowShield16.gif");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.CodeInjectionProtectionAssertionDialog");
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, CodeInjectionProtectionAssertion>(){
+        //Note that PALETTE_FOLDERS is not defined. This is because the assertion is explicitly added to it's FolderNode
+        //in ThreatProtectionFolderNode
+        meta.put(SHORT_NAME, baseName);
+        meta.put(LONG_NAME, "Code Injection Protection");
+        meta.put(DESCRIPTION, "Provides basic threat protection against attacks on web applications by blocking malicious code injection.");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/RedYellowShield16.gif");
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.CodeInjectionProtectionAssertionDialog");
+        meta.put(PROPERTIES_ACTION_NAME, "Code Injection Protection Properties");
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, CodeInjectionProtectionAssertion>(){
             @Override
             public Set<ValidatorFlag> call(CodeInjectionProtectionAssertion assertion) {
                 return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);

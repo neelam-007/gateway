@@ -59,22 +59,31 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
 
     /**
      * Insert any modular assertions that belong in this folder.
+     * <p/>
+     * Requirements for a match:<br>
+     * A modular assertion will 'match' when it defines the PALETTE_FOLDERS meta data, and any of the contents of this
+     * String [] match the <code>id</code> of this folder node.
+     * e.g. for an assertion to match the 'Policy Logic' folder
+     * meta() should define: meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"})
+     *
+     * Once PALETTE_FOLDERS is defined in an assertions meta data, insertModularAssertionByType should no longer be used
      *
      * @param nextIndex the childIndex to use for the first modular assertion inserted by this method (or -1 to insert in order)
      * @return the childIndex to use for the next child inserted.  This will be the incoming nextIndex plus one
      *         for each modular assertion that was inserted or -1 if using insert order.
      */
     protected int insertMatchingModularAssertions(int nextIndex) {
+
         AssertionFinder assFinder = TopComponents.getInstance().getAssertionRegistry();
         Set<Assertion> bothHands = assFinder.getAssertions();
         for (Assertion ass : bothHands) {
             // Find variants
-            Assertion[] variants = (Assertion[])ass.meta().get(AssertionMetadata.VARIANT_PROTOTYPES);
-            if (variants == null || variants.length < 1) variants = new Assertion[] { ass };
+            Assertion[] variants = (Assertion[]) ass.meta().get(AssertionMetadata.VARIANT_PROTOTYPES);
+            if (variants == null || variants.length < 1) variants = new Assertion[]{ass};
 
             for (Assertion variant : variants) {
-                String[] folders = (String[])variant.meta().get(AssertionMetadata.PALETTE_FOLDERS);
-                if (folders == null || folders.length < 1) folders = new String[] {};
+                String[] folders = (String[]) variant.meta().get(AssertionMetadata.PALETTE_FOLDERS);
+                if (folders == null || folders.length < 1) folders = new String[]{};
                 for (String folder : folders) {
                     if (this.id.equals(folder)) {
                         // This assertion wants to be in this folder
@@ -86,17 +95,30 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
         return nextIndex;
     }
 
-    protected int insertModularAssertionByType( int nextIndex,
-                                                Class<? extends Assertion> assertionClass ) {
+    /**
+     * Insert a modular assertion at the specified index.
+     * <p/>
+     * Requirements for use:
+     * The meta data for the modular assertion MUST NOT define PALETTE_FOLDERS.
+     * If the assertion defines PALETTE_FOLDERS meta data and it matches the folder node from where this method is called,
+     * then the assertion will appear in the folder twice.
+     *
+     * @param nextIndex      index to insert the assertion at
+     * @param assertionClass assertion to represent in the palette folder
+     * @return int insert index
+     */
+    protected int insertModularAssertionByType(int nextIndex,
+
+                                               Class<? extends Assertion> assertionClass) {
         AssertionFinder assFinder = TopComponents.getInstance().getAssertionRegistry();
         Set<Assertion> bothHands = assFinder.getAssertions();
         for (Assertion ass : bothHands) {
             // Find variants
-            Assertion[] variants = (Assertion[])ass.meta().get(AssertionMetadata.VARIANT_PROTOTYPES);
-            if (variants == null || variants.length < 1) variants = new Assertion[] { ass };
+            Assertion[] variants = (Assertion[]) ass.meta().get(AssertionMetadata.VARIANT_PROTOTYPES);
+            if (variants == null || variants.length < 1) variants = new Assertion[]{ass};
 
-            for ( Assertion variant : variants ) {
-                if ( assertionClass.isInstance(variant) ) {
+            for (Assertion variant : variants) {
+                if (assertionClass.isInstance(variant)) {
                     // Add assertion to folder
                     nextIndex = insertModularAssertion(variant, nextIndex);
                 }
