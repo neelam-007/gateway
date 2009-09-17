@@ -72,10 +72,6 @@ public abstract class WsFederationPassiveTokenAssertion extends Assertion {
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
-
-        meta.putNull(AssertionMetadata.PALETTE_NODE_FACTORY);
-
         meta.put(AssertionMetadata.SHORT_NAME, "Use WS-Federation Credential");
         meta.put(AssertionMetadata.DESCRIPTION, "Gateway replaces request's credentials with those obtained using WS-Federation (Passive Request Profile).");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
