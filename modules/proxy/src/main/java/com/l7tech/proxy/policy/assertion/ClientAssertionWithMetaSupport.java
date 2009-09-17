@@ -4,10 +4,7 @@
  */
 package com.l7tech.proxy.policy.assertion;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.AssertionUtils;
-import com.l7tech.policy.assertion.AssertionNodeNameFactory;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions;
 
 public abstract class ClientAssertionWithMetaSupport extends ClientAssertion{

@@ -1,9 +1,6 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.AssertionUtils;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.security.xml.XencUtil;
 import com.l7tech.util.Functions;
 
@@ -35,13 +32,20 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
         super(TargetMessageType.RESPONSE);
     }
 
+    private final static String baseName = "Immediate Encrypt (Non-SOAP) XML Element";
+
+    @Override
+    public String getDisplayName() {
+        return baseName;
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Immediate Encrypt (Non-SOAP) XML Element");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(META_PROP_VERB, "encrypt");
         meta.put(AssertionMetadata.DESCRIPTION, "Immediately encrypt one or more elements of the message.  " +
                                                 "This does not require a SOAP Envelope and does not accumulate WS-Security decoration requirements.  " +
@@ -51,18 +55,7 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.NonSoapEncryptElementAssertionPropertiesDialog");
         
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, NonSoapEncryptElementAssertion>() {
-            @Override
-            public String call( final NonSoapEncryptElementAssertion ass ) {
-                StringBuilder name = new StringBuilder("Immediately Encrypt (Non-SOAP) XML Elements ");
-                if (ass.getXpathExpression() == null) {
-                    name.append("[XPath expression not set]");
-                } else {
-                    name.append(ass.getXpathExpression().getExpression());
-                }
-                return AssertionUtils.decorateName(ass, name);
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

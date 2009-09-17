@@ -1,9 +1,6 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.*;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -12,7 +9,7 @@ import java.util.Arrays;
 /**
  * Base class for non-SOAP immediate-mode XML dsig/xenc transformation assertions.
  */
-public class NonSoapSecurityAssertionBase extends XpathBasedAssertion implements MessageTargetable {
+public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion implements MessageTargetable {
     public static String META_PROP_VERB = "NonSoapSecurityAssertion.verb";
     private MessageTargetableSupport messageTargetableSupport;
 
@@ -60,4 +57,23 @@ public class NonSoapSecurityAssertionBase extends XpathBasedAssertion implements
     public String getTargetName() {
         return messageTargetableSupport.getTargetName();
     }
+
+    public abstract String getDisplayName();
+
+    protected final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<NonSoapEncryptElementAssertion>(){
+        @Override
+        public String getAssertionName( final NonSoapEncryptElementAssertion assertion, final boolean decorate) {
+            final String displayName = assertion.getDisplayName();
+            if(!decorate) return displayName;
+
+            StringBuilder name = new StringBuilder(displayName + " ");
+            if (assertion.getXpathExpression() == null) {
+                name.append("[XPath expression not set]");
+            } else {
+                name.append(assertion.getXpathExpression().getExpression());
+            }
+            return AssertionUtils.decorateName(assertion, name);
+        }
+    };
+
 }

@@ -75,19 +75,24 @@ public class UnknownAssertion extends Assertion {
         return cause;
     }
 
+    private final static String baseName = "Unresolved assertion type";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<UnknownAssertion>(){
+        @Override
+        public String getAssertionName( final UnknownAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return assertion.getDetailMessage();
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
 
-        meta.put(SHORT_NAME, "Unresolved assertion type");
+        meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "This assertion type does not exist on this system.");
         meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/unknown.gif");
-        meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Unary< String, UnknownAssertion >() {
-            @Override
-            public String call(UnknownAssertion unknownAssertion) {
-                return unknownAssertion.getDetailMessage();
-            }
-        });
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.putNull( PROPERTIES_ACTION_FACTORY );
 
         return meta;

@@ -42,27 +42,32 @@ public class VariableCredentialSourceAssertion extends MessageTargetableAssertio
         return true;
     }
 
+    private final static String baseName = "Variable Credential Source";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<VariableCredentialSourceAssertion>(){
+        @Override
+        public String getAssertionName( final VariableCredentialSourceAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            StringBuilder name = new StringBuilder("Credentials from variable: ");
+            name.append(assertion.getVariableName() == null ? "<Not yet set>" : "${" + assertion.getVariableName() + "}");
+            return AssertionUtils.decorateName(assertion, name);
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Variable Credential Source");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Gateway retrieves X.509 certificate credentials from context variable");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, -1000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.VariableCredentialSourceAssertionPropertiesDialog");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, VariableCredentialSourceAssertion>() {
-            @Override
-            public String call( final VariableCredentialSourceAssertion ass ) {
-                StringBuilder name = new StringBuilder("Credentials from variable: ");
-                name.append(ass.getVariableName() == null ? "<Not yet set>" : "${" + ass.getVariableName() + "}");
-                return AssertionUtils.decorateName(ass, name);
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

@@ -1,10 +1,7 @@
 package com.l7tech.external.assertions.multipartassembly;
 
 import com.l7tech.util.Functions;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -55,6 +52,19 @@ public class MultipartAssemblyAssertion extends Assertion implements UsesVariabl
     //
     private static final String META_INITIALIZED = MultipartAssemblyAssertion.class.getName() + ".metadataInitialized";
 
+    private final static String baseName = "Multipart Assembly";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<MultipartAssemblyAssertion>(){
+        @Override
+        public String getAssertionName( final MultipartAssemblyAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            return assertion.isActOnRequest()
+                    ? "Multipart Assembly into Request"
+                    : "Multipart Assembly into Response";
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -62,17 +72,10 @@ public class MultipartAssemblyAssertion extends Assertion implements UsesVariabl
             return meta;
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Multipart Assembly");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Wraps a message in a multipart envelope and adds attachments specified in context variables, each expected to contain an array.");
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary< String, MultipartAssemblyAssertion >() {
-            @Override
-            public String call(MultipartAssemblyAssertion assertion) {
-                return assertion.isActOnRequest()
-                        ? "Multipart Assembly into Request"
-                        : "Multipart Assembly into Response";
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 

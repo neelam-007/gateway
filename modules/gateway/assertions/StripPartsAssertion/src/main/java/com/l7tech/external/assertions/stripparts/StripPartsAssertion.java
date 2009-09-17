@@ -4,6 +4,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 
 import java.util.logging.Logger;
 
@@ -34,6 +35,18 @@ public class StripPartsAssertion extends Assertion {
     //
     private static final String META_INITIALIZED = StripPartsAssertion.class.getName() + ".metadataInitialized";
 
+    private final static String baseName = "Strip Parts";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<StripPartsAssertion>(){
+        @Override
+        public String getAssertionName( final StripPartsAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return assertion.isActOnRequest()
+                    ? "Strip Parts from Request"
+                    : "Strip Parts from Response";
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -41,17 +54,10 @@ public class StripPartsAssertion extends Assertion {
             return meta;
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Strip Parts");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "If the message is multipart, converts it to a single part message by throwing away all but the XML part.");
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary< String, StripPartsAssertion >() {
-            @Override
-            public String call(StripPartsAssertion assertion) {
-                return assertion.isActOnRequest()
-                        ? "Strip Parts from Request"
-                        : "Strip Parts from Response";
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 

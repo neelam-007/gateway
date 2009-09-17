@@ -15,13 +15,20 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
         super(TargetMessageType.RESPONSE);
     }
 
+    private final static String baseName = "Immediate Sign (Non-SOAP) XML Element";
+
+    @Override
+    public String getDisplayName() {
+        return baseName;
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Immediate Sign (Non-SOAP) XML Element");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(META_PROP_VERB, "sign");
         meta.put(AssertionMetadata.DESCRIPTION, "Immediately sign one or more elements of the message.  " +
                                                 "This does not require a SOAP Envelope and does not accumulate WS-Security decoration requirements.  " +
@@ -31,18 +38,7 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.NonSoapSignElementAssertionPropertiesDialog");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, NonSoapSignElementAssertion>() {
-            @Override
-            public String call( final NonSoapSignElementAssertion ass ) {
-                StringBuilder name = new StringBuilder("Immediately Sign (Non-SOAP) XML Elements ");
-                if (ass.getXpathExpression() == null) {
-                    name.append("[XPath expression not set]");
-                } else {
-                    name.append(ass.getXpathExpression().getExpression());
-                }
-                return AssertionUtils.decorateName(ass, name);
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

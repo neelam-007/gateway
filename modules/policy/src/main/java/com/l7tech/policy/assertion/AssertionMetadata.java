@@ -197,16 +197,15 @@ public interface AssertionMetadata {
     String POLICY_NODE_NAME = "policyNodeName";
 
     /**
-     * Allowed Types: Functions.Unary< String, Assertion > or Functions.Binary<String, Assertion, Boolean> or String
+     * Allowed Types: AssertionNodeNameFactory
+     * Deprecated: Functions.Unary< String, Assertion >
+     *
+     * This factory is called to generate the value to display in the policy and validator windows. The
+     * AssertionNodeNameFactory is favoured over the Functions.Unary as it allows the validator window to request that
+     * the assertion name not be decorated, so that it is consistent with the palette window
      * <p/>
-     * If a Function it's a generator of name to display on the policy node for this assertion,
-     * if using DefaultAssertionPolicyNode. It is also the String used to describe the assertion in the Policy Validator
-     * Messages window.
-     * <p/>
-     * This is a generator rather than just simple String so that it can vary based on the configuration of the
+     * This is a generator rather than just a simple String so that it can vary based on the configuration of the
      * particular assertion whose policy node is being displayed.
-     * If a Functions.Binary is supplied, the Boolean parameter tells the generator whether or not to decorate the
-     * generated String. The Policy windows needs assertion names decorated, but the policy validation window does not
      * <p/>
      * If the value is a String, it's value will be used
      * <p/>

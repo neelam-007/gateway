@@ -81,6 +81,16 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
     //
     private static final String META_INITIALIZED = JoinAssertion.class.getName() + ".metadataInitialized";
 
+    private final static String baseName = "Join Variable";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<JoinAssertion>(){
+        @Override
+        public String getAssertionName( final JoinAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return "Join variable " + assertion.getInputVariable() + " into " + assertion.getOutputVariable() + " using \"" + assertion.getJoinSubstring() + '"';
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -88,15 +98,10 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
             return meta;
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Join Variable");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Join a multi-valued context variable into a single-valued context variable.");
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, JoinAssertion>() {
-            @Override
-            public String call(JoinAssertion assertion) {
-                return "Join variable " + assertion.getInputVariable() + " into " + assertion.getOutputVariable() + " using \"" + assertion.getJoinSubstring() + '"';
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,

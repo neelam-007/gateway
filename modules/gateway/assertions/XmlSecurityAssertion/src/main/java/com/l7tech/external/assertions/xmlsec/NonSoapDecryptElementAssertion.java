@@ -50,13 +50,20 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
         return prefix == null || prefix.trim().length() < 1 ? var : prefix.trim() + "." + var;
     }
 
+    private final static String baseName = "Immediate Decrypt (Non-SOAP) XML Element";
+
+    @Override
+    public String getDisplayName() {
+        return baseName;
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Immediate Decrypt (Non-SOAP) XML Element");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(META_PROP_VERB, "decrypt");
         meta.put(AssertionMetadata.DESCRIPTION, "Immediately decrypt one or more elements of the message.  " +
                                                 "This does not require a SOAP Envelope and does not examine or produce WS-Security processor results.  " +
@@ -67,19 +74,8 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.NonSoapDecryptElementAssertionPropertiesDialog");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, NonSoapDecryptElementAssertion>() {
-            @Override
-            public String call( final NonSoapDecryptElementAssertion ass ) {
-                StringBuilder name = new StringBuilder("Immediately Decrypt (Non-SOAP) XML Elements ");
-                if (ass.getXpathExpression() == null) {
-                    name .append("[XPath expression not set]");
-                } else {
-                    name.append(ass.getXpathExpression().getExpression());
-                }
-                return AssertionUtils.decorateName(ass, name);
-            }
-        });
 
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

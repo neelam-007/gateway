@@ -87,6 +87,16 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
     //
     private static final String META_INITIALIZED = SplitAssertion.class.getName() + ".metadataInitialized";
 
+    private final static String baseName = "Split Variable";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SplitAssertion>(){
+        @Override
+        public String getAssertionName( final SplitAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            return "Split variable " + assertion.getInputVariable() + " into " + assertion.getOutputVariable() + " on " + assertion.getSplitPattern();
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         final DefaultAssertionMetadata meta = super.defaultMeta();
@@ -94,15 +104,10 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
             return meta;
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Split Variable");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Split a single-valued context variable into a multi-valued context variable.");
 
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SplitAssertion>() {
-            @Override
-            public String call(SplitAssertion assertion) {
-                return "Split variable " + assertion.getInputVariable() + " into " + assertion.getOutputVariable() + " on " + assertion.getSplitPattern();
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, baseName);
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 

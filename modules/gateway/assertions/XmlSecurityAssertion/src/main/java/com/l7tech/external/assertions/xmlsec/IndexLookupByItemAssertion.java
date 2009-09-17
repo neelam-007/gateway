@@ -72,13 +72,30 @@ public class IndexLookupByItemAssertion extends Assertion implements SetsVariabl
         this.allowMultipleMatches = allowMultipleMatches;
     }
 
+    private final static String baseName = "Index Lookup by Item";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<IndexLookupByItemAssertion>(){
+        @Override
+        public String getAssertionName( final IndexLookupByItemAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+            StringBuilder name = new StringBuilder(baseName);
+            if (assertion.getMultivaluedVariableName() != null && assertion.getValueToSearchForVariableName() != null) {
+                name.append(": find item ${").append(assertion.getValueToSearchForVariableName()).append("} within ${").append(assertion.getMultivaluedVariableName()).append("}");
+            }
+            if (assertion.getOutputVariableName() != null) {
+                name.append("; output index to ${").append(assertion.getOutputVariableName()).append("}");
+            }
+            return AssertionUtils.decorateName(assertion, name);
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Index Lookup by Item");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Search a multivalued context variable for the value of a second variable, " +
                                                 "and output the matching index number(s) to a third variable.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"policyLogic"});
@@ -86,19 +103,7 @@ public class IndexLookupByItemAssertion extends Assertion implements SetsVariabl
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.IndexLookupByItemAssertionPropertiesDialog");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/xmlsec/console/resources/indexlookup16.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, IndexLookupByItemAssertion>() {
-            @Override
-            public String call( final IndexLookupByItemAssertion ass ) {
-                StringBuilder name = new StringBuilder("Index Lookup by Item");
-                if (ass.getMultivaluedVariableName() != null && ass.getValueToSearchForVariableName() != null) {
-                    name.append(": find item ${").append(ass.getValueToSearchForVariableName()).append("} within ${").append(ass.getMultivaluedVariableName()).append("}");
-                }
-                if (ass.getOutputVariableName() != null) {
-                    name.append("; output index to ${").append(ass.getOutputVariableName()).append("}");
-                }
-                return AssertionUtils.decorateName(ass, name);
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

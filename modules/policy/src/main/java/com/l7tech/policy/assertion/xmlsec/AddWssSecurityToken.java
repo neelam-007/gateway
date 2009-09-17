@@ -3,12 +3,7 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_NAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.DESCRIPTION;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_ICON;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_FOLDERS;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_SORT_PRIORITY;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 
 /**
