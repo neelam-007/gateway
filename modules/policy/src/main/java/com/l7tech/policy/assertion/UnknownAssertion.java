@@ -6,6 +6,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.util.Functions;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * The <code>UnknownAssertion</code> is an assertion that indicates
@@ -74,20 +75,25 @@ public class UnknownAssertion extends Assertion {
         return cause;
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
 
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/unknown.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary< String, UnknownAssertion >() {
+        meta.put(SHORT_NAME, "Unresolved assertion type");
+        meta.put(DESCRIPTION, "This assertion type does not exist on this system.");
+        meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/unknown.gif");
+        meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Unary< String, UnknownAssertion >() {
+            @Override
             public String call(UnknownAssertion unknownAssertion) {
                 return unknownAssertion.getDetailMessage();
             }
         });
-        meta.putNull( AssertionMetadata.PROPERTIES_ACTION_FACTORY );
+        meta.putNull( PROPERTIES_ACTION_FACTORY );
 
         return meta;
     }
 
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer(super.toString());
         if (detailMessage != null)

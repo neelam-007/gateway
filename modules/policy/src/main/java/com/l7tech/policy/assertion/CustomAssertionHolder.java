@@ -8,6 +8,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.common.io.ClassLoaderObjectInputStream;
 import com.l7tech.util.ResourceUtils;
@@ -79,6 +80,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         this.customAssertion = ca;
     }
 
+    @Override
     public String toString() {
         if (customAssertion == null) {
             return "[ CustomAssertion = null ]";
@@ -98,6 +100,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private Category category;
     private String descriptionText;
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (customAssertion == null || !(customAssertion instanceof UsesVariables) ) {
@@ -107,6 +110,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
         return usesVariables.getVariablesUsed();
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         if (customAssertion == null || !(customAssertion instanceof SetsVariables) ) {
             return new VariableMetadata[0];
@@ -153,5 +157,16 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
 
         return clone;
     }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(SHORT_NAME, "Custom Assertion");
+        meta.put(DESCRIPTION, "Custom Assertion");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/custom.gif");
+        return meta;
+    }
+
 }
 

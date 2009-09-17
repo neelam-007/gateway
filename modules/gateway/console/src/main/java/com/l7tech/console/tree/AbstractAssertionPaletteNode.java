@@ -1,8 +1,8 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.tree.policy.Descriptions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.MutableTreeNode;
@@ -27,7 +27,7 @@ public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
         if (!checkedDescriptionText) {
             Assertion assn = asAssertion();
             if (assn != null) {
-                String desc = Descriptions.getDescription(assn).getDescriptionText();
+                String desc = assn.meta().get(AssertionMetadata.DESCRIPTION).toString();
                 if (desc != null) {
                     descriptionText= desc;
                 }

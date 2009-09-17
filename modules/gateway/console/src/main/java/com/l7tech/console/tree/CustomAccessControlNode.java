@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.gui.util.ImageCache;
@@ -27,6 +28,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
     private Image defaultImageIcon;
     private String name;
     private String description;
+    private final Assertion assertion;
 
     /**
      * construct the <CODE>CustomAccessControlNode</CODE> instance for a given
@@ -36,6 +38,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
      */
     public CustomAccessControlNode(CustomAssertionHolder ca) {
         super(ca);
+        assertion = ca;
         setAllowsChildren(false);
         this.registrar = Registry.getDefault().getCustomAssertionsRegistrar();
     }
@@ -43,6 +46,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
     /**
      * @return always false, custom assertions cannot be deleted from the palette
      */
+    @Override
     public boolean isLeaf() {
         return true;
     }
@@ -54,6 +58,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
      *
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
         return new Action[]{};
     }
@@ -64,6 +69,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
      *
      * @return true if the node can be deleted, false otherwise
      */
+    @Override
     public boolean canDelete() {
         return false;
     }
@@ -71,6 +77,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
     /**
      * @return the assertion this node represents
      */
+    @Override
     public Assertion asAssertion() {
         Assertion assertion = (Assertion) super.getUserObject();
 
@@ -84,9 +91,11 @@ public class CustomAccessControlNode extends AbstractTreeNode {
     /**
      * subclasses override this method
      */
+    @Override
     protected void doLoadChildren() {
     }
 
+    @Override
     public String getName() {
         if ( name == null ) {
             CustomAssertionHolder cha = (CustomAssertionHolder)asAssertion();
@@ -106,6 +115,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
      *
      * @return the <code>ImageIcon</code> or null if not found
      */
+    @Override
     public Image getIcon() {
         return getCutomAssertionIcon();
     }
@@ -141,17 +151,20 @@ public class CustomAccessControlNode extends AbstractTreeNode {
      *
      * @return icon to use to represent the bean when opened
      */
+    @Override
     public Image getOpenedIcon() {
         return getCutomAssertionIcon();
     }
 
+    @Override
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/custom.gif";
+        return assertion.meta().get(AssertionMetadata.PALETTE_NODE_ICON).toString();
     }
 
     /**
      * Override toString
      */
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append(getClass().getName()).append("\n").

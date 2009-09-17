@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.console.action.CustomAssertionPropertiesAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
@@ -40,6 +41,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
     /**
      * @return the node name that is displayed
      */
+    @Override
     public String getName(final boolean decorate) {
         CustomAssertionHolder cha = (CustomAssertionHolder)asAssertion();
         final CustomAssertion ca = cha.getCustomAssertion();
@@ -63,6 +65,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
      *
      * @return <code>null</code> indicating there should be none default action
      */
+    @Override
     public Action getPreferredAction() {
         // check whether this custom assertion should be allowed editing based on whether it has properties to edit
         try {
@@ -86,6 +89,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
      *
      * @return the <code>ImageIcon</code> or null if not found
      */
+    @Override
     public Image getIcon() {
         return getCustomAssertionIcon();
     }
@@ -96,6 +100,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
       *
       * @return the <code>ImageIcon</code> or null if not found
       */
+     @Override
      public Image getOpenedIcon() {
          return getCustomAssertionIcon();
      }
@@ -131,7 +136,8 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
      *
      * @param open for nodes that can be opened, can have children
      */
+    @Override
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/custom.gif";
+        return assertion.meta().get(AssertionMetadata.POLICY_NODE_ICON).toString();
     }
 }
