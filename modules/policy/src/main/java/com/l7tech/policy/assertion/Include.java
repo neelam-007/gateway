@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 import java.util.UUID;
 
@@ -146,12 +147,18 @@ public class Include extends Assertion implements UsesEntities, PolicyReference 
      * Populate the given metadata.
      */
     private void populateMeta( final DefaultAssertionMetadata meta ) {
-        // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Include Policy Fragment");
-        meta.put(AssertionMetadata.LONG_NAME, "Include a Policy Fragment in the policy.");
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/folder.gif");
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddIncludeAdvice");
-        meta.put(AssertionMetadata.POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.IncludeAssertionPolicyNode");
+        meta.put(PALETTE_FOLDERS, new String[] { "policyLogic" });
+
+        meta.put(SHORT_NAME, "Include Policy Fragment");
+        meta.put(DESCRIPTION, "Include a Policy Fragment in the policy.");
+
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/folder.gif");
+
+        meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/folder.gif");
+        
+        meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddIncludeAdvice");
+        meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.IncludeAssertionPolicyNode");
+
+        meta.put(PROPERTIES_ACTION_NAME, "Select Policy Fragment to Include");
     }
 }

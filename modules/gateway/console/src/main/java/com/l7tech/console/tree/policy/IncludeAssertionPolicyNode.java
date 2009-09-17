@@ -11,6 +11,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.objectmodel.FindException;
 
@@ -54,9 +55,12 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         }
     }
 
+    @Override
     public String getName(final boolean decorate) {
+        if(!decorate) return assertion.meta().get(AssertionMetadata.PALETTE_NODE_NAME).toString();
+        
         Policy policy = getPolicy();
-        StringBuilder sb = new StringBuilder("Include: ");
+        StringBuilder sb = new StringBuilder(assertion.meta().get(AssertionMetadata.PALETTE_NODE_NAME).toString()+": ");
         if (policy == null) {
             if ( permissionDenied ) {
                 sb.append("Permission Denied");
@@ -77,7 +81,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
 
     @Override
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/folder.gif";
+        return assertion.meta().get(AssertionMetadata.POLICY_NODE_ICON).toString();
     }
 
     @Override
@@ -92,6 +96,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
      * @param node: an assertion from the palette.
      * @return true if successfully receiving a node.
      */
+    @Override
     public boolean receive(AbstractTreeNode node) {
         if (super.receive(node)) return true;
 
@@ -119,6 +124,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         return true;
     }
 
+    @Override
     public Policy getPolicy() {
         if (policy == null) {
             permissionDenied = false;

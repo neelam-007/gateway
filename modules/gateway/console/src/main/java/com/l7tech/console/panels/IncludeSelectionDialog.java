@@ -2,6 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.Include;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.console.util.Registry;
@@ -42,7 +44,7 @@ public class IncludeSelectionDialog extends JDialog {
      */
     public IncludeSelectionDialog( final Window parent  ) {
         super( parent, ModalityType.DOCUMENT_MODAL );
-        setTitle("Select an Included Policy Fragment");
+        setTitle(new Include().meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
         Utilities.setEscKeyStrokeDisposes(this);
@@ -77,7 +79,7 @@ public class IncludeSelectionDialog extends JDialog {
         } );
 
         pack();
-        Utilities.setDoubleClickAction( policyFragmentList, buttonOK ); 
+        Utilities.setDoubleClickAction( policyFragmentList, buttonOK );
         Utilities.centerOnParentWindow( this );
     }
 
