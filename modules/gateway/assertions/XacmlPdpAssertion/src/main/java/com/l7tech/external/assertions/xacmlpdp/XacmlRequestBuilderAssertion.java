@@ -899,7 +899,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(SHORT_NAME, "Create XACML Request");
-        meta.put(DESCRIPTION, "Build a XACML request and place it in the specified target.");
+        meta.put(DESCRIPTION, "Create a XACML Request and place it in the specified target.");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });

@@ -75,7 +75,7 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
 
         // Set description for GUI
         meta.put(SHORT_NAME, "Capture Identity of Requestor");
-        meta.put(DESCRIPTION, "Record contextual information about the current request by capturing the IP address, authenticated user ID, or from a context variable.");
+        meta.put(DESCRIPTION, "Record contextual information about the current request by capturing the IP address, authenticated user ID, or a context variable.");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 

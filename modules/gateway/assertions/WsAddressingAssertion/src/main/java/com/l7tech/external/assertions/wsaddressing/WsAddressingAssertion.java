@@ -239,7 +239,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
             StringBuilder sb = new StringBuilder("Require ");
 
             if ( assertion.isRequireSignature() ) {
-                sb.append("signed ");
+                sb.append("Signed ");
             }
 
             sb.append("WS-Addressing");

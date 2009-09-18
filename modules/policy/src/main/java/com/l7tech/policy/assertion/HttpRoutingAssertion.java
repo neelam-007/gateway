@@ -516,7 +516,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         meta.put(PALETTE_FOLDERS, new String[]{"routing"});
         
         meta.put(SHORT_NAME, baseName);
-        meta.put(DESCRIPTION, "The incoming message will be routed via http(s) to the protected service at the designated URL.      ");
+        meta.put(DESCRIPTION, "The incoming message will be routed via http(S) to the protected service at the designated URL.      ");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
 
