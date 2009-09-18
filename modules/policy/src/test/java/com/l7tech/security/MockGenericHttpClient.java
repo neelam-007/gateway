@@ -149,14 +149,19 @@ public class MockGenericHttpClient implements GenericHttpClient {
     private int responseCount = 0;
     private Object identity;
 
-    private class MockGenericHttpRequest implements GenericHttpRequest
+    private class MockGenericHttpRequest implements RerunnableHttpRequest
     {
-        private InputStream in;
+        private InputStreamFactory inFac;
+
+        @Override
+        public void setInputStreamFactory( final InputStreamFactory isf ) {
+            inFac = isf;
+        }
 
         @Override
         public GenericHttpResponse getResponse() throws GenericHttpException {
             try {
-                requestBody = in == null ? null : IOUtils.slurpStream(in);
+                requestBody = inFac == null ? null : IOUtils.slurpStream(inFac.getInputStream());
             }
             catch(IOException ioe) {
                 requestBody = null;
@@ -188,8 +193,13 @@ public class MockGenericHttpClient implements GenericHttpClient {
         }
 
         @Override
-        public void setInputStream(InputStream bodyInputStream) {
-            in = bodyInputStream;
+        public void setInputStream(final InputStream bodyInputStream) {
+            inFac = new InputStreamFactory(){
+                @Override
+                public InputStream getInputStream() {
+                    return bodyInputStream;
+                }
+            };
         }
     }
 
