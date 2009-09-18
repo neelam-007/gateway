@@ -203,6 +203,24 @@ public class GatewayFeatureSets {
         fsr("set:wssp", "WS-SecurityPolicy assertion",
             ass(WsspAssertion.class));
 
+        GatewayFeatureSet nonSoapXmlSigning =
+        fsr("set:nonSoapXmlSigning", "Non-SOAP-specific XML signatures and verification",
+                mass("assertion:NonSoapSignElement"),
+                mass("assertion:NonSoapVerifyElement"),
+                mass("assertion:NonSoapCheckVerifyResults"),
+                mass("assertion:IndexLookupByItem"),
+                mass("assertion:ItemLookupByIndex"),
+                mass("assertion:SelectElement"),
+                mass("assertion:VariableCredentialSource"));
+
+        GatewayFeatureSet nonSoapXmlEncryption =
+        fsr("set:nonSoapXmlEncryption", "Non-SOAP-specific XML encryption and decryption",
+                mass("assertion:NonSoapEncryptElement"),
+                mass("assertion:NonSoapDecryptElement"),
+                mass("assertion:IndexLookupByItem"),
+                mass("assertion:ItemLookupByIndex"),
+                mass("assertion:SelectElement"));
+
         GatewayFeatureSet uiPublishServiceWizard = ui(UI_PUBLISH_SERVICE_WIZARD, "Enable the SSM Publish SOAP Service Wizard");
         GatewayFeatureSet uiPublishXmlWizard = ui(UI_PUBLISH_XML_WIZARD, "Enable the SSM Publish XML Service Wizard");
         GatewayFeatureSet uiPublishInternalWizard = ui(UI_PUBLISH_INTERNAL_WIZARD, "Enable the SSM Publish Internal Service Wizard");
@@ -250,6 +268,7 @@ public class GatewayFeatureSets {
         fsr("set:AccessControl:Firewall", "SecureSpan Firewall access control",
             "Adds access control WSS message-level security (including WS-SecureConversation) and identity mapping",
             fs(wssc),
+            fs(nonSoapXmlSigning),
             ass(SpecificUser.class),
             ass(MemberOfGroup.class),
             ass(AuthenticationAssertion.class),
@@ -286,6 +305,8 @@ public class GatewayFeatureSets {
         fsr("set:XmlSec:Firewall", "SecureSpan Firewall XML security",
             "Adds timestamp and token manipulation",
             fs(xmlsecAccel),
+            fs(nonSoapXmlSigning),
+            fs(nonSoapXmlEncryption),
             ass(RequireWssSignedElement.class),
             ass(RequireWssEncryptedElement.class),
             ass(WssSignElement.class),

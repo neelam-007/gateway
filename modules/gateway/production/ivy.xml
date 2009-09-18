@@ -48,6 +48,7 @@
         <dependency name="CertificateAttributesAssertion" rev="latest.integration" conf="module"/>
         <dependency name="XacmlPdpAssertion" rev="latest.integration" conf="module"/>
         <dependency name="JDBCQueryAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="XmlSecurityAssertion" rev="latest.integration" conf="module"/>
         
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
