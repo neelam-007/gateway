@@ -60,9 +60,9 @@ public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion i
 
     public abstract String getDisplayName();
 
-    protected final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<NonSoapEncryptElementAssertion>(){
+    protected final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<NonSoapSecurityAssertionBase>(){
         @Override
-        public String getAssertionName( final NonSoapEncryptElementAssertion assertion, final boolean decorate) {
+        public String getAssertionName( final NonSoapSecurityAssertionBase assertion, final boolean decorate) {
             final String displayName = assertion.getDisplayName();
             if(!decorate) return displayName;
 
