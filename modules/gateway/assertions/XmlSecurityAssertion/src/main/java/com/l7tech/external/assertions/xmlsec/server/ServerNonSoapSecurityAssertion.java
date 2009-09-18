@@ -1,42 +1,42 @@
 package com.l7tech.external.assertions.xmlsec.server;
 
+import com.ibm.xml.enc.KeyInfoResolvingException;
+import com.ibm.xml.enc.StructureException;
 import com.l7tech.external.assertions.xmlsec.NonSoapSecurityAssertionBase;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathVariableFinderVariableContext;
-import com.l7tech.xml.xpath.XpathVariableContext;
-import com.l7tech.xml.InvalidXpathException;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.message.Message;
+import com.l7tech.security.xml.processor.ProcessorException;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.security.xml.processor.ProcessorException;
-import com.ibm.xml.enc.KeyInfoResolvingException;
-import com.ibm.xml.enc.StructureException;
-import org.jaxen.dom.DOMXPath;
+import com.l7tech.xml.InvalidXpathException;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathVariableContext;
+import com.l7tech.xml.xpath.XpathVariableFinderVariableContext;
 import org.jaxen.JaxenException;
+import org.jaxen.dom.DOMXPath;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.util.logging.Logger;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.Callable;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.logging.Logger;
 
 /**
  * Utility superclass for server implementations of non-SOAP XML encryption/decryption/signature/verification assertions.
@@ -86,6 +86,7 @@ public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityA
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             final Message message = context.getTargetMessage(assertion);
+            // TODO use read-only DOM view whenever we know for a fact no Element vars will ever be saved that are later used to modify the DOM
             final Document doc = message.getXmlKnob().getDocumentWritable();
             List<Element> affectedElements = findElements(context, doc);
 

@@ -48,6 +48,11 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
         this.variablePrefix = variablePrefix;
     }
 
+    @Override
+    public boolean isCredentialSource() {
+        return isGatherCertificateCredentials();
+    }
+
     public static String[] getDefaultPermittedSignatureMethodUris() {
         Set<String> uris = new HashSet<String>(Functions.map(SupportedSignatureMethods.getDefaultMethods(), new Functions.Unary<String, SupportedSignatureMethods>() {
             @Override
