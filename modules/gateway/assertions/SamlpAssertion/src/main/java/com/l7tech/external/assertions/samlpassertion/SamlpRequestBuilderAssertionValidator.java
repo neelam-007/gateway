@@ -26,6 +26,7 @@ public class SamlpRequestBuilderAssertionValidator implements AssertionValidator
         this.isNameIdSpecified = NameIdentifierInclusionType.SPECIFIED.equals(assertion.getNameIdentifierType());
     }
 
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
 
         if (assertion != null) {

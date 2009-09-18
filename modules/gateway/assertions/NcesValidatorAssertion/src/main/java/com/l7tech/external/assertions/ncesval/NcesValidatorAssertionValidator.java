@@ -20,6 +20,7 @@ public class NcesValidatorAssertionValidator implements AssertionValidator {
         this.samlRequired = assertion.isSamlRequired();
     }
 
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         int firstSaml = -1;
         for (int i = 0; i < path.getPath().length; i++) {

@@ -48,6 +48,7 @@ public class HardcodedResponseAssertionValidator implements AssertionValidator {
         }
     }
 
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         if (ctypeErr != null)
             result.addError(new PolicyValidatorResult.Error(ass, path, "The content type is invalid: " + ctypeErr, null));

@@ -17,6 +17,7 @@ public class WsAddressingAssertionValidator implements AssertionValidator {
         this.nonLocalSignature = assertion.isRequireSignature() && !assertion.getRecipientContext().localRecipient();
     }
 
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         if (nonLocalSignature)
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path,

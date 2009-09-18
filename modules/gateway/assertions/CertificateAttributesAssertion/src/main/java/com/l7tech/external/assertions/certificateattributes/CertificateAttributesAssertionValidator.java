@@ -22,6 +22,7 @@ public class CertificateAttributesAssertionValidator implements AssertionValidat
         this.assertion = assertion;
     }
 
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         int firstCertCred = -1;
         int firstIdentity = -1;
@@ -45,7 +46,7 @@ public class CertificateAttributesAssertionValidator implements AssertionValidat
                 if (firstCertCred == -1 || firstCertCred > i)
                     result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by a certificate credential source", null));
                 if (firstIdentity == -1 || firstIdentity > i)
-                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by an identity assertion (either Specific User or Member Of Group)", null));
+                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by an identity assertion (e.g. Authenticate User or Group)", null));
                 return;
             }
         }

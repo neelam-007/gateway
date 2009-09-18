@@ -32,6 +32,7 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
         assertion = ra;
     }
 
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         if (path == null || wsdl == null || result == null) throw new IllegalArgumentException();
         if (!soap) return;

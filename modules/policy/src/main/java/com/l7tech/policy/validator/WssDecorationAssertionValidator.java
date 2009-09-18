@@ -50,7 +50,7 @@ public class WssDecorationAssertionValidator implements AssertionValidator {
             }
 
             if ( requiresDecoration && !seenDecoration ) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "This assertion will be ignored. An \"Add or remove WS-Security\" assertion should be used to apply security.", null));
+                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "This assertion will be ignored. An \"Add or Remove WS-Security\" assertion should be used to apply security.", null));
             }
 
             if ( isWss11 && seenWss10 ) {

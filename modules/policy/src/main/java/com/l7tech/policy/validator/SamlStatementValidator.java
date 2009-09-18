@@ -46,14 +46,14 @@ public class SamlStatementValidator implements AssertionValidator {
             
             if (requestWssSaml.isNoSubjectConfirmation()) {
                 if (sslAssertions.length == 0) {
-                    String message = "SSL is recommended with SAML assertions with No Subject Confirmation";
+                    String message = "SSL is recommended with Require SAML Token Profile assertions with No Subject Confirmation";
                     result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, path, message, null)));
                 }
             }
 
             if (hasBearer) {
                 if (sslAssertions.length == 0) {
-                    String message = "SSL is recommended with SAML assertions with Bearer Subject Confirmation";
+                    String message = "SSL is recommended with Require SAML Token Profile assertions with Bearer Subject Confirmation";
                     result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, path, message, null)));
                 }
             }
@@ -68,7 +68,7 @@ public class SamlStatementValidator implements AssertionValidator {
                         }
                     }
                     if (!hasSslAsCrendentialSource) {
-                        String message = "SSL with Client Certificates must be used when No Proof Of Possession specified for Holder-Of-Key.";
+                        String message = "Set SSL or TLS Transport assertion with Client Certificates configured must be used when No Proof Of Possession specified for Holder-Of-Key.";
                         result.addError((new PolicyValidatorResult.Error(requestWssSaml, path, message, null)));
                     }
                 }

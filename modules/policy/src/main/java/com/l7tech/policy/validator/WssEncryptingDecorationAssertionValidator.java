@@ -80,7 +80,7 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
 
         if ( requiresTargetEncKey ) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
-                    "This assertion requires a (Request) WSS Signature assertion, a WS Secure Conversation assertion, a SAML assertion, an Encrypted UsernameToken assertion, or a WSS Kerberos assertion.", null));
+                    "This assertion requires a (Request) Require WS-Security Signature Credentials assertion, a Require WS-SecureConversation assertion, a Require SAML Token Profile Credentials assertion, a Require Encrypted UsernameToken Profile Credentials assertion, or a Require WS-Security Kerberos Token Profile Credentials.", null));
         }
     }
 

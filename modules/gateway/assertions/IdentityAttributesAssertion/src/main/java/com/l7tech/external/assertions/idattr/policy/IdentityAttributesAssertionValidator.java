@@ -25,6 +25,7 @@ public class IdentityAttributesAssertionValidator implements AssertionValidator 
         this.assertion = assertion;
     }
 
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         int firstIdPos = -1;
         Set<Long> authenticatedProviders = new HashSet<Long>();
@@ -36,7 +37,7 @@ public class IdentityAttributesAssertionValidator implements AssertionValidator 
                 authenticatedProviders.add(((IdentityAssertion)assertion).getIdentityProviderOid());
             } else if (assertion == this.assertion) {
                 if (firstIdPos == -1 || firstIdPos > i || !authenticatedProviders.contains(this.assertion.getIdentityProviderOid())) {
-                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by an Identity Assertion (e.g. Specific User or Member of Group) matching the expected Identity Provider", null));
+                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by an Identity Assertion (e.g. Authenticate User or Group) matching the expected Identity Provider", null));
                 }
                 break;
             }

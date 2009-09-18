@@ -35,6 +35,7 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
         nameIdentifierType = assertion.getNameIdentifierType();
     }
 
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         int firstCreds = -1;
         int firstCertCred = -1;

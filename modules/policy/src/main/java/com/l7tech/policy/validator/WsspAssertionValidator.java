@@ -38,6 +38,7 @@ public class WsspAssertionValidator implements AssertionValidator {
     /**
      *
      */
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         Map assertionsToTypes = new LinkedHashMap();
         Assertion[] assertions = path.getPath();
@@ -54,7 +55,7 @@ public class WsspAssertionValidator implements AssertionValidator {
         for (Iterator iterator = assertionsToTypes.keySet().iterator(); iterator.hasNext();) {
             Assertion assertion = (Assertion) iterator.next();
             result.addError(new PolicyValidatorResult.Error(assertion, path,
-                    "Assertion cannot be used with WS-Security Policy Compliance assertion.", null));
+                    "Assertion cannot be used with the Enforce WS-Security Policy Compliance assertion.", null));
         }
     }
 

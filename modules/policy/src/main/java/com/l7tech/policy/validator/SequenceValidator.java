@@ -17,6 +17,7 @@ public class SequenceValidator implements AssertionValidator {
 
     //- PUBLIC
     
+    @Override
     public void validate( final AssertionPath path, final Wsdl wsdl, final boolean soap, final PolicyValidatorResult result ) {
         for ( AssertionValidator validator : validators ) {
             validator.validate( path, wsdl, soap, result );

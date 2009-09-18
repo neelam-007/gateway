@@ -28,6 +28,7 @@ public class WsiBspAssertionValidator implements AssertionValidator {
     /**
      *
      */
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         if(path!=null && result!=null) {
             int count = path.getPathCount();
