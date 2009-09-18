@@ -445,6 +445,16 @@ public class DecorationRequirements {
         this.timestampTimeoutMillis = timestampTimeoutMillis;
     }
 
+    public enum TimestampResolution { DEFAULT, NANOSECONDS, MILLISECONDS, SECONDS }
+
+    public TimestampResolution getTimestampResolution() {
+        return timestampResolution;
+    }
+
+    public void setTimestampResolution( final TimestampResolution timestampResolution ) {
+        this.timestampResolution = timestampResolution;
+    }
+
     /**
      * @return true iff. this decoration requirements has one of the following tokens that can be used to sign elements:
      *         a sender cert and private key; a secure conversation session; or a sender SAML token.
@@ -723,6 +733,7 @@ public class DecorationRequirements {
     private NamespaceFactory namespaceFactory = new NamespaceFactory();
     private Date timestampCreatedDate = null;
     private int timestampTimeoutMillis = 0;
+    private TimestampResolution timestampResolution = TimestampResolution.DEFAULT;
     private boolean securityHeaderReusable = false;
     private String securityHeaderActor = SoapConstants.L7_SOAP_ACTOR;
     private SecurityHeaderMustUnderstand securityHeaderMustUnderstand = SecurityHeaderMustUnderstand.DEFAULT;

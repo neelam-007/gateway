@@ -142,7 +142,8 @@ public class PolicyProcessingTest {
         {"/signatureconfirmation3", "POLICY_signatureconfirmation3.xml"},
         {"/addusernametoken2", "POLICY_response_wss_usernametoken_digest.xml"},
         {"/addusernametoken3", "POLICY_response_encrypted_usernametoken.xml"},
-        {"/secureconversation", "POLICY_secure_conversation.xml"}
+        {"/secureconversation", "POLICY_secure_conversation.xml"},
+        {"/timestampresolution", "POLICY_timestampresolution.xml"}
     };
 
     @Before
@@ -1203,6 +1204,12 @@ public class PolicyProcessingTest {
     public void testSecureConversationHMACOutputLength() throws Exception {
         final String requestMessage = new String(loadResource("REQUEST_secure_conversation_hmacoutputlength.xml"));
         processMessage("/secureconversation", requestMessage, 500);
+    }
+
+    @Test
+	public void testWssTimestampResolution() throws Exception {
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/timestampresolution", requestMessage, 0);
     }
 
     /**

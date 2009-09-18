@@ -36,6 +36,19 @@ public class ServerAddWssTimestamp extends ServerAddWssSignature<AddWssTimestamp
         else {
             wssReq.setIncludeTimestamp(true);            
         }
+        if ( assertion.getResolution() != null ) {
+            switch ( assertion.getResolution() ) {
+                case MILLISECONDS:
+                    wssReq.setTimestampResolution( DecorationRequirements.TimestampResolution.MILLISECONDS );
+                    break;
+                case NANOSECONDS:
+                    wssReq.setTimestampResolution( DecorationRequirements.TimestampResolution.NANOSECONDS );
+                    break;
+                case SECONDS:
+                    wssReq.setTimestampResolution( DecorationRequirements.TimestampResolution.SECONDS );
+                    break;
+            }
+        }
         wssReq.setTimestampTimeoutMillis(assertion.getExpiryMilliseconds());
         return signElements;
     }

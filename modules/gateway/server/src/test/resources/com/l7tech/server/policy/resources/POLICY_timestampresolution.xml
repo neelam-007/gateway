@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Policy to test adding timestamps with different resolutions (default, nanoseconds, milliseconds, seconds)
+  The policy is self testing, using variable regex to check that the timestamps have the correct format.
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNvYXA6RW52ZWxvcGUgeG1sbnM6c29hcD0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iCiAgICB4bWxuczp4c2Q9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hIiB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIj4KICAgIDxzb2FwOkJvZHk+CiAgICAgICAgPGxpc3RQcm9kdWN0c1Jlc3BvbnNlIHhtbG5zPSJodHRwOi8vd2FyZWhvdXNlLmFjbWUuY29tL3dzIj4KICAgICAgICAgICAgPGxpc3RQcm9kdWN0c1Jlc3VsdD4KICAgICAgICAgICAgICAgIDxQcm9kdWN0TGlzdEhlYWRlcj4KICAgICAgICAgICAgICAgICAgICA8cHJvZHVjdE5hbWU+V2hpdGUgYm9hcmQ8L3Byb2R1Y3ROYW1lPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0SWQ+MTExMTExMTEzPC9wcm9kdWN0SWQ+CiAgICAgICAgICAgICAgICA8L1Byb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgPFByb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0TmFtZT5XYWxsIENsb2NrPC9wcm9kdWN0TmFtZT4KICAgICAgICAgICAgICAgICAgICA8cHJvZHVjdElkPjExMTExMTExMjwvcHJvZHVjdElkPgogICAgICAgICAgICAgICAgPC9Qcm9kdWN0TGlzdEhlYWRlcj4KICAgICAgICAgICAgICAgIDxQcm9kdWN0TGlzdEhlYWRlcj4KICAgICAgICAgICAgICAgICAgICA8cHJvZHVjdE5hbWU+UGhvbmVCb29rPC9wcm9kdWN0TmFtZT4KICAgICAgICAgICAgICAgICAgICA8cHJvZHVjdElkPjExMTExMTExMTwvcHJvZHVjdElkPgogICAgICAgICAgICAgICAgPC9Qcm9kdWN0TGlzdEhlYWRlcj4KICAgICAgICAgICAgICAgIDxQcm9kdWN0TGlzdEhlYWRlcj4KICAgICAgICAgICAgICAgICAgICA8cHJvZHVjdE5hbWU+Q2l2aWM8L3Byb2R1Y3ROYW1lPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0SWQ+MTExMTExMTE5PC9wcm9kdWN0SWQ+CiAgICAgICAgICAgICAgICA8L1Byb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgPFByb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0TmFtZT5CTVc8L3Byb2R1Y3ROYW1lPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0SWQ+MTExMTExMTE4PC9wcm9kdWN0SWQ+CiAgICAgICAgICAgICAgICA8L1Byb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgPFByb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0TmFtZT5DYW1jb3JkZXI8L3Byb2R1Y3ROYW1lPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0SWQ+MTExMTExMTE3PC9wcm9kdWN0SWQ+CiAgICAgICAgICAgICAgICA8L1Byb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgPFByb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0TmFtZT5QbGFzbWEgVFY8L3Byb2R1Y3ROYW1lPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0SWQ+MTExMTExMTE2PC9wcm9kdWN0SWQ+CiAgICAgICAgICAgICAgICA8L1Byb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgPFByb2R1Y3RMaXN0SGVhZGVyPgogICAgICAgICAgICAgICAgICAgIDxwcm9kdWN0TmFtZT5TcGVha2VyczwvcHJvZHVjdE5hbWU+CiAgICAgICAgICAgICAgICAgICAgPHByb2R1Y3RJZD4xMTExMTExMTU8L3Byb2R1Y3RJZD4KICAgICAgICAgICAgICAgIDwvUHJvZHVjdExpc3RIZWFkZXI+CiAgICAgICAgICAgICAgICA8UHJvZHVjdExpc3RIZWFkZXI+CiAgICAgICAgICAgICAgICAgICAgPHByb2R1Y3ROYW1lPkRpZ2l0YWwgY2FtZXJhPC9wcm9kdWN0TmFtZT4KICAgICAgICAgICAgICAgICAgICA8cHJvZHVjdElkPjExMTExMTExNDwvcHJvZHVjdElkPgogICAgICAgICAgICAgICAgPC9Qcm9kdWN0TGlzdEhlYWRlcj4KICAgICAgICAgICAgPC9saXN0UHJvZHVjdHNSZXN1bHQ+CiAgICAgICAgPC9saXN0UHJvZHVjdHNSZXNwb25zZT4KICAgIDwvc29hcDpCb2R5Pgo8L3NvYXA6RW52ZWxvcGU+"/>
+        </L7p:HardcodedResponse>
+        <L7p:AddWssTimestamp>
+            <L7p:ExpiryMilliseconds intValue="300000"/>
+            <L7p:SignatureRequired booleanValue="false"/>
+        </L7p:AddWssTimestamp>
+        <L7p:WsSecurity>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:WsSecurity>
+        <L7p:ResponseXpathAssertion>
+            <L7p:VariablePrefix stringValue="timestamp"/>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Header/wsse:Security/wsu:Timestamp/wsu:Created/text()"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsse"/>
+                        <L7p:value stringValue="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsu"/>
+                        <L7p:value stringValue="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:ResponseXpathAssertion>
+        <L7p:AuditDetailAssertion>
+            <L7p:Detail stringValue="${timestamp.result}"/>
+        </L7p:AuditDetailAssertion>
+        <L7p:Regex>
+            <L7p:AutoTarget booleanValue="false"/>
+            <L7p:OtherTargetMessageVariable stringValue="timestamp.result"/>
+            <L7p:Regex stringValue="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{9}Z"/>
+            <L7p:RegexName stringValue="Check timestamp nanos"/>
+            <L7p:Replacement stringValue=""/>
+            <L7p:Target target="OTHER"/>
+        </L7p:Regex>
+        <L7p:AddWssTimestamp>
+            <L7p:ExpiryMilliseconds intValue="300000"/>
+            <L7p:Resolution resolutionValue="NANOSECONDS"/>
+            <L7p:SignatureRequired booleanValue="false"/>
+        </L7p:AddWssTimestamp>
+        <L7p:WsSecurity>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:WsSecurity>
+        <L7p:ResponseXpathAssertion>
+            <L7p:VariablePrefix stringValue="timestamp"/>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Header/wsse:Security/wsu:Timestamp/wsu:Created/text()"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsse"/>
+                        <L7p:value stringValue="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsu"/>
+                        <L7p:value stringValue="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:ResponseXpathAssertion>
+        <L7p:AuditDetailAssertion>
+            <L7p:Detail stringValue="${timestamp.result}"/>
+        </L7p:AuditDetailAssertion>
+        <L7p:Regex>
+            <L7p:AutoTarget booleanValue="false"/>
+            <L7p:OtherTargetMessageVariable stringValue="timestamp.result"/>
+            <L7p:Regex stringValue="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{9}Z"/>
+            <L7p:RegexName stringValue="Check timestamp nanos"/>
+            <L7p:Replacement stringValue=""/>
+            <L7p:Target target="OTHER"/>
+        </L7p:Regex>
+        <L7p:AddWssTimestamp>
+            <L7p:ExpiryMilliseconds intValue="300000"/>
+            <L7p:Resolution resolutionValue="MILLISECONDS"/>
+            <L7p:SignatureRequired booleanValue="false"/>
+        </L7p:AddWssTimestamp>
+        <L7p:WsSecurity>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:WsSecurity>
+        <L7p:ResponseXpathAssertion>
+            <L7p:VariablePrefix stringValue="timestamp"/>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Header/wsse:Security/wsu:Timestamp/wsu:Created/text()"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsse"/>
+                        <L7p:value stringValue="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsu"/>
+                        <L7p:value stringValue="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:ResponseXpathAssertion>
+        <L7p:AuditDetailAssertion>
+            <L7p:Detail stringValue="${timestamp.result}"/>
+        </L7p:AuditDetailAssertion>
+        <L7p:Regex>
+            <L7p:AutoTarget booleanValue="false"/>
+            <L7p:OtherTargetMessageVariable stringValue="timestamp.result"/>
+            <L7p:Regex stringValue="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}Z"/>
+            <L7p:RegexName stringValue="Check timestamp millis"/>
+            <L7p:Replacement stringValue=""/>
+            <L7p:Target target="OTHER"/>
+        </L7p:Regex>
+        <L7p:AddWssTimestamp>
+            <L7p:ExpiryMilliseconds intValue="300000"/>
+            <L7p:Resolution resolutionValue="SECONDS"/>
+            <L7p:SignatureRequired booleanValue="false"/>
+        </L7p:AddWssTimestamp>
+        <L7p:WsSecurity>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:WsSecurity>
+        <L7p:ResponseXpathAssertion>
+            <L7p:VariablePrefix stringValue="timestamp"/>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Header/wsse:Security/wsu:Timestamp/wsu:Created/text()"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsse"/>
+                        <L7p:value stringValue="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsu"/>
+                        <L7p:value stringValue="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:ResponseXpathAssertion>
+        <L7p:AuditDetailAssertion>
+            <L7p:Detail stringValue="${timestamp.result}"/>
+        </L7p:AuditDetailAssertion>
+        <L7p:Regex>
+            <L7p:AutoTarget booleanValue="false"/>
+            <L7p:OtherTargetMessageVariable stringValue="timestamp.result"/>
+            <L7p:Regex stringValue="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z"/>
+            <L7p:RegexName stringValue="Check timestamp seconds"/>
+            <L7p:Replacement stringValue=""/>
+            <L7p:Target target="OTHER"/>
+        </L7p:Regex>
+    </wsp:All>
+</wsp:Policy>

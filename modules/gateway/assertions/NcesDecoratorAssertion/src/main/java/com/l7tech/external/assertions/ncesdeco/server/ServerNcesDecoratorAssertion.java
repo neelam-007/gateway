@@ -120,6 +120,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         }
         decoReq.setSecurityHeaderActor(null);
         decoReq.setSecurityHeaderReusable(true);
+        decoReq.setTimestampResolution(DecorationRequirements.TimestampResolution.MILLISECONDS);            
 
         Document doc;
         try {

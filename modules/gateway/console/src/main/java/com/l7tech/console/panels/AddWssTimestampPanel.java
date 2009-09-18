@@ -4,8 +4,10 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.util.TimeUnit;
+import com.l7tech.util.Functions;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.gui.widgets.ValidatedPanel;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
 
@@ -17,11 +19,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
+import java.util.ResourceBundle;
 
 /**
  * @author alex
  */
 public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
+    private static final ResourceBundle resources = ResourceBundle.getBundle( "com.l7tech.console.resources.AddWssTimestampDialog" );
     private JPanel mainPanel;
     private JFormattedTextField expiryTimeField;
     private JCheckBox signatureRequiredCheckBox;
@@ -30,6 +34,7 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
     private JRadioButton bstRadio;
     private JRadioButton strRadio;
     private JRadioButton issuerSerialRadio;
+    private JComboBox resolutionComboBox;
 
     private final AddWssTimestamp assertion;
     private TimeUnit oldTimeUnit;
@@ -42,13 +47,28 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
 
     @Override
     protected void initComponents() {
+        DefaultComboBoxModel resolutionComboModel = new DefaultComboBoxModel( AddWssTimestamp.Resolution.values() );
+        resolutionComboModel.insertElementAt( null, 0 );
         DefaultComboBoxModel comboModel = new DefaultComboBoxModel(TimeUnit.ALL);
-        final TimeUnit timeUnit = assertion.getTimeUnit();
+        final TimeUnit timeUnit = assertion.getTimeUnit()!=null ? assertion.getTimeUnit() : TimeUnit.MINUTES;
 
         ButtonGroup bg = new ButtonGroup();
         bg.add(bstRadio);
         bg.add(strRadio);
         bg.add(issuerSerialRadio);
+
+        resolutionComboBox.setModel( resolutionComboModel );
+        resolutionComboBox.setRenderer( new TextListCellRenderer<AddWssTimestamp.Resolution>( new Functions.Unary<String,AddWssTimestamp.Resolution>(){
+            @Override
+            public String call( final AddWssTimestamp.Resolution resolution ) {
+                String key = "default";
+                if ( resolution != null ) {
+                    key = resolution.name();
+                }
+                return resources.getString( "timestamp.resolution." + key );    
+            }
+        }, null, true ) );
+        resolutionComboBox.setSelectedItem( assertion.getResolution() );
 
         oldTimeUnit = timeUnit;
         comboModel.setSelectedItem(timeUnit);
@@ -77,8 +97,8 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
             @Override
             public void actionPerformed(ActionEvent e) {
                 TimeUnit newTimeUnit = (TimeUnit)expiryTimeUnitCombo.getSelectedItem();
-                Double time = (Double)expiryTimeField.getValue();
-                if (newTimeUnit != oldTimeUnit) {
+                if ( newTimeUnit != null && oldTimeUnit != null &&  newTimeUnit != oldTimeUnit) {
+                    Double time = (Double)expiryTimeField.getValue();
                     long oldMillis = (long)(oldTimeUnit.getMultiplier() * time);
                     expiryTimeField.setValue((double) oldMillis / newTimeUnit.getMultiplier());
                 }
@@ -118,7 +138,11 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
     @Override
     protected void doUpdateModel() {
         TimeUnit tu = (TimeUnit)expiryTimeUnitCombo.getSelectedItem();
+        if ( tu == null ) {
+            tu = TimeUnit.MILLIS;            
+        }
         Double num = (Double)expiryTimeField.getValue();
+        assertion.setResolution( (AddWssTimestamp.Resolution) resolutionComboBox.getSelectedItem() );
         assertion.setTimeUnit(tu);
         assertion.setExpiryMilliseconds((int)(num * tu.getMultiplier()));
         assertion.setSignatureRequired(signatureRequiredCheckBox.isSelected());

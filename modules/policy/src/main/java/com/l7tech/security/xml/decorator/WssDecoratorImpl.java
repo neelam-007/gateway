@@ -87,8 +87,10 @@ public class WssDecoratorImpl implements WssDecorator {
     /**
      * @return random extra microseconds to add to the timestamp to make it more unique, or zero to not bother.
      */
-    private static long getExtraTime() {
-        return SyspropUtil.getBoolean(PROPERTY_SUPPRESS_NANOSECONDS) ? -1L : (long) rand.nextInt(1000000);
+    private static long getExtraTime( final Boolean includeNanoseconds ) {
+        return  (includeNanoseconds != null && !includeNanoseconds) || (includeNanoseconds == null && SyspropUtil.getBoolean(PROPERTY_SUPPRESS_NANOSECONDS)) ?
+                -1L : 
+                (long) rand.nextInt(1000000);
     }
 
     /**
@@ -137,13 +139,17 @@ public class WssDecoratorImpl implements WssDecorator {
         int timeoutMillis = dreq.getTimestampTimeoutMillis();
         if (timeoutMillis < 1)
             timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
+        Boolean includeNanoSeconds = dreq.getTimestampResolution() == DecorationRequirements.TimestampResolution.DEFAULT ?
+                null :
+                dreq.getTimestampResolution() == DecorationRequirements.TimestampResolution.NANOSECONDS;
         if (dreq.isIncludeTimestamp() && timestamp==null) {
             Date createdDate = dreq.getTimestampCreatedDate();
             // Have to add some uniqueness to this timestamp
-            timestamp = SoapUtil.addTimestamp(securityHeader,
+            timestamp = SoapUtil.addTimestamp(securityHeader, 
                 c.nsf.getWsuNs(),
                 createdDate, // null ok
-                getExtraTime(),
+                dreq.getTimestampResolution() != DecorationRequirements.TimestampResolution.SECONDS,
+                getExtraTime( includeNanoSeconds ),
                 timeoutMillis);
         }
 
@@ -153,7 +159,8 @@ public class WssDecoratorImpl implements WssDecorator {
                 timestamp = SoapUtil.addTimestamp(securityHeader,
                     c.nsf.getWsuNs(),
                     dreq.getTimestampCreatedDate(), // null ok
-                    getExtraTime(),
+                    dreq.getTimestampResolution() != DecorationRequirements.TimestampResolution.SECONDS,
+                    getExtraTime( includeNanoSeconds ),
                     timeoutMillis);
             signList.add(timestamp);
         }
@@ -414,7 +421,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     SoapConstants.VALUETYPE_SAML_ASSERTIONID2 :
                     SoapConstants.VALUETYPE_SAML_ASSERTIONID3;
 
-                if ( Boolean.getBoolean(PROPERTY_SAML_USE_URI_REF) ) {
+                if ( SyspropUtil.getBoolean(PROPERTY_SAML_USE_URI_REF) ) {
                     signatureKeyInfo = KeyInfoDetails.makeUriReference(assId, samlValueType);
                 } else {
                     signatureKeyInfo = KeyInfoDetails.makeKeyId(assId, false, samlValueType);
@@ -429,7 +436,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 if (dreq.getEncryptedKey() != null) {
                     addedEncKeyXmlEncKey = new XencUtil.XmlEncKey(encryptionAlgorithm, dreq.getEncryptedKey());
                 } else {
-                    addedEncKeyXmlEncKey = generateXmlEncKey(encryptionAlgorithm, c);
+                    addedEncKeyXmlEncKey = generateXmlEncKey(encryptionAlgorithm);
                 }
 
                 addedEncKey = addEncryptedKey(c,
@@ -607,7 +614,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     final KeyInfoDetails keyInfoDetails = KeyInfoDetails.makeEncryptedKeySha1Ref(eksha);
 
                     final String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
-                    XencUtil.XmlEncKey encKey = generateXmlEncKey(encryptionAlgorithm, c);
+                    XencUtil.XmlEncKey encKey = generateXmlEncKey(encryptionAlgorithm);
                     encKey = new XencUtil.XmlEncKey(encKey.getAlgorithm(), ekkey);
                     addEncryptedReferenceList(c,
                                               securityHeader,
@@ -662,7 +669,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 // Encrypt to recipient's certificate
                 String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
 
-                XencUtil.XmlEncKey encKey = generateXmlEncKey(encryptionAlgorithm, c);
+                XencUtil.XmlEncKey encKey = generateXmlEncKey(encryptionAlgorithm);
                 addEncryptedKey(c,
                                 securityHeader,
                                 dreq.getRecipientCertificate(),
@@ -1460,12 +1467,11 @@ public class WssDecoratorImpl implements WssDecorator {
      * Create the <code>EncriptionKey</code> based un the xenc algorithm name and using random key material.
      *
      * @param xEncAlgorithm the algorithm name such as http://www.w3.org/2001/04/xmlenc#tripledes-cbc
-     * @param c             the context fro random generatir source
      * @return the encription key instance holding the secret key and the algorithm name
      * @throws NoSuchAlgorithmException if the algorithm URI is not recognized, or
      *                                  if the provided keyBytes is too short for the specified algorithm
      */
-    private XencUtil.XmlEncKey generateXmlEncKey(String xEncAlgorithm, Context c) throws NoSuchAlgorithmException {
+    private XencUtil.XmlEncKey generateXmlEncKey(String xEncAlgorithm) throws NoSuchAlgorithmException {
         byte[] keyBytes = new byte[32]; // (max for aes 256)
         rand.nextBytes(keyBytes);
         XencUtil.XmlEncKey xek = new XencUtil.XmlEncKey(xEncAlgorithm, keyBytes);

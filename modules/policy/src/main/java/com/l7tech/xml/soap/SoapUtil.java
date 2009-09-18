@@ -1152,13 +1152,36 @@ public class SoapUtil extends SoapConstants {
     /**
      * Append a wsu:Timestamp element to the specified parent element, showing the specified
      * time, or the current time if it isn't specified.
+     *
      * @param parent      element which will contain the new timestamp subelement
      * @param wsuUri      which wsu: namespace URI to use
      * @param timestamp   time that should be marked in this timestamp.  if null, uses current time
      * @param timestampNanos   number of nanoseconds to add to the millisecond-granular timestamp
      * @param timeoutSec  after how many seconds this timestamp should expirel.  If zero, uses 5 min.
+     * @return the timestamp element
      */
     public static Element addTimestamp(Element parent, String wsuUri, Date timestamp, long timestampNanos, int timeoutSec) {
+        return addTimestamp( parent, wsuUri, timestamp, true, timestampNanos, timeoutSec );
+    }
+
+    /**
+     * Append a wsu:Timestamp element to the specified parent element, showing the specified
+     * time, or the current time if it isn't specified.
+     *
+     * @param parent      element which will contain the new timestamp subelement
+     * @param wsuUri      which wsu: namespace URI to use
+     * @param timestamp   time that should be marked in this timestamp.  if null, uses current time
+     * @param millis      true to include milliseconds (and possibly nanoseconds)
+     * @param timestampNanos   number of nanoseconds to add to the millisecond-granular timestamp
+     * @param timeoutSec  after how many seconds this timestamp should expirel.  If zero, uses 5 min.
+     * @return the timestamp element
+     */
+    public static Element addTimestamp( final Element parent,
+                                        final String wsuUri,
+                                        final Date timestamp,
+                                        final boolean millis,
+                                        final long timestampNanos,
+                                        final int timeoutSec ) {
         Document message = parent.getOwnerDocument();
         Element timestampEl = message.createElementNS(wsuUri,
                                                       TIMESTAMP_EL_NAME);
@@ -1168,17 +1191,21 @@ public class SoapUtil extends SoapConstants {
         Calendar now = Calendar.getInstance();
         if (timestamp != null)
             now.setTime(timestamp);
-        timestampEl.appendChild(makeTimestampChildElement(timestampEl, CREATED_EL_NAME, now.getTime(), timestampNanos));
+        timestampEl.appendChild(makeTimestampChildElement(timestampEl, CREATED_EL_NAME, now.getTime(), millis, timestampNanos));
         now.add(Calendar.MILLISECOND, timeoutSec != 0 ? timeoutSec : 300000);
-        timestampEl.appendChild(makeTimestampChildElement(timestampEl, EXPIRES_EL_NAME, now.getTime(), -1));
+        timestampEl.appendChild(makeTimestampChildElement(timestampEl, EXPIRES_EL_NAME, now.getTime(), millis, -1));
         return timestampEl;
     }
 
-    private static Element makeTimestampChildElement(Element parent, String createdElName, Date time, long nanos) {
+    private static Element makeTimestampChildElement( final Element parent,
+                                                      final String createdElName,
+                                                      final Date time,
+                                                      final boolean millis,
+                                                      final long nanos) {
         Document factory = parent.getOwnerDocument();
         Element element = factory.createElementNS(parent.getNamespaceURI(), createdElName);
         element.setPrefix(parent.getPrefix());
-        element.appendChild(DomUtils.createTextNode(factory, ISO8601Date.format(time, nanos)));
+        element.appendChild(DomUtils.createTextNode(factory, ISO8601Date.format(time, millis, nanos)));
         return element;
     }
 

@@ -187,21 +187,39 @@ public class ISO8601Date {
     }
 
     public static String format(Date date) {
-        return format(date, -1, UTC);
+        return format(date, true, -1, UTC);
     }
 
     public static String format(Date date, long nanos) {
-        return format(date, nanos, UTC);
+        return format(date, true, nanos, UTC);
+    }
+
+    public static String format(Date date, boolean millis, long nanos) {
+        return format(date, millis, nanos, UTC);
     }
 
     /**
-     * Generate a ISO 8601 date 
+     * Generate an ISO 8601 date
+     *
      * @param date a Date instance
      * @param nanos nanoseconds to include, or -1 to use only millisecond-granular timestamp.
      *              Will be taken modulo 1000000.
      * @return a string representing the date in the ISO 8601 format
      */
-    public static String format(Date date, long nanos, TimeZone tz) {
+    public static String format( final Date date, final long nanos, final TimeZone tz ) {
+        return format( date, true, nanos, tz );
+    }
+
+    /**
+     * Generate an ISO 8601 date
+     *
+     * @param date a Date instance
+     * @param millis true to include milliseconds
+     * @param nanos nanoseconds to include, or -1 to use only millisecond-granular timestamp.
+     *              Will be taken modulo 1000000.
+     * @return a string representing the date in the ISO 8601 format
+     */
+    public static String format( final Date date, final boolean millis, final long nanos, final TimeZone tz) {
         Calendar calendar = new GregorianCalendar(tz);
         calendar.setTime(date);
         StringBuffer buffer = new StringBuffer();
@@ -216,11 +234,13 @@ public class ISO8601Date {
         buffer.append(twoDigit(calendar.get(Calendar.MINUTE)));
         buffer.append(":");
         buffer.append(twoDigit(calendar.get(Calendar.SECOND)));
-        buffer.append(".");
-        buffer.append(threeDigit(calendar.get(Calendar.MILLISECOND)));
-        if (nanos >= 0) {
-            buffer.append(threeDigit((int)((nanos % 1000000L) / 1000L)));
-            buffer.append(threeDigit((int)(nanos % 1000L)));
+        if ( millis ) {
+            buffer.append(".");
+            buffer.append(threeDigit(calendar.get(Calendar.MILLISECOND)));
+            if (nanos >= 0) {
+                buffer.append(threeDigit((int)((nanos % 1000000L) / 1000L)));
+                buffer.append(threeDigit((int)(nanos % 1000L)));
+            }
         }
         if (tz == UTC)
             buffer.append("Z");

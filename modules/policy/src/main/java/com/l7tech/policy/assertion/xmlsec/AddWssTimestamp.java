@@ -8,9 +8,14 @@ import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.PrivateKeyableSupport;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.Functions;
+
+import java.util.Collections;
 
 /**
  * Creates a wsu:Timestamp element and adds it to the SOAP security header in the response.
@@ -20,10 +25,14 @@ import com.l7tech.util.Functions;
 @RequiresSOAP(wss=true)
 public class AddWssTimestamp extends MessageTargetableAssertion implements WssDecorationConfig, PrivateKeyable {
 
+    //- PUBLIC
+
     /**
      * The recommended expiry time to use when creating response wss timestamps;
      */
     public static final int DEFAULT_EXPIRY_TIME = 5 * TimeUnit.MINUTES.getMultiplier();
+
+    public static enum Resolution { NANOSECONDS, MILLISECONDS, SECONDS }
 
     public AddWssTimestamp() {
         super(TargetMessageType.RESPONSE);
@@ -38,23 +47,7 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
         return timestamp;
     }
 
-    /**
-     * Expiry time of the timestamp, always in milliseconds, regardless of {@link #timeUnit}.
-     */
-    private int expiryMillis;
-
-    /** TimeUnit remembered purely for GUI purposes (no impact on {@link #expiryMillis})*/
-    private TimeUnit timeUnit = TimeUnit.MINUTES;
-
-    private String keyReference = KeyReference.BST.getName();
-    private boolean protectTokens = false;
-    
-    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
-
-    private boolean signatureRequired = true;
-    private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
-
-    public void copyFrom(AddWssTimestamp other) {
+    public void copyFrom( final AddWssTimestamp other ) {
         super.copyFrom( other );
         this.expiryMillis = other.expiryMillis;
         this.timeUnit = other.timeUnit;
@@ -62,6 +55,8 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
         this.recipientContext = other.recipientContext;
         this.signatureRequired = other.signatureRequired;
         this.privatekeyableSupport.copyFrom( other.privatekeyableSupport );
+        this.protectTokens = other.protectTokens;
+        this.resolution = other.resolution;
     }
 
     /**
@@ -104,6 +99,14 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
     /** TimeUnit remembered purely for GUI purposes (no impact on {@link #expiryMillis})*/
     public void setTimeUnit(TimeUnit timeUnit) {
         this.timeUnit = timeUnit;
+    }
+
+    public Resolution getResolution() {
+        return resolution;
+    }
+
+    public void setResolution( final Resolution resolution ) {
+        this.resolution = resolution;
     }
 
     @Override
@@ -167,17 +170,6 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
         privatekeyableSupport.setUsesDefaultKeyStore(usesDefaultKeyStore);
     }
 
-    final static String assertionName = "Add Timestamp";
-
-    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<AddWssTimestamp>(){
-        @Override
-        public String getAssertionName( final AddWssTimestamp assertion, final boolean decorate) {
-            final String qualifier = (assertion.isSignatureRequired()) ? "signed " : null;
-            return (decorate && qualifier != null) ?
-                    AssertionUtils.decorateName(assertion, "Add " + qualifier + "Timestamp") : assertionName;
-        }
-    };
-
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -196,9 +188,44 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.AddWssTimestampPropertiesAction");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Timestamp Properties");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/About16.gif");
-        
+
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.AddWssTimestampAssertionValidator");
+
+        Java5EnumTypeMapping mapping = new Java5EnumTypeMapping(Resolution.class, "resolutionValue");
+        meta.put( WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( Collections.<TypeMapping>singleton( mapping ) ) );
 
         return meta;
     }
+
+    //- PRIVATE
+
+    private static final String assertionName = "Add Timestamp";
+
+    private static final AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<AddWssTimestamp>(){
+        @Override
+        public String getAssertionName( final AddWssTimestamp assertion, final boolean decorate) {
+            final String qualifier = (assertion.isSignatureRequired()) ? "Signed " : null;
+            return (decorate && qualifier != null) ?
+                    AssertionUtils.decorateName(assertion, "Add " + qualifier + "Timestamp") : assertionName;
+        }
+    };
+
+    /**
+     * Expiry time of the timestamp, always in milliseconds, regardless of {@link #timeUnit}.
+     */
+    private int expiryMillis;
+
+    /**
+     * TimeUnit remembered purely for GUI purposes (no impact on {@link #expiryMillis})
+     */
+    private TimeUnit timeUnit = TimeUnit.MINUTES;
+
+    private String keyReference = KeyReference.BST.getName();
+    private boolean protectTokens = false;
+
+    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
+
+    private boolean signatureRequired = true;
+    private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
+    private Resolution resolution;
 }

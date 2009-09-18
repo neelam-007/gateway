@@ -13,11 +13,11 @@ import java.awt.*;
  * @author alex
  */
 public class AddWssTimestampDialog extends OkCancelDialog<AddWssTimestamp> {
-    public AddWssTimestampDialog(Frame owner, boolean modal, AddWssTimestamp assertion, boolean readOnly) {
-        super(owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString(), modal, new AddWssTimestampPanel(assertion), readOnly);
-    }
-
-    public AddWssTimestampDialog(Dialog owner, boolean modal, AddWssTimestamp assertion, boolean readOnly) {
+    
+    public AddWssTimestampDialog( final Window owner,
+                                  final boolean modal,
+                                  final AddWssTimestamp assertion,
+                                  final boolean readOnly ) {
         super(owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString(), modal, new AddWssTimestampPanel(assertion), readOnly);
     }
 }
