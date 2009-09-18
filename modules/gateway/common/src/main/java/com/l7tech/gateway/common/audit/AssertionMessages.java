@@ -34,10 +34,10 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_RESPONSE_STATUS         = m(4016, Level.WARNING, true, true, "Protected service ({0}) responded with status {1}");
     public static final M HTTPROUTE_ADDCOOKIE_VERSION       = m(4017, Level.FINE, "Adding outgoing cookie: name = {0}, version = {1}");
     public static final M HTTPROUTE_UPDATECOOKIE            = m(4018, Level.FINE,  "Updating cookie: name = {0}");
-    public static final M BRIDGEROUTE_NO_ATTACHMENTS        = m(4019, Level.WARNING, "Route via SecureSpan XVC assertion does not currently support SOAP with attachments; ignoring additional MIME parts");
-    public static final M BRIDGEROUTE_BAD_CONFIG            = m(4020, Level.WARNING, "Route via SecureSpan XVC assertion is configured with invalid protected service URL or policy XML");
+    public static final M BRIDGEROUTE_NO_ATTACHMENTS        = m(4019, Level.WARNING, "Route via SecureSpan Bridge assertion does not currently support SOAP with attachments; ignoring additional MIME parts");
+    public static final M BRIDGEROUTE_BAD_CONFIG            = m(4020, Level.WARNING, "Route via SecureSpan Bridge assertion is configured with invalid protected service URL or policy XML");
     public static final M HTTPROUTE_BAD_ORIGINAL_URL        = m(4021, Level.WARNING, "Invalid original request URI -- using default");
-    public static final M HTTPROUTE_ACCESS_DENIED           = m(4022, Level.WARNING, "Protected service has denied access based on credentials from the Route via SecureSpan XVC assertion");
+    public static final M HTTPROUTE_ACCESS_DENIED           = m(4022, Level.WARNING, "Protected service has denied access based on credentials from the Route via SecureSpan Bridge assertion");
     public static final M HTTPROUTE_TOO_MANY_ATTEMPTS       = m(4023, Level.WARNING, "Unable to route to the service after multiple failed attempts");
     public static final M HTTPROUTE_SAML_SV_NOT_AUTH        = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated");
     public static final M HTTPROUTE_RESPONSE_STATUS_HANDLED = m(4025, Level.INFO, "Protected service ({0}) responded with status {1}; retrying");

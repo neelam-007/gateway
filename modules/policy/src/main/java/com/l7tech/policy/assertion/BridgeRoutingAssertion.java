@@ -173,7 +173,7 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
         return bra;
     }
 
-    final static String baseName = "Route via SecureSpan XVC";
+    final static String baseName = "Route via SecureSpan Bridge";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<HttpRoutingAssertion>(){
         @Override
@@ -196,7 +196,7 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
         
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
-        meta.put(PROPERTIES_ACTION_NAME, "SecureSpan XVC Routing Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "SecureSpan Bridge Routing Properties");
         meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.BridgeRoutingAssertionPropertiesAction");
 
         return meta;
