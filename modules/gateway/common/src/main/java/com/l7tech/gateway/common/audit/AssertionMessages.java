@@ -16,7 +16,7 @@ public class AssertionMessages extends Messages {
 
     // ServerHttpRoutingAssertion messages
     public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.WARNING, "Could not initialize SSL Context");
-    public static final M HTTPROUTE_BEGIN                   = m(4001, Level.INFO, "Processing HTTP(S) Routing assertion");
+    public static final M HTTPROUTE_BEGIN                   = m(4001, Level.INFO, "Route via HTTP(S) Assertion");
     public static final M HTTPROUTE_NON_SOAP_WRONG_FORMAT   = m(4002, Level.INFO, "Requested option not supported by non-SOAP messages");
     public static final M HTTPROUTE_NON_SOAP_WRONG_POLICY   = m(4003, Level.WARNING, "Option not supported by non-SOAP messages; check policy for errors");
     public static final M HTTPROUTE_PROMOTING_ACTOR         = m(4004, Level.FINE, "Promoting actor {0}");
@@ -55,7 +55,7 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_RESPONSE_CHALLENGE      = m(4037, Level.INFO, "Protected service requires authentication.");
     public static final M HTTPROUTE_RESPONSE_BADSTATUS      = m(4038, Level.INFO, "Downstream service returned status ({0}). This is considered a failure case.");
     public static final M HTTPROUTE_CTYPEWOUTPAYLOAD        = m(4039, Level.INFO, "Downstream service returned an empty response but still included a content-type of ({0}).");
-    public static final M BRIDGEROUTE_REQUEST_NOT_SOAP      = m(4040, Level.WARNING, "Bridge routing failed because request is not SOAP.  Bridge Routing Assertion does not currently support non-SOAP requests.");
+    public static final M BRIDGEROUTE_REQUEST_NOT_SOAP      = m(4040, Level.WARNING, "Route via SecureSpan Bridge Assertion failed because request is not SOAP; this assertion currently does not support non-SOAP requests.");
     public static final M HTTPROUTE_SOCKET_TIMEOUT          = m(4041, Level.WARNING, "Remote network connection timed out.");
     public static final M HTTPROUTE_GENERIC_PROBLEM         = m(4042, Level.WARNING, "Problem routing to {0}. Error msg: {1}");
     public static final M HTTPROUTE_USING_KERBEROS_ERROR    = m(4043, Level.WARNING, "Routing with Kerberos ticket failed with: {0}");
@@ -338,8 +338,8 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE = m(6016, Level.FINER, "Creating request as BytesMessage");
     public static final M JMS_ROUTING_REQUEST_WITH_NO_REPLY           = m(6017, Level.FINE, "Outbound request endpoint {0} specifies NO_REPLY");
     public static final M JMS_ROUTING_REQUEST_WITH_REPLY_TO_OTHER     = m(6018, Level.FINE, "Outbound request endpoint {0} specifies REPLY_TO_OTHER, setting JMSReplyTo to {1}");
-    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "JMS Routing Assertion contains a reference to nonexistent JmsEndpoint #{0}");
-    public static final M JMS_ROUTING_NO_SAML_SIGNER                  = m(6020, Level.WARNING, "JMS Routing Assertion cannot access SAML signing information");
+    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "Route via JMS Assertion contains a reference to nonexistent JmsEndpoint #{0}");
+    public static final M JMS_ROUTING_NO_SAML_SIGNER                  = m(6020, Level.WARNING, "Route via JMS Assertion cannot access SAML signing information");
     public static final M JMS_ROUTING_CANT_CONNECT_RETRYING           = m(6021, Level.WARNING, "Failed to establish JMS connection on try #{0}.  Will retry after {1}ms.");
     public static final M JMS_ROUTING_CANT_CONNECT_NOMORETRIES        = m(6022, Level.WARNING, "Tried {0} times to establish JMS connection and failed.");
     public static final M JMS_ROUTING_REQUEST_WITH_AUTOMATIC          = m(6023, Level.FINE, "Outbound request endpoint {0} specifies AUTOMATIC, using temporary queue");
@@ -352,12 +352,12 @@ public class AssertionMessages extends Messages {
     // ServerRequestWssSaml
     @Deprecated public static final M __UNUSED_SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate SAML statement");
     @Deprecated public static final M __UNUSED_SAML_AUTHN_STMT_NO_TOKENS_PROCESSED                  = m(6101, Level.INFO, "No tokens were processed from this request: Returning AUTH_REQUIRED");
-    @Deprecated public static final M __UNUSED_SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6102, Level.WARNING, true, false, "Request contained more than one SAML assertion");
-    public static final M SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION         = m(6103, Level.INFO, "Assertion did not find an acceptable SAML assertion to use as credentials");
-    public static final M SAML_STMT_VALIDATE_FAILED                            = m(6104, Level.WARNING, "SAML assertion validation errors: {0}");
+    @Deprecated public static final M __UNUSED_SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6102, Level.WARNING, true, false, "Request contained more than one SAML token");
+    public static final M SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION         = m(6103, Level.INFO, "Assertion did not find an acceptable SAML token to use as credentials");
+    public static final M SAML_STMT_VALIDATE_FAILED                            = m(6104, Level.WARNING, "SAML token validation errors: {0}");
     public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6105, Level.FINEST, "{0} message not SOAP; cannot validate SAML statement");
     public static final M SAML_AUTHN_STMT_NO_TOKENS_PROCESSED                  = m(6106, Level.INFO, "No tokens were processed from {0} message: Returning AUTH_REQUIRED");
-    public static final M SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6107, Level.WARNING, true, false, "{0} message contained more than one SAML assertion");
+    public static final M SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6107, Level.WARNING, true, false, "{0} message contained more than one SAML token");
 
     // ServerWsTrustCredentialExchange
     public static final M WSTRUST_NO_SUITABLE_CREDENTIALS = m(6200, Level.INFO, "The current request did not contain credentials of any supported type");
@@ -492,7 +492,7 @@ public class AssertionMessages extends Messages {
     public static final M SQLATTACK_UNRECOGNIZED_PROTECTION  = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
     /** @deprecated */ @Deprecated public static final M _UNUSED_SQLATTACK_REQUEST_REJECTED        = m(7201, Level.WARNING, true, false, "Request was flagged by SQL attack protection assertion");
     public static final M SQLATTACK_ALREADY_ROUTED           = m(7203, Level.WARNING, "Unable to protect against SQL attacks - the request has already been routed");
-    public static final M SQLATTACK_REJECTED                 = m(7204, Level.WARNING, true, false, "{0} was flagged by SQL attack protection assertion");
+    public static final M SQLATTACK_REJECTED                 = m(7204, Level.WARNING, true, false, "{0} was flagged by Protect Against SQL Attacks Assertion");
     public static final M SQLATTACK_SKIP_RESPONSE_NOT_ROUTED = m(7205, Level.FINE, "No response body to check because request has not been routed yet.");
 
     // RequestSizeLimit
@@ -634,7 +634,7 @@ public class AssertionMessages extends Messages {
     public static final M NCESVALID_NO_MSG          = m(8700, Level.WARNING, "{0} variable has not been set; unable to proceed");
     public static final M NCESVALID_BAD_XML         = m(8701, Level.WARNING, "{0} parse failure: {1}");
     public static final M NCESVALID_NOT_SOAP        = m(8702, Level.WARNING, "{0} is not soap");
-    public static final M NCESVALID_NO_SAML         = m(8703, Level.WARNING, "{0} did not contain a signed SAML assertion");
+    public static final M NCESVALID_NO_SAML         = m(8703, Level.WARNING, "{0} did not contain a signed SAML token");
     public static final M NCESVALID_NO_TIMESTAMP    = m(8704, Level.WARNING, "{0} did not contain a signed wsu:Timestamp");
     public static final M NCESVALID_NO_MESSAGEID    = m(8705, Level.WARNING, "{0} did not contain a signed wsa:MessageID");
     public static final M NCESVALID_BODY_NOT_SIGNED = m(8706, Level.WARNING, "{0} SOAP Body was not signed");
