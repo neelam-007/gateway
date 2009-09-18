@@ -37,6 +37,7 @@ public class AuditRecordDomMarshallerTest {
         XmlUtil.nodeToFormattedOutputStream(got, System.out);
     }
 
+    @Ignore("Enable this test to run a performance test of audit record DOM marshalling")
     @Test
     public void testMarshalPerformance() throws Exception {
         Document d = XmlUtil.stringAsDocument("<a/>");
