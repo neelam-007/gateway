@@ -245,8 +245,8 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
             if(!decorate) return baseName;
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Issue ");
-            if (assertion.isSignAssertion()) sb.append("signed ");
+            sb.append("Create ");
+            if (assertion.isSignAssertion()) sb.append("Signed ");
             final String uri = assertion.getSubjectConfirmationMethodUri();
             if (uri != null) {
                 if (SamlIssuerAssertion.HOK_URIS.contains(uri)) {
@@ -258,14 +258,14 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
                 }
             }
 
-            sb.append(baseName);
+            sb.append("SAML Token");
 
             EnumSet<DecorationType> dts = assertion.getDecorationTypes();
             if (dts == null || dts.isEmpty()) return AssertionUtils.decorateName(assertion, sb);
 
             if (dts.contains(DecorationType.ADD_ASSERTION)) {
                 sb.append(" and add to ");
-                if (dts.contains(DecorationType.SIGN_BODY)) sb.append("signed ");
+                if (dts.contains(DecorationType.SIGN_BODY)) sb.append("Signed ");
                 if (dts.contains(DecorationType.REQUEST))
                     sb.append("request");
                 else
@@ -279,9 +279,9 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
-        meta.put(AssertionMetadata.SHORT_NAME, "Create SAML Token");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Create and optionally sign a SAML token.");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Token Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Token Creation Wizard");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.saml.SamlIssuerAssertionPropertiesEditor");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddSamlIssuerAssertionAdvice");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
