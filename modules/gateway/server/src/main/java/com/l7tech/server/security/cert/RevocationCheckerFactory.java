@@ -641,7 +641,7 @@ public class RevocationCheckerFactory {
                         return CertificateValidationResult.REVOKED;
                     }
                 } else {
-                    throw new CausedIOException("No authorized signer found for CRL.");
+                    throw new CRLException("No authorized signer found for CRL.");
                 }
 
                 if (crl.isRevoked(certificate)) {

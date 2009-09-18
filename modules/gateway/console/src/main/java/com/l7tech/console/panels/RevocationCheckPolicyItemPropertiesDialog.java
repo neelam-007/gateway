@@ -113,6 +113,8 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
     private static final String RES_VALIDATE_URL_TITLE = "validate.url.title";
     private static final String RES_VALIDATE_URLREGEX_TEXT = "validate.urlregex.text";
     private static final String RES_VALIDATE_URLREGEX_TITLE = "validate.urlregex.title";
+    private static final String RES_VALIDATE_SIGNER_TEXT = "validate.signer.text";
+    private static final String RES_VALIDATE_SIGNER_TITLE = "validate.signer.title";
 
     /**
      * Maximum allowed number of trusted certificates 
@@ -158,12 +160,14 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
         setContentPane(contentPane);
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onOK();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
@@ -172,15 +176,16 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
         Utilities.equalizeButtonSizes(new JButton[]{okButton, cancelButton});
 
         typeComboBox.setModel(new DefaultComboBoxModel(RevocationCheckPolicyItem.Type.values()));
-        typeComboBox.setRenderer(new TextListCellRenderer(new RevocationCheckPolicyItemAccessor()));
+        typeComboBox.setRenderer(new TextListCellRenderer<RevocationCheckPolicyItem.Type>(new RevocationCheckPolicyItemAccessor()));
         typeComboBox.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableControls();
             }
         });
         urlTextField.setDocument(new MaxLengthDocument(255));
         urlRegexTextField.setDocument(new MaxLengthDocument(255));
-        
+
 
         trustedCertsPanel = new TrustedCertsPanel( readOnly, MAXIMUM_ITEMS, new TrustedCertsPanel.TrustedCertListenerSupport(this){
             @Override
@@ -237,7 +242,12 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
 
         RevocationCheckPolicyItem.Type type = (RevocationCheckPolicyItem.Type) typeComboBox.getSelectedItem();
         if( type != null ) {
-            if ( type.isUrlSpecified() ) {
+            if ( !allowIssuerSignatureCheckBox.isSelected() && trustedCertsPanel.getCertificateOids().length==0 ) {
+                JOptionPane.showMessageDialog(this,
+                        resources.getString(RES_VALIDATE_SIGNER_TEXT),
+                        resources.getString(RES_VALIDATE_SIGNER_TITLE),
+                        JOptionPane.ERROR_MESSAGE);
+            } else if ( type.isUrlSpecified() ) {
                 String url = urlTextField.getText();
                 Collection<String> schemes = URL_SCHEMES_CRL;
                 if (type.equals(RevocationCheckPolicyItem.Type.OCSP_FROM_URL)) {
@@ -255,7 +265,7 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
                 boolean validRegex = false;
                 String errorDetail = "";
                 try {
-                     Pattern.compile(urlRegexTextField.getText());
+                    Pattern.compile(urlRegexTextField.getText());
                     validRegex = true;
                 } catch (PatternSyntaxException pse) {
                     errorDetail = pse.getMessage();
@@ -312,10 +322,9 @@ public class RevocationCheckPolicyItemPropertiesDialog extends JDialog {
     /**
      * Label text accessor for RevocationCheckPolicyItem.Types
      */
-    private static final class RevocationCheckPolicyItemAccessor implements Functions.Unary<String, Object> {
-        public String call(Object value) {
-            RevocationCheckPolicyItem.Type type = (RevocationCheckPolicyItem.Type) value;
-
+    private static final class RevocationCheckPolicyItemAccessor implements Functions.Unary<String, RevocationCheckPolicyItem.Type> {
+        @Override
+        public String call( final RevocationCheckPolicyItem.Type type ) {
             String labelKey = RES_ITEM_CRLFROMCERT;
             switch(type) {
                 case CRL_FROM_CERTIFICATE:
