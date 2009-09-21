@@ -257,6 +257,34 @@ public class ServerNonSoapCheckVerifyResultsAssertionTest {
     }
 
     @Test
+    public void testDisallowedDigestMethod() throws Exception {
+        elementsVerified(cat, snake);
+        signers(alice, alice);
+        sigMethods(RSA_SHA1, RSA_SHA1);
+        digMethods(SHA384, SHA384);
+
+        allowDig(SHA1);
+
+        select(cat, snake);
+        nomulti();
+        expectResult(AssertionStatus.FALSIFIED);
+    }
+
+    @Test
+    public void testDisallowedSignatureMethod() throws Exception {
+        elementsVerified(cat, snake);
+        signers(alice, alice);
+        sigMethods(RSA_SHA1, RSA_SHA1);
+        digMethods(SHA384, SHA384);
+
+        allowSig(ECDSA_SHA384);
+
+        select(cat, snake);
+        nomulti();
+        expectResult(AssertionStatus.FALSIFIED);
+    }
+
+    @Test
     public void testXpathResultElementNotPresentInVerifyResults() throws Exception {
         elementsVerified(cat, dog);
         signers(alice, alice);
