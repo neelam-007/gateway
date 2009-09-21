@@ -293,7 +293,7 @@ customize)
         exit 1;
   fi
 
-  SCA_SSG_SOFTWARE="/ssg/appliance/libexec/masterkey-manage.pl"
+  SCA_SSG_SOFTWARE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
   if [ -s ${SCA_SSG_SOFTWARE} ] ; then
         echo "The SSG SCA support software appears to be installed"
   else

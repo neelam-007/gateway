@@ -181,11 +181,17 @@ seal)
 
   # remove ~/.bash_history
   rm -f ~/.bash_history
-
-  chmod o-w /var/log/* 
+  #chmod the log files in case anything new has been created on startup (since hardening)
+  chmod o-w /var/log/*
   # Delete all log files.
   rm -f /var/log/*/*
   rm -f /var/log/*
+  #stop the ssg services and clean up their logs
+  service ssg stop
+  rm -f /opt/SecureSpan/Appliance/controller/var/logs/*.log
+  rm -f /opt/SecureSpan/Gateway/node/default/var/logs/*.log
+
+
   touch /var/log/btmp
   rm -f ~/ks-post.chroot
   rm -f ~/ks-post.nochroot
