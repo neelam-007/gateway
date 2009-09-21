@@ -171,6 +171,58 @@ public class ServerNonSoapCheckVerifyResultsAssertionTest {
     }
 
     @Test
+    public void testSingleSignatureOfOtherSingleElement() throws Exception {
+        nomulti();
+        select(dog);
+        expectResult(AssertionStatus.NONE, bob);
+    }
+
+    @Test
+    public void testNullSigner() throws Exception {
+        signers(new X509Certificate[]{null});       
+        expectResult(AssertionStatus.SERVER_ERROR);
+    }
+
+    @Test
+    public void testNotEnoughSigners() throws Exception {
+        select(dog);
+        signers(bob);
+        expectResult(AssertionStatus.SERVER_ERROR);
+    }
+
+    @Test
+    public void testNotEnoughDigestMethods() throws Exception {
+        select(dog);
+        digMethods(SHA1);
+        expectResult(AssertionStatus.SERVER_ERROR);
+    }
+
+    @Test
+    public void testNotEnoughSignatureMethods() throws Exception {
+        select(dog);
+        sigMethods(RSA_SHA1);
+        expectResult(AssertionStatus.SERVER_ERROR);
+    }
+
+    @Test
+    public void testJustEnoughSigners() throws Exception {
+        signers(bob);
+        expectResult(AssertionStatus.NONE, bob);
+    }
+
+    @Test
+    public void testJustEnoughDigestMethods() throws Exception {
+        digMethods(SHA1);
+        expectResult(AssertionStatus.NONE, alice);
+    }
+
+    @Test
+    public void testJustEnoughSignatureMethods() throws Exception {
+        sigMethods(RSA_SHA1);
+        expectResult(AssertionStatus.NONE, alice);
+    }
+
+    @Test
     public void testElementsHaveNoCommonSigningCert_disallowMulti() throws Exception {
         nomulti();
         select(cat, dog);
