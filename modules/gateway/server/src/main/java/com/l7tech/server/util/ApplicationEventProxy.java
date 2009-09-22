@@ -6,7 +6,6 @@
 package com.l7tech.server.util;
 
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
@@ -22,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * handler gets wrapped in expensive Spring TX-checking plumbing, which was otherwise going to cause
  * a 30% performance decrease system-wide between Gateway versions 3.5 and 3.6.
  */
-public class ApplicationEventProxy implements ApplicationListener, DisposableBean, ApplicationEventPublisher {
+public class ApplicationEventProxy implements ApplicationListener, ApplicationEventPublisher {
     final Set<ApplicationListener> subscribers = new CopyOnWriteArraySet<ApplicationListener>();
     final boolean primaryChannel;
 
@@ -114,10 +113,6 @@ public class ApplicationEventProxy implements ApplicationListener, DisposableBea
                 toRemove.add(sub);
         }
         subscribers.removeAll(toRemove);
-    }
-
-    public void destroy() throws Exception {
-        subscribers.clear();
     }
 
     /**

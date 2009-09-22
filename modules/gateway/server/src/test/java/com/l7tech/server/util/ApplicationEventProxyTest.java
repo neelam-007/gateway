@@ -106,16 +106,6 @@ public class ApplicationEventProxyTest {
         proxy.addApplicationListener(null);
     }
 
-    @Test
-    public void testDestroy() throws Exception {
-        proxy.addApplicationListener(la);
-        proxy.addApplicationListener(lb);
-        proxy.destroy();
-        proxy.onApplicationEvent(e1);
-        proxy.onApplicationEvent(e2);
-        delivered(0);
-    }
-
     public static class TestListener implements org.springframework.context.ApplicationListener {
         private final Functions.UnaryVoid<ApplicationEvent> callback;
 
