@@ -546,6 +546,26 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
+     * Insert a node in it's natural position.
+     *
+     * @param node The node to insert.
+     */
+    public void insert( final MutableTreeNode node ) {
+        insert( node, getInsertPosition(node) );
+    }
+
+    /**
+     * Insert a node in a position determined by the given comparator.
+     *
+     * @param node The node to insert.
+     * @param comparator The comparator to use
+     */
+    public void insert( final MutableTreeNode node,
+                        final Comparator<? super TreeNode> comparator ) {
+        insert( node, getInsertPosition(node, comparator) );
+    }
+
+    /**
      * Get this node children comparator that defines the children
      * order.
      *

@@ -32,15 +32,15 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
      */
     @Override
     protected void doLoadChildren() {
-        int index = 0;
         children = null;
-        insert(new IdentityNode(), index++);
-        insert(new SslTransportNode(true), index++);
-        index = insertModularAssertionByType(index, WssBasic.class);
-        index = insertModularAssertionByType(index, RequireWssX509Cert.class);
-        index = insertModularAssertionByType(index, RequireWssSaml2.class); //SAML2 since that is the subclass
-        insert(new WsFederationPassiveTokenRequestPaletteNode(), index++);
-        index = insertMatchingModularAssertions(index);
-        insertMatchingCustomAssertions(index, Category.ACCESS_CONTROL);        
+        insert(new IdentityNode());
+        insert(new SslTransportNode(true));
+        insertModularAssertionByType(WssBasic.class);
+        insertModularAssertionByType(RequireWssX509Cert.class);
+        insertModularAssertionByType(RequireWssSaml2.class); //SAML2 since that is the subclass
+
+        insert(new WsFederationPassiveTokenRequestPaletteNode());
+        insertMatchingModularAssertions();
+        insertMatchingCustomAssertions(Category.ACCESS_CONTROL);
     }
 }

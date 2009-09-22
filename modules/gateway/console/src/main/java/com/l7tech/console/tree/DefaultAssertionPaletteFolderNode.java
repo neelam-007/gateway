@@ -28,8 +28,8 @@ public class DefaultAssertionPaletteFolderNode extends AbstractPaletteFolderNode
     @Override
     protected void doLoadChildren() {
         // Load modular assertions and insert in sort order
-        insertMatchingModularAssertions(-1);
-        insertMatchingCustomAssertions(getChildCount(), category);
+        insertMatchingModularAssertions();
+        insertMatchingCustomAssertions(category);
     }
 
     //- PRIVATE

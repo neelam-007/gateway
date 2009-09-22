@@ -26,9 +26,8 @@ public class TransportLayerSecurityFolderNode extends AbstractPaletteFolderNode 
      */
     protected void doLoadChildren() {
         //children = null;
-        int index = 0;
-        insert(new SslTransportNode(false), index++);
-        index = insertMatchingModularAssertions(index);
-        insertMatchingCustomAssertions(index, Category.TRANSPORT_SEC);
+        insert(new SslTransportNode(false));
+        insertMatchingModularAssertions();
+        insertMatchingCustomAssertions(Category.TRANSPORT_SEC);
     }
 }

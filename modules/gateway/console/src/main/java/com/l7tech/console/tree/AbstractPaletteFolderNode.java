@@ -68,11 +68,10 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
      *
      * Once PALETTE_FOLDERS is defined in an assertions meta data, insertModularAssertionByType should no longer be used
      *
-     * @param nextIndex the childIndex to use for the first modular assertion inserted by this method (or -1 to insert in order)
      * @return the childIndex to use for the next child inserted.  This will be the incoming nextIndex plus one
      *         for each modular assertion that was inserted or -1 if using insert order.
      */
-    protected int insertMatchingModularAssertions(int nextIndex) {
+    protected void insertMatchingModularAssertions() {
 
         AssertionFinder assFinder = TopComponents.getInstance().getAssertionRegistry();
         Set<Assertion> bothHands = assFinder.getAssertions();
@@ -87,12 +86,11 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
                 for (String folder : folders) {
                     if (this.id.equals(folder)) {
                         // This assertion wants to be in this folder
-                        nextIndex = insertModularAssertion(variant, nextIndex);
+                        insertModularAssertion(variant);
                     }
                 }
             }
         }
-        return nextIndex;
     }
 
     /**
@@ -103,13 +101,10 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
      * If the assertion defines PALETTE_FOLDERS meta data and it matches the folder node from where this method is called,
      * then the assertion will appear in the folder twice.
      *
-     * @param nextIndex      index to insert the assertion at
      * @param assertionClass assertion to represent in the palette folder
      * @return int insert index
      */
-    protected int insertModularAssertionByType(int nextIndex,
-
-                                               Class<? extends Assertion> assertionClass) {
+    protected void insertModularAssertionByType(Class<? extends Assertion> assertionClass) {
         AssertionFinder assFinder = TopComponents.getInstance().getAssertionRegistry();
         Set<Assertion> bothHands = assFinder.getAssertions();
         for (Assertion ass : bothHands) {
@@ -120,11 +115,10 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
             for (Assertion variant : variants) {
                 if (assertionClass.isInstance(variant)) {
                     // Add assertion to folder
-                    nextIndex = insertModularAssertion(variant, nextIndex);
+                    insertModularAssertion(variant);
                 }
             }
         }
-        return nextIndex;
     }
 
 
@@ -132,43 +126,35 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
      * Insert a palette node for the specified modular assertion into this folder, if possible.
      *
      * @param ass  the prototype assertion that wants to be inserted.  Must not be null.
-     * @param nextIndex the childIndex to use for this modular assertion (or -1 to insert in order)
      * @return the childIndex to use for the next child inserted.  This will have been incremented from nextIndex
      *         if an palette node was added successfully.
      */
-    protected int insertModularAssertion(Assertion ass, int nextIndex) {
+    protected void insertModularAssertion(Assertion ass) {
         //noinspection unchecked
         Functions.Unary< AbstractAssertionPaletteNode, Assertion > factory =
                 (Functions.Unary<AbstractAssertionPaletteNode, Assertion>)
                         ass.meta().get(AssertionMetadata.PALETTE_NODE_FACTORY);
         if (factory == null) {
             logger.warning("Assertion " + ass.getClass().getName() + " requests to be in palette folder " + id + " but provides no paletteNodeFactory");
-            return nextIndex;
+            return;
         }
 
         AbstractAssertionPaletteNode paletteNode = factory.call(ass);
         if (paletteNode == null) {
             logger.warning("Assertion " + ass.getClass().getName() + " requests to be in palette folder " + id + " but its paletteNodeFactory returned null");
-            return nextIndex;
+            return;
         }
 
-        int insertPosition;
-        if ( nextIndex == -1 ) {
-            insertPosition = this.getInsertPosition( paletteNode );
-        } else {
-            insertPosition = nextIndex++;
-        }
-
-        insert(paletteNode, insertPosition);
-        return nextIndex;
+        insert(paletteNode, getInsertPosition( paletteNode ));
     }
 
-    protected int insertMatchingCustomAssertions(int index, Category category) {
+    protected void insertMatchingCustomAssertions(Category category) {
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             for (Object o : cr.getAssertions(category)) {
                 CustomAssertionHolder a = (CustomAssertionHolder) o;
-                insert(new CustomAccessControlNode(a), index++);
+                final CustomAccessControlNode customNode =  new CustomAccessControlNode(a);
+                insert(customNode, getInsertPosition(customNode));
             }
         } catch (RuntimeException e1) {
             if (ExceptionUtils.causedBy(e1, LicenseException.class)) {
@@ -176,7 +162,6 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
             } else
                 logger.log(Level.WARNING, "Unable to retrieve custom assertions", e1);
         } 
-        return index;
     }
 
     @Override

@@ -23,9 +23,8 @@ public class MiscFolderNode extends AbstractPaletteFolderNode {
      * subclasses override this method
      */
     protected void doLoadChildren() {
-        int index = 0;
         children = null;
-        index = insertMatchingModularAssertions(index);
-        insertMatchingCustomAssertions(index, Category.AVAILABILITY);
+        insertMatchingModularAssertions();
+        insertMatchingCustomAssertions(Category.AVAILABILITY);
     }
 }

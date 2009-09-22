@@ -8,7 +8,7 @@ import com.l7tech.util.Functions;
  * Palette node used for modular assertions that do not specify a custom palette node factory in their
  * metadata.
  */
-public class DefaultAssertionPaletteNode<AT extends Assertion> extends AbstractLeafPaletteNode implements Comparable<AbstractTreeNode> {
+public class DefaultAssertionPaletteNode<AT extends Assertion> extends AbstractLeafPaletteNode {
     final AT prototype;
 
     public DefaultAssertionPaletteNode(AT prototype) {
@@ -38,26 +38,5 @@ public class DefaultAssertionPaletteNode<AT extends Assertion> extends AbstractL
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public int compareTo( final AbstractTreeNode treeNode ) {
-        Integer priority = getSortPriority(this);
-        Integer otherPriority = getSortPriority(treeNode);
-
-        int result = otherPriority.compareTo(priority);
-        if ( result == 0 ) {
-            result = String.CASE_INSENSITIVE_ORDER.compare(getName(),treeNode.getName());
-        }
-
-        return result;
-    }
-
-    private static Integer getSortPriority( final AbstractTreeNode treeNode ) {
-        Integer sortPriority = treeNode.asAssertion().meta().get(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY);
-        if ( sortPriority == null ) {
-            sortPriority = Integer.MIN_VALUE;
-        }
-        return sortPriority;
     }
 }

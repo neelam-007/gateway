@@ -10,7 +10,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * @author $Author$
  * @version $Revision$
  */
-public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNode {
+public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNode implements Comparable<AbstractTreeNode> {
 
     //- PUBLIC
 
@@ -70,6 +70,11 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
     @Override
     protected String iconResource(boolean open) {
         return iconResource;
+    }
+
+    @Override
+    public int compareTo( final AbstractTreeNode treeNode ) {
+        return String.CASE_INSENSITIVE_ORDER.compare(getName(),treeNode.getName());
     }
 
     //- PRIVATE

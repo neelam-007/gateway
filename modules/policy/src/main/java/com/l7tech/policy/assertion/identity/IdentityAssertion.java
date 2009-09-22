@@ -94,9 +94,6 @@ public abstract class IdentityAssertion extends MessageTargetableAssertion imple
         meta.put(AssertionMetadata.DESCRIPTION, "Require user or group identities from an identity provider.");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/user16.png");
-
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/user16.png");
-
         return meta;
     }
 }

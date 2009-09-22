@@ -22,10 +22,9 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
      */
     @Override
     protected void doLoadChildren() {
-        int index = 0;
         children = null;
-        index = insertMatchingModularAssertions(index);
-        index = insertMatchingCustomAssertions(index, Category.MESSAGE);
-        insertMatchingCustomAssertions(index, Category.MSG_VAL_XSLT);
+        insertMatchingModularAssertions();
+        insertMatchingCustomAssertions(Category.MESSAGE);
+        insertMatchingCustomAssertions(Category.MSG_VAL_XSLT);
     }
 }

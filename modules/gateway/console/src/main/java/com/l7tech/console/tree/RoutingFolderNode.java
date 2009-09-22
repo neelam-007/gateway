@@ -21,10 +21,9 @@ public class RoutingFolderNode extends AbstractPaletteFolderNode {
      * subclasses override this method
      */
     protected void doLoadChildren() {
-        int index = 0;
         children = null;
         // insert(new SmtpRoutingNode(), index++);
-        index = insertMatchingModularAssertions(index);
-        insertMatchingCustomAssertions(index, Category.ROUTING);
+        insertMatchingModularAssertions();
+        insertMatchingCustomAssertions(Category.ROUTING);
     }
 }

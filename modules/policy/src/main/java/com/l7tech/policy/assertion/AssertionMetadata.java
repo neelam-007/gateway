@@ -217,6 +217,8 @@ public interface AssertionMetadata {
     /**
      * String file path.  Icon to display for the policy node for this assertion, if using DefaultAssertionPolicyNode.
      * Defaults to PALETTE_NODE_ICON.
+     * This meta data should not be used for most assertions as the policy should show the exact same icon as the
+     * palette, in which case there is no need to supply this piece of meta data.
      */
     String POLICY_NODE_ICON = "policyNodeIcon";
 

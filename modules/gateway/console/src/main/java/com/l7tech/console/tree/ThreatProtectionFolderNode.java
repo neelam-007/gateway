@@ -23,12 +23,11 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
      */
     @Override
     protected void doLoadChildren() {
-        int index = 0;
         children = null;
-        insertModularAssertionByType( index++, SqlAttackAssertion.class );
-        insertModularAssertionByType( index++, CodeInjectionProtectionAssertion.class );
-        insertModularAssertionByType( index++, OversizedTextAssertion.class );
-        index = insertMatchingModularAssertions(index);
-        insertMatchingCustomAssertions(index, Category.THREAT_PROT);
+        insertModularAssertionByType(SqlAttackAssertion.class );
+        insertModularAssertionByType(CodeInjectionProtectionAssertion.class );
+        insertModularAssertionByType(OversizedTextAssertion.class);
+        insertMatchingModularAssertions();
+        insertMatchingCustomAssertions(Category.THREAT_PROT);
     }
 }

@@ -19,9 +19,8 @@ public class AuditFolderNode extends AbstractPaletteFolderNode {
      */
     @Override
     protected void doLoadChildren() {
-        int index = 0;
         children = null;
-        index = insertMatchingModularAssertions(index);
-        insertMatchingCustomAssertions(index, Category.AUDIT_ALERT);
+        insertMatchingModularAssertions();
+        insertMatchingCustomAssertions(Category.AUDIT_ALERT);
     }
 }
