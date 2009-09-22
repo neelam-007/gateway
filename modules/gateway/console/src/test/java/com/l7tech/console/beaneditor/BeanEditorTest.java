@@ -1,0 +1,26 @@
+/*
+ * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
+ */
+package com.l7tech.console.beaneditor;
+
+import org.junit.Ignore;
+
+import javax.swing.*;
+
+/**
+ * @author emil
+ * @version Feb 17, 2004
+ */
+@Ignore
+public class BeanEditorTest {
+    public static void main(String[] args) {
+        Person person = new Person();
+        JFrame frame = new JFrame();
+        BeanEditor.Options bopts = new BeanEditor.Options();
+        bopts.setExcludeProperties(new String[]{"age"});
+
+        BeanEditor be = new BeanEditor(frame, person, Object.class, bopts);
+        frame.pack();
+        frame.setVisible(true);
+    }
+}
