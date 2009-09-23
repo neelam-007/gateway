@@ -88,6 +88,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
         }
 
         Callable<ServerAssertion> c = new Callable<ServerAssertion>() {
+            @Override
             public ServerAssertion call() throws Exception {
                 return doMakeServerAssertion(genericAssertion);
             }
@@ -139,36 +140,45 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             String productClassname = (String)genericAssertion.meta().get(AssertionMetadata.SERVER_ASSERTION_CLASSNAME);
             if (productClassname == null)
                 throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"': assertion declares no server implementation");
-            Class specificAssertionClass = genericAssertion.getClass().getClassLoader().loadClass(productClassname);
 
-            if (!ServerAssertion.class.isAssignableFrom(specificAssertionClass))
-                throw new ServerPolicyException(genericAssertion, productClassname + " is not a ServerAssertion");
+            final Thread currentThread = Thread.currentThread();
+            final ClassLoader contextClassLoader = currentThread.getContextClassLoader();
+            final ClassLoader assClassLoader = genericAssertion.getClass().getClassLoader();
+            currentThread.setContextClassLoader( assClassLoader );
+            try {
+                Class specificAssertionClass = assClassLoader.loadClass(productClassname);
 
-            if (logger.isLoggable(Level.FINE))
-                logger.log(Level.FINE,
-                           MessageFormat.format("Instantiating server assertion of type {0} for assertion {1} ordinal: {2} in policy OID: {3}",
-                                                specificAssertionClass.getName(),
-                                                genericAssertionClass.getName(),
-                                                genericAssertion.getOrdinal(),
-                                                genericAssertion.ownerPolicyOid()));
+                if (!ServerAssertion.class.isAssignableFrom(specificAssertionClass))
+                    throw new ServerPolicyException(genericAssertion, productClassname + " is not a ServerAssertion");
 
-            Class[][] patterns = new Class[][] {
-                    new Class[] { genericAssertionClass, ApplicationContext.class },
-                    new Class[] { genericAssertionClass, BeanFactory.class },
-                    new Class[] { genericAssertionClass, ApplicationEventPublisher.class },
-                    new Class[] { genericAssertionClass, BeanFactory.class, ApplicationEventPublisher.class },
-                    new Class[] { genericAssertionClass },
-            };
-            for (Class[] pattern : patterns) {
-                Constructor ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, pattern);
-                if (ctor != null) {
-                    Object[] params = new Object[pattern.length];
-                    if (params.length > 0)
-                        params[0] = genericAssertion;
-                    for (int i = 1; i < params.length; ++i)
-                        params[i] = applicationContext;
-                    return (ServerAssertion)ctor.newInstance(params);
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE,
+                               MessageFormat.format("Instantiating server assertion of type {0} for assertion {1} ordinal: {2} in policy OID: {3}",
+                                                    specificAssertionClass.getName(),
+                                                    genericAssertionClass.getName(),
+                                                    genericAssertion.getOrdinal(),
+                                                    genericAssertion.ownerPolicyOid()));
+
+                Class[][] patterns = new Class[][] {
+                        new Class[] { genericAssertionClass, ApplicationContext.class },
+                        new Class[] { genericAssertionClass, BeanFactory.class },
+                        new Class[] { genericAssertionClass, ApplicationEventPublisher.class },
+                        new Class[] { genericAssertionClass, BeanFactory.class, ApplicationEventPublisher.class },
+                        new Class[] { genericAssertionClass },
+                };
+                for (Class[] pattern : patterns) {
+                    Constructor ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, pattern);
+                    if (ctor != null) {
+                        Object[] params = new Object[pattern.length];
+                        if (params.length > 0)
+                            params[0] = genericAssertion;
+                        for (int i = 1; i < params.length; ++i)
+                            params[i] = applicationContext;
+                        return (ServerAssertion)ctor.newInstance(params);
+                    }
                 }
+            } finally {
+                currentThread.setContextClassLoader( contextClassLoader );
             }
 
             throw new ServerPolicyException(genericAssertion, productClassname + " does not have at least a public constructor-from-" + genericAssertionClass);
@@ -187,6 +197,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
         }
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext)
       throws BeansException {
         this.applicationContext = applicationContext;
