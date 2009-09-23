@@ -281,11 +281,6 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
 
         putDefaultGetter(USED_BY_CLIENT, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                Class assertionClass = meta.getAssertionClass();
-                for (Assertion ass : AllAssertions.BRIDGE_EVERYTHING) {
-                    if (ass.getClass() == assertionClass)
-                        return cache(meta, key, Boolean.TRUE);
-                }
                 return cache(meta, key, Boolean.FALSE);
             }
         });

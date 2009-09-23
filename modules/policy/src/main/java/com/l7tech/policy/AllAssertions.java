@@ -42,39 +42,6 @@ import java.util.List;
 public class AllAssertions {
 
     private static final List<FalseAssertion> LIST_OF_FALSE = Collections.singletonList(new FalseAssertion());
-    /**
-     * the assertions that the agent (ssa) uses
-     * TODO wrap and protect this currently-mutable array
-     */
-    public static Assertion[] BRIDGE_EVERYTHING = new Assertion[]{
-        new HttpBasic(),
-        new HttpDigest(),
-        new WssBasic(),
-        //new WssDigest(),  // TODO uncomment when there is a client implementation of this
-        new EncryptedUsernameTokenAssertion(),
-        new AllAssertion(LIST_OF_FALSE),
-        new ExactlyOneAssertion(LIST_OF_FALSE),
-        new OneOrMoreAssertion(LIST_OF_FALSE),
-        new FalseAssertion(),
-        new SslAssertion(),
-        new TrueAssertion(),
-        new RequireWssX509Cert(),
-        new SecureConversation(),
-        new RequireWssSignedElement(),
-        new RequireWssEncryptedElement(),
-        new WssSignElement(),
-        new WssEncryptElement(),
-        // new RequestXpathAssertion(),  // support removed from Bridge by Franco: fla, please leave commented - this is causing mucho problems
-        // new ResponseXpathAssertion(), // support removed from Bridge by Franco: fla, please leave commented - this is causing mucho problems
-        new WssReplayProtection(),
-        new RequestWssKerberos(),
-        new CookieCredentialSourceAssertion(),
-        new RequireWssSaml(),
-        new RequireWssSaml2(),
-        new PreemptiveCompression(),
-        new RemoteDomainIdentityInjection(),
-        new RequireWssTimestamp(),
-    };
 
     /**
      * all assertions that the gateway must handle

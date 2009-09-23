@@ -447,8 +447,7 @@ public interface AssertionMetadata {
     /**
      * Boolean. True if this assertion should be passed through to the Bridge.
      * <p/>
-     * The default MetadataFinder returns TRUE for any assertion listed in AllAssertions.BRIDGE_EVERYTHING,
-     * and FALSE for all other assertions.
+     * The default value is FALSE.
      */
     String USED_BY_CLIENT = "usedByClient";
 
