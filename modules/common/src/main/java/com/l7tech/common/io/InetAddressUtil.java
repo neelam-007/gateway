@@ -21,6 +21,7 @@ public class InetAddressUtil {
 
     private static final InetAddress localHost;
     public static final Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
+    static final Pattern mightBeIpv6AddressPattern = Pattern.compile("^\\[?[a-fA-F0-9]+\\:[a-fA-F0-9:]+(?:\\d+\\.\\d+\\.\\d+\\.\\d+)?\\]?$");
 
     static {
         InetAddress lh;
@@ -189,5 +190,23 @@ public class InetAddressUtil {
 
         int patint = (int) ipv4ToLong(pataddr);
         return (numeric & netmask) == (patint & netmask);
+    }
+
+    /**
+     * Check whether the specified string looks like it might be an IP address.
+     *
+     * @param str a string that might be an IPv4 dotted-quad or a colon-delimited IPv6 network address.
+     * @return true if the specified string looks like an IPv4 or IPv6 network address.
+     */
+    public static boolean looksLikeIpAddressV4OrV6(String str) {
+        return looksLikeIpv4Address(str) || looksLikeIpv6Address(str);
+    }
+
+    public static boolean looksLikeIpv6Address(String str) {
+        return mightBeIpv6AddressPattern.matcher(str).matches();
+    }
+
+    public static boolean looksLikeIpv4Address(String str) {
+        return validIpAddressPattern.matcher(str).matches();
     }
 }

@@ -1,6 +1,7 @@
 package com.l7tech.internal.certgen;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.util.Pair;
 import org.bouncycastle.asn1.x509.X509Extensions;
@@ -15,9 +16,7 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * Unit tests for {@link GenerateCertificate} command line utility.
@@ -163,6 +162,19 @@ public class GenerateCertificateTest {
         assertTrue(got.toString().contains("CertificatePolicies ["));
         assertTrue(got.toString().contains("  [CertificatePolicyId: [1.2.3.4]"));
         assertTrue(got.toString().contains("  [CertificatePolicyId: [1.2.3.5.6.7]"));
+    }
+
+    @Test
+    public void testSubjectAlternativeName() throws Exception {
+        X509Certificate got = CertUtils.decodeFromPEM(generate("-subjectAltName", "1.2.3.4", "-subjectAltName", "*.foo.bar.com"));
+        final Collection<List<?>> altEntries = got.getSubjectAlternativeNames();
+        assertNotNull(altEntries);
+        assertEquals(2, altEntries.size());
+        List<X509GeneralName> gens = X509GeneralName.fromList(altEntries);
+        assertEquals(X509GeneralName.Type.iPAddress, gens.get(1).getType());
+        assertEquals("1.2.3.4", gens.get(1).getStringVal());
+        assertEquals(X509GeneralName.Type.dNSName, gens.get(0).getType());
+        assertEquals("*.foo.bar.com", gens.get(0).getStringVal());
     }
 
     @Test

@@ -51,6 +51,11 @@ public class CertGenParams implements Serializable {
     private boolean certificatePoliciesCritical;
     private List<String> certificatePolicies;
 
+    // Subject alternative name
+    private boolean includeSubjectAlternativeName;
+    private boolean subjectAlternativeNameCritical;
+    private List<X509GeneralName> subjectAlternativeNames;
+
     public CertGenParams() {
     }
 
@@ -272,6 +277,30 @@ public class CertGenParams implements Serializable {
 
     public void setCertificatePolicies(List<String> certificatePolicies) {
         this.certificatePolicies = certificatePolicies;
+    }
+
+    public boolean isIncludeSubjectAlternativeName() {
+        return includeSubjectAlternativeName;
+    }
+
+    public void setIncludeSubjectAlternativeName(boolean includeSubjectAlternativeName) {
+        this.includeSubjectAlternativeName = includeSubjectAlternativeName;
+    }
+
+    public List<X509GeneralName> getSubjectAlternativeNames() {
+        return subjectAlternativeNames;
+    }
+
+    public void setSubjectAlternativeNames(List<X509GeneralName> subjectAlternativeNames) {
+        this.subjectAlternativeNames = subjectAlternativeNames;
+    }
+
+    public boolean isSubjectAlternativeNameCritical() {
+        return subjectAlternativeNameCritical;
+    }
+
+    public void setSubjectAlternativeNameCritical(boolean subjectAlternativeNameCritical) {
+        this.subjectAlternativeNameCritical = subjectAlternativeNameCritical;
     }
 
     /**

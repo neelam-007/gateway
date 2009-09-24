@@ -3,6 +3,7 @@ package com.l7tech.security.cert;
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.KeyGenParams;
+import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
@@ -86,6 +87,7 @@ public class TestCertificateGenerator {
         c.setSubjectDirectoryAttributesCritical(false);
         c.setCountryOfCitizenshipCountryCodes(Collections.<String>emptyList());
         c.setCertificatePolicies(Collections.<String>emptyList());
+        c.setSubjectAlternativeNames(Collections.<X509GeneralName>emptyList());
         return this;
     }
 
@@ -239,6 +241,20 @@ public class TestCertificateGenerator {
         c.setIncludeCertificatePolicies(true);
         c.setCertificatePoliciesCritical(critical);
         c.setCertificatePolicies(Arrays.asList(policies));
+        return this;
+    }
+
+    public TestCertificateGenerator subjectAlternativeNames(boolean critical, X509GeneralName... generalNames) {
+        c.setIncludeSubjectAlternativeName(true);
+        c.setSubjectAlternativeNameCritical(critical);
+        c.setSubjectAlternativeNames(Arrays.asList(generalNames));
+        return this;
+    }
+
+    public TestCertificateGenerator subjectAlternativeNames(boolean critical, String... hostNamesOrIps) {
+        c.setIncludeSubjectAlternativeName(true);
+        c.setSubjectAlternativeNameCritical(critical);
+        c.setSubjectAlternativeNames(X509GeneralName.fromHostNamesOrIps(Arrays.asList(hostNamesOrIps)));
         return this;
     }
 

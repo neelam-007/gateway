@@ -1,6 +1,7 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
@@ -16,6 +17,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Iterator;
 
 /**
  * Test for TestCertificateGenerator, that also shows how to use it for creating test certificates for QA purposes.
@@ -164,6 +168,38 @@ public class TestCertificateGeneratorTest {
         jdkGot.verify(jdkGot.getPublicKey());
         got.verify(jdkGot.getPublicKey());
         jdkGot.verify(got.getPublicKey());
+    }
+
+    @Test
+    public void testSubjectAlternativeName() throws Exception {
+        TestCertificateGenerator gen = new TestCertificateGenerator();
+        gen.getCertGenParams().setIncludeSubjectAlternativeName(true);
+        gen.getCertGenParams().setSubjectAlternativeNames(Arrays.asList(
+                X509GeneralName.fromDnsName("data.l7tech.com"),
+                X509GeneralName.fromDnsName("*.l7tech.com"),
+                X509GeneralName.fromIpAddress("10.33.44.1"),
+                X509GeneralName.fromIpAddress("2001:0db8:0000:0000:0000::1428:57ab") // IPv6 addr, should get normalized by parsing
+        ));
+        X509Certificate got = gen.generate();
+
+        final X509Certificate jdkGot = CertUtils.decodeCert(got.getEncoded());
+        Collection<List<?>> names = jdkGot.getSubjectAlternativeNames();
+        assertEquals(4, names.size());
+        Iterator<List<?>> iterator = names.iterator();
+        X509GeneralName first = new X509GeneralName(iterator.next());
+        assertEquals(X509GeneralName.Type.dNSName.getTag(), first.getType().getTag());
+        assertEquals("data.l7tech.com", first.getStringVal());
+        X509GeneralName second = new X509GeneralName(iterator.next());
+        assertEquals(X509GeneralName.Type.dNSName.getTag(), second.getType().getTag());
+        assertEquals("*.l7tech.com", second.getStringVal());
+        X509GeneralName third = new X509GeneralName(iterator.next());
+        assertEquals(X509GeneralName.Type.iPAddress.getTag(), third.getType().getTag());
+        assertEquals("10.33.44.1", third.getStringVal());
+        X509GeneralName fourth = new X509GeneralName(iterator.next());
+        assertEquals(X509GeneralName.Type.iPAddress.getTag(), fourth.getType().getTag());
+        assertEquals("2001:db8:0:0:0:0:1428:57ab", fourth.getStringVal()); // normal form?
+
+        System.out.println("Cert: " + got);
     }
 
     @Test

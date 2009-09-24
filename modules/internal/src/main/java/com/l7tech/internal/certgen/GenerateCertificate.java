@@ -1,7 +1,8 @@
 package com.l7tech.internal.certgen;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
@@ -122,6 +123,7 @@ public class GenerateCertificate {
         put("keyUsage",             new KeyUsageOption("keyUsage\tInclude a key usage including the specified key usage bit (may be repeated)"));
         put("countriesOfCitizenship", new CountriesOfCitizenshipOption("countryCode\tInclude SubjectDirectoryAttributes ext including country code (may be repeated)"));
         put("certificatePolicies",  new CertificatePolicyOption("certificatePolicy\tInclude certificate policy (may be repeated)"));
+        put("subjectAltName",       new SubjectAlternativeNamePolicyOption("hostnameOrIp\tSubject Alternative Name hostname pattern or IP address (may be repeated)"));
     }};
 
     //
@@ -284,6 +286,21 @@ public class GenerateCertificate {
             List<String> codes = new ArrayList<String>(target.generator.getCertGenParams().getCountryOfCitizenshipCountryCodes());
             codes.add(countryCode);
             target.generator.countriesOfCitizenship(true, codes.toArray(new String[codes.size()]));
+        }
+    }
+
+    private static class SubjectAlternativeNamePolicyOption extends Option {
+        protected SubjectAlternativeNamePolicyOption(String desc) {
+            super(desc);
+        }
+
+        @Override
+        void configure(GenerateCertificate target, Iterator<String> remainingArgs) {
+            String name = remainingArgs.next();
+            remainingArgs.remove();
+            List<X509GeneralName> names = new ArrayList<X509GeneralName>(target.generator.getCertGenParams().getSubjectAlternativeNames());
+            names.add(X509GeneralName.fromHostNameOrIp(name));
+            target.generator.subjectAlternativeNames(false, names.toArray(new X509GeneralName[names.size()]));
         }
     }
 

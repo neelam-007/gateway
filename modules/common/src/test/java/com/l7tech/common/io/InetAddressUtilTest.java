@@ -84,4 +84,31 @@ public class InetAddressUtilTest {
         assertTrue(patternMatchesAddress("232.255.109.186/31", addr(232, 255, 109, 187)));
         assertFalse(patternMatchesAddress("232.255.109.186/31", addr(232, 255, 109, 188)));
     }
+
+    private void ipv4(String in) {
+        assertTrue(InetAddressUtil.looksLikeIpv4Address(in));
+    }
+
+    private void ipv6(String in) {
+        assertTrue(InetAddressUtil.looksLikeIpv6Address(in));
+    }
+
+    private void notIp(String in) {
+        assertFalse(InetAddressUtil.looksLikeIpAddressV4OrV6(in));
+    }
+
+    @Test
+    public void testLooksLikeIpAddressV4OrV6() throws Exception {
+        ipv4("1.2.3.4");
+        ipv4("234.555.222.334");
+        ipv4("2344.222.1111.0");
+        ipv4("000.000.000.000");
+        ipv4("0000.0000.0000.0000");
+        ipv6("2001:0db8:85a3:08d3:1319:8a2e:0370:7348");
+        ipv6("abf3:FF2:0::00:23");
+        ipv6("cafe:babe:0000::4343:1.2.3.4");
+        notIp("foo.bar.com");
+        notIp("cafe.babe");
+        notIp("cafe:babe:food::344");
+    }
 }

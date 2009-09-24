@@ -1,10 +1,11 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Functions;
+import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.X509KeyUsage;
@@ -19,6 +20,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.io.IOException;
 
 /**
  * Parameter driven X.509 certificate generator.
@@ -78,7 +80,7 @@ public class ParamsCertificateGenerator {
         certgen.setPublicKey(subjectPublicKey);
 
         if (c.isIncludeBasicConstraints())
-            certgen.addExtension(X509Extensions.BasicConstraints.getId(), true, createBasicConstraints());
+            certgen.addExtension(X509Extensions.BasicConstraints, true, createBasicConstraints());
 
         if (c.isIncludeKeyUsage())
             certgen.addExtension(X509Extensions.KeyUsage, c.isKeyUsageCritical(), new X509KeyUsage(c.getKeyUsageBits()));
@@ -87,16 +89,19 @@ public class ParamsCertificateGenerator {
             certgen.addExtension(X509Extensions.ExtendedKeyUsage, c.isExtendedKeyUsageCritical(), createExtendedKeyUsage(c.getExtendedKeyUsageKeyPurposeOids()));
 
         if (c.isIncludeSki())
-            certgen.addExtension(X509Extensions.SubjectKeyIdentifier.getId(), false, createSki(subjectPublicKey));
+            certgen.addExtension(X509Extensions.SubjectKeyIdentifier, false, createSki(subjectPublicKey));
 
         if (c.isIncludeAki())
-            certgen.addExtension(X509Extensions.AuthorityKeyIdentifier.getId(), false, createAki(issuerPublicKey));
+            certgen.addExtension(X509Extensions.AuthorityKeyIdentifier, false, createAki(issuerPublicKey));
 
         if (c.isIncludeSubjectDirectoryAttributes())
-            certgen.addExtension(X509Extensions.SubjectDirectoryAttributes.getId(), c.isSubjectDirectoryAttributesCritical(), createSubjectDirectoryAttributes(c.getCountryOfCitizenshipCountryCodes()));
+            certgen.addExtension(X509Extensions.SubjectDirectoryAttributes, c.isSubjectDirectoryAttributesCritical(), createSubjectDirectoryAttributes(c.getCountryOfCitizenshipCountryCodes()));
 
         if (c.isIncludeCertificatePolicies())
-            certgen.addExtension(X509Extensions.CertificatePolicies.getId(), c.isCertificatePoliciesCritical(), createCertificatePolicies(c.getCertificatePolicies()));
+            certgen.addExtension(X509Extensions.CertificatePolicies, c.isCertificatePoliciesCritical(), createCertificatePolicies(c.getCertificatePolicies()));
+
+        if (c.isIncludeSubjectAlternativeName())
+            certgen.addExtension(X509Extensions.SubjectAlternativeName, c.isSubjectAlternativeNameCritical(), createSubjectAlternativeName(c.getSubjectAlternativeNames()));
 
         try {
             Provider prov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR);
@@ -174,6 +179,25 @@ public class ParamsCertificateGenerator {
                 }
             }).toArray(new ASN1Encodable[certificatePolicies.size()])
         );
+    }
+
+    private DEREncodable createSubjectAlternativeName(List<X509GeneralName> names) {
+        List<ASN1Encodable> generalNames = Functions.map(names, new Functions.Unary<ASN1Encodable, X509GeneralName>() {
+            @Override
+            public ASN1Encodable call(X509GeneralName name) {
+                if (name.isString()) {
+                    return new GeneralName(name.getType().getTag(), name.getStringVal());
+                } else {
+                    try {
+                        return new GeneralName(name.getType().getTag(), ASN1Object.fromByteArray(name.getDerVal()));
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException("Invalid DER value for X509GeneralName: " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
+            }
+        });
+
+        return new GeneralNames(new DERSequence(generalNames.toArray(new ASN1Encodable[generalNames.size()])));
     }
 
     /**
