@@ -70,6 +70,7 @@ public final class TestDocuments {
     public static final String WAREHOUSE_REQUEST_UNKNOWN_BST = DIR + "warehouseRequestUnknownBST.xml";
     public static final String WAREHOUSE_REQUEST_UNKNOWN_MUSTUNDERSTAND = DIR + "warehouseRequestUnknownMustUnderstand.xml";
     public static final String WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS = DIR + "warehouseRequestMultipleTimestampSignatures.xml";
+    public static final String WAREHOUSE_REQUEST_OUT_OF_ORDER_HEADER = DIR + "warehouseRequestOutOfOrderHeader.xml";
 
     public static final String WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndWrappedL7Actors.xml";
     public static final String MULTIPLE_WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndMultipleL7Actors.xml";

@@ -472,6 +472,14 @@ public class WssProcessorTest {
         doTest(result, wssProcessor);
     }
 
+    @BugNumber(7199)
+    @Test
+    public void testOutOfOrderSecurityHeader() throws Exception {
+        Document d = TestDocuments.getTestDocument(TestDocuments.WAREHOUSE_REQUEST_OUT_OF_ORDER_HEADER);
+        TestDocument testDoc = new TestDocument(TestDocuments.WAREHOUSE_REQUEST_OUT_OF_ORDER_HEADER, d, null, null, null, null, null );
+        doTest(testDoc);
+    }
+
     private TestDocument makeEttkTestDocument(String testname, String docname) {
         try {
             Document d = TestDocuments.getTestDocument(docname);

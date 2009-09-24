@@ -310,6 +310,9 @@ public class WssProcessorImpl implements WssProcessor {
             secHeaderActorUri = SoapUtil.getActorValue(releventSecurityHeader);
         }
 
+        // Process basic elements first
+        processTokensAndReferences();
+
         // Process elements one by one
         Element securityChildToProcess = DomUtils.findFirstChildElement(releventSecurityHeader);
         while (securityChildToProcess != null) {
@@ -336,13 +339,9 @@ public class WssProcessorImpl implements WssProcessor {
                     logger.fine("Encountered Timestamp element but not of right namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ')');
                 }
-            } else if (securityChildToProcess.getLocalName().equals( SoapConstants.BINARYSECURITYTOKEN_EL_NAME)) {
-                if (DomUtils.elementInNamespace(securityChildToProcess, SoapConstants.SECURITY_URIS_ARRAY)) {
-                    processBinarySecurityToken(securityChildToProcess);
-                } else {
-                    logger.fine("Encountered BinarySecurityToken element but not of right namespace (" +
-                                securityChildToProcess.getNamespaceURI() + ')');
-                }
+            } else if (securityChildToProcess.getLocalName().equals( SoapConstants.BINARYSECURITYTOKEN_EL_NAME) ||
+                       securityChildToProcess.getLocalName().equals(SamlConstants.ELEMENT_ASSERTION)) {
+                // now pre-processed, see processTokensAndReferences()
             } else if (securityChildToProcess.getLocalName().equals( SoapConstants.SIGNATURE_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals( SoapConstants.DIGSIG_URI)) {
                     processSignature(securityChildToProcess, securityContextFinder);
@@ -397,17 +396,9 @@ public class WssProcessorImpl implements WssProcessor {
                     logger.fine("Encountered ReferenceList element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ')');
                 }
-            } else if (securityChildToProcess.getLocalName().equals(SamlConstants.ELEMENT_ASSERTION)) {
-                if (securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML) ||
-                    securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML2)) {
-                    processSamlSecurityToken(securityChildToProcess);
-                } else {
-                    logger.fine("Encountered SAML Assertion element but not of expected namespace (" +
-                                securityChildToProcess.getNamespaceURI() + ')');
-                }
             } else if (securityChildToProcess.getLocalName().equals( SoapConstants.SECURITYTOKENREFERENCE_EL_NAME)) {
                 if (DomUtils.elementInNamespace(securityChildToProcess, SoapConstants.SECURITY_URIS_ARRAY)) {
-                    processSecurityTokenReference(securityChildToProcess, securityContextFinder, true);
+                    processSecurityTokenReference(securityChildToProcess, securityContextFinder, true, true);
                 } else {
                     logger.fine("Encountered SecurityTokenReference element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ')');
@@ -433,17 +424,13 @@ public class WssProcessorImpl implements WssProcessor {
                     logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
                 }
             }
-            Node nextSibling = securityChildToProcess.getNextSibling();
+
             if (removeRefList != null) {
                 setDocumentModified();
                 removeRefList.getParentNode().removeChild(removeRefList);
             }
-            while (nextSibling != null && nextSibling.getNodeType() != Node.ELEMENT_NODE) {
-                nextSibling = nextSibling.getNextSibling();
-            }
-            if (nextSibling != null && nextSibling.getNodeType() == Node.ELEMENT_NODE) {
-                securityChildToProcess = (Element)nextSibling;
-            } else securityChildToProcess = null;
+
+            securityChildToProcess = DomUtils.findNextElementSibling( securityChildToProcess );
         }
 
         // Backward compatibility - if we didn't see a timestamp in the Security header, check for one up in the SOAP Header
@@ -471,6 +458,41 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         return produceResult();
+    }
+
+    private void processTokensAndReferences() throws ProcessorException, GeneralSecurityException, InvalidDocumentFormatException {
+        Element securityChildToProcess = DomUtils.findFirstChildElement(releventSecurityHeader);
+        while (securityChildToProcess != null) {
+            if (securityChildToProcess.getLocalName().equals( SoapConstants.BINARYSECURITYTOKEN_EL_NAME)) {
+                if (DomUtils.elementInNamespace(securityChildToProcess, SoapConstants.SECURITY_URIS_ARRAY)) {
+                    processBinarySecurityToken(securityChildToProcess);
+                } else {
+                    logger.fine("Encountered BinarySecurityToken element but not of right namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ')');
+                }
+            } else if (securityChildToProcess.getLocalName().equals(SamlConstants.ELEMENT_ASSERTION)) {
+                if (securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML) ||
+                    securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML2)) {
+                    processSamlSecurityToken(securityChildToProcess);
+                } else {
+                    logger.fine("Encountered SAML Assertion element but not of expected namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ')');
+                }
+            }
+
+            securityChildToProcess = DomUtils.findNextElementSibling( securityChildToProcess );
+        }
+
+        securityChildToProcess = DomUtils.findFirstChildElement(releventSecurityHeader);
+        while (securityChildToProcess != null) {
+            if (securityChildToProcess.getLocalName().equals( SoapConstants.SECURITYTOKENREFERENCE_EL_NAME)) {
+                if (DomUtils.elementInNamespace(securityChildToProcess, SoapConstants.SECURITY_URIS_ARRAY)) {
+                    processSecurityTokenReference(securityChildToProcess, securityContextFinder, false, false);
+                }
+            }
+
+            securityChildToProcess = DomUtils.findNextElementSibling( securityChildToProcess );
+        }
     }
 
     private static class MustUnderstandException extends RuntimeException {
@@ -1016,15 +1038,22 @@ public class WssProcessorImpl implements WssProcessor {
      * This is as per <i>Web Services Security: SOAP Message Security 1.0 (WS-Security 2004) OASIS standard</i>
      * TODO this should be merged into KeyInfoElement
      *
+     * NOTE that this method will be called multiple times per reference, once in the "pre-procssing" phase
+     * and once during main processing.
+     *
      * @param str  the SecurityTokenReference element
      * @param securityContextFinder the context finder to perform lookups with (may be null)
-     * @param logIfNothingFound
+     * @param logIfNothingFound True to log if the reference is missing or of an unknown type
+     * @param tokenRequired True if a missing token is an error / warning
      * @throws com.l7tech.util.InvalidDocumentFormatException if STR is invalid format or points at something unsupported
      * @throws com.l7tech.security.xml.processor.ProcessorException if a securityContextFinder is required to resolve this STR, but one was not provided
      */
-    private void processSecurityTokenReference(Element str, SecurityContextFinder securityContextFinder, boolean logIfNothingFound)
+    private void processSecurityTokenReference(Element str, SecurityContextFinder securityContextFinder, boolean logIfNothingFound, boolean tokenRequired )
             throws InvalidDocumentFormatException, ProcessorException
     {
+        // Check if already processed
+        if ( strToTarget.containsKey( str ) ) return;
+
         // Get identifier
         final String id = SoapUtil.getElementWsuId(str);
         final String logId = id == null ? "<noid>" : id;
@@ -1078,10 +1107,14 @@ public class WssProcessorImpl implements WssProcessor {
                 || (!target.getLocalName().equals("BinarySecurityToken") && !target.getLocalName().equals("Assertion"))
                 || !ArrayUtils.contains( SoapConstants.SECURITY_URIS_ARRAY, target.getNamespaceURI())
                 || !SoapUtil.isValueTypeX509v3(target.getAttribute("ValueType"))) {
-                String msg = "Rejecting SecurityTokenReference ID='" + logId + "' with ValueType of '" + valueType +
-                             "' because its target is either missing or not a BinarySecurityToken";
-                logger.warning(msg);
-                throw new InvalidDocumentFormatException(msg);
+                if ( tokenRequired ) {
+                    String msg = "Rejecting SecurityTokenReference ID='" + logId + "' with ValueType of '" + valueType +
+                                 "' because its target is either missing or not a BinarySecurityToken";
+                    logger.warning(msg);
+                    throw new InvalidDocumentFormatException(msg);
+                } else {
+                    return;
+                }
             }
             if(logger.isLoggable(Level.FINEST))
                 logger.finest("Remembering SecurityTokenReference ID=" + logId + " pointing at X.509 BST " + value);
@@ -1097,10 +1130,14 @@ public class WssProcessorImpl implements WssProcessor {
                 || !target.getLocalName().equals("Assertion")
                 || (!target.getNamespaceURI().equals(SamlConstants.NS_SAML) &&
                     !target.getNamespaceURI().equals(SamlConstants.NS_SAML2))) {
-                String msg = "Rejecting SecurityTokenReference ID='" + logId + "' with ValueType of '" + valueType +
-                             "' because its target is either missing or not a SAML assertion";
-                logger.warning(msg); // TODO remove redundant logging after debugging complete
-                throw new InvalidDocumentFormatException(msg);
+                if ( tokenRequired ) {
+                    String msg = "Rejecting SecurityTokenReference ID='" + logId + "' with ValueType of '" + valueType +
+                                 "' because its target is either missing or not a SAML assertion";
+                    logger.warning(msg); // TODO remove redundant logging after debugging complete
+                    throw new InvalidDocumentFormatException(msg);
+                } else {
+                    return;
+                }
             }
             if(logger.isLoggable(Level.FINEST))
                 logger.finest("Remembering SecurityTokenReference ID=" + logId + " pointing at SAML assertion " + value);
@@ -1117,7 +1154,7 @@ public class WssProcessorImpl implements WssProcessor {
                                              "provide a SecurityContextFinder");
 
             KerberosSigningSecurityToken ksst = findKerberosSigningSecurityTokenBySha1(value,str);
-            if ( ksst == null ) {
+            if ( ksst == null && tokenRequired ) {
                 logger.warning("Could not find referenced Kerberos security token '"+value+"'.");
             }
         } else {
@@ -2013,7 +2050,7 @@ public class WssProcessorImpl implements WssProcessor {
         // Process any STR that is used within the signature
         Element keyInfoStr = DomUtils.findFirstChildElementByName(keyInfoElement, SoapConstants.SECURITY_URIS_ARRAY, "SecurityTokenReference");
         if (keyInfoStr != null) {
-            processSecurityTokenReference(keyInfoStr, securityContextFinder, false);
+            processSecurityTokenReference(keyInfoStr, securityContextFinder, false, true);
         }
 
         if (signingCert == null && dkt != null) {
