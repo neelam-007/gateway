@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0">
-	<info organisation="jboss"
-		module="jboss-minimal"
-		revision="4.0.3"
+	<info organisation="jgroups"
+		module="jgroups"
+		revision="2.6.12.GA"
 		status="release"
-		publication="20080707125258"
+		publication="20090928114842"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
 	</configurations>
 	<publications>
-		<artifact name="jboss-minimal" type="jar" ext="jar" conf="default"/>
+		<artifact name="jgroups" type="jar" ext="jar" conf="default"/>
 	</publications>
 </ivy-module>

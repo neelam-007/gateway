@@ -378,6 +378,7 @@
     </bean>
     <!-- server side DistributedMessageIdManager -->
     <bean id="distributedMessageIdManager" class="com.l7tech.server.cluster.DistributedMessageIdManager">
+        <constructor-arg index="0" ref="serverConfig"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 

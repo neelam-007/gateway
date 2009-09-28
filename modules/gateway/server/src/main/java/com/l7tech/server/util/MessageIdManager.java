@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.util;
@@ -11,7 +9,21 @@ package com.l7tech.server.util;
  */
 public interface MessageIdManager {
 
-    public static class DuplicateMessageIdException extends Exception {}
+    public static class MessageIdCheckException extends Exception {
+        public MessageIdCheckException( final String message ) {
+            super( message );
+        }
+
+        public MessageIdCheckException( final String message, final Throwable cause ) {
+            super( message, cause );
+        }
+
+        public MessageIdCheckException() {
+            super();
+        }
+    }
+    
+    public static class DuplicateMessageIdException extends MessageIdCheckException {}
 
     /**
      * Atomically check for the presence of the specified message Id, and remember it either way.  If the specified
@@ -20,7 +32,8 @@ public interface MessageIdManager {
      *
      * @param prospect The message Id to test and set.
      * @throws DuplicateMessageIdException if this message Id is already known.
+     * @throws MessageIdCheckException if the message Id check fails.
      */
-    void assertMessageIdIsUnique(MessageId prospect) throws DuplicateMessageIdException;
+    void assertMessageIdIsUnique(MessageId prospect) throws MessageIdCheckException;
 
 }

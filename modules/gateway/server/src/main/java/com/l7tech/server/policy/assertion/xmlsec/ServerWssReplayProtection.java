@@ -202,6 +202,9 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
         } catch (MessageIdManager.DuplicateMessageIdException e) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdStr, targetName);
             return getBadMessageStatus();
+        } catch (MessageIdManager.MessageIdCheckException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Error checking for replay : " + ExceptionUtils.getMessage( e )}, e);
+            return AssertionStatus.FAILED;
         }
 
         return AssertionStatus.NONE;

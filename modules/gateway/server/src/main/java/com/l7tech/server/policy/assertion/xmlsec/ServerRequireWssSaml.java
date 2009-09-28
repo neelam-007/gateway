@@ -174,13 +174,16 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                 } catch (MessageIdManager.DuplicateMessageIdException e) {
                     auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, "Replay of assertion that is for OneTimeUse.");
                     return AssertionStatus.FALSIFIED;
+                } catch (MessageIdManager.MessageIdCheckException e) {
+                    auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, new String[]{"Error checking for replay of assertion that is for OneTimeUse"}, e);
+                    return AssertionStatus.FAILED;
                 }
             }
 
             authContext.addCredentials( LoginCredentials.makeLoginCredentials( samlAssertion, RequireWssSaml.class ) ) ;
             return AssertionStatus.NONE;
         } catch (SAXException e) {
-            throw (IOException)new IOException().initCause(e);
+            throw new IOException(e);
         }
     }
 

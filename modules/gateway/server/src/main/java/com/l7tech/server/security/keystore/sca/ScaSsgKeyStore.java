@@ -13,7 +13,6 @@ import static com.l7tech.server.security.keystore.SsgKeyFinder.SsgKeyStoreType.P
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import org.jboss.util.stream.NullInputStream;
 
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -21,6 +20,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.ByteArrayInputStream;
 
 /**
  * SsgKeyStore view of this node's local SCA 6000 board.
@@ -127,7 +127,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
 
             lastLoaded = System.currentTimeMillis();
             keystore = JceProvider.getInstance().getKeyStore("PKCS11");
-            keystore.load(new NullInputStream(), password);
+            keystore.load(new ByteArrayInputStream(new byte[0]), password);
             return keystore;
         } catch (ScaException e) {
             final String msg = "Unable to update local hardware keystore from database for keystore named " + name + ": " + ExceptionUtils.getMessage(e);

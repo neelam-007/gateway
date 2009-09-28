@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="jboss"
+		module="jbosscache-core"
+		revision="3.2.0.GA"
+		status="release"
+		publication="20090924151105"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="jbosscache-core" type="jar" ext="jar" conf="default"/>
+	</publications>
+	<dependencies>
+		<dependency org="jboss" name="jboss-common-core" rev="2.2.14.GA" conf="default"/>
+		<dependency org="jboss" name="jboss-logging-spi" rev="2.0.5.GA" conf="default"/>
+		<dependency org="commons-logging" name="commons-logging" rev="1.1.1" conf="default"/>
+		<dependency org="jgroups" name="jgroups" rev="2.6.12.GA" conf="default"/>
+		<dependency org="net.jcip" name="jcip-annotations" rev="1.0" conf="default"/>
+	</dependencies>
+</ivy-module>

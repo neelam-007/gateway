@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0">
 	<info organisation="jboss"
-		module="jboss-aop"
-		revision="4.0.3"
+		module="jboss-logging-spi"
+		revision="2.0.5.GA"
 		status="release"
-		publication="20080707125256"
+		publication="20090924151523"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
 	</configurations>
 	<publications>
-		<artifact name="jboss-aop" type="jar" ext="jar" conf="default"/>
+		<artifact name="jboss-logging-spi" type="jar" ext="jar" conf="default"/>
 	</publications>
 </ivy-module>

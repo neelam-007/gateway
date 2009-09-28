@@ -55,15 +55,8 @@
         <dependency org="org.hibernate" name="hibernate-annotations" rev="3.4.0.GA" force="true" conf="core"/>
         <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.1.0.GA" force="true" conf="core"/>
         <dependency org="javassist" name="javassist" rev="3.4.GA" force="true" conf="core"/>
-        <dependency org="jboss" name="jboss-aop" rev="4.0.3" force="true" conf="core"/>
-        <dependency org="jboss" name="jboss-cache" rev="4.0.3" force="true" conf="core"/>
-        <dependency org="jboss" name="jboss-common" rev="4.0.3" force="true" conf="core"/>
         <dependency org="jboss" name="jboss-j2ee" rev="4.0.3" force="true" conf="core"/>
-        <dependency org="jboss" name="jboss-jmx" rev="4.0.3" force="true" conf="core"/>
-        <dependency org="jboss" name="jboss-minimal" rev="4.0.3" force="true" conf="core"/>
-        <dependency org="jboss" name="jboss-serialization" rev="4.0.3" force="true" conf="core"/>
-        <dependency org="jboss" name="jboss-system" rev="4.0.3" force="true" conf="core"/>
-        <dependency org="jgroups" name="jgroups" rev="2.2.9.2" force="true" conf="core"/>
+        <dependency org="jboss" name="jbosscache-core" rev="3.2.0.GA" force="true" conf="core"/>
         <dependency org="log4j" name="log4j" rev="1.2.14" force="true" conf="core"/>
         <dependency org="org.apache.mina" name="mina-core" rev="1.1.0" force="true" conf="core"/>
         <dependency org="org.apache.mina" name="mina-filter-ssl" rev="1.1.0" force="true" conf="core"/>
@@ -80,7 +73,6 @@
         <dependency org="org.springframework" name="aspectjweaver" rev="2.5.4" force="true" conf="core"/> <!-- Used for parsing pointcut expressions only -->
         <dependency org="cglib" name="cglib-nodep" rev="2.1_3" force="true" conf="core"/>
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional"/>
-        <dependency org="trove" name="trove" rev="1.0.2" force="true" conf="core"/>
         <dependency org="org.apache.ftpserver" name="ftpserver-parent" rev="1.0-543677-20070601" force="true"
                     conf="core"/>
 
