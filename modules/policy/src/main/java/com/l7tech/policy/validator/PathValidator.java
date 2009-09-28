@@ -48,7 +48,7 @@ import java.text.MessageFormat;
  * just once per assertion instance, right after being created, instead of once per assertion instance per path.
  * PathValidator would be passed a map of assertion instances to validator instances.
  */
-class PathValidator {
+public class PathValidator {
 
     private static final ResourceBundle bundle = ResourceBundle.getBundle( PathValidator.class.getName() );
 
