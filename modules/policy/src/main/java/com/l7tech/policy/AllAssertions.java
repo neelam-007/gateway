@@ -32,7 +32,6 @@ import com.l7tech.policy.assertion.xml.RemoveElement;
 import com.l7tech.policy.assertion.xmlsec.*;
 
 import java.util.Collections;
-import java.util.List;
 
 /**
  * The canonical list of legacy assertions known to a new AssertionRegistry instance on startup.
@@ -40,8 +39,6 @@ import java.util.List;
  * @author alex
  */
 public class AllAssertions {
-
-    private static final List<FalseAssertion> LIST_OF_FALSE = Collections.singletonList(new FalseAssertion());
 
     /**
      * all assertions that the gateway must handle
@@ -55,9 +52,9 @@ public class AllAssertions {
         new HttpNegotiate(),
         new WssBasic(),
         new WssDigest(),
-        new AllAssertion(LIST_OF_FALSE),
-        new ExactlyOneAssertion(LIST_OF_FALSE),
-        new OneOrMoreAssertion(LIST_OF_FALSE),
+        new AllAssertion(Collections.singletonList(new FalseAssertion())),
+        new ExactlyOneAssertion(Collections.singletonList(new FalseAssertion())),
+        new OneOrMoreAssertion(Collections.singletonList(new FalseAssertion())),
         new SslAssertion(),
         new HttpRoutingAssertion(),
         new BridgeRoutingAssertion(),
@@ -117,9 +114,9 @@ public class AllAssertions {
         new HttpNegotiate(),
         new WssBasic(),
         new WssDigest(),
-        new AllAssertion(LIST_OF_FALSE),    // Empty composites are not valid
-        new ExactlyOneAssertion(LIST_OF_FALSE), // Empty composites are not valid
-        new OneOrMoreAssertion(LIST_OF_FALSE), // Empty composites are not valid
+        new AllAssertion(Collections.singletonList(new FalseAssertion())),    // Empty composites are not valid
+        new ExactlyOneAssertion(Collections.singletonList(new FalseAssertion())), // Empty composites are not valid
+        new OneOrMoreAssertion(Collections.singletonList(new FalseAssertion())), // Empty composites are not valid
         new FalseAssertion(),
         new SslAssertion(),
         new HttpRoutingAssertion(),
