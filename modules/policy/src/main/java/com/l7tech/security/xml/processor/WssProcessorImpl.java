@@ -2166,6 +2166,14 @@ public class WssProcessorImpl implements WssProcessor {
                 if (elementCoveredURI!=null && elementCoveredURI.charAt(0) == '#') {
                     elementCoveredURI = elementCoveredURI.substring(1);
                 }
+
+                // Check for and reject full xpointer references
+                // TODO we should probably also check for xpointer child sequences such as "/1/2/3" or "<id>/1/2/3"
+                if (elementCoveredURI!=null && elementCoveredURI.startsWith("xpointer") &&
+                    elementCoveredURI.indexOf('(')>0 &&  elementCoveredURI.indexOf(')')>0 ) {
+                    throw new InvalidDocumentFormatException("XPointer reference not supported : " + elementCoveredURI);
+                }
+
                 elementCovered = elementsByWsuId.get(elementCoveredURI);
                 if (elementCovered == null)
                     elementCovered = SoapUtil.getElementByWsuId(sigElement.getOwnerDocument(), elementCoveredURI);

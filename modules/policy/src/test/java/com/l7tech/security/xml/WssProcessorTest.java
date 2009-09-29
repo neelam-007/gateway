@@ -959,6 +959,14 @@ public class WssProcessorTest {
         doTest(testDocument);
     }
 
+    @Test(expected=InvalidDocumentFormatException.class)
+    @BugNumber(7758)
+    public void testXpointerReferenceRejected() throws Exception {
+        Document d = TestDocuments.getTestDocument(TestDocuments.WAREHOUSE_REQUEST_XPOINTER_REFERENCE);
+        TestDocument td = new TestDocument("Warehouse Request XPointer", d, null, null, null, null, null);
+        doTest( td );
+    }
+
     private static Message makeMessage(String xml) throws SAXException {
         Message message = new Message();
         message.initialize(XmlUtil.stringToDocument(xml));

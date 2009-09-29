@@ -1,0 +1,33 @@
+<!--
+  Test message for bug 7758, uses an XPointer reference for the signed body.
+-->
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soapenv:Header>
+        <wsse:Security actor="secure_span" soapenv:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+            <wsu:Timestamp wsu:Id="Timestamp-2-2c4c1847d14985d909c73199edc2da34"><wsu:Created>2009-09-29T20:16:55.477074304Z</wsu:Created><wsu:Expires>2009-09-29T20:21:55.477Z</wsu:Expires></wsu:Timestamp>
+            <wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="BinarySecurityToken-0-d77c4253ca1e132da6a0d92f7a60fe5d">MIICazCCAdSgAwIBAgIEPb7rVDANBgkqhkiG9w0BAQQFADB6MRMwEQYDVQQDDApKb2huIFNtaXRoMR8wHQYDVQQLDBZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMQwwCgYDVQQKDANJQk0xEjAQBgNVBAcMCUN1cGVydGlubzETMBEGA1UECAwKQ2FsaWZvcm5pYTELMAkGA1UEBhMCVVMwHhcNMDUwMTAxMDAwMDAwWhcNMjUxMjMxMjM1OTU5WjB6MRMwEQYDVQQDDApKb2huIFNtaXRoMR8wHQYDVQQLDBZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMQwwCgYDVQQKDANJQk0xEjAQBgNVBAcMCUN1cGVydGlubzETMBEGA1UECAwKQ2FsaWZvcm5pYTELMAkGA1UEBhMCVVMwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAK2K2KzkU42+/bfpfDUIo68oA5DQ1iW9F38UrC5/5PVcIVp0cyu28eGr/5n8OVyfZhBg4Kn1q5L5aQFwvQBSskk9RvBkgHYLIFkmOdLv6N1vftEphBSw1E2WB0hyhkzxu8JmV0FJ+dq3jEM/JA4kHsTEOsyYj20/Q1j0Y3Sel+fDAgMBAAEwDQYJKoZIhvcNAQEEBQADgYEAiA+65PCTbLfkB7OLz5OEQUwySoK16nTY3cXKGrq1rWdHAYmr+FfVF+1ePicihDMVqfzZHeHMlNAvjVRliwP4HuU58OMz3Jn+8iJ0exKH9EKgfFZ7csX7cyXtZfvaMTxlAca04muonxJS0FFqxSFgJNScQELaA6R82wse0hksr7o=</wsse:BinarySecurityToken>
+            <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><ds:Reference URI="#xpointer(id('Body-1-83d7b12246095eecd4594c61ade8b07d'))"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>JSegIVu7Iw449VHJzWRCFG1Fhlo=</ds:DigestValue></ds:Reference><ds:Reference URI="#xpointer(id('Timestamp-2-2c4c1847d14985d909c73199edc2da34'))"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>FisGs07pHdA+fRHS3a2orv0EsyI=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>GrZx/uH8obkJCKVU3nnHR2aBkLc0nyQLzX+VNRLP4uekyv8AsdP/I1fTxl1oi8QcuUeQ0RN00biE+CNYhk6fpzMy8xlAY/HjZaWBYWEBwD4My6wPdbWmZzuEWcs7hsac/0EOOPMkD0Z9wkjjvETsFnCVxoQXXp0he+Grn+VqyDo=</ds:SignatureValue><ds:KeyInfo><wsse:SecurityTokenReference xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><wsse:Reference URI="#BinarySecurityToken-0-d77c4253ca1e132da6a0d92f7a60fe5d" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"/></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature>
+        </wsse:Security>
+        <extras xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+            <!-- Timestamp with unprocessed xpointer id -->
+            <wsu:Timestamp wsu:Id="xpointer(id('Timestamp-2-2c4c1847d14985d909c73199edc2da34'))"><wsu:Created>2009-09-29T20:16:55.477074304Z</wsu:Created><wsu:Expires>2009-09-29T20:21:55.477Z</wsu:Expires></wsu:Timestamp>
+            <!-- Body with unprocessed xpointer id -->
+            <soapenv:Body wsu:Id="xpointer(id('Body-1-83d7b12246095eecd4594c61ade8b07d'))" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+                <ns1:placeOrder soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:ns1="http://warehouse.acme.com/ws">
+                    <productid xsi:type="xsd:long">-9206260647417300294</productid>
+                    <amount xsi:type="xsd:long">1</amount>
+                    <price xsi:type="xsd:float">5.0</price>
+                    <accountid xsi:type="xsd:long">228</accountid>
+                </ns1:placeOrder>
+            </soapenv:Body>
+        </extras>
+    </soapenv:Header>
+    <soapenv:Body wsu:Id="Body-1-83d7b12246095eecd4594c61ade8b07d" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+        <ns1:placeOrder soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:ns1="http://warehouse.acme.com/ws">
+            <productid xsi:type="xsd:long">-9206260647417300294</productid>
+            <amount xsi:type="xsd:long">1</amount>
+            <price xsi:type="xsd:float">5.0</price>
+            <accountid xsi:type="xsd:long">228</accountid>
+        </ns1:placeOrder>
+    </soapenv:Body>
+</soapenv:Envelope>
