@@ -36,7 +36,7 @@ public final class OneOrMoreAssertion extends CompositeAssertion {
 
         meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.OneOrMoreAssertionTreeNode");
         
-        meta.put(PROPERTIES_ACTION_NAME, "Add 'At least one…' Folder");
+        meta.put(PROPERTIES_ACTION_NAME, "Add 'At least one...' Folder");
         meta.put(PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/folder.gif");
 
         meta.put(CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/folder.gif");

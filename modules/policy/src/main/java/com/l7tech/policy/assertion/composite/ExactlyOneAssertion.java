@@ -31,7 +31,7 @@ public final class ExactlyOneAssertion extends CompositeAssertion implements Ser
 
         meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.ExactlyOneAssertionTreeNode");
 
-        meta.put(PROPERTIES_ACTION_NAME, "Add 'exactly one' assertion");
+        meta.put(PROPERTIES_ACTION_NAME, "Add 'Exactly one...' assertion");
         meta.put(PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/folder.gif");
         meta.put(POLICY_NODE_ICON_OPEN, "com/l7tech/console/resources/folderOpen.gif");
 

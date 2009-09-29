@@ -45,7 +45,7 @@ public final class AllAssertion extends CompositeAssertion {
 
         meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.AllAssertionTreeNode");
 
-        meta.put(PROPERTIES_ACTION_NAME, "Add 'All…' Folder");
+        meta.put(PROPERTIES_ACTION_NAME, "Add 'All...' Folder");
         meta.put(PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/folder.gif");
 
         meta.put(CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/folder.gif");
