@@ -62,4 +62,15 @@ public class ServerAssertionUtils {
             throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         }
     }
+
+    public static boolean isPreferredSigner( final Object maybePrivateKeyable ) {
+        boolean preferred = false;
+
+        if (maybePrivateKeyable instanceof PrivateKeyable) {
+            PrivateKeyable keyable = (PrivateKeyable)maybePrivateKeyable;
+            preferred = !keyable.isUsesDefaultKeyStore();
+        }
+
+        return preferred;
+    }
 }

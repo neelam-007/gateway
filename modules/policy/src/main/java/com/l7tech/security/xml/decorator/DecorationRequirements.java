@@ -715,6 +715,26 @@ public class DecorationRequirements {
         return securityHeaderMustUnderstand;
     }
 
+    public enum PreferredSigningTokenType { X509  } // currently only X509 can be preferred
+
+    /**
+     * Get the preferred signing token type if any.
+     *
+     * @return The preferred token type or null.
+     */
+    public PreferredSigningTokenType getPreferredSigningTokenType() {
+        return preferredSigningTokenType;
+    }
+
+    /**
+     * Set the preferred signing token type.
+     *
+     * @param preferredSigningTokenType The type to prefer, or null to clear the current preference
+     */
+    public void setPreferredSigningTokenType( final PreferredSigningTokenType preferredSigningTokenType ) {
+        this.preferredSigningTokenType = preferredSigningTokenType;
+    }
+
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
@@ -751,4 +771,5 @@ public class DecorationRequirements {
     private boolean suppressSamlStrTransform = false;
     private boolean protectTokens = false;
     private String signatureMessageDigest = DsigUtil.getDefaultMessageDigest();
+    private PreferredSigningTokenType preferredSigningTokenType = null;
 }

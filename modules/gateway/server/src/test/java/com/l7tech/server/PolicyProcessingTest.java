@@ -108,6 +108,7 @@ public class PolicyProcessingTest {
         {"/xpathcreds", "POLICY_xpathcreds.xml"},
         {"/usernametoken", "POLICY_usernametoken.xml"},
         {"/encusernametoken", "POLICY_wss_encryptedusernametoken.xml"},
+        {"/encusernametokenX509", "POLICY_wss_encryptedusernametoken_x509.xml"},
         {"/encusernametokentags", "POLICY_wss_encryptedusernametokenidtag.xml"},
         {"/httpbasic", "POLICY_httpbasic.xml"},
         {"/httproutecookie", "POLICY_httproutecookie.xml"},
@@ -415,7 +416,41 @@ public class PolicyProcessingTest {
     @Test
 	public void testEncryptedUsernameToken() throws Exception {
         String requestMessage = new String(loadResource("REQUEST_encryptedusernametoken.xml"));
-        processMessage("/encusernametoken", requestMessage, 0);
+        processMessage("/encusernametoken", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call( final PolicyEnforcementContext policyEnforcementContext ) {
+                try {
+                    // Check the response contains a DerivedKeyToken (so is signed by the encrypted key)
+                    Assert.assertEquals("DerivedKeyToken elements", 1,
+                            policyEnforcementContext.getResponse().getXmlKnob().getDocumentReadOnly().getElementsByTagNameNS(
+                                    "http://schemas.xmlsoap.org/ws/2004/04/sc", "DerivedKeyToken" ).getLength() );
+                } catch ( Exception e ) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Test encrypted username token with response signed by X.509 token
+     */
+    @BugNumber(7382)
+    @Test
+	public void testEncryptedUsernameTokenX509SignedResonse() throws Exception {
+        String requestMessage = new String(loadResource("REQUEST_encryptedusernametoken.xml"));
+        processMessage("/encusernametokenX509", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call( final PolicyEnforcementContext policyEnforcementContext ) {
+                try {
+                    // Check the response contains an X509Data element (so is not signed by the encrypted key)
+                    Assert.assertEquals("X509Data elements", 1,
+                            policyEnforcementContext.getResponse().getXmlKnob().getDocumentReadOnly().getElementsByTagNameNS(
+                                    "http://www.w3.org/2000/09/xmldsig#", "X509Data" ).getLength() );
+                } catch ( Exception e ) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
     }
 
     /**

@@ -44,6 +44,7 @@ import java.util.logging.Logger;
  */
 public abstract class ServerAddWssSignature<AT extends Assertion> extends AbstractMessageTargetableServerAssertion<AT> {
     protected final SignerInfo signerInfo;
+    protected final boolean isPreferred;
     protected final WssDecorationConfig wssConfig;
     protected final Auditor auditor;
     protected final boolean failIfNotSigning;
@@ -60,6 +61,7 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
         this.failIfNotSigning = failIfNotSigning;
         try {
             this.signerInfo = ServerAssertionUtils.getSignerInfo(spring, responseWssAssertion);
+            this.isPreferred = ServerAssertionUtils.isPreferredSigner( responseWssAssertion );
         } catch (KeyStoreException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
@@ -159,7 +161,11 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
             }
         }
 
-        if ((wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null)
+        if ( isPreferred ) {
+            wssReq.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.X509);
+            wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
+            wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+        } else if ((wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null)
             && wssReq.getKerberosTicket() == null) {
             // No luck with #EncryptedKeySHA1 or Kerberos, so we'll have to do a full RSA signature using our own cert.
             wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
