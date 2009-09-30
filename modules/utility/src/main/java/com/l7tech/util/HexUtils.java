@@ -47,6 +47,15 @@ public class HexUtils {
         return getSha1().digest(stuffToDigest);
     }
 
+    public static byte[] getSha1Digest(byte[][] stuffToDigest) {
+        MessageDigest md = getSha1();
+        for (int i = 0; i < stuffToDigest.length; i++) {
+            byte[] bytes = stuffToDigest[i];
+            md.update(bytes);
+        }
+        return md.digest();
+    }
+
     public static byte[] getSha512Digest(byte[] stuffToDigest) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-512");

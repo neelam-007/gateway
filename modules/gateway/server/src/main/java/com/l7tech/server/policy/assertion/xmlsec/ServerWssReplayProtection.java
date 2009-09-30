@@ -19,17 +19,17 @@ import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAsserti
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.kerberos.KerberosUtils;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
+import java.nio.charset.Charset;
 
 /**
  * This assertion asserts that this message had a signed timestamp, and that no message with this timestamp signed
@@ -44,6 +44,8 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
     private static final String ID_PREFIX_WSA_HASHED = "uuid:wsa:digest:";
     private static final int MAX_WSA_MESSAGEID_HASHTHRESHOLD = SyspropUtil.getInteger("com.l7tech.server.messageIDHashThrehold" , 255); // 255 is the max we allow in the DB
     private static final int MAX_WSA_MESSAGEID_MAXLENGTH = SyspropUtil.getInteger("com.l7tech.server.messageIDMaxLength" , 8192); // 8k limit
+
+    private static final Charset UTF8 = Charset.forName( "UTF-8" );
 
     private final Auditor auditor;
     private final MessageIdManager messageIdManager;
@@ -101,7 +103,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             // In practice, this can only happen if a mutating assertion (e.g. XSLT or Regex) has changed this message
             // from SOAP to non-SOAP--if it was originally SOAP, Trogdor will have already run, and the message will
             // have been parsed before we get here.
-            throw (IOException)new IOException(ExceptionUtils.getMessage(e)).initCause(e);
+            throw new IOException(ExceptionUtils.getMessage(e), e);
         }
 
         // See if there's a wsa:MessageID
@@ -186,7 +188,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             }
         } else {
             try {
-                String senderId = getSenderId(timestamp.asElement(), signedElements, createdIsoString, null);
+                String senderId = getSenderId(timestamp.asElement(), signedElements, createdIsoString, targetName);
                 if (senderId == null) return getBadMessageStatus();
                 messageIdStr = senderId;
             } catch (MultipleSenderIdException e) {
@@ -235,18 +237,16 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
 
                 // Use cert info as sender id
                 try {
-                    MessageDigest md = MessageDigest.getInstance("SHA-1");
-                    md.update(createdIsoString.getBytes("UTF-8"));
-                    md.update(signingCert.getSubjectDN().toString().getBytes("UTF-8"));
-                    md.update(signingCert.getIssuerDN().toString().getBytes("UTF-8"));
-                    md.update(skiToString(signingCert).getBytes("UTF-8"));
-                    byte[] digest = md.digest();
+                    byte[] digest = HexUtils.getSha1Digest( new byte[][]{
+                        createdIsoString.getBytes(UTF8),
+                        signingCert.getSubjectDN().toString().getBytes(UTF8),
+                        signingCert.getIssuerDN().toString().getBytes(UTF8),
+                        skiToString(signingCert).getBytes(UTF8)
+                    } );
                     senderId = HexUtils.hexDump(digest);
                 } catch (CertificateEncodingException e) {
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_SKI, what, signingCert.getSubjectDN().getName());
                     return null;
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e); // can't happen, misconfigured VM
                 }
             } else if (signingToken instanceof SecurityContextToken) {
                 if (senderId != null) throw new MultipleSenderIdException();
@@ -274,6 +274,18 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                 sb.append(";");
                 sb.append("EncryptedKeySHA1=");
                 sb.append(encryptedKeySha1);
+                senderId = sb.toString();
+            } else if (signingToken instanceof KerberosSigningSecurityToken) {
+                if (senderId != null) throw new MultipleSenderIdException();
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_KERBEROS, what);
+
+                String kerberosTokenSha1 = KerberosUtils.getBase64Sha1(((KerberosSigningSecurityToken)signingToken).getTicket());
+
+                StringBuffer sb = new StringBuffer();
+                sb.append(createdIsoString);
+                sb.append(";");
+                sb.append("Kerberosv5APREQSHA1=");
+                sb.append(kerberosTokenSha1);
                 senderId = sb.toString();
             } else {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_UNSUPPORTED_TOKEN_TYPE, what, signingToken.getClass().getName());
