@@ -145,6 +145,9 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private BindingOperation currentOperation;
     private JButton editSampleButton;
     private JLabel varPrefixStatusLabel;
+    private JRadioButton encIssuerSerialReferenceRadioButton;
+    private JPanel encryptionResponseConfigPanel;
+    private JRadioButton encSkiReferenceRadioButton;
     private final boolean showHardwareAccelStatus;
     private boolean wasOk = false;
 
@@ -525,6 +528,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         Utilities.setEscKeyStrokeDisposes(this);
 
         initializeEncryptionConfig();
+        initializeResponseEncryptionConfig();
         initializeResponseSignatureConfig();
         setModal(true);
         namespaceButton.addActionListener(new ActionListener() {
@@ -611,6 +615,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 if (!collectEncryptionConfig()) { // check if there exists invalid configurations or not.
                     return;
                 }
+                collectResponseEncryptionConfig();
                 collectResponseSignatureConfig();
                 XpathBasedAssertionPropertiesDialog.this.dispose();
                 wasOk = true;
@@ -751,10 +756,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             return;
         }
         WssSignElement rwssi = (WssSignElement)assertion;
-        ButtonGroup bg = new ButtonGroup();
-        bg.add(bstReferenceRadioButton);
-        bg.add(skiReferenceRadioButton);
-        bg.add(issuerSerialReferenceRadioButton);
         signedBstCheckBox.setSelected(rwssi.isProtectTokens());
         if (KeyReference.BST.getName().equals(rwssi.getKeyReference())) {
             bstReferenceRadioButton.setSelected(true);
@@ -762,6 +763,19 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             issuerSerialReferenceRadioButton.setSelected(true);
         } else {
             skiReferenceRadioButton.setSelected(true);
+        }
+    }
+
+    private void initializeResponseEncryptionConfig() {
+        if (!(assertion instanceof WssEncryptElement)) {
+            encryptionResponseConfigPanel.setVisible(false);
+            return;
+        }
+        WssEncryptElement wee = (WssEncryptElement)assertion;
+        if (KeyReference.ISSUER_SERIAL.getName().equals(wee.getKeyReference())) {
+            encIssuerSerialReferenceRadioButton.setSelected(true);
+        } else {
+            encSkiReferenceRadioButton.setSelected(true);
         }
     }
 
@@ -857,6 +871,18 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             rwssi.setKeyReference(KeyReference.SKI.getName());
         } else if (issuerSerialReferenceRadioButton.isSelected()) {
             rwssi.setKeyReference(KeyReference.ISSUER_SERIAL.getName());            
+        }
+    }
+
+    private void collectResponseEncryptionConfig() {
+        if (!(assertion instanceof WssEncryptElement)) {
+            return;
+        }
+        WssEncryptElement wee = (WssEncryptElement)assertion;
+        if (encSkiReferenceRadioButton.isSelected()) {
+            wee.setKeyReference(KeyReference.SKI.getName());
+        } else if (encIssuerSerialReferenceRadioButton.isSelected()) {
+            wee.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
         }
     }
 

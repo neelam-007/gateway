@@ -5,6 +5,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.KeyReference;
+import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
@@ -121,6 +123,12 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
             wssReq.getElementsToEncrypt().addAll(selectedElements);
             wssReq.setEncryptionAlgorithm(assertion.getXEncAlgorithm());
             wssReq.setKeyEncryptionAlgorithm(assertion.getKeyEncryptionAlgorithm());
+            String keyReference = assertion.getKeyReference();
+            if ( keyReference == null || KeyReference.SKI.getName().equals(keyReference) ) {
+                wssReq.setEncryptionKeyInfoInclusionType(KeyInfoInclusionType.STR_SKI);
+            } else if (KeyReference.ISSUER_SERIAL.getName().equals(keyReference)) {
+                wssReq.setEncryptionKeyInfoInclusionType(KeyInfoInclusionType.ISSUER_SERIAL);
+            }
             applyDecorationRequirements( context, wssReq, encryptionContext );
 
             auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_ENCRYPTED, messageDescription, String.valueOf(selectedElements.size()));

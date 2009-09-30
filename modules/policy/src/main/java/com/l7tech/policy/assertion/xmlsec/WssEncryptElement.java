@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.XencUtil;
+import com.l7tech.security.xml.KeyReference;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -51,6 +52,14 @@ public class WssEncryptElement extends XmlSecurityAssertionBase implements Reque
 
     public void setKeyEncryptionAlgorithm(String keyEncryptionAlgorithm) {
         this.xencKeyAlgorithm = keyEncryptionAlgorithm;
+    }
+
+    public String getKeyReference() {
+        return keyReference;
+    }
+
+    public void setKeyReference( final String keyReference ) {
+        this.keyReference = keyReference;
     }
 
     @Override
@@ -118,4 +127,5 @@ public class WssEncryptElement extends XmlSecurityAssertionBase implements Reque
     private IdentityTarget identityTarget;
     private String xencAlgorithm = XencUtil.AES_128_CBC;
     private String xencKeyAlgorithm = null;
+    private String keyReference = KeyReference.SKI.getName();
 }

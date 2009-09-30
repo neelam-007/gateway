@@ -572,6 +572,24 @@ public class DecorationRequirements {
         this.keyInfoInclusionType = keyInfoInclusionType;
     }
 
+    /**
+     * Get the key reference type for use with encryption.
+     *
+     * @return The encryption KeyInfoInclusionType
+     */
+    public KeyInfoInclusionType getEncryptionKeyInfoInclusionType() {
+        return encryptionKeyInfoInclusionType;
+    }
+
+    /**
+     * Set the key references type for use with encryption.
+     *
+     * @param encryptionKeyInfoInclusionType The encryption type to use.
+     */
+    public void setEncryptionKeyInfoInclusionType( final KeyInfoInclusionType encryptionKeyInfoInclusionType ) {
+        this.encryptionKeyInfoInclusionType = encryptionKeyInfoInclusionType;
+    }
+
     public KerberosServiceTicket getKerberosTicket() {
         return kerberosTicket;
     }
@@ -759,6 +777,7 @@ public class DecorationRequirements {
     private SecurityHeaderMustUnderstand securityHeaderMustUnderstand = SecurityHeaderMustUnderstand.DEFAULT;
     private boolean includeSamlTokenInSignature = false;
     private KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;
+    private KeyInfoInclusionType encryptionKeyInfoInclusionType = KeyInfoInclusionType.STR_SKI;
     private byte[] encryptedKey = null;
     private String encryptedKeySha1 = null;
     private Set<String> signatureConfirmations = new HashSet<String>();

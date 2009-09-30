@@ -144,7 +144,8 @@ public class PolicyProcessingTest {
         {"/addusernametoken2", "POLICY_response_wss_usernametoken_digest.xml"},
         {"/addusernametoken3", "POLICY_response_encrypted_usernametoken.xml"},
         {"/secureconversation", "POLICY_secure_conversation.xml"},
-        {"/timestampresolution", "POLICY_timestampresolution.xml"}
+        {"/timestampresolution", "POLICY_timestampresolution.xml"},
+        {"/wssEncryptResponseIssuerSerial", "POLICY_encrypted_response_issuerserial.xml"}
     };
 
     @Before
@@ -1246,6 +1247,24 @@ public class PolicyProcessingTest {
         final String requestMessage = new String(loadResource("REQUEST_general.xml"));
         processMessage("/timestampresolution", requestMessage, 0);
     }
+
+    @BugNumber(7299)
+    @Test
+    public void testWssEncryptResponseIssuerSerial() throws Exception {
+        final String requestMessage = new String(loadResource("REQUEST_signed.xml"));
+        processMessage("/wssEncryptResponseIssuerSerial", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                try {
+                    final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                    Assert.assertEquals( "IssuerSerial count", 1, document.getElementsByTagNameNS( "http://www.w3.org/2000/09/xmldsig#", "X509IssuerSerial").getLength());
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
+    }
+
 
     /**
      *

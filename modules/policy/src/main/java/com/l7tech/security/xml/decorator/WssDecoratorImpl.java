@@ -415,6 +415,7 @@ public class WssDecoratorImpl implements WssDecorator {
         addEncryptedKey(c,
                         securityHeader,
                         c.dreq.getRecipientCertificate(),
+                        c.dreq.getEncryptionKeyInfoInclusionType(),
                         elementsToEncrypt,
                         encKey,
                         c.dreq.getKeyEncryptionAlgorithm(),
@@ -627,6 +628,7 @@ public class WssDecoratorImpl implements WssDecorator {
         final Element addedEncKey = addEncryptedKey(c,
                                       securityHeader,
                                       c.dreq.getRecipientCertificate(),
+                                      c.dreq.getEncryptionKeyInfoInclusionType(),
                                       new Element[0],
                                       addedEncKeyXmlEncKey,
                                       c.dreq.getKeyEncryptionAlgorithm(),
@@ -1398,13 +1400,14 @@ public class WssDecoratorImpl implements WssDecorator {
      * and appends an EncryptedKey to the Security header before the specified desiredNextSibling element
      * (probably the Signature).
      */
-    private Element addEncryptedKey(Context c,
-                                    Element securityHeader,
-                                    X509Certificate recipientCertificate,
-                                    Element[] elementsToEncrypt,
-                                    XencUtil.XmlEncKey encKey,
-                                    String algorithm,
-                                    Element desiredNextSibling)
+    private Element addEncryptedKey( final Context c,
+                                     final Element securityHeader,
+                                     final X509Certificate recipientCertificate,
+                                     final KeyInfoInclusionType recipientKeyReferenceType,
+                                     final Element[] elementsToEncrypt,
+                                     final XencUtil.XmlEncKey encKey,
+                                     final String algorithm,
+                                     final Element desiredNextSibling )
       throws GeneralSecurityException, DecoratorException {
 
         Document soapMsg = securityHeader.getOwnerDocument();
@@ -1426,11 +1429,19 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element encryptionMethod = DomUtils.createAndAppendElementNS(encryptedKey, "EncryptionMethod", xencNs, xenc);
 
-        byte[] recipSki = CertUtils.getSKIBytesFromCert(recipientCertificate);
+        final KeyInfoDetails keyInfo;
+        if ( recipientKeyReferenceType == null || recipientKeyReferenceType==KeyInfoInclusionType.STR_SKI ) {
+            byte[] recipSki = CertUtils.getSKIBytesFromCert(recipientCertificate);
 
-        KeyInfoDetails keyInfo = recipSki != null
-                ? KeyInfoDetails.makeKeyId(recipSki, SoapConstants.VALUETYPE_SKI)
-                : KeyInfoDetails.makeKeyId(recipientCertificate.getEncoded(), SoapConstants.VALUETYPE_X509);
+            keyInfo = recipSki != null
+                    ? KeyInfoDetails.makeKeyId(recipSki, SoapConstants.VALUETYPE_SKI)
+                    : KeyInfoDetails.makeKeyId(recipientCertificate.getEncoded(), SoapConstants.VALUETYPE_X509);
+        } else if ( recipientKeyReferenceType==KeyInfoInclusionType.ISSUER_SERIAL ) {
+            keyInfo = KeyInfoDetails.makeIssuerSerial( recipientCertificate, true );   
+        } else {
+            throw new DecoratorException("Unsupported encryptio KeyInfoInclusionType: " + recipientKeyReferenceType);
+        }
+
         keyInfo.createAndAppendKeyInfoElement(c.nsf, encryptedKey);
 
         Element cipherData = DomUtils.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
