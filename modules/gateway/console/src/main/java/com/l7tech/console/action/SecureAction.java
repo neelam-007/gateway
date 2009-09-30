@@ -44,6 +44,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
     public static final String UI_DASHBOARD_WINDOW = "ui:DashboardWindow";
     public static final String UI_MANAGE_LOG_SINKS = "ui:ManageLogSinks";
+    public static final String UI_MANAGE_AUDIT_SINK = "ui:ManageAuditSink";
     public static final String UI_MANAGE_EMAIL_LISTENERS = "ui:ManageEmailListeners";
 
     /** Specify that an action requires at least one authentication assertion to be licensed. */

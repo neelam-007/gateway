@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.HexUtils;
+import com.l7tech.policy.assertion.AssertionStatus;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
@@ -45,7 +46,12 @@ import java.util.logging.Logger;
  */
 public class AuditContextImpl implements AuditContext {
 
-    public AuditContextImpl(ServerConfig serverConfig, AuditRecordManager auditRecordManager) {
+    /**
+     * @param serverConfig   required
+     * @param auditRecordManager   required
+     * @param auditPolicyEvaluator  may be null
+     */
+    public AuditContextImpl(ServerConfig serverConfig, AuditRecordManager auditRecordManager, AuditPolicyEvaluator auditPolicyEvaluator) {
         if (serverConfig == null) {
             throw new IllegalArgumentException("Server Config is required");
         }
@@ -54,6 +60,7 @@ public class AuditContextImpl implements AuditContext {
         }
         this.serverConfig = serverConfig;
         this.auditRecordManager = auditRecordManager;
+        this.auditPolicyEvaluator = auditPolicyEvaluator;
     }
 
     /**
@@ -233,17 +240,7 @@ public class AuditContextImpl implements AuditContext {
             currentRecord.setDetails(detailsToSave);
             listener.notifyRecordFlushed(currentRecord, formatter, false);
 
-            if (isSignAudits()) {
-                signRecord(currentRecord);
-            } else {
-                currentRecord.setSignature(null);   // in case of updating, remove any old signature
-            }
-
-            if (update) {
-                auditRecordManager.update(currentRecord);
-            } else {
-                auditRecordManager.save(currentRecord);
-            }
+            outputRecord(currentRecord, this.update);
         } catch (SaveException e) {
             logger.log(Level.SEVERE, "Couldn't save audit records", e);
         } catch (UpdateException e) {
@@ -262,6 +259,27 @@ public class AuditContextImpl implements AuditContext {
             ordinal = 0;
             update = false;
             //system = false;
+        }
+    }
+
+    private void outputRecord(AuditRecord rec, boolean update) throws UpdateException, SaveException {
+        if (auditPolicyEvaluator != null) {
+            AssertionStatus result = auditPolicyEvaluator.outputRecordToPolicyAuditSink(rec, update);
+            if (AssertionStatus.NONE.equals(result))
+                return;
+            // Audit sink policy failed; fall back to built-in handling
+        }
+
+        if (isSignAudits()) {
+            signRecord(rec);
+        } else {
+            rec.setSignature(null);   // in case of updating, remove any old signature
+        }
+
+        if (update) {
+            auditRecordManager.update(rec);
+        } else {
+            auditRecordManager.save(rec);
         }
     }
 
@@ -466,6 +484,7 @@ public class AuditContextImpl implements AuditContext {
 
     private final ServerConfig serverConfig;
     private final AuditRecordManager auditRecordManager;
+    private AuditPolicyEvaluator auditPolicyEvaluator;
     private DefaultKey keystore;
     private AuditLogListener listener;
     private Map<String, Object> logFormatContextVariables;

@@ -67,6 +67,8 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MODULAR_ASSERTIONS_RESCAN_MILLIS = "modularAssertionsRescanMillis";
     public static final String PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS = "modularAssertionsFileExtensions";
 
+    public static final String PARAM_AUDIT_SINK_POLICY_GUID = "audit.sink.policy.guid";
+
     public static final String PARAM_AUDIT_MESSAGE_THRESHOLD = "auditMessageThreshold";
     public static final String PARAM_AUDIT_ADMIN_THRESHOLD = "auditAdminThreshold";
     public static final String PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD = "auditClientSystemLogsThreshold";

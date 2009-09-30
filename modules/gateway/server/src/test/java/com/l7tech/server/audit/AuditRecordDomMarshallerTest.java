@@ -1,6 +1,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.identity.User;
@@ -29,10 +30,43 @@ public class AuditRecordDomMarshallerTest {
     }
 
     @Test
+    public void testSmallMarshalAdmin() throws Exception {
+        Document d = XmlUtil.stringAsDocument("<a/>");
+        AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
+        AuditRecord auditRecord = makeAdminAuditRecord();
+        auditRecord.setThrown(null);
+        //noinspection deprecation
+        auditRecord.getDetails().iterator().next().setException(null);
+        Element got = m.marshal(d, auditRecord);
+        XmlUtil.nodeToFormattedOutputStream(got, System.out);
+    }
+
+    @Test
     public void testSimpleMarshalMessage() throws Exception {
         Document d = XmlUtil.stringAsDocument("<a/>");
         AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
         AuditRecord auditRecord = makeMessageAuditRecord();
+        Element got = m.marshal(d, auditRecord);
+        XmlUtil.nodeToFormattedOutputStream(got, System.out);
+    }
+
+    @Test
+    public void testSmallMarshalMessage() throws Exception {
+        Document d = XmlUtil.stringAsDocument("<a/>");
+        AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
+        AuditRecord auditRecord = makeMessageAuditRecord();
+        auditRecord.setThrown(null);
+        //noinspection deprecation
+        auditRecord.getDetails().iterator().next().setException(null);
+        Element got = m.marshal(d, auditRecord);
+        XmlUtil.nodeToFormattedOutputStream(got, System.out);
+    }
+
+    @Test
+    public void testSimpleMarshalSystem() throws Exception {
+        Document d = XmlUtil.stringAsDocument("<a/>");
+        AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
+        AuditRecord auditRecord = makeSystemAuditRecord();
         Element got = m.marshal(d, auditRecord);
         XmlUtil.nodeToFormattedOutputStream(got, System.out);
     }
@@ -74,6 +108,12 @@ public class AuditRecordDomMarshallerTest {
         auditRecord.setThrown(new RuntimeException("main record throwable"));
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
         auditRecord.getDetails().add(detail1);
+        return auditRecord;
+    }
+
+    private AuditRecord makeSystemAuditRecord() {
+        AuditRecord auditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GW_TRUST_STORE, "One or more trusted certificates has expired or is expiring soon", false, -1, null, null, "Checking", "192.168.1.42");
+        auditRecord.setThrown(new RuntimeException("main record throwable"));
         return auditRecord;
     }
 }

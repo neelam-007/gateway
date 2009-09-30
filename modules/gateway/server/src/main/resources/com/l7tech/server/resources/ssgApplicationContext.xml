@@ -65,6 +65,11 @@
         <constructor-arg index="2"  ref="serverConfig"/>
     </bean>
 
+    <bean id="auditPolicyEvaluator" class="com.l7tech.server.audit.AuditPolicyEvaluator">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="policyCache"/>
+    </bean>
+
     <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher"/>
 
     <!-- JMS boot process  -->
@@ -832,6 +837,7 @@
     <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="prototype">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
+        <constructor-arg ref="auditPolicyEvaluator"/>
         <property name="keystore" ref="defaultKey"/>
         <property name="auditLogListener" ref="auditLogListener"/>
     </bean>

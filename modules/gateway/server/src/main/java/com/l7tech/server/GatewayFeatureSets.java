@@ -91,6 +91,7 @@ public class GatewayFeatureSets {
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
     public static final String UI_DASHBOARD_WINDOW = "ui:DashboardWindow";
     public static final String UI_MANAGE_LOG_SINKS = "ui:ManageLogSinks";
+    public static final String UI_MANAGE_AUDIT_SINK = "ui:ManageAuditSink";
     public static final String UI_MANAGE_EMAIL_LISTENERS = "ui:ManageEmailListeners";
 
     public static final String FEATURE_SIGNED_ATTACHMENTS = "feature:SignedAttachments";
@@ -229,6 +230,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet uiRbacRoleEditor = ui(UI_RBAC_ROLE_EDITOR, "Enable the SSM RBAC Role Editor");
         GatewayFeatureSet uiDashboardWindow = ui(UI_DASHBOARD_WINDOW, "Enable the SSM Dashboard Window");
         GatewayFeatureSet uiLogSinksDialog = ui(UI_MANAGE_LOG_SINKS, "Enable the SSM Log Sinks Dialog");
+        GatewayFeatureSet uiAuditSinkDialog = ui(UI_MANAGE_AUDIT_SINK, "Enable the SSM Audit Sink Dialog");
         GatewayFeatureSet uiEmailListenersDialog = ui(UI_MANAGE_EMAIL_LISTENERS, "Enable the SSM Email Listeners Dialog");
 
         //
@@ -251,7 +253,8 @@ public class GatewayFeatureSets {
             uiAuditWindow,
             uiDashboardWindow,
             uiWsdlCreateWizard,
-            uiLogSinksDialog);
+            uiLogSinksDialog,
+            uiAuditSinkDialog);
 
         GatewayFeatureSet uiDs =
         fsr("set:UI:Datascreen", "SecureSpan Datascreen UI features",
@@ -419,6 +422,7 @@ public class GatewayFeatureSets {
             ass(AuditAssertion.class),
             ass(AuditDetailAssertion.class),
             ass(EmailAlertAssertion.class),
+            ass(AuditRecordToXmlAssertion.class),
             mass("assertion:MessageContext"));
 
         // Policy logic

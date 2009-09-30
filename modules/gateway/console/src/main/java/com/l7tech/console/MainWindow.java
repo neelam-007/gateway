@@ -161,6 +161,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private NewInternalUserAction newInernalUserAction;
     private AuditAlertOptionsAction manageAuditAlertsAction;
     private ManageLogSinksAction manageLogSinksAction = null;
+    private ManageAuditSinkAction manageAuditSinkAction = null;
     private ManageEmailListenersAction manageEmailListenersAction = null;
     private ConfigureFtpAuditArchiverAction configureFtpAuditArchiver = null;
 
@@ -687,6 +688,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageRolesMenuItem());
             menu.add(getManageAuditAlertOptionsMenuItem());
             menu.add(getManageLogSinksAction());
+            menu.add(getManageAuditSinkAction());
             menu.add(getManageEmailListenersAction());
             menu.add(getConfigureFtpAuditArchiverAction());
             menu.add(getManageTrustedEsmUsersAction());
@@ -1651,6 +1653,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageLogSinksAction;
     }
 
+    private Action getManageAuditSinkAction() {
+        if (manageAuditSinkAction != null)
+            return manageAuditSinkAction;
+
+        manageAuditSinkAction = new ManageAuditSinkAction();
+        disableUntilLogin(manageAuditSinkAction);
+        return manageAuditSinkAction;
+    }
+
     private Action getManageEmailListenersAction() {
         if (manageEmailListenersAction != null)
             return manageEmailListenersAction;
@@ -1928,6 +1939,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageClusterLicensesMenuItem());
             menu.add(getChangePasswordMenuItem(false));
             menu.add(getManageLogSinksAction());
+            menu.add(getManageAuditSinkAction());
             menu.add(getManageEmailListenersAction());
             menu.add(getConfigureFtpAuditArchiverAction());
             menu.add(getManageTrustedEsmUsersAction());

@@ -162,5 +162,6 @@
         <L7p:WsSecurity/>
         <L7p:RemoveElement/>
         <L7p:AddWssUsernameToken/>
+        <L7p:AuditRecordToXml/>
     </wsp:OneOrMore>
 </wsp:Policy>

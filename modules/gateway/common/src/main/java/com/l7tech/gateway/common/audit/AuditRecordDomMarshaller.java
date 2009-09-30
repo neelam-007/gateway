@@ -9,6 +9,7 @@ import org.w3c.dom.Text;
 
 import javax.xml.bind.MarshalException;
 import java.util.Set;
+import java.util.logging.Level;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 
@@ -37,7 +38,7 @@ public class AuditRecordDomMarshaller {
             MessageSummaryAuditRecord messageSummaryAuditRecord = (MessageSummaryAuditRecord) auditRecord;
             return marshallMessage(factory, messageSummaryAuditRecord);
         } else
-            throw new MarshalException("Unsupported audit recrod type");
+            throw new MarshalException("Unsupported audit record type");
     }
 
     private Element createElement(Document factory, String name) {
@@ -63,14 +64,16 @@ public class AuditRecordDomMarshaller {
         String message = rec.getMessage();
         long millis = rec.getMillis();
         String nodeId = rec.getNodeId();
-        String level = rec.getStrLvl();
+        Level level = rec.getLevel();
+        String levelStr = rec.getStrLvl();
         String requestId = rec.getStrRequestId();
         long sequenceNumber = rec.getSequenceNumber();
 
         e.setAttribute("id", rec.getId());
         e.setAttribute("name", rec.getName());
         e.setAttribute("sequenceNumber", Long.toString(sequenceNumber));
-        e.setAttribute("level", Integer.toString(rec.getLevel().intValue()));
+        e.setAttribute("level", Integer.toString(level.intValue()));
+        e.setAttribute("levelStr", levelStr);
 
         elm(e, "nodeId", nodeId);
         if (requestId != null && requestId.length() > 0)
@@ -150,7 +153,8 @@ public class AuditRecordDomMarshaller {
     }
 
     private Element marshallMessage(Document factory, MessageSummaryAuditRecord rec) {
-        Element e = createElement(factory, "messageSummary");
+        Element e = createElement(factory, "audit");
+        e.setAttribute("type", "message");
         addAuditRecordFields(e, rec);
         SecurityTokenType authenticationType = rec.getAuthenticationType();
         if (authenticationType != null)
@@ -167,7 +171,9 @@ public class AuditRecordDomMarshaller {
         }
         elm(e, "operationName", rec.getOperationName());
         elm(e, "requestContentLength", Integer.toString(rec.getRequestContentLength()));
+        elm(e, "requestSavedFlag", rec.getRequestXml() != null ? "true" : "false");
         elm(e, "responseContentLength", Integer.toString(rec.getResponseContentLength()));
+        elm(e, "responseSavedFlag", rec.getResponseXml() != null ? "true" : "false");
         elm(e, "responseHttpStatus", Integer.toString(rec.getResponseHttpStatus()));
         elm(e, "routingLatency", Integer.toString(rec.getRoutingLatency()));
         elm(e, "serviceOid", Long.toString(rec.getServiceOid()));
@@ -177,7 +183,8 @@ public class AuditRecordDomMarshaller {
     }
 
     private Element marshallSystem(Document factory, SystemAuditRecord rec) {
-        Element e = createElement(factory, "messageSummary");
+        Element e = createElement(factory, "audit");
+        e.setAttribute("type", "system");
         addAuditRecordFields(e, rec);
         e.setAttribute("action", rec.getAction());
         e.setAttribute("componentId", Integer.toString(rec.getComponentId()));
@@ -185,7 +192,8 @@ public class AuditRecordDomMarshaller {
     }
 
     private Element marshallAdmin(Document factory, AdminAuditRecord rec) {
-        Element e = createElement(factory, "messageSummary");
+        Element e = createElement(factory, "audit");
+        e.setAttribute("type", "admin");
         addAuditRecordFields(e, rec);
 
         char action = rec.getAction();

@@ -320,9 +320,9 @@ public class PolicyEnforcementContext extends ProcessingContext<AuthenticationCo
      */
     public void setVariable(String name, Object value) throws VariableNotSettableException {
         if (name == null) return;
-        if (BuiltinVariables.isSupported(name)) {
+        if (isBuiltinVariable(name)) {
             try {
-                ServerVariables.set(name, value, this);
+                setBuiltinVariable(name, value);
             } catch (NoSuchVariableException e) {
                 throw new RuntimeException("Variable '" + name + "' is supposedly supported, but doesn't exist", e);
             }
@@ -332,6 +332,18 @@ public class PolicyEnforcementContext extends ProcessingContext<AuthenticationCo
             }
             variables.put(name, value);
         }
+    }
+
+    protected boolean isBuiltinVariable(String name) {
+        return BuiltinVariables.isSupported(name);
+    }
+
+    protected void setBuiltinVariable(String name, Object value) throws NoSuchVariableException {
+        ServerVariables.set(name, value, this);
+    }
+
+    protected Object getBuiltinVariable(String name) throws NoSuchVariableException {
+        return ServerVariables.get(name, this);
     }
 
     /**
@@ -344,8 +356,8 @@ public class PolicyEnforcementContext extends ProcessingContext<AuthenticationCo
     public Object getVariable(String name) throws NoSuchVariableException {
         final Object value;
 
-        if (BuiltinVariables.isSupported(name)) {
-            value = ServerVariables.get(name, this);
+        if (isBuiltinVariable(name)) {
+            value = getBuiltinVariable(name);
         } else {
             value = variables.get(name);
         }
@@ -366,8 +378,8 @@ public class PolicyEnforcementContext extends ProcessingContext<AuthenticationCo
         String outName = inName;
         final Object value;
 
-        if (BuiltinVariables.isSupported(inName)) {
-            value = ServerVariables.get(inName, this);
+        if (isBuiltinVariable(inName)) {
+            value = getBuiltinVariable(inName);
         } else {
             String mname = Syntax.getMatchingName(inName, variables.keySet());
             if (mname != null) {

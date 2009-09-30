@@ -1,22 +1,30 @@
 package com.l7tech.policy;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import static com.l7tech.policy.assertion.AssertionMetadata.ASSERTION_FACTORY;
+import static com.l7tech.policy.assertion.AssertionMetadata.CLIENT_ASSERTION_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
+import static com.l7tech.policy.assertion.AssertionMetadata.SERVER_ASSERTION_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.USED_BY_CLIENT;
+import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE;
+import com.l7tech.policy.assertion.AuditRecordToXmlAssertion;
 import static com.l7tech.policy.assertion.DefaultAssertionMetadata.*;
+import com.l7tech.policy.assertion.MetadataFinder;
+import com.l7tech.policy.wsp.*;
 import com.l7tech.util.ClassUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.MetadataFinder;
-import com.l7tech.policy.wsp.*;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -25,7 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.lang.reflect.Type;
 
 /**
  * An AssertionRegistry keeps track of a set of Assertion classes, each represented by a single prototype
@@ -59,6 +66,9 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         // Pre-populate with hardcoded assertions
         for (Assertion assertion : AllAssertions.SERIALIZABLE_EVERYTHING)
             registerAssertion(assertion.getClass());
+
+        // TODO do not commit this
+        registerAssertion(AuditRecordToXmlAssertion.class);
 
         onApplicationContextSet();
     }

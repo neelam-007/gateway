@@ -290,5 +290,8 @@
         <L7p:AddWssUsernameToken>
             <L7p:Enabled booleanValue="false"/>
         </L7p:AddWssUsernameToken>
+        <L7p:AuditRecordToXml>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:AuditRecordToXml>
     </wsp:OneOrMore>
 </wsp:Policy>
