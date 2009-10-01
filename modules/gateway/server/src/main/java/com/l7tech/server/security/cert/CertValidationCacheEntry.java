@@ -4,6 +4,7 @@
 package com.l7tech.server.security.cert;
 
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.common.io.CertUtils;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -25,10 +26,12 @@ class CertValidationCacheEntry {
         this.cert = tce.getCertificate();
         this.subjectDn = tce.getSubjectDn();
         this.ski = tce.getSki();
-        this.issuerDn = this.cert.getIssuerDN().toString();
+        this.issuerDn = CertUtils.getIssuerDN( cert );
         this.serial = this.cert.getSerialNumber();
     }
 
+    @SuppressWarnings({ "RedundantIfStatement" })
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -40,6 +43,7 @@ class CertValidationCacheEntry {
         return true;
     }
 
+    @Override
     public int hashCode() {
         return (tce != null ? tce.hashCode() : 0);
     }

@@ -37,7 +37,7 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,Entity
         List<TrustedCert> tcs = new ArrayList<TrustedCert>();
         for (TrustedCert trustedCert : entities.values()) {
             X509Certificate cert = trustedCert.getCertificate();
-            if (cert.getIssuerDN().equals(issuer) && cert.getSerialNumber().equals(serial)) tcs.add(trustedCert);
+            if (cert.getIssuerX500Principal().equals(issuer) && cert.getSerialNumber().equals(serial)) tcs.add(trustedCert);
         }
         return tcs;
     }

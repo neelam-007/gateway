@@ -22,6 +22,7 @@ import com.l7tech.server.identity.PersistentIdentityProviderImpl;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.common.io.CertUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -118,7 +119,7 @@ public class FederatedIdentityProviderImpl
 
     private void checkSignedByRecognizedTrustedCert(X509Certificate[] clientCertChain) throws FindException, ClientCertManager.VetoSave {
         final X509Certificate clientCert = clientCertChain[0];
-        String issuerDn = clientCert.getIssuerDN().getName();
+        String issuerDn = CertUtils.getIssuerDN( clientCert );
         Collection<TrustedCert> trustedCerts = trustedCertServices.getCertsBySubjectDnFiltered(issuerDn, true, EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS), null);
         for (TrustedCert trustedCert : trustedCerts) {
             try {

@@ -13,7 +13,6 @@ import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.util.ServerCertUtils;
-import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.whirlycott.cache.Cache;
@@ -54,8 +53,8 @@ public class RevocationCheckerFactory {
         // initialize maps and map lock
         // use Whirlycache for checkers by cert as this could be large
         this.mapLock = new ReentrantReadWriteLock();
-        this.keysByTrustedCertOid = new HashMap();
-        this.keysByRevocationCheckPolicyOid = new HashMap();
+        this.keysByTrustedCertOid = new HashMap<Long,Set<CertKey>>();
+        this.keysByRevocationCheckPolicyOid = new HashMap<Long,Set<CertKey>>();
         this.checkersByCert =
                 WhirlycacheFactory.createCache("RevocationPolicyCache", 1000, 66, WhirlycacheFactory.POLICY_LRU);
     }
@@ -140,6 +139,7 @@ public class RevocationCheckerFactory {
         invalidateForProvider(
                 trustedCertOid,
                 new Functions.Unary<X509Certificate, Long>() {
+                    @Override
                     public X509Certificate call(Long oid) {
                         final TrustedCert cert = certValidationProcessor.getTrustedCertByOid(oid);
                         return cert == null ? null : cert.getCertificate();
@@ -165,12 +165,11 @@ public class RevocationCheckerFactory {
      * Add info to the map, caller is responsible for getting a write lock
      */
     private void addChecker(Map<Long,Set<CertKey>> keysByoid, long oid, CompositeRevocationChecker checker) {
-        Long longOid = Long.valueOf(oid);
-        Set<CertKey> keySet = keysByoid.get(longOid);
+        Set<CertKey> keySet = keysByoid.get(oid);
 
         if (keySet == null) {
-            keySet = new HashSet();
-            keysByoid.put(longOid, keySet);
+            keySet = new HashSet<CertKey>();
+            keysByoid.put(oid, keySet);
         }
 
         keySet.add(checker.key);
@@ -183,20 +182,20 @@ public class RevocationCheckerFactory {
      * we already have a cached revocation checker for the certificate .
      */
     private void invalidateForProvider(long oid, Functions.Unary<X509Certificate, Long> certGetter, Map<Long,Set<CertKey>> keysForProvider) {
-        Set<Long> providerMappingsToPurge = new HashSet();
-        Set<CertKey> certKeysToPurge = new HashSet();
+        Set<Long> providerMappingsToPurge = new HashSet<Long>();
+        Set<CertKey> certKeysToPurge = new HashSet<CertKey>();
 
         // find checker for trusted cert
         Set<CertKey> keys = null;
         mapLock.readLock().lock();
         try {
-            keys = keysForProvider.get(Long.valueOf(oid));
+            keys = keysForProvider.get(oid);
         } finally {
             mapLock.readLock().unlock();
         }
 
         if (keys != null) { // invalidate for update / delete
-            providerMappingsToPurge.add(Long.valueOf(oid));
+            providerMappingsToPurge.add(oid);
             certKeysToPurge.addAll(keys);
         } else if (certGetter != null) { // invalidate for new or unused
             try {
@@ -230,7 +229,7 @@ public class RevocationCheckerFactory {
      * Load the certificates for the given list of trusted cert oids
      */
     private X509Certificate[] loadCerts(List<Long> tcOids) throws FindException, CertificateException {
-        List<X509Certificate> certs = new ArrayList();
+        List<X509Certificate> certs = new ArrayList<X509Certificate>();
 
         for (Long oid : tcOids) {
             TrustedCert tc = certValidationProcessor.getTrustedCertByOid(oid);
@@ -249,7 +248,7 @@ public class RevocationCheckerFactory {
                                                     final RevocationCheckPolicy rcp) throws FindException, CertificateException {
         CertificateValidationResult resultForUnknown = CertificateValidationResult.REVOKED;
         CertificateValidationResult resultForNetworkFailure = CertificateValidationResult.REVOKED;
-        List<RevocationChecker> revocationCheckers = new ArrayList();
+        List<RevocationChecker> revocationCheckers = new ArrayList<RevocationChecker>();
 
         if (rcp != null) {
             if (rcp.isDefaultSuccess())
@@ -305,14 +304,17 @@ public class RevocationCheckerFactory {
             this.hashCode =  Arrays.hashCode(certificate.getEncoded());
         }
 
+        @Override
         public boolean equals(Object obj) {
-            return CertUtils.certsAreEqual(certificate, ((CertKey)obj).certificate);
+            return obj instanceof CertKey && CertUtils.certsAreEqual( certificate, ( (CertKey) obj ).certificate );
         }
 
+        @Override
         public int hashCode() {
             return hashCode;
         }
 
+        @Override
         public String toString() {
             return "CertKey[dn='"+certificate.getSubjectDN().toString()+"']";
         }
@@ -339,6 +341,7 @@ public class RevocationCheckerFactory {
             this.revocationCheckers = Collections.unmodifiableList(revocationCheckers);
         }
 
+        @Override
         public CertificateValidationResult getRevocationStatus(final X509Certificate certificate, X509Certificate issuer, Auditor auditor, CertificateValidationResult onNetworkFailure) {
             CertificateValidationResult result = CertificateValidationResult.REVOKED;
 
@@ -459,7 +462,7 @@ public class RevocationCheckerFactory {
 
                     // is this the issuer?
                     if ( issuer.getSerialNumber().equals(signerCert.getSerialNumber()) &&
-                         issuer.getIssuerDN().getName().equals(signerCert.getIssuerDN().getName())) {
+                         CertUtils.getIssuerDN(issuer).equals(CertUtils.getIssuerDN(signerCert))) {
                         if ( allowIssuerSignature ) {
                             signer = issuer;
                             auditor.logAndAudit(SystemMessages.CERTVAL_REV_SIGNER_IS_ISSUER, what(), signer.getSubjectDN().toString());
@@ -475,7 +478,7 @@ public class RevocationCheckerFactory {
                         }
 
                         if ( trustedSigner.getSerialNumber().equals(signerCert.getSerialNumber()) &&
-                             trustedSigner.getIssuerDN().getName().equals(signerCert.getIssuerDN().getName())) {
+                             CertUtils.getIssuerDN(trustedSigner).equals(CertUtils.getIssuerDN(signerCert))) {
                             signer = trustedSigner;
                             auditor.logAndAudit(SystemMessages.CERTVAL_REV_SIGNER_IS_TRUSTED, what(), signer.getSubjectDN().toString());                            
                             break;
@@ -565,6 +568,7 @@ public class RevocationCheckerFactory {
             this.crlCache = crlCache;
         }
 
+        @Override
         public CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuerCertificate, Auditor auditor, CertificateValidationResult onNetworkFailure) {
             final String crlUrl = getValidUrl(certificate, auditor);
             if (crlUrl == null) {
@@ -572,7 +576,7 @@ public class RevocationCheckerFactory {
                 return CertificateValidationResult.UNKNOWN;
             }
             try {
-                X509CRL crl = null;
+                X509CRL crl;
                 try {
                     //attempt to grab the CRL
                     crl = crlCache.getCrl(crlUrl, auditor);
@@ -584,7 +588,7 @@ public class RevocationCheckerFactory {
                     return onNetworkFailure;
                 }
 
-                final String crlIssuerDn = crl.getIssuerDN().getName();
+                final String crlIssuerDn = crl.getIssuerX500Principal().getName();
 
                 // Check certificate scope
                 // Extend this check if we want to add support for the Issuing Distribution Point extension.
@@ -660,10 +664,12 @@ public class RevocationCheckerFactory {
             }
         }
 
+        @Override
         protected String what() {
             return "CRL";
         }
 
+        @Override
         protected String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException {
             return crlCache.getCrlUrlsFromCertificate(certificate, auditor);
         }
@@ -697,6 +703,7 @@ public class RevocationCheckerFactory {
             this.ocspCache = ocspCache;
         }
 
+        @Override
         protected String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException {
             try {
                 return ServerCertUtils.getAuthorityInformationAccessUris(certificate, OID_AIA_OCSP);
@@ -705,10 +712,12 @@ public class RevocationCheckerFactory {
             }
         }
 
+        @Override
         protected String what() {
             return "OCSP";
         }
 
+        @Override
         public CertificateValidationResult getRevocationStatus(final X509Certificate certificate,
                                                                final X509Certificate issuerCertificate,
                                                                final Auditor auditor,
@@ -727,12 +736,14 @@ public class RevocationCheckerFactory {
                      *
                      * This will pass in a callback to check for a "delegated" OCSP responder certificate.
                      */
+                    @Override
                     public X509Certificate getAuthorizedSigner(final OCSPClient ocsp, final X509Certificate[] certificates) {
                         return OCSPRevocationChecker.this.getAuthorizedSigner(issuerCertificate, certificates, auditor, new Functions.Unary<Boolean,X509Certificate>(){
                             /**
                              * Callback that checks if the given certificate is allowed by the issuer and
                              * performs a revocation check on the certificate if needed.
                              */
+                            @Override
                             public Boolean call(final X509Certificate x509Certificate) {
                                 Boolean isPermittedSigner = Boolean.FALSE;
                                 try {
@@ -811,7 +822,8 @@ public class RevocationCheckerFactory {
         private RevokedChecker() {
             super(null, null, null, null);
         }
-        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuer, Auditor auditor) {
+        @Override
+        public CertificateValidationResult getRevocationStatus( final X509Certificate certificate, final X509Certificate issuer, final Auditor auditor, final CertificateValidationResult onNetworkFailure ) {
             return CertificateValidationResult.REVOKED;
         }
     }

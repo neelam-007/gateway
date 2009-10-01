@@ -32,7 +32,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
     @Override
     @Transactional(readOnly=true)
     public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
-        String issuerDn = serverCertChain[0].getIssuerDN().getName();
+        String issuerDn = CertUtils.getIssuerDN(serverCertChain[0]);
         try {
             // Check if this cert is trusted as-is
             if (isTrustedAsIs(serverCertChain))
@@ -71,7 +71,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
         Collection<TrustedCert> caTrusts = getCertsBySubjectDnFiltered(issuerDn, true, EnumSet.of(TrustedCert.TrustedFor.SIGNING_SERVER_CERTS), null);
 
         if (caTrusts.isEmpty()) {
-            String subjectDn = serverCertChain[0].getSubjectDN().getName();
+            String subjectDn = CertUtils.getSubjectDN(serverCertChain[0]);
             if ( trustedCertCache.findBySubjectDn(subjectDn).isEmpty() ) {
                 throw new TrustedCertManager.UnknownCertificateException("Couldn't find CA cert with DN '" + issuerDn + "'");
             } else {
@@ -90,7 +90,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
 
     private boolean isTrustedAsIs(X509Certificate[] serverCertChain) throws CertificateException {
         try {
-            String subjectDn = serverCertChain[0].getSubjectDN().getName();
+            String subjectDn = CertUtils.getSubjectDN(serverCertChain[0]);
             Collection<TrustedCert> selfTrusts = getCertsBySubjectDnFiltered(subjectDn, true, EnumSet.of(TrustedCert.TrustedFor.SSL), null);
             for (TrustedCert selfTrust : selfTrusts) {
                 final X509Certificate selfTrustCert = selfTrust.getCertificate();

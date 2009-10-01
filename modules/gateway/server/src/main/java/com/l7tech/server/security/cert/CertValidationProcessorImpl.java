@@ -61,11 +61,11 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     // lock and locked items
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Map<String, CertValidationCacheEntry> trustedCertsBySKI;
-    private final Map<String, CertValidationCacheEntry> trustedCertsByDn;
+    private final Map<String, CertValidationCacheEntry> trustedCertsByDn; // DN strings in RFC2253 format
     private final Map<IDNSerialKey, CertValidationCacheEntry> trustedCertsByIssuerDnAndSerial;
     private final Map<Long, CertValidationCacheEntry> trustedCertsByOid;
     private final Map<Long, RevocationCheckPolicy> revocationPoliciesByOid;
-    private Map<String, TrustAnchor> trustAnchorsByDn;
+    private Map<String, TrustAnchor> trustAnchorsByDn;  // DN strings in RFC2253 format
     private CertStore certStore;
     private boolean cacheIsDirty = false;
     private RevocationCheckPolicy currentDefaultRevocationPolicy;
@@ -85,11 +85,11 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         this.permissiveRcp.setDefaultSuccess(true);
         this.serverConfig = serverConfig;
 
-        Map<String, CertValidationCacheEntry> myDnCache = new HashMap();
-        Map<IDNSerialKey, CertValidationCacheEntry> myIssuerDnCache = new HashMap();
-        Map<Long, CertValidationCacheEntry> myOidCache = new HashMap();
-        Map<String, CertValidationCacheEntry> mySkiCache = new HashMap();
-        Map<Long, RevocationCheckPolicy> myRCPByIdCache = new HashMap();
+        Map<String, CertValidationCacheEntry> myDnCache = new HashMap<String, CertValidationCacheEntry>();
+        Map<IDNSerialKey, CertValidationCacheEntry> myIssuerDnCache = new HashMap<IDNSerialKey, CertValidationCacheEntry>();
+        Map<Long, CertValidationCacheEntry> myOidCache = new HashMap<Long, CertValidationCacheEntry>();
+        Map<String, CertValidationCacheEntry> mySkiCache = new HashMap<String, CertValidationCacheEntry>();
+        Map<Long, RevocationCheckPolicy> myRCPByIdCache = new HashMap<Long, RevocationCheckPolicy>();
 
         populateCaches(myDnCache, myIssuerDnCache, myOidCache, mySkiCache, myRCPByIdCache);
 
@@ -103,6 +103,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     /**
      * 
      */
+    @Override
     public CertificateValidationResult check(final X509Certificate[] endEntityCertificatePath,
                                              final CertificateValidationType minValType,
                                              final CertificateValidationType requestedValType,
@@ -136,10 +137,10 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             valType = getAcceptedValidationLevel(requestedValType, minValType);
         }
 
-        String subjectDn = endEntityCertificate.getSubjectDN().getName();
+        String subjectDnForLoggingOnly = endEntityCertificate.getSubjectDN().getName();
 
         if (valType == CERTIFICATE_ONLY)
-            return checkCertificateOnly(endEntityCertificate, subjectDn, auditor);
+            return checkCertificateOnly(endEntityCertificate, subjectDnForLoggingOnly, auditor);
 
         // Time to build a path
         final PKIXBuilderParameters pbp = makePKIXBuilderParameters(endEntityCertificatePath,
@@ -152,11 +153,11 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             return OK;
         } catch (CertPathBuilderException e) {
             if (ExceptionUtils.causedBy(e, CertificateExpiredException.class)) {
-                auditor.logAndAudit(SystemMessages.CERTVAL_CERT_EXPIRED, subjectDn);
+                auditor.logAndAudit(SystemMessages.CERTVAL_CERT_EXPIRED, subjectDnForLoggingOnly);
             } else if (ExceptionUtils.causedBy(e, CertificateNotYetValidException.class)) {
-                auditor.logAndAudit(SystemMessages.CERTVAL_CERT_NOT_YET_VALID, subjectDn);
+                auditor.logAndAudit(SystemMessages.CERTVAL_CERT_NOT_YET_VALID, subjectDnForLoggingOnly);
             } else {
-                auditor.logAndAudit(SystemMessages.CERTVAL_CANT_BUILD_PATH, new String[] { subjectDn, ExceptionUtils.getMessage(e) }, e.getCause());
+                auditor.logAndAudit(SystemMessages.CERTVAL_CANT_BUILD_PATH, new String[] { subjectDnForLoggingOnly, ExceptionUtils.getMessage(e) }, e.getCause());
             }
             return CertificateValidationResult.CANT_BUILD_PATH;
         } catch (InvalidAlgorithmParameterException e) {
@@ -166,6 +167,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
+    @Override
     public void afterPropertiesSet() {
         if ( revocationCheckerFactory!=null )
             throw new IllegalStateException("already initialized");
@@ -199,7 +201,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
      * performed by the caller as part of their authentication check.
      */
     private CertificateValidationResult checkCertificateOnly(final X509Certificate endEntityCertificate,
-                                                             final String subjectDn,
+                                                             final String subjectDnForLoggingOnly,
                                                              final Auditor auditor)
             throws SignatureException, CertificateException
     {
@@ -208,10 +210,10 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         try {
             endEntityCertificate.checkValidity();
         } catch (CertificateExpiredException cee) {
-            auditor.logAndAudit(SystemMessages.CERTVAL_CERT_EXPIRED, subjectDn);
+            auditor.logAndAudit(SystemMessages.CERTVAL_CERT_EXPIRED, subjectDnForLoggingOnly);
             throw cee;
         } catch (CertificateNotYetValidException cnyve) {
-            auditor.logAndAudit(SystemMessages.CERTVAL_CERT_NOT_YET_VALID, subjectDn);
+            auditor.logAndAudit(SystemMessages.CERTVAL_CERT_NOT_YET_VALID, subjectDnForLoggingOnly);
             throw cnyve;
         }
 
@@ -219,6 +221,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         return CertificateValidationResult.OK;
     }
 
+    @Override
     public TrustedCert getTrustedCertByOid(long oid) {
         lock.readLock().lock();
         try {
@@ -244,6 +247,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
      * @param subjectDn The Subject DN
      * @return The certificate or null if not found.
      */
+    @Override
     public X509Certificate getCertificateBySubjectDn(String subjectDn) {
         lock.readLock().lock();
         try {
@@ -275,6 +279,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
      * @param serial The serial number
      * @return The certificate or null if not found.
      */
+    @Override
     public X509Certificate getCertificateByIssuerDnAndSerial(String issuerDn, BigInteger serial) {
         lock.readLock().lock();
         try {
@@ -309,6 +314,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
      * @param base64SKI The Subject Key Identifier (from cert extension or generated)
      * @return The certificate or null if not found.
      */
+    @Override
     public X509Certificate getCertificateBySKI(String base64SKI) {
         lock.readLock().lock();
         try {
@@ -331,10 +337,11 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
+    @Override
     public TrustedCert getTrustedCertEntry(X509Certificate certificate) {
         lock.readLock().lock();
         try {
-            final String subjectDn = certificate.getSubjectDN().getName();
+            final String subjectDn = CertUtils.getSubjectDN(certificate);
             final CertValidationCacheEntry entry = trustedCertsByDn.get(subjectDn);
             if (entry == null) return null;
             if (CertUtils.certsAreEqual(certificate, entry.cert)) return entry.tce;
@@ -344,6 +351,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
+    @Override
     public RevocationCheckPolicy getRevocationCheckPolicy(TrustedCert trustedCert) {
         switch(trustedCert.getRevocationCheckPolicyType()) {
             case NONE:
@@ -367,6 +375,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
+    @Override
     public RevocationCheckPolicy getDefaultPolicy() {
         lock.readLock().lock();
         try {
@@ -403,6 +412,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         if (PROP_USE_DEFAULT_ANCHORS.equals(event.getPropertyName())) {
             lock.writeLock().lock();
@@ -421,6 +431,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof EntityInvalidationEvent) {
             boolean isDirty = false;
@@ -593,7 +604,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
         SignerInfo caInfo = defaultKey.getCaInfo();
         if (caInfo != null)
-            anchors.put(caInfo.getCertificate().getSubjectDN().getName(), new TrustAnchor(caInfo.getCertificate(), null));
+            anchors.put(CertUtils.getSubjectDN( caInfo.getCertificate()), new TrustAnchor(caInfo.getCertificate(), null));
 
         if ( includeDefaults ) {
             TrustManagerFactory tmf;
@@ -618,7 +629,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             if (x509tm == null) throw new IllegalStateException("Couldn't find an X509TrustManager");
             X509Certificate[] extraAnchors = x509tm.getAcceptedIssuers();
             for (X509Certificate certificate : extraAnchors) {
-                anchors.put(certificate.getSubjectDN().getName(), new TrustAnchor(certificate, null));
+                anchors.put(CertUtils.getSubjectDN(certificate), new TrustAnchor(certificate, null));
             }
         }
 
@@ -748,7 +759,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
         boolean matches(X509Certificate certificate) {
             boolean match = false;
-            String issuerDn = certificate.getIssuerDN().toString();
+            String issuerDn = CertUtils.getIssuerDN( certificate );
             BigInteger serial = certificate.getSerialNumber();
 
             if ( issuerDn != null && serial != null) {
@@ -761,6 +772,8 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             return match;
         }
 
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -773,6 +786,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             return true;
         }
 
+        @Override
         public int hashCode() {
             int result;
             result = issuerDn.hashCode();

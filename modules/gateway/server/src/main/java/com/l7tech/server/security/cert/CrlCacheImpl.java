@@ -33,6 +33,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.math.BigInteger;
 
 import org.springframework.beans.factory.DisposableBean;
 
@@ -353,15 +354,20 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
     }
 
     private String[] getCachedCrlUrls(final X509Certificate subjectCert) throws IOException {
-        final String subjectDn = subjectCert.getSubjectDN().getName();
+        final CrlUrlCacheKey key = new CrlUrlCacheKey(subjectCert);
         //noinspection unchecked
-        String[] urls = (String[]) certCache.retrieve(subjectDn);
+        String[] urls = (String[]) certCache.retrieve(key);
 
         if (urls == null) {
             urls = ServerCertUtils.getCrlUrls(subjectCert);
-            certCache.store(subjectDn, urls);
+            certCache.store(key, urls);
         }
         return urls;
     }
 
+    private final static class CrlUrlCacheKey extends Pair<String,BigInteger> {
+        private CrlUrlCacheKey( final X509Certificate certificate ) {
+            super( CertUtils.getIssuerDN( certificate ), certificate.getSerialNumber());
+        }
+    }
 }

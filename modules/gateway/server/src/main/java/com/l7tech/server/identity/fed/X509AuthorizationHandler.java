@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.identity.fed;
@@ -31,7 +29,6 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
  */
 class X509AuthorizationHandler extends FederatedAuthorizationHandler {
     private static final boolean ALLOW_SELF_SIGNED_TRUSTED_CERT = SyspropUtil.getBoolean(X509AuthorizationHandler.class.getName()+".allowSelfSigned", false); 
@@ -57,8 +54,8 @@ class X509AuthorizationHandler extends FederatedAuthorizationHandler {
             logger.info("Can only authorize credentials that include a certificate");
             return null;
         }
-        String subjectDn = requestCert.getSubjectDN().getName();
-        String issuerDn = requestCert.getIssuerDN().getName();
+        String subjectDn = CertUtils.getSubjectDN( requestCert );
+        String issuerDn = CertUtils.getIssuerDN( requestCert );
 
         if ( !certOidSet.isEmpty() ) {
             // There could be no trusted certs--this means that specific client certs

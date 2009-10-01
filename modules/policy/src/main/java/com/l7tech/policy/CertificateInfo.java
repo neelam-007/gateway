@@ -1,5 +1,7 @@
 package com.l7tech.policy;
 
+import com.l7tech.common.io.CertUtils;
+
 import java.security.cert.X509Certificate;
 import java.math.BigInteger;
 
@@ -16,9 +18,9 @@ public class CertificateInfo {
     }
 
     public CertificateInfo( final X509Certificate certificate ) {
-        issuerDn = certificate.getIssuerDN().getName();
+        issuerDn = CertUtils.getIssuerDN( certificate );
         serialNumber = certificate.getSerialNumber();
-        subjectDn = certificate.getSubjectDN().getName();
+        subjectDn = CertUtils.getSubjectDN( certificate );
     }
 
     public String getIssuerDn() {
@@ -43,6 +45,15 @@ public class CertificateInfo {
 
     public void setSubjectDn( String subjectDn ) {
         this.subjectDn = subjectDn;
+    }
+
+    public boolean matches( final X509Certificate certificate ) {
+        return getSubjectDn() != null &&
+               getIssuerDn() != null &&
+               getSerialNumber() !=null &&
+               CertUtils.formatDN( getSubjectDn() ).equals( CertUtils.getSubjectDN( certificate ) ) &&
+               CertUtils.formatDN( getIssuerDn() ).equals( CertUtils.getIssuerDN( certificate ) ) &&
+               getSerialNumber().equals( certificate.getSerialNumber() );
     }
 
     @SuppressWarnings({"RedundantIfStatement"})

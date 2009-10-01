@@ -48,6 +48,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
      * @param unresolvedCritExts ignored
      * @throws CertPathValidatorException if the certificate is revoked (or status cannot be determined)
      */
+    @Override
     public void check(final Certificate certificate, final Collection<String> unresolvedCritExts) throws CertPathValidatorException {
         if ( !(certificate instanceof X509Certificate))
             throw new CertPathValidatorException("Only X.509 certificates are supported.");
@@ -70,7 +71,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
         if (issuerCertificate == null) {
             for (TrustAnchor anchor : trustAnchors) {
                 X509Certificate trustAnchorCertificate = anchor.getTrustedCert();
-                if ( trustAnchorCertificate.getSubjectDN().equals(x509Certificate.getIssuerDN()) ) {
+                if ( CertUtils.getSubjectDN(trustAnchorCertificate).equals(CertUtils.getIssuerDN(x509Certificate)) ) {
                     issuerCertificate = trustAnchorCertificate;
                     break;
                 }
@@ -97,6 +98,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
      *
      * @return An empty set.
      */
+    @Override
     public Set<String> getSupportedExtensions() {
         return Collections.emptySet();
     }
@@ -107,6 +109,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
      * @param forward Must be false (forward checking not supported)
      * @throws CertPathValidatorException If you try to use forward checking
      */
+    @Override
     public void init(final boolean forward) throws CertPathValidatorException {
         if ( forward )
             throw new CertPathValidatorException("Forward checking not supported");
@@ -120,6 +123,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
      *
      * @return false
      */
+    @Override
     public boolean isForwardCheckingSupported() {
         return false;
     }

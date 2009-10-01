@@ -127,7 +127,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
     @Override
     public Collection<TrustedCert> findCertsBySubjectDn(final String dn) throws FindException {
-        return getManager().findBySubjectDn(dn);
+        return getManager().findBySubjectDn( CertUtils.formatDN(dn) );
     }
 
     @Override

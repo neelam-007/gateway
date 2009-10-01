@@ -122,7 +122,7 @@ public class KeyInfoElement implements ParsedElement {
                     if (keyName == null || keyName.length() < 1)
                         throw new SAXException("KeyInfo contains KeyName but it is empty");
                     // Use KeyName
-                    gotCert = securityTokenResolver.lookupByKeyName(keyName);
+                    gotCert = securityTokenResolver.lookupByKeyName(CertUtils.formatDN(keyName));
                     if (gotCert == null) throw new SAXException("KeyInfo KeyName did not match any X.509 certificate known to this recipient");
                 }
 

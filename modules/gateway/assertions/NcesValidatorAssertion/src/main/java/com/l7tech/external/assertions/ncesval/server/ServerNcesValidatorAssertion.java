@@ -247,7 +247,7 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         }
 
         // Ensure trusted / unrevoked issuer
-        String issuerDn = cert.getIssuerDN().getName();
+        String issuerDn = CertUtils.getIssuerDN( cert );
         try {
             // Determine if certificate or issuer is trusted
             X509Certificate trustedIssuerCert = null;
@@ -299,11 +299,7 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         boolean trusted = false;
 
         for ( CertificateInfo info : certificateInfos ) {
-            if ( info != null && info.getSubjectDn() != null &&
-                 info.getIssuerDn() != null && info.getSerialNumber() !=null &&
-                 info.getSubjectDn().equals( certificate.getSubjectDN().getName() ) &&
-                 info.getIssuerDn().equals( certificate.getIssuerDN().getName() ) &&
-                 info.getSerialNumber().equals( certificate.getSerialNumber() )) {
+            if ( info != null && info.matches(certificate) ) {
                 trusted = true;
                 break;
             }

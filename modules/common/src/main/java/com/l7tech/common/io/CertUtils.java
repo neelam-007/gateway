@@ -490,6 +490,44 @@ public class CertUtils {
         return HexUtils.encodeBase64(skiBytes);
     }
 
+    /**
+     * Get the Subject DN in standard format for the certificate.
+     *
+     * @param cert The certificate
+     * @return The Subject DN in RFC 2253 format
+     */
+    public static String getSubjectDN( final X509Certificate cert ) {
+        return cert.getSubjectX500Principal().getName();
+    }
+
+    /**
+     * Get the Issuer DN in standard format for the certificate.
+     *
+     * @param cert The certificate
+     * @return The Issuer DN in RFC 2253 format
+     */
+    public static String getIssuerDN( final X509Certificate cert ) {
+        return cert.getIssuerX500Principal().getName();
+    }
+
+    /**
+     * Format a DN in standard format.
+     *
+     * <p>If the given DN is not valid then it is returned unformatted.</p>
+     *
+     * @param dn The DN to format.
+     * @return The DN in RFC 2253 format
+     */
+    public static String formatDN( final String dn ) {
+        String formattedDN = dn;
+        try {
+            formattedDN = new X500Principal(dn).getName();
+        } catch ( IllegalArgumentException iae ) {
+            // don't format            
+        }
+        return formattedDN;
+    }
+
     public static String getCn(X509Certificate cert) {
         Map dnMap = dnToAttributeMap(cert.getSubjectDN().getName());
         List cnValues = (List)dnMap.get("CN");

@@ -9,6 +9,7 @@ package com.l7tech.security.xml;
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
@@ -206,7 +207,7 @@ public class DsigUtil {
             KeyInfo keyInfo = new KeyInfo(keyInfoElement);
             String[] keyNames = keyInfo.getKeyNames();
             if (keyNames != null && keyNames.length > 0) {
-                cert = securityTokenResolver.lookupByKeyName(keyNames[0]);
+                cert = securityTokenResolver.lookupByKeyName( CertUtils.formatDN(keyNames[0]) );
             }
 
             if (cert == null)

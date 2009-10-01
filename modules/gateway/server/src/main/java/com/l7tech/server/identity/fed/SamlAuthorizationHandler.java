@@ -56,8 +56,8 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         String certIssuerDn = null;
         final X509Certificate subjectCertificate = assertion.getSubjectCertificate();
         if (subjectCertificate != null) {
-            certSubjectDn = subjectCertificate.getSubjectDN().getName();
-            certIssuerDn = subjectCertificate.getIssuerDN().getName();
+            certSubjectDn = CertUtils.getSubjectDN( subjectCertificate );
+            certIssuerDn = CertUtils.getIssuerDN( subjectCertificate );
         }
 
         final X509Certificate signerCertificate = assertion.getIssuerCertificate();
@@ -66,7 +66,7 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             throw new BadCredentialsException(assertionUnsigned);
         }
 
-        String samlSignerDn = signerCertificate.getSubjectDN().getName();
+        String samlSignerDn = CertUtils.getSubjectDN( signerCertificate );
 
         // check if the SAML Assertion signer is trusted
         checkSamlAssertionSignerTrusted(signerCertificate, samlSignerDn);
@@ -175,7 +175,7 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
 
     private void checkAttestingEntityTrusted(X509Certificate attestingEntityCertificate) throws AuthenticationException {
         try {
-            String attestingEntityDN = attestingEntityCertificate.getSubjectDN().getName();
+            String attestingEntityDN = CertUtils.getSubjectDN(attestingEntityCertificate);
             Collection<TrustedCert> attestingEntityCertificateTrusts = trustedCertServices.getCertsBySubjectDnFiltered(attestingEntityDN, true, EnumSet.of(TrustedCert.TrustedFor.SAML_ATTESTING_ENTITY), certOidSet);
             for (TrustedCert certificateTrust : attestingEntityCertificateTrusts) {
                 if (CertUtils.certsAreEqual(attestingEntityCertificate, certificateTrust.getCertificate()))

@@ -95,7 +95,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
     }
 
     private boolean isCertSignerTrustedWithoutHostnameVerification(X509Certificate certificate) throws FindException {
-        String issuerDn = certificate.getIssuerDN().getName();
+        String issuerDn = CertUtils.getIssuerDN(certificate);
         Collection<TrustedCert> trustedSignerCert = trustedCertServices.getCertsBySubjectDnFiltered(issuerDn, false, null, null);
         for (TrustedCert trustedCert : trustedSignerCert) {
             if (!trustedCert.isVerifyHostname() && isCertSignedByIssuer(certificate, trustedCert))
@@ -115,7 +115,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
     }
 
     private boolean isCertDirectlyTrustedWithoutHostnameVerification(X509Certificate certificate) throws FindException, CertificateException {
-        String subjectDn = certificate.getSubjectDN().getName();
+        String subjectDn = CertUtils.getSubjectDN(certificate);
         Collection<TrustedCert> trustedCerts = trustedCertServices.getCertsBySubjectDnFiltered(subjectDn, false, null, null);
         for (TrustedCert trustedCert : trustedCerts) {
             if (!trustedCert.isVerifyHostname() && CertUtils.certsAreEqual(trustedCert.getCertificate(), certificate))

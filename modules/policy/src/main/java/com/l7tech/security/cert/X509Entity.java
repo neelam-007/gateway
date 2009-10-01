@@ -98,8 +98,8 @@ public abstract class X509Entity extends PersistentEntityImp {
         BigInteger serial = null;
         try {
             if (cert != null) {
-                subjectDn = cert.getSubjectDN().toString();
-                issuerDn = cert.getIssuerDN().toString();
+                subjectDn = CertUtils.getSubjectDN(cert);
+                issuerDn = CertUtils.getIssuerDN(cert);
                 ski = CertUtils.getSki(cert);
                 thumbprintSha1 = CertUtils.getCertificateFingerprint(cert, CertUtils.ALG_SHA1, CertUtils.FINGERPRINT_BASE64);
                 serial = cert.getSerialNumber();
