@@ -511,8 +511,8 @@ public abstract class Assertion implements Cloneable, Serializable {
 
     /**
      * Transform a policy tree into a new one with any disabled assertions removed.  Assertions
-     * where {@link #isEnabled()} is false will treated as though they were never present in the policy in the
-     * first place.
+     * where {@link #isEnabled()} is false, or CommentAssertion subclasses, will treated as though they were never
+     * present in the policy in the first place.
      * <p/>
      * This is a static method because it may need to replace an Assertion with a null reference if it is disabled,
      * or if it is a composite assertion and all of its children are disabled.
@@ -522,7 +522,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      */
     public static Assertion filterOutDisabledAssertions(Assertion assertionTree) {
         final boolean[] wasRemoved = { false };
-        recursiveFilterOutDisabledAssertions(assertionTree, new EmptyIterator() {
+        recursiveFilterOutDisabledAssertionsAndComments(assertionTree, new EmptyIterator() {
             @Override
             public void remove() {
                 wasRemoved[0] = true;
@@ -531,8 +531,8 @@ public abstract class Assertion implements Cloneable, Serializable {
         return wasRemoved[0] ? null : assertionTree;
     }
 
-    private static void recursiveFilterOutDisabledAssertions(Assertion arg, Iterator parentIterator) {
-        if (arg == null || !arg.isEnabled()) {
+    private static void recursiveFilterOutDisabledAssertionsAndComments(Assertion arg, Iterator parentIterator) {
+        if (arg == null || !arg.isEnabled() || arg instanceof CommentAssertion) {
             parentIterator.remove();
             return;
         }
@@ -543,7 +543,7 @@ public abstract class Assertion implements Cloneable, Serializable {
             Iterator i = kids.iterator();
             //noinspection WhileLoopReplaceableByForEach
             while (i.hasNext())
-                recursiveFilterOutDisabledAssertions((Assertion)i.next(), i);
+                recursiveFilterOutDisabledAssertionsAndComments((Assertion)i.next(), i);
             if (kids.isEmpty())
                 parentIterator.remove();
         }

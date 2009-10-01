@@ -22,10 +22,10 @@ import java.util.List;
  */
 public class WspReader {
     public static enum Visibility {
-        /** Do not filter the parsed policy to remove assertions that are not enabled. */
+        /** Do not filter the parsed policy to remove comment assertions and assertions that are not enabled. */
         includeDisabled,
 
-        /** Filter the parsed policy to remove assertions that are not enabled. */
+        /** Filter the parsed policy to remove comment assertions and assertions that are not enabled. */
         omitDisabled
     }
     public static final Visibility INCLUDE_DISABLED = Visibility.includeDisabled;
