@@ -14,9 +14,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyCheckpointState;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.AuditRecordToXmlAssertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
@@ -112,14 +110,7 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         PolicyHeader header = getSinkPolicyHeader();
         if (header == null) {
             // Create new sink policy with default settings
-            AllAssertion all = new AllAssertion();
-            all.addChild(new AuditRecordToXmlAssertion());
-            HttpRoutingAssertion routingAssertion = new HttpRoutingAssertion();
-            routingAssertion.setProtectedServiceUrl("${gateway.audit.sink.url}");
-            all.addChild(routingAssertion);
-            String theXml = WspWriter.getPolicyXml(all);
-            Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Sink Policy]", theXml, false);
-            policy.setInternalTag(INTERNAL_TAG_AUDIT_SINK);
+            Policy policy = makeDefaultAuditSinkPolicyEntity();
             PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
             policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
             header = new PolicyHeader(policy);
@@ -128,6 +119,36 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             TopComponents.getInstance().getServicesFolderNode().reloadChildren();
         }
         return header;
+    }
+
+    private static Policy makeDefaultAuditSinkPolicyEntity() {
+        String theXml = makeDefaultAuditSinkPolicyXml();
+        Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Audit Sink Policy]", theXml, false);
+        policy.setInternalTag(INTERNAL_TAG_AUDIT_SINK);
+        return policy;
+    }
+
+    private static String makeDefaultAuditSinkPolicyXml() {
+        AllAssertion all = makeDefaultAuditSinkPolicyAssertions();
+        return WspWriter.getPolicyXml(all);
+    }
+
+    private static AllAssertion makeDefaultAuditSinkPolicyAssertions() {
+        AllAssertion all = new AllAssertion();
+        all.addChild(new CommentAssertion("A simple audit sink policy could convert the audit record to XML, then post it somewhere via HTTP"));
+        all.addChild(new AuditRecordToXmlAssertion());
+        all.addChild(new CommentAssertion("Enable the below routing assertion or replace it with something else"));
+        HttpRoutingAssertion routingAssertion = new HttpRoutingAssertion();
+        routingAssertion.setProtectedServiceUrl("${gateway.audit.sink.url}");
+        routingAssertion.setEnabled(false);
+        all.addChild(routingAssertion);
+        FalseAssertion falseAssertion = new FalseAssertion();
+        String falseName = falseAssertion.meta().get(AssertionMetadata.SHORT_NAME);
+        all.addChild(new CommentAssertion("The below " + falseName + " causes this sink policy to always fail."));
+        all.addChild(new CommentAssertion("This will (by default) cause the record to be saved to the internal audit database."));
+        all.addChild(new CommentAssertion("Remove it once you have customized the audit sink policy."));
+        all.addChild(falseAssertion);
+        return all;
     }
 
     private void editSinkPolicy() {
