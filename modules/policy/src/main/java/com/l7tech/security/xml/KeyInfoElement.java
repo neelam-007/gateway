@@ -147,13 +147,13 @@ public class KeyInfoElement implements ParsedElement {
         }
     }
 
-    private X509Certificate handleX509Data(Element x509Data, SecurityTokenResolver securityTokenResolver, EnumSet<KeyInfoInclusionType> allowedTypes)
+    private static X509Certificate handleX509Data(Element x509Data, SecurityTokenResolver securityTokenResolver, EnumSet<KeyInfoInclusionType> allowedTypes)
         throws IOException, CertificateException, MissingResolverException, SAXException, TooManyChildElementsException,
         MissingRequiredElementException {
         // Use X509Data
         Element x509CertEl = getKid(x509Data, allowedTypes, KeyInfoInclusionType.CERT, "X509Certificate");
-        Element x509SkiEl = getKid(x509Data, allowedTypes, KeyInfoInclusionType.CERT, "X509SKI");
-        Element x509IssuerSerialEl = getKid(x509Data, allowedTypes, KeyInfoInclusionType.CERT, "X509IssuerSerial");
+        Element x509SkiEl = getKid(x509Data, allowedTypes, KeyInfoInclusionType.STR_SKI, "X509SKI");
+        Element x509IssuerSerialEl = getKid(x509Data, allowedTypes, KeyInfoInclusionType.ISSUER_SERIAL, "X509IssuerSerial");
         if (x509CertEl != null) {
             String certBase64 = DomUtils.getTextValue(x509CertEl);
             byte[] certBytes = HexUtils.decodeBase64(certBase64, true);
@@ -178,7 +178,7 @@ public class KeyInfoElement implements ParsedElement {
         }
     }
 
-    private Element getKid(final Element x509Data,
+    private static Element getKid(final Element x509Data,
                            final EnumSet<KeyInfoInclusionType> allowedTypes,
                            final KeyInfoInclusionType expectedType,
                            final String elementName)
@@ -187,6 +187,7 @@ public class KeyInfoElement implements ParsedElement {
         return allowedTypes.contains(expectedType) ? DomUtils.findOnlyOneChildElementByName(x509Data, SoapConstants.DIGSIG_URI, elementName) : null;
     }
 
+    @Override
     public Element asElement() {
         return element;
     }
@@ -253,14 +254,17 @@ public class KeyInfoElement implements ParsedElement {
     }
 
     private static final PrivateKey FAKE_KEY = new PrivateKey() {
+        @Override
         public String getAlgorithm() {
             return null;
         }
 
+        @Override
         public String getFormat() {
             return null;
         }
 
+        @Override
         public byte[] getEncoded() {
             return new byte[0];
         }
@@ -342,8 +346,23 @@ public class KeyInfoElement implements ParsedElement {
                                                               SoapConstants.SECURITY_URIS_ARRAY,
                                                               SoapConstants.REFERENCE_EL_NAME);
             if (reference == null || certResolver == null) {
-                // no reference or keyidentifier
-                throw new UnsupportedKeyInfoFormatException("KeyInfo's SecurityTokenReference includes no KeyIdentifier element");
+                Element x509Data = DomUtils.findOnlyOneChildElementByName(str, SoapConstants.DIGSIG_URI, "X509Data");
+                if ( x509Data != null ) {
+                    try {
+                        X509Certificate cert = handleX509Data(x509Data, securityTokenResolver, EnumSet.of(KeyInfoInclusionType.ISSUER_SERIAL));
+                        return cert==null ? null : securityTokenResolver.lookupPrivateKeyByCert(cert);
+                    } catch (IOException e) {
+                        throw new InvalidDocumentFormatException(ExceptionUtils.getMessage(e));
+                    } catch (SAXException e) {
+                       throw new InvalidDocumentFormatException(ExceptionUtils.getMessage(e));
+                    } catch (MissingResolverException e) {
+                        // We always provide a resolver so this should not occur
+                        throw new InvalidDocumentFormatException(ExceptionUtils.getMessage(e));
+                    }
+                } else {
+                    // no reference or keyidentifier
+                    throw new UnsupportedKeyInfoFormatException("KeyInfo's SecurityTokenReference includes no KeyIdentifier element");
+                }
             } else {
                 String uriAttr = reference.getAttribute("URI");
                 if (uriAttr == null || uriAttr.length() < 1) {
