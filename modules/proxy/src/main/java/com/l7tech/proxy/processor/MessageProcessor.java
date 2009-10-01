@@ -89,6 +89,8 @@ public class MessageProcessor {
     public static final String PROPERTY_TIMESTAMP_EXPIRY = "com.l7tech.proxy.processor.timestampExpiryMillis";
     public static final String PROPERTY_LOGPOLICIES    = "com.l7tech.proxy.datamodel.logPolicies";
 
+    // Ssg properties
+    public static final String SSGPROP_ACTOR_NAMESPACED = "wss.decorator.soapActorNamespaced";
     public static final String SSGPROP_TIMESTAMP_CREATEDGRACE = "response.security.createdFutureGrace"; // time in millis
     public static final String SSGPROP_TIMESTAMP_EXPIRESGRACE = "response.security.expiresPastGrace"; // time in millis
 
@@ -416,12 +418,17 @@ public class MessageProcessor {
         }
 
         log.info("Running pending request through WS-Security decorator");
-        Date ts = context.getSsg().getRuntime().getDateTranslatorToSsg().translate(new Date());
-        Integer expiryMillis = Integer.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
+        Ssg ssg = context.getSsg();
+        Date ts = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
+        Integer expiryMillis = SyspropUtil.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
+        String actorNamespacedStr = ssg.getProperties().get(SSGPROP_ACTOR_NAMESPACED);
         for (DecorationRequirements wssrequirement : allDecReq) {
             wssrequirement.setTimestampCreatedDate(ts);
             if (expiryMillis != null) {
                 wssrequirement.setTimestampTimeoutMillis(expiryMillis);
+            }
+            if (actorNamespacedStr != null) {
+                wssrequirement.setSecurityHeaderActorNamespaced(Boolean.valueOf(actorNamespacedStr));
             }
             WssDecorator.DecorationResult dresult =
                     wssDecorator.decorateMessage(

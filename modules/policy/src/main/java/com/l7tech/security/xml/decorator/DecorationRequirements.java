@@ -11,6 +11,7 @@ import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.util.NamespaceFactory;
 import com.l7tech.util.SoapConstants;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.w3c.dom.Element;
 
@@ -485,6 +486,21 @@ public class DecorationRequirements {
         this.securityHeaderActor = securityHeaderActor;
     }
 
+    /**
+     * Should the security header actor attribute be in the SOAP namespace.
+     *
+     * <p>This does not apply to the SOAP 1.2 role attribute.</p>
+     *
+     * @return True if the attribute should be namespaced
+     */
+    public boolean isSecurityHeaderActorNamespaced() {
+        return securityHeaderActorNamespaced;
+    }
+
+    public void setSecurityHeaderActorNamespaced( final boolean securityHeaderActorNamespaced ) {
+        this.securityHeaderActorNamespaced = securityHeaderActorNamespaced;
+    }
+
     /** @return true if Security header should be created asserting mustUnderstand; false if it should not assert mustUnderstand; and null if it should use the WssDecorator's default behavior. */
     public Boolean getSecurityHeaderMustUnderstand() {
         Boolean mustUnderstand;
@@ -774,6 +790,7 @@ public class DecorationRequirements {
     private TimestampResolution timestampResolution = TimestampResolution.DEFAULT;
     private boolean securityHeaderReusable = false;
     private String securityHeaderActor = SoapConstants.L7_SOAP_ACTOR;
+    private boolean securityHeaderActorNamespaced = SyspropUtil.getBoolean( "com.l7tech.security.xml.decorator.soap.soapActorNamespaced", true );
     private SecurityHeaderMustUnderstand securityHeaderMustUnderstand = SecurityHeaderMustUnderstand.DEFAULT;
     private boolean includeSamlTokenInSignature = false;
     private KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;

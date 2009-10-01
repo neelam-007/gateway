@@ -267,7 +267,7 @@ public class SoapUtil extends SoapConstants {
      * Same as other makeSecurityElement but specifies a preferred security namesapce.
      */
     public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace) {
-        return makeSecurityElement(soapMsg, preferredWsseNamespace, null, isSecHdrDefaultsToMustUnderstand());
+        return makeSecurityElement(soapMsg, preferredWsseNamespace, null, isSecHdrDefaultsToMustUnderstand(), true);
     }
 
     /**
@@ -279,6 +279,10 @@ public class SoapUtil extends SoapConstants {
     }
 
     public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace, String actor, Boolean mustUnderstand) {
+        return makeSecurityElement(soapMsg, preferredWsseNamespace, actor, mustUnderstand, true);
+    }
+
+    public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace, String actor, Boolean mustUnderstand, boolean namespaceActor) {
         Element header = getOrMakeHeader(soapMsg);
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
@@ -293,9 +297,10 @@ public class SoapUtil extends SoapConstants {
             }
         }
         if (actor != null) {
-            // todo, should we create this actor with a ns ?
             if(isSoap12) {
                 setSoapAttr(securityEl, SoapUtil.ROLE_ATTR_NAME, actor);
+            } else if (namespaceActor) {
+                setSoapAttr(securityEl, SoapUtil.ACTOR_ATTR_NAME, actor);
             } else {
                 securityEl.setAttribute(SoapUtil.ACTOR_ATTR_NAME, actor);
             }

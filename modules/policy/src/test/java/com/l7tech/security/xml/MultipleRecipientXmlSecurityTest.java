@@ -16,18 +16,17 @@ import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessor;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
-import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.junit.Test;
+import org.junit.Assert;
 
+import javax.xml.soap.SOAPConstants;
 import java.util.logging.Logger;
 
 /**
@@ -35,7 +34,7 @@ import java.util.logging.Logger;
  *
  * @author flascelles@layer7-tech.com
  */
-public class MultipleRecipientXmlSecurityTest extends TestCase {
+public class MultipleRecipientXmlSecurityTest {
     private static Logger logger = Logger.getLogger(MultipleRecipientXmlSecurityTest.class.getName());
     private static WssDecorator decorator = new WssDecoratorImpl();
     private static WssProcessor processor = new WssProcessorImpl();
@@ -44,18 +43,7 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         JceProvider.init();
     }
 
-    public MultipleRecipientXmlSecurityTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(MultipleRecipientXmlSecurityTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSignedForOneRecipientEncryptedForOther() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         Element body = SoapUtil.getBodyElement(doc);
@@ -76,22 +64,22 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         // FIRST PROCESSING
         ProcessorResult res = process(doc);
 
-        assertTrue("The body was signed", checkSignedElement(res, body));
-        assertTrue("The body was encrypted", checkEncryptedElement(res, body));
+        Assert.assertTrue("The body was signed", checkSignedElement(res, body));
+        Assert.assertTrue("The body was encrypted", checkEncryptedElement(res, body));
 
         logger.info("Document once processed by default recipient:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
         // ACTOR PROMOTION
         Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
-        assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
-        alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
+        Assert.assertNotNull("The security header for downstream actor is still present", alternateSecHeader);
+        alternateSecHeader.removeAttributeNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE,SoapUtil.ACTOR_ATTR_NAME);
 
         // SECOND PROCESSING
         res = process(doc);
 
         logger.info("Document once processed by both recipients:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
-        assertTrue("The body was signed", checkSignedElement(res, body));
+        Assert.assertTrue("The body was signed", checkSignedElement(res, body));
     }
 
     public void testBodySignedForTwoRecipients() throws Exception {
@@ -113,22 +101,23 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         // FIRST PROCESSING
         ProcessorResult res = process(doc);
 
-        assertTrue("The body was signed", checkSignedElement(res, body));
+        Assert.assertTrue("The body was signed", checkSignedElement(res, body));
 
         logger.info("Document once processed:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
 
         // ACTOR PROMOTION
         Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
-        assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
-        alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
+        Assert.assertNotNull("The security header for downstream actor is still present", alternateSecHeader);
+        alternateSecHeader.removeAttributeNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE,SoapUtil.ACTOR_ATTR_NAME);
 
         // SECOND PROCESSING
         res = process(doc);
 
-        assertTrue("The body was signed", checkSignedElement(res, body));
+        Assert.assertTrue("The body was signed", checkSignedElement(res, body));
     }
 
+    @Test
     public void testEncapsulatingEncryptedElementsForDifferentRecipients() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         Element body = SoapUtil.getBodyElement(doc);
@@ -153,14 +142,14 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         // FIRST PROCESSING
         ProcessorResult res = process(doc);
 
-        assertTrue("The body was signed", checkSignedElement(res, body));
-        assertTrue("The body was encrypted", checkEncryptedElement(res, body));
+        Assert.assertTrue("The body was signed", checkSignedElement(res, body));
+        Assert.assertTrue("The body was encrypted", checkEncryptedElement(res, body));
 
         logger.info("Document once processed by default recipient:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
         // ACTOR PROMOTION
         Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
-        assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
+        Assert.assertNotNull("The security header for downstream actor is still present", alternateSecHeader);
         Element currentSecHeader = SoapUtil.getSecurityElementForL7(doc);
         if (currentSecHeader == null) {
             currentSecHeader = SoapUtil.getSecurityElement(doc);
@@ -168,17 +157,18 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         if (currentSecHeader != null) {
             currentSecHeader.getParentNode().removeChild(currentSecHeader);
         }
-        alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
+        alternateSecHeader.removeAttributeNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE,SoapUtil.ACTOR_ATTR_NAME);
 
         // SECOND PROCESSING
         res = process(doc);
 
         logger.info("Document once processed by both recipients:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
-        assertTrue("The body was signed", checkSignedElement(res, body));
-        assertTrue("The accountid was encrypted", checkEncryptedElement(res, prodidEl));
+        Assert.assertTrue("The body was signed", checkSignedElement(res, body));
+        Assert.assertTrue("The accountid was encrypted", checkEncryptedElement(res, prodidEl));
     }
 
+    @Test
     public void testAdjacentEncryptedElementsForDifferentRecipients() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         Element body = SoapUtil.getBodyElement(doc);
@@ -204,14 +194,14 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         // FIRST PROCESSING
         ProcessorResult res = process(doc);
 
-        assertTrue("The body was signed", checkSignedElement(res, body));
-        assertTrue("The accountid was encrypted", checkEncryptedElement(res, acctidEl));
+        Assert.assertTrue("The body was signed", checkSignedElement(res, body));
+        Assert.assertTrue("The accountid was encrypted", checkEncryptedElement(res, acctidEl));
 
         logger.info("Document once processed by default recipient:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
         // ACTOR PROMOTION
         Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
-        assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
+        Assert.assertNotNull("The security header for downstream actor is still present", alternateSecHeader);
         Element currentSecHeader = SoapUtil.getSecurityElementForL7(doc);
         if (currentSecHeader == null) {
             currentSecHeader = SoapUtil.getSecurityElement(doc);
@@ -219,22 +209,21 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         if (currentSecHeader != null) {
             currentSecHeader.getParentNode().removeChild(currentSecHeader);
         }
-        alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
+        alternateSecHeader.removeAttributeNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE,SoapUtil.ACTOR_ATTR_NAME);
 
         // SECOND PROCESSING
         res = process(doc);
 
         logger.info("Document once processed by both recipients:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
 
-        assertTrue("The body was signed", checkSignedElement(res, body));
-        assertTrue("The accountid was encrypted", checkEncryptedElement(res, prodidEl));
+        Assert.assertTrue("The body was signed", checkSignedElement(res, body));
+        Assert.assertTrue("The accountid was encrypted", checkEncryptedElement(res, prodidEl));
     }
 
     private boolean checkEncryptedElement(ProcessorResult res, Element el) {
         ParsedElement[] encrypted = res.getElementsThatWereEncrypted();
-        for (int i = 0; i < encrypted.length; i++) {
-            ParsedElement encedel = encrypted[i];
-            if (encedel.asElement().getLocalName().equals(el.getLocalName())) {
+        for ( ParsedElement encedel : encrypted ) {
+            if ( encedel.asElement().getLocalName().equals( el.getLocalName() ) ) {
                 return true;
             }
         }
@@ -243,9 +232,8 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
 
     private boolean checkSignedElement(ProcessorResult res, Element el) {
         SignedElement[] signed = res.getElementsThatWereSigned();
-        for (int i = 0; i < signed.length; i++) {
-            SignedElement signedElement = signed[i];
-            if (signedElement.asElement().getLocalName().equals(el.getLocalName())) {
+        for ( SignedElement signedElement : signed ) {
+            if ( signedElement.asElement().getLocalName().equals( el.getLocalName() ) ) {
                 return true;
             }
         }
