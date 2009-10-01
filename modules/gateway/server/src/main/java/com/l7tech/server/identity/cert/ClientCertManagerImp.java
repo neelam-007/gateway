@@ -221,7 +221,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
             boolean revoke = false;
             if (issuer != null) {
                 X509Certificate userCertificate = currentdata.getCertificate();
-                if (userCertificate != null && userCertificate.getIssuerX500Principal().equals(issuer)) {
+                if (userCertificate != null && CertUtils.isEqualDN(userCertificate.getIssuerX500Principal(),issuer)) {
                     revoke = true;
                 }
             } else {

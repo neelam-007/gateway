@@ -96,7 +96,7 @@ class X509AuthorizationHandler extends FederatedAuthorizationHandler {
         if ( !ALLOW_SELF_SIGNED_TRUSTED_CERT ) {
             for (TrustedCert trustedCert : trustedCerts) {
                 final X509Certificate trustedX509 = trustedCert.getCertificate();
-                final boolean selfSigned = trustedX509.getSubjectX500Principal().equals(trustedX509.getIssuerX500Principal());
+                final boolean selfSigned = CertUtils.isEqualDN(trustedX509.getSubjectX500Principal(),trustedX509.getIssuerX500Principal());
                 if ( selfSigned && CertUtils.certsAreEqual( trustedX509, requestCert ) ) {
                     throw new BadCredentialsException("Unable to authenticate certificate: request certificate is (self signed) trusted certificate");
                 }

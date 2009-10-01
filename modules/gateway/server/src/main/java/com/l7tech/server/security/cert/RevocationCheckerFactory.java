@@ -592,7 +592,7 @@ public class RevocationCheckerFactory {
 
                 // Check certificate scope
                 // Extend this check if we want to add support for the Issuing Distribution Point extension.
-                if ( !crl.getIssuerX500Principal().equals(certificate.getIssuerX500Principal()) ) {
+                if ( !CertUtils.isEqualDN(crl.getIssuerX500Principal(),certificate.getIssuerX500Principal()) ) {
                     auditor.logAndAudit(SystemMessages.CERTVAL_CRL_SCOPE, certificate.getSubjectDN().toString(), crlUrl);
                     return CertificateValidationResult.UNKNOWN;
                 }

@@ -528,6 +528,50 @@ public class CertUtils {
         return formattedDN;
     }
 
+    /**
+     * Compare the given principals for equality in RFC 2253 format.
+     *
+     * <p>Will be false if either (or both) principals are null.</p>
+     *
+     * @param princ1 The first principal to compare (may be null)
+     * @param princ2 The second principal to compare (may be null)
+     * @return True if equal
+     * @see #isEqualDN(String,String)
+     */
+    public static boolean isEqualDN( final X500Principal princ1,
+                                     final X500Principal princ2 ) {
+        boolean equal = false;
+
+        if ( princ1 != null && princ2 != null ) {
+            equal = isEqualDN(princ1.getName(), princ2.getName());
+        }
+
+        return equal;
+    }
+
+    /**
+     * Compare the given DN strings for equality (case insensitive).
+     *
+     * <p>The DNs are not formatted for comparison, so should already
+     * be in the desired format.</p>
+     *
+     * <p>Will be false if either (or both) DNs are null.</p>
+     *
+     * @param dn1 The first DN to compare (may be null)
+     * @param dn2 The second DN to compare (may be null)
+     * @return True if equal
+     */
+    public static boolean isEqualDN( final String dn1,
+                                     final String dn2 ) {
+        boolean equal = false;
+
+        if ( dn1 != null && dn2 != null ) {
+            equal = dn1.equalsIgnoreCase( dn2 );
+        }
+
+        return equal;
+    }
+
     public static String getCn(X509Certificate cert) {
         Map dnMap = dnToAttributeMap(cert.getSubjectDN().getName());
         List cnValues = (List)dnMap.get("CN");

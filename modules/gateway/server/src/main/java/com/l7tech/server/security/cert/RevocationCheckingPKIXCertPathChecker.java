@@ -2,6 +2,7 @@ package com.l7tech.server.security.cert;
 
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.security.types.CertificateValidationResult;
+import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.common.io.CertUtils;
 
 import java.security.cert.*;
@@ -25,6 +26,7 @@ import java.util.logging.Logger;
  * @author Steve Jones
  */
 public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
+    
     //- PUBLIC
 
     /**
@@ -71,9 +73,12 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
         if (issuerCertificate == null) {
             for (TrustAnchor anchor : trustAnchors) {
                 X509Certificate trustAnchorCertificate = anchor.getTrustedCert();
-                if ( CertUtils.getSubjectDN(trustAnchorCertificate).equals(CertUtils.getIssuerDN(x509Certificate)) ) {
-                    issuerCertificate = trustAnchorCertificate;
-                    break;
+                if (CertUtils.isEqualDN(CertUtils.getSubjectDN(trustAnchorCertificate),
+                                        CertUtils.getIssuerDN(x509Certificate)) ) {
+                    if (CertVerifier.isVerified(x509Certificate, trustAnchorCertificate)) {
+                        issuerCertificate = trustAnchorCertificate;
+                        break;
+                    }
                 }
             }
 

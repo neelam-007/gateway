@@ -180,7 +180,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     private <C extends Cert> Object doLookupByKeyName(Collection<C> toSearch, String keyName) {
         for (final Cert cert : toSearch) {
             final String name = cert.getSubjectDn();
-            if (name != null && name.equals(keyName))
+            if ( CertUtils.isEqualDN( keyName, name ))
                 return cert.getPayload();
         }
         return null;
@@ -198,7 +198,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     private <C extends Cert> Object doLookupByIssuerAndSerial( final Collection<C> toSearch, final X500Principal issuer, final BigInteger serial ) {
         for (final Cert cert : toSearch) {
             final X509Certificate certificate = cert.getCertificate();
-            if (certificate.getIssuerX500Principal().equals(issuer) && certificate.getSerialNumber().equals(serial))
+            if (CertUtils.isEqualDN(certificate.getIssuerX500Principal(),issuer) && certificate.getSerialNumber().equals(serial))
                 return cert.getPayload();
         }
         return null;

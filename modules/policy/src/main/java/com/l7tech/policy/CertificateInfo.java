@@ -51,8 +51,8 @@ public class CertificateInfo {
         return getSubjectDn() != null &&
                getIssuerDn() != null &&
                getSerialNumber() !=null &&
-               CertUtils.formatDN( getSubjectDn() ).equals( CertUtils.getSubjectDN( certificate ) ) &&
-               CertUtils.formatDN( getIssuerDn() ).equals( CertUtils.getIssuerDN( certificate ) ) &&
+               CertUtils.isEqualDN( CertUtils.formatDN( getSubjectDn() ), CertUtils.getSubjectDN( certificate ) ) &&
+               CertUtils.isEqualDN( CertUtils.formatDN( getIssuerDn() ), CertUtils.getIssuerDN( certificate ) ) &&
                getSerialNumber().equals( certificate.getSerialNumber() );
     }
 
