@@ -1,12 +1,12 @@
 package com.l7tech.message;
 
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.util.Closeable;
 import com.l7tech.xml.SoftwareFallbackException;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariMessageContext;
 import org.xml.sax.SAXException;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;

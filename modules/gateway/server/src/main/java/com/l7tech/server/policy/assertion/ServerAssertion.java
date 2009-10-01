@@ -6,12 +6,12 @@
 
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.util.Closeable;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 /**

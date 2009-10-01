@@ -5,7 +5,7 @@
 
 package com.l7tech.server.util;
 
-import com.l7tech.util.Closeable;
+import java.io.Closeable;
 
 /**
  * Represents a handle to a referenceable object.  Subclasses will likely delegate to the target.

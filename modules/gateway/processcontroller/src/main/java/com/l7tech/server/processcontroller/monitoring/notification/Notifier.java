@@ -8,8 +8,8 @@ import com.l7tech.server.management.config.monitoring.NotificationRule;
 import com.l7tech.server.management.config.monitoring.PropertyTrigger;
 import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.server.processcontroller.monitoring.InOut;
-import com.l7tech.util.Closeable;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;

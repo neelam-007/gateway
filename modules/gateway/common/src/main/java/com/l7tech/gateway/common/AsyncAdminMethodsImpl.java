@@ -1,10 +1,10 @@
 package com.l7tech.gateway.common;
 
 import com.l7tech.util.Background;
-import com.l7tech.util.Closeable;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 
+import java.io.Closeable;
 import java.io.Serializable;
 import java.security.SecureRandom;
 import java.util.*;

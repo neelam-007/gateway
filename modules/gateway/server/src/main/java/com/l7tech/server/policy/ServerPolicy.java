@@ -3,19 +3,16 @@
  */
 package com.l7tech.server.policy;
 
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.Policy;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.AbstractReferenceCounted;
+import com.l7tech.util.ResourceUtils;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Collections;
+import java.util.*;
 
 /**
  * Ensures that {@link ServerAssertion#close()} can be called safely when no more traffic will arrive by
@@ -70,7 +67,7 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
      */
     @Override
     protected void doClose() {
-        rootAssertion.close();
+        ResourceUtils.closeQuietly(rootAssertion);
     }
 
     //- PRIVATE

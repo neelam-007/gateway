@@ -9,7 +9,7 @@ package com.l7tech.server.util;
  * Utility superclass that maintains a closed flag and ensures that only the first call to close() will result
  * in a dispatch to doClose().
  * <p/>
- * This class does not formally implement {@link com.l7tech.util.Closeable} because not all subclasses
+ * This class does not formally implement {@link java.io.Closeable} because not all subclasses
  * necessarily want to make their close() method public.
  * <p/>
  * This superclass does not provide a finalize method.  The presence of a finalize method, especially on an

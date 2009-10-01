@@ -4,8 +4,7 @@
 
 package com.l7tech.message;
 
-import com.l7tech.util.Closeable;
-
+import java.io.Closeable;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;

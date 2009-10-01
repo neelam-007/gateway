@@ -1,8 +1,7 @@
 package com.l7tech.uddi;
 
+import java.io.Closeable;
 import java.util.Collection;
-
-import com.l7tech.util.Closeable;
 
 /**
  * This provides a facade around interesting aspects of the following UDDI apis:
