@@ -44,6 +44,9 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
 
+    boolean committed = false;
+    boolean policyEditRequested = false;
+
     public AuditSinkGlobalPropertiesDialog(Window owner) {
         super(owner, "Audit Sink Properties", ModalityType.DOCUMENT_MODAL);
         getContentPane().setLayout(new BorderLayout());
@@ -56,6 +59,7 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 commit();
+                committed = true;
                 dispose();
             }
         });
@@ -63,6 +67,7 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                committed = false;
                 dispose();
             }
         });
@@ -131,6 +136,8 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             PolicyEntityNode node = new PolicyEntityNode(header);
             Action editAction = new EditPolicyAction(node, true);
             dispose();
+            committed = false;
+            policyEditRequested = true;
             editAction.actionPerformed(null);
         } catch (FindException e) {
             err("load audit sink", e);
@@ -156,6 +163,14 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         } catch (PolicyAssertionException e) {
             err("configure audit sink", e);
         }
+    }
+
+    public boolean isCommitted() {
+        return committed;
+    }
+
+    public boolean isPolicyEditRequested() {
+        return policyEditRequested;
     }
 
     private void err(String what, Throwable t) {

@@ -1,16 +1,12 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -29,7 +25,7 @@ import java.util.logging.Logger;
 public class LogSinkManagerWindow extends JDialog {
     protected static final Logger logger = Logger.getLogger(LogSinkManagerWindow.class.getName());
 
-    private static final String WINDOW_TITLE = "Manage Log Sinks";
+    private static final String WINDOW_TITLE = "Manage Log and Audit Sinks";
 
     /** Resource bundle with default locale */
     private ResourceBundle resources = null;
@@ -40,6 +36,7 @@ public class LogSinkManagerWindow extends JDialog {
     private JButton removeButton;
     private JButton propertiesButton;
     private JButton closeButton;
+    private JButton auditSinkButton;
     private LogSinkTable logSinkTable;
 
     private PermissionFlags flags;
@@ -126,11 +123,31 @@ public class LogSinkManagerWindow extends JDialog {
             }
         });
 
+        auditSinkButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doAuditSink();
+            }
+        });
+
         Utilities.setDoubleClickAction(logSinkTable, propertiesButton);
 
         loadSinkConfigurations();
         pack();
         enableOrDisableButtons();
+    }
+
+    private void doAuditSink() {
+        final AuditSinkGlobalPropertiesDialog dlg = new AuditSinkGlobalPropertiesDialog(this);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                if (dlg.isPolicyEditRequested())
+                    dispose();
+            }
+        });
     }
 
     private void doRemove() {

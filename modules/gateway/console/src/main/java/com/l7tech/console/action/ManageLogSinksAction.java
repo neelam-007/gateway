@@ -21,12 +21,12 @@ public class ManageLogSinksAction extends SecureAction {
 
     @Override
     public String getName() {
-        return "Manage Log Sinks";
+        return "Manage Log/Audit Sinks";
     }
 
     @Override
     public String getDescription() {
-        return "View and manage log sinks";
+        return "View and manage log and audit sinks";
     }
 
     @Override
