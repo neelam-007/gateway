@@ -11,10 +11,10 @@ import com.l7tech.policy.wsp.ArrayTypeMapping;
 import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.util.Functions;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.util.Functions;
 
 import java.io.Serializable;
 import java.util.*;
@@ -32,17 +32,26 @@ import java.util.*;
  * Date: Nov 6, 2007<br/>
  */
 public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesVariables, SetsVariables, Serializable {
+    private final static String baseName = "Query LDAP";
     private String searchFilter;
+    private boolean searchFilterInjectionProtected = false;
     private QueryAttributeMapping[] queryMappings = new QueryAttributeMapping[0];
     private long ldapProviderOid;
-    private long cachePeriod = 10;
+    private long cachePeriod = 10; // minutes
     private boolean enableCache = true;
     private boolean failIfNoResults = false;
 
     public LDAPQueryAssertion() {
     }
 
-    private final static String baseName = "Query LDAP";
+    /**
+     * Create a new LDAPQueryAssertion with default properties.
+     */
+    public static LDAPQueryAssertion newInstance() {
+        LDAPQueryAssertion assertion = new LDAPQueryAssertion();
+        assertion.setSearchFilterInjectionProtected( true );
+        return assertion;
+    }
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<LDAPQueryAssertion>(){
         @Override
@@ -53,6 +62,7 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
         }
     };
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
@@ -70,6 +80,12 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ldapquery.console.LDAPQueryPropertiesDialog");
 
         meta.put(WSP_EXTERNAL_NAME, "LDAPQuery");
+        meta.put(ASSERTION_FACTORY, new Functions.Unary<LDAPQueryAssertion, LDAPQueryAssertion>(){
+            @Override
+            public LDAPQueryAssertion call( final LDAPQueryAssertion responseWssTimestamp ) {
+                return newInstance();
+            }
+        } );
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
         othermappings.add(new ArrayTypeMapping(new QueryAttributeMapping[0], "queryAttributeMappings"));
@@ -90,6 +106,14 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
         this.searchFilter = searchFilter;
     }
 
+    public boolean isSearchFilterInjectionProtected() {
+        return searchFilterInjectionProtected;
+    }
+
+    public void setSearchFilterInjectionProtected( final boolean searchFilterInjectionProtected ) {
+        this.searchFilterInjectionProtected = searchFilterInjectionProtected;
+    }
+
     public QueryAttributeMapping[] getQueryMappings() {
         return queryMappings;
     }
@@ -107,11 +131,13 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
         this.ldapProviderOid = ldapProviderOid;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         return new EntityHeader[] { new EntityHeader(Long.toString(ldapProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
     }
 
+    @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if( oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) &&
             oldEntityHeader.getOid() == ldapProviderOid &&
@@ -120,12 +146,14 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
         }
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         // parse out of searchFilter
         return Syntax.getReferencedNames(searchFilter);
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         ArrayList<VariableMetadata> output =  new ArrayList<VariableMetadata>();
         for (QueryAttributeMapping am : queryMappings) {

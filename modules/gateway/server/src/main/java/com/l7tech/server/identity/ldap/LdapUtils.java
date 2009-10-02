@@ -67,6 +67,46 @@ public final class LdapUtils {
         return null;
     }
 
+    /**
+     * Escape characters for use in an LDAP search filter
+     *
+     * @param value The text to escape
+     * @return The escaped text
+     */
+    public static String filterEscape( final String value ) {
+        String escaped = value;
+
+        if ( value != null ) {
+            StringBuilder builder = new StringBuilder( (int)(value.length() * 1.3) );
+            for ( char c : value.toCharArray() ) {
+                switch ( c ) {
+                    case 0:
+                        builder.append( "\\00" );
+                        break;
+                    case '(':
+                        builder.append( "\\28" );
+                        break;
+                    case ')':
+                        builder.append( "\\29" );
+                        break;
+                    case '*':
+                        builder.append( "\\2a" );
+                        break;
+                    case '\\':
+                        builder.append( "\\5c" );
+                        break;
+                    default:
+                        builder.append( c );
+                        break;
+                }
+            }
+
+            escaped = builder.toString();
+        }
+
+        return escaped;
+    }
+
     public static Hashtable<? super String,? super String> newEnvironment() {
         if ( LDAP_USES_UNSYNC_NAMING ) {
             return new UnsynchronizedNamingProperties();

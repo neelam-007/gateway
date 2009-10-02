@@ -47,13 +47,13 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JCheckBox cacheLDAPAttributeValuesCheckBox;
     private JSpinner cachePeriodSpinner;
     private JCheckBox failIfNoResultsCheckBox;
+    private JCheckBox protectAgainstLDAPInjectionCheckBox;
     private boolean wasOKed = false;
     private LDAPQueryAssertion assertion;
     private java.util.List<QueryAttributeMapping> localMappings = new ArrayList<QueryAttributeMapping>();
     private final MappingTableModel tableModel = new MappingTableModel();
     private final Logger logger = Logger.getLogger(LDAPQueryPropertiesDialog.class.getName());
     private ArrayList<ComboItem> comboStuff = new ArrayList<ComboItem>();
-    private InputValidator validator;
 
     public LDAPQueryPropertiesDialog(Window owner, LDAPQueryAssertion assertion) throws HeadlessException {
         super(owner, assertion);
@@ -65,8 +65,9 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         setContentPane(mainPanel);
         mappingTable.setModel(tableModel);
 
-        validator = new InputValidator(this, getTitle());
+        final InputValidator validator = new InputValidator( this, getTitle() );
         validator.attachToButton(okBut, new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 viewToModel();
                 wasOKed = true;
@@ -74,12 +75,14 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             }
         });
         cancelButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 dispose();
             }
         });
 
         editButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final int sel = mappingTable.getSelectedRow();
                 if (sel == -1) return;
@@ -88,12 +91,14 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         });
 
         deleteButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doDeleteMapping();
             }
         });
 
         newButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 QueryAttributeMapping newitem = new QueryAttributeMapping("", "");
 
@@ -106,26 +111,27 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         });
 
         mappingTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableButtons();
             }
         });
 
 		 cacheLDAPAttributeValuesCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 enableDisableCache();
             }
         });
-
 
         Utilities.equalizeButtonSizes(new JButton[]{okBut, editButton, deleteButton});
         enableButtons();
 
         ldapCombo.setModel(new DefaultComboBoxModel(populateLdapProviders()));
 
-
         validator.disableButtonWhenInvalid(okBut);
         validator.constrainTextFieldToBeNonEmpty("Search Filter", searchField, new InputValidator.ComponentValidationRule(searchField) {
+            @Override
             public String getValidationError() {
                 String val = searchField.getText();
                 if (val == null || val.trim().length() == 0)
@@ -136,6 +142,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         });
 
         validator.addRule(new InputValidator.ComponentValidationRule(ldapCombo) {
+            @Override
             public String getValidationError() {
                 if (comboStuff.isEmpty())
                     return "An LDAP Provider must be selected";
@@ -161,22 +168,15 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             }
         }
         searchField.setText(assertion.getSearchFilter());
+        searchField.setCaretPosition( 0 );
+        protectAgainstLDAPInjectionCheckBox.setSelected(assertion.isSearchFilterInjectionProtected());
         cacheLDAPAttributeValuesCheckBox.setSelected(assertion.isEnableCache());
         cachePeriodSpinner.setValue(assertion.getCachePeriod());
         failIfNoResultsCheckBox.setSelected(assertion.isFailIfNoResults());
     }
 
     private void viewToModel() {
-        Object selected = ldapCombo.getSelectedItem();
-        if (selected != null) {
-            ComboItem ci = (ComboItem)selected;
-            assertion.setLdapProviderOid(ci.oid);
-        }
-        assertion.setQueryMappings(localMappings.toArray(new QueryAttributeMapping[localMappings.size()]));
-        assertion.setSearchFilter(searchField.getText());
-        assertion.setEnableCache(cacheLDAPAttributeValuesCheckBox.isSelected());
-        assertion.setCachePeriod(Long.parseLong(cachePeriodSpinner.getValue().toString()));
-        assertion.setFailIfNoResults(failIfNoResultsCheckBox.isSelected());
+        getData(assertion);
     }
 
     private void doDeleteMapping() {
@@ -188,6 +188,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
                 "Confirm Deletion",
                 JOptionPane.YES_NO_OPTION,
                 new DialogDisplayer.OptionListener() {
+                    @Override
                     public void reportResult(int option) {
                         if (option == JOptionPane.YES_OPTION) {
                             localMappings.remove(sel);
@@ -200,6 +201,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     public class ComboItem {
         String name;
         long oid;
+        @Override
         public String toString() {
             return name;
         }
@@ -249,24 +251,23 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         deleteButton.setEnabled(sel);
     }
 
-//    private void ok() {
-//        wasOKed = true;
-//        dispose();
-//    }
-
+    @Override
     public JDialog getDialog() {
         return this;
     }
 
+    @Override
     public boolean isConfirmed() {
         return wasOKed;
     }
 
+    @Override
     public void setData(LDAPQueryAssertion assertion) {
         this.assertion = assertion;
         modelToView();
     }
 
+    @Override
     public LDAPQueryAssertion getData(LDAPQueryAssertion assertion) {
         Object selected = ldapCombo.getSelectedItem();
         if (selected != null) {
@@ -275,6 +276,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
         assertion.setQueryMappings(localMappings.toArray(new QueryAttributeMapping[localMappings.size()]));
         assertion.setSearchFilter(searchField.getText());
+        assertion.setSearchFilterInjectionProtected(protectAgainstLDAPInjectionCheckBox.isSelected());
         assertion.setEnableCache(cacheLDAPAttributeValuesCheckBox.isSelected());
         assertion.setCachePeriod(Long.parseLong(cachePeriodSpinner.getValue().toString()));
         assertion.setFailIfNoResults(failIfNoResultsCheckBox.isSelected());
@@ -290,14 +292,17 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     }
 
     private class MappingTableModel extends AbstractTableModel {
+        @Override
         public int getRowCount() {
             return localMappings.size();
         }
                                                                               
+        @Override
         public int getColumnCount() {
             return 2;
         }
 
+        @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             QueryAttributeMapping map = localMappings.get(rowIndex);
             switch(columnIndex) {

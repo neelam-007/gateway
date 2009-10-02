@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.util.Functions;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -260,6 +261,10 @@ public final class ExpandVariables {
         return process(s, vars, audit, strict(), null);
     }
 
+    public static String process(String s, Map vars, Audit audit, Functions.Unary<String,String> valueFilter) {
+        return process(s, vars, audit, strict(), valueFilter);
+    }
+
     /**
      * Process the input string and expand the variables using the supplied
      * user variables map. If the varaible is not found in variables map
@@ -286,10 +291,36 @@ public final class ExpandVariables {
      * @param strict         true if failures to resolve variables should throw exceptions rather than log warnings. If a
      *                       variable referenced by s does not exist and strict is true then an unchecked
      *                       VariableNameSyntaxException will be throw
-     * @param varLengthLimit the length limit of each replacement context variable value, use null if no limit is applied
+     * @param varLengthLimit the length limit of each replacement context variable value.
      * @return the message with expanded/resolved varialbes
      */
-    public static String process(String s, Map vars, Audit audit, boolean strict, Integer varLengthLimit) {
+    public static String process(String s, Map vars, Audit audit, boolean strict, final int varLengthLimit) {
+        return process( s, vars, audit, strict, new Functions.Unary<String,String>(){
+            @Override
+            public String call( final String replacement ) {
+                if ( replacement.length() > varLengthLimit )
+                    return replacement.substring(0, varLengthLimit);
+                else
+                    return replacement;
+            }
+        } );
+    }
+
+    /**
+     * Process the input string and expand the variables using the supplied
+     * user variables map. If the varaible is not found in variables map
+     * then the default variables map is consulted.
+     *
+     * @param s              the input message as a message
+     * @param vars           the caller supplied varialbes map that is consulted first
+     * @param audit          an audit instance to catch warnings
+     * @param strict         true if failures to resolve variables should throw exceptions rather than log warnings. If a
+     *                       variable referenced by s does not exist and strict is true then an unchecked
+     *                       VariableNameSyntaxException will be throw
+     * @param valueFilter    A filter to call on each substituted value (or null for no filtering)
+     * @return the message with expanded/resolved varialbes
+     */
+    public static String process(String s, Map vars, Audit audit, boolean strict, Functions.Unary<String,String> valueFilter) {
         if (s == null) throw new IllegalArgumentException();
 
         Matcher matcher = Syntax.regexPattern.matcher(s);
@@ -312,13 +343,9 @@ public final class ExpandVariables {
                 replacement = syntax.format(newVals, Syntax.DEFAULT_FORMATTER, handler, strict);
             }
 
+            replacement = valueFilter != null ? valueFilter.call(replacement) : replacement;
             replacement = Matcher.quoteReplacement(replacement); // bugzilla 3022 and 6813
-
-            // 5.0 Audit Request Id enhancement imposes a limit to the length of each ctx variable replacement
-            if (varLengthLimit != null && replacement.length() > varLengthLimit)
-                matcher.appendReplacement(sb, replacement.substring(0, varLengthLimit));
-            else
-                matcher.appendReplacement(sb, replacement);
+            matcher.appendReplacement(sb, replacement);
         }
         matcher.appendTail(sb);
 

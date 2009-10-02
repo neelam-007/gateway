@@ -10,11 +10,13 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
+import com.l7tech.server.identity.ldap.LdapUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.NamingEnumeration;
@@ -42,136 +44,118 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
     private final Logger logger = Logger.getLogger(ServerLDAPQueryAssertion.class.getName());
     private final IdentityProviderFactory identityProviderFactory;
     private final Auditor auditor;
-    private LDAPQueryAssertion assertion;
     private final String[] varsUsed;
     // key: resolved search filter value value: cached entry
     private final HashMap<String, CacheEntry> cachedAttributeValues = new HashMap<String, CacheEntry>();
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
 
-    public ServerLDAPQueryAssertion(LDAPQueryAssertion assertion, ApplicationContext appCntx) {
+    public ServerLDAPQueryAssertion( final LDAPQueryAssertion assertion,
+                                     final ApplicationContext appCntx ) {
         super(assertion);
         auditor = new Auditor(this, appCntx, logger);
-        this.assertion = assertion;
         identityProviderFactory = (IdentityProviderFactory) appCntx.getBean("identityProviderFactory", IdentityProviderFactory.class);
         varsUsed = assertion.getVariablesUsed();
     }
 
-    /** Holds either a String or a List of Strings. */
-    private class Stringses {
-        private final String string;
-        private final String[] strings;
+    /**
+     * Single or multivalued attribute value.
+     */
+    private static class AttributeValue {
+        private final boolean multivalued;
+        private final List<String> values;
 
-        private Stringses(String string) {
-            if (string == null) throw new NullPointerException("String may not be null");
-            this.string = string;
-            this.strings = null;
+        private AttributeValue( final String value ) {
+            if (value == null) throw new NullPointerException("Value may not be null");
+            this.multivalued = false;
+            this.values = Collections.singletonList( value );
         }
 
-        private Stringses(List<String> strings) {
-            if (strings == null) throw new NullPointerException("Strings collection may not be null");
-            this.string = null;
-            this.strings = strings.toArray(new String[strings.size()]);
+        private AttributeValue( final List<String> value ) {
+            if (value == null) throw new NullPointerException("Value may not be null");
+            this.multivalued = true;
+            this.values = Collections.unmodifiableList(new ArrayList<String>(value));
         }
 
         public String getString() {
-            return string != null ? string : (strings == null || strings.length < 1 ? null : strings[0]);
+            return values.isEmpty() ? null : values.get( 0 );
         }
 
         public String[] getStrings() {
-            return string != null ? new String[] { string } : strings;
+            return values.toArray( new String[values.size()] );
         }
 
-        /** @return true if {@link #getStringOrStrings} would return an array. */
+        /** @return true if multivalued */
         public boolean isMultivalued() {
-            return strings != null;
+            return multivalued;
         }
 
-        /** @return either a String, a String[], or null.  */
+        /** @return either a String or a String[]  */
         public Object getStringOrStrings() {
-            return string != null ? string : strings;
-        }
-
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Stringses stringses = (Stringses) o;
-
-            return !(string != null ? !string.equals(stringses.string) : stringses.string != null) &&
-                   Arrays.equals(strings, stringses.strings);
-        }
-
-        public int hashCode() {
-            int result;
-            result = (string != null ? string.hashCode() : 0);
-            result = 31 * result + (strings != null ? Arrays.hashCode(strings) : 0);
-            return result;
+            return multivalued ? getStrings() : getString();
         }
     }
 
-    public class CacheEntry {
+    private static class CacheEntry {
+        private final long entryBirthdate;
+        // key: attribute name, value: attribute value
+        private final Map<String, AttributeValue> cachedAttributes;
+
         public CacheEntry() {
             entryBirthdate = System.currentTimeMillis();
-            cachedAttributes = new HashMap<String, Stringses>();
+            cachedAttributes = new HashMap<String, AttributeValue>();
         }
-
-        public long entryBirthdate;
-        // key: attribute name, value: attribute value
-        public HashMap<String, Stringses> cachedAttributes;
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext pec) throws IOException, PolicyAssertionException {
+    @Override
+    public AssertionStatus checkRequest( final PolicyEnforcementContext pec ) throws IOException, PolicyAssertionException {
         // reconstruct filter expression
-        Map vars = pec.getVariableMap(varsUsed, auditor);
-        String filterExpression = ExpandVariables.process(assertion.getSearchFilter(), vars, auditor);
+        final Map vars = pec.getVariableMap(varsUsed, auditor);
+        final String filterExpression = !assertion.isSearchFilterInjectionProtected() ?
+            ExpandVariables.process(assertion.getSearchFilter(), vars, auditor) :
+            ExpandVariables.process(assertion.getSearchFilter(), vars, auditor, new Functions.Unary<String,String>(){
+                @Override
+                public String call( final String replacement ) {
+                    return LdapUtils.filterEscape( replacement );
+                }
+            });
 
+        CacheEntry cachedvalues = null;
         if (assertion.isEnableCache()) {
-            CacheEntry cachedvalues = null;
             cacheLock.readLock().lock();
             try {
                 cachedvalues = cachedAttributeValues.get(filterExpression);
             } finally {
                 cacheLock.readLock().unlock();
             }
-            if (cachedvalues == null || (System.currentTimeMillis() - cachedvalues.entryBirthdate) > (assertion.getCachePeriod() * 1000 * 60)) {
-                try {
-                    cachedvalues = createNewCacheEntry(filterExpression);
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    return AssertionStatus.SERVER_ERROR;
-                }
-                cacheLock.writeLock().lock();
-                try {
-                    cachedAttributeValues.remove(filterExpression);
-                    cachedAttributeValues.put(filterExpression, cachedvalues);
-                } finally {
-                    cacheLock.writeLock().unlock();
-                }
-            } else {
-                logger.info("using cached value");
-            }
+        }
 
-            if (assertion.isFailIfNoResults() && cachedvalues.cachedAttributes.size() < 1) {
-                return AssertionStatus.FAILED;
-            }
-            pushToPec(pec, cachedvalues);
-            return AssertionStatus.NONE;
-        } else {
-            // no caching
-            final CacheEntry values;
+        if (cachedvalues == null || (System.currentTimeMillis() - cachedvalues.entryBirthdate) > (assertion.getCachePeriod() * 1000 * 60)) {
             try {
-                values = createNewCacheEntry(filterExpression);
+                cachedvalues = createNewCacheEntry(filterExpression, assertion.getAttrNames());
             } catch (FindException e) {
                 logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 return AssertionStatus.SERVER_ERROR;
             }
-
-            if (assertion.isFailIfNoResults() && values.cachedAttributes.size() < 1) {
-                return AssertionStatus.FAILED;
+            
+            if (assertion.isEnableCache()) {
+                cacheLock.writeLock().lock();
+                try {
+                    cachedAttributeValues.put(filterExpression, cachedvalues);
+                } finally {
+                    cacheLock.writeLock().unlock();
+                }
             }
-            pushToPec(pec, values);
-            return AssertionStatus.NONE;
+        } else {
+            logger.info("using cached value");
         }
+
+        if (assertion.isFailIfNoResults() && cachedvalues.cachedAttributes.size() < 1) {
+            return AssertionStatus.FAILED;
+        }
+
+        pushToPec(pec, cachedvalues);
+
+        return AssertionStatus.NONE;
     }
 
     private IdentityProvider getIdProvider() throws FindException {
@@ -185,13 +169,13 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
     }
 
     private void pushToPec(PolicyEnforcementContext pec, CacheEntry cachedvalues) {
-        for (String key : cachedvalues.cachedAttributes.keySet()) {
-            Stringses value = cachedvalues.cachedAttributes.get(key);
-            pec.setVariable(key, value.getStringOrStrings());
+        for (Map.Entry<String,AttributeValue> entry : cachedvalues.cachedAttributes.entrySet()) {
+            pec.setVariable(entry.getKey(), entry.getValue().getStringOrStrings());
         }
     }
 
-    private CacheEntry createNewCacheEntry(String filter) throws FindException {
+    private CacheEntry createNewCacheEntry( final String filter,
+                                            final String[] attributeNames ) throws FindException {
         CacheEntry cachedvalues = new CacheEntry();
         // get identity provider
         IdentityProvider provider = getIdProvider();
@@ -203,7 +187,8 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 ldapcontext = idprov.getBrowseContext();
                 SearchControls sc = new SearchControls();
                 sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-                sc.setReturningAttributes(assertion.getAttrNames());
+                sc.setReturningAttributes( attributeNames );
+                sc.setCountLimit( 2 );
                 answer = ldapcontext.search(((LdapIdentityProviderConfig) idprov.getConfig()).getSearchBase(), filter, sc);
 
                 if (answer.hasMore()) {
@@ -217,7 +202,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                         if (valuesWereLookingFor != null && valuesWereLookingFor.size() > 0) {
                             if (attrMapping.isMultivalued()) {
                                 if (attrMapping.isJoinMultivalued()) {
-                                    StringBuffer sbuf = new StringBuffer();
+                                    StringBuilder sbuf = new StringBuilder();
                                     for (int i = 0; i < valuesWereLookingFor.size(); i++) {
                                         if (i > 0) {
                                             sbuf.append(", ");
@@ -225,17 +210,17 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                                         sbuf.append(valuesWereLookingFor.get(i).toString());
                                     }
                                     logger.fine("Set " + attrMapping.getMatchingContextVariableName() + " to " + sbuf.toString());
-                                    cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), new Stringses(sbuf.toString()));
+                                    cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), new AttributeValue(sbuf.toString()));
                                 } else {
                                     List<String> valueStrings = new ArrayList<String>();
                                     for (int i = 0; i < valuesWereLookingFor.size(); i++)
                                         valueStrings.add(valuesWereLookingFor.get(i).toString());
                                     logger.fine("Set " + attrMapping.getMatchingContextVariableName() + " to " + valueStrings.size() + " values");
-                                    cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), new Stringses(valueStrings));
+                                    cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), new AttributeValue(valueStrings));
                                 }
                             } else {
                                 logger.fine("Set " + attrMapping.getMatchingContextVariableName() + " to " + valuesWereLookingFor.get(0));
-                                cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), new Stringses(valuesWereLookingFor.get(0).toString()));
+                                cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), new AttributeValue(valuesWereLookingFor.get(0).toString()));
                             }
                         } else {
                             logger.info("Attribute named " + attrMapping.getAttributeName() + " was not present for ldap entry " + sr.getNameInNamespace());
