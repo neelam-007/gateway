@@ -60,6 +60,7 @@ public class WsdlLocationPanel extends JPanel {
     //- PUBLIC
 
     public static final String SYSPROP_NO_WSDL_IMPORTS = "com.l7tech.console.noWsdlImports";
+    public static final String SYSPROP_IGNORE_WSDL_DTDS = "com.l7tech.console.ignoreWsdlDtds";
 
     /**
      * Create a panel with the given owner and logger.
@@ -521,7 +522,9 @@ public class WsdlLocationPanel extends JPanel {
                             // New technique, process imports via SSG and save them for later
                             String baseDoc = XmlUtil.nodeToString(resolvedDoc);
                             DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
-                            EntityResolver entityResolver = new GatewayEntityResolver(baseUri.startsWith( "file:" ));
+                            EntityResolver entityResolver = SyspropUtil.getBoolean(SYSPROP_IGNORE_WSDL_DTDS) ?
+                                    null :
+                                    new GatewayEntityResolver(baseUri.startsWith( "file:" ));
                             Map<String,String> urisToResources =
                                     processor.processDocument( baseUri, new GatewayResourceResolver(logger, entityResolver, baseUri, baseDoc) );
 
