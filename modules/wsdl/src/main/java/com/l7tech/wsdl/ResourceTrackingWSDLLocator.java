@@ -13,6 +13,9 @@ import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXParseException;
 
 import javax.wsdl.xml.WSDLLocator;
 import javax.xml.parsers.DocumentBuilder;
@@ -80,7 +83,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
             InputSource source = new InputSource();
             source.setSystemId( baseUri );
             source.setCharacterStream( new StringReader(content) );
-            resources.add( buildResource( source, stripDoctypes, stripSchemas ) );
+            resources.add( buildResource( source, null, stripDoctypes, stripSchemas ) );
         }
 
         for ( Map.Entry<String,String> resourceEntry : uriToContent.entrySet() ) {
@@ -91,7 +94,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
                 InputSource source = new InputSource();
                 source.setSystemId( uri );
                 source.setCharacterStream( new StringReader(content) );
-                resources.add( buildResource( source, stripDoctypes, stripSchemas ) );                                
+                resources.add( buildResource( source, null, stripDoctypes, stripSchemas ) );
             }
         }
 
@@ -108,11 +111,33 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
      * @return The processed resource
      * @throws IOException If an IO error occurs
      */
-    public static String processResource(String resourceUri, String resourceContent, boolean stripSchemas, boolean stripDoctypes) throws IOException {
+    public static String processResource( final String resourceUri,
+                                          final String resourceContent,
+                                          boolean stripSchemas,
+                                          boolean stripDoctypes ) throws IOException {
+        return processResource( resourceUri, resourceContent, null, stripSchemas, stripDoctypes );
+    }
+
+    /**
+     * Process the given resource according to the passed flags.
+     *
+     * @param resourceUri The URI of the resource
+     * @param resourceContent The content of the resource
+     * @param resolver The entity resolver to use (may be null)
+     * @param stripSchemas True to replace any "wsdl:import"'d schema xmls with dummy WSDL documents.
+     * @param stripDoctypes Strip the document type
+     * @return The processed resource
+     * @throws IOException If an IO error occurs
+     */
+    public static String processResource( final String resourceUri,
+                                          final String resourceContent,
+                                          final EntityResolver resolver,
+                                          boolean stripSchemas,
+                                          boolean stripDoctypes ) throws IOException {
         InputSource source = new InputSource();
         source.setSystemId( resourceUri );
         source.setCharacterStream( new StringReader(resourceContent) );
-        WSDLResource resource = buildResource( source, stripDoctypes, stripSchemas );
+        WSDLResource resource = buildResource( source, resolver, stripDoctypes, stripSchemas );
         return resource.getWsdl();
     }
 
@@ -130,6 +155,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     /**
      * WSDLLocator
      */
+    @Override
     public InputSource getBaseInputSource() {
         InputSource baseInputSource = null;
         if (includeBase) {
@@ -138,7 +164,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
                 InputSource is = delegate.getBaseInputSource();
                 if (is != null) {
                     uri = is.getSystemId();
-                    WSDLResource resource = buildResource(is, stripDoctypes, stripSchemas);
+                    WSDLResource resource = buildResource(is, null, stripDoctypes, stripSchemas);
                     baseInputSource = resource.toInputSource();
                     resources.add(resource);
                 }
@@ -158,6 +184,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     /**
      * WSDLLocator
      */
+    @Override
     public String getBaseURI() {
         return delegate.getBaseURI();
     }
@@ -165,6 +192,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     /**
      * WSDLLocator
      */
+    @Override
     public InputSource getImportInputSource(final String parentLocation, final String importLocation) {
         InputSource inputSource = null;
 
@@ -173,7 +201,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
             InputSource is = delegate.getImportInputSource(parentLocation, importLocation);
             if (is != null) {
                 uri = is.getSystemId();
-                WSDLResource resource = buildResource(is, stripDoctypes, stripSchemas);
+                WSDLResource resource = buildResource(is, null, stripDoctypes, stripSchemas);
                 inputSource = resource.toInputSource();
                 resources.add(resource);
             }
@@ -191,10 +219,12 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     /**
      * WSDLLocator
      */
+    @Override
     public String getLatestImportURI() {
         return delegate.getLatestImportURI();
     }
 
+    @Override
     public void close() {
         delegate.close();
     }
@@ -249,7 +279,10 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     /**
      * Build a WSDL resource for the given input
      */
-    private static WSDLResource buildResource(InputSource inputSource, boolean stripDoctypes, boolean stripSchemas) throws IOException {
+    private static WSDLResource buildResource( final InputSource inputSource,
+                                               final EntityResolver resolver,
+                                               final boolean stripDoctypes,
+                                               final boolean stripSchemas) throws IOException {
         String uri = inputSource.getSystemId();
         String wsdl = null;
 
@@ -297,6 +330,17 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
         if (stripDoctypes || stripSchemas) {
             try {
                 DocumentBuilder db = getDocumentBuilder();
+                db.setEntityResolver( resolver );
+                db.setErrorHandler( new ErrorHandler(){
+                    @Override
+                    public void warning( SAXParseException exception) {}
+                    @Override
+                    public void error(SAXParseException exception) {}
+                    @Override
+                    public void fatalError(SAXParseException exception) throws SAXException {
+                        throw exception;
+                    }
+                } );
                 InputSource source = new InputSource();
                 source.setSystemId(uri);
                 source.setCharacterStream(new StringReader(wsdl));
@@ -324,7 +368,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
             dbf.setValidating(false);
             dbf.setNamespaceAware(true);
             dbf.setExpandEntityReferences(true);
-            return dbf.newDocumentBuilder();       
+            return dbf.newDocumentBuilder();
         }
         catch(ParserConfigurationException pce) {
             throw new IllegalStateException("Error with XML parser configuration.", pce);

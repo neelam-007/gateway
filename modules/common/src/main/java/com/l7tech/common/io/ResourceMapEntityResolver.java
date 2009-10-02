@@ -28,6 +28,27 @@ public class ResourceMapEntityResolver implements EntityResolver {
     public ResourceMapEntityResolver( final Map<String,String> publicIdsToResources,
                                       final Map<String,String> systemIdsToResources,
                                       final ClassLoader loader ) {
+        this( publicIdsToResources,
+              systemIdsToResources,
+              loader,
+              false );
+    }
+
+    /**
+     * Create an entity resolver that maps the given IDs to classpath resources.
+     *
+     * <p>If no ClassLoader is given then the ClassLoader for this class is used
+     * to find resources.</p>
+     *
+     * @param publicIdsToResources The Public ID to resource map (may be null)
+     * @param systemIdsToResources The System ID to resource map (may be null)
+     * @param loader The ClassLoader to use (may be null)
+     * @param allowMissingResource True to return null on missing resource (else will throw)
+     */
+    public ResourceMapEntityResolver( final Map<String,String> publicIdsToResources,
+                                      final Map<String,String> systemIdsToResources,
+                                      final ClassLoader loader,
+                                      final boolean allowMissingResource ) {
         this.systemIdsToResources = new HashMap<String,String>();
         this.publicIdsToResources = new HashMap<String,String>();
 
@@ -40,11 +61,13 @@ public class ResourceMapEntityResolver implements EntityResolver {
         }
 
         this.loader = loader != null ? loader : ResourceMapEntityResolver.class.getClassLoader();
+
+        this.allowMissingResource = allowMissingResource;
     }
 
     @Override
     public InputSource resolveEntity( final String publicId, final String systemId ) throws SAXException, IOException {
-        InputSource inputSource;
+        InputSource inputSource = null;
         String resource = publicIdsToResources.get( publicId );
 
         if ( resource == null ) {
@@ -59,7 +82,7 @@ public class ResourceMapEntityResolver implements EntityResolver {
             if ( inputSource.getByteStream() == null ) {
                 throw new IOException("Entity resolved to missing resource '"+publicId+"', '"+systemId+"', resource is '"+resource+"'.");
             }
-        } else {
+        } else if ( !allowMissingResource ) {
             throw new IOException("Entity not resolved '"+publicId+"', '"+systemId+"'.");
         }
 
@@ -71,4 +94,5 @@ public class ResourceMapEntityResolver implements EntityResolver {
     private final Map<String,String> systemIdsToResources;
     private final Map<String,String> publicIdsToResources;
     private final ClassLoader loader;
+    private final boolean allowMissingResource;
 }

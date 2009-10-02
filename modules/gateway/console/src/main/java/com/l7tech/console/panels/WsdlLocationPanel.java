@@ -15,6 +15,7 @@ import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
+import com.l7tech.wsdl.WsdlEntityResolver;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.util.*;
 
@@ -22,6 +23,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.EntityResolver;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -519,8 +521,9 @@ public class WsdlLocationPanel extends JPanel {
                             // New technique, process imports via SSG and save them for later
                             String baseDoc = XmlUtil.nodeToString(resolvedDoc);
                             DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
+                            EntityResolver entityResolver = new GatewayEntityResolver(baseUri.startsWith( "file:" ));
                             Map<String,String> urisToResources =
-                                    processor.processDocument( baseUri, new GatewayResourceResolver(logger, baseUri, baseDoc) );
+                                    processor.processDocument( baseUri, new GatewayResourceResolver(logger, entityResolver, baseUri, baseDoc) );
 
                             wsdl = Wsdl.newInstance(WSDLFactory.newInstance(), Wsdl.getWSDLLocator(baseUri, urisToResources, logger));
 
@@ -738,17 +741,56 @@ public class WsdlLocationPanel extends JPanel {
         return Wsdl.getWSDLLocator(is, false);
     }
 
+    private static class GatewayEntityResolver implements EntityResolver {
+        private final boolean permitLocalFiles;
+        private final EntityResolver catalogResolver;
+
+        private GatewayEntityResolver( final boolean permitLocalFiles ) {
+            this.permitLocalFiles = permitLocalFiles;
+            this.catalogResolver = new WsdlEntityResolver(true);
+        }
+
+        @Override
+        public InputSource resolveEntity( final String publicId, final String systemId ) throws SAXException, IOException {
+            InputSource inputSource = catalogResolver.resolveEntity( publicId, systemId );
+
+            if ( inputSource == null ) {
+                String resource = null;
+                if ( systemId.startsWith("http:") ) {
+                    resource = gatewayFetchWsdlUrl( systemId) ;
+                } else if ( systemId.startsWith("file:") && permitLocalFiles ) {
+                    resource = localFetchWsdlUrl( systemId );
+                }
+
+                if ( resource == null ) {
+                    throw new IOException("Could not resolve entity '"+systemId+"'.");
+                }
+
+                inputSource = new InputSource();
+                inputSource.setPublicId( publicId );
+                inputSource.setSystemId( systemId );
+                inputSource.setCharacterStream( new StringReader(resource) );
+            }
+
+            return inputSource;
+        }
+    }
 
     /**
      * GatewayResourceResolver that accesses HTTP URI's via the gateway.
      */
     private static class GatewayResourceResolver implements DocumentReferenceProcessor.ResourceResolver {
         private final Logger logger;
+        private final EntityResolver entityResolver;
         private final String baseUri;
         private final String baseResource;
 
-        private GatewayResourceResolver(final Logger logger, final String baseUri, final String baseResource ) {
+        private GatewayResourceResolver(final Logger logger,
+                                        final EntityResolver entityResolver,
+                                        final String baseUri,
+                                        final String baseResource ) {
             this.logger = logger;
+            this.entityResolver = entityResolver;
             this.baseUri = baseUri;
             this.baseResource = baseResource;
         }
@@ -761,12 +803,12 @@ public class WsdlLocationPanel extends JPanel {
 
 
             if ( baseUri.equals(importLocation) ) {
-                resource = ResourceTrackingWSDLLocator.processResource(baseUri, baseResource, false, true);
+                resource = ResourceTrackingWSDLLocator.processResource(baseUri, baseResource, entityResolver, false, true);
             } else {
                 if ( importLocation.startsWith("http") ) {
-                    resource = ResourceTrackingWSDLLocator.processResource(importLocation, gatewayFetchWsdlUrl(importLocation), false, true);
+                    resource = ResourceTrackingWSDLLocator.processResource(importLocation, gatewayFetchWsdlUrl(importLocation), entityResolver, false, true);
                 } else if ( importLocation.startsWith("file") && baseUri.startsWith("file")) {
-                    resource = ResourceTrackingWSDLLocator.processResource(importLocation, localFetchWsdlUrl(importLocation), false, true);
+                    resource = ResourceTrackingWSDLLocator.processResource(importLocation, localFetchWsdlUrl(importLocation), entityResolver, false, true);
                 }
             }
 
