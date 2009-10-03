@@ -36,6 +36,7 @@ import org.junit.Before;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -212,6 +213,17 @@ public class ExpandVariablesTest {
         Message foo = makeTinyRequest();
         String[] magic = (String[]) ExpandVariables.processSingleVariableAsObject("${foo.http.HeaderVaLUes.magic}", makeVars(foo), audit);
         Assert.assertTrue("Multivalued header values", Arrays.equals(new String[] {"foo", "bar"}, magic));
+    }
+
+    @Test
+    public void testEvaluateMultivaluedExpressionLookup() throws Exception {
+        final String expr="${elements[1]}";
+        final Object element0 = new Object() { @Override public String toString() { return "element1"; } };
+        final Object element1 = new Object() { @Override public String toString() { return "element2"; } };
+        Map<String, Object> vars = new HashMap<String, Object>();
+        vars.put("elements", new Object[] { element0, element1 });
+        Object got = ExpandVariables.processSingleVariableAsObject(expr, vars, audit, true);
+        assertTrue(got == element1);
     }
 
     @Test
