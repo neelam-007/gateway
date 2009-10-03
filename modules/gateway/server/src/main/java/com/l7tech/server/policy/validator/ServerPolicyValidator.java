@@ -1,32 +1,24 @@
 package com.l7tech.server.policy.validator;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.kerberos.KerberosClient;
-import com.l7tech.kerberos.KerberosConfigException;
-import com.l7tech.kerberos.KerberosException;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.util.DomUtils;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.Policy;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.User;
-import com.l7tech.identity.InvalidIdProviderCfgException;
+import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.VirtualGroup;
+import com.l7tech.kerberos.KerberosClient;
+import com.l7tech.kerberos.KerberosConfigException;
+import com.l7tech.kerberos.KerberosException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
@@ -38,6 +30,9 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.wsdl.Wsdl;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -48,6 +43,7 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.KeyStoreException;
 
 /**
  * Performs server side policy validation.
@@ -245,7 +241,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     JmsEndpoint routedRequestEndpoint = jmsEndpointManager.findByPrimaryKey(endpointid);
                     jmsEndpointDefinedOk = routedRequestEndpoint != null;
                 } catch (FindException e) {
-                    logger.log(Level.FINE, "Error fetching endpoint " + endpointid, e);
+                    logger.log(Level.FINE, "Error fetching endpoint " + endpointid + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
                 if (!jmsEndpointDefinedOk) {
                     r.addError(new PolicyValidatorResult.Error(a,
@@ -367,7 +363,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         try {
             res = schemaEntryManager.findByName(sId);
         } catch (FindException e) {
-            logger.log(Level.INFO, "error looking for schema", e);
+            logger.log(Level.INFO, "error looking for schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
         return !(res == null || res.isEmpty());
     }
@@ -397,7 +393,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                             }
                         }
                     } catch (ObjectModelException e) {
-                        logger.log(Level.SEVERE, "cannot get schema", e);
+                        logger.log(Level.SEVERE, "cannot get schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
                 }
                 if (!unresolvedImportsList.isEmpty()) {
@@ -412,7 +408,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 }
             }
         } catch (SAXException e) {
-            logger.log(Level.INFO, "cannot parse xml from schema validation assertion", e);
+            logger.log(Level.INFO, "cannot parse xml from schema validation assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             r.addError(new PolicyValidatorResult.Error(a,
                                                        ap,
                                                        "This schema validation assertion does not appear " +
@@ -441,9 +437,12 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                                                                        null));
                     }
                 }
-
+            } catch (ObjectModelException e) {
+                logger.log(Level.WARNING, "error looking for private key: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            } catch (KeyStoreException e) {
+                logger.log(Level.WARNING, "error looking for private key: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             } catch (Exception e) {
-                logger.log(Level.WARNING, "error looking for private key", e);
+                logger.log(Level.WARNING, "error looking for private key: " + ExceptionUtils.getMessage(e), e);
             }
             if (!found) {
                 r.addError(new PolicyValidatorResult.Error((Assertion)a, ap,
@@ -539,7 +538,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 }
                 idAssertionStatusCache.put(identityAssertion, output);
             } catch (FindException e) {
-                logger.log(Level.WARNING, "problem retrieving identity", e);
+                logger.log(Level.WARNING, "problem retrieving identity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 output = ID_ERROR;
                 idAssertionStatusCache.put(identityAssertion, output);
             }
