@@ -146,10 +146,10 @@ public enum SupportedSignatureMethods {
      */
     public static EnumSet<SupportedSignatureMethods> getDefaultMethods() {
         return EnumSet.of(
-                //RSA_SHA1, 
-                //DSA_SHA1,
+                RSA_SHA1,
+                DSA_SHA1,
                 RSA_SHA256,
-                //ECDSA_SHA1,
+                ECDSA_SHA1,
                 ECDSA_SHA256,
                 ECDSA_SHA384,
                 ECDSA_SHA512);
