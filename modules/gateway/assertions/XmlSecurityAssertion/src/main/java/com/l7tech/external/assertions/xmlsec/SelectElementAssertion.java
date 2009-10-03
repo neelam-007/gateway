@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.xmlsec;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.Functions;
 
 /**
  * An assertion that selects a single DOM element with an XPath, and stores it in an Element context variable.
@@ -32,6 +31,11 @@ public class SelectElementAssertion extends NonSoapSecurityAssertionBase impleme
     }
 
     private final static String baseName = "Select Single Element";
+
+    @Override
+    public String getDefaultXpathExpressionString() {
+        return "/root/SingleElementToSelect";
+    }
 
     @Override
     public String getDisplayName() {

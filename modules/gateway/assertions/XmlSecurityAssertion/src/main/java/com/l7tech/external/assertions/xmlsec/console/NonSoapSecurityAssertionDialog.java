@@ -2,17 +2,17 @@ package com.l7tech.external.assertions.xmlsec.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
-import com.l7tech.external.assertions.xmlsec.NonSoapSecurityAssertionBase;
 import com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAssertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.external.assertions.xmlsec.NonSoapSecurityAssertionBase;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.xml.xpath.XpathExpression;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionBase> extends AssertionPropertiesOkCancelSupport<AT> {
     private JPanel contentPane;
@@ -21,6 +21,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     private JButton editXpathButton;
     private JPanel controlsBelowXpath;
 
+    private final XpathExpression defaultXpathExpression;
     private XpathExpression xpathExpression;
 
     /**
@@ -36,6 +37,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
         editXpathButton.addActionListener(makeEditXpathAction());
         setXpathExpression(null);
         xpathExpressionLabel.setText("Element(s) to " + assertion.getVerb() + " XPath:");
+        defaultXpathExpression = assertion.getDefaultXpathExpression();
     }
 
     protected ActionListener makeEditXpathAction() {
@@ -43,7 +45,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
             @Override
             public void actionPerformed(ActionEvent e) {
                 final NonSoapEncryptElementAssertion holder = new NonSoapEncryptElementAssertion();
-                holder.setXpathExpression(xpathExpression);
+                holder.setXpathExpression(xpathExpression != null ? xpathExpression : defaultXpathExpression);
                 final XpathBasedAssertionPropertiesDialog ape = new XpathBasedAssertionPropertiesDialog(NonSoapSecurityAssertionDialog.this, holder);
                 JDialog dlg = ape.getDialog();
                 dlg.setTitle(getTitle() + " - XPath Expression");

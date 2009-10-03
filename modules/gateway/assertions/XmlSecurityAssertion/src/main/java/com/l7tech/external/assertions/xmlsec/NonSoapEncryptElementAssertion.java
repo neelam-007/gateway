@@ -1,8 +1,9 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.xml.XencUtil;
-import com.l7tech.util.Functions;
 
 /**
  * Immediately encrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
@@ -33,6 +34,11 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
     }
 
     private final static String baseName = "Immediate Encrypt (Non-SOAP) XML Element";
+
+    @Override
+    public String getDefaultXpathExpressionString() {
+        return "//ElementsToEncrypt";
+    }
 
     @Override
     public String getDisplayName() {

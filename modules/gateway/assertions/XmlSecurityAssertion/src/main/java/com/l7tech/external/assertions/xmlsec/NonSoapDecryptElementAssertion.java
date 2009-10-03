@@ -1,9 +1,11 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.Functions;
 
 /**
  * Immediately decrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
@@ -19,6 +21,7 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
 
     public NonSoapDecryptElementAssertion() {
         super(TargetMessageType.REQUEST);
+        setXpathExpression(getDefaultXpathExpression());
     }
 
     public String getVariablePrefix() {
@@ -51,6 +54,11 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
     }
 
     private final static String baseName = "Immediate Decrypt (Non-SOAP) XML Element";
+
+    @Override
+    public String getDefaultXpathExpressionString() {
+        return "//xenc:EncryptedData";
+    }
 
     @Override
     public String getDisplayName() {

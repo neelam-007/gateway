@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.xmlsec;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.util.Functions;
 
 /**
  * Immediately sign one or more Elements in a non-SOAP XML message.
@@ -16,6 +15,11 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
     }
 
     private final static String baseName = "Immediate Sign (Non-SOAP) XML Element";
+
+    @Override
+    public String getDefaultXpathExpressionString() {
+        return "//ElementsToSign";
+    }
 
     @Override
     public String getDisplayName() {

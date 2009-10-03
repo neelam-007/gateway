@@ -1,9 +1,11 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.Functions;
 
 /**
  * Immediately verify one or more signed Elements in a non-SOAP XML message.
@@ -21,6 +23,7 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
 
     public NonSoapVerifyElementAssertion() {
         super(TargetMessageType.REQUEST);
+        setXpathExpression(getDefaultXpathExpression());
     }
 
     public String getVariablePrefix() {
@@ -56,6 +59,11 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     }
 
     private final static String baseName = "Immediate Verify (Non-SOAP) XML Element";
+
+    @Override
+    public String getDefaultXpathExpressionString() {
+        return "//ds:Signature";
+    }
 
     @Override
     public String getDisplayName() {

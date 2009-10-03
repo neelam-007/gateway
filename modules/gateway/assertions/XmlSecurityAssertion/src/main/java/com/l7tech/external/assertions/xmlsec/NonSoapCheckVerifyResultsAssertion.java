@@ -40,6 +40,11 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
         return variables.toArray( new String[variables.size()] );
     }
 
+    @Override
+    public String getDefaultXpathExpressionString() {
+        return "//ElementsThatShouldHaveBeenSigned";
+    }
+
     public String getVariablePrefix() {
         return variablePrefix;
     }
