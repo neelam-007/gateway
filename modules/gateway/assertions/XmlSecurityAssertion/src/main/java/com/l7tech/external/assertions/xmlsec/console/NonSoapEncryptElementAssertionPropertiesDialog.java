@@ -66,7 +66,7 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends NonSoapSecur
                                     }, false);
 
                 final AddCertificateWizard w = new AddCertificateWizard(NonSoapEncryptElementAssertionPropertiesDialog.this, sp);
-                w.setTitle("Assign Certificate to Private Key");
+                w.setTitle("Configure Recipient Certificate");
                 w.addWizardListener(new WizardAdapter() {
                     @Override
                     public void wizardFinished(WizardEvent we) {
