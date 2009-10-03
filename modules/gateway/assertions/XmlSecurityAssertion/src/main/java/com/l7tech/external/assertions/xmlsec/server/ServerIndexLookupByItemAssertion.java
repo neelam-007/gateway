@@ -10,6 +10,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Element;
@@ -19,6 +20,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -31,17 +33,19 @@ public class ServerIndexLookupByItemAssertion extends AbstractServerAssertion<In
     private final String multivaluedVariableName;
     private final String valueToSearchForVariableName;
     private final String outputVariableName;
-    private boolean allowMulti;
+    private final String[] varsUsed;
+    private final boolean allowMulti;
 
     public ServerIndexLookupByItemAssertion(IndexLookupByItemAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws PolicyAssertionException {
         super(assertion);
         this.auditor = new Auditor(this, beanFactory, eventPub, logger);
         this.multivaluedVariableName = assertion.getMultivaluedVariableName();
-        this.valueToSearchForVariableName = assertion.getValueToSearchForVariableName();
+        this.valueToSearchForVariableName = "${" + assertion.getValueToSearchForVariableName() + "}";
         this.outputVariableName = assertion.getOutputVariableName();
         this.allowMulti = assertion.isAllowMultipleMatches();
         if (empty(multivaluedVariableName) || empty(valueToSearchForVariableName) || empty(outputVariableName))
             throw new PolicyAssertionException(assertion, "At least one required property is not configured");
+        this.varsUsed = assertion.getVariablesUsed();
     }
 
     private boolean empty(String s) {
@@ -74,7 +78,12 @@ public class ServerIndexLookupByItemAssertion extends AbstractServerAssertion<In
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             Object multi = context.getVariable(multivaluedVariableName);
-            Object valueToMatch = context.getVariable(valueToSearchForVariableName);
+            Map<String, Object> variableMap = context.getVariableMap(varsUsed, auditor);
+            Object valueToMatch = ExpandVariables.processSingleVariableAsObject(valueToSearchForVariableName, variableMap, auditor, true);
+            if (valueToMatch == null) {
+                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, multivaluedVariableName);
+                return AssertionStatus.SERVER_ERROR;
+            }
 
             final Matcher matcher = getMatcherForValue(valueToMatch);
 

@@ -3,11 +3,12 @@ package com.l7tech.external.assertions.xmlsec;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.Functions;
+import com.l7tech.policy.variable.Syntax;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Arrays;
 
 /**
  * Search a multivalued context variable for a matching value and record its index.
@@ -15,8 +16,8 @@ import java.util.List;
 public class IndexLookupByItemAssertion extends Assertion implements SetsVariables, UsesVariables {
     private static final String META_INITIALIZED = IndexLookupByItemAssertion.class.getName() + ".metadataInitialized";
 
-    private String valueToSearchForVariableName;
-    private String multivaluedVariableName;
+    private String valueToSearchForVariableName; // May be a variable expression (omitting surrounding ${ })
+    private String multivaluedVariableName;       // Must be a single variable name
     private String outputVariableName;
     private boolean allowMultipleMatches;
 
@@ -30,14 +31,21 @@ public class IndexLookupByItemAssertion extends Assertion implements SetsVariabl
     @Override
     public String[] getVariablesUsed() {
         List<String> used = new ArrayList<String>();
-        addIfPresent(used, valueToSearchForVariableName);
-        addIfPresent(used, multivaluedVariableName);
+        addExprIfPresent(used, valueToSearchForVariableName);
+        addVarIfPresent(used, multivaluedVariableName);
         return used.toArray(new String[used.size()]);
     }
 
-    private static void addIfPresent(Collection<String> collection, String str) {
+    private static void addVarIfPresent(Collection<String> collection, String str) {
         if (str != null && str.trim().length() > 0)
             collection.add(str);
+    }
+
+    private static void addExprIfPresent(Collection<String> collection, String expr) {
+        if (expr == null || expr.trim().length() < 1)
+            return;
+        String[] names = Syntax.getReferencedNames("${" + expr + "}");
+        collection.addAll(Arrays.asList(names));
     }
 
     public String getValueToSearchForVariableName() {
