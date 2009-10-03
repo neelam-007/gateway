@@ -113,6 +113,8 @@ public class IndexLookupByItemAssertion extends Assertion implements SetsVariabl
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/xmlsec/console/resources/indexlookup16.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, IndexLookupByItemValidator.class.getName());
+        
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.xmlsec;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.validator.XpathBasedAssertionValidator;
 
 /**
  * An assertion that selects a single DOM element with an XPath, and stores it in an Element context variable.
@@ -73,6 +74,8 @@ public class SelectElementAssertion extends NonSoapSecurityAssertionBase impleme
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, XpathBasedAssertionValidator.class.getName());
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

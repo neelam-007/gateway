@@ -63,6 +63,8 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, NonSoapEncryptElementValidator.class.getName());
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

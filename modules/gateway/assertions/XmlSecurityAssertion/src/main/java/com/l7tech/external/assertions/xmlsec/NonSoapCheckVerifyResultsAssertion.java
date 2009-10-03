@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.util.Functions;
 
@@ -177,6 +179,8 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, NonSoapCheckVerifyResultsValidator.class.getName());
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

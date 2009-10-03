@@ -4,7 +4,6 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.Functions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,6 +106,8 @@ public class ItemLookupByIndexAssertion extends Assertion implements SetsVariabl
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/xmlsec/console/resources/itemlookup16.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, ItemLookupByIndexValidator.class.getName());
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

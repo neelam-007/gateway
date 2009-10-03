@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.xmlsec;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.validator.XpathBasedAssertionValidator;
 
 /**
  * Immediately sign one or more Elements in a non-SOAP XML message.
@@ -43,6 +44,8 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, XpathBasedAssertionValidator.class.getName());
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
