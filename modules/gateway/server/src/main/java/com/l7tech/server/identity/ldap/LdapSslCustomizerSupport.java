@@ -2,8 +2,10 @@ package com.l7tech.server.identity.ldap;
 
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 import com.l7tech.util.FilterClassLoader;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -13,6 +15,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.HostnameVerifier;
 import javax.naming.NamingException;
 import java.util.Map;
 import java.util.HashMap;
@@ -71,6 +74,15 @@ public class LdapSslCustomizerSupport {
     }
 
     /**
+     * Get the hostname verifier to use for LDAPS connections.
+     *
+     * @return The hostname verifier or null if one is not in use
+     */
+    public synchronized static HostnameVerifier getHostnameVerifier() {
+        return hostnameVerifier;
+    }
+
+    /**
      * Configuration of outbound trust
      */
     public synchronized static void setTrustManager( final X509TrustManager trustManager ) {
@@ -85,6 +97,13 @@ public class LdapSslCustomizerSupport {
     }
 
     /**
+     * Configuration of hostname verifiier
+     */
+    public synchronized static void setHostnameVerifier( final HostnameVerifier hostnameVerifier ) {
+        LdapSslCustomizerSupport.hostnameVerifier = hostnameVerifier;
+    }
+
+    /**
      * Get the name for the SSLSocketFactory class with the given options.
      *
      * @param useCertCert True if client certificate authentication should be enabled.
@@ -96,7 +115,7 @@ public class LdapSslCustomizerSupport {
         String classname;
 
         if ( useCertCert && (keystoreOid == null || keystoreOid == -1) && keyAlias == null ) {
-            classname = SslClientSocketFactory.class.getName(); // uses default key
+            classname = SslClientHostnameAwareSocketFactory.class.getName(); // uses default key
         } else if ( !useCertCert ) {
             classname = LdapSSLSocketFactory.class.getPackage().getName() + ".generated.SSLSocketFactory";
         } else {
@@ -112,6 +131,7 @@ public class LdapSslCustomizerSupport {
      * @return The ClassLoader to use
      * @throws NamingException If an error occurs
      */
+    @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
     public static ClassLoader getSSLSocketFactoryClassLoader() throws NamingException {
         if ( classLoader == null ) {
             Translator translator = new Translator(){
@@ -182,6 +202,7 @@ public class LdapSslCustomizerSupport {
 
     private static SsgKeyStoreManager ssgKeyStoreManager;
     private static X509TrustManager trustManager;
+    private static HostnameVerifier hostnameVerifier;
     private static ClassLoader classLoader;
 
     /**
@@ -229,7 +250,7 @@ public class LdapSslCustomizerSupport {
                 context.init(keyManagers,
                              new TrustManager[] { trustManager } ,
                              null);
-                int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
+                int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
                 context.getClientSessionContext().setSessionTimeout(timeout);
                 instance = context;
             } catch (GeneralSecurityException e) {

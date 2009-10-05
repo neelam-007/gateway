@@ -502,6 +502,33 @@
             </list>
         </property>
     </bean>
+    <bean id="clientHostnameAwareSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory"/>
+        <property name="targetMethod" value="setTrustManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="trustManager"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="clientHostnameAwareSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory"/>
+        <property name="targetMethod" value="setDefaultKeyManagers"/>
+        <property name="arguments">
+            <list>
+                <ref bean="sslKeyManagers"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="clientHostnameAwareSocketFactoryHostnameVerifierInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory"/>
+        <property name="targetMethod" value="setHostnameVerifier"/>
+        <property name="arguments">
+            <list>
+                <ref bean="ldapHostnameVerifier"/> <!-- LDAP verifier, since this is also used with LDAP -->
+            </list>
+        </property>
+    </bean>
 
     <!-- SSL for Syslog -->
     <bean id="syslogClientSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
@@ -571,12 +598,28 @@
             </list>
         </property>
     </bean>
+    <bean id="ldapSocketFactoryHostnameVerifierInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.identity.ldap.LdapSslCustomizerSupport"/>
+        <property name="targetMethod" value="setHostnameVerifier"/>
+        <property name="arguments">
+            <list>
+                <ref bean="ldapHostnameVerifier"/>
+            </list>
+        </property>
+    </bean>
 
      <!-- server side HTTP routing hostname verifier -->
     <bean id="hostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="trustedCertServices"/>
     </bean>
+
+    <!-- server side LDAP hostname verifier -->
+   <bean id="ldapHostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
+       <constructor-arg ref="serverConfig"/>
+       <constructor-arg ref="trustedCertServices"/>
+       <constructor-arg value="true"/>
+   </bean>
 
     <!-- server side HTTP routing HTTP client factory -->
     <bean id="httpRoutingHttpClientFactory"

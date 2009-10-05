@@ -37,13 +37,15 @@ public final class SslClientSocketFactory extends SslClientSocketFactorySupport 
         return SingletonHolder.defaultInstance;
     }
 
-    //- PACKAGE
+    //- PROTECTED
 
-    public final X509TrustManager getTrustManager() {
+    @Override
+    protected final X509TrustManager getTrustManager() {
         return trustManager;
     }
 
-    public final KeyManager[] getDefaultKeyManagers() {
+    @Override
+    protected final KeyManager[] getDefaultKeyManagers() {
         return defaultKeyManagers;
     }
 

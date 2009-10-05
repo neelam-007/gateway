@@ -2,7 +2,7 @@ package com.l7tech.server.identity.ldap;
 
 import org.junit.Test;
 import org.junit.Assert;
-import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 
 /**
  *
@@ -13,7 +13,7 @@ public class LdapSslCustomizerSupportTest {
     public void testCustomizerClassname() {
         Assert.assertEquals(
                 "Expected classname for default SSL",
-                SslClientSocketFactory.class.getName(),
+                SslClientHostnameAwareSocketFactory.class.getName(),
                 LdapSslCustomizerSupport.getSSLSocketFactoryClassname( true, null, null ) );
     }
 
