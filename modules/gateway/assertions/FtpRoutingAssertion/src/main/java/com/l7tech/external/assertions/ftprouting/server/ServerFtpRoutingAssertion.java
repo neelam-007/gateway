@@ -25,6 +25,7 @@ import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -41,14 +42,15 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     private static final Logger _logger = Logger.getLogger(ServerFtpRoutingAssertion.class.getName());
     private final Auditor _auditor;
     private final X509TrustManager _trustManager;
+    private final HostnameVerifier _hostnameVerifier;
     private final DefaultKey _keyFinder;
 
     public ServerFtpRoutingAssertion(FtpRoutingAssertion assertion, ApplicationContext applicationContext) {
         super(assertion, applicationContext, _logger);
         _auditor = new Auditor(this, applicationContext, _logger);
         _trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager", X509TrustManager.class);
+        _hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
         _keyFinder = (DefaultKey)applicationContext.getBean("defaultKey", DefaultKey.class);
-
     }
 
     @Override
@@ -164,9 +166,11 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 setTimeout(assertion.getTimeout()).setSecurity(isExplicit ? FtpSecurity.FTPS_EXPLICIT : FtpSecurity.FTPS_IMPLICIT);
 
         X509TrustManager trustManager = null;
+        HostnameVerifier hostnameVerifier = null;
         if (verifyServerCert) {
             config.setVerifyServerCert(true);
             trustManager = _trustManager;
+            hostnameVerifier = _hostnameVerifier;
         }
 
         DefaultKey keyFinder = null;
@@ -175,7 +179,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             keyFinder = _keyFinder;
         }
 
-        FtpClientUtils.upload(config, is, fileName, keyFinder, trustManager);
+        FtpClientUtils.upload(config, is, fileName, keyFinder, trustManager, hostnameVerifier);
     }
 
     private String expandVariables(PolicyEnforcementContext context, String pattern) {

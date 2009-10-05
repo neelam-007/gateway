@@ -783,6 +783,7 @@
       <constructor-arg ref="clusterPropertyManager"/>
       <constructor-arg ref="auditExporter"/>
       <constructor-arg ref="trustManager"/>
+      <constructor-arg ref="hostnameVerifier"/>
       <constructor-arg ref="defaultKey"/>
     </bean>
 

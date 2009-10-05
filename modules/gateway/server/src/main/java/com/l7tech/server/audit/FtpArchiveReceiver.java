@@ -18,6 +18,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.HostnameVerifier;
+
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.transport.ftp.FtpClientUtils;
 import com.l7tech.server.ServerConfig;
@@ -43,26 +45,31 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
 
     public static final String TIMESTAMP_PATTERN = "yyyyMMdd'T'HHmmss.S'Z'";
 
-    private ServerConfig serverConfig;
-    private ClusterPropertyManager clusterPropertyManager;
-    private AuditExporter auditExporter;
-    private X509TrustManager trustManager;      // may be needed for ftps verification
-    private DefaultKey keyFinder;               // may be needed for ftp authentication
-    private X509Certificate sslCert;            // needed for exported zip xml signature
-    private PrivateKey sslPrivateKey;           // needed for exported zip xml signature
+    private final ServerConfig serverConfig;
+    private final ClusterPropertyManager clusterPropertyManager;
+    private final AuditExporter auditExporter;
+    private final X509TrustManager trustManager;      // may be needed for ftps verification
+    private final HostnameVerifier hostnameVerifier;  // may be needed for ftps verification
+    private final DefaultKey keyFinder;               // may be needed for ftp authentication
+    private final X509Certificate sslCert;            // needed for exported zip xml signature
+    private final PrivateKey sslPrivateKey;           // needed for exported zip xml signature
 
 
     private FtpClientConfig ftpConfig;
     private String ftpFilePrefix;
     private long maxUploadFileSize;
 
-    private ReentrantLock lock = new ReentrantLock(); // guards access to zipOut and bytesRemaining
+    private final ReentrantLock lock = new ReentrantLock(); // guards access to zipOut and bytesRemaining
     private DigestZipOutputStream zipOut;
 //    private long bytesRemaining;
     private AuditExporter.ExportedInfo exportedInfo;
 
-    public FtpArchiveReceiver(ServerConfig serverConfig, ClusterPropertyManager cpm, AuditExporter ae,
-                              X509TrustManager trustManager, DefaultKey defaultKey) {
+    public FtpArchiveReceiver( final ServerConfig serverConfig,
+                               final ClusterPropertyManager cpm,
+                               final AuditExporter ae,
+                               final X509TrustManager trustManager,
+                               final HostnameVerifier hostnameVerifier,
+                               final DefaultKey defaultKey ) {
         if (serverConfig == null)
             throw new NullPointerException("ServerConfig parameter must not be null.");
         if (cpm == null)
@@ -78,6 +85,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
         this.clusterPropertyManager = cpm;
         this.auditExporter = ae;
         this.trustManager = trustManager;
+        this.hostnameVerifier = hostnameVerifier;
         this.keyFinder = defaultKey;
 
         try {
@@ -162,7 +170,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
                 logger.fine("Creating new FTP audit archive zip upload stream...");
             try {
                 zipOut = auditExporter.newAuditExportOutputStream(
-                    FtpClientUtils.getUploadOutputStream(ftpConfig, newFileName(), keyFinder, trustManager));
+                    FtpClientUtils.getUploadOutputStream(ftpConfig, newFileName(), keyFinder, trustManager, hostnameVerifier));
                 startWatcherThread();
             } catch (FtpException e) {
                 logger.log(Level.WARNING, "Error creating output stream for audit export.", e);

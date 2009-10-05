@@ -10,13 +10,14 @@ import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.transport.ftp.FtpUtils;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.HostnameVerifier;
 import java.io.*;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
@@ -47,7 +48,7 @@ public class FtpClientUtils {
     }
 
     /**
-     * Convenience proxy method for {@link com.l7tech.gateway.common.transport.ftp.FtpClientConfigImpl.newFtpConfig()}
+     * Convenience proxy method for {@link com.l7tech.gateway.common.transport.ftp.FtpClientConfigImpl#newFtpConfig(String)}
      *
      * @param host
      * @return
@@ -57,21 +58,24 @@ public class FtpClientUtils {
     }
 
     public static Ftps newFtpsClient(FtpClientConfig config) throws FtpException {
-        return newFtpsClient(config, null, null);
+        return newFtpsClient(config, null, null, null);
     }
 
     public static Ftps newFtpsClient(FtpClientConfig config, DefaultKey keyFinder) throws FtpException {
-        return newFtpsClient(config, keyFinder, null);
+        return newFtpsClient(config, keyFinder, null, null);
     }
 
-    public static Ftps newFtpsClient(FtpClientConfig config, X509TrustManager trustManager) throws FtpException {
-        return newFtpsClient(config, null, trustManager);
+    public static Ftps newFtpsClient(FtpClientConfig config, X509TrustManager trustManager, HostnameVerifier hostnameVerifier) throws FtpException {
+        return newFtpsClient(config, null, trustManager, hostnameVerifier);
     }
 
     /**
      * Creates a new, connected FTPS client using the provided FTP configuration.
      */
-    public static Ftps newFtpsClient(FtpClientConfig config, DefaultKey keyFinder, X509TrustManager trustManager) throws FtpException {
+    public static Ftps newFtpsClient( final FtpClientConfig config,
+                                      final DefaultKey keyFinder,
+                                      final X509TrustManager trustManager,
+                                      final HostnameVerifier hostnameVerifier ) throws FtpException {
         if (FtpCredentialsSource.SPECIFIED != config.getCredentialsSource())
             throw new IllegalStateException("Cannot create FTP connection if credentials are not specified.");
 
@@ -90,7 +94,7 @@ public class FtpClientUtils {
 
         CertificateVerifier certificateVerifier = null;
         if (config.isVerifyServerCert()) {
-            certificateVerifier = new CertificateVerifier(trustManager, config.getHost());
+            certificateVerifier = new CertificateVerifier(trustManager, hostnameVerifier, config.getHost());
             ftps.setFtpsCertificateVerifier(certificateVerifier);
         }
 
@@ -202,7 +206,10 @@ public class FtpClientUtils {
      *
      * @throws com.l7tech.gateway.common.transport.ftp.FtpTestException if connection test failed
      */
-    public static void testFtpsConnection(FtpClientConfig config, DefaultKey keyFinder, X509TrustManager trustManager) throws FtpTestException {
+    public static void testFtpsConnection( final FtpClientConfig config,
+                                           final DefaultKey keyFinder,
+                                           final X509TrustManager trustManager,
+                                           final HostnameVerifier hostnameVerifier ) throws FtpTestException {
         // provide our own debug if the client is not watching the logs
         ByteArrayOutputStream baos = null;
         if (config.getDebugStream() == null) {
@@ -212,7 +219,7 @@ public class FtpClientUtils {
 
         Ftps ftps = null;
         try {
-            ftps = newFtpsClient(config, keyFinder, trustManager);
+            ftps = newFtpsClient(config, keyFinder, trustManager, hostnameVerifier);
         } catch (FtpException e) {
             throw new FtpTestException(e.getMessage(), baos != null ? baos.toString() : null);
         } finally {
@@ -225,16 +232,20 @@ public class FtpClientUtils {
     }
 
     public static void upload(FtpClientConfig config, InputStream is, String filename) throws FtpException {
-        upload(config, is, filename, null, null);
+        upload(config, is, filename, null, null, null);
     }
 
-    public static void upload(FtpClientConfig config, InputStream is, String filename,
-                              DefaultKey keyFinder, X509TrustManager trustManager) throws FtpException {
+    public static void upload( final FtpClientConfig config,
+                               final InputStream is,
+                               final String filename,
+                               final DefaultKey keyFinder,
+                               final X509TrustManager trustManager,
+                               final HostnameVerifier hostnameVerifier ) throws FtpException {
 
         if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
             FtpUtils.upload(config, is, filename);
         } else {
-            final Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager);
+            final Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager, hostnameVerifier);
 
             try {
                 ftps.upload(is, filename);
@@ -245,16 +256,19 @@ public class FtpClientUtils {
     }
 
     public static OutputStream getUploadOutputStream(FtpClientConfig config, String filename) throws FtpException {
-        return getUploadOutputStream(config, filename, null, null);
+        return getUploadOutputStream(config, filename, null, null, null);
     }
 
-    public static OutputStream getUploadOutputStream(FtpClientConfig config, String filename,
-                            DefaultKey keyFinder, X509TrustManager trustManager) throws FtpException {
+    public static OutputStream getUploadOutputStream( final FtpClientConfig config,
+                                                      final String filename,
+                                                      final DefaultKey keyFinder,
+                                                      final X509TrustManager trustManager,
+                                                      final HostnameVerifier hostnameVerifier ) throws FtpException {
         if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
             Ftp ftp = FtpUtils.newFtpClient(config);
             return ftp.getOutputStream(filename, 0, false);
         } else {
-            Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager);
+            Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager, hostnameVerifier);
             try {
             return ftps.getOutputStream(filename, 0, false);
             } catch (IOException e) {
@@ -277,21 +291,25 @@ public class FtpClientUtils {
      */
     private static class CertificateVerifier implements FtpsCertificateVerifier {
         private final X509TrustManager _trustManager;
+        private final HostnameVerifier _hostnameVerifier;
         private final String _hostName;
         private boolean _authorized = false;
         private FtpException _exception;
 
-        public CertificateVerifier(X509TrustManager trustManager, String hostName) {
+        public CertificateVerifier(X509TrustManager trustManager, HostnameVerifier hostnameVerifier, String hostName) {
             assert(trustManager != null);
             assert(hostName != null);
             _trustManager = trustManager;
+            _hostnameVerifier = hostnameVerifier;
             _hostName = hostName;
         }
 
+        @Override
         public boolean authorized() {
             return _authorized;
         }
 
+        @Override
         public void verify(SSLSession sslSession) {
             if (logger.isLoggable(Level.FINEST)) {
                 logger.finest("Verifying FTP server (" + _hostName + ") SSL certificate using trusted certificate store.");
@@ -312,12 +330,17 @@ public class FtpClientUtils {
                     return;
                 }
             }
+
             try {
                 _trustManager.checkServerTrusted(x509certs, CertUtils.extractAuthType(sslSession.getCipherSuite()));
-                _authorized = true;
-                _exception = null;
+                if ( _hostnameVerifier == null || _hostnameVerifier.verify( _hostName, sslSession ) ) {
+                    _authorized = true;
+                    _exception = null;
+                } else {
+                    _exception = new FtpException(MessageFormat.format(SystemMessages.FTP_SSL_UNTRUSTED.getMessage(), _hostName, "Hostname verification failed"));
+                }
             } catch (CertificateException e) {
-                _exception = new FtpException(MessageFormat.format(SystemMessages.FTP_SSL_UNTRUSTED.getMessage(), _hostName, e.getMessage()));
+                _exception = new FtpException(MessageFormat.format(SystemMessages.FTP_SSL_UNTRUSTED.getMessage(), _hostName, ExceptionUtils.getMessage(e)));
             }
         }
 

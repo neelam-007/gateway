@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.server.DefaultKey;
 
 import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.HostnameVerifier;
 
 /**
  * @author rmak
@@ -15,11 +16,14 @@ import javax.net.ssl.X509TrustManager;
  */
 public class FtpAdminImpl implements FtpAdmin {
     private final X509TrustManager _x509TrustManager;
+    private final HostnameVerifier _hostnameVerifier;
     private final DefaultKey _keyFinder;
 
     public FtpAdminImpl(X509TrustManager x509TrustManager,
+                        HostnameVerifier hostnameVerifier, 
                         DefaultKey keyFinder) {
         _x509TrustManager = x509TrustManager;
+        _hostnameVerifier = hostnameVerifier;
         _keyFinder = keyFinder;
     }
 
@@ -41,6 +45,7 @@ public class FtpAdminImpl implements FtpAdmin {
      * @param timeout               connection timeout in milliseconds
      * @throws FtpTestException if connection test failed
      */
+    @Override
     public void testConnection(boolean isFtps,
                                boolean isExplicit,
                                boolean isVerifyServerCert,
@@ -73,7 +78,7 @@ public class FtpAdminImpl implements FtpAdmin {
         }
 
         if (isFtps)
-            FtpClientUtils.testFtpsConnection(config, keyFinder, trustManager);
+            FtpClientUtils.testFtpsConnection(config, keyFinder, trustManager, _hostnameVerifier);
         else
             FtpUtils.testFtpConnection(config);
     }
