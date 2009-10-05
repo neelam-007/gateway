@@ -114,6 +114,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_IO_BACK_CONNECTION_TIMEOUT = "ioOutConnectionTimeout";
     public static final String PARAM_IO_BACK_READ_TIMEOUT = "ioOutReadTimeout";
     public static final String PARAM_IO_BACK_HTTPS_HOST_CHECK = "ioHttpsHostVerify";
+    public static final String PARAM_IO_HOST_ALLOW_WILDCARD = "ioHttpsHostAllowWildcard";
     public static final String PARAM_IO_STALE_CHECK_PER_INTERVAL = "ioStaleCheckCount";
     public static final String PARAM_IO_STALE_MAX_HOSTS = "ioStaleCheckHosts";
     public static final String PARAM_IO_XML_PART_MAX_BYTES = "ioXmlPartMaxBytes";

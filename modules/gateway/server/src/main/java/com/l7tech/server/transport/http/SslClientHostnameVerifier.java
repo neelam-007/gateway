@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.CertVerifier;
@@ -13,8 +14,11 @@ import javax.net.ssl.SSLSession;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateParsingException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Collections;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,9 +31,17 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
 
     //- PUBLIC
 
-    public SslClientHostnameVerifier(final ServerConfig serverConfig, final TrustedCertServices trustedCertServices) {
+    public SslClientHostnameVerifier( final ServerConfig serverConfig,
+                                      final TrustedCertServices trustedCertServices ) {
+        this( serverConfig, trustedCertServices, false );
+    }
+
+    public SslClientHostnameVerifier( final ServerConfig serverConfig,
+                                      final TrustedCertServices trustedCertServices,
+                                      final boolean hostnameWildcardsOnly ) {
         this.serverConfig = serverConfig;
         this.trustedCertServices = trustedCertServices;
+        this.hostnameWildcardsOnly = hostnameWildcardsOnly;
     }
 
     /**
@@ -38,8 +50,8 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
      * @param hostname The host name to verify
      * @param sslSession The SSL session
      */
-    public boolean verify(String hostname, SSLSession sslSession) {
-
+    @Override
+    public boolean verify( final String hostname, final SSLSession sslSession ) {
         if (hostname == null || sslSession == null)
             return isSkipHostnameVerificationByDefault();
 
@@ -56,10 +68,14 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
 
     private static final Logger logger = Logger.getLogger(SslClientHostnameVerifier.class.getName());
 
+    private static final int NAME_TYPE_IPADDRESS = 7;
+    private static final int NAME_TYPE_DNS = 2;
+
     private final ServerConfig serverConfig;
     private final TrustedCertServices trustedCertServices;
+    private final boolean hostnameWildcardsOnly; // When wildcards are enabled, are they only allowed for hostnames?
 
-    private boolean doVerify(String expectedHostname, SSLSession sslSession) throws SSLPeerUnverifiedException, FindException, CertificateException {
+    private boolean doVerify( final String expectedHostname, final SSLSession sslSession ) throws SSLPeerUnverifiedException, FindException, CertificateException {
         Certificate[] certChain = sslSession.getPeerCertificates();
         if (certChain.length < 1 || !(certChain[0] instanceof X509Certificate))
             return isSkipHostnameVerificationByDefault();
@@ -83,18 +99,64 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
         return !verify;
     }
 
-    private boolean isHostnameMatch(String expectedHostname, X509Certificate certificate) {
-        if (expectedHostname == null)
-            return false;
-        List<String> cnValues = CertUtils.extractCommonNamesFromCertificate(certificate);
-        for (String cnValue : cnValues) {
-            if (expectedHostname.equalsIgnoreCase(cnValue))
-                return true;
+    private boolean isAllowHostnameWildcards() {
+        boolean allowWildcards = false;
+        String allowHostnameWildcardsTxt = serverConfig.getPropertyCached(ServerConfig.PARAM_IO_HOST_ALLOW_WILDCARD, 30000);
+
+        if (allowHostnameWildcardsTxt != null) {
+            allowWildcards = Boolean.valueOf(allowHostnameWildcardsTxt.trim());
         }
-        return false;
+
+        return allowWildcards;
     }
 
-    private boolean isCertSignerTrustedWithoutHostnameVerification(X509Certificate certificate) throws FindException {
+    private boolean isHostnameMatch( final String expectedHostname, final X509Certificate certificate ) throws CertificateParsingException {
+        if ( expectedHostname == null )
+            return false;
+
+        boolean isIPaddress = InetAddressUtil.looksLikeIpAddressV4OrV6(expectedHostname);
+        Collection<String> certificateNames = getSubjectAlternativeNames( certificate, isIPaddress ? NAME_TYPE_IPADDRESS : NAME_TYPE_DNS );
+
+        if ( certificateNames.isEmpty() ) {
+            String cnValue = CertUtils.extractFirstCommonNameFromCertificate(certificate);
+            if ( cnValue != null ) {
+                certificateNames = Collections.singletonList( cnValue );
+            }
+        }
+
+        boolean match = false;
+        for ( String namePattern : certificateNames ) {
+            if ( !isIPaddress && isAllowHostnameWildcards() ) {
+                match = CertUtils.domainNameMatchesPattern( expectedHostname, namePattern, hostnameWildcardsOnly );
+            } else {
+                match = expectedHostname.equalsIgnoreCase(namePattern);
+            }
+
+            if ( match ) break;
+        }
+
+        return match;
+    }
+
+    private Collection<String> getSubjectAlternativeNames( final X509Certificate certificate, final Integer nameType ) throws CertificateParsingException {
+        Collection<String> names = new ArrayList<String>();
+
+        Collection<List<?>> altNames = certificate.getSubjectAlternativeNames();
+        if ( altNames != null ) {
+            for ( List<?> item : altNames ) {
+                if ( item.size() == 2 ) {
+                    Object type = item.get(0);
+                    if ( nameType.equals(type) ) {
+                        names.add((String) item.get(1));
+                    }
+                }
+            }
+        }
+
+        return names;
+    }
+
+    private boolean isCertSignerTrustedWithoutHostnameVerification( final X509Certificate certificate ) throws FindException {
         String issuerDn = CertUtils.getIssuerDN(certificate);
         Collection<TrustedCert> trustedSignerCert = trustedCertServices.getCertsBySubjectDnFiltered(issuerDn, false, null, null);
         for (TrustedCert trustedCert : trustedSignerCert) {
@@ -105,7 +167,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
     }
 
     // Return true iff. the specified certificate verifies with the specified issuerCert's public key
-    private boolean isCertSignedByIssuer(X509Certificate certificate, TrustedCert issuerCert) {
+    private boolean isCertSignedByIssuer( final X509Certificate certificate, final TrustedCert issuerCert) {
         try {
             CertVerifier.cachedVerify(certificate, issuerCert.getCertificate());
             return true;
@@ -114,7 +176,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
         }
     }
 
-    private boolean isCertDirectlyTrustedWithoutHostnameVerification(X509Certificate certificate) throws FindException, CertificateException {
+    private boolean isCertDirectlyTrustedWithoutHostnameVerification( final X509Certificate certificate ) throws FindException, CertificateException {
         String subjectDn = CertUtils.getSubjectDN(certificate);
         Collection<TrustedCert> trustedCerts = trustedCertServices.getCertsBySubjectDnFiltered(subjectDn, false, null, null);
         for (TrustedCert trustedCert : trustedCerts) {

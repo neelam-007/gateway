@@ -838,6 +838,92 @@ public class CertUtils {
         return matches;
     }
 
+    /**
+     * Test if a domain name matches a template.
+     *
+     * <p>The pattern can optionally be restricted to allow a wildcard (<b>*</b>) for
+     * only the hostname.</p>
+     *
+     * @param name The name to match
+     * @param pattern the pattern to use
+     * @param hostnameOnly True if a wildcard is only permitted for the hostname
+     * @return
+     */
+    public static boolean domainNameMatchesPattern( final String name,
+                                                    final String pattern,
+                                                    final boolean hostnameOnly ) {
+        boolean match = false;
+
+        if ( name != null && pattern != null ) {
+            final String lowerName = name.toLowerCase();
+            final String lowerPattern = pattern.toLowerCase();
+
+            char wildcard = '*';
+            if ( lowerPattern.indexOf(wildcard) < 0 ) {
+                match = lowerName.equals( lowerPattern ) && lowerName.length() > 0;
+            } else {
+                final StringTokenizer nameTokenizer = new StringTokenizer( lowerName, "." );
+                final StringTokenizer patternTokenizer = new StringTokenizer( lowerPattern, "." );
+
+                if ( nameTokenizer.countTokens() == patternTokenizer.countTokens() ) {
+                    match = true;
+                    boolean isFirst = true;               
+                    while ( nameTokenizer.hasMoreTokens() ) {
+                        final String nameToken = nameTokenizer.nextToken();
+                        final String patternToken = patternTokenizer.nextToken();
+
+                        if ( patternToken.indexOf(wildcard)>-1 && (isFirst || !hostnameOnly) ) {
+                            match = matchPattern( nameToken, patternToken, wildcard );
+                        } else if ( !nameToken.equalsIgnoreCase(patternToken)) {
+                            match = false;
+                        }
+
+                        if (!match) break;
+
+                        isFirst = false;
+                    }
+                }
+            }
+        }
+
+        return match;
+    }
+
+    /**
+     * Check that the given name matches the given pattern.
+     *
+     * The pattern can contain a wildcard that matches any character (or none)
+     */
+    private static boolean matchPattern( final String name,
+                                         final String pattern,
+                                         final char wildcard ) {
+        int wildcardIdx = pattern.indexOf( wildcard );
+        if ( wildcardIdx == -1 )
+            return name.equals( pattern );
+
+        boolean isBeginning = true;
+        String namePart = name;
+        String beforeWildcard;
+        String afterWildcard = pattern;
+
+        while ( wildcardIdx != -1 ) {
+            beforeWildcard = afterWildcard.substring( 0, wildcardIdx );
+            afterWildcard = afterWildcard.substring( wildcardIdx + 1 );
+
+            int beforeStartIdx = namePart.indexOf( beforeWildcard );
+            if ( ( beforeStartIdx == -1 ) ||
+                 ( isBeginning && beforeStartIdx != 0 ) ) {
+                return false;
+            }
+            isBeginning = false;
+
+            namePart = namePart.substring( beforeStartIdx + beforeWildcard.length() );
+            wildcardIdx = afterWildcard.indexOf( wildcard );
+        }
+
+        return namePart.endsWith( afterWildcard );
+    }
+
 
     /**
      * Display structured information about a certificate.

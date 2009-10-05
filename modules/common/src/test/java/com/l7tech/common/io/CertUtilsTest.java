@@ -158,4 +158,25 @@ public class CertUtilsTest {
                     CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise",
                                 "dc=layer7-tech, DC=com, cn=*, UID=*"));
     }
+
+    @Test
+    public void testWildcardDomainMatch() {
+        Assert.assertTrue( "Wildcard only match", CertUtils.domainNameMatchesPattern( "host", "*", false ) );
+        Assert.assertTrue( "Wildcards only match", CertUtils.domainNameMatchesPattern( "host", "******", false ) );
+        Assert.assertTrue( "Wildcard hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*.domain.com", false ) );
+        Assert.assertTrue( "Wildcard trailing hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*.domain.com", false ) );
+        Assert.assertTrue( "Wildcard leading hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*t.domain.com", false ) );
+        Assert.assertTrue( "Wildcard embedded hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*t.domain.com", false ) );
+        Assert.assertTrue( "Wildcard multi hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h**t.domain.com", false ) );
+        Assert.assertTrue( "Wildcard multi outer hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*os*.domain.com", false ) );
+        Assert.assertTrue( "Wildcard multi outer2 hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*ost*.domain.com", false ) );
+        Assert.assertTrue( "Wildcard multi outer3 hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*host*.domain.com", false ) );
+        Assert.assertTrue( "Wildcard lots multi hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*****t.domain.com", false ) );
+        Assert.assertTrue( "Wildcard domain match", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "host.*.domain.com", false ) );
+        Assert.assertFalse( "Wildcard mismatch", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "e*.domain.com", false ) );
+        Assert.assertFalse( "Wildcard tailing mismatch", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "*e.domain.com", false ) );
+        Assert.assertFalse( "Wildcard multi-domain match", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "*.domain.com", false ) );
+        Assert.assertFalse( "Wildcard domain match", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "host.*.domain.com", true ) );
+        Assert.assertFalse( "Wildcard multi mismatch", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*eer*st.domain.com", false ) );
+    }
 }
