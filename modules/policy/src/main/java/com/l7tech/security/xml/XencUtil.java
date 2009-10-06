@@ -16,6 +16,7 @@ import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.keys.FlexKey;
+import com.l7tech.security.keys.UnsupportedKeyTypeException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
@@ -423,7 +424,7 @@ public class XencUtil {
      */
     public static byte[] encryptKeyWithRsaAndPad(byte[] keyBytes, X509Certificate recipientCert, PublicKey publicKey) throws GeneralSecurityException {
         if (!("RSA".equalsIgnoreCase(publicKey.getAlgorithm())))
-            throw new KeyException("Unable to encrypt for recipient public key of non-RSA type: " + publicKey.getAlgorithm());
+            throw new UnsupportedKeyTypeException("Unable to encrypt for recipient public key of non-RSA type: " + publicKey.getAlgorithm());
         KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, recipientCert, publicKey);
         Cipher rsa = JceProvider.getInstance().getRsaPkcs1PaddingCipher();
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
@@ -443,7 +444,7 @@ public class XencUtil {
      */
     public static byte[] encryptKeyWithRsaOaepMGF1SHA1(byte[] keyBytes, X509Certificate recipientCert, PublicKey publicKey, byte[] oaepParams) throws GeneralSecurityException {
         if (!("RSA".equalsIgnoreCase(publicKey.getAlgorithm())))
-            throw new KeyException("Unable to encrypt for recipient public key of non-RSA type: " + publicKey.getAlgorithm());
+            throw new UnsupportedKeyTypeException("Unable to encrypt for recipient public key of non-RSA type: " + publicKey.getAlgorithm());
 
         Cipher rsa = JceProvider.getInstance().getRsaOaepPaddingCipher();
         try {
