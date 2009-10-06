@@ -14,8 +14,8 @@ import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.transport.http.SslClientSocketFactory;
-import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
+import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
+import com.l7tech.server.transport.http.AnonymousSslClientHostnameAwareSocketFactory;
 import com.l7tech.server.transport.email.EmailUtils;
 import com.l7tech.server.ServerConfig;
 import org.springframework.context.ApplicationContext;
@@ -27,7 +27,6 @@ import javax.mail.AuthenticationFailedException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.util.Map;
@@ -37,8 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.logging.Logger;
 import java.net.ConnectException;
-import java.net.Socket;
-import java.net.InetAddress;
 
 /**
  * Server side implementation of assertion that sends an email alert.
@@ -57,7 +54,13 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
     private static final Map<Map<String,String>, Session> sessionCache = new WeakHashMap<Map<String,String>, Session>();
     private Session session = null;
     private final String[] varsUsed;
-    private static final String SOCKET_FACTORY_CLASSNAME = SslClientSocketFactory.class.getName();
+    
+    // We only support SSL without client cert, but allow configuration of SSL default key just in case.
+    private static final String PROP_SSL_DEFAULT_KEY = "com.l7tech.server.policy.emailalert.useDefaultSsl";
+    private static final boolean SSL_DEFAULT_KEY = SyspropUtil.getBoolean(PROP_SSL_DEFAULT_KEY, false);
+    private static final String SOCKET_FACTORY_CLASSNAME = SSL_DEFAULT_KEY ?
+            SslClientHostnameAwareSocketFactory.class.getName() :
+            AnonymousSslClientHostnameAwareSocketFactory.class.getName();
 
     public ServerEmailAlertAssertion(EmailAlertAssertion ass, ApplicationContext spring) {
         super(ass);
@@ -129,40 +132,6 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
     }
 
     /**
-     * Test the assertion.
-     * /
-    public Collection<String> test()  {
-        Collection<String> messages = new ArrayList<String>();
-
-        Properties properties = new Properties();
-        properties.putAll( propertyMap );
-        Session session = Session.getInstance(properties, null);
-        String body = assertion.getBase64message();
-
-        if (toAddresses == null) {
-            messages.add("Invalid to address.");
-        } else if (fromAddress == null) {
-            messages.add("Invalid from address.");
-        } else {
-            try {
-                sendMessage( session, body );
-            } catch (AuthenticationFailedException e) {
-                messages.add("Authentication failed.");
-            } catch (MessagingException e) {
-                if ( ExceptionUtils.causedBy( e, ConnectException.class ) ) {
-                    messages.add("Connection failed.");
-                } else if ( ExceptionUtils.causedBy( e, SSLHandshakeException.class ) ) {
-                    messages.add("SSL connection failed.");
-                } else {
-                    messages.add( "An error occurred '" + ExceptionUtils.getMessage(e) + "'");            
-                }
-            }
-        }
-
-        return messages;
-    }*/
-
-    /**
      * Build immutable properties for this assertion 
      */
     private Map<String,String> buildProperties( final EmailAlertAssertion emailAlertAssertion,
@@ -186,9 +155,11 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         // SSL Config
         if ( protocol == EmailAlertAssertion.Protocol.STARTTLS ) {
             props.put("mail." + protoVal + ".socketFactory.class", EmailUtils.StartTlsSocketFactory.class.getName());
+            props.put("mail." + protoVal + ".socketFactory.fallback", "false");
             props.put("mail." + protoVal + ".starttls.enable", "true");
         } else if ( protocol == EmailAlertAssertion.Protocol.SSL ) {
             props.put("mail." + protoVal + ".socketFactory.class", SOCKET_FACTORY_CLASSNAME);
+            props.put("mail." + protoVal + ".socketFactory.fallback", "false");
         }
 
         if( assertion.isAuthenticate() ) {
@@ -203,6 +174,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
      *
      * @return a session, either new or reusing one from another ServerEmailAlertAssertion with compatible settings.
      */
+    @SuppressWarnings({ "UseOfPropertiesAsHashtable" })
     private Session getSession() {
         if (session != null)
             return session;

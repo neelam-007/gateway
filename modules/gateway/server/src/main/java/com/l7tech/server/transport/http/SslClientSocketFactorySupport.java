@@ -3,7 +3,7 @@ package com.l7tech.server.transport.http;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.common.io.SocketWrapper;
+import com.l7tech.common.io.SSLSocketWrapper;
 
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLContext;
@@ -173,7 +173,7 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
                                              final InetAddress address ) throws IOException {
         if ( host == null && address == null ) {
             // we'll have to wrap the socket and wait for connect
-            return new SocketWrapper(sslSocket){
+            return new SSLSocketWrapper(sslSocket){
                 @Override
                 public void connect( final SocketAddress endpoint ) throws IOException {
                     super.connect( endpoint );
@@ -188,6 +188,9 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
 
                 private void verifyHost( final SocketAddress endpoint ) throws IOException {
                     if ( endpoint instanceof InetSocketAddress ) {
+                        // Ensure connection is completed before performing hostname verification                        
+                        sslSocket.startHandshake();
+
                         InetSocketAddress inetEndpoint = (InetSocketAddress) endpoint;
                         final String host = getHost(inetEndpoint);
                         if ( !verifier.verify( host, sslSocket.getSession() ) ) {

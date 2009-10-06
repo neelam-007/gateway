@@ -3,11 +3,12 @@ package com.l7tech.server.transport.http;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 import java.util.logging.Logger;
+import java.util.Comparator;
 
 /**
  * 
  */
-public class AnonymousSslClientSocketFactory extends SslClientSocketFactorySupport {
+public class AnonymousSslClientSocketFactory extends SslClientSocketFactorySupport implements Comparator {
 
     //- PUBLIC
 
@@ -26,6 +27,7 @@ public class AnonymousSslClientSocketFactory extends SslClientSocketFactorySuppo
 
     //- PROTECTED
 
+    @Override
     protected final X509TrustManager getTrustManager() {
         return trustManager;
     }

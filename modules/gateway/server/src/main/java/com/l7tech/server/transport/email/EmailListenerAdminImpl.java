@@ -7,7 +7,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
+import com.l7tech.util.ExceptionUtils;
 import com.sun.mail.pop3.POP3Store;
 import com.sun.mail.imap.IMAPStore;
 
@@ -18,6 +19,7 @@ import javax.mail.MessagingException;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * An implementation of the EmailListenerAdmin interface.
@@ -28,21 +30,24 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
     private final EmailListenerManager emailListenerManager;
     private final String clusterNodeId;
 
-    private static final String SOCKET_FACTORY_CLASSNAME = SslClientSocketFactory.class.getName();
+    private static final String SOCKET_FACTORY_CLASSNAME = SslClientHostnameAwareSocketFactory.class.getName();
 
     public EmailListenerAdminImpl(EmailListenerManager emailListenerManager, String clusterNodeId) {
         this.emailListenerManager = emailListenerManager;
         this.clusterNodeId = clusterNodeId;
     }
 
+    @Override
     public EmailListener findEmailListenerByPrimaryKey(long oid) throws FindException {
         return emailListenerManager.findByPrimaryKey(oid);
     }
 
+    @Override
     public Collection<EmailListener> findAllEmailListeners() throws FindException {
         return emailListenerManager.findAll();
     }
 
+    @Override
     public long saveEmailListener(EmailListener emailListener) throws SaveException, UpdateException {
         if (emailListener.getOid() == EmailListener.DEFAULT_OID) {
             emailListener.createEmailListenerState(clusterNodeId, System.currentTimeMillis(), 0);
@@ -53,10 +58,12 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
         }
     }
 
+    @Override
     public void deleteEmailListener(long oid) throws DeleteException, FindException {
         emailListenerManager.delete(oid);
     }
 
+    @Override
     public boolean testEmailAccount(EmailServerType serverType,
                                     String hostname,
                                     int port,
@@ -86,7 +93,9 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
                 store.close();
                 return true;
             } catch(Exception e) {
-                log.warning("Testing email server \"" + username + "@" + hostname + "\", failed: " + e.getMessage());
+                log.log(Level.WARNING,
+                        "Testing email server \"" + username + "@" + hostname + "\", failed: " + ExceptionUtils.getMessage(e),
+                        ExceptionUtils.getDebugException(e));
                 return false;
             }
         } else if(serverType == EmailServerType.IMAP) {
@@ -114,7 +123,9 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
                     return false;
                 }
             } catch(Exception e) {
-                log.warning("Testing email server \"" + username + "@" + hostname + "\", failed: " + e.getMessage());
+                log.log(Level.WARNING,
+                        "Testing email server \"" + username + "@" + hostname + "\", failed: " + ExceptionUtils.getMessage(e),
+                        ExceptionUtils.getDebugException(e));
                 return false;
             }
         }
@@ -122,6 +133,7 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
         return true;
     }
 
+    @Override
     public IMAPFolder getIMAPFolderList(String hostname, int port, String username, String password, boolean useSSL) {
         try {
             Properties props = new Properties();

@@ -484,6 +484,24 @@
             </list>
         </property>
     </bean>
+    <bean id="anonClientHostnameAwareSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.AnonymousSslClientHostnameAwareSocketFactory"/>
+        <property name="targetMethod" value="setTrustManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="trustManager"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="anonClientHostnameAwareSocketFactoryHostnameVerifierInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.AnonymousSslClientHostnameAwareSocketFactory"/>
+        <property name="targetMethod" value="setHostnameVerifier"/>
+        <property name="arguments">
+            <list>
+                <ref bean="ldapHostnameVerifier"/> <!-- LDAP verifier -->
+            </list>
+        </property>
+    </bean>
     <bean id="clientSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
         <property name="targetMethod" value="setTrustManager"/>

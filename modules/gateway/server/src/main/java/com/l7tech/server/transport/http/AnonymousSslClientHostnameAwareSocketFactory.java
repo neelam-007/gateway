@@ -1,12 +1,11 @@
 package com.l7tech.server.transport.http;
 
 import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocket;
-import java.util.Comparator;
 import java.util.logging.Logger;
+import java.util.Comparator;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.io.IOException;
@@ -14,26 +13,24 @@ import java.io.IOException;
 /**
  *
  */
-public class SslClientHostnameAwareSocketFactory extends SslClientSocketFactorySupport implements Comparator {
+public class AnonymousSslClientHostnameAwareSocketFactory extends SslClientSocketFactorySupport implements Comparator {
 
     //- PUBLIC
 
     public synchronized static void setTrustManager( final X509TrustManager trustManager ) {
         logger.info("SSL Client TrustManager initialized.");
         if (trustManager == null) throw new NullPointerException();
-        SslClientHostnameAwareSocketFactory.trustManager = trustManager;
-    }
-
-    public synchronized static void setDefaultKeyManagers( final KeyManager[] keyManagers ) {
-        logger.info("SSL Client KeyManager initialized.");
-        SslClientHostnameAwareSocketFactory.defaultKeyManagers = keyManagers;
+        AnonymousSslClientHostnameAwareSocketFactory.trustManager = trustManager;
     }
 
     public synchronized static void setHostnameVerifier( final HostnameVerifier hostnameVerifier ) {
         logger.info("SSL Client HostnameVerifier initialized.");
-        SslClientHostnameAwareSocketFactory.hostnameVerifier = hostnameVerifier;
+        AnonymousSslClientHostnameAwareSocketFactory.hostnameVerifier = hostnameVerifier;
     }
 
+    /**
+     * This is bizarre but it's Just The Way It Is(tm)
+     */
     public static SSLSocketFactory getDefault() {
         return SingletonHolder.defaultInstance;
     }
@@ -43,11 +40,6 @@ public class SslClientHostnameAwareSocketFactory extends SslClientSocketFactoryS
     @Override
     protected final X509TrustManager getTrustManager() {
         return trustManager;
-    }
-
-    @Override
-    protected final KeyManager[] getDefaultKeyManagers() {
-        return defaultKeyManagers;
     }
 
     @Override
@@ -68,13 +60,12 @@ public class SslClientHostnameAwareSocketFactory extends SslClientSocketFactoryS
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(SslClientHostnameAwareSocketFactory.class.getName());
+    private static final Logger logger = Logger.getLogger(AnonymousSslClientHostnameAwareSocketFactory.class.getName());
 
     private static X509TrustManager trustManager;
-    private static KeyManager[] defaultKeyManagers;
     private static HostnameVerifier hostnameVerifier;
 
     private static final class SingletonHolder {
-        private static SslClientHostnameAwareSocketFactory defaultInstance = new SslClientHostnameAwareSocketFactory();
+        private static AnonymousSslClientHostnameAwareSocketFactory defaultInstance = new AnonymousSslClientHostnameAwareSocketFactory();
     }
 }

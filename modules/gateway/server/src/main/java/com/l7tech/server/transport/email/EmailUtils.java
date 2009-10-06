@@ -1,8 +1,8 @@
 package com.l7tech.server.transport.email;
 
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.server.transport.http.SslClientSocketFactory;
-import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
+import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
+import com.l7tech.server.transport.http.AnonymousSslClientHostnameAwareSocketFactory;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.transport.email.EmailMessage;
@@ -31,8 +31,9 @@ public class EmailUtils {
     // We only support SSL without client cert, but allow configuration of SSL default key just in case.
     private static final String PROP_SSL_DEFAULT_KEY = "com.l7tech.server.policy.emailalert.useDefaultSsl";
     private static final boolean SSL_DEFAULT_KEY = SyspropUtil.getBoolean(PROP_SSL_DEFAULT_KEY, false);
-    private static final String SOCKET_FACTORY_CLASSNAME = SslClientSocketFactory.class.getName();    
-    private static final Map<Map<String,String>, Session> sessionCache = new WeakHashMap<Map<String,String>, Session>();
+    private static final String SOCKET_FACTORY_CLASSNAME = SSL_DEFAULT_KEY ?
+            SslClientHostnameAwareSocketFactory.class.getName() :
+            AnonymousSslClientHostnameAwareSocketFactory.class.getName();
     private static final Logger logger = Logger.getLogger(EmailUtils.class.getName());
 
     private static Map<String,String> buildProperties(final EmailConfig emailConfig, final EmailMessage emailMessage) {
@@ -54,9 +55,11 @@ public class EmailUtils {
         // SSL Config
         if ( emailConfig.getProtocol() == EmailAlertAssertion.Protocol.STARTTLS ) {
             props.put("mail." + protoVal + ".socketFactory.class", StartTlsSocketFactory.class.getName());
+            props.put("mail." + protoVal + ".socketFactory.fallback", "false");
             props.put("mail." + protoVal + ".starttls.enable", "true");
         } else if ( emailConfig.getProtocol() == EmailAlertAssertion.Protocol.SSL ) {
             props.put("mail." + protoVal + ".socketFactory.class", SOCKET_FACTORY_CLASSNAME);
+            props.put("mail." + protoVal + ".socketFactory.fallback", "false");
         }
 
         if( emailConfig.isAuthenticate() ) {
@@ -71,20 +74,12 @@ public class EmailUtils {
      *
      * @return a session, either new or reusing one from another ServerEmailAlertAssertion with compatible settings.
      */
+    @SuppressWarnings({ "UseOfPropertiesAsHashtable" })
     private static Session getSession(final Map<String, String> propertyMap) {
-        synchronized (sessionCache) {
-            Session session = sessionCache.get(propertyMap);
-            if (session == null) {
-                // create properties for session instantiation
-                Properties properties = new Properties();
-                properties.putAll( propertyMap );
-                session = Session.getInstance(properties, null);
-
-                // store using immutable property map as key
-                sessionCache.put(propertyMap, session);
-            }
-            return session;
-        }
+        // create properties for session instantiation
+        Properties properties = new Properties();
+        properties.putAll( propertyMap );
+        return Session.getInstance(properties, null);
     }
 
     /**
@@ -108,7 +103,12 @@ public class EmailUtils {
                 throw new EmailTestException("Client does not have permission to Send As this sender '" + emailMessage.getFromAddress() + "'");
             } else {
                 logger.fine("Failed to send test email message: " + me.getMessage());
-                throw new EmailTestException(me.getMessage());
+                if ( ExceptionUtils.causedBy(me,IOException.class)) {
+                    IOException cause = ExceptionUtils.getCauseIfCausedBy( me, IOException.class );
+                    throw new EmailTestException(me.getMessage() + " due to " + ExceptionUtils.getMessage( cause ));
+                } else {
+                    throw new EmailTestException(me.getMessage());
+                }
             }
         }
     }
@@ -138,15 +138,12 @@ public class EmailUtils {
      * the same SocketFactory.
      */
     public static class StartTlsSocketFactory extends SSLSocketFactory {
-        private SSLSocketFactory sslFactory = SSL_DEFAULT_KEY ?
-                SslClientSocketFactory.getDefault() :
-                AnonymousSslClientSocketFactory.getDefault();
-        private static StartTlsSocketFactory singleton = new StartTlsSocketFactory();
+        private final SSLSocketFactory sslFactory = SSL_DEFAULT_KEY ?
+                SslClientHostnameAwareSocketFactory.getDefault() :
+                AnonymousSslClientHostnameAwareSocketFactory.getDefault();
+        private static final StartTlsSocketFactory singleton = new StartTlsSocketFactory();
 
         public static synchronized SSLSocketFactory getDefault() {
-            if(singleton == null) {
-                singleton = new StartTlsSocketFactory();
-            }
             return singleton;
         }
 

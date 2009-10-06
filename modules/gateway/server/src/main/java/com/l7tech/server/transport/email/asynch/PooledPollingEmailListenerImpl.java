@@ -2,9 +2,8 @@ package com.l7tech.server.transport.email.asynch;
 
 import com.l7tech.server.event.system.EmailEvent;
 import com.l7tech.server.transport.email.*;
-import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 import com.l7tech.server.LifecycleException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
@@ -15,7 +14,6 @@ import javax.mail.search.FlagTerm;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.beans.PropertyChangeEvent;
 
 /**
@@ -24,7 +22,7 @@ import java.beans.PropertyChangeEvent;
 public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     private static final Logger _logger = Logger.getLogger(PooledPollingEmailListenerImpl.class.getName());
 
-    private static final String SOCKET_FACTORY_CLASSNAME = SslClientSocketFactory.class.getName();
+    private static final String SOCKET_FACTORY_CLASSNAME = SslClientHostnameAwareSocketFactory.class.getName();
 
     /*
      * Is there a better place for these properties?
@@ -168,6 +166,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
      *
      * @throws com.l7tech.server.LifecycleException when an error is encountered in the thread startup
      */
+    @Override
     public void start() throws LifecycleException {
         synchronized(sync) {
             log(Level.FINE, EmailMessages.INFO_LISTENER_START, toString());
@@ -179,6 +178,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     /**
      * Tells the listener thread to stop.
      */
+    @Override
     public void stop() {
         synchronized(sync) {
             log(Level.FINE, EmailMessages.INFO_LISTENER_STOP, toString());
@@ -190,6 +190,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     /**
      * Give the listener thread a set amount of time to shutdown, before it gets interrupted.
      */
+    @Override
     public void ensureStopped() {
         long stopRequestedTime;
 
@@ -237,6 +238,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
         return this.emailListenerCfg;
     }
 
+    @Override
     public long getEmailListenerOid() {
         return this.emailListenerCfg.getEmailListener().getOid();
     }
@@ -268,6 +270,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
         return new EmailTask(getEmailListenerConfig(), message);
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt)
     {
         if (PROPERTY_MAX_SIZE.equals(evt.getPropertyName())) {
@@ -309,15 +312,15 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
         /**
          *
          */
+        @Override
         public final void run() {
             int oopses = 0;
             log(Level.INFO, EmailMessages.INFO_LISTENER_POLLING_START, emailListenerCfg.getEmailListener().getName());
 
             try {
-                MimeMessage message = null;
-                HashSet<Integer> messageIdsToSkip = new HashSet<Integer>();
+                MimeMessage message;
                 while ( !isStop() ) {
-                    Message messages[] = null;
+                    Message messages[];
                     long startTime = System.currentTimeMillis();
                     int lastMessageId = 0;
 
@@ -375,9 +378,9 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                         // Update the last polling time and the last message id
                         emailListenerCfg.getEmailListener().getEmailListenerState().setLastPollTime(System.currentTimeMillis());
                         if(emailListenerCfg.getEmailListener().isDeleteOnReceive()) { // Message IDs can change on expunge
-                            emailListenerCfg.getEmailListener().getEmailListenerState().setLastMessageId(new Long(0));
+                            emailListenerCfg.getEmailListener().getEmailListenerState().setLastMessageId(0L);
                         } else if(lastMessageId > 0) { // At least one message was found
-                            emailListenerCfg.getEmailListener().getEmailListenerState().setLastMessageId(new Long(lastMessageId));
+                            emailListenerCfg.getEmailListener().getEmailListenerState().setLastMessageId((long)lastMessageId);
                         }
                         emailListenerManager.updateState(emailListenerCfg.getEmailListener().getEmailListenerState());
 
