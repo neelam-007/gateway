@@ -105,7 +105,7 @@ public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityA
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return ASSERTION_STATUS_BAD_MESSAGE;
         } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (KeyInfoResolvingException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
