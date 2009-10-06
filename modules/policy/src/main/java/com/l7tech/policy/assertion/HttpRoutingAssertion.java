@@ -9,6 +9,9 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -17,6 +20,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.HTTP_URL;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.HTTP_URL_ARRAY;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.IP_ADDRESS_ARRAY;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.common.http.HttpMethod;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -91,6 +95,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected boolean usesDefaultKeyStore = true;
     protected long nonDefaultKeystoreId;
     protected String keyId;
+    private HttpMethod httpMethod;
 
     // WARNING
     // WARNING : If you add properties, update the copyFrom method
@@ -141,6 +146,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setKeyAlias(source.getKeyAlias());
         this.setUsesDefaultKeyStore(source.isUsesDefaultKeyStore());
         this.setNonDefaultKeystoreId(source.getNonDefaultKeystoreId());
+        this.setHttpMethod(source.getHttpMethod());
     }
 
     @Override
@@ -493,6 +499,20 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.krbUseGatewayKeytab = krbUseGatewayKeytab;
     }
 
+    /**
+     * @return overridden HTTP method, or null to use default behavior.
+     */
+    public HttpMethod getHttpMethod() {
+        return httpMethod;
+    }
+
+    /**
+     * @param httpMethod an HTTP method to force, or null to allow the assertion to choose one automatically.
+     */
+    public void setHttpMethod(HttpMethod httpMethod) {
+        this.httpMethod = httpMethod;
+    }
+
     final static String baseName = "Route via HTTP(S)";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<HttpRoutingAssertion>(){
@@ -524,6 +544,10 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
         meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.HttpRoutingAssertionPropertiesAction");
         meta.put(PROPERTIES_ACTION_NAME, "HTTP(S) Routing Properties");
+
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+                new Java5EnumTypeMapping(HttpMethod.class, "httpMethod")
+        )));
 
         return meta;
     }

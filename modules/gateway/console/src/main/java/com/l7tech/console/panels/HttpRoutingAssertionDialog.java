@@ -1,21 +1,22 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.*;
-import com.l7tech.gui.widgets.IpListPanel;
-import com.l7tech.policy.Policy;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.table.HttpHeaderRuleTableHandler;
 import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.console.table.HttpRuleTableHandler;
+import com.l7tech.gui.util.*;
+import com.l7tech.gui.widgets.IpListPanel;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.variable.*;
 import com.l7tech.util.Functions;
+import com.l7tech.wsdl.Wsdl;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -44,7 +45,6 @@ import java.util.logging.Logger;
  * </ul>
  */
 public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
-
     private static class MsgSrcComboBoxItem {
         private final String _variableName;
         private final String _displayName;
@@ -68,6 +68,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private final EventListenerList listenerList = new EventListenerList();
     private final HttpRoutingAssertion assertion;
+    private final boolean bra; // True if this is actually a BridgeRoutingAssertion; some fields are non-functional
     private final HttpRoutingHttpAuthPanel httpAuthPanel;
     private final HttpRoutingSamlAuthPanel samlAuthPanel;
     private final HttpRoutingWindowsIntegratedAuthPanel windowsAuthPanel;
@@ -126,6 +127,9 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField resMsgDestVariableTextField;
     private JLabel resMsgDestVariableStatusLabel;
     private JCheckBox gzipCheckBox;
+    private JComboBox requestMethodComboBox;
+    private JRadioButton automaticRequestMethodRadioButton;
+    private JRadioButton overrideRequestMethodRadioButton;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -146,6 +150,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         super(owner, assertion, true);
         inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         this.assertion = assertion;
+        this.bra = this.assertion instanceof BridgeRoutingAssertion;
         this.policy = policy;
         this.wsdl = wsdl;
         this.httpAuthPanel = new HttpRoutingHttpAuthPanel(assertion);
@@ -360,6 +365,19 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             resMsgDestVariableRadioButton.doClick();
         }
 
+        Set<HttpMethod> methods = EnumSet.allOf(HttpMethod.class);
+        methods.removeAll(Arrays.asList(HttpMethod.HEAD, HttpMethod.OTHER)); // Omit methods not supports by Commons HTTP client
+        requestMethodComboBox.setModel(new DefaultComboBoxModel(methods.toArray()));
+        Utilities.enableGrayOnDisabled(requestMethodComboBox);
+        final ActionListener requestMethodListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateRequestMethodComboBoxEnableState();
+            }
+        };
+        overrideRequestMethodRadioButton.addActionListener(requestMethodListener);
+        automaticRequestMethodRadioButton.addActionListener(requestMethodListener);
+
         initializeHttpRulesTabs();
 
         inputValidator.attachToButton(okButton, okButtonAction);
@@ -375,6 +393,10 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         getRootPane().setDefaultButton(okButton);               
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    private void updateRequestMethodComboBoxEnableState() {
+        requestMethodComboBox.setEnabled(overrideRequestMethodRadioButton.isSelected());
     }
 
     private Map<String, VariableMetadata> getVariablesSetByPredecessors() {
@@ -443,7 +465,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             requestHttpRulesTableHandler.updateeditState();
         }
 
-        if (assertion instanceof BridgeRoutingAssertion) {
+        if (bra) {
             reqParamsAll.setEnabled(false);
             reqParamsCustomize.setEnabled(false);
             reqParamsTable.setEnabled(false);
@@ -643,6 +665,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         
         assertion.setGzipEncodeDownstream(gzipCheckBox.isSelected());
 
+        assertion.setHttpMethod(overrideRequestMethodRadioButton.isSelected() ? (HttpMethod)requestMethodComboBox.getSelectedItem() : null);
+
         confirmed = true;
         fireEventAssertionChanged(assertion);
 
@@ -730,6 +754,20 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         } else {
             gzipCheckBox.setSelected(false);
         }
+
+        HttpMethod method = assertion.getHttpMethod();
+        if (method == null || bra) {
+            overrideRequestMethodRadioButton.setSelected(false);
+            automaticRequestMethodRadioButton.setSelected(true);
+            requestMethodComboBox.setSelectedItem(HttpMethod.POST);
+        } else {
+            automaticRequestMethodRadioButton.setSelected(false);
+            overrideRequestMethodRadioButton.setSelected(true);
+            requestMethodComboBox.setSelectedItem(method);
+        }
+        if (bra)
+            overrideRequestMethodRadioButton.setEnabled(false);
+        updateRequestMethodComboBoxEnableState();
     }
 
     /**

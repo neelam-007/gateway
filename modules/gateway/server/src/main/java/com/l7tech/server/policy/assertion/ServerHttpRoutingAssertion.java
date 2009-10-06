@@ -381,6 +381,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     }
 
     private HttpMethod methodFromRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams) {
+        HttpMethod method = assertion.getHttpMethod();
+        if (method != null)
+            return method;
+
         if (assertion.getRequestMsgSrc() != null) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_VAR);
             return HttpMethod.POST;
