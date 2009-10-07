@@ -5,11 +5,13 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -56,6 +58,9 @@ public class ServerItemLookupByIndexAssertion extends AbstractServerAssertion<It
 
         } catch (NoSuchVariableException e) {
             auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            return AssertionStatus.SERVER_ERROR;
+        } catch (VariableNameSyntaxException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Bad variable syntax: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (NumberFormatException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Index value is not a nonnegative integer");
