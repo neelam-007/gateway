@@ -47,7 +47,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     private static final String XACML_REQUEST_ELEMENT = "Request";
 
     public XacmlRequestBuilderDialog(Window owner, XacmlRequestBuilderAssertion a) {
-        super(owner, resources.getString( "xacml.request.builder" ) );
+        super(owner, a);
         assertion = a;
         createPopupMenu();
         initComponents();
