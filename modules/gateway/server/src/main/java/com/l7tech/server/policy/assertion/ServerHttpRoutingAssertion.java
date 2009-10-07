@@ -600,12 +600,16 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // todo: move to abstract routing assertion
             requestMessage.notifyMessage(routedResponseDestination, MessageRole.RESPONSE);
             routedResponseDestination.notifyMessage(requestMessage, MessageRole.REQUEST);
-            
+
+            // Register raw HTTP headers source
+            HttpInboundResponseKnob httpInboundResponseKnob = getOrCreateHttpInboundResponseKnob(routedResponseDestination);
+            httpInboundResponseKnob.setHeaderSource(routedResponse);
+
             HttpResponseKnob httpResponseKnob = routedResponseDestination.getKnob(HttpResponseKnob.class);
             if (readOk && httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);
 
-                HttpForwardingRuleEnforcer.handleResponseHeaders(routedResponse,
+                HttpForwardingRuleEnforcer.handleResponseHeaders(httpInboundResponseKnob,
                                                                  httpResponseKnob,
                                                                  auditor,
                                                                  assertion.getResponseHeaderRules(),

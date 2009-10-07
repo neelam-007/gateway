@@ -1,22 +1,21 @@
 package com.l7tech.server.util;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.common.http.*;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.*;
-import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.xml.soap.SoapUtil;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.xml.sax.SAXException;
 
 /**
  * This class handles the runtime enforcement of the forwarding rules
@@ -327,9 +326,12 @@ public class HttpForwardingRuleEnforcer {
         return output;
     }
 
-    public static void handleResponseHeaders(HttpResponseKnob targetForResponseHeaders, Auditor auditor,
+    public static void handleResponseHeaders(HttpResponseKnob targetForResponseHeaders, 
+                                             Auditor auditor,
                                              ServerBridgeRoutingAssertion.HeaderHolder hh,
-                                             HttpPassthroughRuleSet rules, Map vars, String[] varNames,
+                                             HttpPassthroughRuleSet rules,
+                                             Map vars,
+                                             String[] varNames,
                                              PolicyEnforcementContext context) {
         if (rules.isForwardAll()) {
             HttpHeader[] headers = hh.getHeaders().toArray();
@@ -379,7 +381,7 @@ public class HttpForwardingRuleEnforcer {
     /**
      * Handle response http headers from a response
      * @param sourceOfResponseHeaders the response gotten from the routing assertion
-     * @param targetForResponseHeaders the response message to put the headers into
+     * @param targetForResponseHeaders the response message to put the pass-through headers into
      * @param context the pec
      * @param rules http rules dictating what headers should be forwarded and under which conditions
      * @param passThroughSpecialHeaders whether to pass through headers in the list {@link HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITELY_FORWARD}
@@ -388,7 +390,7 @@ public class HttpForwardingRuleEnforcer {
      * @param vars pre-populated map of context variables (pec.getVariableMap) or null
      * @param varNames the context variables used by the calling assertion used to populate vars if null
      */
-    public static void handleResponseHeaders(GenericHttpResponse sourceOfResponseHeaders,
+    public static void handleResponseHeaders(HttpInboundResponseKnob sourceOfResponseHeaders,
                                              HttpResponseKnob targetForResponseHeaders,
                                              Auditor auditor,
                                              HttpPassthroughRuleSet rules,
@@ -399,8 +401,7 @@ public class HttpForwardingRuleEnforcer {
                                              String[] varNames) {
         boolean passIncomingCookies = false;
         if (rules.isForwardAll()) {
-            HttpHeader[] responseHeaders = sourceOfResponseHeaders.getHeaders().toArray();
-            for (HttpHeader h : responseHeaders) {
+            for (HttpHeader h : sourceOfResponseHeaders.getHeadersArray()) {
                 if (!passThroughSpecialHeaders && headerShouldBeIgnored(h.getName())) {
                     logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
                 } else if (HttpConstants.HEADER_SET_COOKIE.equals(h.getName())) {
@@ -412,8 +413,7 @@ public class HttpForwardingRuleEnforcer {
             passIncomingCookies = true;
         } else {
             if (passThroughSpecialHeaders) {
-                HttpHeader[] responseHeaders = sourceOfResponseHeaders.getHeaders().toArray();
-                for (HttpHeader h : responseHeaders) {
+                for (HttpHeader h : sourceOfResponseHeaders.getHeadersArray()) {
                     if (headerShouldBeIgnored(h.getName())) {
                         targetForResponseHeaders.addHeader(h.getName(), h.getFullValue());
                     }
@@ -437,10 +437,9 @@ public class HttpForwardingRuleEnforcer {
                         // special cookie handling outside this loop (see below)
                         passIncomingCookies = true;
                     } else {
-                        List vals = sourceOfResponseHeaders.getHeaders().getValues(rule.getName());
-                        if (vals != null && vals.size() > 0) {
-                            for (Object valo : vals) {
-                                String val = (String) valo;
+                        String[] vals = sourceOfResponseHeaders.getHeaderValues(rule.getName());
+                        if (vals != null && vals.length > 0) {
+                            for (String val : vals) {
                                 targetForResponseHeaders.addHeader(rule.getName(), val);
                             }
                         } else {
@@ -454,7 +453,7 @@ public class HttpForwardingRuleEnforcer {
 
         // handle cookies separately
         if (passIncomingCookies) {
-            List setCookieValues = sourceOfResponseHeaders.getHeaders().getValues(HttpConstants.HEADER_SET_COOKIE);
+            String[] setCookieValues = sourceOfResponseHeaders.getHeaderValues(HttpConstants.HEADER_SET_COOKIE);
             for (Object setCookieValue1 : setCookieValues) {
                 String setCookieValue = (String) setCookieValue1;
                 try {

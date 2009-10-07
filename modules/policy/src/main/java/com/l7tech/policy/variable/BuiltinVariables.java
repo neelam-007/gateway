@@ -11,11 +11,8 @@ import java.util.Map;
  * Lists built-in system variables and their metadata
  */
 public class BuiltinVariables {
-    public static final String PREFIX_REQUEST_HTTP_HEADER = "request.http.header";
-    public static final String PREFIX_REQUEST_HTTP_HEADER_VALUES = "request.http.headerValues";
-
-    public static final String PREFIX_RESPONSE_HTTP_HEADER = "response.http.header";
-    public static final String PREFIX_RESPONSE_HTTP_HEADER_VALUES = "response.http.headerValues";
+    public static final String PREFIX_REQUEST = "request";
+    public static final String PREFIX_RESPONSE = "response";
 
     public static final String PREFIX_REQUEST_HTTP_PARAM = "request.http.parameter";
 
@@ -129,11 +126,8 @@ public class BuiltinVariables {
         new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_NAME, false, false, null, false),
         new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_OID, false, false, null, false),
 
-        new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, true, false, null, false),
-        new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, true, true, null, false),
-
-        new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER, true, false, null, false),
-        new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER_VALUES, true, true, null, false),
+        new VariableMetadata(BuiltinVariables.PREFIX_REQUEST, true, false, null, false, DataType.MESSAGE),
+        new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE, true, false, null, false, DataType.MESSAGE),
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, true, false, null, false),
 

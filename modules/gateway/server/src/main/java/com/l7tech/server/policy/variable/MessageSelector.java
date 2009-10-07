@@ -6,18 +6,20 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.*;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ArrayUtils;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.IOUtils;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Extracts values by name from {@link Message}s.
@@ -29,6 +31,7 @@ class MessageSelector implements ExpandVariables.Selector {
     private static final String HTTP_HEADERVALUES_PREFIX = "http.headervalues.";
     private static final String STATUS_NAME = "http.status";
     private static final String MAINPART_NAME = "mainpart";
+    private static final String SIZE_NAME = "size";
 
     // NOTE: Variable names must be lower case
     private static final String WSS_PREFIX = "wss.";
@@ -73,6 +76,8 @@ class MessageSelector implements ExpandVariables.Selector {
             selector = multiHeaderSelector;
         else if (STATUS_NAME.equals(lname)) {
             selector = statusSelector;
+        } else if (SIZE_NAME.equals(lname)) {
+            selector = sizeSelector;
         } else if (MAINPART_NAME.equals(lname)) {
             selector = mainPartSelector;
         } else if (lname.startsWith(WSS_PREFIX)) {
@@ -102,6 +107,7 @@ class MessageSelector implements ExpandVariables.Selector {
                 "http",
                 "mainpart",
                 "wss",
+                SIZE_NAME,
                 AUTH_USER_PASSWORD,
                 AUTH_USER_USERNAME,
                 AUTH_USER_USER,
@@ -147,6 +153,25 @@ class MessageSelector implements ExpandVariables.Selector {
     private static interface MessageAttributeSelector {
         Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict);
     }
+
+    private static final MessageAttributeSelector sizeSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            MimeKnob mimeKnob = context.getKnob(MimeKnob.class);
+            if (mimeKnob == null) {
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+            try {
+                return new Selection(mimeKnob.getContentLength());
+            } catch (IOException e) {
+                String msg = handler.handleBadVariable(name, e);
+                if (strict) throw new IllegalArgumentException("Unable to determine complete message length: " + msg);
+                return null;
+            }
+        }
+    };
 
     private static final MessageAttributeSelector statusSelector = new MessageAttributeSelector() {
         @Override
@@ -256,6 +281,9 @@ class MessageSelector implements ExpandVariables.Selector {
     private static final HeaderSelector singleHeaderSelector = new HeaderSelector(HTTP_HEADER_PREFIX, false);
     private static final HeaderSelector multiHeaderSelector = new HeaderSelector(HTTP_HEADERVALUES_PREFIX, true);
 
+    private static final List<Class<? extends HasHeaders>> headerHaverKnobClasses =
+            Arrays.<Class<? extends HasHeaders>>asList(HttpRequestKnob.class, HttpResponseKnob.class, HttpInboundResponseKnob.class); 
+
     private static class HeaderSelector implements MessageAttributeSelector {
         String prefix;
         boolean multi;
@@ -266,26 +294,29 @@ class MessageSelector implements ExpandVariables.Selector {
         }
 
         @Override
-        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
-            HasHeaders hrk = context.getKnob(HttpRequestKnob.class);
-            if (hrk == null) hrk = context.getKnob(HttpResponseKnob.class);
-            if (hrk == null) {
-                String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
-                if (strict) throw new IllegalArgumentException(msg);
-                return null;
-            }
+        public Selection select(Message message, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            boolean sawHeaderHaver = false;
             final String hname = name.substring(prefix.length());
-            String[] vals = hrk.getHeaderValues(hname);
-            if (vals == null || vals.length == 0) {
+            for (Class<? extends HasHeaders> headerKnob : headerHaverKnobClasses) {
+                HasHeaders hrk = message.getKnob(headerKnob);
+                if (hrk != null) {
+                    sawHeaderHaver = true;
+                    String[] vals = hrk.getHeaderValues(hname);
+                    if (vals != null && vals.length > 0) {
+                        return new Selection(multi ? vals : vals[0]);
+                    }
+                }
+            }
+
+            if (sawHeaderHaver) {
                 String msg = handler.handleBadVariable(hname + " header was empty");
                 if (strict) throw new IllegalArgumentException(msg);
                 return null;
+            } else {
+                String msg = handler.handleBadVariable(name + " in " + message.getClass().getName());
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
             }
-
-            return new Selection(multi ? vals : vals[0]);
         }
-
     }
-
-
 }

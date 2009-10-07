@@ -265,6 +265,8 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     bridgeResponse.notifyMessage(requestMsg, MessageRole.REQUEST);
 
 
+                    HttpInboundResponseKnob inboundResponseKnob = getOrCreateHttpInboundResponseKnob(bridgeResponse);
+                    inboundResponseKnob.setHeaderSource(hh);
                     HttpResponseKnob httpResponseKnob = bridgeResponse.getKnob(HttpResponseKnob.class);
                     if (httpResponseKnob != null) {
                         HttpForwardingRuleEnforcer.handleResponseHeaders(httpResponseKnob, auditor, hh,
@@ -771,9 +773,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         }
     }
 
-    public static class HeaderHolder {
+    public static class HeaderHolder implements HttpHeadersHaver {
         private HttpHeaders headers;
 
+        @Override
         public HttpHeaders getHeaders() {
             return headers;
         }

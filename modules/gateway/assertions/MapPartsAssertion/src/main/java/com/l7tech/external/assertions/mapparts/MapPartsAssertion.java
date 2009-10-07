@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  */
 public class MapPartsAssertion extends Assertion implements SetsVariables {
     protected static final Logger logger = Logger.getLogger(MapPartsAssertion.class.getName());
-    public static final String REQUEST_PARTS_CONTENT_IDS = "request.parts.contentIds";
+    public static final String REQUEST_PARTS_CONTENT_IDS = "requestParts.contentIds";
 
     @Override
     public VariableMetadata[] getVariablesSet() {

@@ -36,6 +36,8 @@ import java.util.logging.Logger;
 public class ServerVariablesTest {
     private static final Logger logger = Logger.getLogger(ServerVariablesTest.class.getName());
     private static final LogOnlyAuditor auditor = new LogOnlyAuditor(logger);
+    private static final String REQUEST_BODY = "<myrequest/>";
+    private static final String RESPONSE_BODY = "<myresponse/>";
 
     /*
     * testServiceNameContextVariable creates a PolicyEncofcementContext and gives it a
@@ -76,6 +78,22 @@ public class ServerVariablesTest {
         Assert.assertEquals("ServerVariable should equal service oid",l.toString(),variableValue);
 
     }    
+
+    @Test
+    public void testRequest() throws Exception {
+        doTestMessage("request", REQUEST_BODY);
+    }
+
+    @Test
+    public void testResponse() throws Exception {
+        doTestMessage("response", RESPONSE_BODY);
+    }
+
+    private void doTestMessage(String prefix, String messageBody) throws Exception {
+        expandAndCheck(context(), "${" + prefix + ".size}", String.valueOf(messageBody.getBytes().length));
+        expandAndCheck(context(), "${" + prefix + ".mainpart}", messageBody);
+        expandAndCheck(context(), "${" + prefix + ".wss.certificates.count}", "0");
+    }
 
     @Test
     public void testNoUser() throws Exception {
@@ -330,9 +348,9 @@ public class ServerVariablesTest {
     public void testServiceUrlContextVariables() throws Exception{
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         Message request = new Message();
-        request.initialize(XmlUtil.stringAsDocument("<myrequest/>"));
+        request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
         Message response = new Message();
-        response.initialize(XmlUtil.stringAsDocument("<myresponse/>"));
+        response.initialize(XmlUtil.stringAsDocument(RESPONSE_BODY));
         PolicyEnforcementContext pec = new PolicyEnforcementContext(request, response);
 
         String host = "servername.l7tech.com";
@@ -408,9 +426,9 @@ public class ServerVariablesTest {
 
     private PolicyEnforcementContext context(){
         Message request = new Message();
-        request.initialize(XmlUtil.stringAsDocument("<myrequest/>"));
+        request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
         Message response = new Message();
-        response.initialize(XmlUtil.stringAsDocument("<myresponse/>"));
+        response.initialize(XmlUtil.stringAsDocument(RESPONSE_BODY));
         return new PolicyEnforcementContext(request, response);
     }
 

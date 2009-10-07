@@ -4,41 +4,40 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.PartIterator;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.identity.AnonymousUserReference;
+import com.l7tech.identity.UserBean;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.PartInfo;
-import com.l7tech.common.mime.PartIterator;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
-import com.l7tech.identity.AnonymousUserReference;
-import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
-import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.AuthenticationContext;
-import com.l7tech.server.policy.custom.CustomAuditorImpl;
-import com.l7tech.server.policy.ServiceFinderImpl;
-import com.l7tech.server.policy.CertificateFinderImpl;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.CertificateFinderImpl;
+import com.l7tech.server.policy.ServiceFinderImpl;
+import com.l7tech.server.policy.custom.CustomAuditorImpl;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -113,7 +112,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             String[] headerNames = hsRequestKnob.getHeaderNames();
             for (int i = 0; i < headerNames.length; i++) {
                 String name = headerNames[i];
-                context.put(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES + "." + name.toLowerCase(), hsRequestKnob.getHeaderValues(name));
+                context.put("request.http.headerValues" + "." + name.toLowerCase(), hsRequestKnob.getHeaderValues(name));
             }
 
             final HttpServletRequest httpServletRequest = hsRequestKnob.getHttpServletRequest();

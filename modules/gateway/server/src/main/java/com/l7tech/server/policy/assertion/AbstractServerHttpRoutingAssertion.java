@@ -1,14 +1,17 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.message.HttpInboundResponseKnob;
+import com.l7tech.message.Message;
+import com.l7tech.message.HttpInboundResponseFacet;
 import org.springframework.context.ApplicationContext;
 
 import java.net.MalformedURLException;
@@ -173,6 +176,21 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADD_OUTGOING_COOKIE, IV_USER);
             }
         }
+    }
+
+    /**
+     * Ensure that the specified message has an HttpInboundResponseKnob.
+     *
+     * @param message the Message that should have an HttpInboundResponseKnob.  Required.
+     * @return an existing or new HttpInboundResponseKnob.  Never null.
+     */
+    protected static HttpInboundResponseKnob getOrCreateHttpInboundResponseKnob(Message message) {
+        HttpInboundResponseKnob httpInboundResponseKnob = message.getKnob(HttpInboundResponseKnob.class);
+        if (httpInboundResponseKnob == null) {
+            httpInboundResponseKnob = new HttpInboundResponseFacet();
+            message.attachKnob(HttpInboundResponseKnob.class, httpInboundResponseKnob);
+        }
+        return httpInboundResponseKnob;
     }
 
     //- PRIVATE

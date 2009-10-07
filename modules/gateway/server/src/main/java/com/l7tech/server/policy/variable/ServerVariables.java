@@ -3,35 +3,28 @@
  */
 package com.l7tech.server.policy.variable;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.util.HexUtils;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import javax.wsdl.Operation;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Collections;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,24 +66,6 @@ public class ServerVariables {
         return hrk.getParameterValues(hname);
     }
 
-    private static String[] getHeaderValues(String prefix, String name, PolicyEnforcementContext context) throws NoSuchVariableException {
-        // TODO what about response headers?
-        HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
-        if (hrk == null) return new String[0];
-
-        if (!name.startsWith(prefix)) {
-            logger.warning("HTTP Header Getter can't handle variable named '" + name + "'!");
-            throw new NoSuchVariableException("invalid http header name " + name);
-        }
-        String suffix = name.substring(prefix.length());
-        if (!suffix.startsWith(".")) {
-            logger.warning("Variable '" + name + "' does not have a period before the header name.");
-            throw new NoSuchVariableException("invalid http header name " + name);
-        }
-        String hname = name.substring(prefix.length()+1);
-        return hrk.getHeaderValues(hname);
-    }
-
     public static void set(String name, Object value, PolicyEnforcementContext context) throws VariableNotSettableException, NoSuchVariableException {
         Variable var = getVariable(name);
         if (var instanceof SettableVariable) {
@@ -112,6 +87,9 @@ public class ServerVariables {
     }
 
     private static final Variable[] VARS = {
+        new Variable("request", new RequestGetter("request")),
+        new Variable("response", new ResponseGetter("response")),
+
         new Variable("request.tcp.remoteAddress", remoteIpGetter),
         new Variable("request.tcp.remoteip", remoteIpGetter),
         new Variable("request.tcp.remoteHost", new Getter() {
@@ -261,58 +239,6 @@ public class ServerVariables {
                 return context.getRoutingStatus().getName();
             }
         }),
-        new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                String[] vals;
-                try {
-                    vals = getHeaderValues(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, name, context);
-                } catch (NoSuchVariableException e) {
-                    logger.log(Level.WARNING, "invalid http header request", e);
-                    return null;
-                }
-                if (vals.length > 0) return vals[0];
-                return null;
-            }
-        }),
-
-        new Variable(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                // get HttpResponseKnob from pec
-                HttpResponseKnob hrk = context.getResponse().getKnob(HttpResponseKnob.class);
-                if (hrk == null) return new String[0];
-
-                String suffix = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER.length());
-                if (!suffix.startsWith(".")) {
-                    logger.warning("Variable '" + name + "' does not have a period before the header name.");
-                    return new String[0];
-                }
-                String hname = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER.length()+1);
-
-                String[] vals = hrk.getHeaderValues(hname);
-                if (vals.length > 0) return vals[0];
-                return null;
-            }
-        }),
-
-        new Variable(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER_VALUES, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                // get HttpResponseKnob from pec
-                HttpResponseKnob hrk = context.getResponse().getKnob(HttpResponseKnob.class);
-                if (hrk == null) return new String[0];
-
-                String suffix = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER_VALUES.length());
-                if (!suffix.startsWith(".")) {
-                    logger.warning("Variable '" + name + "' does not have a period before the header name.");
-                    return new String[0];
-                }
-                String hname = name.substring(BuiltinVariables.PREFIX_RESPONSE_HTTP_HEADER_VALUES.length()+1);
-
-                return hrk.getHeaderValues(hname);
-            }
-        }),
 
         new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, new Getter() {
             @Override
@@ -327,17 +253,6 @@ public class ServerVariables {
                 }
                 if (vals.length > 0) return vals[0];
                 return null;
-            }
-        }),
-        new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                try {
-                    return getHeaderValues(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, name, context);
-                } catch (NoSuchVariableException e) {
-                    logger.log(Level.WARNING, "invalid http header values request", e);
-                    return null;
-                }
             }
         }),
 
@@ -600,6 +515,28 @@ public class ServerVariables {
 
         public String[] getSubNames() {
             return subNames;
+        }
+    }
+
+    private static class RequestGetter extends SelectingGetter {
+        private RequestGetter(final String baseName) {
+            super(baseName);
+        }
+
+        @Override
+        protected Object getBaseObject(PolicyEnforcementContext context) {
+            return context.getRequest();
+        }
+    }
+
+    private static class ResponseGetter extends SelectingGetter {
+        private ResponseGetter(final String baseName) {
+            super(baseName);
+        }
+
+        @Override
+        protected Object getBaseObject(PolicyEnforcementContext context) {
+            return context.getResponse();
         }
     }
 

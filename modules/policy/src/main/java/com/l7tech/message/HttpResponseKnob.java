@@ -9,6 +9,8 @@ package com.l7tech.message;
 import com.l7tech.common.http.HttpCookie;
 
 /**
+ * This concerns only the OUTBOUND RESPONSE.
+ * For information recorded about the last INCOMING BACK-END RESPONSE, look for an HttpInboundResponseKnob.
  * Information about a response to be sent via HTTP.
  */
 public interface HttpResponseKnob extends MessageKnob, HasHeaders {

@@ -100,8 +100,6 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
             };
         }
 
-        hrk.setStatus(status);
-        response.close();
         final byte[] bytes;
         if (variablesUsed.length > 0) {
             String msg = message;
@@ -110,6 +108,8 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         } else {
             bytes = this.messageBytesNoVar;
         }
+        hrk.setStatus(status);
+        response.close();
         response.initialize(stashManager, contentType, new ByteArrayInputStream(bytes));
         response.attachHttpResponseKnob(hrk);
 
