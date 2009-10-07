@@ -43,13 +43,13 @@ public class IntroductionWizardStepPanel extends SamlpWizardStepPanel {
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
         if (isRequestMode()) {
             descriptionLabel.setText("<html>This wizard assists in specifying the details of the SAMLP assertion to be issued.</html>");
-            titleLabel.setText("Welcome to the SAMLP Builder wizard.");
+            titleLabel.setText("Welcome to the SAML Protocol Message Wizard");
             extraTextLabel.setVisible(false);
         } else {
             descriptionLabel.setText("<html>This wizard assists in specifying a SAMLP Evaluator assertion " +
                                      "and any<br> associated requirements and/or conditions against which the " +
                                      "assertion is validated.</html>");
-            titleLabel.setText("Welcome to the SAMLP Evaluator wizard");
+            titleLabel.setText("Welcome to the SAML Protocol Response Wizard");
             extraTextLabel.setVisible(false);
         }
     }
