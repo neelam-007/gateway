@@ -9,7 +9,6 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
@@ -126,15 +125,12 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
             final long oid  = authenticatedUser.getProviderId();
             final IdentityProviderConfig conf = providerConfigManager.findByPrimaryKey(oid);
-            if (conf instanceof LdapIdentityProviderConfig) {
-                LdapIdentityProviderConfig ldapIdentityProviderConfig = (LdapIdentityProviderConfig) conf;
-                if (ldapIdentityProviderConfig.isUserCertsEnabled()) {
-                   logger.log(Level.WARNING,
-                        "The LDAP Identity provider \"" + ldapIdentityProviderConfig.getName() + "\" allows client certs. Cannot grant a CSR for users with certs in LDAP.");
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
-                        " Contact your administrator for more info.");
-                    return;
-                }
+            if (!conf.canIssueCertificates()) {
+               logger.log(Level.WARNING,
+                    "The Identity provider \"" + conf.getName() + "\" does not permit CSR.");
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
+                    " Contact your administrator for more info.");
+                return;
             }
         } catch (FindException e) {
             logger.log(Level.SEVERE,

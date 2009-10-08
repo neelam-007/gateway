@@ -49,4 +49,20 @@ public interface AuthenticatingIdentityProvider<UT extends User, GT extends Grou
      * @return the certificate or null if not found.
      */
     X509Certificate findCertByIssuerAndSerial(final X500Principal issuer, final BigInteger serial) throws FindException;
+
+    /**
+     * Lookup a certificate from this provider by Subject Key Identifier.
+     *
+     * @param ski The certificiate Subject Key Identifier (BASE64)
+     * @return the certificate or null if not found.
+     */
+    X509Certificate findCertBySki(final String ski) throws FindException;
+
+    /**
+     * Lookup a certificate from this provider by SHA1 thumbprint (fingerprint).
+     *
+     * @param thumbprintSHA1 The certificiate thumbprint (BASE64)
+     * @return the certificate or null if not found.
+     */
+    X509Certificate findCertByThumbprintSHA1(final String thumbprintSHA1) throws FindException;
 }

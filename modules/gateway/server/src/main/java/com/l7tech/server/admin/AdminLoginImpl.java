@@ -106,7 +106,7 @@ public class AdminLoginImpl
             return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion());
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
-            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
+            throw buildAccessControlException("Authentication failed", e);
         } catch (FailAttemptsExceededException faee) {
             //shouldn't happen for certificates
             getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
@@ -179,7 +179,7 @@ public class AdminLoginImpl
             return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion());
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
-            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
+            throw buildAccessControlException("Authentication failed", e);
         }
     }
 
@@ -218,7 +218,7 @@ public class AdminLoginImpl
             throw new IllegalArgumentException(ipe.getMessage());    
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
-            throw (AccessControlException) new AccessControlException("Authentication failed").initCause(e);
+            throw buildAccessControlException("Authentication failed", e);
         } 
     }
 
@@ -290,30 +290,32 @@ public class AdminLoginImpl
             return getDigest(digestWith, certificate);
         } catch (InvalidIdProviderCfgException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
-            throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
+            throw buildAccessControlException("Authentication provider error", e);
         } catch (NoSuchAlgorithmException e) {
             logger.log(Level.WARNING, "Server error", e);
-            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+            throw buildAccessControlException("Server Error", e);
         } catch (CertificateEncodingException e) {
             logger.log(Level.WARNING, "Server error", e);
-            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+            throw buildAccessControlException("Server Error", e);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Server error", e);
-            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+            throw buildAccessControlException("Server Error", e);
         } catch (ObjectNotFoundException e) {
             logger.log(Level.WARNING, "Server error", e);
-            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+            throw buildAccessControlException("Server Error", e);
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Server error", e);
-            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+            throw buildAccessControlException("Server Error", e);
         } catch (KeyStoreException e) {
             logger.log(Level.WARNING, "Server error", e);
-            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+            throw buildAccessControlException("Server Error", e);
         }
     }
 
-
-
+    @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
+    private AccessControlException buildAccessControlException( final String message, final Throwable cause ) {
+        return (AccessControlException)new AccessControlException(message).initCause(cause);
+    }
 
     private byte[] getDigest(String password, X509Certificate serverCertificate)
       throws NoSuchAlgorithmException, CertificateEncodingException {
@@ -361,12 +363,11 @@ public class AdminLoginImpl
     }
 
     private InternalIdentityProvider getInternalIdentityProvider() throws ObjectModelException, InvalidIdProviderCfgException {
-        IdentityProviderConfig cfg = identityProviderConfigManager.findByPrimaryKey(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-        if (cfg == null) {
+        IdentityProvider provider = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        if ( !(provider instanceof InternalIdentityProvider) ) {
             throw new IllegalStateException("Could not find the internal identity provider!");
         }
-
-        return (InternalIdentityProvider) identityProviderFactory.makeProvider(cfg);
+        return (InternalIdentityProvider) provider;
     }
 
 

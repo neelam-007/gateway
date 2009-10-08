@@ -20,8 +20,9 @@ public interface IdentityProviderFactorySpi {
      * Create an identity provider with the given configuration.
      *
      * @param configuration The configuration to use
+     * @param start True if the provider should start maintenance tasks (if any)
      * @return The identity provider.
      * @throws InvalidIdProviderCfgException if the configuration is not valid
      */
-    IdentityProvider createIdentityProvider(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException;
+    IdentityProvider createIdentityProvider(IdentityProviderConfig configuration, boolean start) throws InvalidIdProviderCfgException;
 }

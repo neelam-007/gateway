@@ -136,10 +136,12 @@ public abstract class UserCertPanel extends JPanel {
             importCertButton = new JButton();
             importCertButton.setText("Import");
             importCertButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent event) {
 
                     CertImportMethodsPanel sp = new CertImportMethodsPanel(
                             new CertDetailsPanel(null) {
+                                @Override
                                 public boolean canFinish() {
                                     return true;
                                 }
@@ -167,9 +169,11 @@ public abstract class UserCertPanel extends JPanel {
             exportCertButton = new JButton();
             exportCertButton.setText("Export");
             exportCertButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent event) {
                     if (cert != null) {
                         AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                            @Override
                             public Object run() {
                                 try {
                                     GuiCertUtil.exportCertificate(SwingUtilities.getWindowAncestor(UserCertPanel.this), cert);
@@ -242,6 +246,7 @@ public abstract class UserCertPanel extends JPanel {
         /**
          * Called when the hierarchy has been changed.
          */
+        @Override
         public void hierarchyChanged(HierarchyEvent e) {
             long flags = e.getChangeFlags();
             if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
@@ -286,7 +291,7 @@ public abstract class UserCertPanel extends JPanel {
 
     private X509Certificate getCertFromInternalTrustStore(User user) throws FindException, CertificateException, IOException {
         String certstr = identityAdmin.getUserCert(user);
-        X509Certificate theCert = null;
+        X509Certificate theCert;
         if (certstr == null) {
             theCert = null;
         } else {
@@ -299,7 +304,7 @@ public abstract class UserCertPanel extends JPanel {
     private X509Certificate getCertForLdapUser(LdapUser luser) throws FindException, CertificateException, IOException, LdapCertsNotEnabledException {
         final IdentityProviderConfig whichLdap = identityAdmin.findIdentityProviderConfigByID(luser.getProviderId());
         if (whichLdap == null) return null;
-        if (!whichLdap.isUserCertsEnabled()) throw new LdapCertsNotEnabledException();
+        if (whichLdap.canIssueCertificates()) throw new LdapCertsNotEnabledException();
 
         return luser.getCertificate();
     }
@@ -317,6 +322,7 @@ public abstract class UserCertPanel extends JPanel {
          *
          * @param we the event describing the wizard finish
          */
+        @Override
         public void wizardFinished(WizardEvent we) {
             // update the provider
             Wizard w = (Wizard)we.getSource();
@@ -329,6 +335,7 @@ public abstract class UserCertPanel extends JPanel {
             final TrustedCert tc = (TrustedCert)o;
 
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     try {
                         if (!isCertOk(tc)) return;

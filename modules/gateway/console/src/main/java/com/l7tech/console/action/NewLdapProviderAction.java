@@ -53,6 +53,7 @@ public class NewLdapProviderAction extends NewProviderAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Create LDAP Identity Provider";
     }
@@ -60,6 +61,7 @@ public class NewLdapProviderAction extends NewProviderAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "Create a new LDAP Identity Provider";
     }
@@ -67,6 +69,7 @@ public class NewLdapProviderAction extends NewProviderAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/CreateIdentityProvider16x16.gif";
     }
@@ -78,13 +81,15 @@ public class NewLdapProviderAction extends NewProviderAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
 
                 LdapIdentityProviderConfigPanel configPanel = (
-                  new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new IdentityProviderCertificateValidationConfigPanel(null))), true));
+                  new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new LdapCertificateSettingsPanel(null))), true));
 
 
                 Frame f = TopComponents.getInstance().getTopParent();
@@ -123,6 +128,7 @@ public class NewLdapProviderAction extends NewProviderAction {
             if (iProvider != null) {
 
                 SwingUtilities.invokeLater(new Runnable() {
+                    @Override
                     public void run() {
                         EntityHeader header = new EntityHeader();
                         header.setName(iProvider.getName());
@@ -160,8 +166,10 @@ public class NewLdapProviderAction extends NewProviderAction {
          *
          * @param ev event describing the action
          */
+        @Override
         public void entityAdded(final EntityEvent ev) {
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     EntityHeader eh = (EntityHeader)ev.getEntity();
                     IdentityProvidersTree tree = (IdentityProvidersTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);

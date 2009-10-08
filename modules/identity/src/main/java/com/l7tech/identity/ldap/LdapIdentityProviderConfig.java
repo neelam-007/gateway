@@ -85,40 +85,6 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     }
 
     /**
-     * overrides the search filter for group objects
-     * currently unused
-     */
-    @Transient
-    public String getCustomGrpFilter() {
-        return (String)getProperty(CUSTOM_GROUP_SEARCH_FILTER);
-    }
-
-    /**
-     * overrides the search filter for group objects
-     * currently unused
-     */
-    public void setCustomGrpFilter(String filter) {
-        setProperty(CUSTOM_GROUP_SEARCH_FILTER, filter);
-    }
-
-    /**
-     * overrides the search filter for user objects
-     * currently unused
-     */
-    public void setCustomUsrFilter(String filter) {
-        setProperty(CUSTOM_USER_SEARCH_FILTER, filter);
-    }
-
-    /**
-     * overrides the search filter for user objects
-     * currently unused
-     */
-    @Transient
-    public String getCustomUsrFilter() {
-        return (String)getProperty(CUSTOM_USER_SEARCH_FILTER);
-    }
-
-    /**
      * get the mapping for a specified group object class
      * returns null if there is no mapping declared for the passed object class
      */
@@ -149,9 +115,9 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
      * add or overrides the mapping for a specific group object class
      */
     public void setGroupMapping(GroupMappingConfig cfg) {
-        HashMap grpMap = (HashMap)getProperty(GROUP_MAPPINGS);
+        HashMap<String,GroupMappingConfig> grpMap = getProperty(GROUP_MAPPINGS);
         if (grpMap == null) {
-            grpMap = new HashMap();
+            grpMap = new HashMap<String,GroupMappingConfig>();
             setProperty(GROUP_MAPPINGS, grpMap);
         }
         grpMap.put(cfg.getObjClass().toLowerCase(), cfg);
@@ -161,15 +127,15 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
      * overrides all group class mappings at once
      */
     public void setGroupMappings(GroupMappingConfig[] cfgs) {
-        HashMap grpMap = (HashMap)getProperty(GROUP_MAPPINGS);
+        HashMap<String,GroupMappingConfig> grpMap = getProperty(GROUP_MAPPINGS);
         if (grpMap == null) {
-            grpMap = new HashMap();
+            grpMap = new HashMap<String,GroupMappingConfig>();
             setProperty(GROUP_MAPPINGS, grpMap);
         } else {
             grpMap.clear();
         }
-        for (int i = 0; i < cfgs.length; i++) {
-            grpMap.put(cfgs[i].getObjClass().toLowerCase(), cfgs[i]);
+        for ( GroupMappingConfig cfg : cfgs ) {
+            grpMap.put( cfg.getObjClass().toLowerCase(), cfg );
         }
     }
 
@@ -180,8 +146,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     public UserMappingConfig getUserMapping(String objClass) {
         HashMap usrMap = (HashMap)getProperty(USER_MAPPINGS);
         if (usrMap == null) return null;
-        UserMappingConfig output = (UserMappingConfig)usrMap.get(objClass.toLowerCase());
-        return output;
+        return (UserMappingConfig)usrMap.get(objClass.toLowerCase());
     }
 
     /**
@@ -206,9 +171,9 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
      * add or overrides the mapping for a specific user object class
      */
     public void setUserMapping(UserMappingConfig cfg) {
-        HashMap usrMap = (HashMap)getProperty(USER_MAPPINGS);
+        HashMap<String,UserMappingConfig> usrMap = getProperty(USER_MAPPINGS);
         if (usrMap == null) {
-            usrMap = new HashMap();
+            usrMap = new HashMap<String,UserMappingConfig>();
             setProperty(USER_MAPPINGS, usrMap);
         }
         usrMap.put(cfg.getObjClass().toLowerCase(), cfg);
@@ -218,15 +183,15 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
      * overrides all user class mappings at once
      */
     public void setUserMappings(UserMappingConfig[] cfgs) {
-        HashMap usrMap = (HashMap)getProperty(USER_MAPPINGS);
+        HashMap<String,UserMappingConfig> usrMap = getProperty(USER_MAPPINGS);
         if (usrMap == null) {
-            usrMap = new HashMap();
+            usrMap = new HashMap<String,UserMappingConfig>();
             setProperty(USER_MAPPINGS, usrMap);
         } else {
             usrMap.clear();
         }
-        for (int i = 0; i < cfgs.length; i++) {
-            usrMap.put(cfgs[i].getObjClass().toLowerCase(), cfgs[i]);
+        for ( UserMappingConfig cfg : cfgs ) {
+            usrMap.put( cfg.getObjClass().toLowerCase(), cfg );
         }
     }
 
@@ -318,10 +283,102 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         return new String[]{BIND_PASS};
     }
 
+    @Override
+    @Transient
+    public boolean canIssueCertificates() {
+        return getUserCertificateUseType() == UserCertificateUseType.NONE;
+    }
+
+    /**
+     * Get the search filter to use with custom certificate indexing.
+     *
+     * @return The search filter or null
+     */
+    @Transient
+    public String getUserCertificateIndexSearchFilter() {
+        return getProperty(USER_CERT_CUSTOM_INDEX);
+    }
+
+    /**
+     *  Set the search filter to use with custom certificate indexing.
+     *
+     * @param searchFilter the search filter to use
+     */
+    public void setUserCertificateIndexSearchFilter( final String searchFilter ) {
+        setProperty(USER_CERT_CUSTOM_INDEX, searchFilter);
+    }
+
+    /**
+     * Get the search filter to use for certificate lookup by issuer name and serial number.
+     *
+     * @return The search filter or null
+     */
+    @Transient
+    public String getUserCertificateIssuerSerialSearchFilter() {
+        return getProperty(USER_CERT_SEARCH_ISSUER_SERIAL);
+    }
+
+    /**
+     *  Set the search filter to use for certificate lookup by issuer name and serial number.
+     *
+     * @param searchFilter the search filter to use
+     */
+    public void setUserCertificateIssuerSerialSearchFilter( final String searchFilter ) {
+        setProperty(USER_CERT_SEARCH_ISSUER_SERIAL, searchFilter);
+    }
+
+    /**
+     * Get the search filter to use for certificate lookup by SKI.
+     *
+     * @return The search filter or null
+     */
+    @Transient
+    public String getUserCertificateSKISearchFilter() {
+        return getProperty(USER_CERT_SEARCH_SKI);
+    }
+
+    /**
+     *  Set the search filter to use for certificate lookup by SKI.
+     *
+     * @param searchFilter the search filter to use
+     */
+    public void setUserCertificateSKISearchFilter( final String searchFilter ) {
+        setProperty(USER_CERT_SEARCH_SKI, searchFilter);
+    }
+
+    /**
+     * Get the usage for client certificates.
+     *
+     * @return the client certificate usage type (never null)
+     */
+    @Transient
+    public UserCertificateUseType getUserCertificateUseType() {
+        UserCertificateUseType type;
+
+        String typeStr = getProperty(USER_CERT_USE_TYPE);
+        if ( typeStr == null ) {
+            Boolean b = (Boolean) getProperty(USERCERTS_ENABLED);
+            type = (b != null && b) ? UserCertificateUseType.INDEX : UserCertificateUseType.NONE;
+        } else {
+            type = getEnumProperty(USER_CERT_USE_TYPE, UserCertificateUseType.NONE, UserCertificateUseType.class);
+        }
+
+        return type;
+    }
+
+    /**
+     * Set the usage for client certificates.
+     */
+    public void setUserCertificateUseType( final UserCertificateUseType userCertificateUseType ) {
+        setProperty(USER_CERT_USE_TYPE, userCertificateUseType.toString());
+        setProperty(USERCERTS_ENABLED, null); // remove deprecated property
+    }
+
+
+    public enum UserCertificateUseType { NONE, INDEX, INDEX_CUSTOM, SEARCH }
+
     public static final String URL = "ldapurl";
     public static final String SEARCH_BASE = "ldapsearchbase";
-    private static final String CUSTOM_GROUP_SEARCH_FILTER = "customgrpsearchfilter";
-    private static final String CUSTOM_USER_SEARCH_FILTER = "customusersearchfilter";
     private static final String GROUP_MAPPINGS = "grpmappings";
     private static final String USER_MAPPINGS = "usrmappings";
     private static final String BIND_DN = "ldapBindDN";
@@ -330,4 +387,9 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String CLIENT_AUTH_ENABLED = "clientAuth";
     private static final String KEYSTORE_ID = "keystoreId";
     private static final String KEY_ALIAS = "keyAlias";
+    private static final String USERCERTS_ENABLED = "userCertsEnabled"; // deprecated
+    private static final String USER_CERT_USE_TYPE = "userCertUseType";
+    private static final String USER_CERT_CUSTOM_INDEX = "userCertIndex";
+    private static final String USER_CERT_SEARCH_ISSUER_SERIAL = "userCertSearchIssuerSerial";
+    private static final String USER_CERT_SEARCH_SKI = "userCertSearchSKI";
 }

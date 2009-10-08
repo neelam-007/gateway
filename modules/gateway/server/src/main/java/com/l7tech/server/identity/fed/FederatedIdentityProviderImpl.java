@@ -47,23 +47,28 @@ public class FederatedIdentityProviderImpl
     public FederatedIdentityProviderImpl() {
     }
 
+    @Override
     public IdentityProviderConfig getConfig() {
         return providerConfig;
     }
 
+    @Override
     public FederatedUserManager getUserManager() {
         return userManager;
     }
 
+    @Override
     public FederatedGroupManager getGroupManager() {
         return groupManager;
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public Set<Long> getValidTrustedCertOids() {
         return Collections.unmodifiableSet(validTrustedCertOids);
     }
 
+    @Override
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true, noRollbackFor=AuthenticationException.class)
     public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
         if ( pc.getFormat() == CredentialFormat.CLIENTCERT ) {
@@ -86,6 +91,7 @@ public class FederatedIdentityProviderImpl
     /**
      * This provider does not support lookup of users by credential. 
      */
+    @Override
     public FederatedUser findUserByCredential( LoginCredentials pc ) {
         return null;
     }
@@ -93,14 +99,17 @@ public class FederatedIdentityProviderImpl
     /**
      * Meaningless - no passwords in FIP anyway
      */
+    @Override
     public String getAuthRealm() {
         return HttpDigest.REALM;
     }
 
+    @Override
     public void test(boolean quick) {
         // TODO
     }
 
+    @Override
     public void preSaveClientCert(FederatedUser user, X509Certificate[] clientCertChain ) throws ClientCertManager.VetoSave {
         FederatedUser u = userManager.cast(user);
         final String userDn = u.getSubjectDn();
@@ -142,6 +151,7 @@ public class FederatedIdentityProviderImpl
         this.trustedCertManager = trustedCertManager;
     }
 
+    @Override
     public void setIdentityProviderConfig(IdentityProviderConfig config) throws InvalidIdProviderCfgException {
         if (config instanceof FederatedIdentityProviderConfig) {
             this.providerConfig = (FederatedIdentityProviderConfig)config;
@@ -179,14 +189,21 @@ public class FederatedIdentityProviderImpl
         this.samlHandler = new SamlAuthorizationHandler(this, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
     }
 
+    @Override
+    public void startMaintenance() {
+    }
+
+    @Override
     public void setUserManager(FederatedUserManager userManager) {
         this.userManager = userManager;
     }
 
+    @Override
     public void setGroupManager(FederatedGroupManager groupManager) {
         this.groupManager = groupManager;
     }
 
+    @Override
     public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
         return false;  
     }
@@ -205,6 +222,7 @@ public class FederatedIdentityProviderImpl
      *
      * @throws Exception if initialization fails
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
         if (trustedCertManager == null) {

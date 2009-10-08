@@ -52,11 +52,13 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
     }
 
+    @Override
     public String getDescription() {
         return  resources.getString("configstep.description");
     }
 
     /** @return the wizard step label    */
+    @Override
     public String getStepLabel() {
         return "Provider Configuration";
     }
@@ -82,12 +84,15 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             // To update buttons if there are any changes in the Ldap Host List,
             // add a ListDataListener for the list.
             model.addListDataListener(new ListDataListener() {
+                @Override
                 public void intervalAdded(ListDataEvent e) {
                     updateControlButtonState();
                 }
+                @Override
                 public void intervalRemoved(ListDataEvent e) {
                     updateControlButtonState();
                 }
+                @Override
                 public void contentsChanged(ListDataEvent e) {
                     updateControlButtonState();
                 }
@@ -136,6 +141,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             };*/
             upbutton = new JButton("Move Up");
             upbutton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     int currentPos = getLdapHostList().getSelectedIndex();
                     if (currentPos >= 0) {
@@ -172,6 +178,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             };*/
             downbutton = new JButton("Move Down");
             downbutton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     int currentPos = getLdapHostList().getSelectedIndex();
                     if (currentPos >= 0) {
@@ -194,6 +201,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         if (addButt != null) return addButt;
         addButt = new JButton("Add");
         addButt.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 String newUrl = (String)JOptionPane.showInputDialog(addButt,
                                                             "Enter the LDAP URL:",
@@ -219,6 +227,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         if (editButt != null) return editButt;
         editButt = new JButton("Edit");
         editButt.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int selected = getLdapHostList().getSelectedIndex();
                 if (selected < 0) return;
@@ -242,6 +251,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         if (removeButt != null) return removeButt;
         removeButt = new JButton("Remove");
         removeButt.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int selected = getLdapHostList().getSelectedIndex();
                 if (selected > -1) {
@@ -254,18 +264,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         });
         return removeButt;
     }
-
-    /*private JTextField getLdapHostTextField() {
-        if (ldapHostTextField != null) return ldapHostTextField;
-
-        ldapHostTextField = new JTextField();
-        ldapHostTextField.setToolTipText(resources.getString("ldapHostTextField.tooltip"));
-
-        ldapHostTextField.setText("");
-        ldapHostTextField.addKeyListener(keyListener);
-
-        return ldapHostTextField;
-    }*/
 
     private JTextField getLdapSearchBaseTextField() {
         if (ldapSearchBaseTextField != null) return ldapSearchBaseTextField;
@@ -314,6 +312,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         clientAuthenticationCheckbox.setToolTipText(resources.getString("useClientAuthenticationCheckbox.tooltip"));
 
         clientAuthenticationCheckbox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 keyStoreLabel.setEnabled(getClientAuthenticationCheckbox().isSelected());
                 getPrivateKeysComboBox().setEnabled(getClientAuthenticationCheckbox().isSelected());
@@ -362,16 +361,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         return privateKeyComboBox;
     }
 
-    private JCheckBox getUserCertsEnabledCheckbox() {
-        if (userCertsEnabled == null) {
-            userCertsEnabled = new JCheckBox("Enable user certificates in this LDAP");
-            userCertsEnabled.setToolTipText("Enable the gateway to use certificates stored in this LDAP");
-        }
-
-        return userCertsEnabled;
-    }
-
-
     private IdentityAdmin getIdentityAdmin()
             throws RuntimeException {
         return Registry.getDefault().getIdentityAdmin();
@@ -392,15 +381,13 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
         GridBagConstraints constraints;
 
-        int rowIndex = 0;
-
         // provider types
         JLabel providerTypesLabel = new JLabel();
         providerTypesLabel.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
         providerTypesLabel.setText(resources.getString("providerTypeTextField.label"));
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
-        constraints.gridy = rowIndex;
+        constraints.gridy = 0;
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
@@ -410,7 +397,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
-        constraints.gridy = rowIndex++;
+        constraints.gridy = 0;
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
@@ -611,16 +598,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
         configPanel.add(getAdminEnabledCheckbox(), constraints);
 
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = rowIndex++;
-        constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
-        configPanel.add(getUserCertsEnabledCheckbox(), constraints);
-
         // Horizontal Spacers
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
@@ -647,7 +624,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         // Vertical Spacer
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
-        constraints.gridy = rowIndex++;
+        constraints.gridy = rowIndex;
         constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.WEST;
@@ -664,6 +641,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
      *
      * @return false
      */
+    @Override
     public boolean canFinish() {
         return finishAllowed;
     }
@@ -674,6 +652,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
+    @Override
     public boolean canAdvance() {
         return advanceAllowed;
     }
@@ -688,6 +667,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
      */
     private JComboBox getProviderTypes() {
         if (providerTypesCombo == null) {
+            LdapIdentityProviderConfig[] templates;
             try {
                 templates = getIdentityAdmin().getLdapTemplates();
             } catch (FindException e) {
@@ -703,9 +683,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             }
             Object[] items = new Object[1 + templates.length];
             items[0] = "Select the provider type";
-            for (int i = 0; i < templates.length; i++) {
-                items[i + 1] = templates[i];
-            }
+            System.arraycopy( templates, 0, items, 1, templates.length );
             providerTypesCombo = new JComboBox(items);
             providerTypesCombo.setRenderer(providerTypeRenderer);
             providerTypesCombo.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
@@ -713,6 +691,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             providerTypesCombo.setMinimumSize(new Dimension(217, 20));
 
             providerTypesCombo.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     Object o = providerTypesCombo.getSelectedItem();
 
@@ -772,7 +751,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     getLdapBindDNTextField().setText(iProviderConfig.getBindDN());
                     getLdapSearchBaseTextField().setText(iProviderConfig.getSearchBase());
                     getAdminEnabledCheckbox().setSelected(iProviderConfig.isAdminEnabled());
-                    getUserCertsEnabledCheckbox().setSelected(iProviderConfig.isUserCertsEnabled());
                     getClientAuthenticationCheckbox().setSelected(iProviderConfig.isClientAuthEnabled());                    
                     if (getClientAuthenticationCheckbox().isSelected()) {
                         if ( iProviderConfig.getKeystoreId() != null && iProviderConfig.getKeyAlias() != null ) {
@@ -792,10 +770,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
                     // populate host list based on what is in the iProviderConfig
                     ((DefaultComboBoxModel)getLdapHostList().getModel()).removeAllElements();
-                    String[] listdata = iProviderConfig.getLdapUrl();
-                    for (int i = 0; i < listdata.length; i++) {
-                        String s = listdata[i];
-                        ((DefaultComboBoxModel)getLdapHostList().getModel()).addElement(s);
+                    String[] ldapUrls = iProviderConfig.getLdapUrl();
+                    for ( String ldapUrl : ldapUrls ) {
+                        ( (DefaultComboBoxModel) getLdapHostList().getModel() ).addElement( ldapUrl );
                     }
 
                 }
@@ -821,6 +798,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
      *
      * @param settings the object representing wizard panel state
      */
+    @Override
     public void storeSettings(Object settings) {
 
         if (settings != null) {
@@ -854,7 +832,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 ldapSettings.setBindDN(getLdapBindDNTextField().getText());
                 ldapSettings.setBindPasswd(String.valueOf(getLdapBindPasswordField().getPassword()));
                 ldapSettings.setAdminEnabled(getAdminEnabledCheckbox().isSelected());
-                ldapSettings.setUserCertsEnabled(getUserCertsEnabledCheckbox().isSelected());
                 ldapSettings.setClientAuthEnabled(getClientAuthenticationCheckbox().isSelected());
                 if ( getClientAuthenticationCheckbox().isSelected() && !getPrivateKeysComboBox().isSelectedDefaultSsl() ) {
                     ldapSettings.setKeystoreId(getPrivateKeysComboBox().getSelectedKeystoreId());
@@ -872,20 +849,23 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
+    @Override
     public boolean canTest() {
-        if (advanceAllowed) return true;
-        return false;
+        return advanceAllowed;
     }
 
     private KeyListener keyListener = new KeyListener() {
+        @Override
         public void keyPressed(KeyEvent ke) {
             // don't care
         }
 
+        @Override
         public void keyReleased(KeyEvent ke) {
             updateControlButtonState();
         }
 
+        @Override
         public void keyTyped(KeyEvent ke) {
             // don't care
         }
@@ -908,6 +888,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                  * @see ListSelectionModel
                  * @see ListModel
                  */
+                @Override
                 public Component getListCellRendererComponent(JList list,
                                                               Object value,
                                                               int index,
@@ -932,7 +913,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JTextField ldapSearchBaseTextField = null;
     //private JTextField ldapHostTextField = null;
     private JComboBox providerTypesCombo = null;
-    private LdapIdentityProviderConfig[] templates = null;
     static final Logger log = Logger.getLogger(LdapIdentityProviderConfigPanel.class.getName());
     private boolean providerTypeSelectable;
     private boolean finishAllowed = false;
@@ -946,7 +926,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JButton upbutton;
     private JButton downbutton;
     private JCheckBox adminEnabledCheckbox;
-    private JCheckBox userCertsEnabled;
     private JCheckBox clientAuthenticationCheckbox;
     private JPanel keyStorePanel;
     private JLabel keyStoreLabel = new JLabel("Keystore: ");

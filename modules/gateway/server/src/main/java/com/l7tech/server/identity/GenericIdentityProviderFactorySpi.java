@@ -20,22 +20,31 @@ public class GenericIdentityProviderFactorySpi implements IdentityProviderFactor
         this.identityProviderBeanName = identityProviderBeanName;
     }
 
+    @Override
     public void setBeanFactory(final BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 
+    @Override
     public String getClassname() {
         return classname;
     }
 
-    public IdentityProvider createIdentityProvider( final IdentityProviderConfig configuration ) throws InvalidIdProviderCfgException {
+    @Override
+    public IdentityProvider createIdentityProvider( final IdentityProviderConfig configuration,
+                                                    final boolean start ) throws InvalidIdProviderCfgException {
         IdentityProvider provider = (IdentityProvider) beanFactory.getBean(identityProviderBeanName, IdentityProvider.class);
 
         if ( !(provider instanceof ConfigurableIdentityProvider) ) {
             throw new InvalidIdProviderCfgException("IdentityProvider does not support configuration interface.");
         }
 
-        ((ConfigurableIdentityProvider)provider).setIdentityProviderConfig( configuration );
+        ConfigurableIdentityProvider configurableProvider = (ConfigurableIdentityProvider) provider;
+
+        configurableProvider.setIdentityProviderConfig( configuration );
+        if ( start ) {
+            configurableProvider.startMaintenance();
+        }
 
         return provider;
     }

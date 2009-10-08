@@ -11,13 +11,11 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.support.AbstractApplicationContext;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,7 +76,7 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
                 }
 
                 try {
-                    cachedProvider = makeProvider(config);
+                    cachedProvider = makeProvider(config, true);
                 } catch (InvalidIdProviderCfgException e) {
                     final String msg = "Can't initialize an identity cachedProvider with type " + config.type();
                     logger.log(Level.SEVERE, msg, e);
@@ -102,7 +100,7 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
      * @param identityProviderConfig the new config object (not yet saved)
      */
     public void test(final IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException {
-        IdentityProvider provider = makeProvider(identityProviderConfig);
+        IdentityProvider provider = makeProvider(identityProviderConfig, false);
         provider.test(false);
     }
 
@@ -113,13 +111,13 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
      * Call {@link #getProvider(long)} for runtime use, it has a cache.
      *
      * @param config the configuration to intialize the provider with.
+     * @param start true to start provider maintenance tasks
      * @return the newly-initialized IdentityProvider
      * @throws InvalidIdProviderCfgException if the specified configuration cannot be used to construct an
      *                                       IdentityProvider. Call {@link Throwable#getCause()} to find out why!
      */
-    @SuppressWarnings({"unchecked"})
-    public IdentityProvider makeProvider(IdentityProviderConfig config)
-      throws InvalidIdProviderCfgException {
+    @SuppressWarnings({ "unchecked" })
+    private IdentityProvider makeProvider( final IdentityProviderConfig config, final boolean start ) throws InvalidIdProviderCfgException {
         String classname = config.type().getClassname();
 
         // locate factory for type (class)
@@ -141,7 +139,7 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
         }
 
         try {
-            return factorySpi.createIdentityProvider( config );
+            return factorySpi.createIdentityProvider( config, start );
         } catch (InvalidIdProviderCfgException e) {
             throw e;
         } catch (Exception e) {
@@ -149,7 +147,8 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
         }
     }
 
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    @Override
+    public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
         this.springContext = applicationContext;
     }
 
@@ -160,6 +159,7 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
         return identityProviderConfigManager;
     }
 
+    @Override
     public void onApplicationEvent(final ApplicationEvent event) {
         if (event instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent iev = (EntityInvalidationEvent)event;
@@ -186,6 +186,7 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
         }
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         Set<Long> keys = providers.keySet();
         for (Long key : keys) {

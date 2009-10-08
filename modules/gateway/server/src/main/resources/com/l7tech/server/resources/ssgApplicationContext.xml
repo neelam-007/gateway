@@ -214,6 +214,9 @@
                             <list>
                                 <value>ldapReadTimeout</value>
                                 <value>ldapConnectionTimeout</value>
+                                <value>ldapCertIndexInterval</value>
+                                <value>ldapCertCacheLifetime</value>
+                                <value>maxLdapSearchResultSize</value>
                             </list>
                         </entry>
                         <entry key="adminSessionManager"><list><value>principalSessionCacheMaxTime</value></list></entry>
@@ -332,7 +335,6 @@
         <constructor-arg value="ldapIdentityProvider"/>
     </bean>
     <bean id="ldapIdentityProvider" class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" scope="prototype">
-        <!--roleManager-->
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="serverConfig" ref="serverConfig"/>
         <property name="certificateAuthenticator" ref ="certificateAuthenticator"/>

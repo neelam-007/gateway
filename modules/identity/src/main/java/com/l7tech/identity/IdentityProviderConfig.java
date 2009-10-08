@@ -5,6 +5,7 @@ import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -21,6 +22,9 @@ import javax.persistence.Lob;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.beans.ExceptionListener;
 
 import org.hibernate.annotations.Proxy;
 
@@ -84,19 +88,6 @@ public class IdentityProviderConfig extends NamedEntityImp {
         this.description = description;
     }
 
-    public Object getProperty(String name) {
-        return props.get(name);
-    }
-
-    protected void setProperty(String name, Object value) {
-        if ( value == null ) {
-            props.remove( name );
-        } else {
-            props.put(name, value);
-        }
-        propsXml = null;
-    }
-
     /**
      * for serialization by axis and hibernate only.
      * to get the properties, call getProperty
@@ -114,6 +105,12 @@ public class IdentityProviderConfig extends NamedEntityImp {
                 try {
                     output = new BufferPoolByteArrayOutputStream();
                     encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
+                    encoder.setExceptionListener( new ExceptionListener() {
+                        @Override
+                        public void exceptionThrown( final Exception e ) {
+                            logger.log( Level.WARNING, "Error storing configuration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                        }
+                    });
                     encoder.writeObject(props);
                     encoder.close(); // writes closing XML tag
                     encoder = null;
@@ -146,15 +143,15 @@ public class IdentityProviderConfig extends NamedEntityImp {
             props.clear();
         } else {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
-            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
+            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in, null, new ExceptionListener() {
+                @Override
+                public void exceptionThrown( final Exception e ) {
+                    logger.log( Level.WARNING, "Error loading configuration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                }
+            });
             //noinspection unchecked
             props = (Map<String, Object>) decoder.readObject();
         }
-    }
-
-    @Transient
-    protected String[] getUnexportablePropKeys() {
-        return new String[0];
     }
 
     /**
@@ -177,6 +174,12 @@ public class IdentityProviderConfig extends NamedEntityImp {
             try {
                 output = new BufferPoolByteArrayOutputStream();
                 encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
+                encoder.setExceptionListener( new ExceptionListener() {
+                    @Override
+                    public void exceptionThrown( final Exception e ) {
+                        logger.log( Level.WARNING, "Error exporting configuration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                    }
+                });
                 encoder.writeObject(filteredProps);
                 encoder.close(); // writes closing XML tag
                 encoder = null;
@@ -215,36 +218,59 @@ public class IdentityProviderConfig extends NamedEntityImp {
     }
 
     @Transient
-    public boolean isUserCertsEnabled() {
-        Boolean b = (Boolean) getProperty(USERCERTS_ENABLED);
-        return b != null && b;
-    }
-
-    public void setUserCertsEnabled(boolean certsEnabled) {
-        setProperty(USERCERTS_ENABLED, certsEnabled);
+    public boolean canIssueCertificates() {
+        return true;
     }
 
     @Transient
     public CertificateValidationType getCertificateValidationType() {
-        return (CertificateValidationType) props.get(PROP_CERTIFICATE_VALIDATION_TYPE);
+        CertificateValidationType validationType = null;
+
+        Object value = getProperty(PROP_CERTIFICATE_VALIDATION_TYPE);
+        if ( value instanceof CertificateValidationType ) { // old serialization format
+            validationType = (CertificateValidationType)  value;
+        } else if ( value instanceof String ) {
+            validationType = getEnumProperty(PROP_CERTIFICATE_VALIDATION_TYPE, null, CertificateValidationType.class);
+        }
+
+        return validationType;
     }
 
     public void setCertificateValidationType( CertificateValidationType validationType) {
         if ( validationType == null ) {
-            props.remove(PROP_CERTIFICATE_VALIDATION_TYPE);
+            setProperty(PROP_CERTIFICATE_VALIDATION_TYPE, null);
         } else {
-            props.put(PROP_CERTIFICATE_VALIDATION_TYPE, validationType);
+            setProperty(PROP_CERTIFICATE_VALIDATION_TYPE, validationType.toString());
         }
     }
 
     /**
      * allows to set all properties from another object
      */
-    public void copyFrom(IdentityProviderConfig objToCopy) {
+    public final void copyFrom(IdentityProviderConfig objToCopy) {
         setDescription(objToCopy.getDescription());
         setName(objToCopy.getName());
         type = objToCopy.type();
         props = objToCopy.props;
+        propsXml = null;
+    }
+
+    //- PROTECTED
+
+    protected String description;
+    protected IdentityProviderType type;
+
+    @SuppressWarnings({ "unchecked" })
+    protected <T> T getProperty(String name) {
+        return (T)props.get(name);
+    }
+
+    protected void setProperty(String name, Object value) {
+        if ( value == null ) {
+            props.remove( name );
+        } else {
+            props.put(name, value);
+        }
         propsXml = null;
     }
 
@@ -253,16 +279,33 @@ public class IdentityProviderConfig extends NamedEntityImp {
         return val == null ? dflt : val;
     }
 
-    // ************************************************
-    // PRIVATES
-    // ************************************************
+    protected <E extends Enum<E>> E getEnumProperty(String prop, E dflt, Class<E> template) {
+        E value = dflt;
+
+        String val = (String) props.get(prop);
+        if ( val != null ) {
+            try {
+                value = Enum.valueOf( template, val );
+            } catch ( IllegalArgumentException iae ) {
+                // use default
+            }
+        }
+
+        return value;
+    }
+
+    @Transient
+    protected String[] getUnexportablePropKeys() {
+        return new String[0];
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(IdentityProviderConfig.class.getName());
 
     private static final String ADMIN_ENABLED = "adminEnabled";
-    private static final String USERCERTS_ENABLED = "userCertsEnabled";
     private static final String PROP_CERTIFICATE_VALIDATION_TYPE = "certificateValidationType";
 
-    protected String description;
     private String propsXml;
-    protected IdentityProviderType type;
     private Map<String, Object> props = new HashMap<String, Object>();
 }

@@ -33,22 +33,18 @@ public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolver
     }
 
     @Override
-    public X509Certificate lookupByIssuerAndSerial(X500Principal issuer, BigInteger serial) {
-        X509Certificate certificate = null;
+    public X509Certificate lookupByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
+        return doLookup( issuer, serial, null, null );
+    }
 
-        for (AuthenticatingIdentityProvider provider : providers) {
-            try {
-                certificate = provider.findCertByIssuerAndSerial( issuer, serial );
-            } catch (FindException e) {
-                logger.log(Level.WARNING,
-                           String.format("Unable to find certs in %s: %s", provider.getConfig().getName(), ExceptionUtils.getMessage(e)),
-                           ExceptionUtils.getDebugException(e));
-                continue;
-            }
-            if ( certificate != null ) break;            
-        }
+    @Override
+    public X509Certificate lookupBySki( final String ski ) {
+        return doLookup( null, null, ski, null );
+    }
 
-        return certificate;
+    @Override
+    public X509Certificate lookup( final String thumbprint ) {
+        return doLookup( null, null, null, thumbprint );
     }
 
     @Override
@@ -61,7 +57,7 @@ public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolver
     private static final Logger logger = Logger.getLogger(IdentityProviderSecurityTokenResolver.class.getName());
 
     private final IdentityProviderFactory identityProviderFactory;
-    private volatile Collection<AuthenticatingIdentityProvider> providers = Collections.emptyList();
+    private volatile Collection<Long> providers = Collections.emptyList();
 
     private synchronized void initiateLDAPGetters() {
         buildAuthenticatingProviderList();
@@ -75,18 +71,60 @@ public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolver
     }
 
     private void buildAuthenticatingProviderList() {
-        logger.fine("Rebuilding the list of LDAP providers that might contain certs");
-        List<AuthenticatingIdentityProvider> tmp = new ArrayList<AuthenticatingIdentityProvider>();
+        logger.fine("Rebuilding the list of identity providers that might contain certs");
+        List<Long> tmp = new ArrayList<Long>();
         try {
             for (IdentityProvider provider : identityProviderFactory.findAllIdentityProviders()) {
                 if (provider instanceof AuthenticatingIdentityProvider) {
-                    tmp.add((AuthenticatingIdentityProvider) provider);
+                    tmp.add(provider.getConfig().getOid());
                 }
             }
 
             providers = Collections.unmodifiableList(tmp);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Problem getting ldap cert getters. " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Error loading identity providers " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
+    }
+
+    private AuthenticatingIdentityProvider getProvider( final long oid ) {
+        AuthenticatingIdentityProvider authProvider = null;
+
+        try {
+            IdentityProvider provider = identityProviderFactory.getProvider(oid);
+            if ( provider instanceof AuthenticatingIdentityProvider ) {
+                authProvider = (AuthenticatingIdentityProvider) provider;    
+            }
+        } catch ( FindException e ) {
+            logger.log(Level.WARNING, "Error loading identity provider " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+
+        return authProvider;
+    }
+
+    private X509Certificate doLookup( final X500Principal issuer, final BigInteger serial, final String ski, final String thumbprint ) {
+        X509Certificate certificate = null;
+
+        for (Long providerOid : providers) {
+            AuthenticatingIdentityProvider provider = getProvider(providerOid);
+            if ( provider != null ) {
+                try {
+                    if ( issuer != null && serial != null ) {
+                        certificate = provider.findCertByIssuerAndSerial( issuer, serial );
+                    } else if ( ski != null ) {
+                        certificate = provider.findCertBySki( ski );
+                    } else if ( thumbprint != null ) {
+                        certificate = provider.findCertByThumbprintSHA1( thumbprint );
+                    }
+
+                    if ( certificate != null ) break;
+                } catch (FindException e) {
+                    logger.log(Level.WARNING,
+                               String.format("Unable to find certs in %s: %s", provider.getConfig().getName(), ExceptionUtils.getMessage(e)),
+                               ExceptionUtils.getDebugException(e));
+                }
+            }
+        }
+
+        return certificate;
     }
 }

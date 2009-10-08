@@ -32,9 +32,16 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         super(IdentityProviderType.FEDERATED);
     }
 
+    @Override
     @Transient
     public boolean isWritable() {
         return true;
+    }
+
+    @Override
+    @Transient
+    public boolean canIssueCertificates() {
+        return false;
     }
 
     @Transient
@@ -43,7 +50,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     public void setSamlSupported(boolean saml) {
-        setProperty(PROP_SAML_SUPPORTED,Boolean.valueOf(saml));
+        setProperty(PROP_SAML_SUPPORTED, saml);
     }
 
     @Transient
@@ -52,7 +59,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     public void setX509Supported(boolean x509) {
-        setProperty(PROP_X509_SUPPORTED,Boolean.valueOf(x509));
+        setProperty(PROP_X509_SUPPORTED, x509);
     }
 
     @Transient
@@ -113,6 +120,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         this.importedGroupMembership = importedGroupMembership;
     }
 
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer("<FederatedIdentityProviderConfig ");
         sb.append("oid=\"").append(_oid).append("\" ");

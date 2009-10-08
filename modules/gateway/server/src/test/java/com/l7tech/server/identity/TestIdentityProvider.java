@@ -53,7 +53,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
 
         @Override
-        public IdentityProvider createIdentityProvider(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException {
+        public IdentityProvider createIdentityProvider(IdentityProviderConfig configuration, boolean start) throws InvalidIdProviderCfgException {
             return new TestIdentityProvider(configuration);
         }
     }
@@ -128,6 +128,16 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
 
     @Override
     public X509Certificate findCertByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
+        return null;
+    }
+
+    @Override
+    public X509Certificate findCertBySki( final String ski ) throws FindException {
+        return null;
+    }
+
+    @Override
+    public X509Certificate findCertByThumbprintSHA1( final String thumbprintSHA1 ) throws FindException {
         return null;
     }
 

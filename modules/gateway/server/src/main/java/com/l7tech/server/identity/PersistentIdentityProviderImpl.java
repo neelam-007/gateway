@@ -45,6 +45,7 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
      * todo: (once we dont use hibernate?) replace this by one union sql query and have the results sorted
      * instead of sorting in collection.
      */
+    @Override
     public EntityHeaderSet<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
         if (types == null || types.length < 1) throw new IllegalArgumentException("must pass at least one type");
         boolean wantUsers = false;
@@ -60,10 +61,12 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
         return searchResults;
     }
 
+    @Override
     public EntityHeaderSet<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void validate(UT u) throws ValidationException {
         throw new ValidationException("Validation failed for user '"+u.getLogin()+"' (not supported).");
     }
@@ -78,23 +81,42 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
      *
      * @throws Exception if initialization fails
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
-    public X509Certificate findCertByIssuerAndSerial(X500Principal issuer, BigInteger serial) throws FindException {
-        final long providerOid = getConfig().getOid();
-        List<CertEntryRow> rows = clientCertManager.findByIssuerAndSerial(issuer, serial);
+    @Override
+    public X509Certificate findCertByIssuerAndSerial(final X500Principal issuer,
+                                                     final BigInteger serial) throws FindException {
+        return processCertificateSearch( clientCertManager.findByIssuerAndSerial(issuer, serial) );
+    }
+
+    @Override
+    public X509Certificate findCertBySki(final String ski) throws FindException {
+        return processCertificateSearch( clientCertManager.findBySki(ski) );
+    }
+
+    @Override
+    public X509Certificate findCertByThumbprintSHA1( final String thumbprintSHA1 ) throws FindException {
+        return processCertificateSearch( clientCertManager.findByThumbprint(thumbprintSHA1) );
+    }
+
+    private X509Certificate processCertificateSearch( final List<CertEntryRow> rows ) throws FindException{
         X509Certificate got = null;
+
+        final long providerOid = getConfig().getOid();
         for (CertEntryRow row : rows) {
             if (row.getProvider() == providerOid) {
                 if (got != null) throw new FindException("Found multiple matching certificates");
                 got = row.getCertificate();
             }
         }
+
         return got;
     }
 }

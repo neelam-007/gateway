@@ -3,11 +3,12 @@ package com.l7tech.console.panels;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.awt.BorderLayout;
-import java.awt.Component;
 import javax.swing.*;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.security.types.CertificateValidationType;
+import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.util.Functions;
 
 /**
  * WizardStepPanel for configuration of certificate validation options.
@@ -16,7 +17,7 @@ import com.l7tech.security.types.CertificateValidationType;
  *
  * @author Steve Jones
  */
-public class IdentityProviderCertificateValidationConfigPanel extends WizardStepPanel {
+public class IdentityProviderCertificateValidationConfigPanel extends IdentityProviderStepPanel {
 
     //- PUBLIC
 
@@ -45,6 +46,7 @@ public class IdentityProviderCertificateValidationConfigPanel extends WizardStep
      *
      * @param settings  The current value of configuration items in the wizard input object.
      */
+    @Override
     public void readSettings(Object settings) {
         if (settings != null) {
             if (settings instanceof IdentityProviderConfig) {
@@ -62,6 +64,7 @@ public class IdentityProviderCertificateValidationConfigPanel extends WizardStep
      *
      * @param settings the object representing wizard panel state
      */
+    @Override
     public void storeSettings(Object settings) {
         if (settings instanceof IdentityProviderConfig) {
             IdentityProviderConfig config = (IdentityProviderConfig) settings;
@@ -70,6 +73,7 @@ public class IdentityProviderCertificateValidationConfigPanel extends WizardStep
     }
 
     /** @return the wizard step label    */
+    @Override
     public String getStepLabel() {
         return resources.getString(RES_STEP_TITLE);
     }
@@ -79,6 +83,7 @@ public class IdentityProviderCertificateValidationConfigPanel extends WizardStep
      *
      * @return  String  The descritpion of the step.
      */
+    @Override
     public String getDescription() {
         return resources.getString(RES_STEP_DESCRIPTION);
     }
@@ -111,47 +116,21 @@ public class IdentityProviderCertificateValidationConfigPanel extends WizardStep
         DefaultComboBoxModel model = new DefaultComboBoxModel( CertificateValidationType.values());
         model.insertElementAt(null, 0);
         validationOptionComboBox.setModel(model);
-        validationOptionComboBox.setRenderer(new CertificateValidationTypeRenderer());
+        validationOptionComboBox.setRenderer(new TextListCellRenderer<CertificateValidationType>(
+                new Functions.Unary<String,CertificateValidationType>(){
+                    @Override
+                    public String call( final CertificateValidationType type ) {
+                        String labelKey = RES_VALTYPE_PREFIX + RES_VALTYPE_DEFAULT;
+                        if (type != null) {
+                            labelKey = RES_VALTYPE_PREFIX + type.name();
+                        }
+
+                        return resources.getString(labelKey);
+                    }
+                }, null, true));
 
         validationOptionComboBox.setEnabled(!readOnly);
 
         add(mainPanel, BorderLayout.CENTER);
     }
-
-    /**
-     * Renderer for CertificateValidationType
-     */
-    private final class CertificateValidationTypeRenderer extends JLabel implements ListCellRenderer {
-        public Component getListCellRendererComponent( JList list,
-                                                       Object value,
-                                                       int index,
-                                                       boolean isSelected,
-                                                       boolean cellHasFocus)
-        {
-            CertificateValidationType type = (CertificateValidationType) value;
-
-            String labelKey = RES_VALTYPE_PREFIX + RES_VALTYPE_DEFAULT;
-            if (type != null) {
-                labelKey = RES_VALTYPE_PREFIX + type.name();
-            }
-
-            setText(resources.getString(labelKey));
-
-            if (isSelected) {
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-                setOpaque(true);
-            } else {
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-                setOpaque(false);
-            }
-
-            setEnabled(list.isEnabled());
-            setFont(list.getFont());
-
-            return this;
-        }
-    }
-
 }

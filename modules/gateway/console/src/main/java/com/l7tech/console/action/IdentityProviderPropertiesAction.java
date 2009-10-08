@@ -30,6 +30,7 @@ import com.l7tech.console.panels.LdapUserMappingPanel;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.panels.LdapCertificateSettingsPanel;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.util.Registry;
@@ -57,6 +58,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Properties";
     }
@@ -64,6 +66,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "Edit Identity Provider properties";
     }
@@ -71,6 +74,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
@@ -82,8 +86,10 @@ public class IdentityProviderPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
 
                 Frame f = TopComponents.getInstance().getTopParent();
@@ -99,11 +105,10 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                         Wizard w;
 
                         if (iProvider.type() == IdentityProviderType.INTERNAL || iProvider.type() == IdentityProviderType.LDAP) {
-                            IdentityProviderCertificateValidationConfigPanel cvPanel = new IdentityProviderCertificateValidationConfigPanel(null);
                             if (iProvider.type() == IdentityProviderType.LDAP) {
-                                configPanel = new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(cvPanel)), false);
+                                configPanel = new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new LdapCertificateSettingsPanel(null))), false);
                             } else {
-                                configPanel = new InternalIdentityProviderConfigPanel(cvPanel, false);
+                                configPanel = new InternalIdentityProviderConfigPanel(new IdentityProviderCertificateValidationConfigPanel(null), false);
                             }
 
                             w = new EditIdentityProviderWizard(f, configPanel, iProvider);
@@ -173,6 +178,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
          *
          * @param we the event describing the wizard finish
          */
+        @Override
         public void wizardFinished(WizardEvent we) {
 
             // update the provider
@@ -181,6 +187,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
             if (iProvider != null) {
                 SwingUtilities.invokeLater(new Runnable() {
+                    @Override
                     public void run() {
 
                         try {
@@ -207,6 +214,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
     }
 
     EntityListener entityListener = new EntityListenerAdapter() {
+        @Override
         public void entityUpdated(EntityEvent ev) {
             if (tree == null) {
                 log.warning("Internal: tree has not been set.");
