@@ -370,6 +370,11 @@ public class WssRoundTripTest {
 
     @Test
     public void testSuiteBCryptoSignatureSha384() throws Exception {
+        runRoundTripTest(new NamedTestDocument("testSuiteBCryptoSignature(ECDSA-SHA256", wssDecoratorTest.getSuiteBSigningTestDocument("SHA-256")));
+    }
+
+    @Test
+    public void testSuiteBCryptoSignatureSha384_2() throws Exception {
         runRoundTripTest(new NamedTestDocument("testSuiteBCryptoSignature(ECDSA-SHA384", wssDecoratorTest.getSuiteBSigningTestDocument("SHA-384")));
     }
 

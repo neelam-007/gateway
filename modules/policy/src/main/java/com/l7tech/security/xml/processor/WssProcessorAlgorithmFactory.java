@@ -2,6 +2,7 @@ package com.l7tech.security.xml.processor;
 
 import com.ibm.xml.dsig.Canonicalizer;
 import com.ibm.xml.dsig.Transform;
+import com.ibm.xml.dsig.SignatureMethod;
 import com.ibm.xml.dsig.transform.FixedExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.security.xml.AttachmentCompleteTransform;
@@ -15,6 +16,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * An XSS4J AlgorithmFactory that adds some additonal features:
@@ -31,6 +33,8 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     private final Map<Node, Node> strToTarget;
     private boolean sawEnvelopedTransform = false;
 
+    private Map<String, String> ecdsaSignatureMethodTable = new HashMap<String, String>();
+
     /**
      * Create an algorithm factory that will allow the STR-Transform.
      *
@@ -40,10 +44,10 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     public WssProcessorAlgorithmFactory(Map<Node, Node> strToTarget) {
         this.strToTarget = strToTarget;
         this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA256.getAlgorithmIdentifier(), "SHA256withRSA");
-        this.signatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA1.getAlgorithmIdentifier(), "SHA1withECDSA");
-        this.signatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA256.getAlgorithmIdentifier(), "SHA256withECDSA");
-        this.signatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA384.getAlgorithmIdentifier(), "SHA384withECDSA");
-        this.signatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA512.getAlgorithmIdentifier(), "SHA512withECDSA");
+        this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA1.getAlgorithmIdentifier(), "SHA1withECDSA");
+        this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA256.getAlgorithmIdentifier(), "SHA256withECDSA");
+        this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA384.getAlgorithmIdentifier(), "SHA384withECDSA");
+        this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA512.getAlgorithmIdentifier(), "SHA512withECDSA");
     }
 
     public Canonicalizer getCanonicalizer(String string) {
@@ -54,6 +58,15 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
          }
          return super.getCanonicalizer(string);
      }
+
+    @Override
+    public SignatureMethod getSignatureMethod(String uri, Object o) throws NoSuchAlgorithmException, NoSuchProviderException {
+        String sigMethod = ecdsaSignatureMethodTable.get(uri);
+        if (sigMethod == null)
+            return super.getSignatureMethod(uri, o);
+
+        return new EcdsaSignatureMethod(sigMethod, uri, getProvider());
+    }
 
     public Transform getTransform(String s) throws NoSuchAlgorithmException {
         if (Transform.ENVELOPED.equals(s)) {
