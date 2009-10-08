@@ -1,86 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.external.assertions.jdbcquery.console.JdbcQueryAssertionDialog">
-  <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-    <margin top="0" left="0" bottom="0" right="0"/>
+  <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="20" y="20" width="787" height="485"/>
+      <xy x="20" y="20" width="572" height="469"/>
     </constraints>
     <properties/>
-    <border type="etched"/>
+    <border type="none"/>
     <children>
-      <grid id="1769e" layout-manager="GridLayoutManager" row-count="2" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="f276" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
-        <border type="etched" title="Database Connection Properties">
-          <font swing-font="TextPane.font"/>
-        </border>
+        <border type="etched" title-resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" title-key="panel.title.jdbc.conn"/>
         <children>
-          <component id="142c7" class="javax.swing.JLabel">
+          <component id="5619e" class="javax.swing.JLabel">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Url:"/>
+              <text resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" key="label.choose.conn"/>
             </properties>
           </component>
-          <component id="1f6bd" class="javax.swing.JTextField" binding="connectionUrlTextField">
+          <component id="4efc7" class="javax.swing.JComboBox" binding="connectionNameComboBox">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                <preferred-size width="150" height="-1"/>
-              </grid>
-            </constraints>
-            <properties>
-              <editable value="true"/>
-              <enabled value="true"/>
-              <font/>
-            </properties>
-          </component>
-          <component id="da704" class="javax.swing.JLabel">
-            <constraints>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Driver:"/>
-            </properties>
-          </component>
-          <component id="9d9ce" class="javax.swing.JTextField" binding="driverTextField">
-            <constraints>
-              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                <preferred-size width="150" height="-1"/>
-              </grid>
-            </constraints>
-            <properties/>
-          </component>
-          <component id="9730b" class="javax.swing.JLabel">
-            <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="User:"/>
-            </properties>
-          </component>
-          <component id="a9b1a" class="javax.swing.JTextField" binding="userTextField">
-            <constraints>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                <preferred-size width="150" height="-1"/>
-              </grid>
-            </constraints>
-            <properties/>
-          </component>
-          <component id="2bdc4" class="javax.swing.JLabel">
-            <constraints>
-              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Password:"/>
-            </properties>
-          </component>
-          <component id="15009" class="javax.swing.JPasswordField" binding="passwordTextField">
-            <constraints>
-              <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
@@ -88,182 +34,210 @@
           </component>
         </children>
       </grid>
-      <splitpane id="59061">
+      <grid id="ca5c9" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
-            <preferred-size width="200" height="200"/>
-          </grid>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
-        <properties>
-          <orientation value="0"/>
-          <resizeWeight value="0.3"/>
-        </properties>
-        <border type="none"/>
+        <properties/>
+        <border type="etched" title-resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" title-key="panel.title.sql.query"/>
         <children>
-          <scrollpane id="d0d48">
+          <component id="2a90b" class="javax.swing.JTextArea" binding="sqlQueryTextArea">
             <constraints>
-              <splitpane position="left"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="50"/>
+              </grid>
             </constraints>
             <properties/>
-            <border type="etched" title="Query">
-              <font swing-font="TextPane.font"/>
-            </border>
+          </component>
+          <grid id="804d4" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
             <children>
-              <component id="f35bb" class="javax.swing.JTextArea" binding="sqlTextArea">
+              <component id="141b5" class="javax.swing.JButton" binding="testButton">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" key="button.test"/>
+                </properties>
+              </component>
+              <vspacer id="77daa">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+          <component id="35505" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" key="label.warning.note"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <grid id="38343" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="10" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="etched" title-resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" title-key="panel.title.context.variables.naming"/>
+        <children>
+          <scrollpane id="1c87d">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                <preferred-size width="300" height="200"/>
+              </grid>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="d3c23" class="javax.swing.JTable" binding="namingTable">
                 <constraints/>
                 <properties/>
               </component>
             </children>
           </scrollpane>
-          <grid id="55f20" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="f5bf3" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <splitpane position="right"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
-            <border type="etched" title="Context Variables">
-              <font swing-font="TextPane.font"/>
-            </border>
+            <border type="none"/>
             <children>
-              <scrollpane id="82f5d">
+              <component id="49447" class="javax.swing.JButton" binding="addButton" default-binding="true">
                 <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" key="button.add"/>
+                </properties>
+              </component>
+              <component id="66de0" class="javax.swing.JButton" binding="editButton" default-binding="true">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" key="button.edit"/>
+                </properties>
+              </component>
+              <component id="ed11a" class="javax.swing.JButton" binding="removeButton" default-binding="true">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" key="button.remove"/>
+                </properties>
+              </component>
+              <vspacer id="a61dd">
+                <constraints>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+          <grid id="673cb" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="cbdc" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" key="label.prefix"/>
+                </properties>
+              </component>
+              <component id="df048" class="javax.swing.JTextField" binding="variablePrefixTextField">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
                 </constraints>
                 <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="9a52b" class="javax.swing.JTable" binding="variableTable">
-                    <constraints/>
-                    <properties/>
-                  </component>
-                </children>
-              </scrollpane>
-              <grid id="94c51" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="e8a22" class="javax.swing.JLabel">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="Prefix:"/>
-                    </properties>
-                  </component>
-                  <component id="e2d04" class="javax.swing.JTextField" binding="variablePrefixTextField">
-                    <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                        <preferred-size width="50" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties/>
-                  </component>
-                  <hspacer id="b35df">
-                    <constraints>
-                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                  </hspacer>
-                </children>
-              </grid>
+              </component>
             </children>
           </grid>
         </children>
-      </splitpane>
-      <grid id="bc562" layout-manager="GridLayoutManager" row-count="8" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      </grid>
+      <grid id="2b81e" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
-          <component id="2f8cd" class="javax.swing.JButton" binding="generateButton" default-binding="true">
+          <component id="d5abc" class="javax.swing.JButton" binding="okButton">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Generate"/>
+              <text value="OK"/>
             </properties>
           </component>
-          <vspacer id="a151e">
+          <component id="fdaef" class="javax.swing.JButton" binding="cancelButton" default-binding="true">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-            </constraints>
-          </vspacer>
-          <component id="8f61a" class="javax.swing.JButton" binding="newButton" default-binding="true">
-            <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="New"/>
-            </properties>
-          </component>
-          <component id="dc97" class="javax.swing.JButton" binding="editButton" default-binding="true">
-            <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Edit"/>
-            </properties>
-          </component>
-          <component id="f038d" class="javax.swing.JSeparator">
-            <constraints>
-              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="2" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties/>
-          </component>
-          <component id="3e5d2" class="javax.swing.JButton" binding="okButton" default-binding="true">
-            <constraints>
-              <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Ok"/>
-            </properties>
-          </component>
-          <component id="5ba7e" class="javax.swing.JButton" binding="cancelButton" default-binding="true">
-            <constraints>
-              <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Cancel"/>
             </properties>
           </component>
-          <component id="de50e" class="javax.swing.JButton" binding="deleteButton" default-binding="true">
+          <hspacer id="91b53">
             <constraints>
-              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <text value="Delete"/>
-            </properties>
-          </component>
+          </hspacer>
         </children>
       </grid>
-      <grid id="16f3e" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <component id="d3681" class="javax.swing.JCheckBox" binding="failAssertionCheckBox">
+        <constraints>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <label value="Fail assertion if there are no results returned by querying."/>
+          <selected value="true"/>
+          <text resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" key="label.fail.assertion"/>
+        </properties>
+      </component>
+      <grid id="e74ca" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
-          <component id="85aac" class="javax.swing.JButton" binding="testButton" default-binding="true">
+          <component id="b58e4" class="javax.swing.JLabel">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <enabled value="true"/>
-              <text value="Test"/>
+              <text resource-bundle="com/l7tech/external/assertions/jdbcquery/console/resources/JdbcQueryAssertionDialog" key="long.label.max.records"/>
             </properties>
           </component>
-          <vspacer id="40d55">
+          <component id="312b7" class="javax.swing.JSpinner" binding="maxRecordsSpinner">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                <preferred-size width="50" height="-1"/>
+              </grid>
             </constraints>
-          </vspacer>
+            <properties/>
+          </component>
         </children>
       </grid>
     </children>

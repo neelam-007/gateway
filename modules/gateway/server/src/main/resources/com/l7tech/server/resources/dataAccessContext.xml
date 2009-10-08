@@ -143,9 +143,12 @@
                 <value>com.l7tech.gateway.common.security.rbac.FolderPredicate</value>
                 <value>com.l7tech.gateway.common.security.rbac.EntityFolderAncestryPredicate</value>
 
-                <!-- Audit Entities -->
+                <!-- Customer Mapping -->
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value>
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingValues</value>
+
+                <!-- JDBC Connection -->
+                <value>com.l7tech.gateway.common.jdbcconnection.JdbcConnection</value>
 
                 <!-- General -->
                 <value>com.l7tech.gateway.common.cluster.ClusterNodeInfo</value>

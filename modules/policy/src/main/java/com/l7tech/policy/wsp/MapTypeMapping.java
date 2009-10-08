@@ -15,7 +15,7 @@ import java.util.*;
 /**
  * TypeMapping that knows how to represent a {@link Map} with String keys in a policy XML document.
  */
-class MapTypeMapping extends ComplexTypeMapping {
+public class MapTypeMapping extends ComplexTypeMapping {
     // This is utterly grotesque, but it's all Java's fault.  Please close eyes here
     static final Constructor mapConstructor;
 

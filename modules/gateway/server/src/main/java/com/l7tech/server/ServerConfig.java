@@ -301,6 +301,11 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_SSGNODE_CPUUSAGE_UNIT = "monitoring.ssgNode.cpuUsage.unit";
     public static final String PARAM_MONITORING_SSGNODE_SWAPUSAGE_UNIT = "monitoring.ssgNode.swapUsage.unit";
 
+    public static final String PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST = "jdbcConnection.driverClass.defaultList";
+    public static final String PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT = "jdbcQuery.maxRecords.defaultValue";
+    public static final String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE = "jdbcConnection.pooling.minPoolSize.defaultValue";
+    public static final String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE = "jdbcConnection.pooling.maxPoolSize.defaultValue";
+
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
     private static final String SUFFIX_GETSYSPROP = ".getSystemProperty";

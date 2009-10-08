@@ -498,6 +498,10 @@ public class GatewayFeatureSets {
             mass("assertion:XacmlRequestBuilder"),
             mass("assertion:XacmlPdp"));
 
+        GatewayFeatureSet jdbcQueryAssertions =
+        fsr("set:JdbcQuery:Assertions", "The necessary assertions to enable JDBC Query functionality",
+            mass("assertion:JdbcQuery"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -570,6 +574,7 @@ public class GatewayFeatureSets {
             fs(threatFw),
             fs(uiFw),
             fs(ssb),
+            fs(jdbcQueryAssertions),
             fs(customFw));
 
         GatewayFeatureSet profileGateway =
@@ -591,6 +596,7 @@ public class GatewayFeatureSets {
             fs(modularAssertions),
             fs(samlpAssertions),
             fs(xacmlAssertions),
+            fs(jdbcQueryAssertions),
             fs(uiFw),
             fs(wssp));
 
@@ -621,6 +627,7 @@ public class GatewayFeatureSets {
             fs(ssb),
             fs(modularAssertions),
             fs(wssp),
+            fs(jdbcQueryAssertions),
             fs(uiFw));
 
         PROFILE_ALL =

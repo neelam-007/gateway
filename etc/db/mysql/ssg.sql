@@ -841,6 +841,26 @@ CREATE TABLE connector_property (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Table structure for JDBC Connections
+--
+DROP TABLE IF EXISTS jdbc_connection;
+CREATE TABLE jdbc_connection (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  driver_class varchar(128) NOT NULL,
+  jdbc_url varchar(128) NOT NULL,
+  user_name varchar(128) NOT NULL,
+  password varchar(128) NOT NULL,
+  enabled tinyint(1) NOT NULL DEFAULT 1,
+  min_pool_size integer NOT NULL DEFAULT 3,
+  max_pool_size integer NOT NULL DEFAULT 15,
+  additional_properties mediumtext,
+  PRIMARY KEY (objectid),
+  UNIQUE(name)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 -- Table structure for table rbac_role
 --
 
@@ -1131,6 +1151,13 @@ INSERT INTO rbac_permission VALUES (-902,0,-900,'CREATE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-903,0,-900,'UPDATE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-904,0,-900,'DELETE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-905,0,-900,'READ',NULL,'SERVICE');
+
+INSERT INTO rbac_role VALUES (-950,0,'Manage JDBC Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.');
+INSERT INTO rbac_permission VALUES (-951,0,-950,'READ',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission VALUES (-952,0,-950,'CREATE',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission VALUES (-953,0,-950,'UPDATE',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission VALUES (-954,0,-950,'DELETE',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission VALUES (-955,0,-950,'READ',NULL,'SERVICE');
 
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');

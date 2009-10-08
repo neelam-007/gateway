@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
 
 public interface AdminContext {
 
@@ -47,6 +48,12 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     JmsAdmin getJmsAdmin() throws SecurityException;
+
+    /**
+     * @return the jdbc connection and pool managers
+     * @throws SecurityException on security error accessing the interface
+     */
+    JdbcConnectionAdmin getJdbcConnectionAdmin() throws SecurityException;
 
     /**
      * @return the FTP manager

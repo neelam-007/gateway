@@ -22,6 +22,7 @@ import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.Policy;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -54,6 +55,7 @@ public final class RegistryImpl extends Registry
     private FolderAdmin folderAdmin;
     private JmsAdmin jmsAdmin;
     private FtpAdmin ftpAdmin;
+    private JdbcConnectionAdmin jdbcConnectionAdmin;
     private TrustedCertAdmin trustedCertAdmin;
     private SchemaAdmin schemaAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
@@ -149,6 +151,19 @@ public final class RegistryImpl extends Registry
         }
         jmsAdmin = adminContext.getJmsAdmin();
         return jmsAdmin;
+    }
+
+    /**
+     * @return the JDBC Connection and Pool managers
+     */
+    @Override
+    public synchronized JdbcConnectionAdmin getJdbcConnectionAdmin() {
+        checkAdminContext();
+        if (jdbcConnectionAdmin != null) {
+            return jdbcConnectionAdmin;
+        }
+        jdbcConnectionAdmin = adminContext.getJdbcConnectionAdmin();
+        return jdbcConnectionAdmin;
     }
 
     /**
@@ -370,6 +385,7 @@ public final class RegistryImpl extends Registry
         identityAdmin = null;
         serviceAdmin = null;
         jmsAdmin = null;
+        jdbcConnectionAdmin = null;
         ftpAdmin = null;
         trustedCertAdmin = null;
         schemaAdmin = null;

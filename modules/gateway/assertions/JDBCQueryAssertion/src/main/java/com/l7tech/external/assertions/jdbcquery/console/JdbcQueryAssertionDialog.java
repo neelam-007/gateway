@@ -1,381 +1,449 @@
 package com.l7tech.external.assertions.jdbcquery.console;
 
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
-import com.l7tech.external.assertions.jdbcquery.JDBCQueryAssertion;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 
 import javax.swing.*;
-import javax.swing.event.EventListenerList;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.EventListener;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
+import java.awt.event.ItemListener;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.text.MessageFormat;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 
 /**
  * Properties dialog for the JDBC Query Assertion.
  */
-public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<JDBCQueryAssertion> {
-
-    protected static final Logger logger = Logger.getLogger(JdbcQueryAssertionDialog.class.getName());
-    private JDBCQueryAssertion assertion;
-    private boolean wasOkButtonPressed = false;
-    private EventListenerList listenerList = new EventListenerList();
-
-    private JTextField userTextField;
-    private JPasswordField passwordTextField;
-    private JTextField driverTextField;
-    private JTextField connectionUrlTextField;
-    private JTextArea sqlTextArea;
-
-    private JButton testButton;
-    private JButton cancelButton;
-    private JButton okButton;
+public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<JdbcQueryAssertion> {
+    private static final int MAX_TABLE_COLUMN_NUM = 2;
+    private static final int LOWER_BOUND_MAX_RECORDS = 1;
+    private static final int UPPER_BOUND_MAX_RECORDS = 10000;
+    private static final Logger logger = Logger.getLogger(JdbcQueryAssertionDialog.class.getName());
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.jdbcquery.console.resources.JdbcQueryAssertionDialog");
 
     private JPanel mainPanel;
-    private JTable variableTable;
-    private VariableMapTableModel model;
+    private JComboBox connectionNameComboBox;
+    private JTextArea sqlQueryTextArea;
+    private JTable namingTable;
     private JTextField variablePrefixTextField;
-    private JButton generateButton;
-    private JButton newButton;
+    private JButton testButton;
+    private JButton addButton;
     private JButton editButton;
-    private JButton deleteButton;
+    private JButton removeButton;
+    private JButton cancelButton;
+    private JButton okButton;
+    private JCheckBox failAssertionCheckBox;
+    private JSpinner maxRecordsSpinner;
 
+    private NamingTableModel namingTableModel;
+    private Map<String, String> namingMap;
+    private JdbcQueryAssertion assertion;
+    private boolean confirmed;
 
-
-    private final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
-        public void run() {
-            configureView();
-        }
-    });
-
-    public JdbcQueryAssertionDialog(Frame owner, JDBCQueryAssertion assertion) {
-        super(owner, "JDBC Query Properties", true);
-        this.initComponents();
-        this.setData(assertion);
+    public JdbcQueryAssertionDialog(Window owner, JdbcQueryAssertion assertion) {
+        super(owner, assertion);
+        setData(assertion);
+        initialize();
     }
 
-    private void initComponents() {
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+    @Override
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+
+    @Override
+    public void setData(JdbcQueryAssertion assertion) {
+        this.assertion = assertion;
+    }
+
+    @Override
+    public JdbcQueryAssertion getData(final JdbcQueryAssertion assertion) {
+        viewToModel(assertion);
+        return assertion;
+    }
+
+    @Override
+    protected void configureView() {
+        enableOrDisableOkButton();
+        enableOrDisableTableButtons();
+    }
+
+    private void initialize() {
+        //setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setContentPane(mainPanel);
-        setMinimumSize(new Dimension(600, 400));
-        getRootPane().setDefaultButton(okButton);
+        setModal(true);
+        //setMinimumSize(new Dimension(600, 400));
+        getRootPane().setDefaultButton(cancelButton);
+        Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
 
-        userTextField.getDocument().addDocumentListener(changeListener);
-        passwordTextField.getDocument().addDocumentListener(changeListener);
-        driverTextField.getDocument().addDocumentListener(changeListener);
-        sqlTextArea.getDocument().addDocumentListener(changeListener);
-        variablePrefixTextField.getDocument().addDocumentListener(changeListener);
+        final EventListener changeListener = new RunOnChangeListener(new Runnable() {
+            public void run() {
+                enableOrDisableOkButton();
+            }
+        });
+        connectionNameComboBox.addItemListener((ItemListener)changeListener);
+        sqlQueryTextArea.getDocument().addDocumentListener((DocumentListener)changeListener);
+        variablePrefixTextField.getDocument().addDocumentListener((DocumentListener)changeListener);
 
-        variableTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        variableTable.setModel(getTableModel());
+        initNamingTable();
+
+        final InputValidator inputValidator = new InputValidator(this, resources.getString("dialog.title.jdbc.query.props"));
+        // The values in the spinners will be initialized in the method modelToView().
+        maxRecordsSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_MAX_RECORDS, UPPER_BOUND_MAX_RECORDS, 1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxRecordsSpinner, resources.getString("short.lable.max.records")));
 
         testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onTest();
+                doTest();
             }
         });
 
-        testButton.setVisible(false);//TODO disabled for now until a new SSG Admin method is added
-
-        generateButton.addActionListener(new ActionListener() {
+        addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onGenerate();
-            }
-        });
-
-        newButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onNew();
+                doAdd();
             }
         });
 
         editButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onEdit();
+                doEdit();
             }
         });
 
-        deleteButton.addActionListener(new ActionListener() {
+        removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onDelete();
+                doRemove();
             }
         });
 
-        okButton.addActionListener(new ActionListener() {
+        inputValidator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onOK();
+                doOk();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onCancel();
+                doCancel();
             }
         });
 
-        // call onCancel() when cross is clicked
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                onCancel();
-            }
-        });
-
-        enableDisableComponents();
+        modelToView();
+        configureView();
     }
 
-    public VariableMapTableModel getTableModel(){
-        if(model == null){
-            model = new VariableMapTableModel();
+    private void modelToView() {
+        loadConnectioNameComboBox();
+        sqlQueryTextArea.setText(assertion.getSqlQuery());
+        variablePrefixTextField.setText(assertion.getVariablePrefix());
+        maxRecordsSpinner.setValue(assertion.getMaxRecords());
+        if (assertion.getConnectionName() == null) { // This is a new assertion. It means to load maxRecords from the global cluster properties.
+            JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
+            if (connectionAdmin != null) {
+                maxRecordsSpinner.setValue(connectionAdmin.getPropertyDefaultMaxRecords());
+            }
         }
-        return model;
+        failAssertionCheckBox.setSelected(assertion.isAssertionFailureEnabled());
     }
 
-    private void fireEventAssertionChanged(final Assertion a) {
-        final CompositeAssertion parent = a.getParent();
-        if (parent == null)
-            return;
+    private void viewToModel(final JdbcQueryAssertion assertion) {
+        assertion.setConnectionName(((String) connectionNameComboBox.getSelectedItem()));
+        assertion.setSqlQuery(sqlQueryTextArea.getText());
+        assertion.setNamingMap(namingMap);
+        assertion.setVariablePrefix(variablePrefixTextField.getText());
+        assertion.setMaxRecords((Integer) maxRecordsSpinner.getValue());
+        assertion.setAssertionFailureEnabled(failAssertionCheckBox.isSelected());
 
-        SwingUtilities.invokeLater(
-                new Runnable() {
-                    public void run() {
-                        int[] indices = new int[parent.getChildren().indexOf(a)];
-                        PolicyEvent event = new PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
-                        EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
-                        for (EventListener listener : listeners) {
-                            ((PolicyListener) listener).assertionsChanged(event);
+        assertion.setVariableNames(getVariableNames());
+    }
+
+    private void loadConnectioNameComboBox() {
+        java.util.List<String> connNameList;
+        JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
+        if (connectionAdmin == null) {
+            return;
+        } else {
+            try {
+                connNameList = connectionAdmin.getAllJdbcConnectionNames();
+            } catch (FindException e) {
+                logger.warning("Error getting JDBC connection names");
+                return;
+            }
+        }
+
+        // Sort all default driver classes
+        Collections.sort(connNameList);
+        // Add an empty driver class at the first position of the list
+        connNameList.add(0, "");
+
+        // Add all items into the combox box.
+        connectionNameComboBox.removeAllItems();
+        for (String driverClass: connNameList) {
+            connectionNameComboBox.addItem(driverClass);
+        }
+
+        connectionNameComboBox.setSelectedItem(assertion.getConnectionName());
+    }
+
+    private void initNamingTable() {
+        namingMap = assertion.getNamingMap();
+
+        namingTableModel = new NamingTableModel();
+        namingTable.setModel(namingTableModel);
+        namingTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        namingTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                enableOrDisableTableButtons();
+            }
+        });
+        Utilities.setDoubleClickAction(namingTable, editButton);
+
+        enableOrDisableTableButtons();
+    }
+
+    private class NamingTableModel extends AbstractTableModel {
+        @Override
+        public int getColumnCount() {
+            return MAX_TABLE_COLUMN_NUM;
+        }
+
+        @Override
+        public void fireTableDataChanged() {
+            super.fireTableDataChanged();
+            enableOrDisableTableButtons();
+        }
+
+        @Override
+        public int getRowCount() {
+            return namingMap.size();
+        }
+
+        @Override
+        public String getColumnName(int col) {
+            switch (col) {
+                case 0:
+                    return resources.getString("column.label.query.result.name");
+                case 1:
+                    return resources.getString("column.label.context.variable.name");
+                default:
+                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
+            }
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int col) {
+            return false;
+        }
+
+        @Override
+        public Object getValueAt(int row, int col) {
+            String name = (String) namingMap.keySet().toArray()[row];
+
+            switch (col) {
+                case 0:
+                    return name;
+                case 1:
+                    return namingMap.get(name);
+                default:
+                    throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
+            }
+        }
+    }
+
+    private void enableOrDisableTableButtons() {
+        int selectedRow = namingTable.getSelectedRow();
+
+        boolean addEnabled = true;
+        boolean editEnabled = selectedRow >= 0;
+        boolean removeEnabled = selectedRow >= 0;
+
+        addButton.setEnabled(addEnabled);
+        editButton.setEnabled(editEnabled);
+        removeButton.setEnabled(removeEnabled);
+    }
+
+    private void enableOrDisableOkButton() {
+         boolean enabled =
+             !isReadOnly() &&
+             isNonEmptyRequiredTextField((String) connectionNameComboBox.getSelectedItem()) &&
+             isNonEmptyRequiredTextField(sqlQueryTextArea.getText()) &&
+             isNonEmptyRequiredTextField(variablePrefixTextField.getText());
+
+        okButton.setEnabled(enabled);
+    }
+
+    private boolean isNonEmptyRequiredTextField(String text) {
+        return text != null && !text.trim().isEmpty();
+    }
+
+    private Object getJdbcQueryResult() {
+        Object result;
+        String connectionName = (String) connectionNameComboBox.getSelectedItem();
+        String query = sqlQueryTextArea.getText();
+
+        JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
+        if (connectionAdmin == null) {
+            result = "Cannot get JDBC Conneciton Admin API.";
+        } else {
+            result = connectionAdmin.performJdbcQuery(connectionName, query, 1);
+        }
+
+        return result;
+    }
+
+    private String[] getVariableNames() {
+        List<String> varList = new ArrayList<String>();
+        Object result = getJdbcQueryResult();
+        String prefix = variablePrefixTextField.getText() + ".";
+
+        if (! (result instanceof String)) {
+            varList.add(prefix + JdbcQueryAssertion.VARIABLE_COUNT);
+
+            if (result instanceof ResultSet) {
+                try {
+                    // Get all query result names (i.e., column names)
+                    ResultSetMetaData metaData = ((ResultSet)result).getMetaData();
+                    for (int i = 0; i < metaData.getColumnCount(); i++) {
+                        varList.add(prefix + metaData.getColumnName(i));
+                    }
+
+                    // Update context variables by the naming table.
+                    for (String key: namingMap.keySet()) {
+                        if (varList.contains(prefix + key)) {
+                            varList.remove(prefix + key);
+                            varList.add(prefix + namingMap.get(key));
                         }
                     }
-                });
-    }
-
-    //initialize form from data
-    private void initFormData(final JDBCQueryAssertion assertion) {
-        connectionUrlTextField.setText(assertion.getConnectionUrl());
-        driverTextField.setText(assertion.getDriver());
-        userTextField.setText(assertion.getUser());
-        passwordTextField.setText(assertion.getPass());
-        sqlTextArea.setText(assertion.getSql());
-        variablePrefixTextField.setText(assertion.getVariablePrefix());
-
-        //populate the context variables table from the variablesToSet
-        setVariableTable(assertion);
-    }
-
-    //update data from form
-    private void saveFormData(final JDBCQueryAssertion assertion) {
-        assertion.setConnectionUrl(connectionUrlTextField.getText());
-        assertion.setDriver(driverTextField.getText());
-        assertion.setUser(userTextField.getText());
-        assertion.setPass(new String(passwordTextField.getPassword()));
-        assertion.setSql(sqlTextArea.getText());
-        assertion.setVariablePrefix(variablePrefixTextField.getText());
-        assertion.setVariableMap(buildVariableMap());
-    }
-
-    @Override
-    protected void configureView() {
-        boolean enableOkButton = userTextField.getText().length() > 0 &&
-                driverTextField.getText().length() > 0 &&
-                connectionUrlTextField.getText().length() > 0 &&
-                sqlTextArea != null && sqlTextArea.getText().length() > 0 &&
-                variablePrefixTextField != null && variablePrefixTextField.getText().length() > 0;
-
-        enableDisableComponents();
-
-        enableOkButton &= !isReadOnly();
-        okButton.setEnabled(enableOkButton);
-    }
-
-    private void enableDisableComponents() {
-        String user = userTextField.getText();
-        String pass = new String(passwordTextField.getPassword());
-        String driver = driverTextField.getText();
-        String connectionUrl = connectionUrlTextField.getText();
-
-        if (Syntax.getReferencedNames(user).length > 0 ||
-                Syntax.getReferencedNames(pass).length > 0 ||
-                Syntax.getReferencedNames(driver).length > 0 ||
-                Syntax.getReferencedNames(connectionUrl).length > 0) {
-
-            testButton.setEnabled(false);
-        } else {
-            testButton.setEnabled(true);
-        }
-
-    }
-
-    private void setVariableTable(final JDBCQueryAssertion assertion) {
-        Map<String, String> variableMap = assertion.getVariableMap();
-        model.clearMappings();
-        
-        Set<Map.Entry<String, String>> entries = variableMap.entrySet();
-        for (Map.Entry<String, String> entry : entries) {
-            model.addMapping(new Pair<String, String>(entry.getKey(), entry.getValue()));
-        }
-        model.update(variablePrefixTextField.getText());
-    }
-
-    /* map of variables set by this assertion
-    * key = table column name
-    * value = context variable name
-    */
-    private Map<String, String> buildVariableMap() {
-        Map<String, String> variableMap = new HashMap<String, String>();
-        java.util.List<Pair<String, String>> mappings = model.getMappings();
-
-        for(Pair<String, String> tuple : mappings){
-            variableMap.put(tuple.getKey(), tuple.getValue());
-        }
-
-        return variableMap;
-    }
-
-
-    public boolean isConfirmed() {
-        return wasOkButtonPressed;
-    }
-
-    public void setData(JDBCQueryAssertion assertion) {
-        this.assertion = assertion;
-        initFormData(assertion);
-    }
-
-    public JDBCQueryAssertion getData(final JDBCQueryAssertion assertion) {
-        saveFormData(assertion);
-        return assertion;
-    }
-
-    private void onTest() {
-        //attempt to create a connection
-        Connection conn = null;
-        String msg = "Connection information is valid.";
-
-        try {
-            Class.forName(driverTextField.getText());
-            conn = DriverManager.getConnection(connectionUrlTextField.getText(), userTextField.getText(), new String(passwordTextField.getPassword()));
-
-            //TODO validate the SQL
-
-            JOptionPane.showMessageDialog(this, msg, "Connection Successful", JOptionPane.INFORMATION_MESSAGE);
-        } catch (ClassNotFoundException cnfe) {
-            msg = ExceptionUtils.getMessage(cnfe, cnfe.getMessage());
-            logger.log(Level.WARNING, msg, cnfe);
-            JOptionPane.showMessageDialog(this, msg, "Driver Error", JOptionPane.WARNING_MESSAGE);
-        } catch (SQLException sqle) {
-            msg = ExceptionUtils.getMessage(sqle, sqle.getMessage());
-            logger.log(Level.WARNING, msg, sqle);
-            JOptionPane.showMessageDialog(this, msg, "Connection Error", JOptionPane.WARNING_MESSAGE);
-        } finally {
-            ResourceUtils.closeQuietly(conn);
-        }
-    }
-
-    public static final Pattern GREP_COLUMNS_PATTERN = Pattern.compile("^select\\s+(.*?)\\s+from", Pattern.CASE_INSENSITIVE);
-    public static final Pattern GREP_ALIAS_PATTERN = Pattern.compile("^(.*?)\\s+as\\s+(.*?)$", Pattern.CASE_INSENSITIVE);
-
-    private void onGenerate() {
-        model.clearMappings();
-        //populate the context variables table based on SELECT queries only
-        String sql = sqlTextArea.getText();
-        if (sql == null || sql.length() <= 0 || !JDBCQueryAssertion.SELECT_PATTERN.matcher(sql).find()) {
-            return;
-        }
-
-        Matcher columnMatcher = GREP_COLUMNS_PATTERN.matcher(sql);
-        if (!columnMatcher.find()) {
-            //show a dialog explaining that the user should create their column to variable mapping manually
-            JOptionPane.showMessageDialog(this, "Unable to generate variable names. Verify your SQL syntax and/or enter the variable names manually.");
-            return;
-        }
-
-        //create an array of all the columns in the query
-        String[] columns = columnMatcher.group(1).split(",\\s*");
-
-        //evaluate any aliases
-        String columnName;
-        for (String column : columns) {
-            Matcher aliasMatcher = GREP_ALIAS_PATTERN.matcher(column);
-            if (aliasMatcher.matches()) {
-                columnName = aliasMatcher.group(2);
-            } else {
-                columnName = column;
+                } catch (SQLException e) {
+                    logger.warning("Cannot get meta data of query results.");
+                }
             }
-            model.addMapping(new Pair<String, String>(columnName, columnName));
-        }
-        model.update(variablePrefixTextField.getText());
-    }
-
-    private void onNew() {
-        VariableMappingDialog vmd = new VariableMappingDialog(this, "New Variable Mapping");
-        vmd.setVisible(true);
-
-        if(vmd.isConfirmed()){
-            model.addMapping(new Pair<String, String>(vmd.getColumnName(), vmd.getVariableSuffixName()));
-            model.update(variablePrefixTextField.getText());
         }
 
-        vmd.dispose();
+        Collections.sort(varList);
+        return varList.toArray(new String[varList.size()]);
     }
 
-    private void onEdit() {
-        int row = variableTable.getSelectedRow();
-        if(row == -1) return;
+    private void doTest() {
+        DialogDisplayer.showSafeConfirmDialog(
+            TopComponents.getInstance().getTopParent(),
+            MessageFormat.format(resources.getString("confirmation.test.query"), connectionNameComboBox.getSelectedItem()),
+            resources.getString("dialog.title.test.query"),
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+            new DialogDisplayer.OptionListener() {
+                @Override
+                public void reportResult(int option) {
+                    if (option == JOptionPane.CANCEL_OPTION) {
+                        return;
+                    }
 
-        Pair<String, String> selectedTuple = model.getMappings().get(row);
-        String colName = selectedTuple.getKey();
-        String varName = selectedTuple.getValue();
+                    Object result = getJdbcQueryResult();
+                    if (result instanceof String) {
+                        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), result, null);
+                    }
+                }
+            }
+        );
+    }
 
-        VariableMappingDialog vmd = new VariableMappingDialog(this, "Edit Variable Mapping", colName, varName);
-        vmd.setVisible(true);
+    private void doAdd() {
+        editAndSave(new com.l7tech.console.util.Pair<String, String>("", ""));
+    }
 
-        if(vmd.isConfirmed()){
-            model.updateMapping(row, new Pair<String, String>(vmd.getColumnName(), vmd.getVariableSuffixName()));
-            model.update(variablePrefixTextField.getText());
+    private void doEdit() {
+        int selectedRow = namingTable.getSelectedRow();
+        if (selectedRow < 0) return;
+
+        String queryResultName = (String) namingMap.keySet().toArray()[selectedRow];
+        String contextVarName = namingMap.get(queryResultName);
+
+        editAndSave(new com.l7tech.console.util.Pair<String, String>(queryResultName, contextVarName));
+    }
+
+    private void editAndSave(final com.l7tech.console.util.Pair<String, String> namePair) {
+        if (namePair == null || namePair.left == null || namePair.right == null) return;
+        final String originalQueryResultName = namePair.left;
+
+        final ContextVariableNamingDialog dlg = new ContextVariableNamingDialog(this, namePair);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                if (dlg.isConfirmed()) {
+                    // Save the namePair into the map
+                    if (! originalQueryResultName.isEmpty()) { // This is for doEdit
+                        namingMap.remove(originalQueryResultName);
+                    }
+                    namingMap.put(namePair.left, namePair.right);
+                    // Refresh the table
+                    namingTableModel.fireTableDataChanged();
+                    // Refresh the selection highlight
+                    ArrayList<String> keyset = new ArrayList<String>();
+                    keyset.addAll(namingMap.keySet());
+                    int currentRow = keyset.indexOf(namePair.left);
+                    namingTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
+                }
+            }
+        });
+    }
+
+    private void doRemove() {
+        int currentRow = namingTable.getSelectedRow();
+        if (currentRow < 0) return;
+
+        String propName = (String) namingMap.keySet().toArray()[currentRow];
+        Object[] options = {resources.getString("button.remove"), resources.getString("button.cancel")};
+        int result = JOptionPane.showOptionDialog(
+            this, MessageFormat.format(resources.getString("confirmation.remove.context.variable"), propName),
+            resources.getString("dialog.title.remove.context.variable"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+
+        if (result == 0) {
+            // Refresh the list
+            namingMap.remove(propName);
+            // Refresh the table
+            namingTableModel.fireTableDataChanged();
+            // Refresh the selection highlight
+            if (currentRow == namingMap.size()) currentRow--; // If the previous deleted row was the last row
+            if (currentRow >= 0) namingTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
         }
-
-        vmd.dispose();
     }
 
-    private void onDelete() {
-        int row = variableTable.getSelectedRow();
-        if(row == -1) return;
-
-        model.removeMapping(row);
-        model.update(variablePrefixTextField.getText());
-    }
-
-    private void onOK() {
+    private void doOk() {
         getData(assertion);
-        fireEventAssertionChanged(assertion);
-        wasOkButtonPressed = true;
+        confirmed = true;
         JdbcQueryAssertionDialog.this.dispose();
     }
 
-    private void onCancel() {
+    private void doCancel() {
         JdbcQueryAssertionDialog.this.dispose();
+    }
+
+    private JdbcConnectionAdmin getJdbcConnectionAdmin() {
+        Registry reg = Registry.getDefault();
+        if (!reg.isAdminContextPresent()) {
+            logger.warning("Cannot get JDBC Connection Admin due to no Admin Context present.");
+            return null;
+        }
+        return reg.getJdbcConnectionAdmin();
     }
 }

@@ -112,6 +112,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem managePrivateKeysMenuItem = null;
     private JMenuItem manageSsgConnectorsMenuItem = null;
+    private JMenuItem manageJdbcConnectionsMenuItem = null;
     private JMenuItem revokeCertificatesMenuItem = null;
     private JMenuItem manageGlobalSchemasMenuItem = null;
     private JMenuItem manageClusterPropertiesMenuItem = null;
@@ -152,6 +153,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageCertificatesAction manageCertificatesAction = null;
     private ManagePrivateKeysAction managePrivateKeysAction = null;
     private ManageSsgConnectorsAction manageSsgConnectorsAction = null;
+    private ManageJdbcConnectionsAction manageJdbcConnectionsAction = null;
     private ManageTrustedEsmUsersAction manageTrustedEsmUsersAction = null;
     private RevokeCertificatesAction revokeCertificatesAction = null;
     private ManageGlobalSchemasAction manageGlobalSchemasAction = null;
@@ -682,6 +684,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageGlobalSchemasMenuItem());
             menu.add(getManageClusterPropertiesActionMenuItem());
             menu.add(getManageSsgConnectorsAction());
+            menu.add(getManageJdbcConnectionsAction());
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
@@ -1627,6 +1630,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageSsgConnectorsAction;
     }
 
+    private Action getManageJdbcConnectionsAction() {
+        if (manageJdbcConnectionsAction != null)
+            return manageJdbcConnectionsAction;
+
+        manageJdbcConnectionsAction = new ManageJdbcConnectionsAction();
+        disableUntilLogin(manageJdbcConnectionsAction);
+        return manageJdbcConnectionsAction;
+    }
+
     private Action getManageTrustedEsmUsersAction() {
         if (manageTrustedEsmUsersAction != null)
             return manageTrustedEsmUsersAction;
@@ -1921,6 +1933,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageGlobalSchemasMenuItem());
             menu.add(getManageClusterPropertiesActionMenuItem());
             menu.add(getManageSsgConnectorsAction());
+            menu.add(getManageJdbcConnectionsAction());
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
@@ -2833,6 +2846,12 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (manageSsgConnectorsMenuItem != null)
             return manageSsgConnectorsMenuItem;
         return manageSsgConnectorsMenuItem = new JMenuItem(getManageSsgConnectorsAction());
+    }
+
+    public JMenuItem getManageJdbcConnectionsMenuItem() {
+        if (manageJdbcConnectionsMenuItem != null)
+            return manageJdbcConnectionsMenuItem;
+        return manageJdbcConnectionsMenuItem = new JMenuItem(getManageJdbcConnectionsAction());
     }
 
     public JMenuItem getRevokeCertificatesMenuItem() {

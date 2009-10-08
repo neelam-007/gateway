@@ -20,6 +20,7 @@
                 <ref bean="auditAdmin"/>
                 <ref bean="schemaAdmin"/>
                 <ref bean="jmsAdmin"/>
+                <ref bean="jdbcConnectionAdmin"/>
                 <ref bean="ftpAdmin"/>
                 <ref bean="trustedCertAdmin"/>
                 <ref bean="customAssertionsRegistrar"/>
@@ -61,6 +62,11 @@
     <bean id="jmsAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/JmsAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.jms.JmsAdmin"/>
+    </bean>
+
+    <bean id="jdbcConnectionAdmin" parent="invokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/JdbcConnectionAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin"/>
     </bean>
 
     <bean id="ftpAdmin" parent="invokerCommon">
@@ -151,5 +157,4 @@
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/FolderAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.FolderAdmin"/>
     </bean>
-
 </beans>

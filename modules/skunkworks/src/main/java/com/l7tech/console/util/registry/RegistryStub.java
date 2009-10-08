@@ -5,6 +5,7 @@ import com.l7tech.common.audit.AuditAdminStub;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.common.log.LogSinkAdminStub;
 import com.l7tech.gateway.common.VersionException;
+import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.*;
@@ -101,6 +102,11 @@ public class RegistryStub extends Registry {
     @Override
     public JmsAdmin getJmsManager() {
         return jmsAdmin;
+    }
+
+    @Override
+    public JdbcConnectionAdmin getJdbcConnectionAdmin() {
+        return null;
     }
 
     /**
