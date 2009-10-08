@@ -92,7 +92,7 @@ class UserGroupsPanel extends JPanel {
      * package private method, allows adding users
      */
     Set<IdentityHeader> getCurrentGroups() {
-        return new HashSet<IdentityHeader>(Arrays.asList(listInModel.toArray()));
+        return new HashSet<IdentityHeader>(listInModel.toList());
     }
 
 

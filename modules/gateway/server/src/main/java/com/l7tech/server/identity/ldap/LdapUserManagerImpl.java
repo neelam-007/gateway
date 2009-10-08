@@ -14,6 +14,7 @@ import com.l7tech.util.ResourceUtils;
 import javax.naming.*;
 import javax.naming.directory.*;
 import java.util.Set;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,7 +65,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
             }
 
             UserMappingConfig[] userTypes = ldapIdentityProviderConfig.getUserMappings();
-            Attribute objectclasses = attributes.get("objectclass");
+            Attribute objectclasses = attributes.get(LdapIdentityProvider.OBJECTCLASS_ATTRIBUTE_NAME);
             for (UserMappingConfig userType : userTypes) {
                 String userclass = userType.getObjClass();
                 if (LdapUtils.attrContainsCaseIndependent(objectclasses, userclass)) {
@@ -92,7 +93,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
                     // check for presence of userCertificate
                     String userCertAttrName = userType.getUserCertAttrName();
                     if (userCertAttrName == null) {
-                        userCertAttrName = "userCertificate;binary";
+                        userCertAttrName = LdapUtils.LDAP_ATTR_USER_CERTIFICATE;
                     }
                     tmp = LdapUtils.extractOneAttributeValue(attributes, userCertAttrName);
                     if (tmp != null) {
@@ -147,16 +148,17 @@ public class LdapUserManagerImpl implements LdapUserManager {
 
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            sc.setReturningAttributes(getReturningAttributes());
             String dn = null;
 
-            NamingEnumeration answer = null;
+            NamingEnumeration<SearchResult> answer = null;
             try {
                 answer = context.search(ldapIdentityProviderConfig.getSearchBase(),
                                         filter.toString(),
                                         new String[]{login},
                                         sc);
                 if (answer.hasMore()) {
-                    dn = ((SearchResult)answer.next()).getNameInNamespace();
+                    dn = answer.next().getNameInNamespace();
                 } else {
                     logger.fine(ldapIdentityProviderConfig.getName() + " cannot find cn=" + login);
                     return null;
@@ -305,6 +307,17 @@ public class LdapUserManagerImpl implements LdapUserManager {
         }
         logger.warning("Could not establish context on any of the ldap urls.");
         return false;
+    }
+
+    private String[] getReturningAttributes() {
+        String[] returningAttributes = null;
+
+        Collection<String> attributes = identityProvider.getReturningAttributes();
+        if ( attributes != null ) {
+            returningAttributes = attributes.toArray(new String[attributes.size()]);
+        }
+
+        return returningAttributes;
     }
 
     private LdapIdentityProvider getIdentityProvider() {

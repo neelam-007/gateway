@@ -31,6 +31,7 @@ import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.LdapCertificateSettingsPanel;
+import com.l7tech.console.panels.LdapAdvancedConfigurationPanel;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.util.Registry;
@@ -45,8 +46,7 @@ import com.l7tech.objectmodel.EntityType;
  * The <code>IdentityProviderPropertiesAction</code> edits the
  * identity provider.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * @author Emil Marceta
  */
 public class IdentityProviderPropertiesAction extends NodeAction {
     private EventListenerList listenerList = new EventListenerList();
@@ -106,7 +106,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
                         if (iProvider.type() == IdentityProviderType.INTERNAL || iProvider.type() == IdentityProviderType.LDAP) {
                             if (iProvider.type() == IdentityProviderType.LDAP) {
-                                configPanel = new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new LdapCertificateSettingsPanel(null))), false);
+                                configPanel = new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new LdapAdvancedConfigurationPanel(new LdapCertificateSettingsPanel(null)))), false);
                             } else {
                                 configPanel = new InternalIdentityProviderConfigPanel(new IdentityProviderCertificateValidationConfigPanel(null), false);
                             }

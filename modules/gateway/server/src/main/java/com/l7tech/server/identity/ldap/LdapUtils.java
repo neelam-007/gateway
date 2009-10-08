@@ -20,6 +20,9 @@ import java.util.Hashtable;
  * @author alex
  */
 public final class LdapUtils {
+
+    //- PUBLIC
+
     /**
      * Finds the attribute name within the LDAP URL query string.
      *
@@ -29,7 +32,6 @@ public final class LdapUtils {
      * @see <a href="http://www.ietf.org/rfc/rfc2255.txt">LDAP URL syntax</a>
      */
     public static final Pattern LDAP_URL_QUERY_PATTERN = Pattern.compile("^\\?([^\\?]+).*$");
-    public static final String LDAP_ATTRIBUTE_BINARY_SUFFIX = ";binary";
     public static final boolean LDAP_USES_UNSYNC_NAMING = SyspropUtil.getBoolean( "com.l7tech.server.ldap.unsyncNaming", false );
 
     private LdapUtils() { }
@@ -201,4 +203,11 @@ public final class LdapUtils {
             Thread.currentThread().setContextClassLoader( originalContextClassLoader );
         }
     }
+
+    //- PACKAGE
+
+    static final String LDAP_ATTR_USER_ACCOUNT_CONTROL = "userAccountControl";
+    static final String LDAP_ATTR_ACCOUNT_EXPIRES = "accountExpires";
+    static final String LDAP_ATTR_USER_CERTIFICATE = "userCertificate;binary";
+
 }

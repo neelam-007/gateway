@@ -11,6 +11,9 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.TreeSet;
+import java.util.Set;
+import java.util.Arrays;
 
 import org.hibernate.annotations.Proxy;
 
@@ -23,7 +26,6 @@ import org.hibernate.annotations.Proxy;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 20, 2004<br/>
- * $Id$<br/>
  *
  */
 @XmlRootElement
@@ -40,6 +42,17 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
 
     public LdapIdentityProviderConfig() {
         super(IdentityProviderType.LDAP);
+    }
+
+    /**
+     * Create a new LdapIdentityProviderConfig with default settings.
+     *
+     * @return The new configuration
+     */
+    public static LdapIdentityProviderConfig newLdapIdentityProviderConfig() {
+        LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
+        config.setReturningAttributes( new String[0] );
+        return config;
     }
 
     @Override
@@ -374,6 +387,37 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         setProperty(USERCERTS_ENABLED, null); // remove deprecated property
     }
 
+    /**
+     * Attributes to access from LDAP in addition to mapped / standard attributes.
+     *
+     * @return The attributes, or null for all attributes
+     */
+    @Transient
+    public String[] getReturningAttributes() {
+        String[] attributes = null;
+
+        Object attributesObj = getProperty(RETURNING_ATTRIBUTES);
+        if ( attributesObj instanceof String[] ) {
+            attributes = (String[])attributesObj;
+        }
+
+        return attributes;
+    }
+
+    /**
+     * Set the attributes to access from LDAP in addition to mapped / standard attributes.
+     *
+     * @param attributes The attributes to retrieve (null for all)
+     */
+    public void setReturningAttributes( final String[] attributes ) {
+        if ( attributes == null ) {
+            setProperty( RETURNING_ATTRIBUTES, null );
+        } else {
+            Set<String> attrSet = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+            attrSet.addAll( Arrays.asList(attributes) );
+            setProperty( RETURNING_ATTRIBUTES, attrSet.toArray(new String[attrSet.size()]));
+        }
+    }
 
     public enum UserCertificateUseType { NONE, INDEX, INDEX_CUSTOM, SEARCH }
 
@@ -392,4 +436,5 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String USER_CERT_CUSTOM_INDEX = "userCertIndex";
     private static final String USER_CERT_SEARCH_ISSUER_SERIAL = "userCertSearchIssuerSerial";
     private static final String USER_CERT_SEARCH_SKI = "userCertSearchSKI";
+    private static final String RETURNING_ATTRIBUTES = "returningAttributes";    
 }

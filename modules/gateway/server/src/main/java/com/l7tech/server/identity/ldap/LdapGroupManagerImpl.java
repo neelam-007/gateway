@@ -25,6 +25,9 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
+ *
+ * TODO [steve] various places assume use of "CN" (cn) attribute, is this safe?
+ * TODO [steve] fix case sensitive comparisons of (partial) DN strings
  */
 @LdapClassLoaderRequired
 public class LdapGroupManagerImpl implements LdapGroupManager {
@@ -55,7 +58,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 Attributes attributes = context.getAttributes(dn);
 
                 GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
-                Attribute objectclasses = attributes.get("objectclass");
+                Attribute objectclasses = attributes.get(LdapIdentityProvider.OBJECTCLASS_ATTRIBUTE_NAME);
                 for (GroupMappingConfig groupType : groupTypes) {
                     String grpclass = groupType.getObjClass();
                     if (LdapUtils.attrContainsCaseIndependent(objectclasses, grpclass)) {
@@ -262,7 +265,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     }
 
     // Check if the provided user is a member of the provided OU group, or the immediate subgroups
-    private boolean isMemberOfGroupByOu(User user, String dn) throws NamingException {
+    private boolean isMemberOfGroupByOu( final User user, final String dn ) throws NamingException {
         LdapIdentityProvider identityProvider = getIdentityProvider();
 
         final LdapName userDN = new LdapName(user.getId());
@@ -272,19 +275,19 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
 
         final SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        sc.setReturningAttributes(getReturningAttributes());
 
         final String filter = identityProvider.groupSearchFilterWithParam("*");
         DirContext context = null;
-        NamingEnumeration answer = null;
+        NamingEnumeration<SearchResult> answer = null;
         try {
             context = identityProvider.getBrowseContext();
             answer = context.search(dn, filter, sc);
 
             while (answer.hasMore()) {
-                String entitydn;
-                SearchResult sr = (SearchResult)answer.next();
+                SearchResult sr = answer.next();
                 if (sr != null && sr.getName() != null && sr.getName().length() > 0) {
-                    entitydn = sr.getNameInNamespace();
+                    final String entitydn = sr.getNameInNamespace();
                     if (entitydn.equals(dn)) continue; // Avoid recursing this group
                     if(userDN.startsWith(new LdapName(entitydn))) {
                         return true;
@@ -394,8 +397,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             sc.setCountLimit(identityProvider.getMaxSearchResultSize());
+            sc.setReturningAttributes(getReturningAttributes());
             DirContext context = null;
-            NamingEnumeration answer = null;
+            NamingEnumeration<SearchResult> answer = null;
             try {
                 try {
                     context = identityProvider.getBrowseContext();
@@ -419,7 +423,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
 
                 try {
                     while (answer.hasMore()) {
-                        SearchResult sr = (SearchResult)answer.next();
+                        SearchResult sr = answer.next();
                         IdentityHeader header = identityProvider.searchResultToHeader(sr);
                         if (header != null) {
                             output.add(header);
@@ -512,12 +516,13 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             sc.setCountLimit(identityProvider.getMaxSearchResultSize());
-            NamingEnumeration answer = null;
+            sc.setReturningAttributes(getReturningAttributes());
+            NamingEnumeration<SearchResult> answer = null;
             try {
                 answer = context.search(ldapIdentityProviderConfig.getSearchBase(), filter, sc);
                 while (answer.hasMore()) {
                     // get this item
-                    SearchResult sr = (SearchResult)answer.next();
+                    SearchResult sr = answer.next();
                     IdentityHeader header = identityProvider.searchResultToHeader(sr);
                     if (header != null && header.getType().equals(EntityType.GROUP)) {
                         output.add(header);
@@ -619,7 +624,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             Attributes attributes = context.getAttributes(dn);
 
             GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
-            Attribute objectclasses = attributes.get("objectclass");
+            Attribute objectclasses = attributes.get(LdapIdentityProvider.OBJECTCLASS_ATTRIBUTE_NAME);
             for (GroupMappingConfig groupType : groupTypes) {
                 String grpclass = groupType.getObjClass();
                 if (LdapUtils.attrContainsCaseIndependent(objectclasses, grpclass)) {
@@ -789,14 +794,15 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         sc.setCountLimit(maxSize);
+        sc.setReturningAttributes(getReturningAttributes());
         // use dn of group as base
         {
-            NamingEnumeration answer = null;
+            NamingEnumeration<SearchResult> answer = null;
             try {
                 answer = context.search(dn, filter, sc);
 
                 while (answer.hasMore()) {
-                    SearchResult sr = (SearchResult)answer.next();
+                    SearchResult sr = answer.next();
                     IdentityHeader header = identityProvider.searchResultToHeader(sr);
                     if (header == null) {
                         logger.info("The user " + sr.getNameInNamespace() + " is not valid according to template and will not " +
@@ -868,7 +874,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
         sc.setCountLimit(maxSize);
-        NamingEnumeration answer = null;
+        sc.setReturningAttributes(getReturningAttributes());
+        NamingEnumeration<SearchResult> answer = null;
         try {
             try {
                 answer = context.search(ldapIdentityProviderConfig.getSearchBase(), filter.toString(), sc);
@@ -878,7 +885,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 return;
             }
             while (answer.hasMore()) {
-                SearchResult sr = (SearchResult)answer.next();
+                SearchResult sr = answer.next();
                 IdentityHeader newheader = identityProvider.searchResultToHeader(sr);
                 if (newheader == null) {
                     logger.info("User " + sr.getNameInNamespace() + " is not valid according to the template and will not " +
@@ -892,6 +899,17 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         } finally {
             ResourceUtils.closeQuietly( answer );
         }
+    }
+
+    private String[] getReturningAttributes() {
+        String[] returningAttributes = null;
+
+        Collection<String> attributes = identityProvider.getReturningAttributes();
+        if ( attributes != null ) {
+            returningAttributes = attributes.toArray(new String[attributes.size()]);
+        }
+
+        return returningAttributes;
     }
 
     private LdapIdentityProvider getIdentityProvider() {

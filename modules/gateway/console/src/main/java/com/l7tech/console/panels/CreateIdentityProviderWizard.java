@@ -13,12 +13,7 @@ import java.awt.event.ActionListener;
 
 /*
  * This class provides a wizard for users to add a new identity provider.
- *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id: CreateIdentityProviderWizard.java,v 1.5 2004/02/07 01:47:58 fpang Exp
  */
-
 public class CreateIdentityProviderWizard extends IdentityProviderWizard {
 
     /**
@@ -36,8 +31,7 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
         Utilities.setEscKeyStrokeDisposes(this);
 
         if(wizardInput == null) {
-            this.wizardInput = new LdapIdentityProviderConfig();
-            ((IdentityProviderConfig)this.wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
+            this.wizardInput = LdapIdentityProviderConfig.newLdapIdentityProviderConfig();
         } else {
             this.wizardInput = wizardInput;
             ((IdentityProviderConfig)this.wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
@@ -47,6 +41,7 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
         pack();
 
         getButtonHelp().addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(CreateIdentityProviderWizard.this);
             }

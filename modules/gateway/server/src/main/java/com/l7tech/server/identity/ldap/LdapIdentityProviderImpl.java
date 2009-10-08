@@ -66,7 +66,6 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
  */
-@SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 @LdapClassLoaderRequired
 public class LdapIdentityProviderImpl
         implements LdapIdentityProvider, InitializingBean, DisposableBean, ApplicationContextAware, ConfigurableIdentityProvider, PropertyChangeListener
@@ -94,6 +93,10 @@ public class LdapIdentityProviderImpl
 
         userManager.configure( this );
         groupManager.configure( this );
+
+        if ( this.config.getReturningAttributes() != null ) {
+            returningAttributes = buildReturningAttributes();
+        }
 
         initializeFallbackMechanism();
         initializeConfigProperties();
@@ -651,6 +654,17 @@ public class LdapIdentityProviderImpl
     public long getMaxSearchResultSize() {
         return maxSearchResultSize.get();
     }
+    
+    @Override
+    public Collection<String> getReturningAttributes() {
+        Collection<String> attributes = null;
+
+        if ( returningAttributes != null ) {
+            attributes = Collections.unmodifiableCollection( Arrays.asList( returningAttributes ) );           
+        }
+
+        return attributes;
+    }
 
     /**
      * searches the ldap provider for identities
@@ -924,7 +938,7 @@ public class LdapIdentityProviderImpl
         }
 
         for ( CertCacheKey certCacheKey : newCertCacheEntries.keySet() ) {
-            logger.info("Caching cert for " + certCacheKey);
+            logger.fine("Caching cert for " + certCacheKey);
         }
 
         cacheLock.writeLock().lock();
@@ -985,12 +999,12 @@ public class LdapIdentityProviderImpl
             }
 
             if (output == null) {
-                logger.info("Certificate is in the index but not in directory (" + certCacheKey + ")");
+                logger.fine("Certificate is in the index but not in directory (" + certCacheKey + ")");
                 return null;
             }
 
             // add the cert to the cert cache and return
-            logger.info("Caching cert for " + certCacheKey);
+            logger.fine("Caching cert for " + certCacheKey);
             cacheLock.writeLock().lock();
             try {
                 certCache.put(certCacheKey, new CertCacheEntry(output));
@@ -1011,6 +1025,7 @@ public class LdapIdentityProviderImpl
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             sc.setCountLimit(getMaxSearchResultSize());
+            sc.setReturningAttributes(returningAttributes);
             context = getBrowseContext();
             answer = context.search(config.getSearchBase(), filter, sc);
             while (answer.hasMore()) {
@@ -1113,7 +1128,7 @@ public class LdapIdentityProviderImpl
     }
 
     private String makeSearchFilter(LdapSearchTerm[] terms) {
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
         if (terms.length > 1) output.append("(|");
 
         for (LdapSearchTerm term : terms) {
@@ -1229,6 +1244,7 @@ public class LdapIdentityProviderImpl
             String filter;
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            sc.setReturningAttributes(returningAttributes);            
 
             // make sure the base DN is valid and contains at least one entry
             NamingEnumeration entrySearchEnumeration = null;
@@ -1546,7 +1562,7 @@ public class LdapIdentityProviderImpl
         final long DISABLED_FLAG = 0x00000002;
         final long LOCKED_FLAG = 0x00000010;
         final long EXPIRED_FLAG = 0x00800000; // add a check for this flag in an attempt to fix 1466
-        Attribute userAccountControlAttr = attibutes.get("userAccountControl");
+        Attribute userAccountControlAttr = attibutes.get( LdapUtils.LDAP_ATTR_USER_ACCOUNT_CONTROL );
         if (userAccountControlAttr != null && userAccountControlAttr.size() > 0) {
             Object found = null;
             try {
@@ -1590,7 +1606,7 @@ public class LdapIdentityProviderImpl
      */
     @Override
     public boolean checkExpiredMSADAccount(String userDn, Attributes attibutes) {
-        Attribute accountExpiresAttr = attibutes.get("accountExpires");
+        Attribute accountExpiresAttr = attibutes.get( LdapUtils.LDAP_ATTR_ACCOUNT_EXPIRES );
         if (accountExpiresAttr != null && accountExpiresAttr.size() > 0) {
             Object found = null;
             try {
@@ -1633,7 +1649,7 @@ public class LdapIdentityProviderImpl
         final Attributes atts = sr.getAttributes();
         final String dn = sr.getNameInNamespace();
         // is it user or group ?
-        Attribute objectclasses = atts.get("objectclass");
+        Attribute objectclasses = atts.get( OBJECTCLASS_ATTRIBUTE_NAME );
         // check if it's a user
         UserMappingConfig[] userTypes = config.getUserMappings();
         for (UserMappingConfig userType : userTypes) {
@@ -1802,6 +1818,52 @@ public class LdapIdentityProviderImpl
             throw new FindException("Search filter variable error '"+ExceptionUtils.getMessage(vnse)+"'.");
         } catch ( IllegalArgumentException iae ) {
             throw new FindException("Search filter variable processing error '"+ExceptionUtils.getMessage(iae)+"'.");
+        }
+    }
+
+    private String[] buildReturningAttributes() {
+        Set<String> attributeNames = new LinkedHashSet<String>();
+
+        // Various hard coded attributes that we use
+        attributeNames.add( OBJECTCLASS_ATTRIBUTE_NAME );
+        attributeNames.add( DESCRIPTION_ATTRIBUTE_NAME );
+        attributeNames.add( LdapUtils.LDAP_ATTR_USER_ACCOUNT_CONTROL );
+        attributeNames.add( LdapUtils.LDAP_ATTR_ACCOUNT_EXPIRES );
+        attributeNames.add( LdapUtils.LDAP_ATTR_USER_CERTIFICATE );
+
+        // User mapping attributes
+        UserMappingConfig[] userTypes = config.getUserMappings();
+        for (UserMappingConfig userType : userTypes) {
+            addValidName( attributeNames, userType.getEmailNameAttrName() );
+            addValidName( attributeNames, userType.getFirstNameAttrName() );
+            addValidName( attributeNames, userType.getKerberosAttrName() );
+            addValidName( attributeNames, userType.getKerberosEnterpriseAttrName() );
+            addValidName( attributeNames, userType.getLastNameAttrName() );
+            addValidName( attributeNames, userType.getLoginAttrName() );
+            addValidName( attributeNames, userType.getNameAttrName() );
+            addValidName( attributeNames, userType.getPasswdAttrName() );
+            addValidName( attributeNames, userType.getUserCertAttrName() );
+        }
+
+        // Group mapping attributes
+        GroupMappingConfig[] groupTypes = config.getGroupMappings();
+        for (GroupMappingConfig groupType : groupTypes) {
+            addValidName( attributeNames, groupType.getMemberAttrName() );
+            addValidName( attributeNames, groupType.getNameAttrName() );
+        }
+
+        // Configured attributes
+        String[] attributes = config.getReturningAttributes();
+        if ( attributes != null ) {
+            attributeNames.addAll( Arrays.asList(attributes) );
+        }
+
+        return attributeNames.toArray( new String[attributeNames.size()] );
+    }
+
+    private void addValidName( final Collection<? super String> names, final String name ) {
+        if ( name != null && !name.isEmpty() ) {
+            names.add( name.trim() );
         }
     }
 
@@ -1978,6 +2040,7 @@ public class LdapIdentityProviderImpl
     private final ReentrantReadWriteLock fallbackLock = new ReentrantReadWriteLock();
     private String[] ldapUrls;
     private Long[] urlStatus;
+    private String[] returningAttributes;
 
     /**
      * Certificate index by issuer/serial and SKI

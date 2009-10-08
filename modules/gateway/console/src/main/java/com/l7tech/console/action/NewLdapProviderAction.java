@@ -89,7 +89,7 @@ public class NewLdapProviderAction extends NewProviderAction {
             public void run() {
 
                 LdapIdentityProviderConfigPanel configPanel = (
-                  new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new LdapCertificateSettingsPanel(null))), true));
+                  new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new LdapAdvancedConfigurationPanel(new LdapCertificateSettingsPanel(null)))), true));
 
 
                 Frame f = TopComponents.getInstance().getTopParent();

@@ -12,6 +12,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchResult;
 import javax.naming.directory.Attributes;
 import javax.naming.NamingException;
+import java.util.Collection;
 
 /**
  * @author alex
@@ -30,6 +31,7 @@ public interface LdapIdentityProvider extends AuthenticatingIdentityProvider<Lda
      */
     static final int LDAP_POOL_IDLE_TIMEOUT = 30 * 1000;
     String DESCRIPTION_ATTRIBUTE_NAME = "description";
+    String OBJECTCLASS_ATTRIBUTE_NAME = "objectclass";
 
     String userSearchFilterWithParam(String param);
 
@@ -38,6 +40,8 @@ public interface LdapIdentityProvider extends AuthenticatingIdentityProvider<Lda
     DirContext getBrowseContext() throws NamingException;
 
     long getMaxSearchResultSize();
+
+    Collection<String> getReturningAttributes();
 
     IdentityHeader searchResultToHeader(SearchResult sr);
 

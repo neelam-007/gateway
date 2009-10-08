@@ -39,6 +39,7 @@ public class SortedListModel<E> extends AbstractListModel {
     }
 
     /** @return the length of the list. */
+    @Override
     public int getSize() {
         return model.size();
     }
@@ -47,8 +48,27 @@ public class SortedListModel<E> extends AbstractListModel {
      * @param index  integer the index
      * @return the value at the specified index.
      */
+    @Override
     public E getElementAt(int index) {
-        return (E) model.toArray()[index];
+        E element = null;
+
+        boolean found = false;
+        int iterIndex = 0;
+        for ( Iterator<E> i = model.iterator(); i.hasNext(); iterIndex++ ) {
+            E item = i.next();
+
+            if ( index == iterIndex ) {
+                element = item;
+                found = true;
+                break;
+            }
+        }
+
+        if ( !found ) {
+            throw new IndexOutOfBoundsException("Index out of bounds: " + index);
+        }
+
+        return element;
     }
 
     /**
@@ -58,7 +78,13 @@ public class SortedListModel<E> extends AbstractListModel {
      */
     public void add(E element) {
         if (model.add(element)) {
-            fireContentsChanged(this, 0, getSize());
+            int index = 0;
+            for ( Iterator<E> i = model.iterator(); i.hasNext(); index++ ) {
+                if ( model.comparator().compare( i.next(), element )==0 ) {
+                    fireIntervalAdded(this, index, index);
+                    break;
+                }
+            }
         }
     }
 
@@ -78,9 +104,7 @@ public class SortedListModel<E> extends AbstractListModel {
      * @param elements Object array of elements
      */
     public void addAll(E[] elements) {
-        Collection<E> c = Arrays.asList(elements);
-        model.addAll(c);
-        fireContentsChanged(this, 0, getSize());
+        addAll( Arrays.asList(elements) );
     }
 
     /**
@@ -88,7 +112,7 @@ public class SortedListModel<E> extends AbstractListModel {
      */
     public void clear() {
         model.clear();
-        fireContentsChanged(this, 0, getSize());
+        fireIntervalRemoved(this, 0, getSize());
     }
 
     /**
@@ -120,15 +144,6 @@ public class SortedListModel<E> extends AbstractListModel {
         return model.last();
     }
 
-    /**
-     *
-     * @return an array containing all of the elements in
-     * this  list in the correct order.
-     */
-    public E[] toArray() {
-        return (E[]) model.toArray();
-    }
-
     /** @return a List containing all of the elements of the list in the correct order. */
     public List<E> toList() {
         return new ArrayList<E>(model);
@@ -141,10 +156,22 @@ public class SortedListModel<E> extends AbstractListModel {
      * @return true of the object has been remvoed, false otherwise
      */
     public boolean removeElement(E element) {
-        boolean removed = model.remove(element);
-        if (removed) {
-            fireContentsChanged(this, 0, getSize());
+        boolean removed = false;
+
+        int index = 0;
+        for ( Iterator<E> i = model.iterator(); i.hasNext(); index++ ) {
+            if ( model.comparator().compare( i.next(), element )==0 ) {
+                i.remove();
+                removed = true;
+                break;
+            }
         }
+
+        if ( removed ) {
+            this.fireIntervalRemoved(this, index, index);
+        }
+
+
         return removed;
     }
 }
