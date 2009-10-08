@@ -49,7 +49,7 @@ public class ServerCertUtilsTest {
         String issuerDn = ServerCertUtils.getAKIAuthorityCertIssuer(aki);
 
         assertEquals("Serial number not correctly processed", BigInteger.valueOf(0), serial);
-        assertEquals("Issuer DN not correctly processed", "1.2.840.113549.1.9.1=#160f72686e73407265646861742e636f6d,CN=RHNS Certificate Authority,OU=Red Hat Network Services,O=Red Hat\\, Inc.,L=Research Triangle Park,ST=North Carolina,C=US", issuerDn);
+        assertEquals("Issuer DN not correctly processed", "1.2.840.113549.1.9.1=#160f72686e73407265646861742e636f6d,cn=rhns certificate authority,ou=red hat network services,o=red hat\\, inc.,l=research triangle park,st=north carolina,c=us", issuerDn);
     }
 
     @Test

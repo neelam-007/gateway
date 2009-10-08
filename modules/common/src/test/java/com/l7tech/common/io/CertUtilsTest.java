@@ -179,4 +179,11 @@ public class CertUtilsTest {
         Assert.assertFalse( "Wildcard domain match", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "host.*.domain.com", true ) );
         Assert.assertFalse( "Wildcard multi mismatch", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*eer*st.domain.com", false ) );
     }
+
+    @Test
+    public void testDNComparison() {
+        Assert.assertTrue( "Canonical match", CertUtils.isEqualDNCanonical( "ou=blah+cn=abc", "cn=ABC+OU=Blah" ) );
+        Assert.assertTrue( "Canonical match naming", CertUtils.isEqualDNCanonical( "email=test@test.com+s=ca+dnq=test.com", "EMAILADDRESS=test@test.com+ST=ca+DNQUALIFIER=test.com" ) );
+        Assert.assertFalse( "Basic mismatch", CertUtils.isEqualDNCanonical( "cn=a", "cn=b" ) );
+    }
 }

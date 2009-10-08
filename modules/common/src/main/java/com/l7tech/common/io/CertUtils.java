@@ -494,20 +494,20 @@ public class CertUtils {
      * Get the Subject DN in standard format for the certificate.
      *
      * @param cert The certificate
-     * @return The Subject DN in RFC 2253 format
+     * @return The Subject DN in canonical format
      */
     public static String getSubjectDN( final X509Certificate cert ) {
-        return cert.getSubjectX500Principal().getName();
+        return cert.getSubjectX500Principal().getName(X500Principal.CANONICAL);
     }
 
     /**
      * Get the Issuer DN in standard format for the certificate.
      *
      * @param cert The certificate
-     * @return The Issuer DN in RFC 2253 format
+     * @return The Issuer DN in canonical format
      */
     public static String getIssuerDN( final X509Certificate cert ) {
-        return cert.getIssuerX500Principal().getName();
+        return cert.getIssuerX500Principal().getName(X500Principal.CANONICAL);
     }
 
     /**
@@ -516,37 +516,20 @@ public class CertUtils {
      * <p>If the given DN is not valid then it is returned unformatted.</p>
      *
      * @param dn The DN to format.
-     * @return The DN in RFC 2253 format
+     * @return The DN in canonical format
      */
     public static String formatDN( final String dn ) {
         String formattedDN = dn;
-        try {
-            formattedDN = new X500Principal(dn).getName();
-        } catch ( IllegalArgumentException iae ) {
-            // don't format            
+
+        if ( dn != null ) {
+            try {
+                formattedDN = new X500Principal(dn).getName(X500Principal.CANONICAL);
+            } catch ( IllegalArgumentException iae ) {
+                // don't format
+            }
         }
+
         return formattedDN;
-    }
-
-    /**
-     * Compare the given principals for equality in RFC 2253 format.
-     *
-     * <p>Will be false if either (or both) principals are null.</p>
-     *
-     * @param princ1 The first principal to compare (may be null)
-     * @param princ2 The second principal to compare (may be null)
-     * @return True if equal
-     * @see #isEqualDN(String,String)
-     */
-    public static boolean isEqualDN( final X500Principal princ1,
-                                     final X500Principal princ2 ) {
-        boolean equal = false;
-
-        if ( princ1 != null && princ2 != null ) {
-            equal = isEqualDN(princ1.getName(), princ2.getName());
-        }
-
-        return equal;
     }
 
     /**
@@ -570,6 +553,23 @@ public class CertUtils {
         }
 
         return equal;
+    }
+
+    /**
+     * Compare the given DN strings for equality (case insensitive).
+     *
+     * <p>The DNs are not formatted for comparison, so should already
+     * be in the desired format.</p>
+     *
+     * <p>Will be false if either (or both) DNs are null.</p>
+     *
+     * @param dn1 The first DN to compare (may be null)
+     * @param dn2 The second DN to compare (may be null)
+     * @return True if equal
+     */
+    public static boolean isEqualDNCanonical( final String dn1,
+                                              final String dn2 ) {
+        return isEqualDN( formatDN(dn1), formatDN(dn2) );
     }
 
     public static String getCn(X509Certificate cert) {

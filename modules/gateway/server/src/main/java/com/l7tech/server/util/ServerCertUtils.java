@@ -192,7 +192,7 @@ public class ServerCertUtils {
                 if (name.getTagNo()==4) { // need a directory name
                     try {
                         X500Principal x500Name = new X500Principal(name.getName().getDERObject().getDEREncoded());
-                        issuerDn = x500Name.getName();
+                        issuerDn = x500Name.getName(X500Principal.CANONICAL);
                     }
                     catch(IllegalArgumentException iae) {
                         throw new CertificateException("Could not parse issuer as directory name.", iae);

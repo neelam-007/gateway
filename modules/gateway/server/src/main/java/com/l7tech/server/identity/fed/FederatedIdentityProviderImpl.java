@@ -114,7 +114,7 @@ public class FederatedIdentityProviderImpl
         FederatedUser u = userManager.cast(user);
         final String userDn = u.getSubjectDn();
         final String clientCertDn = clientCertChain[0].getSubjectDN().getName();
-        if (!userDn.equals(clientCertDn))
+        if (!CertUtils.isEqualDNCanonical(userDn, clientCertDn))
             throw new ClientCertManager.VetoSave("User's X.509 Subject DN '" + userDn +
                     "'doesn't match cert's Subject DN '" + clientCertDn + "'");
         try {

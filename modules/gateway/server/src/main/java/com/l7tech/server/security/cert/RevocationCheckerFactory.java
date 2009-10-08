@@ -18,6 +18,7 @@ import com.l7tech.util.Functions;
 import com.whirlycott.cache.Cache;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
@@ -588,11 +589,11 @@ public class RevocationCheckerFactory {
                     return onNetworkFailure;
                 }
 
-                final String crlIssuerDn = crl.getIssuerX500Principal().getName();
+                final String crlIssuerDn = crl.getIssuerX500Principal().getName(X500Principal.CANONICAL);
 
                 // Check certificate scope
                 // Extend this check if we want to add support for the Issuing Distribution Point extension.
-                if ( !CertUtils.isEqualDN(crl.getIssuerX500Principal(),certificate.getIssuerX500Principal()) ) {
+                if ( !crl.getIssuerX500Principal().equals(certificate.getIssuerX500Principal()) ) {
                     auditor.logAndAudit(SystemMessages.CERTVAL_CRL_SCOPE, certificate.getSubjectDN().toString(), crlUrl);
                     return CertificateValidationResult.UNKNOWN;
                 }

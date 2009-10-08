@@ -73,8 +73,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
         if (issuerCertificate == null) {
             for (TrustAnchor anchor : trustAnchors) {
                 X509Certificate trustAnchorCertificate = anchor.getTrustedCert();
-                if (CertUtils.isEqualDN(CertUtils.getSubjectDN(trustAnchorCertificate),
-                                        CertUtils.getIssuerDN(x509Certificate)) ) {
+                if (trustAnchorCertificate.getSubjectX500Principal().equals(x509Certificate.getIssuerX500Principal()) ) {
                     if (CertVerifier.isVerified(x509Certificate, trustAnchorCertificate)) {
                         issuerCertificate = trustAnchorCertificate;
                         break;

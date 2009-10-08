@@ -9,7 +9,6 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.common.io.CertUtils;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -38,7 +37,7 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,Entity
         List<TrustedCert> tcs = new ArrayList<TrustedCert>();
         for (TrustedCert trustedCert : entities.values()) {
             X509Certificate cert = trustedCert.getCertificate();
-            if (CertUtils.isEqualDN(cert.getIssuerX500Principal(),issuer) && cert.getSerialNumber().equals(serial)) tcs.add(trustedCert);
+            if (cert.getIssuerDN().equals(issuer) && cert.getSerialNumber().equals(serial)) tcs.add(trustedCert);
         }
         return tcs;
     }

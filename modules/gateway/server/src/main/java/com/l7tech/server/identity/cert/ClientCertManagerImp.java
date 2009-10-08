@@ -49,6 +49,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         this.defaultKey = defaultKey;
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public boolean isCertPossiblyStale(X509Certificate userCert) {
         SsgKeyEntry caInfo = defaultKey.getCaInfo();
@@ -58,12 +59,9 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         }
 
         X509Certificate caCert = caInfo.getCertificate();
-        String rootCertSubjectName = caCert.getSubjectDN().getName();
         byte[] rootCertSki = CertUtils.getSKIBytesFromCert(caCert);
 
-        String requestCertIssuerName = userCert.getIssuerDN().getName();
-
-        if (requestCertIssuerName.equals(rootCertSubjectName)) {
+        if ( userCert.getIssuerX500Principal().equals(caCert.getSubjectX500Principal()) ) {
             // Check whether the request cert was signed with this version of the CA cert
             byte[] aki = CertUtils.getAKIBytesFromCert(userCert);
             // Bug #2094: mlyons: If no aki, can't tell if cert is stale.  Assume it isn't.
@@ -73,6 +71,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         return false;
     }
 
+    @Override
     @Transactional(readOnly=true)
     public boolean userCanGenCert(User user, Certificate existingCert) throws FindException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
@@ -86,6 +85,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
             || userData.getResetCounter() < 10;
     }
 
+    @Override
     public void recordNewUserCert(User user, Certificate cert, boolean oldCertWasStale) throws UpdateException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("recordNewUserCert for " + getName(user));
@@ -171,6 +171,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         }
     }
 
+    @Override
     @Transactional(readOnly=true)
     public Certificate getUserCert(User user) throws FindException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
@@ -203,10 +204,12 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         return name;
     }
 
+    @Override
     public void revokeUserCert(User user) throws UpdateException {
         revokeUserCertIfIssuerMatches(user, null);
     }
 
+    @Override
     public boolean revokeUserCertIfIssuerMatches(User user, X500Principal issuer) throws UpdateException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("revokeUserCert for " + getName(user) + (issuer==null ? "" : " issuer "+issuer.toString()));
@@ -221,7 +224,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
             boolean revoke = false;
             if (issuer != null) {
                 X509Certificate userCertificate = currentdata.getCertificate();
-                if (userCertificate != null && CertUtils.isEqualDN(userCertificate.getIssuerX500Principal(),issuer)) {
+                if (userCertificate != null && userCertificate.getIssuerX500Principal().equals(issuer)) {
                     revoke = true;
                 }
             } else {
@@ -247,6 +250,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         return revokedUserCertificate;
     }
 
+    @Override
     public void forbidCertReset(User user) throws UpdateException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("forbidCertReset for " + getName(user));
@@ -283,11 +287,13 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         }
     }
 
+    @Override
     @Transactional(readOnly=true)
     public List<CertEntryRow> findByThumbprint(String thumbprint) throws FindException {
         return simpleQuery("thumbprintSha1", thumbprint);
     }
 
+    @Override
     @Transactional(readOnly=true)
     public List<CertEntryRow> findBySki(String ski) throws FindException {
         return simpleQuery("ski", ski);
@@ -297,16 +303,18 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     @Transactional(readOnly=true)
     public List<CertEntryRow> findByIssuerAndSerial(final X500Principal issuer, final BigInteger serial) throws FindException {
         if (issuer == null || serial == null) throw new NullPointerException();
-        return simpleQuery(new Pair<String, Object>("issuerDn", issuer.getName()),
+        return simpleQuery(new Pair<String, Object>("issuerDn", issuer.getName(X500Principal.CANONICAL)),
                            new Pair<String, Object>("serial", serial));
     }
 
+    @Override
     public List<CertInfo> findAll() throws FindException {
         List<CertInfo> allCerts = new ArrayList<CertInfo>();
 
         try {
             @SuppressWarnings({"unchecked"})
             List<CertEntryRow> userCerts = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     return session.createCriteria(CertEntryRow.class).list();
                 }
@@ -332,6 +340,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         try {
             //noinspection unchecked
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     final Criteria crit = session.createCriteria(CertEntryRow.class);
                     for (Pair<String, Object> nvp : nvps) {
@@ -385,14 +394,17 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
             this.login = cer.getLogin();
         }
 
+        @Override
         public String getLogin() {
             return login;
         }
 
+        @Override
         public long getProviderId() {
             return providerId;
         }
 
+        @Override
         public String getUserId() {
             return userId;
         }
