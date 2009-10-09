@@ -266,6 +266,7 @@
     <!-- jdbc Connection admin servant -->
     <bean id="jdbcConnectionAdmin" class="com.l7tech.server.jdbcconnection.JdbcConnectionAdminImpl">
         <constructor-arg ref="jdbcConnectionManager"/>
+        <constructor-arg ref="jdbcQueryingManager"/>
         <constructor-arg ref="jdbcConnectionPoolManager"/>
         <constructor-arg ref="serverConfig"/>
     </bean>

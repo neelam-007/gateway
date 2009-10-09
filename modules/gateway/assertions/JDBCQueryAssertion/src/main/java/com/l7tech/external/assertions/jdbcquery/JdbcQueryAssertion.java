@@ -17,9 +17,9 @@ import java.util.*;
  */
 public class JdbcQueryAssertion extends Assertion implements UsesVariables, SetsVariables {
     public static final String VARIABLE_COUNT = "count";
+    public static final String DEFAULT_VARIABLE_PREFIX = "jdbcQuery";
 
     private static final String META_INITIALIZED = JdbcQueryAssertion.class.getName() + ".metadataInitialized";
-    private static final String DEFAULT_VARIABLE_PREFIX = "jdbcQuery";
 
     private String connectionName;
     private String sqlQuery;

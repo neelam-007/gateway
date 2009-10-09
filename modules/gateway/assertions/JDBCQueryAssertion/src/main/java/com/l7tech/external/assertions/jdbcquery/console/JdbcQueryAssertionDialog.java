@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.jdbcquery.console;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Pair;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -10,6 +11,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -240,9 +242,9 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         public String getColumnName(int col) {
             switch (col) {
                 case 0:
-                    return resources.getString("column.label.query.result.name");
+                    return resources.getString("column.label.column");
                 case 1:
-                    return resources.getString("column.label.context.variable.name");
+                    return resources.getString("column.label.variable");
                 default:
                     throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
             }
@@ -299,11 +301,15 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         String connectionName = (String) connectionNameComboBox.getSelectedItem();
         String query = sqlQueryTextArea.getText();
 
-        JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
-        if (connectionAdmin == null) {
-            result = "Cannot get JDBC Conneciton Admin API.";
+        if (Syntax.getReferencedNames(query).length > 0) {
+            result = "Unable to evaluate the SQL query statement due to context variable used.";
         } else {
-            result = connectionAdmin.performJdbcQuery(connectionName, query, 1);
+            JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
+            if (connectionAdmin == null) {
+                result = "Cannot get JDBC Conneciton Admin API.";
+            } else {
+                result = connectionAdmin.performJdbcQuery(connectionName, query, 1, null);
+            }
         }
 
         return result;
@@ -314,27 +320,26 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         Object result = getJdbcQueryResult();
         String prefix = variablePrefixTextField.getText() + ".";
 
-        if (! (result instanceof String)) {
-            varList.add(prefix + JdbcQueryAssertion.VARIABLE_COUNT);
+        varList.add(prefix + JdbcQueryAssertion.VARIABLE_COUNT);
 
-            if (result instanceof ResultSet) {
-                try {
-                    // Get all query result names (i.e., column names)
-                    ResultSetMetaData metaData = ((ResultSet)result).getMetaData();
-                    for (int i = 0; i < metaData.getColumnCount(); i++) {
-                        varList.add(prefix + metaData.getColumnName(i));
-                    }
-
-                    // Update context variables by the naming table.
-                    for (String key: namingMap.keySet()) {
-                        if (varList.contains(prefix + key)) {
-                            varList.remove(prefix + key);
-                            varList.add(prefix + namingMap.get(key));
-                        }
-                    }
-                } catch (SQLException e) {
-                    logger.warning("Cannot get meta data of query results.");
+        // If there is a ResultSet object returned, then make all column names as context variables.
+        if (result instanceof ResultSet) {
+            try {
+                // Get all query result names (i.e., column names)
+                ResultSetMetaData metaData = ((ResultSet)result).getMetaData();
+                for (int i = 0; i < metaData.getColumnCount(); i++) {
+                    varList.add(prefix + metaData.getColumnLabel(i));
                 }
+
+                // Update context variables by the naming table.
+                for (String key: namingMap.keySet()) {
+                    if (varList.contains(prefix + key)) {
+                        varList.remove(prefix + key);
+                        varList.add(prefix + namingMap.get(key));
+                    }
+                }
+            } catch (SQLException e) {
+                logger.warning("Cannot get meta data of query results.");
             }
         }
 
@@ -357,16 +362,15 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
                     }
 
                     Object result = getJdbcQueryResult();
-                    if (result instanceof String) {
-                        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), result, null);
-                    }
+                    String message = result instanceof String? "Testing query failed: " + result : "Testing query passed.";
+                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), message, null);
                 }
             }
         );
     }
 
     private void doAdd() {
-        editAndSave(new com.l7tech.console.util.Pair<String, String>("", ""));
+        editAndSave(new Pair<String, String>("", ""));
     }
 
     private void doEdit() {
@@ -376,10 +380,10 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         String queryResultName = (String) namingMap.keySet().toArray()[selectedRow];
         String contextVarName = namingMap.get(queryResultName);
 
-        editAndSave(new com.l7tech.console.util.Pair<String, String>(queryResultName, contextVarName));
+        editAndSave(new Pair<String, String>(queryResultName, contextVarName));
     }
 
-    private void editAndSave(final com.l7tech.console.util.Pair<String, String> namePair) {
+    private void editAndSave(final Pair<String, String> namePair) {
         if (namePair == null || namePair.left == null || namePair.right == null) return;
         final String originalQueryResultName = namePair.left;
 
@@ -390,6 +394,14 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
             @Override
             public void run() {
                 if (dlg.isConfirmed()) {
+                    // Check if the input entry is duplicated.
+                    String warningMessage = isDuplicatedColumnOrVariable(namePair);
+                    if (warningMessage != null) {
+                        DialogDisplayer.showMessageDialog(JdbcQueryAssertionDialog.this, warningMessage,
+                            resources.getString("dialog.titie.invalid.input"), JOptionPane.ERROR_MESSAGE, null);
+                        return;
+                    }
+
                     // Save the namePair into the map
                     if (! originalQueryResultName.isEmpty()) { // This is for doEdit
                         namingMap.remove(originalQueryResultName);
@@ -405,6 +417,35 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
                 }
             }
         });
+    }
+
+    private String isDuplicatedColumnOrVariable(final Pair<String, String> pair) {
+
+        // Check Column
+        boolean duplicated = false;
+        for (String key: namingMap.keySet()) {
+            if (pair.left.compareToIgnoreCase(key) == 0) {
+                duplicated = true;
+                break;
+            }
+        }
+        if (duplicated) {
+            return MessageFormat.format(resources.getString("warning.message.duplicated.column"), pair.left);
+        }
+
+        // Check Variable
+        duplicated = false;
+        for (String value: namingMap.values()) {
+            if (pair.right.compareToIgnoreCase(value) == 0) {
+                duplicated = true;
+                break;
+            }
+        }
+        if (duplicated) {
+            return MessageFormat.format(resources.getString("warning.message.duplicated.variable"), pair.right);
+        }
+
+        return null;
     }
 
     private void doRemove() {

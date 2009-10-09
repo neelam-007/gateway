@@ -10,23 +10,22 @@ import com.l7tech.objectmodel.DeleteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.sql.ResultSet;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
  * @author: ghuang
  */
 public class JdbcConnectionAdminImpl implements JdbcConnectionAdmin {
     private JdbcConnectionManager jdbcConnectionManager;
+    private JdbcQueryingManager jdbcQueryingManager;
     private JdbcConnectionPoolManager jdbcConnectionPoolManager;
     private ServerConfig serverConfig;
 
     public JdbcConnectionAdminImpl(JdbcConnectionManager jdbcConnectionManager,
+                                   JdbcQueryingManager jdbcQueryingManager,
                                    JdbcConnectionPoolManager jdbcConnectionPoolManager,
                                    ServerConfig serverConfig) {
         this.jdbcConnectionManager = jdbcConnectionManager;
+        this.jdbcQueryingManager = jdbcQueryingManager;
         this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
         this.serverConfig = serverConfig;
     }
@@ -70,41 +69,8 @@ public class JdbcConnectionAdminImpl implements JdbcConnectionAdmin {
     }
 
     @Override
-    public Object performJdbcQuery(String connectionName, String query, int maxRecords) {
-        if (connectionName == null || connectionName.isEmpty()) return "JDBC Connection Name is not specified.";
-        else if (query == null || query.isEmpty()) return "SQL Query is not specified.";
-
-        Connection conn;
-        try {
-            conn = jdbcConnectionPoolManager.getJdbcConnection(connectionName);
-        } catch (Exception e) {
-            return "Cannot get a connection from the C3P0 Connection pool.";
-        }
-
-        Statement stmt;
-        try {
-            stmt = conn.createStatement();
-        } catch (SQLException e) {
-            return "Cannnot create a SQL statement.";
-        }
-
-        try {
-            stmt.setMaxRows(maxRecords);
-        } catch (SQLException e) {
-            return "The SQL statement cannot set a maximum number of records, " + maxRecords + ".";
-        }
-
-        try {
-            if (query.toLowerCase().startsWith("select")) {
-                ResultSet rs = stmt.executeQuery(query);
-                return rs;
-            } else {
-                int num = stmt.executeUpdate(query);
-                return num;
-            }
-        } catch (SQLException e) {
-            return "Invalid SQL statement.";
-        }
+    public Object performJdbcQuery(String connectionName, String query, int maxRecords, List<Object> preparedStmtParams) {
+        return jdbcQueryingManager.performJdbcQuery(connectionName, query, maxRecords, preparedStmtParams);
     }
 
     @Override

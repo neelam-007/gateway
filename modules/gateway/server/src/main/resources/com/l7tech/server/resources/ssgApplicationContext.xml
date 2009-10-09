@@ -1207,6 +1207,10 @@
         <constructor-arg ref="managedBackgroundTimer"/>
     </bean>
 
+    <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbcconnection.JdbcQueryingManagerImpl">
+        <constructor-arg ref="jdbcConnectionPoolManager"/>
+    </bean>
+
     <bean id="jdbcConnectionManager" class="com.l7tech.server.jdbcconnection.JdbcConnectionManagerImpl" parent="hibernateBean"/>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">

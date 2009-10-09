@@ -45,7 +45,7 @@ public interface JdbcConnectionAdmin {
 
     void createDataSource(JdbcConnection connection);
 
-    Object performJdbcQuery(String connectionName, String query, int maxRecords);
+    Object performJdbcQuery(String connectionName, String query, int maxRecords, List<Object> preparedStmtParams);
 
     List<String> getPropertyDefaultDriverClassList();
     int getPropertyDefaultMaxRecords();

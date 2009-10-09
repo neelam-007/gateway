@@ -2,7 +2,9 @@ package com.l7tech.external.assertions.jdbcquery.console;
 
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.console.util.Pair;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -14,8 +16,8 @@ public class ContextVariableNamingDialog extends JDialog {
     private JPanel contentPane;
     private JButton okButton;
     private JButton cancelButton;
-    private JTextField queryResultTextField;
-    private JTextField contextVariableTextField;
+    private JTextField columnLabelTextField;
+    private JTextField variableNameTextField;
 
     private boolean confirmed;
     private Pair<String, String> namePair;
@@ -41,10 +43,14 @@ public class ContextVariableNamingDialog extends JDialog {
             }
         });
         // todo: test field length verification
-        queryResultTextField.getDocument().addDocumentListener(changeListener);
-        contextVariableTextField.getDocument().addDocumentListener(changeListener);
+        columnLabelTextField.getDocument().addDocumentListener(changeListener);
+        variableNameTextField.getDocument().addDocumentListener(changeListener);
 
-        okButton.addActionListener(new ActionListener() {
+        final InputValidator inputValidator = new InputValidator(this, resources.getString("dialog.title.context.variable.naming"));
+        inputValidator.constrainTextField(columnLabelTextField, new NonContextVariableTextFieldValidationRule(columnLabelTextField));
+        inputValidator.constrainTextField(variableNameTextField, new NonContextVariableTextFieldValidationRule(variableNameTextField));
+
+        inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 doOk();
@@ -66,22 +72,22 @@ public class ContextVariableNamingDialog extends JDialog {
         if (namePair == null || namePair.left == null || namePair.right == null) {
             throw new IllegalStateException("A namePair object must be initialized first.");
         }
-        queryResultTextField.setText(namePair.left);
-        contextVariableTextField.setText(namePair.right);
+        columnLabelTextField.setText(namePair.left);
+        variableNameTextField.setText(namePair.right);
     }
 
     private void viewToModel() {
         if (namePair == null || namePair.left == null || namePair.right == null) {
             throw new IllegalStateException("A namePair object must be initialized first.");
         }
-        namePair.left = queryResultTextField.getText();
-        namePair.right = contextVariableTextField.getText();
+        namePair.left = columnLabelTextField.getText();
+        namePair.right = variableNameTextField.getText();
     }
 
     private void enableOrDisableOkButton() {
         boolean enabled =
-            isNonEmptyRequiredTextField(queryResultTextField.getText()) &&
-            isNonEmptyRequiredTextField(contextVariableTextField.getText());
+            isNonEmptyRequiredTextField(columnLabelTextField.getText()) &&
+            isNonEmptyRequiredTextField(variableNameTextField.getText());
         okButton.setEnabled(enabled);
     }
 
@@ -90,11 +96,11 @@ public class ContextVariableNamingDialog extends JDialog {
     }
 
     public String getColumnName() {
-        return queryResultTextField.getText();
+        return columnLabelTextField.getText();
     }
 
     public String getVariableSuffixName() {
-        return contextVariableTextField.getText();
+        return variableNameTextField.getText();
     }
 
     public boolean isConfirmed() {
@@ -109,5 +115,22 @@ public class ContextVariableNamingDialog extends JDialog {
 
     private void doCancel() {
         dispose();
+    }
+
+    private class NonContextVariableTextFieldValidationRule extends InputValidator.ComponentValidationRule {
+        public NonContextVariableTextFieldValidationRule(JTextField textField) {
+            super(textField);
+        }
+
+        @Override
+        public String getValidationError() {
+            JTextField textField = (JTextField)component;
+
+            if ( Syntax.getReferencedNames(textField.getText()).length > 0) {
+                return resources.getString("validation.message");
+            } else {
+                return null;
+            }
+        }
     }
 }
