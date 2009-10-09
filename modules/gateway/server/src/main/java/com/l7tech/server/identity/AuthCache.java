@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.util.TimeSource;
+import com.l7tech.util.SyspropUtil;
 import com.whirlycott.cache.Cache;
 
 import java.util.logging.Level;
@@ -22,19 +23,19 @@ import java.util.logging.Logger;
 public final class AuthCache {
     private static final Logger logger = Logger.getLogger(AuthCache.class.getName());
 
+    private static final int SUCCESS_CACHE_TUNER_INTERVAL = 59;
+    private static final int FAILURE_CACHE_TUNER_INTERVAL = 61;
+
+    public final static int SUCCESS_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE, 200);
+    public final static int FAILURE_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE, 100);
+
+    private static final boolean AUTH_MUTEX_ENABLED = SyspropUtil.getBoolean( "com.l7tech.server.identity.authCacheMutexEnabled", true );
+
     private final TimeSource timeSource;
     private final Cache successCache;
     private final Cache failureCache;
     private final boolean successCacheDisabled;
     private final boolean failureCacheDisabled;
-    private static final int SUCCESS_CACHE_TUNER_INTERVAL = 59;
-    /*
-    * prime so cleanup won't ever collide with success tunerInterval of 59, also prime
-    * */
-    private static final int FAILURE_CACHE_TUNER_INTERVAL = 61;
-
-    public final static int SUCCESS_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE, 200);
-    public final static int FAILURE_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE, 100); 
 
     AuthCache() {
         this(   "AuthCache",
@@ -87,6 +88,7 @@ public final class AuthCache {
         }
 
         /** @noinspection RedundantIfStatement*/
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -99,6 +101,7 @@ public final class AuthCache {
             return true;
         }
 
+        @Override
         public int hashCode() {
             if (cachedHashcode == -1) {
                 int result;
@@ -146,10 +149,13 @@ public final class AuthCache {
         // There was a successCache miss before, so someone has to authenticate it.
 
         // We'll allow multiple simultaneous authentications for the same credentials only for internal password auth
-        boolean concurrentOk = idp instanceof InternalIdentityProvider &&
-                creds.getFormat() == CredentialFormat.CLEARTEXT;
+        boolean isInternalPasswordAuth =
+                idp instanceof InternalIdentityProvider &&
+                (creds.getFormat() == CredentialFormat.CLEARTEXT ||
+                 creds.getFormat() == CredentialFormat.BASIC ||
+                 creds.getFormat() == CredentialFormat.DIGEST);
 
-        if (!successCacheDisabled && concurrentOk) {
+        if (AUTH_MUTEX_ENABLED && !successCacheDisabled && !isInternalPasswordAuth) {
             // Let's make sure only one thread does so on this SSG.
             // Lock username so we only auth it on one thread at a time
             String credsMutex = (Long.toString(providerOid) + credString).intern();
