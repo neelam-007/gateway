@@ -1,6 +1,8 @@
 package com.l7tech.xml.soap;
 
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -21,6 +23,7 @@ import javax.xml.XMLConstants;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.*;
+import java.nio.charset.Charset;
 
 /**
  * The class creates and array of <code>SoapRequest</code> instances
@@ -39,6 +42,9 @@ public class SoapMessageGenerator {
     private static final String PREFIX_SCHEMA_INSTANCE ="xsi";
     private static final String PREFIX_SOAP11 = "soapenv";
     private static final String PREFIX_SOAP12 = "s12";
+    private static final String SOAP_1_1_TEMPLATE = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Header/><soapenv:Body/></soapenv:Envelope>";
+    private static final String SOAP_1_2_TEMPLATE = "<s12:Envelope xmlns:s12=\"http://www.w3.org/2003/05/soap-envelope\"><s12:Header/><s12:Body/></s12:Envelope>";
+
     private MessageInputGenerator messageInputGenerator;
     private Wsdl.UrlGetter wsdlUrlGetter;
     private Wsdl wsdl;
@@ -60,6 +66,7 @@ public class SoapMessageGenerator {
     public SoapMessageGenerator(MessageInputGenerator messageInputGenerator, Wsdl.UrlGetter wsdlUrlGetter) {
         this.messageInputGenerator = messageInputGenerator;
         this.wsdlUrlGetter = wsdlUrlGetter != null ? wsdlUrlGetter : new Wsdl.UrlGetter() {
+            @Override
             public String get(String url) throws IOException {
                 throw new IOException("Resource not found: '" + url + "'.");
             }
@@ -226,16 +233,15 @@ public class SoapMessageGenerator {
         final String soapProtocol = getSoapProtocolForBindingOperation(bindingOperation);
         final String soapNsPrefix = getSoapNsPrefixForSoapProtocol(soapProtocol);
         MessageFactory messageFactory = SoapUtil.getMessageFactory(soapProtocol);
-        SOAPMessage soapMessage = messageFactory.createMessage();
+        SOAPMessage soapMessage;
+        try {
+            soapMessage = messageFactory.createMessage(getMimeHeadersForSoapProtocol(soapProtocol), getTemplateForSoapProtocol(soapProtocol));
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
         SOAPPart soapPart = soapMessage.getSOAPPart();
         SOAPEnvelope envelope = soapPart.getEnvelope();
 
-        setPrefix(soapNsPrefix, envelope);
-        envelope.removeNamespaceDeclaration("SOAP-ENV");
-        envelope.removeNamespaceDeclaration("soapenv");
-        envelope.removeNamespaceDeclaration("env");
-        setPrefix(soapNsPrefix, envelope.getBody());
-        setPrefix(soapNsPrefix, envelope.getHeader());
         verifyNamespaces(envelope);
         String targetNameSpace = wsdl.getDefinition().getTargetNamespace();
 
@@ -272,10 +278,22 @@ public class SoapMessageGenerator {
                 : PREFIX_SOAP11;        
     }
 
-    private void setPrefix(String prefix, SOAPElement element) {
-        if (element instanceof Node) {
-            ((Node)element).setPrefix(prefix);   
-        }
+    private MimeHeaders getMimeHeadersForSoapProtocol(String soapProtocol) {
+        MimeHeaders mimeHeaders = new MimeHeaders();
+
+        String contentType = SOAPConstants.SOAP_1_2_PROTOCOL.equals(soapProtocol)
+                ? ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue()
+                : ContentTypeHeader.XML_DEFAULT.getFullValue();
+
+        mimeHeaders.setHeader( MimeUtil.CONTENT_TYPE, contentType );
+
+        return mimeHeaders;
+    }
+
+    private InputStream getTemplateForSoapProtocol(String soapProtocol) {
+        return SOAPConstants.SOAP_1_2_PROTOCOL.equals(soapProtocol)
+                ? new ByteArrayInputStream( SOAP_1_2_TEMPLATE.getBytes(Charset.forName("UTF-8")) )
+                : new ByteArrayInputStream( SOAP_1_1_TEMPLATE.getBytes(Charset.forName("UTF-8")) );
     }
 
     /**
@@ -668,6 +686,7 @@ public class SoapMessageGenerator {
          * @return A constant to determine whether the node is accepted,
          *         rejected, or skipped, as defined above.
          */
+        @Override
         public short acceptNode(Node n) {
             Element element = (Element)n; // blow on cast
             if (nodeName.equals(n.getLocalName())) return FILTER_ACCEPT;
@@ -695,6 +714,7 @@ public class SoapMessageGenerator {
         /**
          * @return a string representation of the name type pair.
          */
+        @Override
         public String toString() {
             return "[ name = " + name + ", type = " + type + " ]";
         }
@@ -735,6 +755,7 @@ public class SoapMessageGenerator {
             return binding;
         }
 
+        @Override
         public String toString() {
             StringBuffer sb = new StringBuffer("[");
             if (operation != null) {

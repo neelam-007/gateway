@@ -46,6 +46,7 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
@@ -73,6 +74,7 @@ import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.SOAPConstants;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -301,8 +303,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                         //noinspection unchecked
                         requiredNamespaces.putAll(XpathUtil.getNamespaces(soapRequest.getSOAPMessage()));
                     }
-                    requiredNamespaces.put("L7p",WspConstants.L7_POLICY_NS);
-                    requiredNamespaces.put("wsp",WspConstants.WSP_POLICY_NS);
                 }
             } catch (Exception e) {
                 throw new RuntimeException("Unable to parse the service WSDL " + serviceNode.getName(), e);
@@ -319,8 +319,15 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             }
         }
 
-        if (namespaces.size() < requiredNamespaces.size()) {
-            namespaces.putAll(requiredNamespaces);
+        requiredNamespaces.put("L7p",WspConstants.L7_POLICY_NS);
+        requiredNamespaces.put("wsp",WspConstants.WSP_POLICY_NS);
+        requiredNamespaces.put(SoapConstants.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        requiredNamespaces.put(SoapConstants.SOAP_1_2_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
+        
+        for ( String prefix : requiredNamespaces.keySet() ) {
+            if ( !namespaces.containsKey(prefix) ) {
+                namespaces.put( prefix, requiredNamespaces.get(prefix) );
+            }
         }
 
         initialize(readOnly);

@@ -4,16 +4,14 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import org.jaxen.dom.DOMXPath;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.xml.soap.SOAPConstants;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -37,7 +35,7 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
     private JCheckBox removeLoginCheckbox;
     private JCheckBox removePasswordCheckbox;
     private JButton namespacesButton;
-    private Map namespaces; // one map for both xpath expressions
+    private Map<String,String> namespaces; // one map for both xpath expressions
 
     public XpathCredentialSource getXpathCredsAssertion() {
         return xpathCredsAssertion;
@@ -48,15 +46,19 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
         this.xpathCredsAssertion = assertion;
         this.readOnly = readOnly;
 
-        if (assertion != null && assertion.getXpathExpression() != null) {
+        if (assertion.getXpathExpression() != null) {
             namespaces = assertion.getXpathExpression().getNamespaces();
         }
         if (namespaces == null) {
-            namespaces = new HashMap();
+            namespaces = new HashMap<String,String>();
         }
-        // Only for an brand-new Xpath Credential Assertion, add a default namespace. 
-        if (namespaces.isEmpty() && assertion.getXpathExpression() == null) {
-            namespaces.put( SoapConstants.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_ENVELOPE);
+
+        // ensure standard namespaces are available
+        if(!namespaces.containsKey(SoapConstants.SOAP_ENV_PREFIX)) {
+            namespaces.put(SoapConstants.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        }
+        if(!namespaces.containsKey(SoapConstants.SOAP_1_2_ENV_PREFIX)) {
+            namespaces.put(SoapConstants.SOAP_1_2_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
         }
 
         XpathExpression loginExpr = assertion.getXpathExpression();
@@ -74,10 +76,8 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
         getContentPane().add(mainPanel);
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                if(xpathCredsAssertion.getSoapVersion() == SoapVersion.SOAP_1_2 && !namespaces.containsKey("s12")) {
-                    namespaces.put("s12", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
-                }
                 xpathCredsAssertion.setXpathExpression(new XpathExpression(loginXpathField.getText(), namespaces));
                 xpathCredsAssertion.setPasswordExpression(new XpathExpression(passwordXpathField.getText(), namespaces));
                 xpathCredsAssertion.setRemoveLoginElement(removeLoginCheckbox.isSelected());
@@ -88,22 +88,23 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 xpathCredsAssertion = null;
                 dispose();
             }
         });
 
-        DocumentListener updateListener = new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) { updateButtons(); }
-            public void insertUpdate(DocumentEvent e) { updateButtons(); }
-            public void removeUpdate(DocumentEvent e) { updateButtons(); }
-        };
+        RunOnChangeListener updateListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() { updateButtons(); }
+        });
 
         loginXpathField.getDocument().addDocumentListener(updateListener);
         passwordXpathField.getDocument().addDocumentListener(updateListener);
 
         namespacesButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 editNamespaces();
             }
@@ -113,15 +114,13 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
     }
 
     private void editNamespaces() {
-        if(xpathCredsAssertion.getSoapVersion() == SoapVersion.SOAP_1_2 && !namespaces.containsKey("s12")) {
-            namespaces.put("s12", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
-        }
         final NamespaceMapEditor nseditor = new NamespaceMapEditor(this, namespaces, null);
         nseditor.pack();
         Utilities.centerOnScreen(nseditor);
         DialogDisplayer.display(nseditor, new Runnable() {
+            @Override
             public void run() {
-                Map newMap = nseditor.newNSMap();
+                Map<String,String> newMap = nseditor.newNSMap();
                 if (newMap != null) {
                     namespaces = newMap;
                 }
