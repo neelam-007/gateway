@@ -22,6 +22,7 @@ import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.springframework.beans.factory.BeanFactory;
@@ -31,12 +32,15 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
@@ -46,6 +50,9 @@ import java.util.logging.Logger;
  */
 public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapVerifyElementAssertion> {
     private static final Logger logger = Logger.getLogger(ServerNonSoapVerifyElementAssertion.class.getName());
+
+    static final String PROP_CERT_PARSE_BC_FALLBACK = "com.l7tech.external.assertions.xmlsec.certParseBcFallback";
+    static boolean CERT_PARSE_BC_FALLBACK = SyspropUtil.getBoolean(PROP_CERT_PARSE_BC_FALLBACK, false);
 
     private static final int COL_SIGNED_ELEMENT = 0;
     private static final int COL_SIGNER_CERT = 1;
@@ -116,6 +123,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
                     throw new InvalidDocumentFormatException("Duplicate element Id found in document: " + id);
             }
         }
+        map.put("", doc.getDocumentElement());
         return map;
     }
 
@@ -197,7 +205,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         for (int i = 0; i < numRefs; i++) {
             // Resolve each elements one by one.
             String refId = validity.getReferenceURI(i);
-            if (refId != null && refId.charAt(0) == '#')
+            if (refId != null && refId.length() > 1 && refId.charAt(0) == '#')
                 refId = refId.substring(1);
             Element elementCovered = elementsById.get(refId);
             if (elementCovered == null) {
@@ -228,18 +236,27 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         } catch (InvalidDocumentFormatException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unable to parse KeyInfo: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return null;
+        } catch (IOException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unable to parse KeyInfo: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            return null;
         }
     }
 
-    private static X509Certificate handleX509Data(Element x509Data, SecurityTokenResolver securityTokenResolver) throws CertificateException, InvalidDocumentFormatException {
+    private static X509Certificate handleX509Data(Element x509Data, SecurityTokenResolver securityTokenResolver) throws CertificateException, InvalidDocumentFormatException, IOException {
         // Use X509Data
         Element x509CertEl = DomUtils.findOnlyOneChildElementByName(x509Data, SoapConstants.DIGSIG_URI, "X509Certificate");
         Element x509SkiEl = DomUtils.findOnlyOneChildElementByName(x509Data, SoapConstants.DIGSIG_URI, "X509SKI");
         Element x509IssuerSerialEl = DomUtils.findOnlyOneChildElementByName(x509Data, SoapConstants.DIGSIG_URI, "X509IssuerSerial");
         if (x509CertEl != null) {
             String certBase64 = DomUtils.getTextValue(x509CertEl);
-            byte[] certBytes = HexUtils.decodeBase64(certBase64, true);
-            return CertUtils.decodeCert(certBytes);
+            byte[] certBytes = CertUtils.decodeCertBytesFromPEM(certBase64, false);
+            try {
+                return CertUtils.decodeCert(certBytes);
+            } catch (CertificateException e) {
+                if (!CERT_PARSE_BC_FALLBACK)
+                    throw e;
+                return (X509Certificate)CertificateFactory.getInstance("X.509", new BouncyCastleProvider()).generateCertificate(new ByteArrayInputStream(certBytes));
+            }
         } else if (x509SkiEl != null) {
             String skiRaw = DomUtils.getTextValue(x509SkiEl);
             String ski = HexUtils.encodeBase64(HexUtils.decodeBase64(skiRaw, true), true);

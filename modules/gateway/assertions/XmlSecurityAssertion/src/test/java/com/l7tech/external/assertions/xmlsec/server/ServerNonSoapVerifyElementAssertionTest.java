@@ -6,16 +6,19 @@ import com.l7tech.external.assertions.xmlsec.NonSoapVerifyElementAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.xpath.XpathExpression;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import static org.junit.Assert.*;
 import org.junit.*;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 
@@ -40,10 +43,66 @@ public class ServerNonSoapVerifyElementAssertionTest {
             "<ds:KeyInfo><ds:X509Data><ds:X509Certificate>" + SIGNER_CERT + "</ds:X509Certificate>" +
             "</ds:X509Data></ds:KeyInfo></ds:Signature></bar><blat/></foo>";
 
+    // Unfortunately this includes an EC cert that uses explicit parameters rather than a named curve, so
+    // requires the Bouncy Castle certificate factory to parse it.
+    public static final String APACHE_SAMPLE_SIGNED_XML =
+            "<!-- Comment before -->\n" +
+            "<RootElement>Some simple text\n" +
+            "<ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+            "<ds:SignedInfo>\n" +
+            "\n" +
+            "<ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:CanonicalizationMethod>\n" +
+            "<ds:SignatureMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1\"></ds:SignatureMethod>\n" +
+            "<ds:Reference URI=\"\">\n" +
+            "<ds:Transforms>\n" +
+            "<ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"></ds:Transform>\n" +
+            "<ds:Transform Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"></ds:Transform>\n" +
+            "</ds:Transforms>\n" +
+            "<ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"></ds:DigestMethod>\n" +
+            "<ds:DigestValue>LKyUpNaZJ2joznVzwEup5JDwtS0=</ds:DigestValue>\n" +
+            "</ds:Reference>\n" +
+            "</ds:SignedInfo>\n" +
+            "<ds:SignatureValue>\n" +
+            "Qma5I5AZiSzQ6J4UZwjpteD2qvQclABKATPQ5MZ7mmOFYfj8xAlpXWu2u+Oa/4mpP9jK9OUUcTU9\n" +
+            "Psfucz+qPA==\n" +
+            "</ds:SignatureValue>\n" +
+            "<ds:KeyInfo>\n" +
+            "<ds:X509Data>\n" +
+            "<ds:X509Certificate>\n" +
+            "MIICEjCCAbegAwIBAgIGARJQ/UmbMAsGByqGSM49BAEFADBQMSEwHwYDVQQDExhYTUwgRUNEU0Eg\n" +
+            "U2lnbmF0dXJlIFRlc3QxFjAUBgoJkiaJk/IsZAEZEwZhcGFjaGUxEzARBgoJkiaJk/IsZAEZEwNv\n" +
+            "cmcwHhcNMDcwNTAzMDgxMDE1WhcNMTEwNTAzMDgxMDE1WjBQMSEwHwYDVQQDExhYTUwgRUNEU0Eg\n" +
+            "U2lnbmF0dXJlIFRlc3QxFjAUBgoJkiaJk/IsZAEZEwZhcGFjaGUxEzARBgoJkiaJk/IsZAEZEwNv\n" +
+            "cmcwgbQwgY0GByqGSM49AgEwgYECAQEwLAYHKoZIzj0BAQIhAP//////////////////////////\n" +
+            "//////////////2XMCcEIQD////////////////////////////////////////9lAQCAKYEAgMB\n" +
+            "AiEA/////////////////////2xhEHCZWtEARYQbCbdhuJMDIgADZubz40WiQ+v/nrjhfizYmEIl\n" +
+            "tKIr/n7hwGwpG3CDEk2jIDAeMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgGmMAsGByqGSM49\n" +
+            "BAEFAANIADBFAiEA63Pq7/YfDDrnbCxXVX20T3dn77iL8dvC1Cb24Al9VFkCIHUeymf/N+H60OQL\n" +
+            "v9Wg/X8Cbp2am42qjQvaKtb4+BFk\n" +
+            "</ds:X509Certificate>\n" +
+            "</ds:X509Data>\n" +
+            "</ds:KeyInfo>\n" +
+            "</ds:Signature></RootElement>\n" +
+            "<!-- Comment after -->";
+
+    public static final String APACHE_SIGNER_CERT =
+            "MIICEjCCAbegAwIBAgIGARJQ/UmbMAsGByqGSM49BAEFADBQMSEwHwYDVQQDExhYTUwgRUNEU0Eg\n" +
+            "U2lnbmF0dXJlIFRlc3QxFjAUBgoJkiaJk/IsZAEZEwZhcGFjaGUxEzARBgoJkiaJk/IsZAEZEwNv\n" +
+            "cmcwHhcNMDcwNTAzMDgxMDE1WhcNMTEwNTAzMDgxMDE1WjBQMSEwHwYDVQQDExhYTUwgRUNEU0Eg\n" +
+            "U2lnbmF0dXJlIFRlc3QxFjAUBgoJkiaJk/IsZAEZEwZhcGFjaGUxEzARBgoJkiaJk/IsZAEZEwNv\n" +
+            "cmcwgbQwgY0GByqGSM49AgEwgYECAQEwLAYHKoZIzj0BAQIhAP//////////////////////////\n" +
+            "//////////////2XMCcEIQD////////////////////////////////////////9lAQCAKYEAgMB\n" +
+            "AiEA/////////////////////2xhEHCZWtEARYQbCbdhuJMDIgADZubz40WiQ+v/nrjhfizYmEIl\n" +
+            "tKIr/n7hwGwpG3CDEk2jIDAeMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgGmMAsGByqGSM49\n" +
+            "BAEFAANIADBFAiEA63Pq7/YfDDrnbCxXVX20T3dn77iL8dvC1Cb24Al9VFkCIHUeymf/N+H60OQL\n" +
+            "v9Wg/X8Cbp2am42qjQvaKtb4+BFk";
+
     private static BeanFactory beanFactory;
 
     @BeforeClass
     public static void setupKeys() throws Exception {
+        System.setProperty("com.l7tech.common.security.jceProviderEngineName", "BC");
+        
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("securityTokenResolver", NonSoapXmlSecurityTestUtils.makeSecurityTokenResolver());
             put("ssgKeyStoreManager", NonSoapXmlSecurityTestUtils.makeSsgKeyStoreManager());
@@ -89,6 +148,61 @@ public class ServerNonSoapVerifyElementAssertionTest {
         assertNotNull(signatureValues);
         assertEquals(1, signatureValues.length);
         assertEquals(SIGNATURE_VALUE, signatureValues[0]);
+
+        Object[] signatureElements = (Object[])context.getVariable("signatureElements");
+        assertNotNull(signatureElements);
+        assertEquals(1, signatureElements.length);
+        assertTrue(Element.class.isInstance(signatureElements[0]));
+        Element sigElement = (Element) signatureElements[0];
+        assertEquals("Signature", sigElement.getLocalName());
+        assertEquals(SoapConstants.DIGSIG_URI, sigElement.getNamespaceURI());
+
+    }
+    
+    @Test
+    public void testVerifyApacheSignedEcdsa() throws Exception {
+        ServerNonSoapVerifyElementAssertion.CERT_PARSE_BC_FALLBACK = true;
+
+        // This test unfortunately needs to use the Bouncy Castle CertificateFactory, since the signing cert does not use a named curve
+        JceProvider.init();
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+
+        NonSoapVerifyElementAssertion ass = new NonSoapVerifyElementAssertion();
+        ass.setXpathExpression(new XpathExpression("//*[local-name()='Signature']"));
+        ass.setTarget(TargetMessageType.REQUEST);
+
+        ServerNonSoapVerifyElementAssertion sass = new ServerNonSoapVerifyElementAssertion(ass, beanFactory, null);
+        Message request = new Message(XmlUtil.stringAsDocument(APACHE_SAMPLE_SIGNED_XML));
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+
+        Document doc = request.getXmlKnob().getDocumentReadOnly();
+        Element bar = (Element)doc.getElementsByTagName("RootElement").item(0);
+
+        Object[] elementsVerified = (Object[])context.getVariable("elementsVerified");
+        assertNotNull(elementsVerified);
+        assertEquals(1, elementsVerified.length);
+        assertTrue(elementsVerified[0] == bar);
+
+        Object[] signingCertificates = (Object[])context.getVariable("signingCertificates");
+        assertNotNull(signingCertificates);
+        assertEquals(1, signingCertificates.length);
+        //assertTrue(CertUtils.certsAreEqual((X509Certificate) signingCertificates[0], CertUtils.decodeFromPEM(APACHE_SIGNER_CERT, false)));
+
+        Object[] digestMethodUris = (Object[])context.getVariable("digestMethodUris");
+        assertNotNull(digestMethodUris);
+        assertEquals(1, digestMethodUris.length);
+        assertEquals("http://www.w3.org/2000/09/xmldsig#sha1", digestMethodUris[0]);
+
+        Object[] signatureMethodUris = (Object[])context.getVariable("signatureMethodUris");
+        assertNotNull(signatureMethodUris);
+        assertEquals(1, signatureMethodUris.length);
+        assertEquals("http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", signatureMethodUris[0]);
+
+        Object[] signatureValues = (Object[])context.getVariable("signatureValues");
+        assertNotNull(signatureValues);
+        assertEquals(1, signatureValues.length);
 
         Object[] signatureElements = (Object[])context.getVariable("signatureElements");
         assertNotNull(signatureElements);
