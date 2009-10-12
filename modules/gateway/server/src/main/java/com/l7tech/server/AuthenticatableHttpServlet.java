@@ -487,6 +487,8 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
         // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
         Assertion rootassertion = parsePolicy(policy.getXml());
+        if (rootassertion == null)
+            return true;
 
         Iterator it = rootassertion.preorderIterator();
         boolean allIdentitiesAreFederated = true;
