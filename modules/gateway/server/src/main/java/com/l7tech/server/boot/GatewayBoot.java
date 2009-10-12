@@ -2,35 +2,35 @@ package com.l7tech.server.boot;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.prov.JceUtil;
+import com.l7tech.security.prov.StrongCryptoNotAvailableException;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.log.JdkLogConfig;
+import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.SyspropUtil;
 import com.mchange.v2.c3p0.C3P0Registry;
 import com.mchange.v2.c3p0.PooledDataSource;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import javax.crypto.spec.SecretKeySpec;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
-import java.sql.SQLException;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.LogManager;
-import java.security.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.security.GeneralSecurityException;
+import java.security.Provider;
+import java.security.Security;
+import java.sql.SQLException;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -292,17 +292,11 @@ public class GatewayBoot {
         if (SyspropUtil.getBoolean(SYSPROP_STARTUPCHECKS, true)) {
             // check strong crypto is available
             try {
-                SecretKeySpec key = new SecretKeySpec(new byte[32], 0, 32, "AES");
-                Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                aes.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(new byte[16]));
-            } catch ( InvalidKeyException ike ) {
+                JceUtil.requireStrongCryptoEnabledInJvm();
+            } catch (StrongCryptoNotAvailableException e) {
                 throw new LifecycleException("Strong cryptography not available. Please update JDK to enable strong cryptography.");
-            } catch (NoSuchAlgorithmException nsae) {
-                logger.log(Level.WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(nsae)+"'.", ExceptionUtils.getDebugException(nsae));
-            } catch (NoSuchPaddingException nspe) {
-                logger.log(Level.WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(nspe)+"'.", ExceptionUtils.getDebugException(nspe));
-            } catch (InvalidAlgorithmParameterException iape) {
-                logger.log(Level.WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(iape)+"'.", ExceptionUtils.getDebugException(iape));
+            } catch (GeneralSecurityException e) {
+                logger.log(Level.WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
             }
         }
     }

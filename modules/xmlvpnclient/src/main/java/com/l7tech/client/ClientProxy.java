@@ -1,8 +1,10 @@
 package com.l7tech.client;
 
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.prov.JceUtil;
+import com.l7tech.security.prov.StrongCryptoNotAvailableException;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
@@ -12,6 +14,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.GeneralSecurityException;
 
 /**
  * Encapsulates an HTTP proxy that processes SOAP messages.
@@ -90,10 +93,10 @@ public class ClientProxy {
             throw new IllegalStateException("ClientProxy is currently running");
     }
 
-    private synchronized void init()
-    {
+    private synchronized void init() throws GeneralSecurityException, StrongCryptoNotAvailableException {
         if (isInitialized)
             return;
+        JceUtil.requireStrongCryptoEnabledInJvm();
         isInitialized = true;
     }
 
