@@ -101,8 +101,6 @@ public class ServerNonSoapVerifyElementAssertionTest {
 
     @BeforeClass
     public static void setupKeys() throws Exception {
-        System.setProperty("com.l7tech.common.security.jceProviderEngineName", "BC");
-        
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("securityTokenResolver", NonSoapXmlSecurityTestUtils.makeSecurityTokenResolver());
             put("ssgKeyStoreManager", NonSoapXmlSecurityTestUtils.makeSsgKeyStoreManager());
