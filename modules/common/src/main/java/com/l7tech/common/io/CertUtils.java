@@ -388,6 +388,19 @@ public class CertUtils {
      * @throws CertificateException if the certificate decoding fails
      */
     public static X509Certificate decodeFromPEM(String certificateText, boolean requireMarker ) throws IOException, CertificateException {
+        byte[] certificateBytes = decodeCertBytesFromPEM(certificateText, requireMarker);
+        return decodeCert(certificateBytes);
+    }
+
+    /**
+     * Extract the certificate bytes from a PEM format certificate without actually trying to decode the certificate DER.
+     *
+     * @param certificateText the certificate in PEM format, with begin and end markers if requireMarker is true.
+     * @param requireMarker  true to require PEM markers.  False to allow plain old Base-64.
+     * @return the certificate bytes, ready to be passed to a certificate factory.  Never null.
+     * @throws IOException if PEM or Base-64 decoding fails.
+     */
+    public static byte[] decodeCertBytesFromPEM(String certificateText, boolean requireMarker) throws IOException {
         int startIndex = certificateText.indexOf(PEM_CERT_BEGIN_MARKER);
         int endIndex = certificateText.indexOf(PEM_CERT_END_MARKER);
 
@@ -402,9 +415,7 @@ public class CertUtils {
                     endIndex);
         }
 
-        byte[] certificateBytes = HexUtils.decodeBase64(base64Certificate, true);
-
-        return decodeCert(certificateBytes);
+        return HexUtils.decodeBase64(base64Certificate, true);
     }
 
     /**
