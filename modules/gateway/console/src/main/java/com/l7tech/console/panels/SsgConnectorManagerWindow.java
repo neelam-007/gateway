@@ -255,7 +255,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         if (! conflict)  return false;
 
         String title = "Port Conflict";
-        String warningMessage = "The port " + connector.getPort() + " is already in use. Please try another port.";
+        String warningMessage = "The port " + connector.getPort() + " is already in use on that interface or on an (All) interface. Please try another port.";
         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), title, warningMessage, null);
         return true;
     }
@@ -637,7 +637,8 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
 
         /**
-         * Check if there exists any port same as the port for the given connector.
+         * Check if there exists any port same as the port for the given connector and with the same interface.
+         *
          * @param connector: the given connector to check
          * @param onlyEnabled: true to only check enabled connectors
          * @return true if there exist a conflict port, false otherwise.
@@ -648,10 +649,13 @@ public class SsgConnectorManagerWindow extends JDialog {
                     if ( onlyEnabled && !row.getConnector().isEnabled() )
                         continue;
 
-                    int port = row.getConnector().getPort();
-                    long oid = row.getConnector().getOid();
-                    if (oid != connector.getOid() && port == connector.getPort()) {
-                        return true;
+                    if (connector.getOid() == row.getConnector().getOid())
+                        continue;
+
+                    final List<PortRange> usedPorts = row.getConnector().getUsedPorts();
+                    for (PortRange range : usedPorts) {
+                        if (connector.isOverlapping(range))
+                            return true;
                     }
                 }
             }
