@@ -1,9 +1,8 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.policy.assertion.SslAssertion;
 
 
 /**
@@ -15,6 +14,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 public class SslTransportNode extends AbstractLeafPaletteNode {
     private boolean requireClientAuthentication;
+    private final String name;
 
     /**
      * construct the <CODE>SslTransportNode</CODE> instance indicating
@@ -26,6 +26,7 @@ public class SslTransportNode extends AbstractLeafPaletteNode {
     public SslTransportNode(boolean requireClientAuthentication) {
         super(new SslAssertion());
         this.requireClientAuthentication = requireClientAuthentication;
+        this.name = asAssertion().meta().get(AssertionMetadata.PALETTE_NODE_NAME).toString();
     }
 
     /**
@@ -37,5 +38,10 @@ public class SslTransportNode extends AbstractLeafPaletteNode {
     public Assertion asAssertion() {
         return new SslAssertion(requireClientAuthentication);
 
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

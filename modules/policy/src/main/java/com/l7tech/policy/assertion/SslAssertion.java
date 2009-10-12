@@ -5,11 +5,11 @@
  */
 package com.l7tech.policy.assertion;
 
-import com.l7tech.util.EnumTranslator;
-import com.l7tech.policy.wsp.WspEnumTypeMapping;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.WspEnumTypeMapping;
+import com.l7tech.util.EnumTranslator;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -214,9 +214,15 @@ public class SslAssertion extends ConfidentialityAssertion {
 
     @Override
     public AssertionMetadata meta() {
-        DefaultAssertionMetadata meta = defaultMeta();
+        DefaultAssertionMetadata meta = isRequireClientAuthentication() ? META_CLIENT : META_NOCLIENT;
+        meta.put(AssertionMetadata.VARIANT_PROTOTYPES, new Assertion[] { META_CLIENT.getPrototype(), META_NOCLIENT.getPrototype() });
+        return meta;
+    }
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Set SSL or TLS Transport");
+    private static DefaultAssertionMetadata makeMeta(boolean requireClientCert) {
+        DefaultAssertionMetadata meta = new DefaultAssertionMetadata(new SslAssertion(requireClientCert));
+
+        meta.put(AssertionMetadata.SHORT_NAME, requireClientCert ? "Require SSL or TLS Client Authentication" : "Require SSL or TLS Transport");
         meta.put(AssertionMetadata.DESCRIPTION, "The incoming request must either use, optionally use, or is forbidden to use SSL/TLS transport. Client certificate authentication is optional if SSL / TLS is required.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ssl.gif");
 
@@ -234,6 +240,9 @@ public class SslAssertion extends ConfidentialityAssertion {
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         return meta;
     }
+
+    static final DefaultAssertionMetadata META_NOCLIENT = makeMeta(false);
+    static final DefaultAssertionMetadata META_CLIENT = makeMeta(true);
 
     protected Set _cipherSuites = Collections.EMPTY_SET;
     protected Option _option = REQUIRED;
