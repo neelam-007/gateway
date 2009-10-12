@@ -9,7 +9,9 @@ import java.math.BigInteger;
 import java.security.*;
 
 /**
- *
+ * A SignatureMethod for ECDSA signatures that when signing converts the Java Signature.FOOwithECDSA signature value,
+ * which is ASN.1 encoded, back into the raw SignatureValue required by xmldsig; and when verifying converts
+ * the raw signature value into ASN.1 before passing it to the Java Signature.FOOwithECDSA to verify.
  */
 class EcdsaSignatureMethod extends SignatureMethod {
     private final Signature signature;
@@ -50,70 +52,72 @@ class EcdsaSignatureMethod extends SignatureMethod {
         return this.signature.verify(encodeAsn1(signature));
     }
 
-    static byte[] toRawOctetString(DERInteger i) {
-        byte[] rb = i.getPositiveValue().toByteArray();
+    static byte[] encodeAsn1(byte[] rs) throws SignatureException {
+        if (rs.length < 40)
+            throw new SignatureException("Invalid ECDSA SignatureValue: it is only " + rs.length + " bytes long");
+        if (rs.length % 2 != 0)
+            throw new SignatureException("Invalid ECDSA SignatureValue: it is an odd number of bytes long");
 
-        if (rb[0] != 0)
-            return rb;
+        int sidx = rs.length / 2;
+        byte[] rb = new byte[sidx];
+        byte[] sb = new byte[sidx];
+        System.arraycopy(rs, 0, rb, 0, sidx);
+        System.arraycopy(rs, sidx, sb, 0, sidx);
 
-        // Skip first octet
-        byte[] ret = new byte[rb.length - 1];
-        System.arraycopy(rb, 1, ret, 0, ret.length);
-        return ret;
-    }
-
-    /**
-     * Convert an ASN.1 DER SEQUENCE of two INTEGER values into a byte array containing the concatenation
-     * of the two raw integer octet strings (with any leading nul octets omitted).
-     *
-     * @param asn an EC signature value in the form of the ASN.1 DER SEQUENCE of two tagged INTEGER values
-     *            for the (r,s) values respectively.
-     * @return the raw (r,s) value octet strings concatenated together.
-     */
-    static byte[] decodeAsn1(byte[] asn) {
-        if (asn.length < 40)
-            throw new IllegalArgumentException("Encoded signature value is too small; only " + asn.length + " byte");
-        if (asn.length > 4096)
-            throw new IllegalArgumentException("Encoded signature value is too large; " + asn.length + " byte");
+        DERInteger r = new DERInteger(new BigInteger(1, rb));
+        DERInteger s = new DERInteger(new BigInteger(1, sb));
+        DERSequence seq = new DERSequence(new ASN1Encodable[] { r, s });
         try {
-            ASN1Sequence seq = (ASN1Sequence)ASN1Object.fromByteArray(asn);
-            if (seq.size() != 2)
-                throw new IllegalArgumentException("r,s sequence did not contain exactly two elements; count = " + seq.size());
-            DERInteger r = (DERInteger)seq.getObjectAt(0);
-            DERInteger s = (DERInteger)seq.getObjectAt(1);
-
-            byte[] rb = toRawOctetString(r);
-            byte[] sb = toRawOctetString(s);
-
-            byte[] out = new byte[rb.length + sb.length];
-            System.arraycopy(rb, 0, out, 0, rb.length);
-            System.arraycopy(sb, 0, out, rb.length, sb.length);
-            return out;
-
+            return seq.getEncoded(ASN1Encodable.DER);
         } catch (IOException e) {
-            throw new IllegalArgumentException("Invalid encoded signature value: " + ExceptionUtils.getMessage(e), e);
+            throw new SignatureException("Invalid ECDSA SignatureValue: Unable to encode (r,s) pair as DER: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
-    static byte[] encodeAsn1(byte[] rs) {
-        if (rs.length < 40)
-            throw new IllegalArgumentException("Raw signature value is too small; only " + rs.length + " byte");
-        if (rs.length > 4096)
-            throw new IllegalArgumentException("Raw signature value is too large; " + rs.length + " byte");
-        int half = rs.length / 2;
-        byte[] rb = new byte[half];
-        byte[] sb = new byte[half];
-        System.arraycopy(rs, 0, rb, 0, half);
-        System.arraycopy(rs, half, sb, 0, half);
-        DERInteger r = new DERInteger(new BigInteger(1, rb));
-        DERInteger s = new DERInteger(new BigInteger(1, sb));
+    static byte[] getIntegerOctetStringFromSequence(ASN1Sequence seq, int index) throws SignatureException {
+        Object obj = seq.getObjectAt(index);
+        if (obj instanceof DERInteger) {
+            DERInteger integer = (DERInteger) obj;
+            return integer.getPositiveValue().toByteArray();
+        } else {
+            throw new SignatureException("Internal error generating ECDSA signature: Unable to decode (r,s) pair from DER: sequence element was not a DERInteger");
+        }
+    }
 
-        DERSequence seq = new DERSequence(new ASN1Encodable[] { r, s });
-
+    static byte[] decodeAsn1(byte[] asn1) throws SignatureException {
         try {
-            return seq.getEncoded();
+            ASN1Object got = ASN1Sequence.fromByteArray(asn1);
+            if (got instanceof ASN1Sequence) {
+                ASN1Sequence seq = (ASN1Sequence) got;
+                if (seq.size() != 2)
+                    throw new SignatureException("Internal error generating ECDSA signature: Unable to decode (r,s) pair from DER: sequence was not of two elements");
+                byte[] rb = getIntegerOctetStringFromSequence(seq, 0);
+                byte[] sb = getIntegerOctetStringFromSequence(seq, 1);
+
+                // Skip over leading zeroes
+                int rlen = rb.length;
+                while (rlen > 0 && rb[rb.length - rlen] == 0)
+                        rlen--;
+
+                int slen = sb.length;
+                while (slen > 0 && sb[sb.length - slen] == 0)
+                        slen--;
+
+                // Find output size as multiple of 8 bytes
+                int rblen = ((rlen + 7) / 8) * 8;
+                int sblen = ((slen + 7) / 8) * 8;
+                int outlen = rblen > sblen ? rblen : sblen;
+
+                byte[] out = new byte[outlen * 2];
+                System.arraycopy(rb, rb.length - rlen, out, outlen - rlen, rlen);
+                System.arraycopy(sb, sb.length - slen, out, outlen + (outlen - slen), slen);
+                return out;
+                
+            } else {
+                throw new SignatureException("Internal error generating ECDSA signature: Unable to decode (r,s) pair from DER: result was not a sequence");
+            }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new SignatureException("Internal error generating ECDSA signature: Unable to decode (r,s) pair from DER: " + ExceptionUtils.getMessage(e), e);
         }
     }
 }
