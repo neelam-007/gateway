@@ -235,9 +235,9 @@ public class  NewPrivateKeyDialog extends JDialog {
         Collection<KeyType> types = new ArrayList<KeyType>(Arrays.asList(
                 rsasize(512, 20, 1),
                 rsasize(768, 50, 2),
-        dfltk = rsasize(1024, 100, 5),
+                rsasize(1024, 100, 5),
                 rsasize(1280, 60 * 7, 10),
-                rsasize(2048, 60 * 20, 17),
+        dfltk = rsasize(2048, 60 * 20, 17),
                 curvename("secp384r1")
         ));
 

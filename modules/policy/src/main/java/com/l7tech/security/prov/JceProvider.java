@@ -41,7 +41,7 @@ public abstract class JceProvider {
     // System property to disable fallback to default JceProvider if overridden JceProvider fails to initialize
     public static final String DISABLE_FALLBACK_PROPERTY = "com.l7tech.common.security.disableJceProviderFallback";
 
-    public static final int DEFAULT_RSA_KEYSIZE = SyspropUtil.getInteger("com.l7tech.security.prov.defaultRsaKeySize", 1024);
+    public static final int DEFAULT_RSA_KEYSIZE = SyspropUtil.getInteger("com.l7tech.security.prov.defaultRsaKeySize", 2048);
     public static final String DEFAULT_CSR_SIG_ALG = SyspropUtil.getString("com.l7tech.security.prov.defaultCsrSigAlg", "SHA1withRSA");
 
     // Available drivers
