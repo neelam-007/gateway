@@ -783,7 +783,11 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         public String getKeyType() {
             if (keyType == null) {
-                PublicKey publicKey = getCertificate().getPublicKey();
+                final X509Certificate cert = getCertificate();
+                if (cert == null) {
+                    return "<Bad Cert>";
+                }
+                PublicKey publicKey = cert.getPublicKey();
                 String alg = publicKey.getAlgorithm();
                 if (alg == null) alg = "N/A"; // can't happen
                 if (publicKey instanceof RSAPublicKey) {
@@ -805,7 +809,8 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
 
         public Object getExpiry() {
-            return getCertificate().getNotAfter();
+            final X509Certificate cert = getCertificate();
+            return cert == null ? new Date(0) : cert.getNotAfter();
         }
 
         public boolean isDefaultSsl() {

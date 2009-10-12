@@ -21,6 +21,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -204,13 +205,37 @@ public abstract class JceProvider {
      * Generate an ECC public key / private key pair using the current Crypto provider with the specified curve name.
      *
      * @param curveName  curve name to use, ie "P-384".  Required.
+     * @param random a SecureRandom instance with which to initialize the KeyPairGenerator, or null to use the default.  Optional.
      * @return the generated key pair.  Never null.
      * @throws NoSuchAlgorithmException  if ECC is not currently available.
      * @throws InvalidAlgorithmParameterException if the specified curve name is unrecognized.
      */
-    public KeyPair generateEcKeyPair(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+    public KeyPair generateEcKeyPair(String curveName, SecureRandom random) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        try {
+            return tryGenerateEcKeyPair(curveName, random);
+        } catch (InvalidAlgorithmParameterException e) {
+            // Try synonyms, if any
+            Set<String> syns = JceUtil.getCurveNameSynonyms(curveName, false);
+            for (String syn : syns) {
+                try {
+                    return tryGenerateEcKeyPair(syn, random);
+                } catch (InvalidAlgorithmParameterException e2) {
+                    // Ignore
+                }
+            }
+            // Oh well, we tried
+            throw e;
+        }
+    }
+
+    protected KeyPair tryGenerateEcKeyPair(String curveName, SecureRandom random) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         KeyPairGenerator kpg = getKeyPairGenerator("EC", getProviderFor("KeyPairGenerator.EC"));
-        kpg.initialize(new ECGenParameterSpec(curveName));
+        ECGenParameterSpec spec = new ECGenParameterSpec(curveName);
+        if (random != null) {
+            kpg.initialize(spec, random);
+        } else {
+            kpg.initialize(spec);
+        }
         return kpg.generateKeyPair();
     }
 

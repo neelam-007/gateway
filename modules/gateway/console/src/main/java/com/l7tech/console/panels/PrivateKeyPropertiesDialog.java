@@ -229,26 +229,33 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     class ListEntry {
-        public ListEntry(X509Certificate cert) {
+        public ListEntry(String subjectDn, X509Certificate cert) {
+            this.subjectDn = subjectDn;
             this.cert = cert;
         }
         public X509Certificate cert;
+        public String subjectDn;
 
         public X509Certificate getCert() {
             return cert;
         }
 
+        public String getSubjectDn() {
+            return subjectDn;
+        }
+
         @Override
         public String toString() {
-            return cert.getSubjectDN().getName();
+            return getSubjectDn();
         }
     }
 
     private void populateList() {
         X509Certificate[] data = subject.getKeyEntry().getCertificateChain();
+        String[] dns = subject.getKeyEntry().getCertificateChainSubjectDns();
         ListEntry[] listData = new ListEntry[data.length];
         for (int i = 0; i < data.length; i++) {
-            listData[i] = new ListEntry(data[i]);
+            listData[i] = new ListEntry(dns[i], data[i]);
         }
         certList.setListData(listData);
     }
@@ -259,6 +266,11 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             return;
         }
         X509Certificate cert = seled.getCert();
+        if (cert == null) {
+            DialogDisplayer.showMessageDialog(this, "The SecureSpan Manager is unable to read or display this certificate.", "Unable to Parse Certificate", JOptionPane.ERROR_MESSAGE, null);
+            return;
+        }
+
         TrustedCert tc = new TrustedCert();
         tc.setCertificate(cert);
         tc.setName(cert.getSubjectDN().toString());

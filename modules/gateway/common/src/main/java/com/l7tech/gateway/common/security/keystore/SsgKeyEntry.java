@@ -69,10 +69,12 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
      * @return the ID of this entry, or null if it's not yet assigned.
      *         This ID is the keystoreId converted to a string, followed by a colon, followed by the alias.
      */
+    @Override
     public String getId() {
         return alias == null ? null : (keystoreId + ":" + alias);
     }
 
+    @Override
     public String getName() {
         return getAlias();
     }
@@ -86,7 +88,7 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
      * @return true if getPrivateKey() would return non-null without throwing.
      */
     public boolean isPrivateKeyAvailable() {
-        return privateKey != null;
+        return getPrivate() != null;
     }
 
     /**
@@ -97,6 +99,7 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
      *                                    to a secure PKCS#11 object).
      */
     public PrivateKey getPrivateKey() throws UnrecoverableKeyException {
+        PrivateKey privateKey = super.getPrivate();
         if (privateKey == null)
             throw new UnrecoverableKeyException("The private key is not available to this code");
         return privateKey;
@@ -118,12 +121,13 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     }
 
     /** @param certificateChain the new certificate chain.  Must contain at least one certificate. */
+    @Override
     public void setCertificateChain(X509Certificate[] certificateChain) {
-        this.certificateChain = certificateChain;
+        super.setCertificateChain(certificateChain);
     }
 
     /** @param privateKey the new RSA private key, or null to clear it. */
     public void setPrivateKey(PrivateKey privateKey) {
-        this.privateKey = privateKey;
+        super.setPrivate(privateKey);
     }
 }

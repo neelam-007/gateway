@@ -4,7 +4,6 @@ import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.security.prov.JceProvider;
 
 import java.security.*;
-import java.security.spec.ECGenParameterSpec;
 
 /**
  * Parameter driven key pair generator that accepts a KeyGenParams instance.
@@ -42,14 +41,7 @@ public class ParamsKeyGenerator {
         if (curve == null)
             curve = getDefaultNamedCurve();
 
-        KeyPairGenerator kpg = JceProvider.getInstance().getKeyPairGenerator("EC");
-        ECGenParameterSpec spec = new ECGenParameterSpec(curve);
-        if (random != null) {
-            kpg.initialize(spec, random);
-        } else {
-            kpg.initialize(spec);
-        }
-        return kpg.generateKeyPair();
+        return JceProvider.getInstance().generateEcKeyPair(curve, random);
     }
 
     protected KeyPair generateRsaKeyPair() throws NoSuchAlgorithmException {

@@ -39,8 +39,6 @@ import java.util.logging.Logger;
 public class  NewPrivateKeyDialog extends JDialog {
     protected static final Logger logger = Logger.getLogger(NewPrivateKeyDialog.class.getName());
 
-    private static final String PROP_SHOW_ADDITIONAL_NAMED_CURVES = "com.l7tech.console.keyStore.showAdditionalNamedCurves";
-
     private static final String TITLE = "Create Private Key";
     private static final String DEFAULT_EXPIRY = Long.toString(365 * 5);
 
@@ -238,11 +236,6 @@ public class  NewPrivateKeyDialog extends JDialog {
                 rsasize(1024, 100, 5),
                 rsasize(1280, 60 * 7, 10),
         dfltk = rsasize(2048, 60 * 20, 17),
-                curvename("secp384r1")
-        ));
-
-        if (SyspropUtil.getBoolean(PROP_SHOW_ADDITIONAL_NAMED_CURVES, false)) {
-            types.addAll(Arrays.asList(
                 curvename("sect163k1"),
                 curvename("sect163r1"),
                 curvename("sect163r2"),
@@ -285,8 +278,7 @@ public class  NewPrivateKeyDialog extends JDialog {
                 curvename("P-256"),
                 curvename("P-384"),
                 curvename("P-521")
-            ));
-        }
+        ));
 
         if (keystoreInfo.getKeyStoreType() != null && keystoreInfo.getKeyStoreType().toLowerCase().contains("pkcs11"))
             usingHsm = true;
