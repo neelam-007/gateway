@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.jdbcquery.console;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Pair;
+import com.l7tech.console.util.MutablePair;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -370,7 +370,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
     }
 
     private void doAdd() {
-        editAndSave(new Pair<String, String>("", ""));
+        editAndSave(new MutablePair<String, String>("", ""));
     }
 
     private void doEdit() {
@@ -380,10 +380,10 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         String queryResultName = (String) namingMap.keySet().toArray()[selectedRow];
         String contextVarName = namingMap.get(queryResultName);
 
-        editAndSave(new Pair<String, String>(queryResultName, contextVarName));
+        editAndSave(new MutablePair<String, String>(queryResultName, contextVarName));
     }
 
-    private void editAndSave(final Pair<String, String> namePair) {
+    private void editAndSave(final MutablePair<String, String> namePair) {
         if (namePair == null || namePair.left == null || namePair.right == null) return;
         final String originalQueryResultName = namePair.left;
 
@@ -419,7 +419,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         });
     }
 
-    private String isDuplicatedColumnOrVariable(final Pair<String, String> pair) {
+    private String isDuplicatedColumnOrVariable(final MutablePair<String, String> pair) {
 
         // Check Column
         boolean duplicated = false;

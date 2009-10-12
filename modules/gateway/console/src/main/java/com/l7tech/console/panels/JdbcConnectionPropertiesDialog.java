@@ -7,7 +7,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
 import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.Pair;
+import com.l7tech.console.util.MutablePair;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
@@ -322,7 +322,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private void doAdd() {
-        editAndSave(new Pair<String, String>("", ""));
+        editAndSave(new MutablePair<String, String>("", ""));
     }
 
     private void doEdit() {
@@ -332,10 +332,10 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         String propName = (String) additionalPropMap.keySet().toArray()[selectedRow];
         String propValue = (String)additionalPropMap.get(propName);
 
-        editAndSave(new Pair<String, String>(propName, propValue));
+        editAndSave(new MutablePair<String, String>(propName, propValue));
     }
 
-    private void editAndSave(final Pair<String, String> property) {
+    private void editAndSave(final MutablePair<String, String> property) {
         if (property == null || property.left == null || property.right == null) return;
         final String originalPropName = property.left;
 

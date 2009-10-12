@@ -2,7 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.console.util.Pair;
+import com.l7tech.console.util.MutablePair;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
@@ -27,10 +27,10 @@ public class AdditionalPropertiesDialog extends JDialog {
     private JTextField propValueTextField;
     private JCheckBox setC3p0PoolingCheckBox;
 
-    private Pair<String, String> property;
+    private MutablePair<String, String> property;
     private boolean confirmed;
 
-    public AdditionalPropertiesDialog(Dialog owner, Pair<String, String> property) {
+    public AdditionalPropertiesDialog(Dialog owner, MutablePair<String, String> property) {
         super(owner, resources.getString("dialog.title.additional.props"));
         initialize(property);
     }
@@ -39,7 +39,7 @@ public class AdditionalPropertiesDialog extends JDialog {
         return confirmed;
     }
 
-    private void initialize(Pair<String, String> property) {
+    private void initialize(MutablePair<String, String> property) {
         this.property = property;
 
         setContentPane(mainPanel);

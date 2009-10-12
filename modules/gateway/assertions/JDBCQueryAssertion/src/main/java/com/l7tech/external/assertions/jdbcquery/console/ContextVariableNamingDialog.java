@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.jdbcquery.console;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.console.util.Pair;
+import com.l7tech.console.util.MutablePair;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
@@ -20,14 +20,14 @@ public class ContextVariableNamingDialog extends JDialog {
     private JTextField variableNameTextField;
 
     private boolean confirmed;
-    private Pair<String, String> namePair;
+    private MutablePair<String, String> namePair;
 
-    public ContextVariableNamingDialog(JDialog owner, Pair<String, String> namePair){
+    public ContextVariableNamingDialog(JDialog owner, MutablePair<String, String> namePair){
         super(owner, resources.getString("dialog.title.context.variable.naming"));
         initialize(namePair);
     }
 
-    private void initialize(Pair<String, String> namePair) {
+    private void initialize(MutablePair<String, String> namePair) {
         this.namePair = namePair;
 
         setContentPane(contentPane);

@@ -5,12 +5,12 @@ import java.util.Map;
 /**
  * @author ghuang
  */
-public class Pair<L, R> implements Map.Entry<L, R> {
+public class MutablePair<L, R> implements Map.Entry<L, R> {
 
     public L left;
     public R right;
 
-    public Pair(L left, R right) {
+    public MutablePair(L left, R right) {
         this.left = left;
         this.right = right;
     }
