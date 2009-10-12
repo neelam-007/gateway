@@ -47,6 +47,11 @@
         </property>
     </bean>
 
+    <bean id="cryptoInit" class="com.l7tech.server.security.CryptoInitializer" depends-on="initLunaPinFinder">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="licenseManager"/>
+    </bean>
+
     <!-- SSG boot process -->
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker"><!-- sinkManager -->
         <property name="serverConfig" ref="serverConfig"/>
@@ -985,7 +990,7 @@
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
 
-    <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker" depends-on="initLunaPinFinder">
+    <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker" depends-on="cryptoInit">
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
         <property name="earlyTasks">

@@ -58,6 +58,12 @@ public class Pkcs11JceProviderEngine extends JceProvider {
     }
 
     @Override
+    public boolean isFips140ModeEnabled() {
+        // We only support configuring the SCA 6000 in FIPS mode.
+        return true;
+    }
+
+    @Override
     public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {
         throw new UnsupportedOperationException("Pkcs11JceProviderEngine is unable to create new Certificate Signing Request using PKCS#11 KeyPair: Unsupported operation");
     }

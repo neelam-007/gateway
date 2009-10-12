@@ -18,14 +18,19 @@ import java.lang.reflect.InvocationTargetException;
 public class RsaJceProviderEngine extends JceProvider {
     private static final Logger logger = Logger.getLogger(RsaJceProviderEngine.class.getName());
 
-    private static final boolean FIPS = SyspropUtil.getBoolean("com.l7tech.security.fips.enabled", false);
-    private static final boolean SUNJSSE_FIPS = SyspropUtil.getBoolean("com.l7tech.security.sunjsse.fips.enabled", false);
+    private static final String PROP_FIPS = "com.l7tech.security.fips.enabled";
+    private static final String PROP_PERMAFIPS = "com.l7tech.security.fips.alwaysEnabled";
+    private static final String PROP_SUNJSSE_FIPS = "com.l7tech.security.sunjsse.fips.enabled";
+
+    private static final boolean FIPS = SyspropUtil.getBoolean(PROP_FIPS, false);
+    private static final boolean SUNJSSE_FIPS = SyspropUtil.getBoolean(PROP_SUNJSSE_FIPS, false);
 
     private static final Provider PROVIDER;
 
     static {
         try {
-            if (FIPS) {
+            final boolean permafips = SyspropUtil.getBoolean(PROP_PERMAFIPS, false);
+            if (FIPS || permafips) {
                 logger.info("Initializing RSA library in FIPS 140 mode");
                 CryptoJ.setMode(CryptoJ.FIPS140_SSL_ECC_MODE);
                 PROVIDER = new JsafeJCE();
@@ -70,6 +75,11 @@ public class RsaJceProviderEngine extends JceProvider {
             // or if we are running on a non-Sun JDK that nevertheless has a Provider installed named "SunJSSE"
             throw new RuntimeException("Unable to put SunJSSE SSL library into FIPS mode: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    @Override
+    public boolean isFips140ModeEnabled() {
+        return CryptoJ.isInFIPS140Mode();
     }
 
     @Override

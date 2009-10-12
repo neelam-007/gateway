@@ -83,6 +83,9 @@ public class GatewayFeatureSets {
     public static final String SERVICE_MODULELOADER = "service:ModuleLoader"; // Ability to load jars from /ssg/modules/assertions
     public static final String SERVICE_EMS = "service:EnterpriseManageable"; // Ability to be managed remotely by an Enterprise Manager Server
 
+    // Constants for flag names
+    public static final String FLAG_PERMAFIPS = "flag:FipsModeAlways";
+
     public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
     public static final String UI_PUBLISH_XML_WIZARD = "ui:PublishXmlWizard";
     public static final String UI_PUBLISH_INTERNAL_WIZARD = "ui:PublishInternalWizard";
@@ -232,6 +235,8 @@ public class GatewayFeatureSets {
         GatewayFeatureSet uiLogSinksDialog = ui(UI_MANAGE_LOG_SINKS, "Enable the SSM Log Sinks Dialog");
         GatewayFeatureSet uiAuditSinkDialog = ui(UI_MANAGE_AUDIT_SINK, "Enable the SSM Audit Sink Dialog");
         GatewayFeatureSet uiEmailListenersDialog = ui(UI_MANAGE_EMAIL_LISTENERS, "Enable the SSM Email Listeners Dialog");
+
+        GatewayFeatureSet flagPermaFips = flag(FLAG_PERMAFIPS, "FIPS mode is always required.");
 
         //
         // Declare "building block" feature sets
@@ -636,7 +641,8 @@ public class GatewayFeatureSets {
                 fs(profileGateway),
                 fs(profileFederal),
                 fs(profileUs),
-                fs(experimental));
+                fs(experimental),
+                fs(flagPermaFips));
 
         // For now, if a license names no features explicitly, we will enable all features.
         // TODO we should enable only those features that existed in 3.5.
@@ -842,6 +848,12 @@ public class GatewayFeatureSets {
     private static GatewayFeatureSet ui(String name, String desc) {
         if (!name.startsWith("ui:"))
             throw new IllegalArgumentException("Preferred feature name for ui feature must start with \"ui:\": " + name);
+        return getOrMakeFeatureSet(name, desc);
+    }
+
+    private static GatewayFeatureSet flag(String name, String desc) {
+        if (!name.startsWith("flag:"))
+            throw new IllegalArgumentException("Preferred feature name for flag must start with \"flag:\": " + name);
         return getOrMakeFeatureSet(name, desc);
     }
 }

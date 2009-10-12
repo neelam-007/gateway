@@ -55,6 +55,12 @@ public class LunaJceProviderEngine extends JceProvider {
     }
 
     @Override
+    public boolean isFips140ModeEnabled() {
+        // TODO this method exists but its return value is not documented: LunaTokenManager.getInstance().GetCurrentFIPSSetting();
+        return true;
+    }
+
+    @Override
     public Provider getBlockCipherProvider() {
         return JCE_PROVIDER;
     }

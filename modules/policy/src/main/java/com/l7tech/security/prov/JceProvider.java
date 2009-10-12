@@ -155,6 +155,16 @@ public abstract class JceProvider {
     public abstract String getDisplayName();
 
     /**
+     * Check whether the JceProvider is in FIPS 140 compliant mode.
+     *
+     * @return true if the current JceProvider is capable of and is operating in FIPS 140 compliant mode.
+     *         false if it is either not capable of a FIPS 140 compliant mode or is not operating in it.
+     */
+    public boolean isFips140ModeEnabled() {
+        return false;
+    }
+
+    /**
      * Create an RsaSignerEngine that uses the current crypto API.
      * This can be used to sign certificates.
      *
