@@ -28,6 +28,10 @@ public interface JdbcConnectionAdmin {
     static final int ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE = 15;
 
     @Transactional(readOnly=true)
+    @Secured(types=EntityType.JDBC_CONNECTION, stereotype= MethodStereotype.FIND_ENTITY)
+    JdbcConnection getJdbcConnection(String connectionName) throws FindException;
+
+    @Transactional(readOnly=true)
     @Secured(types=EntityType.JDBC_CONNECTION, stereotype= MethodStereotype.FIND_ENTITIES)
     List<JdbcConnection> getAllJdbcConnections() throws FindException;
 

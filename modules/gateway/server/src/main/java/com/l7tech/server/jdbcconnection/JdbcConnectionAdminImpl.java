@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 /**
- * @author: ghuang
+ * @author ghuang
  */
 public class JdbcConnectionAdminImpl implements JdbcConnectionAdmin {
     private JdbcConnectionManager jdbcConnectionManager;
@@ -28,6 +28,11 @@ public class JdbcConnectionAdminImpl implements JdbcConnectionAdmin {
         this.jdbcQueryingManager = jdbcQueryingManager;
         this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
         this.serverConfig = serverConfig;
+    }
+
+    @Override
+    public JdbcConnection getJdbcConnection(String connectionName) throws FindException {
+        return jdbcConnectionManager.getJdbcConnection(connectionName);
     }
 
     @Override

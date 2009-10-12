@@ -41,7 +41,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.jdbcquery.console.resources.JdbcQueryAssertionDialog");
 
     private JPanel mainPanel;
-    private JComboBox connectionNameComboBox;
+    private JComboBox connectionComboBox;
     private JTextArea sqlQueryTextArea;
     private JTable namingTable;
     private JTextField variablePrefixTextField;
@@ -101,7 +101,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
                 enableOrDisableOkButton();
             }
         });
-        connectionNameComboBox.addItemListener((ItemListener)changeListener);
+        connectionComboBox.addItemListener((ItemListener)changeListener);
         sqlQueryTextArea.getDocument().addDocumentListener((DocumentListener)changeListener);
         variablePrefixTextField.getDocument().addDocumentListener((DocumentListener)changeListener);
 
@@ -153,7 +153,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
     }
 
     private void modelToView() {
-        loadConnectioNameComboBox();
+        populateConnectionCombobox();
         sqlQueryTextArea.setText(assertion.getSqlQuery());
         variablePrefixTextField.setText(assertion.getVariablePrefix());
         maxRecordsSpinner.setValue(assertion.getMaxRecords());
@@ -167,7 +167,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
     }
 
     private void viewToModel(final JdbcQueryAssertion assertion) {
-        assertion.setConnectionName(((String) connectionNameComboBox.getSelectedItem()));
+        assertion.setConnectionName(((String) connectionComboBox.getSelectedItem()));
         assertion.setSqlQuery(sqlQueryTextArea.getText());
         assertion.setNamingMap(namingMap);
         assertion.setVariablePrefix(variablePrefixTextField.getText());
@@ -177,7 +177,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         assertion.setVariableNames(getVariableNames());
     }
 
-    private void loadConnectioNameComboBox() {
+    private void populateConnectionCombobox() {
         java.util.List<String> connNameList;
         JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
         if (connectionAdmin == null) {
@@ -197,12 +197,12 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         connNameList.add(0, "");
 
         // Add all items into the combox box.
-        connectionNameComboBox.removeAllItems();
+        connectionComboBox.removeAllItems();
         for (String driverClass: connNameList) {
-            connectionNameComboBox.addItem(driverClass);
+            connectionComboBox.addItem(driverClass);
         }
 
-        connectionNameComboBox.setSelectedItem(assertion.getConnectionName());
+        connectionComboBox.setSelectedItem(assertion.getConnectionName());
     }
 
     private void initNamingTable() {
@@ -242,9 +242,9 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         public String getColumnName(int col) {
             switch (col) {
                 case 0:
-                    return resources.getString("column.label.column");
+                    return resources.getString("column.label.column.label");
                 case 1:
-                    return resources.getString("column.label.variable");
+                    return resources.getString("column.label.variable.name");
                 default:
                     throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
             }
@@ -285,7 +285,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
     private void enableOrDisableOkButton() {
          boolean enabled =
              !isReadOnly() &&
-             isNonEmptyRequiredTextField((String) connectionNameComboBox.getSelectedItem()) &&
+             isNonEmptyRequiredTextField((String) connectionComboBox.getSelectedItem()) &&
              isNonEmptyRequiredTextField(sqlQueryTextArea.getText()) &&
              isNonEmptyRequiredTextField(variablePrefixTextField.getText());
 
@@ -298,7 +298,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
 
     private Object getJdbcQueryResult() {
         Object result;
-        String connectionName = (String) connectionNameComboBox.getSelectedItem();
+        String connectionName = (String) connectionComboBox.getSelectedItem();
         String query = sqlQueryTextArea.getText();
 
         if (Syntax.getReferencedNames(query).length > 0) {
@@ -350,7 +350,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
     private void doTest() {
         DialogDisplayer.showSafeConfirmDialog(
             TopComponents.getInstance().getTopParent(),
-            MessageFormat.format(resources.getString("confirmation.test.query"), connectionNameComboBox.getSelectedItem()),
+            MessageFormat.format(resources.getString("confirmation.test.query"), connectionComboBox.getSelectedItem()),
             resources.getString("dialog.title.test.query"),
             JOptionPane.OK_CANCEL_OPTION,
             JOptionPane.WARNING_MESSAGE,

@@ -6,8 +6,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
 
 /**
- * @author: ghuang
+ * @author ghuang
  */
 public interface JdbcConnectionManager extends EntityManager<JdbcConnection, EntityHeader> {
-    JdbcConnection findByConnectionName(String connectionName) throws FindException;
+    JdbcConnection getJdbcConnection(String connectionName) throws FindException;
 }

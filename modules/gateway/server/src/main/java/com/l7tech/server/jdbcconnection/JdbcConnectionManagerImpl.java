@@ -37,7 +37,7 @@ public class JdbcConnectionManagerImpl
     }
 
     @Override
-    public JdbcConnection findByConnectionName(String connectionName) throws FindException {
+    public JdbcConnection getJdbcConnection(String connectionName) throws FindException {
         return findByUniqueName(connectionName);
     }
 }

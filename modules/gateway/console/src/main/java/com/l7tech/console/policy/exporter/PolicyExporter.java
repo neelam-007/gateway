@@ -103,7 +103,7 @@ public class PolicyExporter {
         } else if (assertion instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsidass = (JmsRoutingAssertion)assertion;
             if(jmsidass.getEndpointOid() != null) {
-                ref = new JMSEndpointReference(jmsidass.getEndpointOid().longValue());
+                ref = new JMSEndpointReference(jmsidass.getEndpointOid());
             }
         } else if (assertion instanceof CustomAssertionHolder) {
             CustomAssertionHolder cahAss = (CustomAssertionHolder)assertion;
@@ -135,7 +135,7 @@ public class PolicyExporter {
 
             if(!refs.contains(ref)) {
                 IncludedPolicyReference includedReference = (IncludedPolicyReference)ref;
-                Policy fragmentPolicy = null;
+                Policy fragmentPolicy;
                 //bug 5316: if we are dealing with include assertions, we'll just get the policy fragment from the assertion.
                 if (assertion instanceof Include) {
                     fragmentPolicy = ((Include)assertion).retrieveFragmentPolicy();
@@ -156,6 +156,16 @@ public class PolicyExporter {
                     logger.log(Level.WARNING, "Failed to create policy from include reference (policy OID = " + includedReference.getGuid() + ")");
                 }
             }
+        } else if (assertion instanceof JdbcConnectionable) {
+            JdbcConnectionable connectionable = (JdbcConnectionable)assertion;
+            // Check if there exists a duplicate JDBC connection reference.
+            for (ExternalReference exRef: refs) {
+                if (exRef instanceof JdbcConnectionReference) {
+                    JdbcConnectionReference connRef = (JdbcConnectionReference)exRef;
+                    if (connRef.getConnectionName().equals(connectionable.getConnectionName())) return;
+                }
+            }
+            ref = new JdbcConnectionReference(connectionable);
         } else if(assertion instanceof UsesEntities) {
             UsesEntities entitiesUser = (UsesEntities)assertion;
             for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
@@ -172,7 +182,6 @@ public class PolicyExporter {
                     refs.add(ref);
                 }
             }
-
             // Since BridgeRoutingAssertion implements UsersEntities and also extends PrivateKeyable,
             // so if it is a BridgeRoutingAssertion, we need to create private key reference for it in the next step.
             if (! (assertion instanceof BridgeRoutingAssertion)) {
@@ -182,7 +191,6 @@ public class PolicyExporter {
 
         if (assertion instanceof PrivateKeyable) {
             PrivateKeyable keyable = (PrivateKeyable)assertion;
-
             // Check if there exists a duplicate private key reference.
             for (ExternalReference er: refs) {
                 if (er instanceof PrivateKeyReference) {
@@ -193,7 +201,6 @@ public class PolicyExporter {
                     }
                 }
             }
-
             ref = new PrivateKeyReference(keyable);
         }
 

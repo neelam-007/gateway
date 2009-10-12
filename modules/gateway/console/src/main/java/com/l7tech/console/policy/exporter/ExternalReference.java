@@ -81,6 +81,8 @@ public abstract class ExternalReference {
                     references.add(TrustedCertReference.parseFromElement(refEl));
                 } else if (refType.equals(PrivateKeyReference.class.getName())) {
                     references.add(PrivateKeyReference.parseFromElement(refEl));
+                } else if (refType.equals(JdbcConnectionReference.class.getName())) {
+                    references.add(JdbcConnectionReference.parseFromElement(refEl));
                 }
             }
         }

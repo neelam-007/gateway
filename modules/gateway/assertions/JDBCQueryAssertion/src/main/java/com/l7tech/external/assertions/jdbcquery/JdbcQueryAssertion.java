@@ -15,7 +15,7 @@ import java.util.*;
 /**
  *
  */
-public class JdbcQueryAssertion extends Assertion implements UsesVariables, SetsVariables {
+public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable, UsesVariables, SetsVariables {
     public static final String VARIABLE_COUNT = "count";
     public static final String DEFAULT_VARIABLE_PREFIX = "jdbcQuery";
 
@@ -57,10 +57,12 @@ public class JdbcQueryAssertion extends Assertion implements UsesVariables, Sets
         setVariableNames(Arrays.copyOf(source.getVariableNames(), source.getVariableNames().length));
     }
 
+    @Override
     public String getConnectionName() {
         return connectionName;
     }
 
+    @Override
     public void setConnectionName(String connectionName) {
         this.connectionName = connectionName;
     }

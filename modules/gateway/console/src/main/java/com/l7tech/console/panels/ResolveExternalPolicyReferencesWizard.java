@@ -51,6 +51,8 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
                 panel = new ResolveForeignTrustedCertificatePanel(null,(TrustedCertReference)(refs[i]));
             } else if (refs[i] instanceof PrivateKeyReference) {
                 panel = new ResolvePrivateKeyPanel(null, (PrivateKeyReference)(refs[i]));
+            } else if (refs[i] instanceof JdbcConnectionReference) {
+                panel = new ResolveJdbcConnectionPanel(null, (JdbcConnectionReference)(refs[i]));
             }
             if (panel != null) {
                 if (firstPanel == null) {
