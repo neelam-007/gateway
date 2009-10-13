@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.action.EditPolicyAction;
 import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -18,6 +19,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
 import java.awt.*;
@@ -106,7 +108,7 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         return null;
     }
 
-    private PolicyHeader getOrCreateSinkPolicyHeader() throws FindException, PolicyAssertionException, SaveException {
+    private Pair<PolicyHeader, Boolean> getOrCreateSinkPolicyHeader() throws FindException, PolicyAssertionException, SaveException {
         PolicyHeader header = getSinkPolicyHeader();
         if (header == null) {
             // Create new sink policy with default settings
@@ -116,9 +118,11 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             header = new PolicyHeader(policy);
 
             // Refresh service tree
-            TopComponents.getInstance().getServicesFolderNode().reloadChildren();
+            ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+            tree.refresh();
+            return new Pair<PolicyHeader, Boolean>(header, true);
         }
-        return header;
+        return new Pair<PolicyHeader, Boolean>(header, false);
     }
 
     private static Policy makeDefaultAuditSinkPolicyEntity() {
@@ -153,9 +157,7 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
 
     private void editSinkPolicy() {
         try {
-            PolicyHeader header = getOrCreateSinkPolicyHeader();
-            PolicyEntityNode node = new PolicyEntityNode(header);
-            Action editAction = new EditPolicyAction(node, true);
+            Action editAction = prepareEditAction();
             dispose();
             committed = false;
             policyEditRequested = true;
@@ -169,6 +171,13 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         }
     }
 
+    private Action prepareEditAction() throws FindException, PolicyAssertionException, SaveException {
+        Pair<PolicyHeader, Boolean> h = getOrCreateSinkPolicyHeader();
+        PolicyHeader header = h.left;
+        PolicyEntityNode node = new PolicyEntityNode(header);
+        return new EditPolicyAction(node, true);
+    }
+
     private void commit() {
         try {
             if (rbSaveToDb.isSelected()) {
@@ -176,9 +185,20 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
                 return;
             }
 
-            PolicyHeader header = getOrCreateSinkPolicyHeader();
+            Pair<PolicyHeader, Boolean> h = getOrCreateSinkPolicyHeader();
+            PolicyHeader header = h.left;
+            boolean justCreated = h.right;
             String guid = header.getGuid();
             ClusterPropertyCrud.putClusterProperty(AUDIT_SINK_POLICY_GUID_CLUSTER_PROP, guid);
+
+            if (justCreated) {
+                Action editAction = prepareEditAction();
+                dispose();
+                committed = true;
+                policyEditRequested = true;
+                editAction.actionPerformed(null);
+            }
+
         } catch (ObjectModelException e) {
             err("configure audit sink", e);
         } catch (PolicyAssertionException e) {
