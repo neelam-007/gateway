@@ -97,7 +97,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         putDefaultGetter(PROPERTIES_ACTION_NAME, new MetadataFinder() {
             @Override
             public Object get(final AssertionMetadata meta, String key) {
-                return cache(meta, key, getDefaultName(meta));
+                return cache(meta, key, getDefaultName(meta) + " Properties");
             }
         });
 
