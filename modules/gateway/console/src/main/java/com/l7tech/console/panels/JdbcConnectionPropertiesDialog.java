@@ -245,7 +245,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         if (connection == null)
             throw new IllegalStateException("A JDBC connection must be initialized first before additional properties are loaded.");
         else
-            additionalPropMap = connection.getAllAddtionalProperties();
+            additionalPropMap = connection.getAddtionalProperties();
         
         additionalPropertyTableModel = new AdditionalPropertyTableModel();
         additionalPropertiesTable.setModel(additionalPropertyTableModel);
@@ -346,6 +346,13 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             @Override
             public void run() {
                 if (dlg.isConfirmed()) {
+                    String warningMessage = isAdditionalProperty(property.left);
+                    if (warningMessage != null) {
+                        DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, warningMessage,
+                            resources.getString("dialog.title.duplicate.property"), JOptionPane.WARNING_MESSAGE, null);
+                        return;
+                    }
+                    
                     // Save the property into the map
                     if (! originalPropName.isEmpty()) { // This is for doEdit
                         additionalPropMap.remove(originalPropName);
@@ -361,6 +368,26 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
                 }
             }
         });
+    }
+
+    private String isAdditionalProperty(String propName) {
+        if ("driverClass".compareToIgnoreCase(propName) == 0) {
+            return MessageFormat.format(resources.getString("warning.basic.conn.prop.configured"), resources.getString("property.driver.class"));
+        } else if ("jdbcUrl".compareToIgnoreCase(propName) == 0) {
+            return MessageFormat.format(resources.getString("warning.basic.conn.prop.configured"), resources.getString("property.jdbc.url"));
+        } else if ("user".compareToIgnoreCase(propName) == 0) {
+            return MessageFormat.format(resources.getString("warning.basic.conn.prop.configured"), resources.getString("property.user.name"));
+        } else if ("password".compareToIgnoreCase(propName) == 0) {
+            return MessageFormat.format(resources.getString("warning.basic.conn.prop.configured"), resources.getString("property.password"));
+        }
+
+         if ("minPoolSize".compareToIgnoreCase(propName) == 0) {
+            return MessageFormat.format(resources.getString("warning.c3p0.pool.prop.configured"), resources.getString("property.minPoolSize"));
+        } else if ("maxPoolSize".compareToIgnoreCase(propName) == 0) {
+            return MessageFormat.format(resources.getString("warning.c3p0.pool.prop.configured"), resources.getString("property.maxPoolSize"));
+        }
+
+        return null;
     }
 
     private void doRemove() {

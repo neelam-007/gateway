@@ -167,11 +167,6 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
         }
     }
 
-//    @Transient
-//    public String getAdditionalPropertyName(int index) {
-//        return (String) additionalProps.keySet().toArray()[index];
-//    }
-
     @Transient
     public Object getAdditionalPropertyValue(String propName) {
         return additionalProps.get(propName);
@@ -187,32 +182,8 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
     }
 
     @Transient
-    public Map<String, Object> getAllAddtionalProperties() {
+    public Map<String, Object> getAddtionalProperties() {
         return additionalProps;
-    }
-
-    @Transient
-    public Properties getAllProperties() {
-        Properties props = new Properties();
-
-        // Basic Connection Configuration
-        props.put("driverClass", driverClass);
-        props.put("jdbcUrl", jdbcUrl);
-        props.put("user", userName);
-        props.put("password", password);
-
-        // C3P0 Pool Configuration
-        props.put("minPoolSize", minPoolSize);
-        props.put("maxPoolSize", maxPoolSize);
-
-        // Additional Properties
-        for (String key: additionalProps.keySet()) {
-            String value = (String) additionalProps.get(key);
-            if (value != null && !value.isEmpty())
-                props.put(key, value);
-        }
-
-        return props;
     }
 
     @Override

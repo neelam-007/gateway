@@ -398,7 +398,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
                     String warningMessage = isDuplicatedColumnOrVariable(namePair);
                     if (warningMessage != null) {
                         DialogDisplayer.showMessageDialog(JdbcQueryAssertionDialog.this, warningMessage,
-                            resources.getString("dialog.titie.invalid.input"), JOptionPane.ERROR_MESSAGE, null);
+                            resources.getString("dialog.titie.invalid.input"), JOptionPane.WARNING_MESSAGE, null);
                         return;
                     }
 

@@ -9,15 +9,12 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 import javax.naming.InitialContext;
 import javax.naming.Context;
 import javax.naming.NamingException;
+import javax.sql.DataSource;
 import java.util.logging.Logger;
-import java.util.Timer;
-import java.util.Hashtable;
-import java.util.TimerTask;
-import java.util.Properties;
+import java.util.*;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import sun.jdbc.odbc.ee.DataSource;
+import java.beans.PropertyVetoException;
 
 /**
  * @author ghuang
@@ -40,8 +37,33 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         this.jdbcConnectionManager = jdbcConnectionManager;
     }
 
-    public Connection getJdbcConnection(String connectionName) throws NamingException, SQLException {
-        DataSource ds = (DataSource)context.lookup(connectionName);
+    @Override
+    protected void init() {
+        timer.schedule(new TimerTask(){
+            public void run() {
+                //todo: 
+                // TBD: probably there are somethings to update here.
+            }
+        }, 30000, 30000 );
+    }
+
+    @Override
+    protected void doStart() throws LifecycleException {
+        logger.info("Starting JDBC Connections Pooling.");
+        try {
+            initJndiContext();
+            bindDataSources();
+        } catch (NamingException e) {
+            // todo: need auditing?
+            logger.warning("Cannot start pooling JDBC connections due to unable to initialize a JNDI context.");
+        } catch (FindException e) {
+            // todo: need auditing?
+            logger.warning("Cannot start pooling JDBC connections due to unable to find JDBC connections.");
+        }
+    }
+
+    public Connection getConnection(String jdbcConnName) throws NamingException, SQLException {
+        DataSource ds = (DataSource)context.lookup(jdbcConnName);
         return ds.getConnection();
     }
 
@@ -56,19 +78,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
 
         try {
             ComboPooledDataSource cpds = new ComboPooledDataSource();
-            Properties props = connection.getAllProperties();
-//            props.remove("minPoolSize");
-//            props.remove("maxPoolSize");
-            cpds.setProperties(props);
-            // maybe number format problem for minpoolsize
-            
-            cpds.setDriverClass(connection.getDriverClass());
-            cpds.setJdbcUrl(connection.getJdbcUrl());
-            cpds.setUser(connection.getUserName());
-            cpds.setPassword(connection.getPassword());
-            cpds.setMinPoolSize(connection.getMinPoolSize());
-            cpds.setMaxPoolSize(connection.getMaxPoolSize());
-
+            setDataSourceByJdbcConnection(cpds, connection);
             return true;
         } catch (Exception e) {
             // todo: auditing and logging
@@ -77,29 +87,40 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         }
     }
 
-    @Override
-    protected void init() {
-        timer.schedule(new TimerTask(){
-            public void run() {
-                update();
+    private void setDataSourceByJdbcConnection(ComboPooledDataSource cpds, JdbcConnection connection) throws PropertyVetoException {
+        // Set basic configuration
+        cpds.setDriverClass(connection.getDriverClass());
+        cpds.setJdbcUrl(connection.getJdbcUrl());
+        cpds.setUser(connection.getUserName());
+        cpds.setPassword(connection.getPassword());
+
+        // Set C3P0 basic properties
+        cpds.setMinPoolSize(connection.getMinPoolSize());
+        cpds.setMaxPoolSize(connection.getMaxPoolSize());
+        cpds.setMaxIdleTime(120);
+        int acquireIncrement = (connection.getMaxPoolSize() - connection.getMinPoolSize()) / 10;
+        if (acquireIncrement <= 0) acquireIncrement = 1;
+        cpds.setAcquireIncrement(acquireIncrement);
+
+        // Set additional properties
+        Properties props = new Properties();
+        Map<String, Object> additionalProps = connection.getAddtionalProperties();
+        for (String key: additionalProps.keySet()) {
+            String value = (String) additionalProps.get(key);
+            // Reset maxIdleTime and acquireIncrement if they are overridden in the additional properties.
+            if ("c3p0.maxIdleTime".compareToIgnoreCase(key) == 0) {
+                cpds.setMaxIdleTime(Integer.parseInt(value));
+            } else if ("c3p0.acquireIncrement".compareToIgnoreCase(key) == 0) {
+                cpds.setAcquireIncrement(Integer.parseInt(value));
+            } else {
+                props.put(key, value);
             }
-        }, 30000, 30000 );
-    }
-
-    @Override
-    protected void doStart() throws LifecycleException {
-        try {
-            initJndiContext();
-        } catch (NamingException e) {
-            // todo: need auditing?
-            logger.warning("Cannot start pooling JDBC connections due to unable to initialize a JNDI context.");
         }
-
-        //bindDataSources();
+        cpds.setProperties(props);
     }
 
     private void initJndiContext() throws NamingException {
-        Hashtable table = new Hashtable();
+        Hashtable<String, String> table = new Hashtable<String, String>();
         table.put(Context.INITIAL_CONTEXT_FACTORY,"org.apache.naming.java.javaURLContextFactory");
         context = new InitialContext(table);
     }
@@ -113,18 +134,20 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             }
 
             ComboPooledDataSource cpds = new ComboPooledDataSource();
-            cpds.setProperties(connection.getAllProperties());
+            try {
+                setDataSourceByJdbcConnection(cpds, connection);
+            } catch (Exception e) {
+                // todo: need auditing and logging?
+                logger.warning("Cannot bind a datasource with the context due to invalid datasource properties.");
+                continue;
+            }
 
             try {
                 context.bind(connection.getName(), cpds);
             } catch (NamingException e) {
                 // todo: need auditing and logging?
-                logger.warning("Cannot bind a datasource in the context, due to naming error.");
+                logger.warning("Cannot bind a datasource with the context due to error naming.");
             }
         }
-    }
-
-    private void update() {
-
     }
 }

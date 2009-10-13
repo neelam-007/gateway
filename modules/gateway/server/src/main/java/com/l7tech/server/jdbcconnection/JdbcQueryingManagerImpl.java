@@ -24,7 +24,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
 
         Connection conn;
         try {
-            conn = jdbcConnectionPoolManager.getJdbcConnection(connectionName);
+            conn = jdbcConnectionPoolManager.getConnection(connectionName);
         } catch (Exception e) {
             return "Cannot get a connection from the C3P0 Connection pool.";
         }
