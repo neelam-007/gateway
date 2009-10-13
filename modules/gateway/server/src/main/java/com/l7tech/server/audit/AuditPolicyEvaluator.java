@@ -33,7 +33,7 @@ public class AuditPolicyEvaluator {
         return serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID);
     }
 
-    public AssertionStatus outputRecordToPolicyAuditSink(final AuditRecord auditRecord, final boolean wantsUpdate) {
+    public AssertionStatus outputRecordToPolicyAuditSink(final AuditRecord auditRecord) {
         PolicyEnforcementContext context = null;
         ServerPolicyHandle sph = null;
         try {

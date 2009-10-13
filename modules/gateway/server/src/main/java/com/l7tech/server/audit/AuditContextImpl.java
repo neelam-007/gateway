@@ -264,9 +264,14 @@ public class AuditContextImpl implements AuditContext {
 
     private void outputRecord(AuditRecord rec, boolean update) throws UpdateException, SaveException {
         if (auditPolicyEvaluator != null) {
-            AssertionStatus result = auditPolicyEvaluator.outputRecordToPolicyAuditSink(rec, update);
+            // Don't bother running the sink policy for update events
+            if (update)
+                return;
+
+            AssertionStatus result = auditPolicyEvaluator.outputRecordToPolicyAuditSink(rec);
             if (AssertionStatus.NONE.equals(result))
                 return;
+            
             // Audit sink policy failed; fall back to built-in handling
         }
 
