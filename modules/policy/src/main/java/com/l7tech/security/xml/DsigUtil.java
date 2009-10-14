@@ -13,6 +13,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
+import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
@@ -61,8 +62,6 @@ public class DsigUtil {
                                                    String messageDigestAlgorithm)
             throws SignatureException, SignatureStructureException, XSignatureException
     {
-        if (messageDigestAlgorithm == null)
-            messageDigestAlgorithm = "EC".equalsIgnoreCase(senderSigningKey.getAlgorithm()) ? "SHA-256" : "SHA-1";
         SupportedSignatureMethods signaturemethod = getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm);
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
@@ -127,6 +126,7 @@ public class DsigUtil {
         } catch (CertificateException e) {
             throw new SignatureException(e);
         }
+        sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(null));
         return sigContext.sign(sigElement, senderSigningKey);
     }
 
@@ -140,7 +140,7 @@ public class DsigUtil {
      */
     public static SupportedSignatureMethods getSignatureMethodForSignerPrivateKey(Key senderSigningKey, String messageDigestAlgorithm) throws SignatureException {
         if (messageDigestAlgorithm == null)
-            messageDigestAlgorithm = getDefaultMessageDigest();
+            messageDigestAlgorithm = getDefaultMessageDigest("EC".equals(senderSigningKey.getAlgorithm()));
 
         String keyAlg;
         if (senderSigningKey instanceof PublicKey || senderSigningKey instanceof PrivateKey)
@@ -382,8 +382,8 @@ public class DsigUtil {
      * @throws SignatureException if no signature method is known for the supplied private key type.
      */
     public static SupportedSignatureMethods getSignatureMethod(final PrivateKey signingKey) throws SignatureException {
-
-        final String md = getDefaultMessageDigest();
+        final boolean usingEcc = signingKey instanceof ECPrivateKey || "EC".equals(signingKey.getAlgorithm());
+        final String md = getDefaultMessageDigest(usingEcc);
 
         SupportedSignatureMethods signaturemethod;
         if (signingKey instanceof RSAPrivateKey || "RSA".equals(signingKey.getAlgorithm())) {
@@ -392,7 +392,7 @@ public class DsigUtil {
             else
                 signaturemethod = SupportedSignatureMethods.RSA_SHA1;
 
-        } else if (signingKey instanceof ECPrivateKey || "EC".equals(signingKey.getAlgorithm())) {
+        } else if (usingEcc) {
             if ("SHA-256".equals(md))
                 signaturemethod = SupportedSignatureMethods.ECDSA_SHA256;
             else if ("SHA-512".equals(md))
@@ -420,6 +420,10 @@ public class DsigUtil {
      * @return the default digest algorithm, defaulting to "SHA-1".  Never null.
      */
     public static String getDefaultMessageDigest() {
-        return SyspropUtil.getString("com.l7tech.security.xml.decorator.digsig.messagedigest", "SHA-1");
+        return getDefaultMessageDigest(false);
+    }
+
+    static String getDefaultMessageDigest(boolean ellipticCurve) {
+        return SyspropUtil.getString("com.l7tech.security.xml.decorator.digsig.messagedigest", ellipticCurve ? "SHA-384" : "SHA-1");
     }
 }

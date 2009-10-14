@@ -5,8 +5,10 @@ import com.l7tech.external.assertions.xmlsec.NonSoapSignElementAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
 import static org.junit.Assert.*;
@@ -27,6 +29,7 @@ public class ServerNonSoapSignElementAssertionTest {
 
     @BeforeClass
     public static void setupKeys() throws Exception {
+        JceProvider.init();
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("securityTokenResolver", NonSoapXmlSecurityTestUtils.makeSecurityTokenResolver());
             put("ssgKeyStoreManager", NonSoapXmlSecurityTestUtils.makeSsgKeyStoreManager());
@@ -39,6 +42,28 @@ public class ServerNonSoapSignElementAssertionTest {
 
         NonSoapSignElementAssertion ass = new NonSoapSignElementAssertion();
         ass.setKeyAlias("data");
+        ass.setUsesDefaultKeyStore(false);
+        ass.setNonDefaultKeystoreId(-1);
+        ass.setXpathExpression(new XpathExpression("/foo/bar"));
+        ass.setTarget(TargetMessageType.REQUEST);
+
+        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
+        Message request = new Message(XmlUtil.stringAsDocument("<foo><bar/></foo>"));
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        Document doc = request.getXmlKnob().getDocumentReadOnly();
+        logger.info("Signed XML:\n" + XmlUtil.nodeToString(doc));
+        assertEquals(1, doc.getElementsByTagNameNS(SoapUtil.DIGSIG_URI, "Signature").getLength());
+    }
+
+    @Test
+    @BugNumber(7871)
+    public void testSimpleSignElementEcdsa() throws Exception {
+        assertTrue(true);
+
+        NonSoapSignElementAssertion ass = new NonSoapSignElementAssertion();
+        ass.setKeyAlias(NonSoapXmlSecurityTestUtils.ECDSA_KEY_ALIAS);
         ass.setUsesDefaultKeyStore(false);
         ass.setNonDefaultKeystoreId(-1);
         ass.setXpathExpression(new XpathExpression("/foo/bar"));

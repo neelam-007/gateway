@@ -20,12 +20,13 @@ import java.util.Arrays;
 public class NonSoapXmlSecurityTestUtils {
     public static final String TEST_KEY_ALIAS = "test";
     public static final String DATA_KEY_ALIAS = "data";
+    public static final String ECDSA_KEY_ALIAS = "ecdsa";
 
     /**
      * @return the test key from TEST_KEYSTORE.
      */
     public static SsgKeyEntry getTestKey() throws IOException, GeneralSecurityException {
-        final Pair<X509Certificate,PrivateKey> k = TestCertificateGenerator.convertFromBase64Pkcs12(NonSoapXmlSecurityTestUtils.TEST_KEYSTORE);
+        final Pair<X509Certificate,PrivateKey> k = TestCertificateGenerator.convertFromBase64Pkcs12(TEST_KEYSTORE);
         return new SsgKeyEntry(99, TEST_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
     }
 
@@ -33,8 +34,13 @@ public class NonSoapXmlSecurityTestUtils {
      * @return the test key from DATA_KEYSTORE.
      */
     public static SsgKeyEntry getDataKey() throws IOException, GeneralSecurityException {
-        final Pair<X509Certificate,PrivateKey> k = TestCertificateGenerator.convertFromBase64Pkcs12(NonSoapXmlSecurityTestUtils.DATA_KEYSTORE);
+        final Pair<X509Certificate,PrivateKey> k = TestCertificateGenerator.convertFromBase64Pkcs12(DATA_KEYSTORE);
         return new SsgKeyEntry(99, DATA_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
+    }
+
+    public static SsgKeyEntry getEcdsaKey() throws IOException, GeneralSecurityException {
+        Pair<X509Certificate, PrivateKey> k = TestCertificateGenerator.convertFromBase64Pkcs12(ECDSA_KEYSTORE);
+        return new SsgKeyEntry(99, ECDSA_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
     }
 
     /**
@@ -57,7 +63,8 @@ public class NonSoapXmlSecurityTestUtils {
     public static SsgKeyEntry[] getAllKeys() throws IOException, GeneralSecurityException {
         return new SsgKeyEntry[] {
                 getTestKey(),
-                getDataKey()
+                getDataKey(),
+                getEcdsaKey()
         };
     }
 
@@ -122,4 +129,24 @@ public class NonSoapXmlSecurityTestUtils {
             "AeZ8iutWsWGrl+L74sec9bVuOrUBihLtxe2Hl9ukn8VYbDVOmrqu2Y26Npiw8fzP/zRXAAAAAAAA\n" +
             "AAAAAAAAAAAAAAAAMD0wITAJBgUrDgMCGgUABBQ3T/1UECawLciqzMgBw4qafQrElAQUiqH1WtTr\n" +
             "OSLH0cErDr/i3Gx8Wq4CAgQAAAA=";
+
+    public static final String ECDSA_KEYSTORE =
+            "MIACAQMwgAYJKoZIhvcNAQcBoIAkgASCA5AwgDCABgkqhkiG9w0BBwGggCSABIHfMIHcMIHZBgsq\n" +
+            "hkiG9w0BDAoBAqCBhzCBhDAoBgoqhkiG9w0BDAEDMBoEFEaLiGWnOVlBG13a5lgLb9iKoGfpAgIE\n" +
+            "AARYioJ8HLiWJH61SPCuJ8kA1c0ChWabOaqZwRi446HEvfDsoGzSgSEkUo5JPx3rlNWtZ8FBi027\n" +
+            "ZVvwJJjuIF37iWn2NPjHes4XBUyzsCRs/YvCPbNxuMYlkTFAMBkGCSqGSIb3DQEJFDEMHgoAZQBu\n" +
+            "AHQAcgB5MCMGCSqGSIb3DQEJFTEWBBSxICMdkP6HesLjcsKr//Q+yU4vvAAAAAAAADCABgkqhkiG\n" +
+            "9w0BBwaggDCAAgEAMIAGCSqGSIb3DQEHATAoBgoqhkiG9w0BDAEGMBoEFJD4MwrykVAVNdy+NzDO\n" +
+            "cTf4SJU8AgIEAKCABIICOKlmXp+RjSTMYaCm1jX2CvyXlST/PGPMPFSrxkAA7lKMXzTWxqr5FJbb\n" +
+            "7fRZwe1KQnmBudlAhmRgcrwBm8Y6xWxe2zaLJn02vfYeSGdeYCw+PWOdJvAy9S+9AmuYnBx14aPg\n" +
+            "w6GxMWO3JiyuLEallWkipyph+L5f0uhTJqIX2M2XIZCOi3SVU8+dl55yAEKNqg3KV1wwbWGb0XY7\n" +
+            "URkiCjC4QFU+CbWLGNnmSGLYYx3rrWqm6PlWPefFwX6xixfKqlhqj1TrRAI1fbZG/mlD8MXsUyRM\n" +
+            "JY3T5gLjwHC7yQ30+GoD4Zko5XnyrPE0i19ewKWbPDAyn7gzGmU6zTToEI76lAmpvYaaNW2YlCQ1\n" +
+            "YcfCl6Qa63sA3v4lBVZeVHXSPJQzBe2wCJqoCicFkkGG04cgEq2HQbVyoAn4Ktyx++RudKomv5nV\n" +
+            "uGEwhtDjhumN/3k6O3rQx2NFGE2+HV1cvsWPdoDAHih9wzkROAthT+Mm0yu3t1uvXTxWG6/VbQtl\n" +
+            "XSvLmwkDnwFNH56k7PYZqquR2x9yFHaAWl/KTDz+JudkfW4J1J7gXzqNFUqD/HPZb6W3P5s18e+S\n" +
+            "EH4SPJmX4+XfS+bIu8t5Z3/CUeJaC5m06FhOgxOVEMlfxilbRR79QEASEdlgQGMC3klBfdpgcmC8\n" +
+            "7FBfEtdrM0IEvhTTwNtTcNR59yJNxlSWe42h+vymnQIENHsJKwyGCMMSzIfwM1ifr2Rcx5idmfr/\n" +
+            "rU4tlsO4XyLjw7/a9/cAAAAAAAAAAAAAAAAAAAAAAAAwPTAhMAkGBSsOAwIaBQAEFPQl9JNmRzlF\n" +
+            "RRGWMnrqUwFidZd6BBRPEe/kyB/G2Y03G5UkfyCEBiH5yAICBAAAAA==";
 }
