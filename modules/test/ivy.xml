@@ -23,6 +23,6 @@
     </publications>
     <dependencies>
         <dependency org="concurrent" name="concurrent" rev="1.3.4" force="true" conf="core"/>
-        <dependency org="junit" name="junit" rev="4.4" force="true" conf="core"/>
+        <dependency org="junit" name="junit" rev="4.7" force="true" conf="core"/>
     </dependencies>
 </ivy-module>

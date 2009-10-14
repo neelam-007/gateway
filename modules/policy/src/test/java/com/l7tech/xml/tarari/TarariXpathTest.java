@@ -11,6 +11,7 @@ import com.l7tech.test.SystemPropertyPrerequisite;
 import com.l7tech.common.TestDocuments;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 
 /**
@@ -46,5 +47,11 @@ public class TarariXpathTest {
                 if (tmc != null) tmc.close();
             }
         }
+    }
+
+    @Test
+    @Ignore
+    public void testNothing() {
+        // placeholder to prevent error when above test is filtered out
     }
 }

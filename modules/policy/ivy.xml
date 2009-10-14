@@ -52,7 +52,7 @@
         <dependency org="com.l7tech.lib" name="xbean-xenc-xmldsig" rev="1.0" force="true" conf="core"/>
         <dependency org="com.ibm" name="xss4j.00.patch" rev="1.0" force="true" conf="core"/>
         <dependency org="com.ibm" name="xss4j" rev="1.0" force="true" conf="core"/>
-        <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
+        <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
         <!-- Optional security provider -->
         <dependency org="com.chrysalisits.cryptox" name="luna-libs" rev="1" force="true" conf="optional"/>
         <!-- Optional security provider -->

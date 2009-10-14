@@ -22,6 +22,6 @@
 		<dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
 		<dependency org="edu.stanford.ejalbert" name="browser-launcher" rev="1.0rc4" force="true" conf="core"/>
 		<dependency org="com.intellij" name="forms_rt" rev="7.0.1" force="true" conf="core"/>
-		<dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
+		<dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
 	</dependencies>
 </ivy-module>

@@ -24,6 +24,6 @@
 		<dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core"/>
 		<dependency name="layer7-gateway-console" rev="latest.integration" force="true" conf="core"/>
 		<dependency name="layer7-gateway-server" rev="latest.integration" force="true" conf="core"/>
-		<dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
+		<dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
 	</dependencies>
 </ivy-module>

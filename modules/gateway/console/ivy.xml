@@ -49,7 +49,7 @@
         <dependency org="com.japisoft" name="xmlpad" rev="3.7" force="true" conf="core"/>
         <dependency org="com.japisoft" name="xmlpad-res" rev="3.7" force="true" conf="runtime"/>
         <dependency org="org.springframework" name="spring-web" rev="2.5.6" force="true" conf="core"/>
-        <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
+        <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
 
         <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
