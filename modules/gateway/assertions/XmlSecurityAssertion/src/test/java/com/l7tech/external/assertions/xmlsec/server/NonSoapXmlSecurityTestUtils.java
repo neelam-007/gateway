@@ -7,10 +7,10 @@ import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.util.Pair;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
@@ -39,8 +39,17 @@ public class NonSoapXmlSecurityTestUtils {
     }
 
     public static SsgKeyEntry getEcdsaKey() throws IOException, GeneralSecurityException {
+        ensureEcProviderAvailable();
         Pair<X509Certificate, PrivateKey> k = TestCertificateGenerator.convertFromBase64Pkcs12(ECDSA_KEYSTORE);
         return new SsgKeyEntry(99, ECDSA_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
+    }
+
+    private static void ensureEcProviderAvailable() {
+        try {
+            KeyFactory.getInstance("EC");
+        } catch (NoSuchAlgorithmException e) {
+            Security.addProvider(new BouncyCastleProvider());
+        }
     }
 
     /**
