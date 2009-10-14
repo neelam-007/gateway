@@ -1008,6 +1008,11 @@
         <constructor-arg index="2" ref="ssgKeyStoreManager"/>
     </bean>
 
+    <bean id="jdbcConnectionResolver" class="com.l7tech.server.JdbcConnectionResolver">
+        <constructor-arg index="0" ref="jdbcConnectionManager"/>
+        <constructor-arg index="1" ref="jdbcConnectionPoolManager"/>
+    </bean>
+
     <bean id="identityProviderSecurityTokenResolver" class="com.l7tech.server.IdentityProviderSecurityTokenResolver">
         <constructor-arg index="0" ref="identityProviderFactory"/>
     </bean>
@@ -1069,6 +1074,7 @@
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="jmsEndpointManager"/>
+                <ref bean="jdbcConnectionManager"/>
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="ssgConnectorManager"/>

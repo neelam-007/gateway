@@ -45,9 +45,7 @@ public interface JdbcConnectionAdmin {
     void deleteJdbcConnection(JdbcConnection connection) throws DeleteException;
 
     @Transactional(readOnly=true)
-    boolean testConnection(JdbcConnection connection);
-
-    void createDataSource(JdbcConnection connection);
+    String testJdbcConnection(JdbcConnection connection);
 
     Object performJdbcQuery(String connectionName, String query, int maxRecords, List<Object> preparedStmtParams);
 

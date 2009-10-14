@@ -9,6 +9,8 @@ import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
 
 /**
+ * The implementation of managing JDBC Connection Entity
+ *
  * @author ghuang
  */
 @Transactional(propagation= Propagation.REQUIRED)

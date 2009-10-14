@@ -686,11 +686,12 @@ public class AssertionMessages extends Messages {
     public static final M MCM_TOO_MANY_MAPPINGS  = m(9003, Level.WARNING, "Message context mapping dropped {0}.");
     public static final M MCM_TOO_LONG_VALUE     = m(9004, Level.WARNING, "Message context mapping value truncated {0}.");
 
-    public static final M MCM_CANNOT_START_POOLING              = m(9100, Level.WARNING, "JDBC Connection Pooling cannot start due to {0}");
-    public static final M MCM_INVALID_CONNECTION_CONFIG         = m(9101, Level.WARNING, "A JDBC Connection {0} is not configured due to invalid property: {1}");
-    public static final M MCM_CONNECTION_DISABLED               = m(9102, Level.WARNING, "The SSG would not configure a disabled JDBC connection {0}");
-    public static final M MCM_QUERYING_FAILURE_ASSERTION_FAILED = m(9103, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to {0}");
-    public static final M MCM_NO_QUERY_RESULT_ASSERTION_FAILED  = m(9104, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to no query results via a connection {0}");
+    public static final M MCM_CANNOT_START_POOLING              = m(9100, Level.WARNING, "JDBC Connection Pooling cannot start due to: {0}");
+    public static final M MCM_CANNOT_CONFIG_CONNECTION_POOL     = m(9101, Level.WARNING, "Cannot configure a pool associated with a JDBC connection {0} due to: {1}");
+    public static final M MCM_CANNOT_DELETE_CONNECTION_POOL     = m(9102, Level.WARNING, "Cannot delete a pool associated with a JDBC connection {0} due to: {1}");
+    public static final M MCM_CONNECTION_DISABLED               = m(9103, Level.WARNING, "The SSG would not configure a disabled JDBC connection {0}");
+    public static final M MCM_QUERYING_FAILURE_ASSERTION_FAILED = m(9104, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to {0}");
+    public static final M MCM_NO_QUERY_RESULT_ASSERTION_FAILED  = m(9105, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to no query results via a connection {0}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

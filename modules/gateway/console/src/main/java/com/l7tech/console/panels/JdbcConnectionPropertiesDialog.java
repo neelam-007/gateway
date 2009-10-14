@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.MutablePair;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
@@ -42,7 +43,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     private JTextField jdbcUrlTextField;
     private JTextField usernameTextField;
     private JPasswordField passwordField;
-    private JSpinner minPoolSizeSpinner;//todo: check boundaries for min and max
+    private JSpinner minPoolSizeSpinner;
     private JSpinner maxPoolSizeSpinner;
 
     private JTable additionalPropertiesTable;
@@ -154,7 +155,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
 
     private void modelToView() {
         connectionNameTextField.setText(connection.getName());
-        loadDriverClassComboBox();
+        populateDriverClassComboBox();
         jdbcUrlTextField.setText(connection.getJdbcUrl());
         usernameTextField.setText(connection.getUserName());
         passwordField.setText(connection.getPassword());
@@ -179,7 +180,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         }
     }
 
-    private void loadDriverClassComboBox() {
+    private void populateDriverClassComboBox() {
         java.util.List<String> driverClassList;
         JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
         if (connectionAdmin == null) {
@@ -412,24 +413,62 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private void doTest() {
-        JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
-        if (connectionAdmin == null) return;
+        JdbcConnectionAdmin admin = getJdbcConnectionAdmin();
+        if (admin == null) return;
 
         viewToModel();
 
-        // todo: add detail for failure
-        String message = connectionAdmin.testConnection(connection)?
-            "JDBC connection testing passed" : "JDBC connection testing failed with detail here";
+        String warningMessage = admin.testJdbcConnection(connection);
+        String message = warningMessage == null? "JDBC connection testing passed" : "Testing failed: " + warningMessage;
         DialogDisplayer.showMessageDialog(this, message, null);
     }
 
     private void doOk() {
-        confirmed = true;
+        String warningMessage = isDuplicateJdbcConnection();
+        if (warningMessage != null) {
+            DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, warningMessage,
+                resources.getString("dialog.title.error.saving.conn"), JOptionPane.WARNING_MESSAGE, null);
+            return;
+        } else if (! isMinNoGreaterThanMax()) {
+            DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, "Minimum Pool Size must not be greater than Maximum Pool Size.",
+                resources.getString("dialog.title.error.saving.conn"), JOptionPane.WARNING_MESSAGE, null);
+            return;
+        }
+
+        // Assign new attributes to the connect
         viewToModel();
+
+        confirmed = true;
         dispose();
     }
 
     private void doCancel() {
         dispose();
+    }
+
+    private String isDuplicateJdbcConnection() {
+        JdbcConnectionAdmin admin = getJdbcConnectionAdmin();
+        if (admin == null) return "Cannot get JDBC Connection Admin.  Check the log and try again.";
+
+        String originalConnName = connection.getName();
+        String connName = connectionNameTextField.getText();
+        if (originalConnName.compareToIgnoreCase(connName) == 0) return null;
+
+        try {
+            for (String name: admin.getAllJdbcConnectionNames()) {
+                if (connName.compareToIgnoreCase(name) == 0) {
+                    return "The connection name \"" + name + "\" already exists. Try a new name.";
+                }
+            }
+        } catch (FindException e) {
+            return "Cannot find JDBC connections.  Check the log and Try again.";
+        }
+        return null;
+    }
+
+    private boolean isMinNoGreaterThanMax() {
+        int min = (Integer) minPoolSizeSpinner.getValue();
+        int max = (Integer) maxPoolSizeSpinner.getValue();
+        return min <= max;
     }
 }

@@ -64,13 +64,8 @@ public class JdbcConnectionAdminImpl implements JdbcConnectionAdmin {
     }
 
     @Override
-    public boolean testConnection(JdbcConnection connection) {
-        return jdbcConnectionPoolManager.createDataSource(connection);
-    }
-
-    @Override
-    public void createDataSource(JdbcConnection connection) {
-        jdbcConnectionPoolManager.createDataSource(connection);
+    public String testJdbcConnection(JdbcConnection connection) {
+        return jdbcConnectionPoolManager.testJdbcConnection(connection);
     }
 
     @Override

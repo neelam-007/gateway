@@ -24,9 +24,9 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
 
         Connection conn;
         try {
-            conn = jdbcConnectionPoolManager.getConnection(connectionName);
+            conn = jdbcConnectionPoolManager.getRawConnection(connectionName);
         } catch (Exception e) {
-            return "Cannot get a connection from the C3P0 Connection pool.";
+            return "Cannot get a connection from a C3P0 Connection pool.";
         }
 
         Statement stmt;
@@ -44,9 +44,11 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
 
         try {
             if (query.toLowerCase().startsWith("select")) {
+                @SuppressWarnings({"UnnecessaryLocalVariable"})
                 ResultSet rs = stmt.executeQuery(query);
                 return rs;
             } else {
+                @SuppressWarnings({"UnnecessaryLocalVariable"})
                 int num = stmt.executeUpdate(query);
                 return num;
             }

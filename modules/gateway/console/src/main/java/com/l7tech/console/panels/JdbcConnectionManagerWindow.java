@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 import java.text.MessageFormat;
 
 /**
- * @author: ghuang
+ * @author ghuang
  */
 public class JdbcConnectionManagerWindow extends JDialog {
     private static final int MAX_TABLE_COLUMN_NUM = 5;
@@ -55,15 +55,13 @@ public class JdbcConnectionManagerWindow extends JDialog {
     private void initialize() {
         flags = PermissionFlags.get(EntityType.JDBC_CONNECTION);
 
-        // Initialize JDBC Connection List
-        initJdbcConnectionList();
-
         // Initialize GUI components
         setContentPane(mainPanel);
         setModal(true);
         getRootPane().setDefaultButton(closeButton);
         Utilities.setEscKeyStrokeDisposes(this);
 
+        // Initialize JDBC Connection table
         initJdbcConnectionTable();
 
         addButton.addActionListener(new ActionListener() {
@@ -97,7 +95,7 @@ public class JdbcConnectionManagerWindow extends JDialog {
         enableOrDisableButtons();
     }
 
-    private void initJdbcConnectionList() {
+    private void loadJdbcConnectionList() {
         JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
         if (connectionAdmin != null) {
             try {
@@ -110,6 +108,8 @@ public class JdbcConnectionManagerWindow extends JDialog {
     }
 
     private void initJdbcConnectionTable() {
+        loadJdbcConnectionList();
+
         connectionTableModel = new JdbcConnectionTableModel();
 
         connectionTable.setModel(connectionTableModel);
@@ -192,18 +192,17 @@ public class JdbcConnectionManagerWindow extends JDialog {
             connection.setMaxPoolSize(connectionAdmin.getPropertyDefaultMaxPoolSize());
         }
 
-        editAndSave(-1, connection); // -1 means this is a new connection.
+        editAndSave(connection);
     }
 
     private void doEdit() {
         int selectedRow = connectionTable.getSelectedRow();
         if (selectedRow < 0) return;
 
-        JdbcConnection connection = connectionList.get(selectedRow);
-        editAndSave(selectedRow, connection);
+        editAndSave(connectionList.get(selectedRow));
     }
 
-    private void editAndSave(final int row, final JdbcConnection connection) {
+    private void editAndSave(final JdbcConnection connection) {
         final JdbcConnectionPropertiesDialog dlg = new JdbcConnectionPropertiesDialog(JdbcConnectionManagerWindow.this, connection);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
@@ -218,18 +217,23 @@ public class JdbcConnectionManagerWindow extends JDialog {
                         connectionAdmin.saveJdbcConnection(connection);
                     } catch (UpdateException e) {
                         logger.warning("Cannot save a JDBC connection, " + connection.getName());
+                        return;
                     }
 
                     // Refresh the list
-                    if (row >= 0) connectionList.remove(row);
-                    connectionList.add(connection);
-                    Collections.sort(connectionList);
+                    loadJdbcConnectionList();
 
                     // Refresh the table
                     connectionTableModel.fireTableDataChanged();
 
                     // Refresh the selection highlight
-                    int currentRow = connectionList.indexOf(connection);
+                    int currentRow = 0;
+                    for (JdbcConnection conn: connectionList) {
+                        if (conn.getName().equals(connection.getName())) {
+                            break;
+                        }
+                        currentRow++;
+                    }
                     connectionTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
                 }
             }
