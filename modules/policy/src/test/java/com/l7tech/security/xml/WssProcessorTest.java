@@ -969,6 +969,12 @@ public class WssProcessorTest {
         doTest( td );
     }
 
+    @Test
+    public void testEcdsaSignedFromMiltonAtGd() throws Exception {
+        doTest(makeEttkTestDocument("ECDSA signed by Milton", XmlUtil.stringAsDocument(ECDSA_EXAMPLE_FROM_MILTON_GD)));
+    }
+
+
     private static Message makeMessage(String xml) throws SAXException {
         Message message = new Message();
         message.initialize(XmlUtil.stringToDocument(xml));
@@ -1022,6 +1028,7 @@ public class WssProcessorTest {
             "gL//fxSkNnWKQK1JdMRmzVSq9kPvkyOF56YHNW5t6YAmOrEkNBEcl2x8mtRUl9Wy\n" +
             "EQTDNN63uJSIPSQnDkbOuBBywbxmJtgcPfOliMn/FnrD8NwO";
 
+    /** @deprecated this message was generated before the fix for bug #7859 and so encodes the ECDSA SignatureValue incorrectly (as ASN.1, rather than as raw r,s pair) */
     private static final String SIGNED_USING_SHA384_WITH_ECDSA =
             "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" " +
             "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><soapenv:Header><wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/" +
@@ -1077,6 +1084,25 @@ public class WssProcessorTest {
             "/security/sc/dk\"/></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></wsse:Security></soap:Header><soap:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"><" +
             "delay>0</delay></listProducts></soap:Body></soap:Envelope>";
 
-
-
+    public static final String ECDSA_EXAMPLE_FROM_MILTON_GD =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Header><wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"><wsse:BinarySecurityToken xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\" ValueType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3\" wsu:Id=\"CertId-1BD8AC45F3134AF165125555972903310\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">MIIBVDCB26ADAgECAgIE0jAKBggqhkjOPQQDAzAUMRIwEAYDVQQDEwlUZXN0IHRlc3QwHhcNMDkxMDE0MjIzNDM4WhcNMDkxMTEzMjIzNTI4WjAWMRQwEgYDVQQDEwtNaWx0b24gdGVzdDB2MBAGByqGSM49AgEGBSuBBAAiA2IABCUrgO1fN22cSMKU0B0wfY179NelsKPozAJSwjkgjhEEDSNWB+7MuLnXgu+oJ45V/4+eNH0HxqeoXJs+KER2pRkE08ALv1vKeFUkwWie6b7zM2Lc7MnO7Wk+hfccbTBovDAKBggqhkjOPQQDAwNoADBlAjBVLFIv45yIBkrYXbvelm/nou0Zeha89ps+G4ytwlV5bFIi6oxNML281URBz5auejQCMQDYGIuGvaOmGZZAV/klAVs+pWnOYKnGfffHYf/O5uRd9sQWUZrilT/UssjNT0Dvbx4=</wsse:BinarySecurityToken><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\" Id=\"Signature-5\">\n" +
+            "<ds:SignedInfo>\n" +
+            "<ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\n" +
+            "<ds:SignatureMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384\"/>\n" +
+            "<ds:Reference URI=\"#id-6\">\n" +
+            "<ds:Transforms>\n" +
+            "<ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\n" +
+            "</ds:Transforms>\n" +
+            "<ds:DigestMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#sha384\"/>\n" +
+            "<ds:DigestValue>NLlgN3qzbmWAKbqX+++kVnEmPn4C5/iKkCcn5iJ7yKUaszqhom2sbOzeweAadafO</ds:DigestValue>\n" +
+            "</ds:Reference>\n" +
+            "</ds:SignedInfo>\n" +
+            "<ds:SignatureValue>\n" +
+            "L/O5rFENm/vLGC5OtubBBvPJEMJuXefB/kJC8FE/8oHzlSzR7C8jpL8SCLS+U5u+kqOHh6yqmcLU\n" +
+            "Tgp+rPo/vYdAKl+02CU9zPDXRfeMNb3dH/p0YujzgOwbbIEQZfaj\n" +
+            "</ds:SignatureValue>\n" +
+            "<ds:KeyInfo Id=\"KeyId-1BD8AC45F3134AF165125555972903311\">\n" +
+            "<wsse:SecurityTokenReference xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" wsu:Id=\"STRId-1BD8AC45F3134AF165125555972903312\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"><wsse:Reference URI=\"#CertId-1BD8AC45F3134AF165125555972903310\" ValueType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"/></wsse:SecurityTokenReference>\n" +
+            "</ds:KeyInfo>\n" +
+            "</ds:Signature></wsse:Security></S:Header><S:Body xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" wsu:Id=\"id-6\"><ns2:buyHatResponse xmlns:ns2=\"http://hats/\"><return>test</return></ns2:buyHatResponse></S:Body></S:Envelope>";
 }
