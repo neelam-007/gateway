@@ -34,7 +34,7 @@ public class ServerAuditRecordToXmlAssertionTest {
     @Test
     public void testSimpleConvertAudit() throws Exception {
         ServerAuditRecordToXmlAssertion sass = new ServerAuditRecordToXmlAssertion(new AuditRecordToXmlAssertion(), null, null);
-        PolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(makeMessageAuditRecord());
+        PolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(makeMessageAuditRecord(), null);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         assertEquals("audit", context.getRequest().getXmlKnob().getDocumentReadOnly().getDocumentElement().getLocalName());

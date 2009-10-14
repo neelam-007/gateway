@@ -287,6 +287,30 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return mappings.toArray(new MessageContextMapping[mappings.size()]);
     }
 
+    /**
+     * Get the associated original policy enforcement context; used while running within the Gateway.
+     * <P/>
+     * Return is typed as Object because this code lives in gateway-common and doesn't have access to the PEC or
+     * even the ProcessingContext.
+     *
+     * @return the original PolicyEnforcementContext, if still available, or null.
+     */
+    public Object originalPolicyEnforcementContext() {
+        return originalPolicyEnforcementContext;
+    }
+
+    /**
+     * Set the associated original policy enforcement context.
+     * <P/>
+     * Param is typed as Object because this code lives in gateway-common and doesn't have access to the PEC or
+     * even the ProcessingContext.
+     *
+     * @param originalPolicyEnforcementContext the original PEC to make available, or null to clear it.
+     */
+    public void originalPolicyEnforcementContext(Object originalPolicyEnforcementContext) {
+        this.originalPolicyEnforcementContext = originalPolicyEnforcementContext;
+    }
+
     /** Status of the request so far, or AssertionStatus.UNDEFINED if it's not yet known. */
     protected int status;
 
@@ -329,6 +353,9 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     private Number mappingValueOidHaver;
 
     private MessageContextMappingValues mappingValuesEntity;
+
+    /** Holds the original policy enforcement context for Message Summary Audit Records. */
+    private transient Object originalPolicyEnforcementContext;
 
     @Override
     public void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException {

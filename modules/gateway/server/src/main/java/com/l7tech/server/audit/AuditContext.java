@@ -134,7 +134,7 @@ public interface AuditContext {
 
     /**
      * Flushes the current {@link AuditRecord} and any associated
-     * {@link AuditDetail} records to the database.
+     * {@link AuditDetail} records to the database or audit sink policy.
      * <p>
      * The context can be reused once this operation has completed.
      * </p>

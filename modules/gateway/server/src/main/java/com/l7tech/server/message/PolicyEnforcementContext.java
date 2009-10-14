@@ -19,10 +19,10 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.audit.AuditContext;
@@ -335,7 +335,7 @@ public class PolicyEnforcementContext extends ProcessingContext<AuthenticationCo
     }
 
     protected boolean isBuiltinVariable(String name) {
-        return BuiltinVariables.isSupported(name);
+        return BuiltinVariables.isSupported(name) && ServerVariables.isValidForContext(name, this);
     }
 
     protected void setBuiltinVariable(String name, Object value) throws NoSuchVariableException {

@@ -1,10 +1,9 @@
 package com.l7tech.server.audit;
 
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.message.Message;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableNotSettableException;
 
 /**
  * Policy enforcement context used when evaluating an audit sink policy.
@@ -12,34 +11,27 @@ import com.l7tech.policy.variable.VariableNotSettableException;
  */
 public class AuditSinkPolicyEnforcementContext extends PolicyEnforcementContext {
     private final AuditRecord auditRecord;
+    private final PolicyEnforcementContext originalContext;
 
-    public AuditSinkPolicyEnforcementContext(AuditRecord auditRecord) {
+    public AuditSinkPolicyEnforcementContext(AuditRecord auditRecord, PolicyEnforcementContext originalContext) {
         super(new Message(), new Message());
         this.auditRecord = auditRecord;
+        this.originalContext = originalContext;
     }
 
-    @Override
-    protected boolean isBuiltinVariable(String name) {
-        return name.equalsIgnoreCase("audit") || name.toLowerCase().startsWith("audit.") || super.isBuiltinVariable(name);
+    public AuditRecord getAuditRecord() {
+        return auditRecord;
     }
 
-    @Override
-    protected Object getBuiltinVariable(String name) throws NoSuchVariableException {
-        if (name.equalsIgnoreCase("audit")) {
-            return auditRecord;
-        }
-
-        // TODO add rest of audit record context variables from func spec
-
-        return super.getBuiltinVariable(name);
+    public Message getOriginalRequest() {
+        return originalContext == null ? null : originalContext.getRequest();
     }
 
-    @Override
-    protected void setBuiltinVariable(String name, Object value) throws NoSuchVariableException {
-        if (name.equalsIgnoreCase("audit") || name.toLowerCase().startsWith("audit.")) {
-            throw new VariableNotSettableException(name);
-        }
+    public Message getOriginalResponse() {
+        return originalContext == null ? null : originalContext.getResponse();
+    }
 
-        super.setBuiltinVariable(name, value);
+    public Object getOriginalContextVariable(String name) throws NoSuchVariableException {
+        return originalContext == null ? null : originalContext.getVariable(name);
     }
 }

@@ -26,6 +26,8 @@ public class BuiltinVariables {
     public static final String PREFIX_REQUEST_URL = "request.url";
     public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table
 
+    public static final String PREFIX_AUDIT = "audit"; // Only actually available at runtime when running an audit sink policy
+
     private static final Map metadataByName = new HashMap();
     private static final Map metadataPresetByName = new HashMap();
 
@@ -161,6 +163,8 @@ public class BuiltinVariables {
         new VariableMetadata("response.authenticateddns", true, false, null, false),
 
         new VariableMetadata("request.compression.gzip.found", false, false, null, true, DataType.BOOLEAN),
+
+        new VariableMetadata(PREFIX_AUDIT, true, false, null, false),
     };
 
     static {

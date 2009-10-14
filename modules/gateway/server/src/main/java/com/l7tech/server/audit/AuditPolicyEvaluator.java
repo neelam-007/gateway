@@ -10,6 +10,7 @@ import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.message.Message;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -33,7 +34,15 @@ public class AuditPolicyEvaluator {
         return serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID);
     }
 
-    public AssertionStatus outputRecordToPolicyAuditSink(final AuditRecord auditRecord) {
+    /**
+     * Run the current audit sink policy to export the specified audit record; and, for Message Summary audit records only,
+     * making available the request and response from the specified original PolicyEnforcementContext (if available).
+     *
+     * @param auditRecord  the audit record to give to the sink policy to export.  Required.
+     * @param originalContext  the auditRecord is a message summary audit record, the not-yet-closed PolicyEnforcementContext from message processing.  May be null.
+     * @return
+     */
+    public AssertionStatus outputRecordToPolicyAuditSink(final AuditRecord auditRecord, PolicyEnforcementContext originalContext) {
         PolicyEnforcementContext context = null;
         ServerPolicyHandle sph = null;
         try {
@@ -43,7 +52,7 @@ public class AuditPolicyEvaluator {
                 return null;
             }
 
-            context = new AuditSinkPolicyEnforcementContext(auditRecord);
+            context = new AuditSinkPolicyEnforcementContext(auditRecord, originalContext);
             context.setAuditContext(new NullAuditContext());
             context.setAuditLevel(Level.INFO);
 

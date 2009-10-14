@@ -9,11 +9,9 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.VariableMetadata;
+import org.junit.*;
 
 import java.util.Arrays;
-
-import org.junit.Test;
-import org.junit.Assert;
 
 /**
  * Unit tests for PolicyService.
@@ -22,21 +20,21 @@ public class VariablePrefixesTest {
 
     @Test
     public void testAmbiguousPrefixes() throws Exception {
-        Variable var = ServerVariables.getVariable("gateway.time.yyyy-MM-dd");
+        Variable var = ServerVariables.getVariable("gateway.time.yyyy-MM-dd", null);
         Assert.assertEquals(var.getName(), "gateway.time");
 
-        var = ServerVariables.getVariable("gateway.asdfasdf");
+        var = ServerVariables.getVariable("gateway.asdfasdf", null);
         Assert.assertEquals(var.getName(), "gateway");
 
         // make sure the legacy wss message attribute variables are retrieved correctly
-        var = ServerVariables.getVariable("request.wss.signingcertificate");
+        var = ServerVariables.getVariable("request.wss.signingcertificate", null);
         Assert.assertEquals("request.wss.signingcertificate", var.getName());
 
-        var = ServerVariables.getVariable("request.wss.signingcertificate.base64");
+        var = ServerVariables.getVariable("request.wss.signingcertificate.base64", null);
         Assert.assertEquals("request.wss.signingcertificate.base64",
                 var.getName() + BuiltinVariables.getUnmatchedName( "request.wss.signingcertificate.base64" ));
 
-        var = ServerVariables.getVariable("request.wss.signingcertificate.pem");
+        var = ServerVariables.getVariable("request.wss.signingcertificate.pem", null);
         Assert.assertEquals("request.wss.signingcertificate.pem",
                 var.getName() + BuiltinVariables.getUnmatchedName( "request.wss.signingcertificate.pem" ));
     }

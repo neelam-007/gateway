@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 /**
  * 
  */
-class AuthenticatedUserGetter implements Getter {
+class AuthenticatedUserGetter extends Getter {
 
     //- PUBLIC
 

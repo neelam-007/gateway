@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.HexUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 
@@ -152,6 +153,7 @@ public class AuditContextImpl implements AuditContext {
             return;
         }
 
+        PolicyEnforcementContext policyEnforcementContext = null;
         try {
             if (currentRecord instanceof MessageSummaryAuditRecord) {
                 if (highestLevelYetSeen.intValue() < getSystemMessageThreshold().intValue()) {
@@ -163,6 +165,7 @@ public class AuditContextImpl implements AuditContext {
                     }
                     return;
                 }
+                policyEnforcementContext = (PolicyEnforcementContext)((MessageSummaryAuditRecord)currentRecord).originalPolicyEnforcementContext();
             } else if (currentRecord instanceof AdminAuditRecord) {
                 if (currentRecord.getLevel().intValue() < getSystemAdminThreshold().intValue()) {
                     if(logger.isLoggable(Level.FINE)) {
@@ -240,7 +243,7 @@ public class AuditContextImpl implements AuditContext {
             currentRecord.setDetails(detailsToSave);
             listener.notifyRecordFlushed(currentRecord, formatter, false);
 
-            outputRecord(currentRecord, this.update);
+            outputRecord(currentRecord, this.update, policyEnforcementContext);
         } catch (SaveException e) {
             logger.log(Level.SEVERE, "Couldn't save audit records", e);
         } catch (UpdateException e) {
@@ -262,13 +265,13 @@ public class AuditContextImpl implements AuditContext {
         }
     }
 
-    private void outputRecord(AuditRecord rec, boolean update) throws UpdateException, SaveException {
+    private void outputRecord(AuditRecord rec, boolean update, PolicyEnforcementContext policyEnforcementContext) throws UpdateException, SaveException {
         if (auditPolicyEvaluator != null) {
             // Don't bother running the sink policy for update events
             if (update)
                 return;
 
-            AssertionStatus result = auditPolicyEvaluator.outputRecordToPolicyAuditSink(rec);
+            AssertionStatus result = auditPolicyEvaluator.outputRecordToPolicyAuditSink(rec, policyEnforcementContext);
             if (AssertionStatus.NONE.equals(result))
                 return;
             

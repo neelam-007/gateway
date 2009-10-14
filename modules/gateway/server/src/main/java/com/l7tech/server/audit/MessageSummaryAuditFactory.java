@@ -187,7 +187,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             };
         }
 
-        return new MessageSummaryAuditRecord(context.getAuditLevel(), nodeId, requestId, status, clientAddr,
+        MessageSummaryAuditRecord ret = new MessageSummaryAuditRecord(context.getAuditLevel(), nodeId, requestId, status, clientAddr,
                                              context.isAuditSaveRequest() ? requestXml : null,
                                              requestContentLength,
                                              context.isAuditSaveResponse() ? responseXml : null,
@@ -197,6 +197,8 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
                                              serviceOid, serviceName, operationNameHaver,
                                              authenticated, authType, identityProviderOid, userName, userId,
                                              mapping_values_oid);
+        ret.originalPolicyEnforcementContext(context);
+        return ret;
     }
 
     public void setMessageContextMappingManager(MessageContextMappingManager messageContextMappingManager) {

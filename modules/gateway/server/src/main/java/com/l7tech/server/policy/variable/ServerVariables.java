@@ -15,6 +15,7 @@ import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
@@ -39,16 +40,16 @@ public class ServerVariables {
     private static final Map<String, Variable> varsByName = new HashMap<String, Variable>();
     private static final Map<String, Variable> varsByPrefix = new HashMap<String, Variable>();
 
-    static Variable getVariable(String name) {
+    static Variable getVariable(String name, PolicyEnforcementContext targetContext) {
         final String lname = name.toLowerCase();
         Variable var = varsByName.get(lname);
-        if (var != null) return var;
+        if (var != null && var.isValidForContext(targetContext)) return var;
 
         int pos = lname.length();
         do {
             String tryname = lname.substring(0, pos);
             var = varsByPrefix.get(tryname);
-            if (var != null) return var;
+            if (var != null && var.isValidForContext(targetContext)) return var;
             pos = lname.lastIndexOf(".", pos-1);
         } while (pos > 0);
 
@@ -67,7 +68,7 @@ public class ServerVariables {
     }
 
     public static void set(String name, Object value, PolicyEnforcementContext context) throws VariableNotSettableException, NoSuchVariableException {
-        Variable var = getVariable(name);
+        Variable var = getVariable(name, context);
         if (var instanceof SettableVariable) {
             SettableVariable sv = (SettableVariable)var;
             sv.set(name, value, context);
@@ -79,11 +80,15 @@ public class ServerVariables {
     }
 
     public static Object get(String name, PolicyEnforcementContext context) throws NoSuchVariableException {
-        Variable var = getVariable(name);
+        Variable var = getVariable(name, context);
 
         if (var == null) throw new NoSuchVariableException(name);
 
         return var.get(name, context);
+    }
+
+    public static boolean isValidForContext(String name, PolicyEnforcementContext context) {
+        return getVariable(name, context) != null;
     }
 
     private static final Variable[] VARS = {
@@ -391,6 +396,14 @@ public class ServerVariables {
                 return context.isRequestWasCompressed();
             }
         }),
+
+        new Variable("audit", new AuditContextGetter("audit")),
+        new Variable("audit.request", new AuditOriginalMessageGetter(false)),
+        new Variable("audit.requestContentLength", new AuditOriginalMessageSizeGetter(false)),
+        new Variable("audit.response", new AuditOriginalMessageGetter(true)),
+        new Variable("audit.responseContentLength", new AuditOriginalMessageSizeGetter(true)),
+        new Variable("audit.var", new AuditOriginalContextVariableGetter()),
+
     };
 
     private static X509Certificate getOnlyOneClientCertificateForSource( final List<LoginCredentials> credentials,
@@ -540,14 +553,14 @@ public class ServerVariables {
         }
     }
 
-    private static class RemoteIpGetter implements Getter {
+    private static class RemoteIpGetter extends Getter {
         @Override
         public Object get(String name, PolicyEnforcementContext context) {
             return getRequestRemoteIp(context.getRequest());
         }
     }
 
-    private static class OperationGetter implements Getter {
+    private static class OperationGetter extends Getter {
         @Override
         public Object get(String name, PolicyEnforcementContext context) {
             try {
@@ -570,7 +583,7 @@ public class ServerVariables {
         }
     }
 
-    private static class SoapNamespaceGetter implements Getter {
+    private static class SoapNamespaceGetter extends Getter {
         @Override
         public Object get(String name, PolicyEnforcementContext context) {
             SoapKnob soapKnob = context.getRequest().getKnob(SoapKnob.class);
@@ -589,7 +602,91 @@ public class ServerVariables {
         }
     }
 
-    private static abstract class SelectingGetter implements Getter {
+    private static class AuditContextGetter extends SelectingGetter {
+        private AuditContextGetter(final String baseName) {
+            super(baseName);
+        }
+
+        @Override
+        protected Object getBaseObject(PolicyEnforcementContext context) {
+            if (context instanceof AuditSinkPolicyEnforcementContext) {
+                AuditSinkPolicyEnforcementContext sinkctx = (AuditSinkPolicyEnforcementContext) context;
+                return sinkctx.getAuditRecord();
+            }
+            logger.log(Level.WARNING, "The audit.* variables are only available while processing an audit sink policy.");
+            return null;
+        }
+
+        @Override
+        boolean isValidForContext(PolicyEnforcementContext context) {
+            return context instanceof AuditSinkPolicyEnforcementContext;
+        }
+    }
+
+    private static class AuditOriginalMessageGetter extends Getter {
+        private final boolean targetsResponse;
+
+        private AuditOriginalMessageGetter(boolean targetsResponse) {
+            this.targetsResponse = targetsResponse;
+        }
+
+        @Override
+        Object get(String name, PolicyEnforcementContext context) {
+            if (context instanceof AuditSinkPolicyEnforcementContext) {
+                AuditSinkPolicyEnforcementContext auditpec = (AuditSinkPolicyEnforcementContext) context;
+                return targetsResponse ? auditpec.getOriginalResponse() : auditpec.getOriginalRequest();
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Used only for getting the "audit.requestContentLength" and "audit.responseContentLength" values
+     * within an audit sink policy.
+     */
+    private static class AuditOriginalMessageSizeGetter extends Getter {
+        private final boolean targetsResponse;
+
+        private AuditOriginalMessageSizeGetter(boolean targetsResponse) {
+            this.targetsResponse = targetsResponse;
+        }
+
+        @Override
+        Object get(String name, PolicyEnforcementContext context) {
+            if (context instanceof AuditSinkPolicyEnforcementContext) {
+                AuditSinkPolicyEnforcementContext auditpec = (AuditSinkPolicyEnforcementContext) context;
+                Message target = targetsResponse ? auditpec.getOriginalResponse() : auditpec.getOriginalRequest();
+                if (target == null)
+                    return null;
+                MimeKnob mimeKnob = target.getKnob(MimeKnob.class);
+                if (mimeKnob == null)
+                    return null;
+                try {
+                    return mimeKnob.getContentLength();
+                } catch (IOException e) {
+                    return null;
+                }
+            }
+            return null;
+        }
+    }
+
+    private static class AuditOriginalContextVariableGetter extends Getter {
+        @Override
+        Object get(String name, PolicyEnforcementContext context) {
+            if (context instanceof AuditSinkPolicyEnforcementContext) {
+                AuditSinkPolicyEnforcementContext auditpec = (AuditSinkPolicyEnforcementContext) context;
+                try {
+                    return auditpec.getOriginalContextVariable(name);
+                } catch (NoSuchVariableException e) {
+                    return null;
+                }
+            }
+            return null;
+        }
+    }
+
+    private static abstract class SelectingGetter extends Getter {
         private final String baseName;
 
         private SelectingGetter( final String baseName ) {
