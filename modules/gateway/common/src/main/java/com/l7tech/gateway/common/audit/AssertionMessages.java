@@ -690,7 +690,7 @@ public class AssertionMessages extends Messages {
     public static final M MCM_CANNOT_CONFIG_CONNECTION_POOL     = m(9101, Level.WARNING, "Cannot configure a pool associated with a JDBC connection {0} due to: {1}");
     public static final M MCM_CANNOT_DELETE_CONNECTION_POOL     = m(9102, Level.WARNING, "Cannot delete a pool associated with a JDBC connection {0} due to: {1}");
     public static final M MCM_CONNECTION_DISABLED               = m(9103, Level.WARNING, "The SSG would not configure a disabled JDBC connection {0}");
-    public static final M MCM_QUERYING_FAILURE_ASSERTION_FAILED = m(9104, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to {0}");
+    public static final M MCM_QUERYING_FAILURE_ASSERTION_FAILED = m(9104, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to: {0}");
     public static final M MCM_NO_QUERY_RESULT_ASSERTION_FAILED  = m(9105, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to no query results via a connection {0}");
 
     // Highest ID reserved for AssertionMessages = 99999

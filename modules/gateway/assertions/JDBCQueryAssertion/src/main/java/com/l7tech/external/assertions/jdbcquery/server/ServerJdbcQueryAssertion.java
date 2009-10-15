@@ -48,15 +48,13 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
-        List<Object> params = new ArrayList<Object>();
-        String plainQuery = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), params, context);
+        List<Object> preparedStmtParams = new ArrayList<Object>();
+        String plainQuery = getQueryStatementWithoutContextVariables(assertion.getSqlQuery(), preparedStmtParams, context);
 
-        Object result = jdbcQueryingManager.performJdbcQuery(
-            assertion.getConnectionName(),
-            plainQuery,
-            assertion.getMaxRecords(),
-            params);
+        // Get result by quering.  The result could be a ResultSet object, an integer (updated rows), or a string (a warning message).
+        Object result = jdbcQueryingManager.performJdbcQuery(assertion.getConnectionName(), plainQuery, assertion.getMaxRecords(), preparedStmtParams);
 
+        // Analyze the result type and perform a corresponding action.
         if (result instanceof String) {
             auditor.logAndAudit(AssertionMessages.MCM_QUERYING_FAILURE_ASSERTION_FAILED, (String)result);
             return AssertionStatus.FAILED;

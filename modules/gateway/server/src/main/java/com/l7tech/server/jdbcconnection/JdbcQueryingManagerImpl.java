@@ -1,9 +1,8 @@
 package com.l7tech.server.jdbcconnection;
 
 import java.sql.Connection;
-import java.sql.Statement;
 import java.sql.SQLException;
-import java.sql.ResultSet;
+import java.sql.PreparedStatement;
 import java.util.List;
 
 /**
@@ -22,6 +21,7 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
         if (connectionName == null || connectionName.isEmpty()) return "JDBC Connection Name is not specified.";
         else if (query == null || query.isEmpty()) return "SQL Query is not specified.";
 
+        // Get a raw connection for querying
         Connection conn;
         try {
             conn = jdbcConnectionPoolManager.getRawConnection(connectionName);
@@ -29,31 +29,41 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
             return "Cannot get a connection from a C3P0 Connection pool.";
         }
 
-        Statement stmt;
+        // Create a prepared statement
+        PreparedStatement pstmt;
         try {
-            stmt = conn.createStatement();
+            pstmt = conn.prepareStatement(query);
         } catch (SQLException e) {
-            return "Cannnot create a SQL statement.";
+            return "error creating a SQL prepared statement.";
         }
 
+        // Set parameters
         try {
-            stmt.setMaxRows(maxRecords);
-        } catch (SQLException e) {
-            return "The SQL statement cannot set a maximum number of records, " + maxRecords + ".";
-        }
-
-        try {
-            if (query.toLowerCase().startsWith("select")) {
-                @SuppressWarnings({"UnnecessaryLocalVariable"})
-                ResultSet rs = stmt.executeQuery(query);
-                return rs;
-            } else {
-                @SuppressWarnings({"UnnecessaryLocalVariable"})
-                int num = stmt.executeUpdate(query);
-                return num;
+            for (int i = 0; i < preparedStmtParams.size(); i++) {
+                pstmt.setObject(i+1, preparedStmtParams.get(i));
             }
         } catch (SQLException e) {
-            return "Invalid SQL statement.";
+            return "error setting a parameter in a SQL prepared statement.";
+        }
+
+        // Set max number of returned records
+        try {
+            pstmt.setMaxRows(maxRecords);
+        } catch (SQLException e) {
+            return "error setting a maximum number of records, " + maxRecords + " in a SQL prepared statement";
+        }
+
+        // Query and return the result
+        try {
+            if (query.toLowerCase().startsWith("select")) {
+                // Return a ResultSet
+                return pstmt.executeQuery();
+            } else {
+                // Return an integer
+                return pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            return "an invalid SQL prepared statement";
         }
     }
 }
