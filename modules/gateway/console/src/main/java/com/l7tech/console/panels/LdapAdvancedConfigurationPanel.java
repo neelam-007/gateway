@@ -100,7 +100,7 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
     private static final String RES_EDIT_ATTRIBUTE_TITLE  = "advancedConfiguration.attrs.edit.title";
     private static final String RES_ATTRIBUTE_PROMPT  = "advancedConfiguration.attrs.prompt";
 
-    private static final int DEFAULT_GROUP_CACHE_SIZE = 100;
+    private static final int DEFAULT_GROUP_CACHE_SIZE = 0;
     private static final int DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE = 60000;
     private static final int DEFAULT_GROUP_MAX_NESTING = 0;
 

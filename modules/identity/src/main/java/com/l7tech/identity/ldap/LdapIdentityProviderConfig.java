@@ -52,6 +52,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     public static LdapIdentityProviderConfig newLdapIdentityProviderConfig() {
         LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
         config.setReturningAttributes( new String[0] );
+        config.setGroupCacheSize( 100 );
         return config;
     }
 

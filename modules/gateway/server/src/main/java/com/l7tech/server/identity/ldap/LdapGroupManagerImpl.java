@@ -1158,9 +1158,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     private static final String memberNvPairAttribute = SyspropUtil.getString( "com.l7tech.server.identity.ldap.memberAttrName", "cn" );
     private static final boolean useSingleMemberNvPair = SyspropUtil.getBoolean( "com.l7tech.server.identity.ldap.useMemberAttrName", false );
 
-    private static final int DEFAULT_GROUP_CACHE_SIZE = 100;
+    private static final int DEFAULT_GROUP_CACHE_SIZE = 0; // Zero for backwards compatibility
     private static final int DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE = 60000;
-    private static final int DEFAULT_GROUP_MAX_NESTING = 0;
+    private static final int DEFAULT_GROUP_MAX_NESTING = 0; // Unlimited for backwards compatibility
 
     private LdapIdentityProviderConfig identityProviderConfig;
     private LdapIdentityProvider identityProvider;
