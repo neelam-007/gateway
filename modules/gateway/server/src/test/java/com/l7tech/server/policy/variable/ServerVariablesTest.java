@@ -1,10 +1,9 @@
 package com.l7tech.server.policy.variable;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
-import com.l7tech.gateway.common.audit.Messages;
+import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.RequestId;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
@@ -477,7 +476,7 @@ public class ServerVariablesTest {
     }
 
     @Test
-    public void testAuditRecordVariables() throws Exception {
+    public void testAuditRecordFields() throws Exception {
         final AuditSinkPolicyEnforcementContext c = sinkcontext();
         expandAndCheck(c, "${audit.type}", "message");
         expandAndCheck(c, "${audit.id}", "9777");
@@ -486,18 +485,23 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.name}", "ACMEWarehouse");
         expandAndCheck(c, "${audit.sequenceNumber}", String.valueOf(c.getAuditRecord().getSequenceNumber()));
         expandAndCheck(c, "${audit.nodeId}", "node1");
-        expandAndCheck(c, "${audit.requestId}", "req4545");
+        expandAndCheck(c, "${audit.requestId}", "0000000000000222-333");
         expandAndCheck(c, "${audit.time}", String.valueOf(c.getAuditRecord().getMillis()));
         expandAndCheck(c, "${audit.message}", "Message processed successfully");
         expandAndCheck(c, "${audit.ipAddress}", "3.2.1.1");
         expandAndCheck(c, "${audit.user.name}", "alice");
         expandAndCheck(c, "${audit.user.id}", "41123");
-        expandAndCheck(c, "${audit.user.idProv}", String.valueOf(-2));
+        expandAndCheck(c, "${audit.user.idProv}", "-2");
         expandAndCheck(c, "${audit.authType}", "HTTP Basic");
         expandAndCheck(c, "${audit.thrown}", ExceptionUtils.getStackTraceAsString(c.getAuditRecord().getThrown()));
         expandAndCheck(c, "${audit.entity.class}", ""); // only for admin records
         expandAndCheck(c, "${audit.entity.oid}", "");  // only for admin records
-        expandAndCheck(c, "${audit.details[0]}", c.getAuditRecord().getDetails().toArray()[0].toString()); // not very useful for the time being, but whatever
+        expandAndCheck(c, "${audit.details[0]}", c.getAuditRecord().getDetailsInOrder()[0].toString());
+    }
+
+    @Test
+    public void testMessageAuditRecordFields() throws Exception {
+        final AuditSinkPolicyEnforcementContext c = sinkcontext();
         expandAndCheck(c, "${audit.mappingValuesOid}", "49585");
         expandAndCheck(c, "${audit.operationName}", "listProducts");
         expandAndCheck(c, "${audit.requestContentLength}", String.valueOf(REQUEST_BODY.getBytes().length));
@@ -514,6 +518,103 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.status}", "0");
     }
 
+    @Test
+    public void testSystemAuditRecordFields() throws Exception {
+        SystemAuditRecord rec = new SystemAuditRecord(Level.WARNING, "node1", Component.GW_CSR_SERVLET, "CSR servlet is dancing!", true, 0, null, null, "Dancing", "1.2.3.4");
+        final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, context());
+        expandAndCheck(c, "${audit.type}", "system");
+        expandAndCheck(c, "${audit.levelStr}", "WARNING");
+        expandAndCheck(c, "${audit.name}", "Certificate Signing Service");
+        expandAndCheck(c, "${audit.nodeId}", "node1");
+        expandAndCheck(c, "${audit.requestId}", "");
+        expandAndCheck(c, "${audit.action}", "Dancing");
+        expandAndCheck(c, "${audit.component}", "Certificate Signing Service");
+        expandAndCheck(c, "${audit.time}", String.valueOf(c.getAuditRecord().getMillis()));
+        expandAndCheck(c, "${audit.message}", "CSR servlet is dancing!");
+        expandAndCheck(c, "${audit.ipAddress}", "1.2.3.4");
+        expandAndCheck(c, "${audit.user.name}", "");
+        expandAndCheck(c, "${audit.user.id}", "");
+        expandAndCheck(c, "${audit.user.idProv}", "0");
+        expandAndCheck(c, "${audit.authType}", "");
+    }
+
+    @Test
+    public void testAdminAuditRecordFields() throws Exception {
+        AdminAuditRecord rec = new AdminAuditRecord(Level.WARNING, "node1", 31, "com.l7tech.MyEntity", "thename", 'U', "Updated thename", -2, "alice", "483", "1.4.2.1");
+        rec.setReqId(new RequestId("222-333"));
+        final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, context());
+        expandAndCheck(c, "${audit.type}", "admin");
+        expandAndCheck(c, "${audit.name}", "thename");
+        expandAndCheck(c, "${audit.sequenceNumber}", String.valueOf(c.getAuditRecord().getSequenceNumber()));
+        expandAndCheck(c, "${audit.nodeId}", "node1");
+        expandAndCheck(c, "${audit.requestId}", "0000000000000222-333");
+        expandAndCheck(c, "${audit.action}", "U");
+        expandAndCheck(c, "${audit.time}", String.valueOf(c.getAuditRecord().getMillis()));
+        expandAndCheck(c, "${audit.message}", "Updated thename");
+        expandAndCheck(c, "${audit.ipAddress}", "1.4.2.1");
+        expandAndCheck(c, "${audit.user.name}", "alice");
+        expandAndCheck(c, "${audit.user.id}", "483");
+        expandAndCheck(c, "${audit.user.idProv}", "-2");
+        expandAndCheck(c, "${audit.authType}", "");
+        expandAndCheck(c, "${audit.thrown}", "");
+        expandAndCheck(c, "${audit.entity.class}", "com.l7tech.MyEntity"); // only for admin records
+        expandAndCheck(c, "${audit.entity.oid}", "31");
+    }
+
+    @Test
+    public void testAuditDetailFields() throws Exception {
+        final AuditSinkPolicyEnforcementContext c = sinkcontext();
+        AuditDetail[] details = c.getAuditRecord().getDetailsInOrder();
+        expandAndCheck(c, "${audit.details}", details[0].toString() + ", " + details[1].toString());
+        expandAndCheck(c, "${audit.details[0]}", details[0].toString());
+        expandAndCheck(c, "${audit.details[1]}", details[1].toString());
+        expandAndCheck(c, "${audit.details.1}", details[1].toString());
+        expandAndCheck(c, "${audit.details.1.}",details[1].toString());
+        expandAndCheck(c, "${audit.details.0.ordinal}", "0");
+        expandAndCheck(c, "${audit.details.0.exception}", details[0].getException());
+        expandAndCheck(c, "${audit.details.1.exception}", details[1].getException());
+        expandAndCheck(c, "${audit.details.0.componentId}", "8711");
+        expandAndCheck(c, "${audit.details.1.componentId}", "8712");
+        expandAndCheck(c, "${audit.details.0.messageId}", "6");
+        expandAndCheck(c, "${audit.details.1.messageId}", "4");
+        expandAndCheck(c, "${audit.details.0.params}", "foomp");
+        expandAndCheck(c, "${audit.details.0.params[0]}", "foomp");
+        expandAndCheck(c, "${audit.details.1.params}", "twoomp, moretwoomp");
+        expandAndCheck(c, "${audit.details.1.params[0]}", "twoomp");
+        expandAndCheck(c, "${audit.details.1.params[1]}", "moretwoomp");
+        expandAndCheck(c, "${audit.details.1.nonexistent}", "");
+        expandAndCheck(c, "${audit.details.1.nonexistent[3]}", "");
+        expandAndCheck(c, "${audit.details.}", "");
+        expandAndCheck(c, "${audit.details..}", "");
+        expandAndCheck(c, "${audit.details.4.}", "");
+        expandAndCheck(c, "${audit.details.4.messageId}", "");
+
+        c.getAuditRecord().getDetails().clear();
+        expandAndCheck(c, "${audit.details}", "");
+        expandAndCheck(c, "${audit.details[0]}", "");
+        expandAndCheck(c, "${audit.details[1]}", "");
+        expandAndCheck(c, "${audit.details.1}", "");
+        expandAndCheck(c, "${audit.details.1.}","");
+        expandAndCheck(c, "${audit.details.0.ordinal}", "");
+        expandAndCheck(c, "${audit.details.0.exception}", "");
+        expandAndCheck(c, "${audit.details.1.exception}", "");
+        expandAndCheck(c, "${audit.details.0.componentId}", "");
+        expandAndCheck(c, "${audit.details.1.componentId}", "");
+        expandAndCheck(c, "${audit.details.0.messageId}", "");
+        expandAndCheck(c, "${audit.details.1.messageId}", "");
+        expandAndCheck(c, "${audit.details.0.params}", "");
+        expandAndCheck(c, "${audit.details.0.params[0]}", "");
+        expandAndCheck(c, "${audit.details.1.params}", "");
+        expandAndCheck(c, "${audit.details.1.params[0]}", "");
+        expandAndCheck(c, "${audit.details.1.params[1]}", "");
+        expandAndCheck(c, "${audit.details.1.nonexistent}", "");
+        expandAndCheck(c, "${audit.details.0.nonexistent[3]}", "");
+        expandAndCheck(c, "${audit.details.}", "");
+        expandAndCheck(c, "${audit.details..}", "");
+        expandAndCheck(c, "${audit.details.4.}", "");
+        expandAndCheck(c, "${audit.details.4.messageId}", "");
+    }
+
     private PolicyEnforcementContext context(){
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
@@ -526,14 +627,22 @@ public class ServerVariablesTest {
         return new AuditSinkPolicyEnforcementContext(auditRecord(), context());
     }
 
-    static AuditRecord auditRecord() {
+    @SuppressWarnings({"deprecation"})
+    AuditRecord auditRecord() {
         AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, 8859, "ACMEWarehouse",
                 "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
         //noinspection deprecation
         auditRecord.setOid(9777L);
+        auditRecord.setReqId(new RequestId("222-333"));
         auditRecord.setThrown(new RuntimeException("main record throwable"));
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
+        detail1.setOrdinal(0);
+        detail1.setComponentId(8711);
         auditRecord.getDetails().add(detail1);
+        final AuditDetail detail2 = new AuditDetail(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"twoomp", "moretwoomp"}, new IllegalArgumentException("Exception for twoomp detail"));
+        detail2.setOrdinal(1);
+        detail2.setComponentId(8712);
+        auditRecord.getDetails().add(detail2);
         return auditRecord;
     }
 

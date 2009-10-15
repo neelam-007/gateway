@@ -139,6 +139,7 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.X509CertificateSelector",
         "com.l7tech.server.policy.variable.UserSelector",
         "com.l7tech.server.policy.variable.AuditRecordSelector",
+        "com.l7tech.server.policy.variable.AuditDetailSelector",
         "com.l7tech.server.policy.variable.PolicyEnforcementContextSelector",
     };
 

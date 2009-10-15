@@ -1,13 +1,12 @@
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.util.ExceptionUtils;
 
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,7 +46,33 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
             }
         }
 
-        // TODO handle audit.details.*
+        if (name.toLowerCase().startsWith("details.")) {
+            if (name.length() < "details.".length() + 1)
+                return null;
+            AuditDetail[] details = auditRecord.getDetailsInOrder();
+            if (details == null || details.length == 0)
+                return new Selection(null);
+            name = name.substring("details.".length());
+            int dot = name.indexOf('.');
+            int index;
+            String remainingName;
+            try {
+                if (dot == -1) {
+                    index = Integer.parseInt(name);
+                    remainingName = null;
+                } else {
+                    index = Integer.parseInt(name.substring(0, dot));
+                    remainingName = name.length() > dot ? name.substring(dot + 1) : null;
+                }
+                return new Selection(details[index], remainingName);
+            } catch (NumberFormatException nfe) {
+                logger.warning("Invalid numeric index for audit detail lookup");
+                return null;
+            } catch (ArrayIndexOutOfBoundsException e) {
+                logger.fine("Index out of bounds for audit detail lookup");
+                return null;
+            }
+        }
 
         return null;
     }
@@ -184,8 +209,37 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         baseFields.put("details", new FieldGetter<AuditRecord>() {
             @Override
             public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
-                final Set<AuditDetail> details = rec.getDetails();
-                return details == null ? null : new Selection(details.toArray(new AuditDetail[details.size()]));
+                return new Selection(rec.getDetailsInOrder());
+            }
+        });
+
+        //
+        // System audit records only have a couple of fields, so we'll just handle them here with the base fields
+        //
+
+        baseFields.put("action", new FieldGetter<AuditRecord>() {
+            @Override
+            public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
+                if (rec instanceof SystemAuditRecord) {
+                    SystemAuditRecord sysrec = (SystemAuditRecord) rec;
+                    return new Selection(sysrec.getAction());
+                } else if (rec instanceof AdminAuditRecord) {
+                    AdminAuditRecord adminrec = (AdminAuditRecord) rec;
+                    return new Selection(String.valueOf(adminrec.getAction()));
+                }
+                else return null;
+            }
+        });
+
+        baseFields.put("component", new FieldGetter<AuditRecord>() {
+            @Override
+            public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
+                if (rec instanceof SystemAuditRecord) {
+                    SystemAuditRecord sysrec = (SystemAuditRecord) rec;
+                    final Component component = Component.fromId(sysrec.getComponentId());
+                    return new Selection(component == null ? null : component.getName());
+                }
+                else return null;
             }
         });
     }

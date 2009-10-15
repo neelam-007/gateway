@@ -42,6 +42,15 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     /** Unique ID of the user that is making the request (if known), or null otherwise. */
     protected String userId;
 
+    private static final Comparator<AuditDetail> COMPARE_BY_ORDINAL = new Comparator<AuditDetail>() {
+        @Override
+        public int compare(AuditDetail a, AuditDetail b) {
+            int ao = a.getOrdinal();
+            int bo = b.getOrdinal();
+            return (ao < bo ? -1 : (ao == bo ? 0 : 1));
+        }
+    };
+
     /** @deprecated to be called only for serialization and persistence purposes! */
     protected AuditRecord() {
     }
@@ -130,6 +139,16 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      */
     public Set<AuditDetail> getDetails() {
         return details;
+    }
+
+    /**
+     * Gets the list of @{link AuditDetail} records associated with this audit record, ordered by ordinal
+     * @return
+     */
+    public AuditDetail[] getDetailsInOrder() {
+        final List<AuditDetail> details = new ArrayList<AuditDetail>(getDetails());
+        Collections.sort(details, COMPARE_BY_ORDINAL);
+        return details.toArray(new AuditDetail[details.size()]);
     }
 
     public void setDetails(Set<AuditDetail> details) {
