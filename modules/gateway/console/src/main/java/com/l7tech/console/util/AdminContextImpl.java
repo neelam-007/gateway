@@ -37,22 +37,27 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
 
     //- PUBLIC
 
+    @Override
     public AdminLogin getAdminLogin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(AdminLogin.class);
     }
 
+    @Override
     public IdentityAdmin getIdentityAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(IdentityAdmin.class);
     }
 
+    @Override
     public ServiceAdmin getServiceAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(ServiceAdmin.class);
     }
 
+    @Override
     public FolderAdmin getFolderAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(FolderAdmin.class);
     }
 
+    @Override
     public JmsAdmin getJmsAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(JmsAdmin.class);
     }
@@ -62,56 +67,74 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
         return this.getRemoteInterfaceForEndpoint(JdbcConnectionAdmin.class);
     }
 
+    @Override
     public FtpAdmin getFtpAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(FtpAdmin.class);
     }
 
+    @Override
     public TrustedCertAdmin getTrustedCertAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(TrustedCertAdmin.class);
     }
 
+    @Override
     public SchemaAdmin getSchemaAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(SchemaAdmin.class);
     }
 
+    @Override
     public CustomAssertionsRegistrar getCustomAssertionsRegistrar() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(CustomAssertionsRegistrar.class);
     }
 
+    @Override
     public AuditAdmin getAuditAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(AuditAdmin.class);
     }
 
+    @Override
     public ClusterStatusAdmin getClusterStatusAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(ClusterStatusAdmin.class);
     }
 
+    @Override
     public KerberosAdmin getKerberosAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(KerberosAdmin.class);
     }
 
+    @Override
     public RbacAdmin getRbacAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(RbacAdmin.class);
     }
 
+    @Override
     public TransportAdmin getTransportAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(TransportAdmin.class);
     }
 
+    @Override
     public PolicyAdmin getPolicyAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(PolicyAdmin.class);
     }
 
+    @Override
     public LogSinkAdmin getLogSinkAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(LogSinkAdmin.class);
     }
 
+    @Override
     public EmailListenerAdmin getEmailListenerAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(EmailListenerAdmin.class);
     }
 
+    @Override
     public EmailAdmin getEmailAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(EmailAdmin.class);
+    }
+
+    @Override
+    public UDDIRegistryAdmin getUDDIRegistryAdmin() throws SecurityException {
+        return this.getRemoteInterfaceForEndpoint(UDDIRegistryAdmin.class);
     }
 
     //- PACKAGE
@@ -155,6 +178,7 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
         // Running on Swing event thread, and no delayed cancel dialog already pending
         try {
             return CancelableOperationDialog.doWithDelayedCancelDialog(new Callable<Object>() {
+                @Override
                 public Object call() throws Exception {
                     try {
                         return AdminContextImpl.super.doRemoteInvocation(targetObject, method, args);

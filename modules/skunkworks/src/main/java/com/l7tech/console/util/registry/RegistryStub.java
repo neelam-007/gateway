@@ -21,11 +21,7 @@ import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.service.*;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.admin.KerberosAdmin;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gateway.common.admin.FolderAdmin;
-import com.l7tech.gateway.common.admin.AdminLogin;
+import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -375,6 +371,11 @@ public class RegistryStub extends Registry {
     @Override
     public LogSinkAdmin getLogSinkAdmin() {
         return logSinkAdmin;
+    }
+
+    @Override
+    public UDDIRegistryAdmin getUDDIRegistryAdmin() {
+        return null;
     }
 
     @Override

@@ -48,6 +48,11 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
      */
     public ET getCachedEntity( long o, int maxAge ) throws FindException;
 
+    /**
+     * The Entity this manager manages may implement an Interface representing the Entity. If so this method should
+     * return the class of the Interface implemented.
+     * @return the Class of the interface this Entity implements, otherwise the Entity class itself
+     */
     Class<? extends Entity> getInterfaceClass();
 
     EntityType getEntityType();

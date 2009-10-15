@@ -209,6 +209,14 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     /**
      * Gets the entity uniquess constraints.
+     *
+     * Each Map in the collection represents a unique constraint for all entities e.g. name is often a unique constraint
+     * for entities. The contents of each Map represent the unique constrains for an individual row
+     *
+     * If an entity person has a name and an age and the name must be unique then a Collection with a single map
+     * with a single value of 'name' can be used. If however no two persons can have the same name and age, then
+     * a single Map will contain two entries: name and age. If no two people can have the same name or the same age,
+     * then two maps are required, one with the value 'name' and another with the value 'age' 
      * 
      * @return Uniquess constraint specification: entries in a map are ANDed, items in the collection are ORed.
      */
@@ -244,7 +252,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     throw new SaveException("Couldn't find previous version(s) to check uniqueness");
                 }
 
-                if (!others.isEmpty()) throw new DuplicateObjectException(describeAttributes(constraints) + " must be unique");
+                if (!others.isEmpty()) throw new DuplicateObjectException(describeAttributes(constraints));
             }
 
             Object key = getHibernateTemplate().save(entity);
@@ -257,7 +265,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
-    private String describeAttributes(Collection<Map<String, Object>> maps) {
+    protected String describeAttributes(Collection<Map<String, Object>> maps) {
         StringBuilder result = new StringBuilder();
         for (Map<String,Object> map : maps) {
             if (map.size() == 0) continue;
@@ -271,7 +279,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
         if (result.length() == 0)
             throw new IllegalStateException("Unique attribute map was empty");
-    
+
+        result.append(" must be unique");
         return result.toString();
     }
 
@@ -290,7 +299,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 if (!others.isEmpty()) {
                     for (ET other : others) {
                         if (!entity.getId().equals(other.getId()) || !entity.getClass().equals(other.getClass())) {
-                            String message = describeAttributes(constraints) + " must be unique";
+                            String message = describeAttributes(constraints);
                             // nested since DuplicateObjectException is a SaveException not an UpdateException
                             throw new UpdateException(message, new DuplicateObjectException(message));
                         }

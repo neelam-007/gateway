@@ -107,4 +107,9 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailAdmin"/>
     </bean>
 
+    <bean name="/UDDIRegistryAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+        <property name="service" ref="uddiRegistryAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.admin.UDDIRegistryAdmin"/>
+    </bean>
+
 </beans>

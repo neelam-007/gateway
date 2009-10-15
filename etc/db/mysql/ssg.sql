@@ -860,6 +860,39 @@ CREATE TABLE jdbc_connection (
   UNIQUE(name)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+
+--
+-- Table structure for UDDI Registries
+-- Note: base_url is unique and has a size limit of 255 bytes, which is the max allowed for a unique key
+-- in mysql when using utf-8 encoding. It is the max size of a hostname
+--
+DROP TABLE IF EXISTS uddi_registries;
+CREATE TABLE uddi_registries (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  enabled tinyint(1) NOT NULL DEFAULT 0,
+  registry_type varchar(128) NOT NULL,
+  base_url varchar(255) NOT NULL,
+  security_url varchar(255) NOT NULL,
+  inquiry_url varchar(255) NOT NULL,
+  publish_url varchar(255) NOT NULL,
+  subscription_url varchar(255) NULL,
+  client_auth tinyint(1) NOT NULL DEFAULT 0,
+  keystore_oid bigint(20) NULL,
+  key_alias varchar(255) NULL,
+  user_name varchar(128) NOT NULL,
+  password varchar(128) NOT NULL,
+  metrics_enabled tinyint(1) NOT NULL DEFAULT 0,
+  metrics_publish_frequency integer NOT NULL DEFAULT 0,
+  monitoring_enabled tinyint(1) NOT NULL DEFAULT 0,
+  subscribe_for_notifications tinyint(1) NOT NULL DEFAULT 0,
+  monitor_frequency integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (objectid),
+  UNIQUE(name),
+  UNIQUE(base_url)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- Table structure for table rbac_role
 --
@@ -1158,6 +1191,13 @@ INSERT INTO rbac_permission VALUES (-952,0,-950,'CREATE',NULL,'JDBC_CONNECTION')
 INSERT INTO rbac_permission VALUES (-953,0,-950,'UPDATE',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-954,0,-950,'DELETE',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-955,0,-950,'READ',NULL,'SERVICE');
+
+INSERT INTO rbac_role VALUES (-1000,0,'Manage UDDI Registries', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections.');
+INSERT INTO rbac_permission VALUES (-1001,0,-1000,'READ',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission VALUES (-1002,0,-1000,'CREATE',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission VALUES (-1003,0,-1000,'UPDATE',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission VALUES (-1004,0,-1000,'DELETE',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission VALUES (-1005,0,-1000,'READ',NULL,'SERVICE');
 
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');

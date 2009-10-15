@@ -1552,4 +1552,6 @@
         </property>
     </bean>
 
+    <bean id="uddiRegistryManager" class="com.l7tech.server.uddi.UDDIRegistryManagerImpl" parent="hibernateBean" />
+    
 </beans>

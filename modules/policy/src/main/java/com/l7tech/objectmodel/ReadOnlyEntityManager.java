@@ -25,5 +25,9 @@ public interface ReadOnlyEntityManager<ET extends Entity, HT extends EntityHeade
      */
     Collection<ET> findAll() throws FindException;
 
+    /**
+     * Get the implementing class of the Entity
+     * @return the Class of the actual implementing class of the Entity
+     */
     Class<? extends Entity> getImpClass();
 }

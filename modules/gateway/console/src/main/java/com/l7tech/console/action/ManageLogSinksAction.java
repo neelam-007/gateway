@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  * Action to invoke LogSinkManagerWindow.
  */
 public class ManageLogSinksAction extends SecureAction {
-    static final Logger log = Logger.getLogger(ManageSsgConnectorsAction.class.getName());
+    static final Logger log = Logger.getLogger(ManageLogSinksAction.class.getName());
 
     public ManageLogSinksAction() {
         super(new AttemptedAnyOperation(EntityType.LOG_SINK), UI_MANAGE_LOG_SINKS);

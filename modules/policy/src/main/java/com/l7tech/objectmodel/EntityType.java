@@ -55,6 +55,8 @@ public enum EntityType implements Comparable<EntityType> {
 
     SSG_CONNECTOR("Listen Port", true),
 
+    UDDI_REGISTRY("UDDI Registry", true),
+
     JDBC_CONNECTION("JDBC Connection", true),
 
     EMAIL_LISTENER("Email Listener", true),

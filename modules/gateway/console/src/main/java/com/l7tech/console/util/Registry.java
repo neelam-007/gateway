@@ -2,11 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.admin.KerberosAdmin;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gateway.common.admin.FolderAdmin;
-import com.l7tech.gateway.common.admin.AdminLogin;
+import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
@@ -176,6 +172,11 @@ public abstract class Registry {
      */
     public abstract LogSinkAdmin getLogSinkAdmin();
 
+    /**
+     * @return the UDDI Registry admin interface implementation
+     */
+    public abstract UDDIRegistryAdmin getUDDIRegistryAdmin();
+
     public ConsoleLicenseManager getLicenseManager() {
         return ConsoleLicenseManager.getInstance();
     }
@@ -315,6 +316,11 @@ public abstract class Registry {
 
         @Override
         public LogSinkAdmin getLogSinkAdmin() {
+            return null;
+        }
+
+        @Override
+        public UDDIRegistryAdmin getUDDIRegistryAdmin() {
             return null;
         }
     }

@@ -161,6 +161,7 @@
                 <value>com.l7tech.server.logon.LogonInfo</value>
                 <value>com.l7tech.server.security.keystore.KeystoreFile</value>
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
+                <value>com.l7tech.uddi.UDDIRegistry</value>
 
                 <!-- Policy Assertion Related Entities -->
                 <value>com.l7tech.server.sla.CounterIDRecord</value>

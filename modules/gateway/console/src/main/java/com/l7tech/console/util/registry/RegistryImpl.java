@@ -68,6 +68,7 @@ public final class RegistryImpl extends Registry
     private EmailAdmin emailAdmin;
     private PolicyAdmin policyAdmin;
     private LogSinkAdmin logSinkAdmin;
+    private UDDIRegistryAdmin uddiRegistryAdmin;
     private PolicyValidator policyValidator;
     private GuidBasedEntityManager<Policy> policyFinder;
     private PolicyPathBuilderFactory policyPathBuilderFactory;
@@ -330,6 +331,16 @@ public final class RegistryImpl extends Registry
         }
         logSinkAdmin = adminContext.getLogSinkAdmin();
         return logSinkAdmin;
+    }
+
+    @Override
+    public UDDIRegistryAdmin getUDDIRegistryAdmin() {
+        checkAdminContext();
+        if (uddiRegistryAdmin != null) {
+            return uddiRegistryAdmin;
+        }
+        uddiRegistryAdmin = adminContext.getUDDIRegistryAdmin();
+        return uddiRegistryAdmin;
     }
 
     /**

@@ -165,6 +165,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageLogSinksAction manageLogSinksAction = null;
     private ManageEmailListenersAction manageEmailListenersAction = null;
     private ConfigureFtpAuditArchiverAction configureFtpAuditArchiver = null;
+    private ManageUDDIRegistriesAction manageUDDIRegistriesAction = null;
 
 
     private JPanel frameContentPane = null;
@@ -693,6 +694,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageEmailListenersAction());
             menu.add(getConfigureFtpAuditArchiverAction());
             menu.add(getManageTrustedEsmUsersAction());
+            menu.add(getManageUDDIRegistriesAction());
 
 
             int mnemonic = menu.getText().toCharArray()[0];
@@ -1628,6 +1630,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         manageSsgConnectorsAction = new ManageSsgConnectorsAction();
         disableUntilLogin(manageSsgConnectorsAction);
         return manageSsgConnectorsAction;
+    }
+
+    private Action getManageUDDIRegistriesAction(){
+        if(manageUDDIRegistriesAction != null) return manageUDDIRegistriesAction;
+
+        manageUDDIRegistriesAction = new ManageUDDIRegistriesAction();
+        disableUntilLogin(manageUDDIRegistriesAction);
+        return manageUDDIRegistriesAction;
     }
 
     private Action getManageJdbcConnectionsAction() {

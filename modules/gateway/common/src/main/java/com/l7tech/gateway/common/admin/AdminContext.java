@@ -128,4 +128,10 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     EmailAdmin getEmailAdmin() throws SecurityException;
+
+    /**
+     * @return the UDDI Registry admin interface implementation.
+     * @throws SecurityException on security error accessing the interface
+     */
+    UDDIRegistryAdmin getUDDIRegistryAdmin() throws SecurityException;
 }

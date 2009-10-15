@@ -345,4 +345,10 @@
     <bean id="logSinkAdmin" class="com.l7tech.server.log.LogSinkAdminImpl">
         <constructor-arg ref="sinkManager"/>
     </bean>
+
+    <!-- UDDI Registry admin servant -->
+    <bean id="uddiRegistryAdmin" class="com.l7tech.server.uddi.UDDIRegistryAdminImpl">
+        <constructor-arg ref="uddiRegistryManager"/>
+    </bean>
+
 </beans>
