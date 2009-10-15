@@ -46,6 +46,7 @@ public interface UDDIRegistryAdmin {
      * @throws FindException if the UDDIRegistry cannot be found
      * @throws UDDIException if it's not possible to authenticate
      */
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
     void testUDDIRegistryAuthentication(long registryOid) throws FindException, UDDIException;
 
 }
