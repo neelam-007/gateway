@@ -25,11 +25,11 @@ import java.util.regex.Matcher;
  * {@link ExpandVariables#process(String, Map, Audit)} method.
  */
 public final class ExpandVariables {
-    public static Object processSingleVariableAsObject(final String expr, final Map vars, final Audit audit) {
+    public static Object processSingleVariableAsObject(final String expr, final Map<String,?> vars, final Audit audit) {
         return processSingleVariableAsObject(expr, vars, audit, strict());
     }
 
-    public static Object processSingleVariableAsDisplayableObject(final String expr, final Map vars, final Audit audit) {
+    public static Object processSingleVariableAsDisplayableObject(final String expr, final Map<String,?> vars, final Audit audit) {
         return processSingleVariableAsDisplayableObject(expr, vars, audit, strict());
     }
 
@@ -37,7 +37,7 @@ public final class ExpandVariables {
         return "true".equals(ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_TEMPLATE_STRICTMODE));
     }
 
-    public static Object processSingleVariableAsObject(final String expr, final Map vars, final Audit audit, final boolean strict) {
+    public static Object processSingleVariableAsObject(final String expr, final Map<String,?> vars, final Audit audit, final boolean strict) {
         if (expr == null) throw new IllegalArgumentException();
 
         Matcher matcher = Syntax.oneVarPattern.matcher(expr);
@@ -55,7 +55,7 @@ public final class ExpandVariables {
         }
     }
 
-    public static Object processSingleVariableAsDisplayableObject(final String expr, final Map vars, final Audit audit, final boolean strict) {
+    public static Object processSingleVariableAsDisplayableObject(final String expr, final Map<String,?> vars, final Audit audit, final boolean strict) {
         if (expr == null) throw new IllegalArgumentException();
 
         Matcher matcher = Syntax.oneVarPattern.matcher(expr);
@@ -161,7 +161,7 @@ public final class ExpandVariables {
         }
     }});
 
-    private static Object[] getAndFilter(Map vars, Syntax syntax, Audit audit, boolean strict) {
+    private static Object[] getAndFilter(Map<String,?> vars, Syntax syntax, Audit audit, boolean strict) {
         String matchingName = Syntax.getMatchingName(syntax.remainingName.toLowerCase(), vars.keySet());
         if (matchingName == null) {
             badVariable(syntax.remainingName, strict, audit);
@@ -203,8 +203,8 @@ public final class ExpandVariables {
         if (contextValue instanceof Object[]) {
             vals = (Object[]) contextValue;
         } else if( contextValue instanceof List){
-            final List tempList = (List) contextValue;
-            vals = tempList.toArray(new Object[]{});
+            final List<?> tempList = (List) contextValue;
+            vals = tempList.toArray(new Object[tempList.size()]);
         } else {
             vals = new Object[] {contextValue};
         }
@@ -260,11 +260,11 @@ public final class ExpandVariables {
     }
 
 
-    public static String process(String s, Map vars, Audit audit) {
+    public static String process(String s, Map<String,?> vars, Audit audit) {
         return process(s, vars, audit, strict(), null);
     }
 
-    public static String process(String s, Map vars, Audit audit, Functions.Unary<String,String> valueFilter) {
+    public static String process(String s, Map<String,?> vars, Audit audit, Functions.Unary<String,String> valueFilter) {
         return process(s, vars, audit, strict(), valueFilter);
     }
 
@@ -279,7 +279,7 @@ public final class ExpandVariables {
      * @param strict true if failures to resolve variables should throw exceptions rather than log warnings
      * @return the message with expanded/resolved varialbes
      */
-    public static String process(String s, Map vars, Audit audit, boolean strict) {
+    public static String process(String s, Map<String,?> vars, Audit audit, boolean strict) {
         return process(s, vars, audit, strict, null);
     }
 
@@ -297,7 +297,7 @@ public final class ExpandVariables {
      * @param varLengthLimit the length limit of each replacement context variable value.
      * @return the message with expanded/resolved varialbes
      */
-    public static String process(String s, Map vars, Audit audit, boolean strict, final int varLengthLimit) {
+    public static String process(String s, Map<String,?> vars, Audit audit, boolean strict, final int varLengthLimit) {
         return process( s, vars, audit, strict, new Functions.Unary<String,String>(){
             @Override
             public String call( final String replacement ) {
@@ -323,7 +323,7 @@ public final class ExpandVariables {
      * @param valueFilter    A filter to call on each substituted value (or null for no filtering)
      * @return the message with expanded/resolved varialbes
      */
-    public static String process(String s, Map vars, Audit audit, boolean strict, Functions.Unary<String,String> valueFilter) {
+    public static String process(String s, Map<String,?> vars, Audit audit, boolean strict, Functions.Unary<String,String> valueFilter) {
         if (s == null) throw new IllegalArgumentException();
 
         Matcher matcher = Syntax.regexPattern.matcher(s);
@@ -366,7 +366,7 @@ public final class ExpandVariables {
      *         and the resolved variable values
      * @see #process(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)
      */
-    public static List<Object> processNoFormat(String s, Map vars, Audit audit, boolean strict) {
+    public static List<Object> processNoFormat(String s, Map<String,?> vars, Audit audit, boolean strict) {
         if (s == null) throw new IllegalArgumentException();
 
         Matcher matcher = Syntax.regexPattern.matcher(s);
