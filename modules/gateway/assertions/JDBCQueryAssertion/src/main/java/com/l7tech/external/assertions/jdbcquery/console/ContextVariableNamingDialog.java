@@ -5,10 +5,12 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.console.util.MutablePair;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 
 import javax.swing.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
+import java.text.MessageFormat;
 
 public class ContextVariableNamingDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.jdbcquery.console.resources.ContextVariableNamingDialog");
@@ -47,8 +49,8 @@ public class ContextVariableNamingDialog extends JDialog {
         variableNameTextField.getDocument().addDocumentListener(changeListener);
 
         final InputValidator inputValidator = new InputValidator(this, resources.getString("dialog.title.context.variable.naming"));
-        inputValidator.constrainTextField(columnLabelTextField, new NonContextVariableTextFieldValidationRule(columnLabelTextField));
-        inputValidator.constrainTextField(variableNameTextField, new NonContextVariableTextFieldValidationRule(variableNameTextField));
+        inputValidator.constrainTextField(columnLabelTextField, new NonContextVariableTextFieldValidationRule(columnLabelTextField, resources.getString("text.column.label")));
+        inputValidator.constrainTextField(variableNameTextField, new NonContextVariableTextFieldValidationRule(variableNameTextField, resources.getString("text.variable.name")));
 
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
@@ -118,8 +120,11 @@ public class ContextVariableNamingDialog extends JDialog {
     }
 
     private class NonContextVariableTextFieldValidationRule extends InputValidator.ComponentValidationRule {
-        public NonContextVariableTextFieldValidationRule(JTextField textField) {
+        private String textFieldLabel;
+
+        public NonContextVariableTextFieldValidationRule(JTextField textField, String textFieldLabel) {
             super(textField);
+            this.textFieldLabel = textFieldLabel;
         }
 
         @Override
@@ -127,10 +132,14 @@ public class ContextVariableNamingDialog extends JDialog {
             JTextField textField = (JTextField)component;
 
             if ( Syntax.getReferencedNames(textField.getText()).length > 0) {
-                return resources.getString("validation.message");
-            } else {
-                return null;
+                return MessageFormat.format(resources.getString("validation.message.cannot.use.context.var"), textFieldLabel);
+            } else if (textFieldLabel.equals(resources.getString("text.variable.name"))) {
+                String text = textField.getText();
+                if (text != null && text.equals(JdbcQueryAssertion.VARIABLE_COUNT)) {
+                    return MessageFormat.format(resources.getString("validation.message.queryresult.count.reserved"), JdbcQueryAssertion.VARIABLE_COUNT);
+                }
             }
+            return null;
         }
     }
 }

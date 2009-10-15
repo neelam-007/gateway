@@ -47,7 +47,11 @@ public interface JdbcConnectionAdmin {
     @Transactional(readOnly=true)
     String testJdbcConnection(JdbcConnection connection);
 
+    @Transactional(readOnly=true)
     Object performJdbcQuery(String connectionName, String query, int maxRecords, List<Object> preparedStmtParams);
+
+    @Transactional(readOnly=true)
+    String testJdbcQuery(String connectionName, String query);
 
     List<String> getPropertyDefaultDriverClassList();
     int getPropertyDefaultMaxRecords();

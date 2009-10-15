@@ -74,6 +74,12 @@ public class JdbcConnectionAdminImpl implements JdbcConnectionAdmin {
     }
 
     @Override
+    public String testJdbcQuery(String connectionName, String query) {
+        Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, 1, null);
+        return (result instanceof String)? (String)result : null;
+    }
+
+    @Override
     public List<String> getPropertyDefaultDriverClassList() {
         List<String> driverClassList = new ArrayList<String>();
 

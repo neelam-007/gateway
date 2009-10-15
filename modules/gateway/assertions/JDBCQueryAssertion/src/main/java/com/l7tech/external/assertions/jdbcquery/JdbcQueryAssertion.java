@@ -16,7 +16,7 @@ import java.util.*;
  *
  */
 public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable, UsesVariables, SetsVariables {
-    public static final String VARIABLE_COUNT = "count";
+    public static final String VARIABLE_COUNT = "queryresult.count";
     public static final String DEFAULT_VARIABLE_PREFIX = "jdbcQuery";
 
     private static final String META_INITIALIZED = JdbcQueryAssertion.class.getName() + ".metadataInitialized";
@@ -26,9 +26,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private String variablePrefix = DEFAULT_VARIABLE_PREFIX;
     private int maxRecords = JdbcConnectionAdmin.ORIGINAL_MAX_RECORDS;
     private boolean assertionFailureEnabled = true;
-
     private Map<String, String> namingMap = new TreeMap<String, String>();
-    private String[] variableNames = new String[] {VARIABLE_COUNT};
 
     public JdbcQueryAssertion() {}
 
@@ -42,7 +40,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         copy.setMaxRecords(maxRecords);
         copy.setAssertionFailureEnabled(assertionFailureEnabled);
         copy.setNamingMap(copyMap(namingMap));
-        copy.setVariableNames(Arrays.copyOf(variableNames, variableNames.length));
 
         return copy;
     }
@@ -54,7 +51,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         setMaxRecords(source.getMaxRecords());
         setAssertionFailureEnabled(source.isAssertionFailureEnabled());
         setNamingMap(copyMap(source.getNamingMap()));
-        setVariableNames(Arrays.copyOf(source.getVariableNames(), source.getVariableNames().length));
     }
 
     @Override
@@ -107,20 +103,16 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         this.namingMap = namingMap;
     }
 
-    public String[] getVariableNames() {
-        return variableNames;
-    }
-
-    public void setVariableNames(String[] variableNames) {
-        this.variableNames = variableNames;
-    }
-
     @Override
     public VariableMetadata[] getVariablesSet() {
         List<VariableMetadata> varMeta = new ArrayList<VariableMetadata>();
-        for (String var: variableNames) {
-            boolean multi_valued = !var.endsWith(VARIABLE_COUNT);
-            varMeta.add(new VariableMetadata(var, false, multi_valued, null, false, DataType.STRING));
+        varMeta.add(new VariableMetadata(variablePrefix, true, false, null, false, DataType.STRING));
+        varMeta.add(new VariableMetadata(variablePrefix + "." + VARIABLE_COUNT, false, false, null, false, DataType.INTEGER));
+
+        for (String key: namingMap.keySet()) {
+            String varName = namingMap.get(key);
+            boolean multi_valued = !key.endsWith(VARIABLE_COUNT);
+            varMeta.add(new VariableMetadata(variablePrefix + "." + varName, false, multi_valued, null, false, DataType.STRING));
         }
         return varMeta.toArray(new VariableMetadata[varMeta.size()]);
     }
@@ -161,8 +153,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
-            new MapTypeMapping(),
-            new ArrayTypeMapping(new String[0], "variableNameArray")
+            new MapTypeMapping()
         )));
 
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.jdbcquery.server.ServerJdbcQueryAssertion");

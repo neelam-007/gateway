@@ -175,15 +175,14 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         try {
             conn = cpds.getConnection();
         } catch (SQLException e) {
-            return "Database access error occurs";
+            return "invalid connection properties setting.";
         } catch (Throwable e) {
-            return e.getClass().getSimpleName() + " occurs";
+            return "unexpected error, " + e.getClass().getSimpleName() + " thrown";
         } finally {
             if (conn != null) try {
                 conn.close();
-            } catch (SQLException e) {
-                return "Cannot close a connection.";
-            }
+            } catch (SQLException e) {}
+
             cpds.close();
         }
 

@@ -23,12 +23,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemListener;
 import java.util.*;
-import java.util.List;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 
 /**
  * Properties dialog for the JDBC Query Assertion.
@@ -173,8 +169,6 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         assertion.setVariablePrefix(variablePrefixTextField.getText());
         assertion.setMaxRecords((Integer) maxRecordsSpinner.getValue());
         assertion.setAssertionFailureEnabled(failAssertionCheckBox.isSelected());
-
-        assertion.setVariableNames(getVariableNames());
     }
 
     private void populateConnectionCombobox() {
@@ -296,58 +290,8 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         return text != null && !text.trim().isEmpty();
     }
 
-    private Object getJdbcQueryResult() {
-        Object result;
-        String connectionName = (String) connectionComboBox.getSelectedItem();
-        String query = sqlQueryTextArea.getText();
-
-        if (Syntax.getReferencedNames(query).length > 0) {
-            result = "Unable to evaluate the SQL query statement due to context variable used.";
-        } else {
-            JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
-            if (connectionAdmin == null) {
-                result = "Cannot get JDBC Conneciton Admin API.";
-            } else {
-                result = connectionAdmin.performJdbcQuery(connectionName, query, 1, null);
-            }
-        }
-
-        return result;
-    }
-
-    private String[] getVariableNames() {
-        List<String> varList = new ArrayList<String>();
-        Object result = getJdbcQueryResult();
-        String prefix = variablePrefixTextField.getText() + ".";
-
-        varList.add(prefix + JdbcQueryAssertion.VARIABLE_COUNT);
-
-        // If there is a ResultSet object returned, then make all column names as context variables.
-        if (result instanceof ResultSet) {
-            try {
-                // Get all query result names (i.e., column names)
-                ResultSetMetaData metaData = ((ResultSet)result).getMetaData();
-                for (int i = 0; i < metaData.getColumnCount(); i++) {
-                    varList.add(prefix + metaData.getColumnLabel(i));
-                }
-
-                // Update context variables by the naming table.
-                for (String key: namingMap.keySet()) {
-                    if (varList.contains(prefix + key)) {
-                        varList.remove(prefix + key);
-                        varList.add(prefix + namingMap.get(key));
-                    }
-                }
-            } catch (SQLException e) {
-                logger.warning("Cannot get meta data of query results.");
-            }
-        }
-
-        Collections.sort(varList);
-        return varList.toArray(new String[varList.size()]);
-    }
-
     private void doTest() {
+        final String[] warningMsg = new String[1];
         DialogDisplayer.showSafeConfirmDialog(
             TopComponents.getInstance().getTopParent(),
             MessageFormat.format(resources.getString("confirmation.test.query"), connectionComboBox.getSelectedItem()),
@@ -360,13 +304,34 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
                     if (option == JOptionPane.CANCEL_OPTION) {
                         return;
                     }
+                    String connName = (String) connectionComboBox.getSelectedItem();
+                    String query = sqlQueryTextArea.getText();
+                    int numOfContextVariablesUsed = Syntax.getReferencedNames(query).length;
 
-                    Object result = getJdbcQueryResult();
-                    String message = result instanceof String? "Testing query failed: " + result : "Testing query passed.";
-                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), message, null);
+                    if (numOfContextVariablesUsed > 0) {
+                        warningMsg[0] = "Unable to evaluate a query containing context variable" +  (numOfContextVariablesUsed > 1? "s." : ".");
+                    } else {
+                        JdbcConnectionAdmin admin = getJdbcConnectionAdmin();
+                        if (admin == null) {
+                            warningMsg[0] = "Cannot process testing due to JDBC Conneciton Admin unavailable.";
+                        } else {
+                            warningMsg[0] = admin.testJdbcQuery(connName, query);
+                        }
+                    }
                 }
             }
         );
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                DialogDisplayer.showMessageDialog(
+                    JdbcQueryAssertionDialog.this,
+                    (warningMsg[0] == null)? resources.getString("message.query.testing.passed") : resources.getString("message.query.testing.failed") + " " + warningMsg[0],
+                    resources.getString("dialog.title.test.query"),
+                    (warningMsg[0] == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+                    null);
+            }
+        });
     }
 
     private void doAdd() {
