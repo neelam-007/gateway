@@ -256,6 +256,19 @@ public class ExceptionUtils {
         return sb.toString();
     }
 
+    /**
+     * Returns a String containing the characters that would be output be calling printStackTrace() on the specified
+     * Throwable.
+     *
+     * @param t the Throwable whos stack trace to collect.  Required.
+     * @return the stack trace as a String.  Never null.
+     */
+    public static String getStackTraceAsString(Throwable t) {
+        StringWriter sw = new StringWriter(4096);
+        t.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ExceptionUtils.class.getName());

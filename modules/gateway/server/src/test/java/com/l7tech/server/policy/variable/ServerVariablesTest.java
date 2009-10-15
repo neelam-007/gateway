@@ -1,33 +1,43 @@
 package com.l7tech.server.policy.variable;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.UsernameTokenImpl;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.test.BugNumber;
-import com.l7tech.security.token.OpaqueSecurityToken;
-import com.l7tech.security.token.UsernameTokenImpl;
-import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.util.ExceptionUtils;
 import org.junit.*;
 import static org.junit.Assert.*;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -345,6 +355,7 @@ public class ServerVariablesTest {
     * : host, protocol, path, file, query
     * */
     @Test
+    @SuppressWarnings({"deprecation"})
     public void testServiceUrlContextVariables() throws Exception{
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         Message request = new Message();
@@ -424,12 +435,105 @@ public class ServerVariablesTest {
         Assert.assertEquals("ServerVariable should equal httpRouting url query", query, variableValue);
     }
 
+    @Test(expected = NoSuchVariableException.class)
+    public void testNonAuditSinkCtx_base() throws Exception {
+        context().getVariable("audit");
+    }
+
+
+    /*
+        new Variable("audit", new AuditContextGetter("audit")),
+        new Variable("audit.request", new AuditOriginalMessageGetter(false)),
+        new Variable("audit.requestContentLength", new AuditOriginalMessageSizeGetter(false)),
+        new Variable("audit.response", new AuditOriginalMessageGetter(true)),
+        new Variable("audit.responseContentLength", new AuditOriginalMessageSizeGetter(true)),
+        new Variable("audit.var", new AuditOriginalContextVariableGetter()),
+     */
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testNonAuditSinkCtx_request() throws Exception {
+        context().getVariable("audit.request");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testNonAuditSinkCtx_response() throws Exception {
+        context().getVariable("audit.response");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testNonAuditSinkCtx_requestContentLength() throws Exception {
+        context().getVariable("audit.requestContentLength");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testNonAuditSinkCtx_responseContentLength() throws Exception {
+        context().getVariable("audit.responseContentLength");
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void var() throws Exception {
+        context().getVariable("audit.var.request.clientid");
+    }
+
+    @Test
+    public void testAuditRecordVariables() throws Exception {
+        final AuditSinkPolicyEnforcementContext c = sinkcontext();
+        expandAndCheck(c, "${audit.type}", "message");
+        expandAndCheck(c, "${audit.id}", "9777");
+        expandAndCheck(c, "${audit.level}", "800");
+        expandAndCheck(c, "${audit.levelStr}", "INFO");
+        expandAndCheck(c, "${audit.name}", "ACMEWarehouse");
+        expandAndCheck(c, "${audit.sequenceNumber}", String.valueOf(c.getAuditRecord().getSequenceNumber()));
+        expandAndCheck(c, "${audit.nodeId}", "node1");
+        expandAndCheck(c, "${audit.requestId}", "req4545");
+        expandAndCheck(c, "${audit.time}", String.valueOf(c.getAuditRecord().getMillis()));
+        expandAndCheck(c, "${audit.message}", "Message processed successfully");
+        expandAndCheck(c, "${audit.ipAddress}", "3.2.1.1");
+        expandAndCheck(c, "${audit.user.name}", "alice");
+        expandAndCheck(c, "${audit.user.id}", "41123");
+        expandAndCheck(c, "${audit.user.idProv}", String.valueOf(-2));
+        expandAndCheck(c, "${audit.authType}", "HTTP Basic");
+        expandAndCheck(c, "${audit.thrown}", ExceptionUtils.getStackTraceAsString(c.getAuditRecord().getThrown()));
+        expandAndCheck(c, "${audit.entity.class}", ""); // only for admin records
+        expandAndCheck(c, "${audit.entity.oid}", "");  // only for admin records
+        expandAndCheck(c, "${audit.details[0]}", c.getAuditRecord().getDetails().toArray()[0].toString()); // not very useful for the time being, but whatever
+        expandAndCheck(c, "${audit.mappingValuesOid}", "49585");
+        expandAndCheck(c, "${audit.operationName}", "listProducts");
+        expandAndCheck(c, "${audit.requestContentLength}", String.valueOf(REQUEST_BODY.getBytes().length));
+        expandAndCheck(c, "${audit.responseContentLength}", String.valueOf(RESPONSE_BODY.getBytes().length));
+        expandAndCheck(c, "${audit.request.mainpart}", REQUEST_BODY);
+        expandAndCheck(c, "${audit.response.mainpart}", RESPONSE_BODY);
+        expandAndCheck(c, "${audit.var.request.mainpart}", REQUEST_BODY);
+        expandAndCheck(c, "${audit.var.response.mainpart}", RESPONSE_BODY);
+        expandAndCheck(c, "${audit.var.request.size}", String.valueOf(REQUEST_BODY.getBytes().length));
+        expandAndCheck(c, "${audit.requestSavedFlag}", "false");
+        expandAndCheck(c, "${audit.responseSavedFlag}", "false");
+        expandAndCheck(c, "${audit.routingLatency}", "232");
+        expandAndCheck(c, "${audit.serviceOid}", "8859");
+        expandAndCheck(c, "${audit.status}", "0");
+    }
+
     private PolicyEnforcementContext context(){
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
         Message response = new Message();
         response.initialize(XmlUtil.stringAsDocument(RESPONSE_BODY));
         return new PolicyEnforcementContext(request, response);
+    }
+
+    private AuditSinkPolicyEnforcementContext sinkcontext() {
+        return new AuditSinkPolicyEnforcementContext(auditRecord(), context());
+    }
+
+    static AuditRecord auditRecord() {
+        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, 8859, "ACMEWarehouse",
+                "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
+        //noinspection deprecation
+        auditRecord.setOid(9777L);
+        auditRecord.setThrown(new RuntimeException("main record throwable"));
+        final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
+        auditRecord.getDetails().add(detail1);
+        return auditRecord;
     }
 
     private void expandAndCheck(PolicyEnforcementContext context, String expression, String expectedValue) throws IOException, PolicyAssertionException {

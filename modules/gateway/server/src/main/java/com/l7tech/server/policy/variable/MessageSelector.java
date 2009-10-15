@@ -190,7 +190,11 @@ class MessageSelector implements ExpandVariables.Selector {
         @Override
         public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
             try {
-                final MimeKnob mk = context.getMimeKnob();
+                final MimeKnob mk = context.getKnob(MimeKnob.class);
+                if (mk == null) {
+                    // Message not yet initialized
+                    return null;
+                }
                 ContentTypeHeader cth = mk.getFirstPart().getContentType();
                 if (cth.isText() || cth.isXml()) {
                     // TODO maximum size? This could be huge and OOM

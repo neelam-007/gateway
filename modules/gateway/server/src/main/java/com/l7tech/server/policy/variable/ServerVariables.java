@@ -398,11 +398,11 @@ public class ServerVariables {
         }),
 
         new Variable("audit", new AuditContextGetter("audit")),
-        new Variable("audit.request", new AuditOriginalMessageGetter(false)),
+        new Variable("audit.request", new AuditOriginalMessageGetter("audit.request", false)),
         new Variable("audit.requestContentLength", new AuditOriginalMessageSizeGetter(false)),
-        new Variable("audit.response", new AuditOriginalMessageGetter(true)),
+        new Variable("audit.response", new AuditOriginalMessageGetter("audit.response", true)),
         new Variable("audit.responseContentLength", new AuditOriginalMessageSizeGetter(true)),
-        new Variable("audit.var", new AuditOriginalContextVariableGetter()),
+        new Variable("audit.var", new AuditOriginalContextVariableGetter("audit.var")),
 
     };
 
@@ -623,15 +623,40 @@ public class ServerVariables {
         }
     }
 
-    private static class AuditOriginalMessageGetter extends Getter {
+    /**
+     * Superclass for getters that only work inside an audit sink policy.
+     */
+    private static abstract class AbstractAuditGetter extends Getter {
+        @Override
+        boolean isValidForContext(PolicyEnforcementContext context) {
+            return context instanceof AuditSinkPolicyEnforcementContext;
+        }
+    }
+
+    /**
+     * Superclass for selecting getters that only work inside an audit sink policy.
+     */
+    private static abstract class AbstractSelectingAuditGetter extends SelectingGetter {
+        protected AbstractSelectingAuditGetter(final String baseName) {
+            super(baseName);
+        }
+
+        @Override
+        boolean isValidForContext(PolicyEnforcementContext context) {
+            return context instanceof AuditSinkPolicyEnforcementContext;
+        }
+    }
+
+    private static class AuditOriginalMessageGetter extends AbstractSelectingAuditGetter {
         private final boolean targetsResponse;
 
-        private AuditOriginalMessageGetter(boolean targetsResponse) {
+        private AuditOriginalMessageGetter(String baseName, boolean targetsResponse) {
+            super(baseName);
             this.targetsResponse = targetsResponse;
         }
 
         @Override
-        Object get(String name, PolicyEnforcementContext context) {
+        protected Object getBaseObject(PolicyEnforcementContext context) {
             if (context instanceof AuditSinkPolicyEnforcementContext) {
                 AuditSinkPolicyEnforcementContext auditpec = (AuditSinkPolicyEnforcementContext) context;
                 return targetsResponse ? auditpec.getOriginalResponse() : auditpec.getOriginalRequest();
@@ -644,7 +669,7 @@ public class ServerVariables {
      * Used only for getting the "audit.requestContentLength" and "audit.responseContentLength" values
      * within an audit sink policy.
      */
-    private static class AuditOriginalMessageSizeGetter extends Getter {
+    private static class AuditOriginalMessageSizeGetter extends AbstractAuditGetter {
         private final boolean targetsResponse;
 
         private AuditOriginalMessageSizeGetter(boolean targetsResponse) {
@@ -671,16 +696,16 @@ public class ServerVariables {
         }
     }
 
-    private static class AuditOriginalContextVariableGetter extends Getter {
+    private static class AuditOriginalContextVariableGetter extends AbstractSelectingAuditGetter {
+        protected AuditOriginalContextVariableGetter(final String baseName) {
+            super(baseName);
+        }
+
         @Override
-        Object get(String name, PolicyEnforcementContext context) {
+        protected Object getBaseObject(PolicyEnforcementContext context) {
             if (context instanceof AuditSinkPolicyEnforcementContext) {
-                AuditSinkPolicyEnforcementContext auditpec = (AuditSinkPolicyEnforcementContext) context;
-                try {
-                    return auditpec.getOriginalContextVariable(name);
-                } catch (NoSuchVariableException e) {
-                    return null;
-                }
+                AuditSinkPolicyEnforcementContext sinkctx = (AuditSinkPolicyEnforcementContext) context;
+                return sinkctx.getOriginalContext();
             }
             return null;
         }

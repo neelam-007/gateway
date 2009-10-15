@@ -3,14 +3,13 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.StringWriter;
-import java.io.PrintWriter;
 
 /**
  *
@@ -61,12 +60,6 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
     static interface FieldGetter<T extends AuditRecord> {
         // We'll pass in the entire name the base selector got, because stripping the prefix isn't free, and the common case is for our fields to ignore the remainingName completely
         Selection getFieldValue(T rec, String baseAndRemainingName);
-    }
-
-    private static String throwableToString(Throwable t) {
-        StringWriter sw = new StringWriter(4096);
-        t.printStackTrace(new PrintWriter(sw));
-        return sw.toString();
     }
 
     static Map<String, FieldGetter<AuditRecord>> baseFields = new TreeMap<String, FieldGetter<AuditRecord>>(String.CASE_INSENSITIVE_ORDER);
@@ -184,7 +177,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
             @Override
             public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
                 final Throwable thrown = rec.getThrown();
-                return new Selection(thrown == null ? null : throwableToString(thrown));
+                return new Selection(thrown == null ? null : ExceptionUtils.getStackTraceAsString(thrown));
             }
         });
 
@@ -216,7 +209,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
 
     static Map<String, FieldGetter<MessageSummaryAuditRecord>> messageFields = new TreeMap<String, FieldGetter<MessageSummaryAuditRecord>>(String.CASE_INSENSITIVE_ORDER);
     static {
-        messageFields.put("user.authType", new FieldGetter<MessageSummaryAuditRecord>() {
+        messageFields.put("authType", new FieldGetter<MessageSummaryAuditRecord>() {
             @Override
             public Selection getFieldValue(MessageSummaryAuditRecord auditRecord, String baseAndRemainingName) {
                 final SecurityTokenType type = auditRecord.getAuthenticationType();

@@ -34,4 +34,8 @@ public class AuditSinkPolicyEnforcementContext extends PolicyEnforcementContext 
     public Object getOriginalContextVariable(String name) throws NoSuchVariableException {
         return originalContext == null ? null : originalContext.getVariable(name);
     }
+
+    public PolicyEnforcementContext getOriginalContext() {
+        return originalContext;
+    }
 }
