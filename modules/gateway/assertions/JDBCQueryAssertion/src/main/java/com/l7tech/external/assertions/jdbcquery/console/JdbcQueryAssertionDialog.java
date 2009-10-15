@@ -49,6 +49,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
     private JButton okButton;
     private JCheckBox failAssertionCheckBox;
     private JSpinner maxRecordsSpinner;
+    private JTextField queryNameTextField;
 
     private NamingTableModel namingTableModel;
     private Map<String, String> namingMap;
@@ -160,6 +161,8 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
             }
         }
         failAssertionCheckBox.setSelected(assertion.isAssertionFailureEnabled());
+        queryNameTextField.setText(assertion.getQueryName());
+        
     }
 
     private void viewToModel(final JdbcQueryAssertion assertion) {
@@ -169,6 +172,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         assertion.setVariablePrefix(variablePrefixTextField.getText());
         assertion.setMaxRecords((Integer) maxRecordsSpinner.getValue());
         assertion.setAssertionFailureEnabled(failAssertionCheckBox.isSelected());
+        assertion.setQueryName(queryNameTextField.getText());
     }
 
     private void populateConnectionCombobox() {

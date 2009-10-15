@@ -1,9 +1,7 @@
 package com.l7tech.external.assertions.jdbcquery;
 
 import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
-import static com.l7tech.policy.assertion.AssertionMetadata.SERVER_ASSERTION_CLASSNAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -18,12 +16,14 @@ import java.util.*;
 public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable, UsesVariables, SetsVariables {
     public static final String VARIABLE_COUNT = "queryresult.count";
     public static final String DEFAULT_VARIABLE_PREFIX = "jdbcQuery";
+    public static final String ASSERTION_SHORT_NAME = "Perform JDBC Query";
 
     private static final String META_INITIALIZED = JdbcQueryAssertion.class.getName() + ".metadataInitialized";
 
     private String connectionName;
     private String sqlQuery;
     private String variablePrefix = DEFAULT_VARIABLE_PREFIX;
+    private String queryName = "";
     private int maxRecords = JdbcConnectionAdmin.ORIGINAL_MAX_RECORDS;
     private boolean assertionFailureEnabled = true;
     private Map<String, String> namingMap = new TreeMap<String, String>();
@@ -39,6 +39,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         copy.setVariablePrefix(variablePrefix);
         copy.setMaxRecords(maxRecords);
         copy.setAssertionFailureEnabled(assertionFailureEnabled);
+        copy.setQueryName(queryName);
         copy.setNamingMap(copyMap(namingMap));
 
         return copy;
@@ -50,6 +51,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         setVariablePrefix(source.getVariablePrefix());
         setMaxRecords(source.getMaxRecords());
         setAssertionFailureEnabled(source.isAssertionFailureEnabled());
+        setQueryName(source.getQueryName());
         setNamingMap(copyMap(source.getNamingMap()));
     }
 
@@ -95,6 +97,14 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         this.assertionFailureEnabled = assertionFailureEnabled;
     }
 
+    public String getQueryName() {
+        return queryName;
+    }
+
+    public void setQueryName(String queryName) {
+        this.queryName = queryName;
+    }
+
     public Map<String, String> getNamingMap() {
         return namingMap;
     }
@@ -133,7 +143,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Perform JDBC Query");
+        meta.put(AssertionMetadata.SHORT_NAME, ASSERTION_SHORT_NAME);
         meta.put(AssertionMetadata.DESCRIPTION, "Query an external database via a JDBC connection.");
 
         // Add to palette folder(s)
@@ -144,6 +154,16 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
         // Set up smart Getter for nice, informative policy node name, for GUI
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<JdbcQueryAssertion>() {
+            @Override
+            public String getAssertionName(JdbcQueryAssertion assertion, boolean decorate) {
+                if (! decorate) return ASSERTION_SHORT_NAME;
+
+                String queryName = assertion.getQueryName();
+                if (queryName == null || queryName.trim().isEmpty()) return ASSERTION_SHORT_NAME;
+                else return AssertionUtils.decorateName(assertion, ASSERTION_SHORT_NAME + " - " + queryName);
+            }
+        });
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/CreateIdentityProvider16x16.gif");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.jdbcquery.console.JdbcQueryAssertionDialog");
         meta.put(PROPERTIES_ACTION_NAME, "JDBC Query Properties");
