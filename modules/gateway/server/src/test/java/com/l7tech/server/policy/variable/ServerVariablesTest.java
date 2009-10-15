@@ -435,20 +435,21 @@ public class ServerVariablesTest {
         Assert.assertEquals("ServerVariable should equal httpRouting url query", query, variableValue);
     }
 
+    @Test
+    public void testAuditNameNotReservedOutsideOfAuditSinkPolicy() throws Exception {
+        // Ensure that variables with names of "audit" or starting with "audit.*" continue to be useable
+        // for user variables when the context is not processing an audit sink policy.
+        PolicyEnforcementContext ctx = context();
+        populateAndCheck(ctx, "audit", "contentsofaudit123");
+        populateAndCheck(ctx, "audit.requestContentLength", "mystuff");
+        populateAndCheck(ctx, "audit.response", "myotherstuff");
+        populateAndCheck(ctx, "audit.var.request", "blahab");
+    }
+
     @Test(expected = NoSuchVariableException.class)
     public void testNonAuditSinkCtx_base() throws Exception {
         context().getVariable("audit");
     }
-
-
-    /*
-        new Variable("audit", new AuditContextGetter("audit")),
-        new Variable("audit.request", new AuditOriginalMessageGetter(false)),
-        new Variable("audit.requestContentLength", new AuditOriginalMessageSizeGetter(false)),
-        new Variable("audit.response", new AuditOriginalMessageGetter(true)),
-        new Variable("audit.responseContentLength", new AuditOriginalMessageSizeGetter(true)),
-        new Variable("audit.var", new AuditOriginalContextVariableGetter()),
-     */
 
     @Test(expected = NoSuchVariableException.class)
     public void testNonAuditSinkCtx_request() throws Exception {
@@ -471,7 +472,7 @@ public class ServerVariablesTest {
     }
 
     @Test(expected = NoSuchVariableException.class)
-    public void var() throws Exception {
+    public void testNonAuditSinkCtx_var() throws Exception {
         context().getVariable("audit.var.request.clientid");
     }
 
@@ -534,6 +535,11 @@ public class ServerVariablesTest {
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
         auditRecord.getDetails().add(detail1);
         return auditRecord;
+    }
+
+    private void populateAndCheck(PolicyEnforcementContext context, String variable, String value) throws IOException, PolicyAssertionException {
+        context.setVariable(variable, value);
+        expandAndCheck(context, "${" + variable + "}", value);
     }
 
     private void expandAndCheck(PolicyEnforcementContext context, String expression, String expectedValue) throws IOException, PolicyAssertionException {
