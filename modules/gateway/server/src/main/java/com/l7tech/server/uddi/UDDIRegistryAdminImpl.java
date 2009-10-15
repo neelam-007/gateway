@@ -7,6 +7,7 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.SyspropUtil;

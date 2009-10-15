@@ -3,7 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.objectmodel.*;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;

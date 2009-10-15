@@ -9,7 +9,7 @@ package com.l7tech.server.uddi;
 
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 
 public interface UDDIRegistryManager extends EntityManager<UDDIRegistry, EntityHeader>{
 
