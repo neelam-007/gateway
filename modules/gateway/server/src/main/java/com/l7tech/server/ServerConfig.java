@@ -339,9 +339,9 @@ public class ServerConfig implements ClusterPropertyListener, Config {
             String description = tuple[2];
             String defaultValue = tuple[3];
 
-            if (defaultValue != null) _properties.put(propName + SUFFIX_DEFAULT, defaultValue);
-            if (description != null) _properties.put(propName + SUFFIX_DESC, description);
-            if (clusterPropName != null) _properties.put(propName + SUFFIX_CLUSTER_KEY, clusterPropName);
+            if (defaultValue != null) _properties.setProperty(propName + SUFFIX_DEFAULT, defaultValue);
+            if (description != null) _properties.setProperty(propName + SUFFIX_DESC, description);
+            if (clusterPropName != null) _properties.setProperty(propName + SUFFIX_CLUSTER_KEY, clusterPropName);
 
             String value = getPropertyUncached(propName, true);
             valueCache.put(propName, new CachedValue(value, now));
@@ -858,7 +858,15 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     }
 
     public long getTimeUnitPropertyCached(String propName, long emergencyDefault, long maxAge) {
-        String strval = getPropertyCached(propName, maxAge);
+        return asTimeUnit( propName, getPropertyCached(propName, maxAge), emergencyDefault);
+    }
+
+    @Override
+    public long getTimeUnitProperty(String propName, long emergencyDefault) {
+        return asTimeUnit( propName, getProperty(propName), emergencyDefault);
+    }
+
+    private long asTimeUnit( final String propName, final String strval, long emergencyDefault ) {
         long val;
         if ( strval == null ) {
             val = emergencyDefault;
@@ -880,7 +888,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      * @return true if the specified property is marked as mutable
      */
     boolean isMutable(String propName) {
-        return "true".equals(_properties.get(propName + ".mutable"));
+        return "true".equals(_properties.getProperty(propName + ".mutable"));
     }
 
     /**
@@ -892,7 +900,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      */
     public boolean putProperty(String propName, String value) {
         if (!isMutable(propName)) return false;
-        String oldValue = (String) _properties.put(propName, value);
+        String oldValue = (String) _properties.setProperty(propName, value);
         valueCache.remove(propName);
 
         PropertyChangeListener pcl;
@@ -961,7 +969,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     //- PRIVATE
 
     private static final String NO_CACHE_BY_DEFAULT = "com.l7tech.server.ServerConfig.suppressCacheByDefault";
-    private static final Boolean NO_CACHE_BY_DEFAULT_VALUE = Boolean.getBoolean(NO_CACHE_BY_DEFAULT);
+    private static final Boolean NO_CACHE_BY_DEFAULT_VALUE = SyspropUtil.getBoolean(NO_CACHE_BY_DEFAULT);
 
     private static final Map<String,CachedValue> valueCache = new ConcurrentHashMap<String,CachedValue>();
 
@@ -1115,7 +1123,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     }
 
     private String getServerConfigProperty(String prop) {
-        String val = (String)_properties.get(prop);
+        String val = _properties.getProperty(prop);
         if (val == null) return null;
         if (val.length() == 0) return val;
 

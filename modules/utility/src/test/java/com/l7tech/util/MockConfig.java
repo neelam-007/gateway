@@ -32,4 +32,9 @@ public class MockConfig implements Config {
     public boolean getBooleanProperty(final String propertyName, final boolean defaultValue) {
         return Boolean.valueOf( getProperty( propertyName, Boolean.toString(defaultValue) ) );
     }
+
+    @Override
+    public long getTimeUnitProperty( final String propertyName, final long defaultValue ) {
+        return TimeUnit.parse( getProperty( propertyName, Long.toString(defaultValue)), TimeUnit.MILLIS);
+    }
 }
