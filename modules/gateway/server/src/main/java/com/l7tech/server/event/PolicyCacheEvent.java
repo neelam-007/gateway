@@ -55,6 +55,12 @@ public abstract class PolicyCacheEvent extends ApplicationEvent {
         }
     }
 
+    public static class Started extends PolicyCacheEvent {
+        public Started(final Object source) {
+            super( source, null );
+        }
+    }
+
     public static class Reset extends PolicyCacheEvent {
         public Reset( Object source ) {
             super( source, null );

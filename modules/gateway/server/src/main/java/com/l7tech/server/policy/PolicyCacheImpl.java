@@ -70,7 +70,10 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     //- PUBLIC
 
     /**
+     * Create a PolicyCache.
      *
+     * @param transactionManager  the transaction manager, or null to avoid attempting to have cache updates participate in transactions.
+     * @param policyFactory the policy factory to use for compiling policy trees.  Required.       
      */
     public PolicyCacheImpl( final PlatformTransactionManager transactionManager,
                             final ServerPolicyFactory policyFactory ) {
@@ -124,6 +127,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         }
 
         return null;
+    }
+
+    @Override
+    public boolean isStarted() {
+        return initialized;
     }
 
     /**
@@ -341,6 +349,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         for ( PolicyCacheEvent event : events ) {
             publishEvent( event );
         }
+        publishEvent(new PolicyCacheEvent.Started(this));
 
         trace();
     }

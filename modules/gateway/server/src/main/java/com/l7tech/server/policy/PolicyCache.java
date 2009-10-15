@@ -130,4 +130,12 @@ public interface PolicyCache {
      * @return The metadata for the policy or null if the policy is not valid
      */
     PolicyMetadata getPolicyMetadata(long policyOid);
+
+    /**
+     * Check if this policy cache is ready to use.
+     *
+     * @return false if this cache has not yet started.
+     *         true if queries for policies should now be expected to succeed.
+     */
+    boolean isStarted();
 }
