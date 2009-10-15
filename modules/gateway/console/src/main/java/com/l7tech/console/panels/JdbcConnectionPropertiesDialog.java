@@ -347,7 +347,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             @Override
             public void run() {
                 if (dlg.isConfirmed()) {
-                    String warningMessage = isAdditionalProperty(property.left);
+                    String warningMessage = checkDuplicateProperty(property.left);
                     if (warningMessage != null) {
                         DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, warningMessage,
                             resources.getString("dialog.title.duplicate.property"), JOptionPane.WARNING_MESSAGE, null);
@@ -371,7 +371,9 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         });
     }
 
-    private String isAdditionalProperty(String propName) {
+    private String checkDuplicateProperty(String propName) {
+        if (propName.length() > 5 && propName.startsWith("c3p0.")) propName = propName.substring(5);
+        
         if ("driverClass".compareToIgnoreCase(propName) == 0) {
             return MessageFormat.format(resources.getString("warning.basic.conn.prop.configured"), resources.getString("property.driver.class"));
         } else if ("jdbcUrl".compareToIgnoreCase(propName) == 0) {
@@ -424,7 +426,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private void doOk() {
-        String warningMessage = isDuplicateJdbcConnection();
+        String warningMessage = checkDuplicateJdbcConnection();
         if (warningMessage != null) {
             DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, warningMessage,
                 resources.getString("dialog.title.error.saving.conn"), JOptionPane.WARNING_MESSAGE, null);
@@ -446,7 +448,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         dispose();
     }
 
-    private String isDuplicateJdbcConnection() {
+    private String checkDuplicateJdbcConnection() {
         JdbcConnectionAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) return "Cannot get JDBC Connection Admin.  Check the log and try again.";
 

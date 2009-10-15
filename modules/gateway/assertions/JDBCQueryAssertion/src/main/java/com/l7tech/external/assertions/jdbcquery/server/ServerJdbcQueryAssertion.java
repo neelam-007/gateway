@@ -113,7 +113,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         // Get mappings of column names and context varaible names
         ResultSetMetaData metaData = resultSet.getMetaData();
-        for (int i = 0; i < metaData.getColumnCount(); i++) {
+        for (int i = 1; i <= metaData.getColumnCount(); i++) {
             String columnName = metaData.getColumnName(i);
             if (namingMap.containsKey(columnName)) {
                 newNamingMap.put(columnName, namingMap.get(columnName));
@@ -123,24 +123,24 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         }
 
         // Get results
-        Object[][] results = new Object[newNamingMap.size()][assertion.getMaxRecords()];
+        Map<String, List<Object>> results = new HashMap<String, List<Object>>(newNamingMap.size());
+        for (String column: newNamingMap.keySet()) results.put(column, new ArrayList<Object>());
+
+        int maxRecords = assertion.getMaxRecords();
         int row = 0;
-        while (resultSet.next()) {
-            int col = 0;
+        while (resultSet.next() && row < maxRecords) {
             for (String columnName: newNamingMap.keySet()) {
-                results[col][row] = resultSet.getObject(columnName);
-                col++;
+                results.get(columnName).add(resultSet.getObject(columnName));
             }
             row++;
         }
 
         // Assign the results to context variables
-        String[] columns = newNamingMap.keySet().toArray(new String[newNamingMap.size()]);
         String varPrefix = getVaraiblePrefix(context);
-        for (int i = 0; i < results.length; i++) {
-            String fullVarName = varPrefix + "." + newNamingMap.get(columns[i]);
-            context.setVariable(fullVarName, results[i]);
+        for (String column: results.keySet()) {
+            context.setVariable(varPrefix + "." + newNamingMap.get(column), results.get(column).toArray());
         }
+        context.setVariable(varPrefix + "." + JdbcQueryAssertion.VARIABLE_COUNT, row);
     }
 
     private String getVaraiblePrefix(PolicyEnforcementContext context) {
