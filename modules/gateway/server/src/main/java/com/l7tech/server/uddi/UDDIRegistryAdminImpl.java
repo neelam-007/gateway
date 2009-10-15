@@ -50,12 +50,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     @Override
     public void testUDDIRegistryAuthentication(long registryOid) throws FindException, UDDIException {
         UDDIRegistry uddiRegistry= uddiRegistryManager.findByPrimaryKey(registryOid);
-        UDDIClient uddiClient = new GenericUDDIClient(uddiRegistry.getInquiryUrl(),
-                uddiRegistry.getPublishUrl(),
-                uddiRegistry.getSecurityUrl(),
-                uddiRegistry.getRegistryAccountUserName(),
-                uddiRegistry.getRegistryAccountPassword(),
-                getDefaultPolicyAttachmentVersion());
+
+        UDDIClient uddiClient = UDDIClientFactory.getInstance().newUDDIClient(uddiRegistry.getInquiryUrl(),
+                uddiRegistry.getPublishUrl(), uddiRegistry.getSecurityUrl(), uddiRegistry.getRegistryAccountUserName(),
+                uddiRegistry.getRegistryAccountPassword(), getDefaultPolicyAttachmentVersion());
 
         try {
             uddiClient.authenticate();

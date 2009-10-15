@@ -66,7 +66,7 @@ import javax.xml.namespace.QName;
 /**
  * UDDIv3 client implementation using generated JAX-WS UDDI API
  */
-public class GenericUDDIClient implements UDDIClient {
+class GenericUDDIClient implements UDDIClient {
 
     //- PUBLIC
 
