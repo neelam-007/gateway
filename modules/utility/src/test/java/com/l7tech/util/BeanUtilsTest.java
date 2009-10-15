@@ -1,31 +1,19 @@
 package com.l7tech.util;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyDescriptor;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.l7tech.util.BeanUtils;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
  * Test cases for BeanUtils.
  */
-public class BeanUtilsTest extends TestCase {
-    public BeanUtilsTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(BeanUtilsTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
+public class BeanUtilsTest {
 
     public static class TestBean {
         private String str1;
@@ -76,6 +64,7 @@ public class BeanUtilsTest extends TestCase {
         }
     }
 
+    @Test
     public void testCopyProperties() throws Exception {
         TestBean b = new TestBean();
         b.setStr1("blah");
@@ -96,6 +85,34 @@ public class BeanUtilsTest extends TestCase {
         assertTrue("must be shallow copy", b.table1 == b2.table1);
     }
 
+    @Test
+    public void testCopyFromMap() throws Exception {
+        TestBean target = new TestBean();
+
+        Map<String,Object> source = new HashMap<String,Object>();
+        source.put( "int1", 1 );
+        source.put( "str1", "text" );
+        source.put( "bool1", true );
+
+        BeanUtils.copyProperties( source, null, target );
+        assertEquals( "int1", 1, target.getInt1() );
+        assertEquals( "str1", "text", target.getStr1() );
+        assertEquals( "bool1", true, target.isBool1() );
+
+        TestBean target2 = new TestBean();
+
+        Map<String,Object> source2 = new HashMap<String,Object>();
+        source2.put( "prefix.int1", 1 );
+        source2.put( "prefix.str1", "text" );
+        source2.put( "prefix.bool1", true );
+
+        BeanUtils.copyProperties( source2, "prefix.", target2 );
+        assertEquals( "int1", 1, target2.getInt1() );
+        assertEquals( "str1", "text", target2.getStr1() );
+        assertEquals( "bool1", true, target2.isBool1() );
+    }
+
+    @Test
     public void testFiltering() throws Exception {
         Set<PropertyDescriptor> props = BeanUtils.getProperties(TestBean.class);
         assertEquals(4, props.size());
