@@ -8,7 +8,6 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.ValidationException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.CertEntryRow;
-import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -59,11 +58,6 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
         if (wantUsers) searchResults.addAll(getUserManager().search(searchString));
         if (wantGroups) searchResults.addAll(getGroupManager().search(searchString));
         return searchResults;
-    }
-
-    @Override
-    public EntityHeaderSet<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
-        throw new UnsupportedOperationException();
     }
 
     @Override

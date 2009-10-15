@@ -4,7 +4,6 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -55,6 +54,10 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         @Override
         public IdentityProvider createIdentityProvider(IdentityProviderConfig configuration, boolean start) throws InvalidIdProviderCfgException {
             return new TestIdentityProvider(configuration);
+        }
+
+        @Override
+        public void destroyIdentityProvider( final IdentityProvider identityProvider ) {
         }
     }
 
@@ -163,11 +166,6 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
 
     @Override
     public EntityHeaderSet<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
-        return EntityHeaderSet.empty();
-    }
-
-    @Override
-    public EntityHeaderSet<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
         return EntityHeaderSet.empty();
     }
 

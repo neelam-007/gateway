@@ -15,11 +15,4 @@ public interface ConfigurableIdentityProvider {
      * @throws InvalidIdProviderCfgException If the configuration is invalid.
      */
     void setIdentityProviderConfig(final IdentityProviderConfig configuration) throws InvalidIdProviderCfgException;
-
-    /**
-     * The provider should start any maintenance tasks.
-     *
-     * <p>This should not be invoked before the configuration is set.</p> 
-     */
-    void startMaintenance();
 }

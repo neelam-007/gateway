@@ -215,7 +215,7 @@
                                 <value>ioMailInTimeout</value>
                             </list>
                         </entry>
-                        <entry key="identityProviderFactory">
+                        <entry key="ldapRuntimeConfig">
                             <list>
                                 <value>ldapReadTimeout</value>
                                 <value>ldapConnectionTimeout</value>
@@ -339,15 +339,22 @@
         <constructor-arg value="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl"/>
         <constructor-arg value="ldapIdentityProvider"/>
     </bean>
+    <bean id="ldapRuntimeConfig"  class="com.l7tech.server.identity.ldap.LdapRuntimeConfig">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
     <bean id="ldapIdentityProvider" class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" scope="prototype">
         <property name="clientCertManager" ref="clientCertManager"/>
-        <property name="serverConfig" ref="serverConfig"/>
+        <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
         <property name="certificateAuthenticator" ref ="certificateAuthenticator"/>
         <property name="userManager">
-            <bean class="com.l7tech.server.identity.ldap.LdapUserManagerImpl" scope="prototype"/>
+            <bean class="com.l7tech.server.identity.ldap.LdapUserManagerImpl" scope="prototype">
+                <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+            </bean>
         </property>
         <property name="groupManager">
-            <bean class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" scope="prototype"/>
+            <bean class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" scope="prototype">
+                <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+            </bean>
         </property>
         <property name="configManager" ref="identityProviderConfigManager"/>
     </bean>

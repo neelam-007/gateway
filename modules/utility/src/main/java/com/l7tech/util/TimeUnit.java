@@ -78,6 +78,31 @@ public final class TimeUnit implements Serializable, Comparable {
         return valuesByAbbrev.get(value);
     }
 
+    /**
+     * Get the largest TimeUnit that can be used to represent the value.
+     *
+     * @param value The value to check
+     * @param defaultUnit the unit to use for zero
+     * @return The time unit.
+     */
+    public static TimeUnit largestUnitForValue( final long value, final TimeUnit defaultUnit ) {
+        TimeUnit unit = TimeUnit.MILLIS;
+
+        if ( value == 0 ) {
+            unit = defaultUnit;
+        } else {
+            for ( TimeUnit timeUnit : ALL ) {
+                if ( value % timeUnit.getMultiplier() == 0 ) {
+                    unit = timeUnit;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        return unit;
+    }
+
     private static final Pattern numberPattern = Pattern.compile("(-?\\d*\\.?\\d*)(\\p{Lower}*)");
 
     /**

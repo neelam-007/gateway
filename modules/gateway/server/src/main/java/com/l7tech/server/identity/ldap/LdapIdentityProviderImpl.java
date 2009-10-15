@@ -9,31 +9,28 @@ import com.l7tech.identity.ldap.GroupMappingConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
-import com.l7tech.identity.mapping.IdentityMapping;
-import com.l7tech.identity.mapping.LdapAttributeMapping;
+import com.l7tech.identity.ldap.MemberStrategy;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.Lifecycle;
+import com.l7tech.server.LifecycleException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.ConfigurableIdentityProvider;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
-import com.l7tech.server.util.ManagedTimer;
-import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ArrayUtils;
 import com.sun.jndi.ldap.LdapURL;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -41,18 +38,12 @@ import org.springframework.context.ApplicationContextAware;
 import javax.naming.*;
 import javax.naming.directory.*;
 import javax.security.auth.x500.X500Principal;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.math.BigInteger;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.text.MessageFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,7 +59,7 @@ import java.util.logging.Logger;
  */
 @LdapClassLoaderRequired
 public class LdapIdentityProviderImpl
-        implements LdapIdentityProvider, InitializingBean, DisposableBean, ApplicationContextAware, ConfigurableIdentityProvider, PropertyChangeListener
+        implements LdapIdentityProvider, InitializingBean, ApplicationContextAware, ConfigurableIdentityProvider, Lifecycle
 {
 
     public LdapIdentityProviderImpl() {
@@ -97,321 +88,24 @@ public class LdapIdentityProviderImpl
         if ( this.config.getReturningAttributes() != null ) {
             returningAttributes = buildReturningAttributes();
         }
+        ldapTemplate = new LdapUtils.LdapTemplate(config.getSearchBase(), returningAttributes){
+            @Override
+            DirContext getDirContext() throws NamingException {
+                return getBrowseContext();
+            }
+        };
 
         initializeFallbackMechanism();
-        initializeConfigProperties();
 
-        if ( certIndexEnabled() ) {
-            rebuildTask = new RebuildTask(this);
-        }
-
-        cleanupTask = new CleanupTask(this);
-    }
-
-    @Override
-    public void startMaintenance() {
-        scheduleTask( rebuildTask, rebuildTimerLength.get() );
-        scheduleTask( cleanupTask, cleanupTimerLength.get() );
-    }
-
-    private void initializeConfigProperties() {
-        loadConnectionTimeout();
-        loadReadTimeout();
-        loadMaxSearchResultSize();
-        loadIndexRebuildIntervalProperty();
-        loadCachedCertEntryLifeProperty();
-    }
-
-    private void loadConnectionTimeout() {
-        long ldapConnectionTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
-        logger.config("Connection timeout = " + ldapConnectionTimeout);
-    }
-
-    private void loadReadTimeout() {
-        long ldapReadTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_READ_TIMEOUT, DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
-        logger.config("Read timeout = " + ldapReadTimeout);
-    }
-
-    private void loadMaxSearchResultSize() {
-        String tmp = serverConfig.getPropertyCached(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE);
-        if (tmp == null) {
-            logger.info(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " is not set. using default value.");
-            maxSearchResultSize.set(DEFAULT_MAX_SEARCH_RESULT_SIZE);
-        } else {
-            try {
-                long tmpl = Long.parseLong(tmp);
-                if (tmpl <= 0) {
-                    logger.info(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " has invalid value: " + tmp +
-                                ". using default value.");
-                    maxSearchResultSize.set(DEFAULT_MAX_SEARCH_RESULT_SIZE);
-                } else {
-                    logger.info("Read system value " + ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " of " + tmp);
-                    maxSearchResultSize.set(tmpl);
-                }
-            } catch (NumberFormatException e) {
-                logger.log(Level.WARNING, "The property " + ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE +
-                                          " has an invalid format. falling back on default value.", e);
-                maxSearchResultSize.set(DEFAULT_MAX_SEARCH_RESULT_SIZE);
-            }
-        }
-    }
-
-    private void loadIndexRebuildIntervalProperty() {
-        long indexRebuildInterval = DEFAULT_INDEX_REBUILD_INTERVAL;
-
-        String scp = serverConfig.getPropertyCached(ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL);
-        if (scp != null) {
-            try {
-                indexRebuildInterval = Long.parseLong(scp);
-                if (indexRebuildInterval < MIN_INDEX_REBUILD_TIME) {
-                    logger.info(MessageFormat.format("Property {0} is less than the minimum value {1} (configured value = {2}). Using the default value ({3} ms)",
-                            ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL,
-                            MIN_INDEX_REBUILD_TIME,
-                            indexRebuildInterval,
-                            DEFAULT_CACHED_CERT_ENTRY_LIFE));
-                    indexRebuildInterval = DEFAULT_INDEX_REBUILD_INTERVAL;
-                }
-                logger.fine("Read property " + ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL + " with value " + indexRebuildInterval);
-            } catch (NumberFormatException e) {
-                logger.warning(MessageFormat.format("Error parsing property {0} with value {1}. Using the default value ({2})",
-                        ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL,
-                        scp,
-                        DEFAULT_INDEX_REBUILD_INTERVAL));
-            }
-        }
-        rebuildTimerLength.set(indexRebuildInterval);
-        logger.config("Certificate index rebuild interval = " + indexRebuildInterval);
-    }
-
-    private void loadCachedCertEntryLifeProperty() {
-        long cleanupLife = DEFAULT_CACHED_CERT_ENTRY_LIFE;
-
-        String scp = serverConfig.getPropertyCached(ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME);
-        if (scp != null) {
-            try {
-                cleanupLife = Long.parseLong(scp);
-                if (cleanupLife < MIN_CERT_CACHE_LIFETIME) {
-                    logger.info(MessageFormat.format("Property {0} is less than the minimum value {1} (configured value = {2}). Using the default value ({3} ms)",
-                            ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME,
-                            MIN_CERT_CACHE_LIFETIME,
-                            cleanupLife,
-                            DEFAULT_CACHED_CERT_ENTRY_LIFE));
-                    cleanupLife = DEFAULT_CACHED_CERT_ENTRY_LIFE;
-                }
-            } catch (NumberFormatException e) {
-                logger.warning(MessageFormat.format("Could not parse property {0} with value {1}. Using the default ({2} ms)",
-                        ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME,
-                        scp,
-                        DEFAULT_CACHED_CERT_ENTRY_LIFE));
-            }
-        }
-        cachedCertEntryLife.set(cleanupLife);
-        logger.config("Certificate cache entry lifetime = " + cleanupLife);
-    }
-
-    /**
-     * Task to rebulid the certificate index (if required)
-     */
-    private static class RebuildTask extends ManagedTimerTask {
-        private final LdapIdentityProviderImpl ldapProvRef;
-        private final String providerName;
-        private final long oid;
-        private long currentIndexInterval;
-
-        RebuildTask( final LdapIdentityProviderImpl prov) {
-            this.ldapProvRef = prov;
-            this.providerName = prov.getConfig().getName();
-            this.oid = prov.getConfig().getOid();
-            currentIndexInterval = ldapProvRef.rebuildTimerLength.get();
-        }
-
-        @Override
-        protected void doRun() {
-            // When the referant Identity provider goes away, this timer should stop
-            if ( ldapProvRef.isStale() ) {
-                cancel();
-            } else {
-                long newIndexInterval = ldapProvRef.rebuildTimerLength.get();
-
-                if (currentIndexInterval != newIndexInterval) {
-                    logger.info(MessageFormat.format(
-                            "Certificate index rebuild interval has changed (old value = {0}, new value = {1}). Rescheduling this task with new interval.", 
-                            currentIndexInterval,
-                            newIndexInterval));
-                    currentIndexInterval = newIndexInterval;
-                    ldapProvRef.rescheduleIndexRebuildTask();
-                } else {
-                    ldapProvRef.doRebuildCertIndex();
-                }
-            }
-        }
-
-        @Override
-        public boolean cancel() {
-            logger.info("Cancelling cert index task for '" + providerName + "' oid: " + oid);
-            return super.cancel();
-        }
-    }
-
-    private void rescheduleIndexRebuildTask() {
-        cancelTasks(rebuildTask);
-        rebuildTask = new RebuildTask(this);
-        scheduleTask(rebuildTask, rebuildTimerLength.get());
-    }
-
-    private static class CleanupTask extends ManagedTimerTask {
-        private final LdapIdentityProviderImpl ldapProv;
-        private final String providerName;
-        private final long oid;
-
-        CleanupTask( final LdapIdentityProviderImpl prov ) {
-            this.ldapProv = prov;
-            this.providerName = prov.getConfig().getName();
-            this.oid = prov.getConfig().getOid();
-        }
-
-        @Override
-        protected void doRun() {
-            //when the referant Identity provider goes away, this timer should stop
-            if ( ldapProv.isStale() ) {
-                cancel();
-            } else {
-                ldapProv.cleanupCertCache();
-            }
-        }
-
-        @Override
-        public boolean cancel() {
-            logger.info("Cancelling cert cache cleanup task for '" + providerName + "' oid: " + oid);
-            return super.cancel();
-        }
-    }
-
-    private boolean isStale() {
-        if ( configManager == null ) {
-            logger.warning("Config Manager is null.");
-        } else {
-            try {
-                IdentityProviderConfig config = configManager.findByPrimaryKey(this.config.getOid());
-                return config == null || config.getVersion()!=this.config.getVersion();
-            } catch (FindException e) {
-                logger.warning("Error checking identity configuration for " + config);
-            }
-        }
-        return false; // don't assume it was removed if there are errors getting to it
-    }
-
-    private void cleanupCertCache() {
-        ArrayList<CertCacheKey> todelete = new ArrayList<CertCacheKey>();
-        long now = System.currentTimeMillis();
-        cacheLock.readLock().lock();
-        try {
-            Set<CertCacheKey> keys = certCache.keySet();
-            for (CertCacheKey key : keys) {
-                CertCacheEntry cce = certCache.get(key);
-                if ((now - cce.entryCreation) > cachedCertEntryLife.get()) {
-                    todelete.add(key);
-                }
-            }
-        } finally {
-            cacheLock.readLock().unlock();
-        }
-        if (todelete.size() > 0) {
-            cacheLock.writeLock().lock();
-            try {
-                for (CertCacheKey key : todelete) {
-                    logger.fine("Removing certificate from cache '" + key + "'.");
-                    certCache.remove(key);
-                }
-            } finally {
-                cacheLock.writeLock().unlock();
-            }
-        }
-    }
-
-    private void doRebuildCertIndex() {
-        try {
-            doWithLDAPContextClassLoader( new Functions.NullaryVoidThrows<NamingException>() {
-                @Override
-                public void call() throws NamingException {
-                    rebuildCertIndex();
-                }
-            } );
-        } catch (NamingException e) {
-            logger.log(Level.WARNING, "Error while recreating ldap user certificate index for LDAP Provider '" + config.getName() + "': " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));            
-        }
-    }
-
-    private void rebuildCertIndex() {
-        logger.fine("Re-creating ldap user certificate index for " + config.getName());
-        final CertIndex index = new CertIndex(
-                new HashMap<Pair<String, String>, CertCacheKey>(),
-                new HashMap<String, CertCacheKey>(),
-                new HashMap<String, CertCacheKey>(),
-                false);
-
-        DirContext context = null;
-        try {
-            final Set<String> distinctCertAttributeNames = getDistinctCertificateAttributeNames();
-
-            String filter = null;
-            if ( getConfig().getUserCertificateUseType() == LdapIdentityProviderConfig.UserCertificateUseType.INDEX ) {
-                StringBuilder builder = new StringBuilder();
-                boolean multiple = distinctCertAttributeNames.size() > 1;
-                if (multiple) builder.append("(|");
-                for ( String attr : distinctCertAttributeNames ) {
-                    builder.append( '(' );
-                    builder.append( attr );
-                    builder.append( "=*)" );
-                }
-                if (multiple) builder.append(')');
-                filter = builder.toString();
-            } else if ( getConfig().getUserCertificateUseType() == LdapIdentityProviderConfig.UserCertificateUseType.INDEX_CUSTOM ) {
-                filter = getConfig().getUserCertificateIndexSearchFilter();
-            }
-
-            if ( filter != null ) {
-                logger.fine( "LDAP user certificate search filter is '"+filter+"'." );
-
-                SearchControls sc = new SearchControls();
-                sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-                sc.setReturningAttributes(distinctCertAttributeNames.toArray(new String[distinctCertAttributeNames.size()]));
-
-                NamingEnumeration<SearchResult> answer = null;
-                try {
-                    context = getBrowseContext();
-                    answer = context.search(config.getSearchBase(), filter, sc);
-
-                    while (answer.hasMore()) {
-                        final SearchResult sr = answer.next();
-                        final Attributes attributes = sr.getAttributes();
-                        final String dn = sr.getNameInNamespace();
-
-                        for ( String certAttributeName : distinctCertAttributeNames ) {
-                            final Object certificateObj = LdapUtils.extractOneAttributeValue(attributes, certAttributeName);
-                            if (certificateObj instanceof byte[]) {
-                                try {
-                                    final X509Certificate cert = CertUtils.decodeCert((byte[])certificateObj);
-                                    index.addCertificateToIndexes( dn, cert );
-                                } catch ( CertificateException e ) {
-                                    logger.log( Level.WARNING, "Could not process certificate for '"+dn+"': " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                                }
-                            }
-                        }
-                    }
-                } finally {
-                    ResourceUtils.closeQuietly( answer );
-                }
-
-                certIndexRef.set( index.immutable() );
-
-                logger.fine("LDAP user certificate index rebuilt '"+index.describe()+"'.");
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Error while recreating ldap user certificate index for LDAP Provider '" + config.getName() + "': " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        } finally {
-            ResourceUtils.closeQuietly( context );
-        }
+        String description = config.getName() + "(#" + config.getOid() + "," + config.getVersion() + ")";
+        ldapCertificateCache = new LdapCertificateCache(
+                config,
+                configManager, 
+                ldapRuntimeConfig,
+                ldapTemplate,
+                getDistinctCertificateAttributeNames(),
+                description,
+                certIndexEnabled());
     }
 
     private Set<String> getDistinctCertificateAttributeNames() {
@@ -431,36 +125,23 @@ public class LdapIdentityProviderImpl
     }
 
     private boolean certsAreEnabled() {
-        return getConfig().getUserCertificateUseType() != LdapIdentityProviderConfig.UserCertificateUseType.NONE;
+        return config.getUserCertificateUseType() != LdapIdentityProviderConfig.UserCertificateUseType.NONE;
     }
 
     private boolean certIndexEnabled() {
-        return getConfig().getUserCertificateUseType() == LdapIdentityProviderConfig.UserCertificateUseType.INDEX ||
-               getConfig().getUserCertificateUseType() == LdapIdentityProviderConfig.UserCertificateUseType.INDEX_CUSTOM;
+        return config.getUserCertificateUseType() == LdapIdentityProviderConfig.UserCertificateUseType.INDEX ||
+               config.getUserCertificateUseType() == LdapIdentityProviderConfig.UserCertificateUseType.INDEX_CUSTOM;
     }
 
-    public void setServerConfig(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public void setLdapRuntimeConfig( final LdapRuntimeConfig ldapRuntimeConfig ) {
+        this.ldapRuntimeConfig = ldapRuntimeConfig;
     }
 
-    public void setCertificateAuthenticator(CertificateAuthenticator certificateAuthenticator) {
+    public void setCertificateAuthenticator( final CertificateAuthenticator certificateAuthenticator ) {
         this.certificateAuthenticator = certificateAuthenticator;
     }
 
     private void initializeFallbackMechanism() {
-        // configure timeout period
-        String property = serverConfig.getPropertyCached("ldap.reconnect.timeout");
-        if (property == null || property.length() < 1) {
-            retryFailedConnectionTimeout = 60000;
-            logger.warning("ldap.reconnect.timeout server property not set. using default");
-        } else {
-            try {
-                retryFailedConnectionTimeout = Long.parseLong(property);
-            } catch (NumberFormatException e) {
-                logger.log(Level.WARNING, "ldap.reconnect.timeout property not configured properly. using default", e);
-                retryFailedConnectionTimeout = 60000;
-            }
-        }
         // build a table of ldap urls status
         ldapUrls = config.getLdapUrl();
         urlStatus = new Long[ldapUrls.length];
@@ -517,6 +198,8 @@ public class LdapIdentityProviderImpl
             throw new RuntimeException(e);
         }
         try {
+            long retryFailedConnectionTimeout = ldapRuntimeConfig.getRetryFailedConnectionTimeout();
+
             //noinspection StringEquality
             if (urlThatFailed != lastSuccessfulLdapUrl) return lastSuccessfulLdapUrl;
             if (urlThatFailed != null) {
@@ -651,11 +334,6 @@ public class LdapIdentityProviderImpl
     }
 
     @Override
-    public long getMaxSearchResultSize() {
-        return maxSearchResultSize.get();
-    }
-    
-    @Override
     public Collection<String> getReturningAttributes() {
         Collection<String> attributes = null;
 
@@ -702,9 +380,10 @@ public class LdapIdentityProviderImpl
             } else
                 filter = "(|" + userFilter + grpFilter + ")";
         } else if (wantUsers) {
-            filter = userSearchFilterWithParam(searchString);
-        } else
-            filter = groupSearchFilterWithParam(searchString);
+            filter = userFilter;
+        } else {
+            filter = grpFilter;
+        }
 
         // no group mapping is now allowed
         if (filter == null) return EntityHeaderSet.empty();
@@ -754,7 +433,7 @@ public class LdapIdentityProviderImpl
             terms.add( new LdapSearchTerm( userMappingConfig.getObjClass(), mappingName, value ) );
         }
 
-        String filter = makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
+        String filter = makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]), true);
 
         return doSearch(filter);
     }
@@ -765,18 +444,11 @@ public class LdapIdentityProviderImpl
 
         if ( certsAreEnabled() ) {
             // look for presence of cert in index
-            CertIndex index = certIndexRef.get();
-            CertCacheKey certCacheKey = index.getCertCacheKeyBySki( ski );
-
-            if ( certCacheKey != null ) {
-                lookedupCert = getCertificateByKey(certCacheKey);
-            }
+            lookedupCert = findCertBySki( ski );
 
             if ( lookedupCert == null ) {
                 if ( !certIndexEnabled() ) { // then search for cert and add to cache if found
                     lookedupCert = getCertificateBySki( ski );
-                } else if ( certCacheKey==null ) {
-                    logger.fine("The certificate with SKI '" + ski + "' is not indexed.");
                 }
             }
         }
@@ -789,19 +461,11 @@ public class LdapIdentityProviderImpl
         X509Certificate lookedupCert = null;
 
         if ( certsAreEnabled() ) {
-            // look for presence of cert in index
-            CertIndex index = certIndexRef.get();
-            CertCacheKey certCacheKey = index.getCertCacheKeyByIssuerAndSerial( issuerDN, certSerial );
-
-            if ( certCacheKey != null ) {
-                lookedupCert = getCertificateByKey(certCacheKey);
-            }
+            lookedupCert = ldapCertificateCache.findCertByIssuerAndSerial( issuerDN, certSerial );
 
             if ( lookedupCert == null ) {
                 if ( !certIndexEnabled() ) { // then search for cert and add to cache if found
                     lookedupCert = getCertificateByIssuerAndSerial( issuerDN, certSerial );
-                } else if ( certCacheKey==null ) {
-                    logger.fine("The certificate with Issuer DN '" + issuerDN + "' and  Serial Number '" + certSerial + "' is not indexed.");
                 }
             }
         }
@@ -814,15 +478,7 @@ public class LdapIdentityProviderImpl
         X509Certificate lookedupCert = null;
 
         if ( certsAreEnabled() ) {
-            // look for presence of cert in index
-            CertIndex index = certIndexRef.get();
-            CertCacheKey certCacheKey = index.getCertCacheKeyByThumbprintSHA1( thumbprintSHA1 );
-
-            if ( certCacheKey != null ) {
-                lookedupCert = getCertificateByKey(certCacheKey);
-            } else {
-                logger.fine("The certificate with Thumbprint SHA1 '" + thumbprintSHA1 + "' is not indexed.");
-            }
+            lookedupCert = ldapCertificateCache.findCertByThumbprintSHA1( thumbprintSHA1 );
         }
 
         return lookedupCert;
@@ -869,180 +525,87 @@ public class LdapIdentityProviderImpl
 
         final String filter = formatCertificateSearchFilter( filterTemplate, issuer, serial, ski );
 
-        DirContext context = null;
-        NamingEnumeration<SearchResult> answer = null;
         try {
             final Set<String> distinctCertAttributeNames = getDistinctCertificateAttributeNames();
+            final String[] dnHolder = new String[1];
+            final List<X509Certificate> certs = new ArrayList<X509Certificate>();
 
-            SearchControls sc = new SearchControls();
-            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            sc.setCountLimit(1);
-            sc.setReturningAttributes(distinctCertAttributeNames.toArray(new String[distinctCertAttributeNames.size()]));
+            ldapTemplate.search( filter, 1, distinctCertAttributeNames, new LdapUtils.LdapListener(){
+                @Override
+                boolean searchResult( final SearchResult sr ) throws NamingException {
+                    final Attributes attributes = sr.getAttributes();
+                    dnHolder[0] = sr.getNameInNamespace();
 
-            context = getBrowseContext();
-            answer = context.search(config.getSearchBase(), filter, sc);
-            if ( answer.hasMore() ) {
-                final SearchResult sr = answer.next();
-                final Attributes attributes = sr.getAttributes();
-                final String dn = sr.getNameInNamespace();
-
-                List<X509Certificate> certs = new ArrayList<X509Certificate>();
-                for ( String certAttributeName : distinctCertAttributeNames ) {
-                    final Object certificateObj = LdapUtils.extractOneAttributeValue(attributes, certAttributeName);
-                    if (certificateObj instanceof byte[]) {
-                        X509Certificate cert = CertUtils.decodeCert((byte[])certificateObj);
-
-                        // Stash for indexing
-                        certs.add( cert );
-
-                        // Check if this the target certificate
-                        if ( issuer != null && serial != null ) {
-                            if ( issuer.equals(cert.getIssuerX500Principal()) && serial.equals(cert.getSerialNumber())) {
-                                certificate = cert;
-                            }
-                        } else if ( ski != null ) {
-                            if ( ski.equals( CertUtils.getSki(cert))) {
-                                certificate = cert;
+                    for ( String certAttributeName : distinctCertAttributeNames ) {
+                        final Object certificateObj = LdapUtils.extractOneAttributeValue(attributes, certAttributeName);
+                        if (certificateObj instanceof byte[]) {
+                            try {
+                                certs.add( CertUtils.decodeCert((byte[])certificateObj) );
+                            } catch ( CertificateException ce ) {
+                                logger.log(Level.WARNING,
+                                           "Error processing certificate for dn '"+dnHolder[0]+"', '"+ExceptionUtils.getMessage(ce)+"'.",
+                                           ExceptionUtils.getDebugException(ce));
                             }
                         }
                     }
+
+                    return false;
                 }
+            } );
+
+            if ( !certs.isEmpty() ) {
+                for ( X509Certificate cert : certs ) {
+                    // Check if this the target certificate
+                    if ( issuer != null && serial != null ) {
+                        if ( issuer.equals(cert.getIssuerX500Principal()) && serial.equals(cert.getSerialNumber())) {
+                            certificate = cert;
+                        }
+                    } else if ( ski != null ) {
+                        if ( ski.equals( CertUtils.getSki(cert))) {
+                            certificate = cert;
+                        }
+                    }
+
+                    if ( certificate != null ) break;
+                }
+
                 X509Certificate[] certificates = certs.toArray( new X509Certificate[certs.size()] );
-                cacheAndIndexCertificates( dn, certificates );
+                ldapCertificateCache.cacheAndIndexCertificates( dnHolder[0], certificates );
             }
         } catch (NamingException e) {
             throw new FindException("LDAP search error with filter " + filter, e);
         } catch (CertificateException e) {
             throw new FindException("LDAP search error with filter " + filter, e);
-        } finally {
-            ResourceUtils.closeQuietly( answer );
-            ResourceUtils.closeQuietly( context );
         }
 
         if ( certificate == null ) {
-            clearIndex( issuer, serial, ski );
+            ldapCertificateCache.clearIndex( issuer, serial, ski );
         }
 
         return certificate;
     }
 
-    private void cacheAndIndexCertificates( final String dn, final X509Certificate[] certificates ) throws CertificateException {
-        final CertIndex index = certIndexRef.get();
-
-        final Map<CertCacheKey, CertCacheEntry> newCertCacheEntries = new HashMap<CertCacheKey, CertCacheEntry>();
-        for ( X509Certificate cert : certificates ) {
-            CertCacheKey certCacheKey = index.addCertificateToIndexes( dn, cert );
-            if ( certCacheKey != null ) {
-                newCertCacheEntries.put( certCacheKey, new CertCacheEntry(cert) );
-            }
-        }
-
-        for ( CertCacheKey certCacheKey : newCertCacheEntries.keySet() ) {
-            logger.fine("Caching cert for " + certCacheKey);
-        }
-
-        cacheLock.writeLock().lock();
+    private EntityHeaderSet<IdentityHeader> doSearch( final String filter ) throws FindException {
+        final EntityHeaderSet<IdentityHeader> output = new EntityHeaderSet<IdentityHeader>(new TreeSet<IdentityHeader>());
         try {
-            certCache.putAll(newCertCacheEntries);
-        } finally {
-            cacheLock.writeLock().unlock();
-        }
-    }
+            ldapTemplate.search( filter, ldapRuntimeConfig.getMaxSearchResultSize(), null, new LdapUtils.LdapListener(){
+                @Override
+                boolean searchResult( final SearchResult sr ) {
+                    IdentityHeader header = searchResultToHeader(sr);
+                    // if we successfully constructed a header, add it to result list
+                    if (header != null)
+                        output.add(header);
+                    else
+                        logger.info("entry not valid or objectclass not supported for dn=" + sr.getNameInNamespace() + ". this " +
+                          "entry will not be presented as part of the search results.");
 
-    private void clearIndex( final X500Principal issuer, final BigInteger serial, final String ski ) {
-        final CertIndex index = certIndexRef.get();
-        index.removeIndex( issuer, serial, ski );
-    }
-
-    private X509Certificate getCertificateByKey( final CertCacheKey certCacheKey ) {
-        X509Certificate output = null;
-
-        // try to find cert in cert cache
-        cacheLock.readLock().lock();
-        try {
-            CertCacheEntry cce = certCache.get(certCacheKey);
-            if (cce != null) output = cce.cert;
-        } finally {
-            cacheLock.readLock().unlock();
-        }
-
-        if (output != null) {
-            logger.fine("Cert found in cache '"+certCacheKey+"'.");
-        } else {
-            // load the cert from ldap
-            DirContext context = null;
-            try {
-                UserMappingConfig[] mappings = config.getUserMappings();
-
-                context = getBrowseContext();
-                Attributes attributes = context.getAttributes(certCacheKey.getKey());
-                for ( UserMappingConfig mapping : mappings ) {
-                    String userCertAttrName = mapping.getUserCertAttrName();
-                    if (userCertAttrName == null || userCertAttrName.trim().isEmpty()) {
-                        logger.fine("No user certificate attribute has been configured for user mapping " + mapping.getObjClass());
-                    } else {
-                        Object certificateObj = LdapUtils.extractOneAttributeValue(attributes, userCertAttrName.trim());
-                        if (certificateObj instanceof byte[]) {
-                            logger.fine("Found a certificate in directory for " + certCacheKey.getKey());
-                            X509Certificate certificate = CertUtils.decodeCert((byte[])certificateObj);
-                            if ( certCacheKey.getValue().equals(CertUtils.getThumbprintSHA1(certificate)) ) {
-                                output = certificate;
-                                break;
-                            }
-                        }
-                    }
+                    return true;
                 }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Error looking up user in directory " + certCacheKey, e);
-            } finally {
-                ResourceUtils.closeQuietly( context );
-            }
-
-            if (output == null) {
-                logger.fine("Certificate is in the index but not in directory (" + certCacheKey + ")");
-                return null;
-            }
-
-            // add the cert to the cert cache and return
-            logger.fine("Caching cert for " + certCacheKey);
-            cacheLock.writeLock().lock();
-            try {
-                certCache.put(certCacheKey, new CertCacheEntry(output));
-            } finally {
-                cacheLock.writeLock().unlock();
-            }
-        }
-
-        return output;
-    }
-
-    private EntityHeaderSet<IdentityHeader> doSearch(String filter) throws FindException {
-        EntityHeaderSet<IdentityHeader> output = new EntityHeaderSet<IdentityHeader>(new TreeSet<IdentityHeader>());
-        DirContext context = null;
-        NamingEnumeration answer = null;
-        try {
-            // search string for users and or groups based on passed types wanted
-            SearchControls sc = new SearchControls();
-            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            sc.setCountLimit(getMaxSearchResultSize());
-            sc.setReturningAttributes(returningAttributes);
-            context = getBrowseContext();
-            answer = context.search(config.getSearchBase(), filter, sc);
-            while (answer.hasMore()) {
-                // get this item
-                SearchResult sr = (SearchResult)answer.next();
-                IdentityHeader header = searchResultToHeader(sr);
-                // if we successfully constructed a header, add it to result list
-                if (header != null)
-                    output.add(header);
-                else
-                    logger.info("entry not valid or objectclass not supported for dn=" + sr.getNameInNamespace() + ". this " +
-                      "entry will not be presented as part of the search results.");
-            }
+            } );
         } catch (SizeLimitExceededException e) {
             // add something to the result that indicates the fact that the search criteria is too wide
             logger.log(Level.FINE, "the search results exceede the maximum: '" + e.getMessage() + "'");
-            output.setMaxExceeded(getMaxSearchResultSize());
+            output.setMaxExceeded(ldapRuntimeConfig.getMaxSearchResultSize());
             // dont throw here, we still want to return what we got
         } catch (javax.naming.AuthenticationException ae) {
             throw new FindException("LDAP search error: Authentication failed.", ae);
@@ -1051,57 +614,8 @@ public class LdapIdentityProviderImpl
             // don't throw, return the partial result
         } catch (NamingException e) {
             throw new FindException("LDAP search error with filter " + filter, e);
-        } finally {
-            ResourceUtils.closeQuietly( answer );
-            ResourceUtils.closeQuietly( context );
         }
         return output;
-    }
-
-    @Override
-    public EntityHeaderSet<IdentityHeader> search(boolean getusers, boolean getgroups, IdentityMapping mapping, Object attValue) throws FindException {
-        if (mapping instanceof LdapAttributeMapping) {
-            LdapAttributeMapping lam = (LdapAttributeMapping) mapping;
-            String attName = lam.getCustomAttributeName();
-
-            if (!(getusers || getgroups)) {
-                logger.info("Nothing to search for - specified EntityType not supported by this IdentityMapping");
-                return EntityHeaderSet.empty();
-            }
-
-            String userFilter = null;
-            String groupFilter = null;
-            if (getusers) {
-                ArrayList<LdapSearchTerm> terms = new ArrayList<LdapSearchTerm>();
-                for (int i = 0; i < config.getUserMappings().length; i++) {
-                    UserMappingConfig userMappingConfig = config.getUserMappings()[i];
-                    terms.add(new LdapSearchTerm(userMappingConfig.getObjClass(), attName, attValue.toString()));
-                }
-                userFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
-            }
-
-            if (getusers) {
-                ArrayList<LdapSearchTerm> terms = new ArrayList<LdapSearchTerm>();
-                for (int i = 0; i < config.getGroupMappings().length; i++) {
-                    GroupMappingConfig groupMappingConfig = config.getGroupMappings()[i];
-                    terms.add(new LdapSearchTerm(groupMappingConfig.getObjClass(), attName, attValue.toString()));
-                }
-                groupFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
-            }
-
-            String filter;
-            if (getusers && getgroups) {
-                filter = "(|" + userFilter + groupFilter + ")";
-            } else if (getusers) {
-                filter = userFilter;
-            } else {
-                filter = groupFilter;
-            }
-
-            return doSearch(filter);
-        } else {
-            throw new FindException("Unsupported AttributeMapping type");
-        }
     }
 
     @Override
@@ -1119,27 +633,34 @@ public class LdapIdentityProviderImpl
         UserMappingConfig[] userTypes = config.getUserMappings();
         ArrayList<LdapSearchTerm> terms = new ArrayList<LdapSearchTerm>();
 
+        String safeParam = LdapUtils.filterMatchEscape( param );
+
         // Find all known classes of user, by both name and login
         for (UserMappingConfig userType : userTypes) {
-            terms.add(new LdapSearchTerm(userType.getObjClass(), userType.getLoginAttrName(), param));
-            terms.add(new LdapSearchTerm(userType.getObjClass(), userType.getNameAttrName(), param));
+            terms.add(new LdapSearchTerm(userType.getObjClass(), userType.getLoginAttrName(), safeParam));
+            terms.add(new LdapSearchTerm(userType.getObjClass(), userType.getNameAttrName(), safeParam));
         }
-        return makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
+        return makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]), false);
     }
 
-    private String makeSearchFilter(LdapSearchTerm[] terms) {
-        StringBuilder output = new StringBuilder();
-        if (terms.length > 1) output.append("(|");
+    private String makeSearchFilter( final LdapSearchTerm[] terms, final boolean escapeTerms ) {
+        LdapSearchFilter filter = new LdapSearchFilter();
+        if (terms.length > 1) filter.or();
 
         for (LdapSearchTerm term : terms) {
-            output.append("(&");
-            output.append("(objectClass").append("=").append(term.objectclass).append(")");
-            output.append("(").append(term.searchAttribute).append("=").append(term.searchValue).append(")");
-            output.append(")");
+            filter.and();
+              filter.objectClass(term.objectclass);
+              if (escapeTerms) {
+                filter.attrEquals(term.searchAttribute, term.searchValue);
+              } else {
+                filter.attrEqualsUnsafe(term.searchAttribute, term.searchValue);
+              }
+            filter.end();
         }
 
-        if (terms.length > 1) output.append(")");
-        return output.toString();
+        if (terms.length > 1) filter.end();
+
+        return filter.buildFilter();
     }
 
     /**
@@ -1148,17 +669,21 @@ public class LdapIdentityProviderImpl
      * @return the search filter or null if no group mappings are declared for this config
      */
     @Override
-    public String groupSearchFilterWithParam(String param) {
+    public String groupSearchFilterWithParam(String param, MemberStrategy... strategies ) {
         if (config == null) throw new IllegalStateException("this provider needs a config!");
         GroupMappingConfig[] groupTypes = config.getGroupMappings();
         if (groupTypes == null || groupTypes.length <= 0) return null;
 
+        String safeParam = LdapUtils.filterMatchEscape( param );
+
         ArrayList<LdapSearchTerm> terms = new ArrayList<LdapSearchTerm>();
         for (GroupMappingConfig groupType : groupTypes) {
-            terms.add(new LdapSearchTerm(groupType.getObjClass(), groupType.getNameAttrName(), param));
+            if ( strategies == null || strategies.length == 0 || ArrayUtils.contains(strategies, groupType.getMemberStrategy())) {
+                terms.add(new LdapSearchTerm(groupType.getObjClass(), groupType.getNameAttrName(), safeParam));
+            }
         }
 
-        return makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
+        return makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]), false);
     }
 
     @Override
@@ -1173,8 +698,8 @@ public class LdapIdentityProviderImpl
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
             env.put(Context.PROVIDER_URL, ldapurl);
             env.put("com.sun.jndi.ldap.connect.pool", "true");
-            env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(getLdapConnectionTimeout()));
-            env.put("com.sun.jndi.ldap.read.timeout", Long.toString(getLdapReadTimeout()));
+            env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(ldapRuntimeConfig.getLdapConnectionTimeout()));
+            env.put("com.sun.jndi.ldap.read.timeout", Long.toString(ldapRuntimeConfig.getLdapReadTimeout()));
             env.put( Context.REFERRAL, "follow" );
             String dn = config.getBindDN();
             if (dn != null && dn.length() > 0) {
@@ -1241,28 +766,17 @@ public class LdapIdentityProviderImpl
             // That's all for a quick test
             if ( quick ) return;
 
-            String filter;
-            SearchControls sc = new SearchControls();
-            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            sc.setReturningAttributes(returningAttributes);            
-
-            // make sure the base DN is valid and contains at least one entry
-            NamingEnumeration entrySearchEnumeration = null;
             try {
-                sc.setCountLimit( 1 );
-                entrySearchEnumeration = context.search(config.getSearchBase(), "(objectClass=*)", sc);
+                ldapTemplate.search( context, "(objectClass=*)", 1, null, null );
             } catch (NamingException e) {
                 // note. i am not embedding the NamingException because it sometimes
                 // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
                 throw new InvalidIdProviderCfgException("Cannot search using base: " + config.getSearchBase());
-            } finally {
-                sc.setCountLimit( 0 );
-                ResourceUtils.closeQuietly( entrySearchEnumeration );
             }
 
             // check user mappings. make sure they work
             boolean atLeastOneUser = false;
-            UserMappingConfig[] userTypes = config.getUserMappings();
+            final UserMappingConfig[] userTypes = config.getUserMappings();
             Collection<UserMappingConfig> offensiveUserMappings = new ArrayList<UserMappingConfig>();
             Collection<UserMappingConfig> userMappingsWithoutLoginAttribute = new ArrayList<UserMappingConfig>();
             for (UserMappingConfig userType : userTypes) {
@@ -1270,34 +784,36 @@ public class LdapIdentityProviderImpl
                     userMappingsWithoutLoginAttribute.add(userType);
                     continue;
                 }
-                filter = "(|" +
-                        "(&" +
-                        "(objectClass=" + userType.getObjClass() + ")" +
-                        "(" + userType.getLoginAttrName() + "=*)" +
-                        ")" +
-                        "(&" +
-                        "(objectClass=" + userType.getObjClass() + ")" +
-                        "(" + userType.getNameAttrName() + "=*)" +
-                        ")" +
-                        ")";
+                LdapSearchFilter filter = new LdapSearchFilter();
+                filter.or();
+                  filter.and();
+                    filter.objectClass( userType.getObjClass() );
+                    filter.attrPresent( userType.getLoginAttrName() );
+                  filter.end();
+                  filter.and();
+                    filter.objectClass( userType.getObjClass() );
+                    filter.attrPresent( userType.getLoginAttrName() );
+                  filter.end();
+                filter.end();
 
-                NamingEnumeration answer = null;
                 try {
-                    answer = context.search(config.getSearchBase(), filter, sc);
-                    while (answer.hasMore()) {
-                        SearchResult sr = (SearchResult) answer.next();
-                        EntityHeader header = searchResultToHeader(sr);
-                        // if we successfully constructed a header, add it to result list
-                        if (header != null) {
-                            atLeastOneUser = true;
-                            break;
+                    final boolean foundUserHolder[] = new boolean[]{false};
+                    ldapTemplate.search( context, filter.buildFilter(), 0, null, new LdapUtils.LdapListener(){
+                        @Override
+                        boolean searchResult( final SearchResult sr ) {
+                            EntityHeader header = searchResultToHeader(sr);
+                            if ( header != null ) {
+                                foundUserHolder[0] = true;
+                                return false;
+                            } else {
+                                return true;
+                            }
                         }
-                    }
+                    } );
+                    atLeastOneUser = foundUserHolder[0];
                 } catch (NamingException e) {
                     offensiveUserMappings.add(userType);
                     logger.log(Level.FINE, "error testing user mapping" + userType.getObjClass(), e);
-                } finally {
-                    ResourceUtils.closeQuietly(answer);
                 }
             }
 
@@ -1306,90 +822,86 @@ public class LdapIdentityProviderImpl
             Collection<GroupMappingConfig> offensiveGroupMappings = new ArrayList<GroupMappingConfig>();
             boolean atLeastOneGroup = false;
             for (GroupMappingConfig groupType : groupTypes) {
-                filter = "(&" +
-                        "(objectClass=" + groupType.getObjClass() + ")" +
-                        "(" + groupType.getNameAttrName() + "=*)" +
-                        ")";
-                NamingEnumeration answer = null;
+                LdapSearchFilter filter = new LdapSearchFilter();
+                filter.and();
+                  filter.objectClass( groupType.getObjClass() );
+                  filter.attrPresent( groupType.getNameAttrName() );
+                filter.end();
+
                 try {
-                    answer = context.search(config.getSearchBase(), filter, sc);
-                    while (answer.hasMore()) {
-                        SearchResult sr = (SearchResult) answer.next();
-                        EntityHeader header = searchResultToHeader(sr);
-                        // if we successfully constructed a header, add it to result list
-                        if (header != null) {
-                            atLeastOneGroup = true;
-                            break;
+                    final boolean foundGroupHolder[] = new boolean[]{false};
+                    ldapTemplate.search( context, filter.buildFilter(), 0, null, new LdapUtils.LdapListener(){
+                        @Override
+                        boolean searchResult( final SearchResult sr ) {
+                            EntityHeader header = searchResultToHeader(sr);
+                            if ( header != null ) {
+                                foundGroupHolder[0] = true;
+                                return false;
+                            } else {
+                                return true;
+                            }
                         }
-                    }
+                    });
+                    atLeastOneGroup = foundGroupHolder[0];
                 } catch (NamingException e) {
                     offensiveGroupMappings.add(groupType);
                     logger.log(Level.FINE, "error testing group mapping" + groupType.getObjClass(), e);
-                } finally {
-                    ResourceUtils.closeQuietly(answer);
                 }
             }
 
             // test search filters if any
-            sc.setCountLimit( 100 );
             boolean atLeastOneCertIndexed = true;
             boolean validSearchByIssuerSerial = true;
             boolean validSearchBySKI = true;
             switch ( config.getUserCertificateUseType() ) {
                 case INDEX_CUSTOM:
                     {
-                        NamingEnumeration answer = null;
-                        atLeastOneCertIndexed = false;
+                        final boolean foundCertHolder[] = new boolean[]{false};
                         try {
-                            answer = context.search(config.getSearchBase(), config.getUserCertificateIndexSearchFilter(), sc);
-                            out:
-                            while ( answer.hasMore() ) {
-                                final SearchResult sr = (SearchResult) answer.next();
-                                final Attributes atts = sr.getAttributes();
+                            ldapTemplate.search( context, config.getUserCertificateIndexSearchFilter(), 1000, null, new LdapUtils.LdapListener(){
+                                @Override
+                                boolean searchResult( final SearchResult sr ) {
+                                    final Attributes atts = sr.getAttributes();
 
-                                for ( UserMappingConfig userType : userTypes ) {
-                                    String attrName = userType.getUserCertAttrName();
-                                    if ( attrName==null || attrName.trim().isEmpty() ) continue;
-                                    if ( atts.get( attrName ) != null ) {
-                                        atLeastOneCertIndexed = true;
-                                        break out;
+                                    for ( UserMappingConfig userType : userTypes ) {
+                                        String attrName = userType.getUserCertAttrName();
+                                        if ( attrName==null || attrName.trim().isEmpty() ) continue;
+                                        if ( atts.get( attrName ) != null ) {
+                                            foundCertHolder[0] = true;
+                                            return false;
+                                        }
                                     }
+
+                                    return true;
                                 }
-                            }
+                            } );
                         } catch (Exception e) { // Search with "(" for AIOOBE, ")" for IllegalStateException
                             logger.log(Level.FINE, "Error testing certificate index search filter", e);
-                        } finally {
-                            ResourceUtils.closeQuietly(answer);
                         }
+                        atLeastOneCertIndexed = foundCertHolder[0];
                     }
                     break;
                 case SEARCH:
                     String issuerSerialSearchFilter = config.getUserCertificateIssuerSerialSearchFilter();
                     if ( issuerSerialSearchFilter!=null && !issuerSerialSearchFilter.isEmpty() ) {
-                        NamingEnumeration answer = null;
                         validSearchByIssuerSerial = false;
                         try {
                             String searchFilter = formatCertificateSearchFilter(issuerSerialSearchFilter);
-                            answer = context.search(config.getSearchBase(), searchFilter, sc);
+                            ldapTemplate.search( context, searchFilter, 1, null, null );
                             validSearchByIssuerSerial = true;
                         } catch (Exception e) { // Search with "(" for AIOOBE, ")" for IllegalStateException
                             logger.log(Level.FINE, "Error testing certificate index search filter", e);
-                        } finally {
-                            ResourceUtils.closeQuietly(answer);
                         }
                     }
                     String skiSearchFilter = config.getUserCertificateSKISearchFilter();
                     if ( skiSearchFilter!=null && !skiSearchFilter.isEmpty() ) {
-                        NamingEnumeration answer = null;
                         validSearchBySKI = false;
                         try {
                             String searchFilter = formatCertificateSearchFilter(skiSearchFilter);
-                            answer = context.search(config.getSearchBase(), searchFilter, sc);
+                            ldapTemplate.search( context, searchFilter, 1, null, null );
                             validSearchBySKI = true;
                         } catch (NamingException e) {
                             logger.log(Level.FINE, "Error testing certificate index search filter", e);
-                        } finally {
-                            ResourceUtils.closeQuietly(answer);
                         }
                     }
                     break;
@@ -1510,38 +1022,21 @@ public class LdapIdentityProviderImpl
         if (auditor == null) throw new IllegalStateException("Auditor has not been initialized");
         if (userManager == null) throw new IllegalStateException("UserManager has not been initialized");
         if (groupManager == null) throw new IllegalStateException("GroupManager has not been initialized");
-        if (serverConfig == null) throw new IllegalStateException("ServerConfig has not been initialized");
     }
 
     @Override
-    public void destroy() throws Exception {
-        cancelTasks(rebuildTask, cleanupTask);
-    }
-
-    private void scheduleTask( final ManagedTimerTask task, final long period ) {
-        if ( task != null ) {
-            timer.schedule(task, 5000, period);
+    public void start() throws LifecycleException {
+        ldapCertificateCache.start();
+        if ( groupManager instanceof Lifecycle ) {
+            ((Lifecycle)groupManager).start();
         }
     }
 
-    private void cancelTasks(ManagedTimerTask ... tasks) {
-        for (ManagedTimerTask task : tasks) {
-            if ( task != null ) {
-                task.cancel();
-            }
-        }
-    }
-
-    /**
-     * Invoke the given callback with the context classloader that loads SSL socket factories. 
-     */
-    private void doWithLDAPContextClassLoader( final Functions.NullaryVoidThrows<NamingException> callback ) throws NamingException {
-        final ClassLoader originalContextClassLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader( LdapSslCustomizerSupport.getSSLSocketFactoryClassLoader() );
-            callback.call();
-        } finally {
-            Thread.currentThread().setContextClassLoader( originalContextClassLoader );
+    @Override
+    public void stop() throws LifecycleException {
+        ldapCertificateCache.stop();
+        if ( groupManager instanceof Lifecycle ) {
+            ((Lifecycle)groupManager).stop();
         }
     }
 
@@ -1755,32 +1250,6 @@ public class LdapIdentityProviderImpl
         }
     }
 
-    @Override
-    public long getLdapConnectionTimeout() {
-        return ldapConnectionTimeout.get();
-    }
-
-    @Override
-    public long getLdapReadTimeout() {
-        return ldapReadTimeout.get();
-    }
-
-    @Override
-    public void propertyChange(final PropertyChangeEvent evt) {
-        String propertyName = evt.getPropertyName();
-        if (ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT.equals(propertyName)) {
-            loadConnectionTimeout();
-        } else if (ServerConfig.PARAM_LDAP_READ_TIMEOUT.equals(propertyName)) {
-            loadReadTimeout();
-        } else if (ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE.equals(propertyName)) {
-            loadMaxSearchResultSize();
-        } else if (ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL.equals(propertyName)) {
-            loadIndexRebuildIntervalProperty();
-        } else if (ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME.equals(propertyName)) {
-            loadCachedCertEntryLifeProperty();
-        }
-    }
-
     private String formatCertificateSearchFilter( final String filter ) throws InvalidIdProviderCfgException {
         try {
             return formatCertificateSearchFilter( filter, new X500Principal("cn=Test Issuer, ou=Test Organization, c=Test"), BigInteger.ZERO, HexUtils.encodeBase64(new byte[1])) ;
@@ -1867,167 +1336,13 @@ public class LdapIdentityProviderImpl
         }
     }
 
-    private static final class CertCacheKey extends Pair<String,String>{
-        public CertCacheKey( final String dn, final String thumbprint) {
-            super(dn,thumbprint);
-        }
-    }
-
-    private static final class CertCacheEntry {
-        private final X509Certificate cert;
-        private final long entryCreation;
-
-        CertCacheEntry(X509Certificate cert) {
-            this.entryCreation = System.currentTimeMillis();
-            this.cert = cert;
-        }
-    }
-
-    private static class CertIndex {
-        /**
-         * This is a map which indexes the DN of LDAP entries for the entry's certificate serial and issuer dn.
-         * Key: a string, lowercased, that is a Pair of IssuerDn and serial num.
-         * Value: the DN of the LDAP entry containing the certificate and the certificates thumbprint
-         */
-        private final Map<Pair<String, String>, CertCacheKey> certIndexByIssuerSerial;
-
-        /**
-         * This is a map which indexes the DN of LDAP entries for the entry's certificate SKI.
-         * Key: a string, BASE64 SKI.
-         * Value: the DN of the LDAP entry containing the certificate and the certificates thumbprint
-         */
-        private final Map<String, CertCacheKey> certIndexBySki;
-
-        /**
-         * This is a map which indexes the DN of LDAP entries for the entry's ThumbprintSHA1.
-         * Key: a string, BASE64 SKI.
-         * Value: the DN of the LDAP entry containing the certificate and the certificates thumbprint
-         */
-        private final Map<String, CertCacheKey> certIndexByThumbprintSHA1;
-
-        private final boolean immutable;
-
-        protected CertIndex() {
-            this.certIndexByIssuerSerial = new ConcurrentHashMap<Pair<String, String>, CertCacheKey>();
-            this.certIndexBySki = new ConcurrentHashMap<String, CertCacheKey>();
-            this.certIndexByThumbprintSHA1 = new ConcurrentHashMap<String, CertCacheKey>();
-            this.immutable = false;
-        }
-
-        protected CertIndex( final Map<Pair<String, String>, CertCacheKey> certIndexByIssuerSerial,
-                             final Map<String, CertCacheKey> certIndexBySki,
-                             final Map<String, CertCacheKey> certIndexByThumbprintSHA1,
-                             final boolean immutable ) {
-            this.certIndexByIssuerSerial = certIndexByIssuerSerial;
-            this.certIndexBySki = certIndexBySki;
-            this.certIndexByThumbprintSHA1 = certIndexByThumbprintSHA1;
-            this.immutable = immutable;
-        }
-
-        protected CertCacheKey getCertCacheKeyByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
-            Pair<String, String> key = makeIndexKey(issuer, serial);
-            return certIndexByIssuerSerial.get(key);
-        }
-
-        protected CertCacheKey getCertCacheKeyBySki( final String ski ) {
-            return certIndexBySki.get(ski);
-        }
-
-        protected CertCacheKey getCertCacheKeyByThumbprintSHA1( final String thumbprintSHA1 ) {
-            return certIndexByThumbprintSHA1.get(thumbprintSHA1);
-        }
-
-        protected CertCacheKey addCertificateToIndexes( final String dn,
-                                                        final X509Certificate cert ) throws CertificateException {
-            CertCacheKey certCacheKey = null;
-
-            if ( !immutable ) {
-                final String thumbprintSHA1 = CertUtils.getThumbprintSHA1(cert);
-                certCacheKey = new CertCacheKey( dn, thumbprintSHA1 );
-
-                if (cert.getSerialNumber() != null && cert.getIssuerX500Principal() != null) {
-                    X500Principal issuer = cert.getIssuerX500Principal();
-                    BigInteger serial = cert.getSerialNumber();
-
-                    Pair<String, String> key = makeIndexKey(issuer, serial);
-                    logger.finer("Indexing certificate by issuer/serial " + key + " for " + dn);
-                    certIndexByIssuerSerial.put(key, certCacheKey);
-                }
-                String ski = CertUtils.getSki( cert );
-                if ( ski != null ) {
-                    logger.finer("Indexing certificate by ski " + ski + " for " + dn);
-                    certIndexBySki.put(ski, certCacheKey);
-                }
-
-                logger.finer("Indexing certificate by thumbprintSHA1 " + thumbprintSHA1 + " for " + dn);
-                certIndexByThumbprintSHA1.put(thumbprintSHA1, certCacheKey);
-            }
-
-            return certCacheKey;
-        }
-
-        protected void removeIndex( final X500Principal issuer, final BigInteger serial, final String ski ) {
-            if ( !immutable ) {
-                if ( issuer != null && serial != null ) {
-                    certIndexByIssuerSerial.remove(makeIndexKey(issuer, serial));
-                }
-
-                if ( ski != null ) {
-                    certIndexBySki.remove(ski);
-                }
-            }
-        }
-
-        protected CertIndex immutable() {
-            return immutable ? this : new CertIndex( 
-                    Collections.unmodifiableMap(certIndexByIssuerSerial),
-                    Collections.unmodifiableMap(certIndexBySki),
-                    Collections.unmodifiableMap(certIndexByThumbprintSHA1),
-                    true);
-        }
-
-        protected String describe() {
-            StringBuilder description = new StringBuilder();
-            description.append("Issuer/Serial index size: ");
-            description.append(certIndexByIssuerSerial.size());
-            description.append(", SKI index size: ");
-            description.append(certIndexBySki.size());
-            description.append(", ThumbprintSHA1 index size: ");
-            description.append(certIndexByThumbprintSHA1.size());
-            return description.toString();
-        }
-
-        private Pair<String,String> makeIndexKey(X500Principal issuerDN, BigInteger certSerial) {
-            return new Pair<String, String>(issuerDN.getName(X500Principal.RFC2253), certSerial.toString());
-        }
-    }
-
     private static final Logger logger = Logger.getLogger(LdapIdentityProviderImpl.class.getName());
 
     private static final BigInteger fileTimeConversionfactor = new BigInteger("116444736000000000");
     private static final BigInteger fileTimeConversionfactor2 = new BigInteger("10000");
 
-    private static final long DEFAULT_INDEX_REBUILD_INTERVAL = 1000*60*10; // 10 minutes
-    private static final long DEFAULT_CACHE_CLEANUP_INTERVAL = 1000*60*10; // 10 minutes
-    private static final long DEFAULT_CACHED_CERT_ENTRY_LIFE = 1000*60*10; // 10 minutes
-    private static final long MIN_INDEX_REBUILD_TIME = 10000; //10 seconds
-    private static final long MIN_CERT_CACHE_LIFETIME = 10000; //10 seconds
-    private static final long MAX_CACHE_AGE_VALUE = 30000;
-    private static final long DEFAULT_MAX_SEARCH_RESULT_SIZE = 100;
-
-    private final AtomicLong rebuildTimerLength = new AtomicLong(DEFAULT_INDEX_REBUILD_INTERVAL);
-    private final AtomicLong cleanupTimerLength = new AtomicLong(DEFAULT_CACHE_CLEANUP_INTERVAL);
-    private final AtomicLong cachedCertEntryLife = new AtomicLong(DEFAULT_CACHED_CERT_ENTRY_LIFE);
-    private final AtomicLong ldapConnectionTimeout = new AtomicLong(DEFAULT_LDAP_CONNECTION_TIMEOUT);
-    private final AtomicLong ldapReadTimeout = new AtomicLong(DEFAULT_LDAP_READ_TIMEOUT);
-    private final AtomicLong maxSearchResultSize = new AtomicLong(DEFAULT_MAX_SEARCH_RESULT_SIZE);
-
-    private final ManagedTimer timer = new ManagedTimer("LDAP Certificate Cache Timer");
-    private ManagedTimerTask rebuildTask;
-    private ManagedTimerTask cleanupTask;
-
     private Auditor auditor;
-    private ServerConfig serverConfig;
+    private LdapRuntimeConfig ldapRuntimeConfig;
     private LdapIdentityProviderConfig config;
     private IdentityProviderConfigManager configManager;
     private ClientCertManager clientCertManager;
@@ -2036,26 +1351,10 @@ public class LdapIdentityProviderImpl
     private CertificateAuthenticator certificateAuthenticator;
 
     private String lastSuccessfulLdapUrl;
-    private long retryFailedConnectionTimeout;
     private final ReentrantReadWriteLock fallbackLock = new ReentrantReadWriteLock();
     private String[] ldapUrls;
     private Long[] urlStatus;
     private String[] returningAttributes;
-
-    /**
-     * Certificate index by issuer/serial and SKI
-     */
-    private final AtomicReference<CertIndex> certIndexRef = new AtomicReference<CertIndex>(new CertIndex());
-
-    /**
-     * This is a map to cache user certificates by the LDAP entry DN
-     * Key: a string, lowercased, the DN of the LDAP entry to which the cert belong. This DN comes from the index certIndex
-     * Value: the X509Certificate
-     */
-    private final HashMap<CertCacheKey, CertCacheEntry> certCache = new HashMap<CertCacheKey, CertCacheEntry>();
-
-    /**
-     * a lock for accessing the index above
-     */
-    private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private LdapUtils.LdapTemplate ldapTemplate;
+    private LdapCertificateCache ldapCertificateCache;
 }

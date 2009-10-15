@@ -24,14 +24,16 @@ import com.l7tech.gateway.common.LicenseManager;
  *
  * @author Steve Jones
  */
-public abstract class LifecycleBean implements InitializingBean, ApplicationContextAware, ApplicationListener, ServerComponentLifecycle, DisposableBean {
+public abstract class LifecycleBean implements Lifecycle, InitializingBean, ApplicationContextAware, ApplicationListener, ServerComponentLifecycle, DisposableBean {
 
     //- PUBLIC
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         init();
     }
 
+    @Override
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
         if(this.applicationContext!=null) throw new IllegalStateException("applicationContext already initialized!");
         this.applicationContext = applicationContext;
@@ -48,6 +50,7 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
         return licensed;
     }
 
+    @Override
     public final void start() throws LifecycleException {
         if ( isLicensed() ) {
             doStart();
@@ -60,6 +63,7 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
         }
     }
 
+    @Override
     public void stop() throws LifecycleException {
         startedRwLock.writeLock().lock();
         try {
@@ -70,10 +74,12 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
         doStop();
     }
 
+    @Override
     public void close() throws LifecycleException {
         doClose();
     }
 
+    @Override
     public void destroy() throws Exception {
         stop();
         close();
@@ -88,6 +94,7 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
         }
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if ( licenseFeature != null ) {
             if (applicationEvent instanceof LicenseEvent) {
@@ -103,6 +110,7 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
 
                 if (isLicensed()) {
                     Background.scheduleOneShot(new TimerTask() {
+                        @Override
                         public void run() {
                             try {
                                 doStart();
@@ -116,6 +124,7 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
         }
     }
 
+    @Override
     public String toString() {
         return componentName;
     }

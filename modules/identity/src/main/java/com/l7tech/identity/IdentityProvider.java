@@ -1,7 +1,6 @@
 package com.l7tech.identity;
 
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -35,8 +34,6 @@ public interface IdentityProvider<UT extends User, GT extends Group, UMT extends
      * pattern may include wildcard such as * character
      */
     EntityHeaderSet<IdentityHeader> search(EntityType[] types, String searchString) throws FindException;
-
-    EntityHeaderSet<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException;
 
     String getAuthRealm();
 

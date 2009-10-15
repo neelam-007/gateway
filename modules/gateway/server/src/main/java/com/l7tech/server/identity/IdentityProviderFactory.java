@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.identity;
@@ -11,7 +9,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
@@ -21,17 +18,15 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * This factory caches identity providers!
  *
  * @author alex
  */
-public class IdentityProviderFactory implements ApplicationContextAware, ApplicationListener, PropertyChangeListener {
-    private ApplicationContext springContext;
-    private final IdentityProviderConfigManager identityProviderConfigManager;
+public class IdentityProviderFactory implements ApplicationContextAware, ApplicationListener {
+
+    // - PUBLIC
 
     public IdentityProviderFactory(final IdentityProviderConfigManager identityProviderConfigManager) {
         this.identityProviderConfigManager = identityProviderConfigManager;     
@@ -104,59 +99,9 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
         provider.test(false);
     }
 
-    /**
-     * Creates a new IdentityProvider of the correct type indicated by the specified
-     * {@link IdentityProviderConfig} and initializes it.
-     * <p/>
-     * Call {@link #getProvider(long)} for runtime use, it has a cache.
-     *
-     * @param config the configuration to intialize the provider with.
-     * @param start true to start provider maintenance tasks
-     * @return the newly-initialized IdentityProvider
-     * @throws InvalidIdProviderCfgException if the specified configuration cannot be used to construct an
-     *                                       IdentityProvider. Call {@link Throwable#getCause()} to find out why!
-     */
-    @SuppressWarnings({ "unchecked" })
-    private IdentityProvider makeProvider( final IdentityProviderConfig config, final boolean start ) throws InvalidIdProviderCfgException {
-        String classname = config.type().getClassname();
-
-        // locate factory for type (class)
-        IdentityProviderFactorySpi factorySpi = null;
-        Map<String,IdentityProviderFactorySpi> factories = springContext.getBeansOfType(IdentityProviderFactorySpi.class);
-        for ( Map.Entry<String,IdentityProviderFactorySpi> entry : factories.entrySet() ) {
-            String name = entry.getKey();
-            IdentityProviderFactorySpi factory = entry.getValue();
-
-            if ( classname.equals(factory.getClassname()) ) {
-                logger.log(Level.FINE, "Using identity provider factory ''{0}'' for type ''{1}''.", new String[]{name, classname});
-                factorySpi = factory;
-                break;
-            }
-        }
-
-        if ( factorySpi == null ) {
-            throw new InvalidIdProviderCfgException("Could not find factory for identity provider type '"+classname+"'.");                                                              
-        }
-
-        try {
-            return factorySpi.createIdentityProvider( config, start );
-        } catch (InvalidIdProviderCfgException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new InvalidIdProviderCfgException(e);
-        }
-    }
-
     @Override
     public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
         this.springContext = applicationContext;
-    }
-
-    /**
-     * Avoid too many calls to getBean 
-     */
-    private IdentityProviderConfigManager getIdentityProviderConfigurationManager() {
-        return identityProviderConfigManager;
     }
 
     @Override
@@ -174,34 +119,91 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
         }
     }
 
-    private void destroyProvider(long oid) {
-        IdentityProvider x = providers.get(oid);
-        if (x instanceof DisposableBean) {
-            DisposableBean disposableBean = (DisposableBean) x;
-            try {
-                disposableBean.destroy();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to destroy the identity provider " + oid, e);
-            }
-        }
-    }
+    //- PRIVATE
 
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        Set<Long> keys = providers.keySet();
-        for (Long key : keys) {
-            IdentityProvider provider = providers.get(key);
-            if (provider != null && provider instanceof PropertyChangeListener) {
-                PropertyChangeListener listener = (PropertyChangeListener) provider;
-                listener.propertyChange(evt);
-            }
-        }
-    }
+    private static final Logger logger = Logger.getLogger(IdentityProviderFactory.class.getName());
 
     // note these need to be singletons so that they can be invalidates in case of deletion
     private static Map<Long, IdentityProvider> providers = new ConcurrentHashMap<Long, IdentityProvider>();
 
-    public static final int MAX_AGE = 60 * 1000;
+    private final IdentityProviderConfigManager identityProviderConfigManager;
+    private ApplicationContext springContext;
+    private Map<String,IdentityProviderFactorySpi> factories;
 
-    private static final Logger logger = Logger.getLogger(IdentityProviderFactory.class.getName());
+    /**
+     * Avoid too many calls to getBean
+     */
+    private IdentityProviderConfigManager getIdentityProviderConfigurationManager() {
+        return identityProviderConfigManager;
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    private Map<String,IdentityProviderFactorySpi> getIdentityProviderFactories() {
+        Map<String,IdentityProviderFactorySpi> factories = this.factories;
+
+        if ( factories == null ) {
+            factories = this.factories = springContext.getBeansOfType(IdentityProviderFactorySpi.class);
+        }         
+
+        return factories;
+    }
+
+    private IdentityProviderFactorySpi getIdentityProviderFactory( final IdentityProviderConfig config ) throws InvalidIdProviderCfgException {
+        final String classname = config.type().getClassname();
+
+        IdentityProviderFactorySpi factorySpi = null;
+        Map<String,IdentityProviderFactorySpi> factories = getIdentityProviderFactories();
+        for ( Map.Entry<String,IdentityProviderFactorySpi> entry : factories.entrySet() ) {
+            String name = entry.getKey();
+            IdentityProviderFactorySpi factory = entry.getValue();
+
+            if ( classname.equals(factory.getClassname()) ) {
+                logger.log( Level.FINE, "Using identity provider factory ''{0}'' for type ''{1}''.", new String[]{name, classname});
+                factorySpi = factory;
+                break;
+            }
+        }
+
+        if ( factorySpi == null ) {
+            throw new InvalidIdProviderCfgException("Could not find factory for identity provider type '"+classname+"'.");
+        }
+
+        return factorySpi;
+    }
+
+    /**
+     * Creates a new IdentityProvider of the correct type indicated by the specified
+     * {@link IdentityProviderConfig} and initializes it.
+     * <p/>
+     * Call {@link #getProvider(long)} for runtime use, it has a cache.
+     *
+     * @param config the configuration to intialize the provider with.
+     * @param start true to start provider maintenance tasks
+     * @return the newly-initialized IdentityProvider
+     * @throws InvalidIdProviderCfgException if the specified configuration cannot be used to construct an
+     *                                       IdentityProvider. Call {@link Throwable#getCause()} to find out why!
+     */
+    @SuppressWarnings({ "unchecked" })
+    private IdentityProvider makeProvider( final IdentityProviderConfig config, final boolean start ) throws InvalidIdProviderCfgException {
+        IdentityProviderFactorySpi factorySpi = getIdentityProviderFactory( config );
+
+        try {
+            return factorySpi.createIdentityProvider( config, start );
+        } catch (InvalidIdProviderCfgException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new InvalidIdProviderCfgException(e);
+        }
+    }
+
+    private void destroyProvider( final long oid ) {
+        IdentityProvider identityProvider = providers.get(oid);
+        if ( identityProvider != null ) {
+            try {
+                getIdentityProviderFactory(identityProvider.getConfig()).destroyIdentityProvider(identityProvider);
+            } catch ( InvalidIdProviderCfgException e ) {
+                logger.warning( "Could not find factory to destroy identity provider '"+identityProvider.getConfig().type().getClassname()+"'." );
+            }
+        }
+    }
 }

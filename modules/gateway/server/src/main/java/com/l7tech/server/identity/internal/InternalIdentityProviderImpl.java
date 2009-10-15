@@ -191,10 +191,6 @@ public class InternalIdentityProviderImpl
     }
 
     @Override
-    public void startMaintenance() {
-    }
-
-    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.springContext = applicationContext;
         this.auditor = new Auditor(this, applicationContext, logger);

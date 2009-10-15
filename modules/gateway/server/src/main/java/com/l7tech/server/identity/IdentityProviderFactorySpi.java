@@ -25,4 +25,11 @@ public interface IdentityProviderFactorySpi {
      * @throws InvalidIdProviderCfgException if the configuration is not valid
      */
     IdentityProvider createIdentityProvider(IdentityProviderConfig configuration, boolean start) throws InvalidIdProviderCfgException;
+
+    /**
+     * Destroy the given identity provider.
+     *
+     * @param identityProvider The provider to destroy
+     */
+    void destroyIdentityProvider(IdentityProvider identityProvider);
 }

@@ -6,15 +6,20 @@ package com.l7tech.server.identity.ldap;
 import com.sun.jndi.ldap.LdapURL;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ResourceUtils;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.DirContext;
+import javax.naming.directory.SearchResult;
+import javax.naming.directory.SearchControls;
 import javax.naming.NamingException;
 import javax.naming.Context;
+import javax.naming.NamingEnumeration;
 import java.util.regex.Pattern;
 import java.util.Hashtable;
+import java.util.Set;
 
 /**
  * @author alex
@@ -93,6 +98,45 @@ public final class LdapUtils {
                         break;
                     case '*':
                         builder.append( "\\2a" );
+                        break;
+                    case '\\':
+                        builder.append( "\\5c" );
+                        break;
+                    default:
+                        builder.append( c );
+                        break;
+                }
+            }
+
+            escaped = builder.toString();
+        }
+
+        return escaped;
+    }
+
+    /**
+     * Escape characters for use in an LDAP search filter
+     *
+     * <p>This escapes most special LDAP characters, but leaves "*".</p>
+     *
+     * @param value The text to escape
+     * @return The escaped text
+     */
+    public static String filterMatchEscape( final String value ) {
+        String escaped = value;
+
+        if ( value != null ) {
+            StringBuilder builder = new StringBuilder( (int)(value.length() * 1.3) );
+            for ( char c : value.toCharArray() ) {
+                switch ( c ) {
+                    case 0:
+                        builder.append( "\\00" );
+                        break;
+                    case '(':
+                        builder.append( "\\28" );
+                        break;
+                    case ')':
+                        builder.append( "\\29" );
                         break;
                     case '\\':
                         builder.append( "\\5c" );
@@ -210,4 +254,214 @@ public final class LdapUtils {
     static final String LDAP_ATTR_ACCOUNT_EXPIRES = "accountExpires";
     static final String LDAP_ATTR_USER_CERTIFICATE = "userCertificate;binary";
 
+    /**
+     * Listener for results from an LdapTemplate
+     */
+    static class LdapListener {
+        /**
+         * Notification of a SearchResults enumeration
+         *
+         * <p>This implementation calls {@link #searchResult} for each item.</p>
+         *
+         * @param results The results to process
+         * @throws NamingException If an error occurs
+         */
+        void searchResults( final NamingEnumeration<SearchResult> results ) throws NamingException {
+            while ( results.hasMore() ) {
+                if (!searchResult( results.next() )) break;
+            }
+        }
+
+        /**
+         * Notification of a SearchResult.
+         *
+         * <p>This implementation calls {@link #attributes} and returns true.</p>
+         *
+         * @param sr The Search result
+         * @return true to recieve more results
+         * @throws NamingException If an error occurs
+         */
+        boolean searchResult( final SearchResult sr ) throws NamingException {
+            attributes( sr.getNameInNamespace(), sr.getAttributes() );
+            return true;
+        }
+
+        /**
+         * Notification of an attributes.
+         *
+         * <p>This implementation does nothing.</p>
+         *
+         * @param dn The DN associated with the attributes.
+         * @param attributes The attributes
+         * @throws NamingException If an error occurs
+         */
+        void attributes( final String dn, final Attributes attributes ) throws NamingException {
+        }
+    }
+
+    /**
+     * Template to use with searching and attributes access.
+     *
+     * <p>This handles the common functionality such as resource access and
+     * disposal and configuration of the search controls for returned
+     * attributes and count limit.</p> 
+     */
+    abstract static class LdapTemplate {
+        private final String searchBase;
+        private final String[] returningAttributes;
+
+        /**
+         * Create a new tempalte with the given default options.
+         *
+         * @param searchBase The default search base
+         * @param returningAttributes The default returning attributes
+         */
+        LdapTemplate( final String searchBase, final String[] returningAttributes ) {
+            this.searchBase = searchBase;
+            this.returningAttributes = returningAttributes;                        
+        }
+
+        /**
+         * Search the default DirContext with the supplied filter and options.
+         *
+         * @param filter The filter to use
+         * @param countLimit The count limit (0 for no limit)
+         * @param returningAttributes The attributes to return (null for default)
+         * @param listener The listener for the searchResults callback (null for no callback)
+         * @throws NamingException If an error occurs
+         */
+        void search( final String filter,
+                     final long countLimit,
+                     final Set<String> returningAttributes,
+                     final LdapListener listener ) throws NamingException {
+            search( (String) null, filter, countLimit, returningAttributes, listener );
+        }
+
+        /**
+         * Search the default DirContext with the supplied filter and options.
+         *
+         * @param searchBase The search base to use (null for default)
+         * @param filter The filter to use
+         * @param countLimit The count limit (0 for no limit)
+         * @param returningAttributes The attributes to return (null for default)
+         * @param listener The listener for the searchResults callback (null for no callback)
+         * @throws NamingException If an error occurs
+         */
+        void search( final String searchBase,
+                     final String filter,
+                     final long countLimit,
+                     final Set<String> returningAttributes,
+                     final LdapListener listener ) throws NamingException {
+            DirContext context = null;
+
+            try {
+                context = getDirContext();
+                search( context, searchBase, filter, countLimit, returningAttributes, listener );
+            } finally {
+                ResourceUtils.closeQuietly( context );
+            }
+        }
+
+        /**
+         * Search the given DirContext with the supplied filter and options.
+         *
+         * @param context The context to search
+         * @param filter The filter to use
+         * @param countLimit The count limit (0 for no limit)
+         * @param returningAttributes The attributes to return (null for default)
+         * @param listener The listener for the searchResults callback (null for no callback)
+         * @throws NamingException If an error occurs
+         */
+        void search( final DirContext context,
+                     final String filter,
+                     final long countLimit,
+                     final Set<String> returningAttributes,
+                     final LdapListener listener ) throws NamingException {
+            search( context, null, filter, countLimit, returningAttributes, listener );
+        }
+
+        /**
+         * Search the given DirContext with the supplied filter and options.
+         *
+         * @param context The context to search
+         * @param searchBase The search base to use (null for default)
+         * @param filter The filter to use
+         * @param countLimit The count limit (0 for no limit)
+         * @param returningAttributes The attributes to return (null for default)
+         * @param listener The listener for the searchResults callback (null for no callback)
+         * @throws NamingException If an error occurs
+         */
+        void search( final DirContext context,
+                     final String searchBase,
+                     final String filter,
+                     final long countLimit,
+                     final Set<String> returningAttributes,
+                     final LdapListener listener ) throws NamingException {
+            String base = searchBase;
+            if (base == null) {
+                base = this.searchBase;
+            }
+
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            if (returningAttributes==null) {
+                sc.setReturningAttributes(this.returningAttributes);
+            } else {
+                sc.setReturningAttributes(returningAttributes.toArray( new String[returningAttributes.size()] ));
+            }
+            sc.setCountLimit( countLimit );
+
+            NamingEnumeration<SearchResult> answer = null;
+            try {
+                answer = context.search(base, filter, sc);
+                if ( listener != null ) {
+                    listener.searchResults( answer );
+                }
+            } finally {
+                ResourceUtils.closeQuietly(answer);
+            }
+        }
+
+        /**
+         * Access attributes for the given DN using the default DirContext.
+         *
+         * @param dn The DN of the attributes
+         * @param listener The listener for the attributes callback.
+         * @throws NamingException If an error occurs.
+         */
+        void attributes( final String dn, final LdapListener listener ) throws NamingException {
+            DirContext context = null;
+
+            try {
+                context = getDirContext();
+                attributes( context, dn, listener );
+            } finally {
+                ResourceUtils.closeQuietly( context );
+            }
+        }
+
+        /**
+         * Access attributes for the given DN.
+         *
+         * @param context The context to use
+         * @param dn The DN of the attributes
+         * @param listener The listener for the attributes callback.
+         * @throws NamingException If an error occurs.
+         */
+        void attributes( final DirContext context, final String dn, final LdapListener listener ) throws NamingException {
+            try {
+                listener.attributes( dn, context.getAttributes( dn, returningAttributes ));
+            } finally {
+                ResourceUtils.closeQuietly( context );
+            }
+        }
+
+        /**
+         * Get the DirContext to use.
+         *
+         * @return The DirContext
+         * @throws NamingException If an error occurs.
+         */
+        abstract DirContext getDirContext() throws NamingException;
+    }
 }

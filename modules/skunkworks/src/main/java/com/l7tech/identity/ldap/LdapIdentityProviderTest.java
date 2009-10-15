@@ -122,7 +122,7 @@ public class LdapIdentityProviderTest {
         spock.setGroupManager(new LdapGroupManagerImpl());
         spock.setIdentityProviderConfig(getConfigForSpock());
         spock.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
-        spock.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
+        spock.setLdapRuntimeConfig(new LdapRuntimeConfig((ServerConfig)applicationContext.getBean("serverConfig")));
 
         spock.afterPropertiesSet();
         return spock;
@@ -134,7 +134,7 @@ public class LdapIdentityProviderTest {
         bones.setGroupManager(new LdapGroupManagerImpl());
         bones.setIdentityProviderConfig(getConfigForBones());        
         bones.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
-        bones.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
+        bones.setLdapRuntimeConfig(new LdapRuntimeConfig((ServerConfig)applicationContext.getBean("serverConfig")));
 
         bones.afterPropertiesSet();
         return bones;
@@ -152,7 +152,7 @@ public class LdapIdentityProviderTest {
         msad.setGroupManager(new LdapGroupManagerImpl());
         msad.setIdentityProviderConfig(getConfigForMSAD());        
         msad.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
-        msad.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
+        msad.setLdapRuntimeConfig(new LdapRuntimeConfig((ServerConfig)applicationContext.getBean("serverConfig")));
         msad.afterPropertiesSet();
         return msad;
     }

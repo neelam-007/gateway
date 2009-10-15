@@ -1,0 +1,118 @@
+# LDIF file for use testing LDAP Identity Provider (with test template)
+
+# LDIF Version
+version: 1
+
+# Users/groups OU
+#dn: ou=users, ou=system
+#objectClass: organizationalunit
+#objectClass: top
+#ou: users
+
+# User: test1
+dn: cn=test1, ou=users, ou=system
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: top
+cn: test1
+sn: user
+uid: test1
+
+# User: test2
+dn: cn=test2, ou=users, ou=system
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: top
+cn: test2
+sn: user
+uid: test2
+
+# User: test3
+dn: cn=test3, ou=users, ou=system
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: top
+cn: test3
+sn: user
+uid: test3
+
+# Posix Group 1 (MemberStrategy 1, MEMBERS_ARE_LOGIN)
+dn: cn=pgroup1, ou=users, ou=system
+objectClass: posixGroup
+objectClass: top
+cn: pgroup1
+gidNumber: 1
+memberUid: test1
+
+# Posix Group 2
+dn: cn=pgroup2, ou=users, ou=system
+objectClass: posixGroup
+objectClass: top
+cn: pgroup2
+gidNumber: 2
+memberUid: pgroup1
+
+# Posix Group 3
+dn: cn=pgroup3, ou=users, ou=system
+objectClass: posixGroup
+objectClass: top
+cn: pgroup3
+gidNumber: 3
+memberUid: pgroup2
+
+# Posix Group 4
+dn: cn=pgroup4, ou=users, ou=system
+objectClass: posixGroup
+objectClass: top
+cn: pgroup4
+gidNumber: 4
+memberUid: pgroup3
+
+# GON Group (MemberStrategy 0, MEMBERS_ARE_DN)
+dn: cn=group1, ou=users, ou=system
+objectClass: groupOfNames
+objectClass: top
+cn: group1
+member: cn=test1, ou=users, ou=system
+
+dn: cn=group2, ou=users, ou=system
+objectClass: groupOfNames
+objectClass: top
+cn: group2
+member: cn=group1, ou=users, ou=system
+
+# GOUN Group (MemberStrategy 2, MEMBERS_ARE_NVPAIR)
+dn: cn=ugroup1, ou=users, ou=system
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: ugroup1
+uniqueMember: cn=test1
+
+dn: cn=ugroup2, ou=users, ou=system
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: ugroup2
+uniqueMember: cn=ugroup1
+
+# Groups in separate OUs for heterogenous group nesting tests
+dn: ou=groups1, ou=system
+objectClass: organizationalunit
+objectClass: top
+ou: groups1
+
+dn: ou=groups2, ou=system
+objectClass: organizationalunit
+objectClass: top
+ou: groups2
+
+dn: cn=sougroup1, ou=groups1, ou=system
+objectClass: groupOfNames
+objectClass: top
+cn: sougroup1
+member: cn=test1, ou=users, ou=system
+
+dn: cn=sougroup2, ou=groups2, ou=system
+objectClass: groupOfNames
+objectClass: top
+cn: sougroup2
+member: ou=users, ou=system

@@ -111,5 +111,5 @@ public interface GroupManager<UT extends User, GT extends Group> {
 
     Collection findAll() throws FindException;
 
-    Group findByName(String groupName) throws FindException;
+    GT findByName(String groupName) throws FindException;
 }

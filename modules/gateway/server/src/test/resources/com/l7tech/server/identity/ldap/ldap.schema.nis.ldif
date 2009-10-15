@@ -1,0 +1,13 @@
+# LDIF file for use testing LDAP Identity Provider (with test template)
+#
+# This file enables the RFC 2307 (NIS) schema (needed for posixGroup)
+
+# LDIF Version
+version: 1
+
+# Enable NIS schema
+dn: cn=nis, ou=schema
+changetype: modify
+replace:m-disabled
+m-disabled: FALSE
+-

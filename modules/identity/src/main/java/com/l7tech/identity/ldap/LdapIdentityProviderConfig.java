@@ -419,6 +419,65 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         }
     }
 
+    /**
+     * Get the group cache size.
+     *
+     * @return The size or null if not set.
+     */
+    @Transient
+    public Integer getGroupCacheSize() {
+        return getProperty(GROUP_CACHE_SIZE);
+    }
+
+    /**
+     * Set the group cache size to use.
+     *
+     * @param size The size to use (null for default size, 0 for no caching)
+     */
+    public void setGroupCacheSize( final Integer size ) {
+        setProperty(GROUP_CACHE_SIZE, size);
+    }
+
+    /**
+     * Get the maximum age in milliseconds for cached group information.
+     *
+     * @return The maximum age or null
+     */
+    @Transient
+    public Integer getGroupCacheMaxAge() {
+        return getProperty(GROUP_CACHE_MAX_AGE);
+    }
+
+    /**
+     * Set the maximum age in milliseconds for cached group information.
+     *
+     * @param maxAge The maximum age (null for default, 0 for no caching)
+     */
+    public void setGroupCacheMaxAge( final Integer maxAge ) {
+        setProperty(GROUP_CACHE_MAX_AGE, maxAge);
+    }
+
+    /**
+     * Get the group maximum nesting depth.
+     *
+     * <p>This limits the depth when checking of nested groups.</p>
+     *
+     * @return The maximum nesting or null if not set.
+     */
+    @Transient
+    public Integer getGroupMaxNesting() {
+        return getProperty(GROUP_MAX_NESTING);
+    }
+
+    /**
+     * Set the group maximum nesting depth.
+     *
+     * @param depth The depth to use (null or 0 for no limit)
+     */
+    public void setGroupMaxNesting( final Integer depth ) {
+        setProperty(GROUP_MAX_NESTING, depth);
+    }
+
     public enum UserCertificateUseType { NONE, INDEX, INDEX_CUSTOM, SEARCH }
 
     public static final String URL = "ldapurl";
@@ -437,4 +496,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String USER_CERT_SEARCH_ISSUER_SERIAL = "userCertSearchIssuerSerial";
     private static final String USER_CERT_SEARCH_SKI = "userCertSearchSKI";
     private static final String RETURNING_ATTRIBUTES = "returningAttributes";    
+    private static final String GROUP_CACHE_SIZE = "groupCacheSize";
+    private static final String GROUP_CACHE_MAX_AGE = "groupCacheMaxAge";
+    private static final String GROUP_MAX_NESTING = "groupMaxNesting";
 }

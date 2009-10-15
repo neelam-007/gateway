@@ -190,10 +190,6 @@ public class FederatedIdentityProviderImpl
     }
 
     @Override
-    public void startMaintenance() {
-    }
-
-    @Override
     public void setUserManager(FederatedUserManager userManager) {
         this.userManager = userManager;
     }

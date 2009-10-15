@@ -6,13 +6,20 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Pair;
+import com.l7tech.common.io.WhirlycacheFactory;
+import com.l7tech.server.Lifecycle;
+import com.l7tech.server.LifecycleException;
+import com.whirlycott.cache.Cache;
 
 import javax.naming.ldap.LdapName;
-import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.OperationNotSupportedException;
 import javax.naming.SizeLimitExceededException;
 import javax.naming.AuthenticationException;
+import javax.naming.NameNotFoundException;
+import javax.naming.NamingEnumeration;
 import javax.naming.directory.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -25,12 +32,9 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
- *
- * TODO [steve] various places assume use of "CN" (cn) attribute, is this safe?
- * TODO [steve] fix case sensitive comparisons of (partial) DN strings
  */
 @LdapClassLoaderRequired
-public class LdapGroupManagerImpl implements LdapGroupManager {
+public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
 
     public LdapGroupManagerImpl() {
     }
@@ -38,7 +42,39 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     @Override
     public synchronized void configure(LdapIdentityProvider provider) {
         identityProvider = provider;
-        identityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
+        identityProviderConfig = identityProvider.getConfig();
+
+        cacheSize = getConfigValue( identityProviderConfig.getGroupCacheSize(), DEFAULT_GROUP_CACHE_SIZE ) * 2; // double since we cache by name and dn
+        cacheMaxAge = getConfigValue( identityProviderConfig.getGroupCacheMaxAge(), DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE );
+        groupMaxNesting = getConfigValue( identityProviderConfig.getGroupMaxNesting(), DEFAULT_GROUP_MAX_NESTING );
+
+        ldapTemplate = new LdapUtils.LdapTemplate(
+                identityProviderConfig.getSearchBase(),
+                getReturningAttributes() ){
+            @Override
+            DirContext getDirContext() throws NamingException {
+                return identityProvider.getBrowseContext();
+            }
+        };
+    }
+
+    public void setLdapRuntimeConfig( final LdapRuntimeConfig ldapRuntimeConfig ) {
+        this.ldapRuntimeConfig = ldapRuntimeConfig;
+    }
+
+    @Override
+    public void start() throws LifecycleException {
+        groupCache = cacheSize < 1 ? null :
+                WhirlycacheFactory.createCache("LDAP Group Cache ("+getId()+")", cacheSize, 33, WhirlycacheFactory.POLICY_LFU);
+    }
+
+    @Override
+    public void stop() throws LifecycleException {
+        Cache cache = groupCache;
+        groupCache = null;
+        if ( cache != null ) {
+            WhirlycacheFactory.shutdown(cache);
+        }
     }
 
     /**
@@ -47,43 +83,35 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * @return an LdapGroup object, null if group dont exist
      */
     @Override
-    public LdapGroup findByPrimaryKey(String dn) throws FindException {
-        try {
-            DirContext context = null;
+    public LdapGroup findByPrimaryKey( final String dn ) throws FindException {
+        final LdapGroup[] groupHolder = new LdapGroup[1];
+
+        groupHolder[0] = getCachedGroupByDn(dn);
+        if ( groupHolder[0]==null ) {
+            final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
             try {
-                LdapIdentityProvider identityProvider = getIdentityProvider();
-                LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
-
-                context = identityProvider.getBrowseContext();
-                Attributes attributes = context.getAttributes(dn);
-
-                GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
-                Attribute objectclasses = attributes.get(LdapIdentityProvider.OBJECTCLASS_ATTRIBUTE_NAME);
-                for (GroupMappingConfig groupType : groupTypes) {
-                    String grpclass = groupType.getObjClass();
-                    if (LdapUtils.attrContainsCaseIndependent(objectclasses, grpclass)) {
-                        LdapGroup out = new LdapGroup();
-                        out.setProviderId(ldapIdentityProviderConfig.getOid());
-                        out.setDn(dn);
-                        out.setAttributes(attributes);
-                        Object tmp = LdapUtils.extractOneAttributeValue(attributes,
-                                groupType.getNameAttrName());
-                        if (tmp != null) out.setCn(tmp.toString());
-                        return out;
+                ldapTemplate.attributes( dn, new LdapUtils.LdapListener(){
+                    @Override
+                    void attributes( final String dn, final Attributes attributes ) throws NamingException {
+                        groupHolder[0] = buildGroup( dn, attributes );
+                        cacheGroup( groupHolder[0] );
                     }
+                });
+            } catch (NameNotFoundException nnfe) {
+                if ( logger.isLoggable(Level.FINEST )) {
+                    logger.finest("Group " + dn + " does not exist in" + ldapIdentityProviderConfig.getName() + " (" + ExceptionUtils.getMessage(nnfe) + ")");
                 }
-                return null;
-            } finally {
-                ResourceUtils.closeQuietly( context );
+            } catch (AuthenticationException ae) {
+                logger.log(Level.WARNING, "LDAP authentication error, while building group: " + ae.getMessage(),
+                        ExceptionUtils.getDebugException(ae));
+                throw new FindException("naming exception", ae);
+            } catch (NamingException e) {
+                logger.log(Level.WARNING, "LDAP error, while building group", e);
+                throw new FindException("naming exception", e);
             }
-        } catch (AuthenticationException ae) {
-            logger.log(Level.WARNING, "LDAP authentication error, while building group: " + ae.getMessage(),
-                    ExceptionUtils.getDebugException(ae));
-            throw new FindException("naming exception", ae);
-        } catch (NamingException e) {
-            logger.log(Level.WARNING, "LDAP error, while building group", e);
-            throw new FindException("naming exception", e);
         }
+
+        return groupHolder[0];
     }
 
     @Override
@@ -97,22 +125,42 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * does equivalent of LdapIdentityProvider.search(new EntityType[] {EntityType.GROUP}, name);
      */
     @Override
-    public LdapGroup findByName(String name) throws FindException {
-        LdapIdentityProvider identityProvider = getIdentityProvider();
-        Collection res = identityProvider.search(new EntityType[]{EntityType.GROUP}, name);
-        switch (res.size()) {
-            case 0:
-                return null;
-            case 1:
-                EntityHeader header = (EntityHeader)res.iterator().next();
-                return findByPrimaryKey(header.getStrId());
-            default:
-                // return 1st one
-                logger.warning("search on group name returned more than one " +
-                  "result. returning 1st one");
-                header = (EntityHeader)res.iterator().next();
-                return findByPrimaryKey(header.getStrId());
+    public LdapGroup findByName( final String name ) throws FindException {
+        LdapGroup ldapGroup = getCachedGroupByCn(name);
+
+       if ( ldapGroup == null ) {
+            final LdapIdentityProvider identityProvider = getIdentityProvider();
+            final String filter = identityProvider.groupSearchFilterWithParam( name );
+            final LdapGroup[] groupHolder = new LdapGroup[1];
+            try {
+                ldapTemplate.search( filter, 2, null, new LdapUtils.LdapListener(){
+                    @Override
+                    void searchResults( final NamingEnumeration<SearchResult> results ) throws NamingException {
+                        if ( results.hasMore() ) {
+                            SearchResult result = results.next();
+                            groupHolder[0] = buildGroup( result.getNameInNamespace(), result.getAttributes() );
+                            cacheGroup( groupHolder[0] );
+                        }
+
+                        if ( results.hasMore() ) {
+                            logger.warning("search on group name returned more than one " +
+                              "result. returning 1st one");
+                        }
+                    }
+                } );
+            } catch (AuthenticationException ae) {
+                logger.log(Level.WARNING, "LDAP authentication error, while building group: " + ae.getMessage(),
+                        ExceptionUtils.getDebugException(ae));
+                throw new FindException("naming exception", ae);
+            } catch (NamingException e) {
+                logger.log(Level.WARNING, "LDAP error, while building group", e);
+                throw new FindException("naming exception", e);
+            }
+
+            ldapGroup = groupHolder[0];
         }
+
+        return ldapGroup;
     }
 
     /**
@@ -197,17 +245,27 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * @throws FindException
      */
     @Override
-    public boolean isMember(User user, LdapGroup group) throws FindException {
+    public boolean isMember( final User user,
+                             final LdapGroup group ) throws FindException {
         if (user.getProviderId() != getProviderOid()) {
             logger.log(Level.FINE, "User is not from this Identity Provider");
             return false;
         }
 
+        return isMember( user, group, 1 );
+    }
+
+    private boolean isMember( final User user,
+                              final LdapGroup group,
+                              final int depth ) throws FindException {
         LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
         for(GroupMappingConfig groupMappingConfig : ldapIdentityProviderConfig.getGroupMappings()) {
-            if(groupMappingConfig.getMemberStrategy().equals(MemberStrategy.MEMBERS_BY_OU)) {
+            final MemberStrategy memberStrategy = groupMappingConfig.getMemberStrategy();
+            if( MemberStrategy.MEMBERS_BY_OU.equals(memberStrategy) ) {
                 try {
-                    if(isMemberOfGroupByOu(user, group.getDn())) {
+                    final LdapName userDN = new LdapName(user.getId());
+                    final LdapName groupDN = new LdapName(group.getDn());
+                    if( userDN.startsWith(groupDN) ) {
                         return true;
                     }
                 } catch(NamingException e) {
@@ -216,92 +274,77 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                     throw new FindException(msg, e);
                 }
             } else {
-                boolean membersByLogin = groupMappingConfig.getMemberStrategy().equals(MemberStrategy.MEMBERS_ARE_LOGIN);
-                Attribute membersAttribute = group.getAttributes().get(groupMappingConfig.getMemberAttrName());
+                Attributes attributes = group.getAttributes();
+                Attribute membersAttribute = attributes==null ? null : attributes.get(groupMappingConfig.getMemberAttrName());
                 if(membersAttribute == null) {
                     continue;
                 }
-                
+
                 for(int i = 0;i < membersAttribute.size();i++) {
                     try {
                         String member = (String)membersAttribute.get(i);
-                        if(membersByLogin && member.equals(user.getLogin()) ||
-                                !membersByLogin && (member.equals(user.getId()) || member.equals("cn=" + user.getName()))) {
-                            return true;
+                        if( MemberStrategy.MEMBERS_ARE_LOGIN.equals(memberStrategy) ) {
+                            if ( member.equals(user.getLogin()) ) {
+                                return true;
+                            }
+                        } else if ( MemberStrategy.MEMBERS_ARE_DN.equals(memberStrategy) ) {
+                            if ( member.equals(user.getId()) ) {
+                                return true;
+                            }
+                        } else if ( MemberStrategy.MEMBERS_ARE_NVPAIR.equals(memberStrategy) ) {
+                            for ( String nameAttribute : getDistinctUserNameAttributeNames() ) {
+                                if ( member.equals(nameAttribute + "=" + user.getName()) ) {
+                                    return true;
+                                }
+                            }
                         }
                     } catch(NamingException ne) {
                         logger.log(Level.WARNING, "LDAP attribute read error: " + ne.getMessage(), ExceptionUtils.getDebugException(ne));
                     }
                 }
 
-                // The user is nto a member of this group, need to check subgroups
-                for(int i = 0;i < membersAttribute.size();i++) {
+                // The user is not a member of this group, need to check subgroups
+                if ( groupNestingProcessNextDepth(depth) ) {
+                    final List<String> nonGroups = new ArrayList<String>();
                     try {
-                        String memberString = (String)membersAttribute.get(i);
-                        LdapGroup subgroup;
-                        if(membersByLogin) {
-                            subgroup = findByName((String)membersAttribute.get(i));
-                        } else {
-                            if(memberString.startsWith("cn=") && memberString.substring(3).contains("=")) {
-                                subgroup = findByName(memberString.substring(3));
-                            } else {
-                                subgroup = findByPrimaryKey((String)membersAttribute.get(i));
-                            }
-                        }
+                        for(int i = 0; i < membersAttribute.size(); i++) {
+                            try {
+                                final String memberString = (String)membersAttribute.get(i);
 
-                        if(subgroup != null) {
-                            if(isMember(user, subgroup)) {
-                                return true;
+                                if ( isNonGroup(group, memberString) ) {
+                                    continue;
+                                }
+
+                                LdapGroup subgroup = null;
+                                if( MemberStrategy.MEMBERS_ARE_LOGIN.equals(memberStrategy) ) {
+                                    subgroup = findByName((String)membersAttribute.get(i));
+                                } else if ( MemberStrategy.MEMBERS_ARE_DN.equals(memberStrategy) ) {
+                                    subgroup = findByPrimaryKey(memberString);
+                                } else if( MemberStrategy.MEMBERS_ARE_NVPAIR.equals(memberStrategy) ) {
+                                    String memberName = memberString;
+                                    int index = memberName.indexOf( '=' );
+                                    if ( index > 0 ) {
+                                        memberName = memberName.substring( index+1 );
+                                    }
+                                    subgroup = findByName(memberName);
+                                }
+
+                                if( subgroup != null ) {
+                                    if ( isMember(user, subgroup, depth + 1) ) {
+                                        return true;
+                                    }
+                                } else {
+                                    nonGroups.add( memberString );
+                                }
+                            } catch(NamingException e) {
+                                // skip to the next member
                             }
                         }
-                    } catch(NamingException e) {
-                        // skip to the next member
+                    } finally {
+                        cacheNonGroups( group, nonGroups );
                     }
                 }
             }
-        }
-
-        return false;
-    }
-
-    // Check if the provided user is a member of the provided OU group, or the immediate subgroups
-    private boolean isMemberOfGroupByOu( final User user, final String dn ) throws NamingException {
-        LdapIdentityProvider identityProvider = getIdentityProvider();
-
-        final LdapName userDN = new LdapName(user.getId());
-        if(userDN.startsWith(new LdapName(dn))) {
-            return true;
-        }
-
-        final SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        sc.setReturningAttributes(getReturningAttributes());
-
-        final String filter = identityProvider.groupSearchFilterWithParam("*");
-        DirContext context = null;
-        NamingEnumeration<SearchResult> answer = null;
-        try {
-            context = identityProvider.getBrowseContext();
-            answer = context.search(dn, filter, sc);
-
-            while (answer.hasMore()) {
-                SearchResult sr = answer.next();
-                if (sr != null && sr.getName() != null && sr.getName().length() > 0) {
-                    final String entitydn = sr.getNameInNamespace();
-                    if (entitydn.equals(dn)) continue; // Avoid recursing this group
-                    if(userDN.startsWith(new LdapName(entitydn))) {
-                        return true;
-                    }
-                }
-            }
-        } catch (SizeLimitExceededException e) {
-            // add something to the result that indicates the fact that the search criteria is too wide
-            logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
-                                   "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
-                                   e);
-        } finally {
-            ResourceUtils.closeQuietly( answer );
-            ResourceUtils.closeQuietly( context );            
         }
 
         return false;
@@ -361,45 +404,47 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * @return a collection containing EntityHeader objects
      */
     @Override
-    public Set<IdentityHeader> getGroupHeaders(LdapUser user) throws FindException {
-        LdapIdentityProvider identityProvider = getIdentityProvider();
-        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+    public Set<IdentityHeader> getGroupHeaders( final LdapUser user ) throws FindException {
+        final LdapIdentityProvider identityProvider = getIdentityProvider();
+        final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
 
         GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
-        StringBuffer uberGroupMembershipFilter = new StringBuffer("(|");
         boolean checkOuStrategyToo = false;
-        boolean somethingToSearchFor = false;
+        LdapSearchFilter filter = new LdapSearchFilter();
+        filter.or();
         for (GroupMappingConfig groupType : groupTypes) {
-            String grpclass = groupType.getObjClass();
-            String mbmAttrName = groupType.getMemberAttrName();
-            MemberStrategy memberstrategy = groupType.getMemberStrategy();
-            if (memberstrategy.equals(MemberStrategy.MEMBERS_ARE_LOGIN)) {
-                uberGroupMembershipFilter.append("(&" + "(objectClass=").append(grpclass).append(")");
-                uberGroupMembershipFilter.append("(").append(mbmAttrName).append("=").append(user.getLogin()).append(")");
-                uberGroupMembershipFilter.append(")");
-                somethingToSearchFor = true;
-            } else if (memberstrategy.equals(MemberStrategy.MEMBERS_BY_OU)) {
+            final String grpclass = groupType.getObjClass();
+            final String mbmAttrName = groupType.getMemberAttrName();
+            final MemberStrategy memberstrategy = groupType.getMemberStrategy();
+            if (MemberStrategy.MEMBERS_BY_OU.equals(memberstrategy)) {
                 checkOuStrategyToo = true;
-            } else {
-                uberGroupMembershipFilter.append("(&" + "(objectClass=").append(grpclass).append(")");
-                uberGroupMembershipFilter.append("(|");
-                uberGroupMembershipFilter.append("(").append(mbmAttrName).append("=cn=").append(user.getName()).append(")");
-                uberGroupMembershipFilter.append("(").append(mbmAttrName).append("=").append(user.getId()).append(")");
-                uberGroupMembershipFilter.append(")");
-                uberGroupMembershipFilter.append(")");
-                somethingToSearchFor = true;
+            } else if (MemberStrategy.MEMBERS_ARE_LOGIN.equals(memberstrategy)) {
+                filter.and();
+                  filter.objectClass(grpclass);
+                  filter.attrEquals(mbmAttrName, user.getLogin());
+                filter.end();
+            } else if (MemberStrategy.MEMBERS_ARE_DN.equals(memberstrategy)) {
+                filter.and();
+                  filter.objectClass(grpclass);
+                  filter.attrEquals( mbmAttrName, user.getId() );
+                filter.end();
+            } else if (MemberStrategy.MEMBERS_ARE_NVPAIR.equals(memberstrategy)) {
+                filter.and();
+                  filter.objectClass(grpclass);
+                  Set<String> names = getDistinctUserNameAttributeNames();
+                  if (names.size()>1) { filter.or(); }
+                  for ( String name : names ) {
+                      filter.attrEquals( mbmAttrName, name + "=" + user.getName() );
+                  }
+                  if (names.size()>1) { filter.end(); }
+                filter.end();
             }
         }
-        uberGroupMembershipFilter.append(")");
+        filter.end();
 
-        EntityHeaderSet<IdentityHeader> output = new EntityHeaderSet<IdentityHeader>();
-        if (somethingToSearchFor) {
-            SearchControls sc = new SearchControls();
-            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            sc.setCountLimit(identityProvider.getMaxSearchResultSize());
-            sc.setReturningAttributes(getReturningAttributes());
+        final EntityHeaderSet<IdentityHeader> output = new EntityHeaderSet<IdentityHeader>();
+        if ( !filter.isEmpty() ) {
             DirContext context = null;
-            NamingEnumeration<SearchResult> answer = null;
             try {
                 try {
                     context = identityProvider.getBrowseContext();
@@ -414,72 +459,76 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 }
 
                 try {
-                    answer = context.search(ldapIdentityProviderConfig.getSearchBase(), uberGroupMembershipFilter.toString(), sc);
-                } catch (NamingException e) {
-                    String msg = "error getting answer";
-                    logger.log(Level.WARNING, msg, e);
-                    throw new FindException(msg, e);
-                }
+                    final DirContext searchContext = context;
+                    ldapTemplate.search( context, filter.buildFilter(), ldapRuntimeConfig.getMaxSearchResultSize(), null, new LdapUtils.LdapListener(){
+                        @Override
+                        boolean searchResult( final SearchResult sr ) throws NamingException {
+                            IdentityHeader header = identityProvider.searchResultToHeader(sr);
+                            if ( header != null ) {
+                                output.add(header);
+                                // Groups within groups.
+                                // check if this group is a member of other groups. if so, then user belongs to those
+                                // groups too.
+                                if ( groupNestingEnabled()  ) {
+                                    output.addAll(getSubGroups(searchContext, sr.getNameInNamespace(), 2));
+                                }
+                            }
 
-                try {
-                    while (answer.hasMore()) {
-                        SearchResult sr = answer.next();
-                        IdentityHeader header = identityProvider.searchResultToHeader(sr);
-                        if (header != null) {
-                            output.add(header);
-                            // Groups within groups.
-                            // check if this group refer to other groups. if so, then user belongs to those
-                            // groups too.
-                            output.addAll(getSubGroups(context, sr.getNameInNamespace()));
+                            return true;
                         }
-                    }
+                    } );
                 } catch (SizeLimitExceededException e) {
                     // add something to the result that indicates the fact that the search criteria is too wide
                     logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
                                            "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
                                            e);
-                    output.setMaxExceeded(identityProvider.getMaxSearchResultSize());
+                    output.setMaxExceeded(ldapRuntimeConfig.getMaxSearchResultSize());
                     // dont throw here, we still want to return what we got
                 } catch (NamingException e) {
-                    String msg = "error getting next answer";
+                    String msg = "error getting answer";
                     logger.log(Level.WARNING, msg, e);
                     throw new FindException(msg, e);
                 }
             } finally {
-                ResourceUtils.closeQuietly( answer );
                 ResourceUtils.closeQuietly( context );
             }
         }
 
-        if (checkOuStrategyToo) {
+        if ( checkOuStrategyToo ) {
             // look for OU memberships
-            String tmpdn = user.getId();
-            int pos = 0;
-            int res = tmpdn.indexOf("ou=", pos);
-            while (res >= 0) {
-                // is there a valid organizational unit there?
-                LdapGroup maybegrp;
-                try {
-                    maybegrp = findByPrimaryKey(tmpdn.substring(res));
-                } catch (FindException e) {
-                    logger.finest("could not resolve this group " + e.getMessage());
-                    maybegrp = null;
-                }
-                if (maybegrp != null) {
-                    output.add(groupToHeader(maybegrp));
-                }
-                pos = res + 2;
-                res = tmpdn.indexOf("ou=", pos);
-            }
+            addOUGroups( user.getId(), output );
         }
+
         return output;
+    }
+
+    /**
+     * If the given DN has OUs, then add as groups.
+     */
+    private void addOUGroups( final String dn, final EntityHeaderSet<IdentityHeader> output ) {
+        final String dnLower = dn.toLowerCase();
+        int pos = 0;
+        int res = dnLower.indexOf("ou=", pos);
+        while (res >= 0) {
+            // is there a valid organizational unit there?
+            try {
+                LdapGroup group = findByPrimaryKey( dn.substring(res) );
+                if ( group != null ) {
+                    output.add( groupToHeader(group) );
+                }
+            } catch (FindException e) {
+                logger.finest("could not resolve this group " + e.getMessage());
+            }
+            pos = res + 2;
+            res = dnLower.indexOf("ou=", pos);
+        }
     }
 
     /**
      * practical equivalent to getGroupHeaders(LdapUserManager.findByPrimaryKey(userId));
      */
     @Override
-    public Set<IdentityHeader> getGroupHeaders(String userId) throws FindException {
+    public Set<IdentityHeader> getGroupHeaders( final String userId ) throws FindException {
         return getGroupHeaders(getUserManager().findByPrimaryKey(userId));
     }
 
@@ -506,63 +555,44 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * @param dn the dn of the group to inspect
      * @return a collection containing EntityHeader objects
      */
-    private Set<IdentityHeader> getSubGroups(DirContext context, String dn) {
-        LdapIdentityProvider identityProvider = getIdentityProvider();
-        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
-
-        EntityHeaderSet<IdentityHeader> output = new EntityHeaderSet<IdentityHeader>();
+    private Set<IdentityHeader> getSubGroups( final DirContext context,
+                                              final String dn,
+                                              final int depth ) {
+        final LdapIdentityProvider identityProvider = getIdentityProvider();
+        final EntityHeaderSet<IdentityHeader> output = new EntityHeaderSet<IdentityHeader>();
         String filter = subGroupSearchString(dn);
         if (filter != null) {
-            SearchControls sc = new SearchControls();
-            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            sc.setCountLimit(identityProvider.getMaxSearchResultSize());
-            sc.setReturningAttributes(getReturningAttributes());
-            NamingEnumeration<SearchResult> answer = null;
             try {
-                answer = context.search(ldapIdentityProviderConfig.getSearchBase(), filter, sc);
-                while (answer.hasMore()) {
-                    // get this item
-                    SearchResult sr = answer.next();
-                    IdentityHeader header = identityProvider.searchResultToHeader(sr);
-                    if (header != null && header.getType().equals(EntityType.GROUP)) {
-                        output.add(header);
-                        output.addAll(getSubGroups(context, sr.getNameInNamespace()));
+                ldapTemplate.search( context, filter, ldapRuntimeConfig.getMaxSearchResultSize(), null, new LdapUtils.LdapListener(){
+                    @Override
+                    boolean searchResult( final SearchResult sr ) throws NamingException {
+                        IdentityHeader header = identityProvider.searchResultToHeader(sr);
+                        if (header != null && header.getType().equals(EntityType.GROUP)) {
+                            output.add(header);
+                            if ( groupNestingProcessNextDepth(depth) ) {
+                                output.addAll(getSubGroups(context, sr.getNameInNamespace(), depth + 1));
+                            }
+                        }
+                        return true;
                     }
-                }
+                } );
             } catch (SizeLimitExceededException e) {
                 // add something to the result that indicates the fact that the search criteria is too wide
                 logger.log(Level.FINE, "the search results exceeded the maximum.", e);
-                output.setMaxExceeded(identityProvider.getMaxSearchResultSize());
+                output.setMaxExceeded(ldapRuntimeConfig.getMaxSearchResultSize());
                 // dont throw here, we still want to return what we got
             } catch (NamingException e) {
                 logger.log(Level.WARNING, "naming exception with filter " + filter, e);
-            } finally {
-                ResourceUtils.closeQuietly( answer );
             }
         }
+
         // look for sub-OU memberships
-        int pos = 0;
-        int res = dn.indexOf("ou=", pos);
-        while (res >= 0) {
-            // is there a valid organizational unit there?
-            LdapGroup maybegrp;
-            try {
-                maybegrp = findByPrimaryKey(dn.substring(res));
-            } catch (FindException e) {
-                logger.finest("could not resolve this group " + e.getMessage());
-                maybegrp = null;
-            }
-            if (maybegrp != null) {
-                IdentityHeader grpheader = groupToHeader(maybegrp);
-                output.add(grpheader);
-            }
-            pos = res + 2;
-            res = dn.indexOf("ou=", pos);
-        }
+        addOUGroups( dn, output );
+
         return output;
     }
 
-    private IdentityHeader groupToHeader(LdapGroup maybegrp) {
+    private IdentityHeader groupToHeader( final LdapGroup maybegrp ) {
         return new IdentityHeader(
                     getProviderOid(),
                     maybegrp.getDn(),
@@ -578,30 +608,26 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      *
      * @return returns a search string or null if the group object classes dont allow for groups within groups
      */
-    private String subGroupSearchString(String dnOfChildGroup) {
+    private String subGroupSearchString( final String dnOfChildGroup ) {
         LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
 
-        StringBuffer output = new StringBuffer("(|");
         GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
-        boolean searchStringValid = false;
+        LdapSearchFilter searchFilter = new LdapSearchFilter();
+        searchFilter.or();
         for (GroupMappingConfig groupType : groupTypes) {
             if (groupType.getMemberStrategy().equals(MemberStrategy.MEMBERS_ARE_DN) ||
                 groupType.getMemberStrategy().equals(MemberStrategy.MEMBERS_ARE_NVPAIR))
             {
-                searchStringValid = true;
-                output.append("(&" + "(objectClass=");
-                output.append(groupType.getObjClass());
-                output.append(")" + "(");
-                output.append(groupType.getMemberAttrName());
-                output.append("=");
-                output.append(dnOfChildGroup);
-                output.append(")" + ")");
+                searchFilter.and();
+                  searchFilter.objectClass(groupType.getObjClass());
+                  searchFilter.attrEquals( groupType.getMemberAttrName(), dnOfChildGroup );
+                searchFilter.end();
             }
         }
-        output.append(")");
-        if (!searchStringValid) return null;
+        searchFilter.end();
+        if (searchFilter.isEmpty()) return null;
 
-        return output.toString();
+        return searchFilter.buildFilter();
     }
 
     /**
@@ -610,126 +636,135 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * @return a collection containing EntityHeader objects
      */
     @Override
-    public EntityHeaderSet<IdentityHeader> getUserHeaders(LdapGroup group) throws FindException {
-        NamingEnumeration answer = null;
+    public EntityHeaderSet<IdentityHeader> getUserHeaders( final LdapGroup group ) throws FindException {
+        return getUserHeaders( group, 1 );
+    }
+
+    private EntityHeaderSet<IdentityHeader> getUserHeaders( final LdapGroup group,
+                                                            final int depth ) throws FindException {
+        final LdapIdentityProvider identityProvider = getIdentityProvider();
+        final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+        final GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
+        final EntityHeaderSet<IdentityHeader> headers = new EntityHeaderSet<IdentityHeader>();
+
         DirContext context = null;
         try {
-            LdapIdentityProvider identityProvider = getIdentityProvider();
-            LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
-
-            EntityHeaderSet<IdentityHeader> headers = new EntityHeaderSet<IdentityHeader>();
-
             String dn = group.getDn();
             context = identityProvider.getBrowseContext();
-            Attributes attributes = context.getAttributes(dn);
-
-            GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
-            Attribute objectclasses = attributes.get(LdapIdentityProvider.OBJECTCLASS_ATTRIBUTE_NAME);
-            for (GroupMappingConfig groupType : groupTypes) {
-                String grpclass = groupType.getObjClass();
-                if (LdapUtils.attrContainsCaseIndependent(objectclasses, grpclass)) {
-                    if (groupType.getMemberStrategy().equals(MemberStrategy.MEMBERS_ARE_LOGIN)) {
-                        Attribute memberAttribute = attributes.get(groupType.getMemberAttrName());
-                        if (memberAttribute != null) {
-                            for (int ii = 0; ii < memberAttribute.size(); ii++) {
-                                Object val = memberAttribute.get(ii);
-                                if (val != null) {
-                                    String memberlogin = val.toString();
-                                    LdapUser u = getUserManager().findByLogin(memberlogin);
-                                    if (u != null) {
-                                        IdentityHeader h = new IdentityHeader(getProviderOid(), u.getDn(), EntityType.USER, u.getLogin(), null, u.getName(), null);
-                                        if (h == null) {
-                                            logger.info("the user " + u + " is not valid according to template " +
-                                                        "and will not be considered a member");
-                                        } else {
-                                            headers.add(h);
+            final DirContext searchContext = context;
+            ldapTemplate.attributes( context, dn, new LdapUtils.LdapListener(){
+                @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
+                @Override
+                void attributes( final String dn, final Attributes attributes ) throws NamingException {
+                    final Attribute objectclasses = attributes.get(LdapIdentityProvider.OBJECTCLASS_ATTRIBUTE_NAME);
+                    for ( GroupMappingConfig groupType : groupTypes ) {
+                        final String grpclass = groupType.getObjClass();
+                        if (LdapUtils.attrContainsCaseIndependent(objectclasses, grpclass)) {
+                            final MemberStrategy memberStrategy = groupType.getMemberStrategy();
+                            if ( MemberStrategy.MEMBERS_BY_OU.equals(memberStrategy) ) {
+                                collectOUGroupMembers(searchContext, dn, headers, depth);
+                            } else if ( MemberStrategy.MEMBERS_ARE_LOGIN.equals(memberStrategy) ) {
+                                Attribute memberAttribute = attributes.get(groupType.getMemberAttrName());
+                                if (memberAttribute != null) {
+                                    for (int ii = 0; ii < memberAttribute.size(); ii++) {
+                                        Object val = memberAttribute.get(ii);
+                                        if (val != null) {
+                                            String memberlogin = val.toString();
+                                            LdapUser u;
+                                            try {
+                                                u = getUserManager().findByLogin(memberlogin);
+                                            } catch (FindException e) {
+                                                throw (NamingException) new NamingException().initCause( e );
+                                            }
+                                            if (u != null) {
+                                                IdentityHeader h = new IdentityHeader(getProviderOid(), u.getDn(), EntityType.USER, u.getLogin(), null, u.getName(), null);
+                                                headers.add(h);
+                                            }
+                                            //TODO [steve] should process nested groups for MEMBERS_ARE_LOGIN here
                                         }
                                     }
                                 }
-                            }
-                        }
-                    } else if (groupType.getMemberStrategy().equals(MemberStrategy.MEMBERS_BY_OU)) {
-                        collectOUGroupMembers(context, dn, headers);
-                    } else {
-                        Attribute memberAttribute = attributes.get(groupType.getMemberAttrName());
-                        // for some reason, oracle directory specifies his members more than one (?!)
-                        if (memberAttribute != null) {
-                            for (int ii = 0; ii < memberAttribute.size(); ii++) {
-                                Object val = memberAttribute.get(ii);
-                                if (val != null) {
-                                    // nv pairs or dn. which is it?
-                                    String memberhint = val.toString();
-                                    // try to get user through dn
-                                    boolean done = false;
-                                    try {
-                                        LdapUser u = getUserManager().findByPrimaryKey(memberhint);
-                                        if (u != null) {
-                                            IdentityHeader newheader = new IdentityHeader(getProviderOid(), u.getDn(),
-                                                                                          EntityType.USER,
-                                                                                          u.getLogin(), null, u.getName(), null);
-                                            if (newheader == null) {
-                                                logger.info("the user " + u + " is not valid according to template " +
-                                                            "and will not be considered a member");
-                                            } else {
-                                                if (!headers.contains(newheader)) {
-                                                    headers.add(newheader);
-                                                }
-                                            }
-                                            done = true;
-                                        } else {
-                                            // GROUPS WITHIN GROUPS
-                                            // fla note: the member hint might actually refer to another group
-                                            // insted of a user
-                                            LdapGroup subgroup;
+                            } else if ( MemberStrategy.MEMBERS_ARE_DN.equals(memberStrategy) ||
+                                        MemberStrategy.MEMBERS_ARE_NVPAIR.equals(memberStrategy) ) {
+                                final Attribute memberAttribute = attributes.get(groupType.getMemberAttrName());
+                                // for some reason, oracle directory specifies his members more than one (?!)
+                                if (memberAttribute != null) {
+                                    for (int ii = 0; ii < memberAttribute.size(); ii++) {
+                                        Object val = memberAttribute.get(ii);
+                                        if (val != null) {
+                                            // nv pairs or dn. which is it?
+                                            String memberhint = val.toString();
+                                            // try to get user through dn
+                                            boolean done = false;
                                             try {
-                                                subgroup = findByPrimaryKey(memberhint);
-                                            } catch (FindException e) {
-                                                // nothing on purpose
-                                                logger.finest("seems like " + memberhint +
-                                                        " is not a group dn" + e.getMessage());
-                                                subgroup = null;
-                                            }
-                                            if (subgroup == null) {
-                                                try {
-                                                    subgroup = findByName(memberhint);
-                                                } catch (FindException e) {
-                                                    // nothing on purpose
-                                                    logger.finest("seems like " + memberhint +
-                                                            " is not a group name" + e.getMessage());
-                                                    subgroup = null;
+                                                LdapUser u = getUserManager().findByPrimaryKey(memberhint);
+                                                if (u != null) {
+                                                    IdentityHeader newheader = new IdentityHeader(getProviderOid(), u.getDn(),
+                                                                                                  EntityType.USER,
+                                                                                                  u.getLogin(), null, u.getName(), null);
+                                                    if (!headers.contains(newheader)) {
+                                                        headers.add(newheader);
+                                                    }
+                                                    done = true;
+                                                } else if ( groupNestingProcessNextDepth(depth) ) {
+                                                    // GROUPS WITHIN GROUPS
+                                                    // fla note: the member hint might actually refer to another group
+                                                    // insted of a user
+                                                    LdapGroup subgroup;
+                                                    try {
+                                                        subgroup = findByPrimaryKey(memberhint);
+                                                    } catch (FindException e) {
+                                                        // nothing on purpose
+                                                        logger.finest("seems like " + memberhint +
+                                                                " is not a group dn" + e.getMessage());
+                                                        subgroup = null;
+                                                    }
+                                                    if (subgroup == null) {
+                                                        try {
+                                                            subgroup = findByName(memberhint); //TODO [steve] need to handle NV_PAIR for groups?
+                                                        } catch (FindException e) {
+                                                            // nothing on purpose
+                                                            logger.finest("seems like " + memberhint +
+                                                                    " is not a group name" + e.getMessage());
+                                                            subgroup = null;
+                                                        }
+                                                    }
+                                                    if (subgroup != null) {
+                                                        // todo, prevent explosion
+                                                        // (what if some asshole has circular reference of groups?)
+                                                        // note. i dont think this is possible
+                                                        Set<IdentityHeader> subgroupmembers = getUserHeaders(subgroup, depth + 1);
+                                                        headers.addAll(subgroupmembers);
+                                                    }
                                                 }
+                                            } catch (FindException e) {
+                                                logger.log(Level.FINEST, "cannot resolve user through dn, try nv" +
+                                                        "pair method", e);
                                             }
-                                            if (subgroup != null) {
-                                                // todo, prevent explosion
-                                                // (what if some asshole has circular reference of groups?)
-                                                // note. i dont think this is possible
-                                                Set<IdentityHeader> subgroupmembers = getUserHeaders(subgroup);
-                                                headers.addAll(subgroupmembers);
+                                            // if that dont work, try search assuming nv pair
+                                            if (!done) {
+                                                nvSearchForUser(searchContext, memberhint, headers);
                                             }
                                         }
-                                    } catch (FindException e) {
-                                        logger.log(Level.FINEST, "cannot resolve user through dn, try nv" +
-                                                "pair method", e);
-                                    }
-                                    // if that dont work, try search assuming nv pair
-                                    if (!done) {
-                                        nvSearchForUser(context, memberhint, headers);
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
+            } );
+
             return headers;
         } catch (AuthenticationException ae) {
             logger.log(Level.WARNING, "LDAP authentication error: " + ae.getMessage(), ExceptionUtils.getDebugException(ae));
             throw new FindException(ae.getMessage(), ae);
         } catch (NamingException ne) {
+            if ( ExceptionUtils.causedBy( ne, FindException.class ) ) {
+                throw ExceptionUtils.getCauseIfCausedBy( ne, FindException.class );
+            }
             logger.log(Level.SEVERE, null, ne);
             throw new FindException(ne.getMessage(), ne);
         } finally {
-            ResourceUtils.closeQuietly( answer );
             ResourceUtils.closeQuietly( context );
         }
     }
@@ -785,24 +820,22 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         return identityProvider.getUserManager();
     }
 
-    private void collectOUGroupMembers(DirContext context, String dn, EntityHeaderSet<IdentityHeader> memberHeaders) throws NamingException {
-        LdapIdentityProvider identityProvider = getIdentityProvider();
-        long maxSize = identityProvider.getMaxSearchResultSize();
+    private void collectOUGroupMembers( final DirContext context,
+                                        final String dn,
+                                        final EntityHeaderSet<IdentityHeader> memberHeaders,
+                                        final int depth ) throws NamingException {
+        final LdapIdentityProvider identityProvider = getIdentityProvider();
+        final long maxSize = ldapRuntimeConfig.getMaxSearchResultSize();
         if (memberHeaders.size() >= maxSize) return;
+
         // build group memberships
         String filter = identityProvider.userSearchFilterWithParam("*");
-        SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        sc.setCountLimit(maxSize);
-        sc.setReturningAttributes(getReturningAttributes());
-        // use dn of group as base
-        {
-            NamingEnumeration<SearchResult> answer = null;
-            try {
-                answer = context.search(dn, filter, sc);
 
-                while (answer.hasMore()) {
-                    SearchResult sr = answer.next();
+        // use dn of group as base
+        try {
+            ldapTemplate.search( context, dn, filter, maxSize, null, new LdapUtils.LdapListener(){
+                @Override
+                boolean searchResult( final SearchResult sr ) throws NamingException {
                     IdentityHeader header = identityProvider.searchResultToHeader(sr);
                     if (header == null) {
                         logger.info("The user " + sr.getNameInNamespace() + " is not valid according to template and will not " +
@@ -810,94 +843,87 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                     } else {
                         memberHeaders.add(header);
                     }
+                    return true;
                 }
-            } catch (SizeLimitExceededException e) {
-                // add something to the result that indicates the fact that the search criteria is too wide
-                logger.log(Level.FINE, "the search results exceeded the maximum.", e);
-                memberHeaders.setMaxExceeded(identityProvider.getMaxSearchResultSize());
-                // dont throw here, we still want to return what we got
-            } finally {
-                ResourceUtils.closeQuietly( answer );
-            }
-        }
-        if (memberHeaders.size() >= maxSize) return;
-        // sub group search
-        filter = identityProvider.groupSearchFilterWithParam("*");
-        // use dn of group as base
-        NamingEnumeration answer = null;
-        try {
-            answer = context.search(dn, filter, sc);
-
-            while (answer.hasMore()) {
-                String entitydn;
-                SearchResult sr = (SearchResult)answer.next();
-                if (sr != null && sr.getName() != null && sr.getName().length() > 0) {
-                    entitydn = sr.getNameInNamespace();
-                    if (entitydn.equals(dn)) continue; // Avoid recursing this group
-                    try {
-                        LdapGroup subGroup = this.findByPrimaryKey(entitydn);
-                        if (subGroup != null) {
-                            Set<IdentityHeader> subGroupMembers = getUserHeaders(subGroup);
-                            memberHeaders.addAll(subGroupMembers);
-                        }
-                    } catch (FindException e) {
-                        logger.log(Level.FINE, "error looking for sub-group" + entitydn, e);
-                    }
-                }
-            }
+            } );
         } catch (SizeLimitExceededException e) {
             // add something to the result that indicates the fact that the search criteria is too wide
             logger.log(Level.FINE, "the search results exceeded the maximum.", e);
-            memberHeaders.setMaxExceeded(identityProvider.getMaxSearchResultSize());
+            memberHeaders.setMaxExceeded(ldapRuntimeConfig.getMaxSearchResultSize());
             // dont throw here, we still want to return what we got
-        } finally {
-            ResourceUtils.closeQuietly( answer );
+        }
+
+        // sub group search
+        if ( memberHeaders.size() < maxSize &&
+             groupNestingProcessNextDepth(depth) ) {
+            filter = identityProvider.groupSearchFilterWithParam("*");
+            // use dn of group as base
+            try {
+                ldapTemplate.search( context, dn, filter, maxSize, null, new LdapUtils.LdapListener(){
+                    @Override
+                    boolean searchResult( final SearchResult sr ) throws NamingException {
+                        if (sr != null && sr.getName() != null && sr.getName().length() > 0) {
+                            String entitydn = sr.getNameInNamespace();
+                            if (!entitydn.equals(dn)) { // avoid recursion on this group
+                                try {
+                                    LdapGroup subGroup = findByPrimaryKey(entitydn);
+                                    if (subGroup != null) {
+                                        Set<IdentityHeader> subGroupMembers = getUserHeaders(subGroup);
+                                        memberHeaders.addAll(subGroupMembers);
+                                    }
+                                } catch (FindException e) {
+                                    logger.log(Level.FINE, "error looking for sub-group" + entitydn, e);
+                                }
+                            }
+                        }
+                        return true;
+                    }
+                });
+            } catch (SizeLimitExceededException e) {
+                // add something to the result that indicates the fact that the search criteria is too wide
+                logger.log(Level.FINE, "the search results exceeded the maximum.", e);
+                memberHeaders.setMaxExceeded(ldapRuntimeConfig.getMaxSearchResultSize());
+                // dont throw here, we still want to return what we got
+            }
         }
     }
 
-    private void nvSearchForUser(DirContext context, String nvhint, Set<IdentityHeader> memberHeaders) throws NamingException {
-        LdapIdentityProvider identityProvider = getIdentityProvider();
-        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
-        long maxSize = identityProvider.getMaxSearchResultSize();
+    private void nvSearchForUser( final DirContext context,
+                                  final String nvhint,
+                                  final Set<IdentityHeader> memberHeaders ) throws NamingException {
+        final LdapIdentityProvider identityProvider = getIdentityProvider();
+        final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+        final long maxSize = ldapRuntimeConfig.getMaxSearchResultSize();
         if (memberHeaders.size() >= maxSize) return;
-        StringBuffer filter = new StringBuffer("(|");
+
+        LdapSearchFilter filter = new LdapSearchFilter();
+        filter.or();
         UserMappingConfig[] userTypes = ldapIdentityProviderConfig.getUserMappings();
         for (UserMappingConfig userType : userTypes) {
-            filter.append("(&" + "(objectClass=");
-            filter.append(userType.getObjClass());
-            filter.append(")" + "(");
-            filter.append(nvhint);
-            filter.append(")" + ")");
+            filter.and();
+              filter.objectClass( userType.getObjClass() );
+              filter.expression(nvhint);
+            filter.end();
         }
-        filter.append(")");
+        filter.end();
 
-        SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        sc.setCountLimit(maxSize);
-        sc.setReturningAttributes(getReturningAttributes());
-        NamingEnumeration<SearchResult> answer = null;
         try {
-            try {
-                answer = context.search(ldapIdentityProviderConfig.getSearchBase(), filter.toString(), sc);
-            } catch (OperationNotSupportedException e) {
-                // this gets thrown by oid for some weird groups
-                logger.log(Level.FINE, ldapIdentityProviderConfig.getName() + "directory cannot search on" + nvhint, e);
-                return;
-            }
-            while (answer.hasMore()) {
-                SearchResult sr = answer.next();
-                IdentityHeader newheader = identityProvider.searchResultToHeader(sr);
-                if (newheader == null) {
-                    logger.info("User " + sr.getNameInNamespace() + " is not valid according to the template and will not " +
-                                "be considered as a member");
-                } else {
-                    if (!memberHeaders.contains(newheader)) {
+            ldapTemplate.search( context, filter.buildFilter(), maxSize, null, new LdapUtils.LdapListener(){
+                @Override
+                boolean searchResult( final SearchResult sr ) throws NamingException {
+                    IdentityHeader newheader = identityProvider.searchResultToHeader(sr);
+                    if (newheader == null) {
+                        logger.info("User " + sr.getNameInNamespace() + " is not valid according to the template and will not " +
+                                    "be considered as a member");
+                    } else if (!memberHeaders.contains(newheader)) {
                         memberHeaders.add(newheader);
                     }
+                    return true;
                 }
-            }
-        } finally {
-            ResourceUtils.closeQuietly( answer );
+            } );
+        } catch (OperationNotSupportedException e) {
+            // this gets thrown by oid for some weird groups
+            logger.log(Level.FINE, ldapIdentityProviderConfig.getName() + "directory cannot search on" + nvhint, e);
         }
     }
 
@@ -912,6 +938,40 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         return returningAttributes;
     }
 
+    private Set<String> getDistinctUserNameAttributeNames() {
+        Set<String> nameNames;
+
+        if ( useSingleMemberNvPair ) {
+            nameNames = Collections.singleton( memberNvPairAttribute );
+        } else {
+            nameNames = new HashSet<String>();
+
+            for ( UserMappingConfig config : identityProviderConfig.getUserMappings() ) {
+                nameNames.add( config.getNameAttrName() );
+            }            
+        }
+
+        return nameNames;
+    }
+
+    private int getConfigValue( final Integer configValue, final int defaultValue ) {
+        int result = defaultValue;
+
+        if ( configValue != null ) {
+            result = configValue;
+        }
+
+        return result;
+    }
+
+    private boolean groupNestingEnabled() {
+        return groupMaxNesting != 1;
+    }
+
+    private boolean groupNestingProcessNextDepth( final int depth ) {
+        return groupMaxNesting == 0 || depth < groupMaxNesting;
+    }
+
     private LdapIdentityProvider getIdentityProvider() {
         LdapIdentityProvider provider =  identityProvider;
         if ( provider == null ) {
@@ -924,11 +984,19 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         long oid = providerOid;
 
         if ( oid == 0 ) {
-            oid = getIdentityProvider().getConfig().getOid();
+            oid = identityProviderConfig.getOid();
             providerOid = oid;
         }
 
         return oid;
+    }
+
+    private String getId() {
+        StringBuilder builder = new StringBuilder();
+        builder.append( getProviderOid() );
+        builder.append( ',' );
+        builder.append( identityProviderConfig.getVersion() );
+        return builder.toString();
     }
 
     private LdapIdentityProviderConfig getIdentityProviderConfig() {
@@ -939,8 +1007,168 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         return config;
     }
 
+    private LdapGroup getCachedGroupByDn( final String dn ) {
+        return getCachedGroup( GroupCacheKey.buildDnKey(dn) );
+    }
+
+    private LdapGroup getCachedGroupByCn( final String cn ) {
+        return getCachedGroup( GroupCacheKey.buildCnKey(cn) );
+    }
+
+    private LdapGroup getCachedGroup( final GroupCacheKey key ) {
+        LdapGroup ldapGroup = null;
+
+        if ( groupCache != null ) {
+            GroupCacheEntry entry = (GroupCacheEntry) groupCache.retrieve( key );
+            if ( !isExpired(entry) ) {
+                ldapGroup = entry.asLdapGroup();
+            }
+        }
+
+        return ldapGroup;
+    }
+
+    private void cacheGroup( final LdapGroup group ) {
+        if ( groupCache != null && group != null ) {
+            GroupCacheEntry entry = new GroupCacheEntry(group);
+            groupCache.store( GroupCacheKey.buildDnKey( group.getDn() ), entry, entry.timestamp );
+            groupCache.store( GroupCacheKey.buildCnKey( group.getCn() ), entry, entry.timestamp );           
+        }
+    }
+
+    private boolean isNonGroup( final LdapGroup group, final String member ) {
+        boolean nonGroup = false;
+
+        if ( groupCache != null ) {
+            GroupCacheEntry entry = (GroupCacheEntry) groupCache.retrieve( GroupCacheKey.buildDnKey(group.getDn()) );
+            if ( !isExpired(entry) ) {
+                nonGroup = entry.isNonGroup( member );
+            }
+        }
+
+        return nonGroup;
+    }
+
+    private void cacheNonGroups( final LdapGroup group, final Collection<String> nonGroupMembers ) {
+        if ( groupCache != null && !nonGroupMembers.isEmpty() ) {
+            GroupCacheEntry entry = (GroupCacheEntry) groupCache.retrieve( GroupCacheKey.buildDnKey(group.getDn()) );
+            if ( !isExpired(entry) ) {
+                entry.addNonGroups( nonGroupMembers );
+            }
+        }
+    }
+
+    private LdapGroup buildGroup( final String dn, final Attributes attributes ) throws NamingException {
+        LdapGroup group = null;
+
+        final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+        final GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
+        final Attribute objectclasses = attributes.get( LdapIdentityProvider.OBJECTCLASS_ATTRIBUTE_NAME);
+        for (GroupMappingConfig groupType : groupTypes) {
+            final String grpclass = groupType.getObjClass();
+            if ( LdapUtils.attrContainsCaseIndependent(objectclasses, grpclass)) {
+                Object tmp = LdapUtils.extractOneAttributeValue(attributes,
+                        groupType.getNameAttrName());
+                group = buildGroup( getProviderOid(), dn, tmp!=null ? tmp.toString() : null, attributes );
+                break;
+            }
+        }
+
+        return group;
+    }
+
+    private static LdapGroup buildGroup( final long providerOid, final String dn, final String cn, final Attributes attributes ) {
+        LdapGroup ldapGroup = new LdapGroup();
+        ldapGroup.setProviderId(providerOid);
+        ldapGroup.setDn(dn);
+        ldapGroup.setAttributes(attributes);
+        if ( cn != null ) {
+            ldapGroup.setCn( cn );
+        }
+        return ldapGroup;
+    }
+
+    private boolean isExpired( final GroupCacheEntry entry ) {
+        boolean expired = true;
+
+        if ( entry != null ) {
+            long timestamp = entry.timestamp;
+            expired = ( timestamp + cacheMaxAge ) < System.currentTimeMillis();
+        }
+
+        return expired;
+    }
+
+    private static final class GroupCacheKey extends Pair<String,String> {
+
+        private GroupCacheKey( final String attribute,
+                               final String value ) {
+            super( attribute, value );
+        }
+
+        private static GroupCacheKey buildDnKey( final String dn ) {
+            return new GroupCacheKey( "dn", dn );
+        }
+
+        private static GroupCacheKey buildCnKey( final String cn ) {
+            return new GroupCacheKey( "cn", cn );    
+        }
+    }
+
+    private static final class GroupCacheEntry {
+        private final long providerOid;
+        private final String dn;
+        private final String cn;
+        private final Attributes attributes;
+        private final long timestamp = System.currentTimeMillis();
+        private final Set<String> nonGroupMembers = Collections.synchronizedSet( new HashSet<String>() );
+
+        private GroupCacheEntry( final LdapGroup ldapGroup ) {
+            this( ldapGroup.getProviderId(),
+                  ldapGroup.getDn(),
+                  ldapGroup.getCn(),
+                  ldapGroup.getAttributes() );
+        }
+
+        private GroupCacheEntry( final long providerOid,
+                                 final String dn,
+                                 final String cn,
+                                 final Attributes attributes ) {
+            this.providerOid = providerOid;
+            this.dn = dn;
+            this.cn = cn;
+            this.attributes = attributes;
+        }
+
+        private LdapGroup asLdapGroup() {
+            return buildGroup( providerOid, dn, cn, attributes );
+        }
+
+        public boolean isNonGroup( final String member ) {
+            return nonGroupMembers.contains( member );
+        }
+
+        public void addNonGroups( final Collection<String> members ) {
+            nonGroupMembers.addAll( members );
+        }
+    }
+
+    private static final Logger logger = Logger.getLogger(LdapGroupManagerImpl.class.getName());
+
+    private static final String memberNvPairAttribute = SyspropUtil.getString( "com.l7tech.server.identity.ldap.memberAttrName", "cn" );
+    private static final boolean useSingleMemberNvPair = SyspropUtil.getBoolean( "com.l7tech.server.identity.ldap.useMemberAttrName", false );
+
+    private static final int DEFAULT_GROUP_CACHE_SIZE = 100;
+    private static final int DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE = 60000;
+    private static final int DEFAULT_GROUP_MAX_NESTING = 0;
+
     private LdapIdentityProviderConfig identityProviderConfig;
-    private final Logger logger = Logger.getLogger(getClass().getName());
     private LdapIdentityProvider identityProvider;
+    private LdapRuntimeConfig ldapRuntimeConfig;
     private long providerOid;
+    private LdapUtils.LdapTemplate ldapTemplate;
+    private Cache groupCache;
+    private int cacheSize = DEFAULT_GROUP_CACHE_SIZE;
+    private int cacheMaxAge = DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE;
+    private int groupMaxNesting = DEFAULT_GROUP_MAX_NESTING;
 }
