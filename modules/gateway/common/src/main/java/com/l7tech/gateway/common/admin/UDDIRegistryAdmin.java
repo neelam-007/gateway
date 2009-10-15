@@ -13,8 +13,8 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITIES;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.objectmodel.*;
-import com.l7tech.uddi.UDDIRegistry;
 import com.l7tech.uddi.UDDIException;
 
 import java.util.Collection;
