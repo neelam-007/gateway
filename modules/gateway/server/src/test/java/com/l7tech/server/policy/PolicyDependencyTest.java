@@ -28,10 +28,6 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.LicenseEvent;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -50,8 +46,11 @@ import java.text.MessageFormat;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEvent;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
-public class PolicyDependencyTest extends TestCase {
+public class PolicyDependencyTest {
     private static final Logger logger = Logger.getLogger(PolicyDependencyTest.class.getName());
 
     private PolicyManager simpleFinder;
@@ -64,16 +63,8 @@ public class PolicyDependencyTest extends TestCase {
     private Set<Long> policiesToSetAsUnlicensed = new HashSet<Long>();
     private Set<Long> policiesThatHaveBeenClosed = new HashSet<Long>();
 
-    public PolicyDependencyTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(PolicyDependencyTest.class);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         AssertionRegistry ar = new AssertionRegistry();
         ar.registerAssertion(Include.class);
         WspConstants.setTypeMappingFinder(ar);
@@ -193,10 +184,12 @@ public class PolicyDependencyTest extends TestCase {
         return p;
     }
 
+    @Test
     public void testSimple() throws Exception {
         setupPolicyCache(simpleFinder, null);
     }
 
+    @Test
     public void testPreorderIterator() throws Exception {
         Policy policy = simpleFinder.findByPrimaryKey(2000);
         Iterator i = new NewPreorderIterator(policy.getAssertion(), new IncludeAssertionDereferenceTranslator(simpleFinder));
@@ -232,6 +225,7 @@ public class PolicyDependencyTest extends TestCase {
         notSoSimpleFinder = new PolicyManagerStub(new Policy[] { audit, includeAudit, basicAndUserOrGroup, includeBasic, servicePolicyWithTwoIncludes });
     }
 
+    @Test
     public void testNotSoSimple() throws Exception {
         Policy servicePolicy = notSoSimpleFinder.findByPrimaryKey(1004);
         Iterator i = new NewPreorderIterator(servicePolicy.getAssertion(), new IncludeAssertionDereferenceTranslator(notSoSimpleFinder));
@@ -252,15 +246,18 @@ public class PolicyDependencyTest extends TestCase {
         assertEquals(ppr.getPathCount(),2);
     }
 
+    @Test
     public void testCycle() throws Exception {
         final ApplicationEvent[] holder = new ApplicationEvent[1];
         final boolean[] sawCircular = new boolean[1];
         setupPolicyCache(cycleFinder, new ApplicationEventPublisher(){
+            @Override
             public void publishEvent( ApplicationEvent event ) {
-                holder[0] = event;
-                if ( event instanceof PolicyCacheEvent.Invalid &&
-                     ((PolicyCacheEvent.Invalid) event).getException() instanceof CircularPolicyException) {
-                    sawCircular[0] = true;    
+                if ( event instanceof PolicyCacheEvent.Invalid ) {
+                    holder[0] = event;
+                    if ( ((PolicyCacheEvent.Invalid) event).getException() instanceof CircularPolicyException) {
+                        sawCircular[0] = true;
+                    }
                 }
             }
         } );
@@ -269,15 +266,18 @@ public class PolicyDependencyTest extends TestCase {
         assertTrue("Policy event cause", sawCircular[0]);
     }
 
+    @Test
     public void testComplexCycle() throws Exception {
         final ApplicationEvent[] holder = new ApplicationEvent[1];
         final boolean[] sawCircular = new boolean[1];
         setupPolicyCache(complexCycleFinder, new ApplicationEventPublisher(){
+            @Override
             public void publishEvent( ApplicationEvent event ) {
-                holder[0] = event;
-                if ( event instanceof PolicyCacheEvent.Invalid &&
-                     ((PolicyCacheEvent.Invalid) event).getException() instanceof CircularPolicyException) {
-                    sawCircular[0] = true;
+                if ( event instanceof PolicyCacheEvent.Invalid ) {
+                    holder[0] = event;
+                    if ( ((PolicyCacheEvent.Invalid) event).getException() instanceof CircularPolicyException) {
+                        sawCircular[0] = true;
+                    }
                 }
             }
         } );
@@ -286,6 +286,7 @@ public class PolicyDependencyTest extends TestCase {
         assertTrue("Policy event cause", sawCircular[0]);
     }
 
+    @Test
     public void testGrandchild() throws Exception {
         PolicyCache cache = setupPolicyCache(clonedGrandchildFinder, null);
         Map<Long, Integer> m = cache.getDependentVersions(2000L);
@@ -297,6 +298,7 @@ public class PolicyDependencyTest extends TestCase {
         assertTrue(m.containsKey(1002L));
     }
 
+    @Test
     public void testFailedDeletion() throws Exception {
         PolicyCache cache = setupPolicyCache(clonedGrandchildFinder, null);
         try {
@@ -310,6 +312,7 @@ public class PolicyDependencyTest extends TestCase {
         }
     }
 
+    @Test
     public void testRemoveAndRecreate() throws Exception {
         PolicyCache cache = setupPolicyCache(clonedGrandchildFinder, null);
 
@@ -327,6 +330,7 @@ public class PolicyDependencyTest extends TestCase {
     /**
      * Test that removal cascades to invalid entries that are no longer in use 
      */
+    @Test
     public void testRemoveWithCascade() throws Exception {
         PolicyCacheImpl cache = setupPolicyCache(clonedGrandchildFinder, null);
         cache.setTraceLevel( Level.INFO );
@@ -349,6 +353,7 @@ public class PolicyDependencyTest extends TestCase {
         assertFalse( "2001 cached invalid", cache.isInCache( 2001L ));
     }
 
+    @Test
     public void testInvalidGrandchild() throws Exception {
         PolicyCache cache = setupPolicyCache(invalidGrandchildFinder, null);
 
@@ -369,10 +374,12 @@ public class PolicyDependencyTest extends TestCase {
         assertNotNull( "3000 is valid", cache.getServerPolicy( 3000 ));        
     }
 
+    @Test
     public void testInvalidGrandchildEvents() throws Exception {
         final Set<Long> validPolicies = new TreeSet<Long>();
         final Set<Long> invalidPolicies = new TreeSet<Long>();
         PolicyCacheImpl cache = setupPolicyCache(invalidGrandchildFinder, new ApplicationEventPublisher(){
+            @Override
             public void publishEvent( ApplicationEvent event ) {
                 if ( event instanceof PolicyCacheEvent.Invalid ) {
                     invalidPolicies.add( ((PolicyCacheEvent.Invalid)event).getPolicyId() );
@@ -407,6 +414,7 @@ public class PolicyDependencyTest extends TestCase {
         assertTrue( "3000 is valid", validPolicies.contains( 3000L ));
     }
 
+    @Test
     public void testUpdateDescendentForVersioning() throws Exception {
         PolicyCache cache = setupPolicyCache(clonedGrandchildFinder, null);
 
@@ -427,11 +435,13 @@ public class PolicyDependencyTest extends TestCase {
         assertFalse("Version updated", versionBefore.equals( versionAfter ));
     }
 
+    @Test
     public void testSuccessfulDeletion() throws Exception {
         PolicyCache cache = setupPolicyCache(clonedGrandchildFinder, null);
         assertTrue("Policy deleted", cache.remove(2000));
     }
 
+    @Test
     public void testResetUnlicensed() throws Exception {
         PolicyCacheImpl cache = setupPolicyCache(unlicensedGrandchildFinder, null);
 
@@ -455,7 +465,8 @@ public class PolicyDependencyTest extends TestCase {
         assertEquals( "Policy result", AssertionStatus.NONE, cache.getServerPolicy( 11001L ).checkRequest( null ) );
     }
 
-    public void testCloseWhenNotUSed() throws Exception {
+    @Test
+    public void testCloseWhenNotUsed() throws Exception {
         PolicyCache cache = setupPolicyCache(simpleFinder, null);
 
         policiesThatHaveBeenClosed.clear();
@@ -472,6 +483,7 @@ public class PolicyDependencyTest extends TestCase {
     private PolicyCacheImpl setupPolicyCache(PolicyManager manager, ApplicationEventPublisher aep) throws Exception {
         if (aep == null) {
             aep = new ApplicationEventPublisher() {
+                @Override
                 public void publishEvent( ApplicationEvent event ) {
                 }
             };
@@ -491,14 +503,17 @@ public class PolicyDependencyTest extends TestCase {
                         status = AssertionStatus.NONE;
                     }
                     return new ServerAssertion(){
+                        @Override
                         public AssertionStatus checkRequest( PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
                             return status;
                         }
 
+                        @Override
                         public Assertion getAssertion() {
                             return assertion;
                         }
 
+                        @Override
                         public void close() {
                             policiesThatHaveBeenClosed.add( policy.getOid() );
                         }
@@ -521,9 +536,5 @@ public class PolicyDependencyTest extends TestCase {
         cache.setPolicyManager(manager);
         cache.onApplicationEvent(new Started(this, Component.GATEWAY, "Test"));
         return cache;
-    }
-
-    public static void main(String[] args) {
-        TestRunner.run(suite());
     }
 }
