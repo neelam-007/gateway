@@ -13,6 +13,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.HexUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.common.io.InetAddressUtil;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
@@ -52,7 +53,7 @@ public class AuditContextImpl implements AuditContext {
      * @param auditRecordManager   required
      * @param auditPolicyEvaluator  may be null
      */
-    public AuditContextImpl(ServerConfig serverConfig, AuditRecordManager auditRecordManager, AuditPolicyEvaluator auditPolicyEvaluator) {
+    public AuditContextImpl(ServerConfig serverConfig, AuditRecordManager auditRecordManager, AuditPolicyEvaluator auditPolicyEvaluator, String nodeId) {
         if (serverConfig == null) {
             throw new IllegalArgumentException("Server Config is required");
         }
@@ -62,6 +63,7 @@ public class AuditContextImpl implements AuditContext {
         this.serverConfig = serverConfig;
         this.auditRecordManager = auditRecordManager;
         this.auditPolicyEvaluator = auditPolicyEvaluator;
+        this.nodeId = nodeId;
     }
 
     /**
@@ -266,16 +268,24 @@ public class AuditContextImpl implements AuditContext {
     }
 
     private void outputRecord(AuditRecord rec, boolean update, PolicyEnforcementContext policyEnforcementContext) throws UpdateException, SaveException {
+        boolean sinkPolicyFailed = false;
+        AssertionStatus sinkPolicyStatus = null;
+
         if (auditPolicyEvaluator != null) {
             // Don't bother running the sink policy for update events
             if (update)
                 return;
 
-            AssertionStatus result = auditPolicyEvaluator.outputRecordToPolicyAuditSink(rec, policyEnforcementContext);
-            if (AssertionStatus.NONE.equals(result))
+            sinkPolicyStatus = auditPolicyEvaluator.outputRecordToPolicyAuditSink(rec, policyEnforcementContext);
+            if (AssertionStatus.NONE.equals(sinkPolicyStatus)) {
+                // Sink policy succeeded
                 return;
-            
-            // Audit sink policy failed; fall back to built-in handling
+            } else if (null == sinkPolicyStatus) {
+                // No sink policy configured; fallthrough to regular handling
+            } else {
+                // Audit sink policy failed; fall back to built-in handling and audit failure
+                sinkPolicyFailed = true;
+            }
         }
 
         if (isSignAudits()) {
@@ -288,6 +298,13 @@ public class AuditContextImpl implements AuditContext {
             auditRecordManager.update(rec);
         } else {
             auditRecordManager.save(rec);
+        }
+
+        if (sinkPolicyFailed) {
+            // Need to audit something about the failure, says func spec
+            SystemAuditRecord fail = new SystemAuditRecord(Level.WARNING, nodeId, Component.GW_AUDIT_SYSTEM,
+                    "Audit sink policy failed; status = " + sinkPolicyStatus.getNumeric(), false, 0, null, null, "Sink Failure", OUR_IP);
+            auditRecordManager.save(fail);
         }
     }
 
@@ -489,9 +506,11 @@ public class AuditContextImpl implements AuditContext {
     private static final Logger logger = Logger.getLogger(AuditContextImpl.class.getName());
     private static final String CONFIG_AUDIT_SIGN = "auditSigningEnabled";
     private static final Boolean DEFAULT_AUDIT_SIGN = false;
+    private static final String OUR_IP = InetAddressUtil.getLocalHost().getHostAddress();
 
     private final ServerConfig serverConfig;
     private final AuditRecordManager auditRecordManager;
+    private final String nodeId;
     private AuditPolicyEvaluator auditPolicyEvaluator;
     private DefaultKey keystore;
     private AuditLogListener listener;

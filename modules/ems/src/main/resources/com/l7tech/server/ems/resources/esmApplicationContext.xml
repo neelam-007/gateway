@@ -294,8 +294,10 @@
     </bean>
 
     <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="prototype">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="auditRecordManager"/>
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="auditRecordManager"/>
+        <constructor-arg index="2"><null/></constructor-arg>
+        <constructor-arg index="3" ref="esmId"/>
         <property name="keystore" ref="defaultKey"/>
         <property name="auditLogListener" ref="auditLogListener"/>
     </bean>

@@ -907,6 +907,7 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
         <constructor-arg ref="auditPolicyEvaluator"/>
+        <constructor-arg ref="clusterNodeId"/>
         <property name="keystore" ref="defaultKey"/>
         <property name="auditLogListener" ref="auditLogListener"/>
     </bean>
