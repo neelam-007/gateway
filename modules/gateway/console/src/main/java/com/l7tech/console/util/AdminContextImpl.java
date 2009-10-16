@@ -17,7 +17,7 @@ import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
@@ -63,8 +63,8 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     }
 
     @Override
-    public JdbcConnectionAdmin getJdbcConnectionAdmin() throws SecurityException {
-        return this.getRemoteInterfaceForEndpoint(JdbcConnectionAdmin.class);
+    public JdbcAdmin getJdbcConnectionAdmin() throws SecurityException {
+        return this.getRemoteInterfaceForEndpoint(JdbcAdmin.class);
     }
 
     @Override

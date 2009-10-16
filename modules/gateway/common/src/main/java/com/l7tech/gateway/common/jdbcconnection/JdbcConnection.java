@@ -42,8 +42,8 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
         jdbcUrl = "";
         userName = "";
         password = "";
-        minPoolSize = JdbcConnectionAdmin.ORIGINAL_C3P0_BASIC_POOL_CONFIG_MINPOOLSIZE;
-        maxPoolSize = JdbcConnectionAdmin.ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE;
+        minPoolSize = JdbcAdmin.ORIGINAL_C3P0_BASIC_POOL_CONFIG_MINPOOLSIZE;
+        maxPoolSize = JdbcAdmin.ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE;
         enabled = true;
     }
 

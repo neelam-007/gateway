@@ -3,7 +3,7 @@ package com.l7tech.console.policy.exporter;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JdbcConnectionable;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
@@ -42,7 +42,7 @@ public class JdbcConnectionReference extends ExternalReference {
         if (connable == null) throw new IllegalStateException("JdbcConnectionable must not be null.");
 
         connectionName = connable.getConnectionName();
-        JdbcConnectionAdmin admin = getJdbcConnectionAdmin();
+        JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin != null) {
             try {
                 JdbcConnection connection = admin.getJdbcConnection(connectionName);
@@ -137,7 +137,7 @@ public class JdbcConnectionReference extends ExternalReference {
 
     @Override
     boolean verifyReference() throws InvalidPolicyStreamException {
-        JdbcConnectionAdmin admin = getJdbcConnectionAdmin();
+        JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) return false;
 
         try {
@@ -198,7 +198,7 @@ public class JdbcConnectionReference extends ExternalReference {
         }
     }
 
-    private JdbcConnectionAdmin getJdbcConnectionAdmin() {
+    private JdbcAdmin getJdbcConnectionAdmin() {
         Registry reg = Registry.getDefault();
         if (!reg.isAdminContextPresent()) {
             logger.warning("Cannot get JDBC Connection Admin due to no Admin Context present.");

@@ -5,7 +5,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
@@ -82,7 +82,7 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
 
     private void populateConnectionCombobox() {
         java.util.List<String> connNameList;
-        JdbcConnectionAdmin admin = getJdbcConnectionAdmin();
+        JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) return;
         else {
             try {
@@ -104,7 +104,7 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
         //connectionComboBox.setSelectedIndex(0);
     }
 
-    private JdbcConnectionAdmin getJdbcConnectionAdmin() {
+    private JdbcAdmin getJdbcConnectionAdmin() {
         Registry reg = Registry.getDefault();
         if (!reg.isAdminContextPresent()) {
             logger.warning("Cannot get JDBC Connection Admin due to no Admin Context present.");

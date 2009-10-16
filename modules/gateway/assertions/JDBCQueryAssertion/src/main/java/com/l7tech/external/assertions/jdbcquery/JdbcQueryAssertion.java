@@ -6,7 +6,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.*;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 
 import java.util.*;
 
@@ -24,7 +24,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     private String sqlQuery;
     private String variablePrefix = DEFAULT_VARIABLE_PREFIX;
     private String queryName = "";
-    private int maxRecords = JdbcConnectionAdmin.ORIGINAL_MAX_RECORDS;
+    private int maxRecords = JdbcAdmin.ORIGINAL_MAX_RECORDS;
     private boolean assertionFailureEnabled = true;
     private Map<String, String> namingMap = new TreeMap<String, String>();
 
@@ -165,7 +165,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
             }
         });
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/CreateIdentityProvider16x16.gif");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.jdbcquery.console.JdbcQueryAssertionDialog");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.jdbcquery.console.JdbcQueryAssertionPropertiesDialog");
         meta.put(PROPERTIES_ACTION_NAME, "JDBC Query Properties");
 
         // request default feature set name for our class name, since we are a known optional module

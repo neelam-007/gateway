@@ -14,14 +14,14 @@ import com.l7tech.util.SyspropUtil;
 import java.util.List;
 
 /**
- * Admin interface for managing JDBC connections and Connection Pooling.
+ * Admin interface for managing JDBC connections, Connection Pooling, and JDBC querying.
  *
  * @author ghuang
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types= EntityType.JDBC_CONNECTION)
 @Administrative
-public interface JdbcConnectionAdmin {
+public interface JdbcAdmin {
 
     static final String ORIGINAL_DRIVERCLASS_LIST = "com.mysql.jdbc.Driver"; // If you add more driver classes, separate them by '\n'.
     static final int ORIGINAL_MAX_RECORDS = 10;

@@ -2,7 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityType;
@@ -96,10 +96,10 @@ public class JdbcConnectionManagerWindow extends JDialog {
     }
 
     private void loadJdbcConnectionList() {
-        JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
-        if (connectionAdmin != null) {
+        JdbcAdmin admin = getJdbcConnectionAdmin();
+        if (admin != null) {
             try {
-                connectionList = connectionAdmin.getAllJdbcConnections();
+                connectionList = admin.getAllJdbcConnections();
             } catch (FindException e) {
                 logger.warning("Cannot find JDBC Connections.");
             }
@@ -186,10 +186,10 @@ public class JdbcConnectionManagerWindow extends JDialog {
     private void doAdd() {
         JdbcConnection connection = new JdbcConnection();
 
-        JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
-        if (connectionAdmin != null) {
-            connection.setMinPoolSize(connectionAdmin.getPropertyDefaultMinPoolSize());
-            connection.setMaxPoolSize(connectionAdmin.getPropertyDefaultMaxPoolSize());
+        JdbcAdmin admin = getJdbcConnectionAdmin();
+        if (admin != null) {
+            connection.setMinPoolSize(admin.getPropertyDefaultMinPoolSize());
+            connection.setMaxPoolSize(admin.getPropertyDefaultMaxPoolSize());
         }
 
         editAndSave(connection);
@@ -211,10 +211,10 @@ public class JdbcConnectionManagerWindow extends JDialog {
             public void run() {
                 if (dlg.isConfirmed()) {
                     // Save the connection
-                    JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
-                    if (connectionAdmin == null) return;
+                    JdbcAdmin admin = getJdbcConnectionAdmin();
+                    if (admin == null) return;
                     try {
-                        connectionAdmin.saveJdbcConnection(connection);
+                        admin.saveJdbcConnection(connection);
                     } catch (UpdateException e) {
                         logger.warning("Cannot save a JDBC connection, " + connection.getName());
                         return;
@@ -253,10 +253,10 @@ public class JdbcConnectionManagerWindow extends JDialog {
         if (result == 0) {
             connectionList.remove(currentRow);
 
-            JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
-            if (connectionAdmin == null) return;
+            JdbcAdmin admin = getJdbcConnectionAdmin();
+            if (admin == null) return;
             try {
-                connectionAdmin.deleteJdbcConnection(connection);
+                admin.deleteJdbcConnection(connection);
             } catch (DeleteException e) {
                 logger.warning("Cannot delete the JDBC connection " + connection.getName());
                 return;
@@ -274,7 +274,7 @@ public class JdbcConnectionManagerWindow extends JDialog {
         }
     }
 
-    private JdbcConnectionAdmin getJdbcConnectionAdmin() {
+    private JdbcAdmin getJdbcConnectionAdmin() {
         Registry reg = Registry.getDefault();
         if (!reg.isAdminContextPresent())
             return null;

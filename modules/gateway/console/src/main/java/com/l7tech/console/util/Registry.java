@@ -19,7 +19,7 @@ import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.Policy;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 
 
@@ -96,7 +96,7 @@ public abstract class Registry {
      /**
      * @return the JDBC Connection and Pool managers
      */
-    abstract public JdbcConnectionAdmin getJdbcConnectionAdmin();
+    abstract public JdbcAdmin getJdbcConnectionAdmin();
 
     abstract public FtpAdmin getFtpManager();
 
@@ -227,7 +227,7 @@ public abstract class Registry {
         }
 
         @Override
-        public JdbcConnectionAdmin getJdbcConnectionAdmin() {
+        public JdbcAdmin getJdbcConnectionAdmin() {
             return null;
         }
 

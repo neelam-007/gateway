@@ -5,7 +5,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.MutablePair;
 import com.l7tech.objectmodel.EntityType;
@@ -182,11 +182,11 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
 
     private void populateDriverClassComboBox() {
         java.util.List<String> driverClassList;
-        JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
-        if (connectionAdmin == null) {
+        JdbcAdmin admin = getJdbcConnectionAdmin();
+        if (admin == null) {
             return;
         } else {
-            driverClassList = connectionAdmin.getPropertyDefaultDriverClassList();
+            driverClassList = admin.getPropertyDefaultDriverClassList();
         }
 
         // Get the driver class of the current connection
@@ -233,7 +233,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         return text != null && !text.trim().isEmpty();
     }
 
-    private JdbcConnectionAdmin getJdbcConnectionAdmin() {
+    private JdbcAdmin getJdbcConnectionAdmin() {
         Registry reg = Registry.getDefault();
         if (!reg.isAdminContextPresent()) {
             logger.warning("Cannot get JDBC Connection Admin due to no Admin Context present.");
@@ -415,7 +415,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private void doTest() {
-        JdbcConnectionAdmin admin = getJdbcConnectionAdmin();
+        JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) return;
 
         viewToModel();
@@ -449,7 +449,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private String checkDuplicateJdbcConnection() {
-        JdbcConnectionAdmin admin = getJdbcConnectionAdmin();
+        JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) return "Cannot get JDBC Connection Admin.  Check the log and try again.";
 
         String originalConnName = connection.getName();

@@ -263,8 +263,8 @@
         <constructor-arg ref="jmsPropertyMapper"/>
     </bean>
 
-    <!-- jdbc Connection admin servant -->
-    <bean id="jdbcConnectionAdmin" class="com.l7tech.server.jdbcconnection.JdbcConnectionAdminImpl">
+    <!-- jdbc admin servant -->
+    <bean id="jdbcAdmin" class="com.l7tech.server.jdbcconnection.JdbcAdminImpl">
         <constructor-arg ref="jdbcConnectionManager"/>
         <constructor-arg ref="jdbcQueryingManager"/>
         <constructor-arg ref="jdbcConnectionPoolManager"/>

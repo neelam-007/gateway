@@ -8,7 +8,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.policy.variable.Syntax;
@@ -29,11 +29,11 @@ import java.text.MessageFormat;
 /**
  * Properties dialog for the JDBC Query Assertion.
  */
-public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<JdbcQueryAssertion> {
+public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEditorSupport<JdbcQueryAssertion> {
     private static final int MAX_TABLE_COLUMN_NUM = 2;
     private static final int LOWER_BOUND_MAX_RECORDS = 1;
-    private static final Logger logger = Logger.getLogger(JdbcQueryAssertionDialog.class.getName());
-    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.jdbcquery.console.resources.JdbcQueryAssertionDialog");
+    private static final Logger logger = Logger.getLogger(JdbcQueryAssertionPropertiesDialog.class.getName());
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.jdbcquery.console.resources.JdbcQueryAssertionPropertiesDialog");
 
     private JPanel mainPanel;
     private JComboBox connectionComboBox;
@@ -55,7 +55,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
     private JdbcQueryAssertion assertion;
     private boolean confirmed;
 
-    public JdbcQueryAssertionDialog(Window owner, JdbcQueryAssertion assertion) {
+    public JdbcQueryAssertionPropertiesDialog(Window owner, JdbcQueryAssertion assertion) {
         super(owner, assertion);
         setData(assertion);
         initialize();
@@ -105,7 +105,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
 
         final InputValidator inputValidator = new InputValidator(this, resources.getString("dialog.title.jdbc.query.props"));
         // The values in the spinners will be initialized in the method modelToView().
-        maxRecordsSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_MAX_RECORDS, JdbcConnectionAdmin.UPPER_BOUND_MAX_RECORDS, 1));
+        maxRecordsSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_MAX_RECORDS, JdbcAdmin.UPPER_BOUND_MAX_RECORDS, 1));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxRecordsSpinner, resources.getString("short.lable.max.records")));
 
         testButton.addActionListener(new ActionListener() {
@@ -154,9 +154,9 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
         variablePrefixTextField.setText(assertion.getVariablePrefix());
         maxRecordsSpinner.setValue(assertion.getMaxRecords());
         if (assertion.getConnectionName() == null) { // This is a new assertion. It means to load maxRecords from the global cluster properties.
-            JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
-            if (connectionAdmin != null) {
-                maxRecordsSpinner.setValue(connectionAdmin.getPropertyDefaultMaxRecords());
+            JdbcAdmin admin = getJdbcConnectionAdmin();
+            if (admin != null) {
+                maxRecordsSpinner.setValue(admin.getPropertyDefaultMaxRecords());
             }
         }
         failAssertionCheckBox.setSelected(assertion.isAssertionFailureEnabled());
@@ -176,12 +176,12 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
 
     private void populateConnectionCombobox() {
         java.util.List<String> connNameList;
-        JdbcConnectionAdmin connectionAdmin = getJdbcConnectionAdmin();
-        if (connectionAdmin == null) {
+        JdbcAdmin admin = getJdbcConnectionAdmin();
+        if (admin == null) {
             return;
         } else {
             try {
-                connNameList = connectionAdmin.getAllJdbcConnectionNames();
+                connNameList = admin.getAllJdbcConnectionNames();
             } catch (FindException e) {
                 logger.warning("Error getting JDBC connection names");
                 return;
@@ -314,7 +314,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
                     if (numOfContextVariablesUsed > 0) {
                         warningMsg[0] = "Unable to evaluate a query containing context variable" +  (numOfContextVariablesUsed > 1? "s." : ".");
                     } else {
-                        JdbcConnectionAdmin admin = getJdbcConnectionAdmin();
+                        JdbcAdmin admin = getJdbcConnectionAdmin();
                         if (admin == null) {
                             warningMsg[0] = "Cannot process testing due to JDBC Conneciton Admin unavailable.";
                         } else {
@@ -328,7 +328,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
             @Override
             public void run() {
                 DialogDisplayer.showMessageDialog(
-                    JdbcQueryAssertionDialog.this,
+                    JdbcQueryAssertionPropertiesDialog.this,
                     (warningMsg[0] == null)? resources.getString("message.query.testing.passed") : resources.getString("message.query.testing.failed") + " " + warningMsg[0],
                     resources.getString("dialog.title.test.query"),
                     (warningMsg[0] == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
@@ -365,7 +365,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
                     // Check if the input entry is duplicated.
                     String warningMessage = isDuplicatedColumnOrVariable(namePair);
                     if (warningMessage != null) {
-                        DialogDisplayer.showMessageDialog(JdbcQueryAssertionDialog.this, warningMessage,
+                        DialogDisplayer.showMessageDialog(JdbcQueryAssertionPropertiesDialog.this, warningMessage,
                             resources.getString("dialog.titie.invalid.input"), JOptionPane.WARNING_MESSAGE, null);
                         return;
                     }
@@ -440,14 +440,14 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
     private void doOk() {
         getData(assertion);
         confirmed = true;
-        JdbcQueryAssertionDialog.this.dispose();
+        JdbcQueryAssertionPropertiesDialog.this.dispose();
     }
 
     private void doCancel() {
-        JdbcQueryAssertionDialog.this.dispose();
+        JdbcQueryAssertionPropertiesDialog.this.dispose();
     }
 
-    private JdbcConnectionAdmin getJdbcConnectionAdmin() {
+    private JdbcAdmin getJdbcConnectionAdmin() {
         Registry reg = Registry.getDefault();
         if (!reg.isAdminContextPresent()) {
             logger.warning("Cannot get JDBC Connection Admin due to no Admin Context present.");

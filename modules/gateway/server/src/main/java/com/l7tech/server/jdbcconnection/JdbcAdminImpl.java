@@ -1,6 +1,6 @@
 package com.l7tech.server.jdbcconnection;
 
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnectionAdmin;
+import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.objectmodel.FindException;
@@ -14,13 +14,13 @@ import java.util.StringTokenizer;
 /**
  * @author ghuang
  */
-public class JdbcConnectionAdminImpl implements JdbcConnectionAdmin {
+public class JdbcAdminImpl implements JdbcAdmin {
     private JdbcConnectionManager jdbcConnectionManager;
     private JdbcQueryingManager jdbcQueryingManager;
     private JdbcConnectionPoolManager jdbcConnectionPoolManager;
     private ServerConfig serverConfig;
 
-    public JdbcConnectionAdminImpl(JdbcConnectionManager jdbcConnectionManager,
+    public JdbcAdminImpl(JdbcConnectionManager jdbcConnectionManager,
                                    JdbcQueryingManager jdbcQueryingManager,
                                    JdbcConnectionPoolManager jdbcConnectionPoolManager,
                                    ServerConfig serverConfig) {
