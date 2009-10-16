@@ -68,7 +68,12 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             }
         } else if (result instanceof ResultSet) {
             try {
-                setContextVariables((ResultSet)result, context);
+                int affectedRows = setContextVariables((ResultSet)result, context);
+
+                if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
+                    auditor.logAndAudit(AssertionMessages.MCM_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
+                    return AssertionStatus.FAILED;
+                }
             } catch (SQLException e) {
                 auditor.logAndAudit(AssertionMessages.MCM_QUERYING_FAILURE_ASSERTION_FAILED, e.getMessage());
                 return AssertionStatus.FAILED;
@@ -103,7 +108,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         return query;
     }
 
-    private void setContextVariables(ResultSet resultSet, PolicyEnforcementContext context) throws SQLException {
+    private int setContextVariables(ResultSet resultSet, PolicyEnforcementContext context) throws SQLException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
         Map<String, String> namingMap = assertion.getNamingMap();
@@ -139,6 +144,8 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             context.setVariable(varPrefix + "." + newNamingMap.get(column), results.get(column).toArray());
         }
         context.setVariable(varPrefix + "." + JdbcQueryAssertion.VARIABLE_COUNT, row);
+
+        return row;
     }
 
     private String getVaraiblePrefix(PolicyEnforcementContext context) {
