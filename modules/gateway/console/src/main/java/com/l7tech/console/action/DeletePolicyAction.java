@@ -3,20 +3,21 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.policy.PolicyHeader;
-import com.l7tech.policy.PolicyDeletionForbiddenException;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.policy.PolicyDeletionForbiddenException;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The <code>DeletePolicyAction</code> action deletes a {@link com.l7tech.policy.Policy}.
@@ -83,21 +84,35 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
             PolicyDeletionForbiddenException pdfe = ExceptionUtils.getCauseIfCausedBy(ome, PolicyDeletionForbiddenException.class);
             String msg;
             if (pdfe != null) {
-                msg = node.getName() + " cannot be deleted at this time; it is still in use by another policy";
+                msg = pdfeMessage(pdfe);
             } else {
                 msg = "Error encountered while deleting " +
                         node.getName() +
                         ". Please try again later.";
             }
-            log.log(Level.WARNING, "Error deleting policy", ome);
-            DialogDisplayer.showMessageDialog(Actions.getTopParent(),
-                    msg,
-                    "Delete Policy",
-                    JOptionPane.ERROR_MESSAGE, null);
+            showDeleteError(ome, msg);
+        } catch (PolicyDeletionForbiddenException e) {
+            showDeleteError(e, pdfeMessage(e));
         } catch (Throwable throwable) {
             ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting policy");
         }
         return false;
+    }
+
+    private void showDeleteError(Throwable e, String msg) {
+        log.log(Level.WARNING, "Error deleting policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        DialogDisplayer.showMessageDialog(Actions.getTopParent(),
+                    msg,
+                    "Delete Policy",
+                JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    private String pdfeMessage(PolicyDeletionForbiddenException pdfe) {
+        String msg;
+        msg = node.getName() + " cannot be deleted at this time; it is still in use" + (EntityType.POLICY.equals(pdfe.getReferringEntityType())
+                ? " by another policy"
+                : " as the audit sink policy");
+        return msg;
     }
 
     public String getUserConfirmationMessage() {

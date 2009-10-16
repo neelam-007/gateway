@@ -186,6 +186,7 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             if (!cbOutputToPolicy.isSelected()) {
                 ClusterPropertyCrud.deleteClusterProperty(AUDIT_SINK_POLICY_GUID_CLUSTER_PROP);
                 ClusterPropertyCrud.deleteClusterProperty(AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP);
+                dispose();
                 return;
             }
 

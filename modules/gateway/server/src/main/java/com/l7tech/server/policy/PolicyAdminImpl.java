@@ -3,24 +3,25 @@
  */
 package com.l7tech.server.policy;
 
-import com.l7tech.util.BeanUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.map;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.policy.*;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.util.BeanUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.map;
 
 import java.beans.PropertyDescriptor;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * @author alex
@@ -36,6 +37,8 @@ public class PolicyAdminImpl implements PolicyAdmin {
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
     private final PolicyAliasManager policyAliasManager;
+
+    private ServerConfig serverConfig;
 
     public PolicyAdminImpl(PolicyManager policyManager,
                            PolicyAliasManager policyAliasManager,
@@ -101,8 +104,23 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     public void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
+        checkForActiveAuditSinkPolicy(oid);
         policyManager.delete(oid);
         roleManager.deleteEntitySpecificRoles(EntityType.POLICY, oid);
+    }
+
+    private void checkForActiveAuditSinkPolicy(long oid) throws FindException, PolicyDeletionForbiddenException {
+        if (serverConfig == null)
+            return;
+        Policy policy = policyManager.findByPrimaryKey(oid);
+        if (policy == null)
+            return;
+        if (!(PolicyType.INTERNAL.equals(policy.getType())))
+            return;
+        String guid = policy.getGuid();
+        String sinkGuid = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID);
+        if (sinkGuid != null && sinkGuid.trim().equals(guid))
+            throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global audit sink policy");         
     }
 
     public long savePolicy(Policy policy) throws SaveException {
@@ -436,4 +454,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         policyVersionManager.deactivateVersions(policyOid, PolicyVersion.DEFAULT_OID);
     }
 
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
+    }
 }

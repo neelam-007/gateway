@@ -340,6 +340,7 @@
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="roleManager"/>
+        <property name="serverConfig" ref="serverConfig"/>
     </bean>
 
     <bean id="logSinkAdmin" class="com.l7tech.server.log.LogSinkAdminImpl">
