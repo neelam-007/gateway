@@ -68,6 +68,8 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS = "modularAssertionsFileExtensions";
 
     public static final String PARAM_AUDIT_SINK_POLICY_GUID = "audit.sink.policy.guid";
+    public static final String PARAM_AUDIT_SINK_FALLBACK_ON_FAIL = "audit.sink.fallbackToInternal";
+    public static final String PARAM_AUDIT_SINK_ALWAYS_FALLBACK = "audit.sink.alwaysSaveInternal";
 
     public static final String PARAM_AUDIT_MESSAGE_THRESHOLD = "auditMessageThreshold";
     public static final String PARAM_AUDIT_ADMIN_THRESHOLD = "auditAdminThreshold";

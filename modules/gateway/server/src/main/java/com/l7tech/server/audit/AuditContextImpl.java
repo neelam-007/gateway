@@ -4,16 +4,16 @@
 
 package com.l7tech.server.audit;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.HexUtils;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.common.io.InetAddressUtil;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
@@ -279,11 +279,14 @@ public class AuditContextImpl implements AuditContext {
             sinkPolicyStatus = auditPolicyEvaluator.outputRecordToPolicyAuditSink(rec, policyEnforcementContext);
             if (AssertionStatus.NONE.equals(sinkPolicyStatus)) {
                 // Sink policy succeeded
-                return;
+                if (!isAlwaysSaveToDatabase())
+                    return;
             } else if (null == sinkPolicyStatus) {
                 // No sink policy configured; fallthrough to regular handling
             } else {
                 // Audit sink policy failed; fall back to built-in handling and audit failure
+                if (!isAlwaysSaveToDatabase() && !isFallbackToDatabaseIfSinkPolicyFails())
+                    return;
                 sinkPolicyFailed = true;
             }
         }
@@ -306,6 +309,14 @@ public class AuditContextImpl implements AuditContext {
                     "Audit sink policy failed; status = " + sinkPolicyStatus.getNumeric(), false, 0, null, null, "Sink Failure", OUR_IP);
             auditRecordManager.save(fail);
         }
+    }
+
+    private boolean isFallbackToDatabaseIfSinkPolicyFails() {
+        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, true, 30000);
+    }
+
+    private boolean isAlwaysSaveToDatabase() {
+        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false, 30000);
     }
 
     /**

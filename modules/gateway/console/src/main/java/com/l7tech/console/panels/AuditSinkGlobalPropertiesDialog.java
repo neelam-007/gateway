@@ -35,12 +35,13 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(AuditSinkGlobalPropertiesDialog.class.getName());
     private static final String INTERNAL_TAG_AUDIT_SINK = "audit-sink";
     private static final String AUDIT_SINK_POLICY_GUID_CLUSTER_PROP = "audit.sink.policy.guid";
+    private static final String AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP = "audit.sink.alwaysSaveInternal";
 
     private JPanel mainPanel;
-    private JRadioButton rbOutputToPolicy;
-    private JRadioButton rbSaveToDb;
     private JButton okButton;
     private JButton cancelButton;
+    private JCheckBox cbOutputToPolicy;
+    private JCheckBox cbSaveToDb;
 
     boolean committed = false;
     boolean policyEditRequested = false;
@@ -68,11 +69,22 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             }
         });
 
+        final ActionListener buttonListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                okButton.setEnabled(isCommittable());
+            }
+        };
+        cbSaveToDb.addActionListener(buttonListener);
+        cbOutputToPolicy.addActionListener(buttonListener);
+
         //getRootPane().setDefaultButton(okButton); // Not sure we want to make this quite THAT easy to commit
         Utilities.setEscKeyStrokeDisposes(this);
         Utilities.equalizeButtonSizes(okButton, cancelButton);
 
-        rbOutputToPolicy.setSelected(isUsingSinkPolicy());
+        final boolean usingSinkPolicy = isUsingSinkPolicy();
+        cbOutputToPolicy.setSelected(usingSinkPolicy);
+        cbSaveToDb.setSelected(!usingSinkPolicy || isAlwaysSaveToDb());
     }
 
     private boolean isUsingSinkPolicy() {
@@ -83,6 +95,17 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
             final PolicyHeader sinkHeader = getSinkPolicyHeader();
             return sinkHeader != null && configuredGuid.equals(sinkHeader.getGuid());
         } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to check if sink policy configured and exists: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return false;
+        }
+    }
+
+    private boolean isAlwaysSaveToDb() {
+        try {
+            String val = ClusterPropertyCrud.getClusterProperty(AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP);
+            return Boolean.valueOf(val);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to check if always save to DB: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
         }
     }
@@ -149,15 +172,26 @@ public class AuditSinkGlobalPropertiesDialog extends JDialog {
         return new EditPolicyAction(node, true);
     }
 
+    private boolean isCommittable() {
+        return cbOutputToPolicy.isSelected() || cbSaveToDb.isSelected();
+    }
+
     private void commit() {
+        if (!isCommittable()) {
+            DialogDisplayer.showMessageDialog(this, "At least one checkbox must be checked.", "Unable to Save", JOptionPane.ERROR_MESSAGE, null);
+            return;
+        }
+
         try {
-            if (rbSaveToDb.isSelected()) {
-                ClusterPropertyCrud.putClusterProperty(AUDIT_SINK_POLICY_GUID_CLUSTER_PROP, "");
+            if (!cbOutputToPolicy.isSelected()) {
+                ClusterPropertyCrud.deleteClusterProperty(AUDIT_SINK_POLICY_GUID_CLUSTER_PROP);
+                ClusterPropertyCrud.deleteClusterProperty(AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP);
                 return;
             }
 
             PolicyHeader header = getOrCreateSinkPolicyHeader();
             String guid = header.getGuid();
+            ClusterPropertyCrud.putClusterProperty(AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP, String.valueOf(cbSaveToDb.isSelected()));
             ClusterPropertyCrud.putClusterProperty(AUDIT_SINK_POLICY_GUID_CLUSTER_PROP, guid);
 
             final Action editAction = prepareEditAction();
