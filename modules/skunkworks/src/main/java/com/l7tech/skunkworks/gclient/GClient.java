@@ -27,6 +27,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.PrettyGoodWSDLLocator;
 import com.l7tech.xml.soap.SoapMessageGenerator;
@@ -82,7 +83,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        frame = new JFrame("GClient v0.9.0");
+        frame = new JFrame("GClient v0.9.1");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -90,7 +91,7 @@ public class GClient {
         buildControls();
 
         // listeners
-        buildListeners(frame);
+        buildListeners(frame, true);
 
         // do menus
         buildMenus(frame);
@@ -201,7 +202,7 @@ public class GClient {
         return validateBeforeSendCheckBox.isSelected();
     }
 
-    private void buildListeners(final JFrame frame) {
+    private void buildListeners(final JFrame frame, final boolean addAll ) {
         serviceComboBox.addItemListener(new ItemListener(){
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -220,24 +221,39 @@ public class GClient {
                 updateOperationSelection();
             }
         });
-        certButton.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                loadCert(frame);
-            }
-        });
-        serverCertButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                loadServerCert(frame);
-            }
-        });
-        sendButton.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                sendMessage();
-            }
-        });
+
+        if ( addAll ) {
+            certButton.addActionListener(new ActionListener(){
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    loadCert(frame);
+                }
+            });
+            serverCertButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    loadServerCert(frame);
+                }
+            });
+            sendButton.addActionListener(new ActionListener(){
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    sendMessage();
+                }
+            });
+            decorationButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    decorateMessage();
+                }
+            });
+            stripDecorationButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    stripDecorations();
+                }
+            });
+        }
         requestTextArea.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
@@ -254,18 +270,6 @@ public class GClient {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 updateResponse();
-            }
-        });
-        decorationButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                decorateMessage();
-            }
-        });
-        stripDecorationButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                stripDecorations();
             }
         });
     }
@@ -371,6 +375,7 @@ public class GClient {
         }
 
         if(services.size()==1) {
+            serviceComboBox.setSelectedIndex( 0 );
             updateServiceSelection();
         }
     }
@@ -687,6 +692,7 @@ public class GClient {
                 Object obj = dec.readObject();
                 if (obj instanceof GClient) {
                     GClient gClient = (GClient)obj;
+                    gClient.buildListeners( gClient.frame, false );
                     gClient.show();
                     GClient.this.frame.dispose();
                 }
@@ -1354,22 +1360,6 @@ public class GClient {
         this.service = service;
     }
 
-    public BindingOperation getOperation() {
-        return operation;
-    }
-
-    public void setOperation(BindingOperation operation) {
-        this.operation = operation;
-    }
-
-    public SoapMessageGenerator.Message[] getRequestMessages() {
-        return requestMessages;
-    }
-
-    public void setRequestMessages(SoapMessageGenerator.Message[] requestMessages) {
-        this.requestMessages = requestMessages;
-    }
-
     public JCheckBox getReformatRequestMessageCheckbox() {
         return reformatRequestMessageCheckbox;
     }
@@ -1498,30 +1488,6 @@ public class GClient {
         this.soapActionTextField = soapActionTextField;
     }
 
-    public JComboBox getServiceComboBox() {
-        return serviceComboBox;
-    }
-
-    public void setServiceComboBox(JComboBox serviceComboBox) {
-        this.serviceComboBox = serviceComboBox;
-    }
-
-    public JComboBox getPortComboBox() {
-        return portComboBox;
-    }
-
-    public void setPortComboBox(JComboBox portComboBox) {
-        this.portComboBox = portComboBox;
-    }
-
-    public JComboBox getOperationComboBox() {
-        return operationComboBox;
-    }
-
-    public void setOperationComboBox(JComboBox operationComboBox) {
-        this.operationComboBox = operationComboBox;
-    }
-
     public JSpinner getThreadSpinner() {
         return threadSpinner;
     }
@@ -1544,5 +1510,51 @@ public class GClient {
 
     public void setCookiesTextField(JTextField cookiesTextField) {
         this.cookiesTextField = cookiesTextField;
+    }
+
+    public String getSerializedWsdl() {
+        String value = null;
+        if ( wsdl != null ) {
+            ByteArrayOutputStream baos = null;
+            ObjectOutputStream out = null;
+            try {
+                baos = new ByteArrayOutputStream();
+                out = new ObjectOutputStream( baos );
+                out.writeObject( wsdl );
+                value = HexUtils.encodeBase64( baos.toByteArray() );
+            } catch ( Exception e ) {
+                e.printStackTrace();
+            } finally {
+                ResourceUtils.closeQuietly( out );
+                ResourceUtils.closeQuietly( baos );
+            }
+        }
+        return value;
+    }
+
+    public void setSerializedWsdl( final String wsdlStr ) {
+        if ( wsdlStr != null && wsdlStr.length() > 0 ) {
+            final String action = soapActionTextField.getText(); // save and restore so setting WSDL doesn't overwrite
+            final String message = requestTextArea.getText();
+            ObjectInputStream in = null;
+            try {
+                in = new ObjectInputStream( new ByteArrayInputStream( HexUtils.decodeBase64(wsdlStr) ) );
+                final Wsdl wsdl = (Wsdl) in.readObject();
+                SwingUtilities.invokeLater( new Runnable(){
+                    @Override
+                    public void run() {
+                        setWsdl( wsdl );                        
+                        soapActionTextField.setText( action );
+                        soapActionTextField.setCaretPosition( 0 );
+                        requestTextArea.setText( message );
+                        requestTextArea.setCaretPosition( 0 );
+                    }
+                } );
+            } catch ( Exception e ) {
+                e.printStackTrace();
+            } finally {
+                ResourceUtils.closeQuietly( in );
+            }
+        }
     }
 }
