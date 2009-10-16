@@ -3,6 +3,7 @@ package com.l7tech.common.io;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,6 +12,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -158,14 +162,7 @@ public class ProcUtils {
      * @throws java.io.IOException if there is a problem running the subprocess, or the subprocess exits nonzero.
      */
     public static ProcResult exec(File program, String[] args, byte[] stdin, boolean allowNonzeroExit) throws IOException {
-        try {
-            return doExec(null, program, args, stdin, allowNonzeroExit);
-        } catch (IOException e) {
-            throw new CausedIOException("Unable to invoke program " + program.getName() + ": " + e.getMessage(), e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new CausedIOException("Interrupted during invocation of program " + program.getName() + ": " + e.getMessage(), e);
-        }
+        return exec(null, program, args, stdin, allowNonzeroExit);
     }
 
     /**
@@ -192,11 +189,15 @@ public class ProcUtils {
         } catch (IOException e) {
             throw new CausedIOException("Unable to invoke " + program.getName() + " program: " + e.getMessage(), e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.out.println(System.currentTimeMillis() + " " + Thread.currentThread() + " ProcUtils caught interruption");
+            throw new CausedIOException("Interrupted during invocation of program " + program.getName() + ": " + ExceptionUtils.getMessage(e), e);
+        } catch (ExecutionException e) {
             throw new CausedIOException("Unable to invoke " + program.getName() + " program: " + e.getMessage(), e);
         }
     }
 
-    private static ProcResult doExec(File cwd, File program, String[] args, byte[] stdin, boolean allowNonzeroExit) throws InterruptedException, IOException {
+    private static ProcResult doExec(File cwd, File program, String[] args, byte[] stdin, boolean allowNonzeroExit) throws InterruptedException, IOException, ExecutionException {
         String[] cmdArray = new String[args.length + 1];
         cmdArray[0] = program.getPath();
         System.arraycopy(args, 0, cmdArray, 1, args.length);
@@ -218,7 +219,13 @@ public class ProcUtils {
 
             if (logger.isLoggable(Level.FINEST)) logger.finest("Reading output from program: " + program.getName());
             is = proc.getInputStream();
-            byte[] slurped = IOUtils.slurpStream(is);
+            final InputStream is1 = is;
+            byte[]  slurped = Executors.newSingleThreadExecutor().submit(new Callable<ByteArrayHolder>() {
+                @Override
+                public ByteArrayHolder call() throws Exception {
+                    return new ByteArrayHolder(IOUtils.slurpStream(is1));
+                }
+            }).get().getData();
             is.close(); is = null;
             if (logger.isLoggable(Level.FINEST)) logger.finest("Read " + slurped.length + " bytes of output from program: " + program.getName());
 
@@ -233,6 +240,17 @@ public class ProcUtils {
             ResourceUtils.closeQuietly(os);
             if (proc != null)
                 proc.destroy();
+        }
+    }
+
+    private static class ByteArrayHolder {
+        private final byte[] data;
+        private ByteArrayHolder(byte[] data) {
+            this.data = data;
+        }
+
+        public byte[] getData() {
+            return data;
         }
     }
 }

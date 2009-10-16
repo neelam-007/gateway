@@ -19,21 +19,41 @@
 
     <bean id="monitoringApiImpl" class="com.l7tech.server.processcontroller.MonitoringApiImpl"/>
 
+    <bean id="osApiImpl" class="com.l7tech.server.processcontroller.OSApiImpl"/>
+
+    <bean id="patchServiceApiImpl" class="com.l7tech.server.processcontroller.patching.PatchServiceApiImpl"/>
+
     <bean id="securityInterceptor" class="com.l7tech.server.processcontroller.SecurityInterceptor"/>
 
-    <jaxws:endpoint id="nodeManagementApiEndpoint" implementor="#nodeManagementApiImpl" address="/nodeManagementApi">
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="location" value="classpath:/com/l7tech/server/processcontroller/resources/processcontroller.properties"/>
+    </bean>
+
+    <jaxws:endpoint id="nodeManagementApiEndpoint" implementor="#nodeManagementApiImpl" address="${node.management.api.endpoint}">
         <jaxws:inInterceptors>
             <ref bean="securityInterceptor"/>
         </jaxws:inInterceptors>
     </jaxws:endpoint>
 
-    <jaxws:endpoint id="processControllerApiEndpoint" implementor="#processControllerApiImpl" address="/processControllerApi">
+    <jaxws:endpoint id="processControllerApiEndpoint" implementor="#processControllerApiImpl" address="${processcontroller.api.endpoint}">
         <jaxws:inInterceptors>
             <ref bean="securityInterceptor"/>
         </jaxws:inInterceptors>
     </jaxws:endpoint>
 
-    <jaxws:endpoint id="monitoringApiEndpoint" implementor="#monitoringApiImpl" address="/monitoringApi">
+    <jaxws:endpoint id="monitoringApiEndpoint" implementor="#monitoringApiImpl" address="${monitoring.api.endpoint}">
+        <jaxws:inInterceptors>
+            <ref bean="securityInterceptor"/>
+        </jaxws:inInterceptors>
+    </jaxws:endpoint>
+
+    <jaxws:endpoint id="osApiEndpoint" implementor="#osApiImpl" address="${os.api.endpoint}">
+        <jaxws:inInterceptors>
+            <ref bean="securityInterceptor"/>
+        </jaxws:inInterceptors>
+    </jaxws:endpoint>
+
+    <jaxws:endpoint id="patchServiceApiEndpoint" implementor="#patchServiceApiImpl" address="${patch.service.api.endpoint}">
         <jaxws:inInterceptors>
             <ref bean="securityInterceptor"/>
         </jaxws:inInterceptors>

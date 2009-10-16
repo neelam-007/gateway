@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.SecureRandom;
 
 /**
  * Utility methods to approximate Unix-style transactional file replacement in Java.
@@ -564,5 +565,34 @@ public class FileUtils {
             defaultDir = result;
         }
         return result;
+    }
+
+
+    /**
+     * Until it makes it into java.io.File
+     * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4735419 
+     */
+    public static File createTempDirectory(String prefix, String suffix, File directory, boolean deleteOnExit) throws IOException {
+        if (prefix == null) throw new NullPointerException();
+        if (prefix.length() < 3)
+            throw new IllegalArgumentException("Prefix string too short");
+        String s = (suffix == null) ? ".tmp" : suffix;
+
+        if (directory == null) {
+            String tmpDir = System.getProperty("java.io.tmpdir");
+            directory = new File(tmpDir);
+        }
+        File f;
+        do {
+            f = generateFile(prefix, s, directory);
+        } while (!f.mkdir());
+        if (deleteOnExit) f.deleteOnExit();
+        return f;
+    }
+
+    private static final SecureRandom random = new SecureRandom();
+    private static File generateFile(String prefix, String suffix, File dir) throws IOException {
+        long n = random.nextLong();
+        return new File(dir, prefix + Long.toString(n == Long.MIN_VALUE ? 0 : Math.abs(n)) + suffix);
     }
 }

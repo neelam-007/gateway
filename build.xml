@@ -2896,6 +2896,7 @@
             <mkdir dir="@{dir}/${install.src.pc.controletc}/conf"/>
             <mkdir dir="@{dir}/${install.src.pc.controllib}"/>
             <mkdir dir="@{dir}/${install.src.pc.controllogs}"/>
+            <mkdir dir="@{dir}/${install.src.pc.controlpatches}"/>
             <mkdir dir="@{dir}/${install.src.pc.controlvar}"/>
 
             <!-- Copy Controller.jar -->
@@ -2916,6 +2917,7 @@
             </copy>
 
             <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.pc.controletc}/conf/omp.dat"/>
+            <copy file="${src.root}/etc/patchesCert" tofile="@{dir}/${install.src.pc.controletc}/conf/patchesCert.pem"/>
        </sequential>
     </macrodef>
 

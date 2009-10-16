@@ -11,6 +11,10 @@
 
     <bean id="configService" class="com.l7tech.server.processcontroller.ConfigServiceImpl"/>
 
+    <bean id="patchPackageManager" class="com.l7tech.server.processcontroller.patching.PatchPackageManagerImpl"/>
+
+    <bean id="patchRecordManager" class="com.l7tech.server.processcontroller.patching.PatchFileRecordManager"/>
+
     <bean id="monitoringKernel" class="com.l7tech.server.processcontroller.monitoring.MonitoringKernelImpl"/>
     <bean id="propertySamplerFactory" class="com.l7tech.server.processcontroller.monitoring.sampling.PropertySamplerFactory"/>
     <bean id="notifierFactory" class="com.l7tech.server.processcontroller.monitoring.notification.NotifierFactory"/>

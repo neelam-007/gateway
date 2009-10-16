@@ -22,10 +22,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -39,13 +36,18 @@ import java.util.logging.Logger;
 public class ConfigServiceImpl implements ConfigService {
     private static final Logger logger = Logger.getLogger(ConfigServiceImpl.class.getName());
     private static final String SLASH = System.getProperty("file.separator");
+    private static final String SERVICES_CONTEXT_BASE_PATH = "/services";
+    private static final String PROCESSCONTROLLER_PROPERTIES = "com/l7tech/server/processcontroller/resources/processcontroller.properties";
 
     private final File processControllerHomeDirectory;
     private final File nodeBaseDirectory;
+    private final File patchesDirectory;
+    private final String patchesLog;
     private final HostConfig host;
     private final MasterPasswordManager masterPasswordManager;
     private final Pair<X509Certificate[], PrivateKey> sslKeypair;
     private final Set<X509Certificate> trustedRemoteNodeManagementCerts;
+    private final Set<X509Certificate> trustedPatchCerts;
     private final int sslPort;
     private final String sslIPAddress;
     private final File configDirectory;
@@ -53,6 +55,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final File javaBinary;
     private final boolean useSca; // TODO this should go through ScaFeature
     private final Properties hostProps;
+    private final Properties apiEndpointPaths = new Properties();
 
     private volatile boolean responsibleForClusterMonitoring;
     private volatile MonitoringConfiguration currentMonitoringConfiguration;
@@ -120,13 +123,26 @@ public class ConfigServiceImpl implements ConfigService {
         this.javaBinary = javaBinary.getCanonicalFile();
         logger.info("Using java binary: " + javaBinary.getPath());
 
+        this.patchesDirectory = this.hostProps.containsKey(HOSTPROPERTIES_PATCHES_DIR) ? new File(this.hostProps.getProperty(HOSTPROPERTIES_PATCHES_DIR)) :
+                                new File(processControllerHomeDirectory, DEFAULT_PATCHES_SUBDIR);
+        if (! patchesDirectory.isDirectory())
+            throw new IllegalStateException("Invalid patches directory: " + patchesDirectory);
+
+        this.patchesLog = this.hostProps.containsKey(HOSTPROPERTIES_PATCHES_LOG) ? this.hostProps.getProperty(HOSTPROPERTIES_PATCHES_LOG) :
+                                processControllerHomeDirectory + SLASH + DEFAULT_PATCHES_LOGFILE;
+        File logFile = new File(this.patchesLog);
+        if (! logFile.exists() && ! logFile.getParentFile().exists() || logFile.isDirectory())
+            throw new IllegalStateException("Invalid patch log file configured: " + patchesLog);
+
         this.sslPort = Integer.valueOf(hostProps.getProperty(HOSTPROPERTIES_SSL_PORT, "8765"));
         this.sslIPAddress = hostProps.getProperty(HOSTPROPERTIES_SSL_IPADDRESS, "127.0.0.1");
         this.sslKeypair = readSslKeypair(hostProps);
         this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts(hostProps);
+        this.trustedPatchCerts = readTrustedPatchCerts(hostProps);
         this.useSca = Boolean.valueOf(hostProps.getProperty("host.sca", "false"));
 
         reverseEngineerIps(hostConfig);
+        this.apiEndpointPaths.load(Thread.currentThread().getContextClassLoader().getResourceAsStream(PROCESSCONTROLLER_PROPERTIES));
 
         try {
             for (NodeConfig config : NodeConfigurationManager.loadNodeConfigs(false)) {
@@ -303,6 +319,24 @@ public class ConfigServiceImpl implements ConfigService {
         }
 
         final String encryptedPassword = getRequiredProperty(hostProps, HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_PASSWORD);
+
+        return readCerts(trustStoreType, trustStoreFile, encryptedPassword);
+    }
+
+    private Set<X509Certificate> readTrustedPatchCerts(Properties hostProps) throws IOException, GeneralSecurityException {
+        String patchTrustStore = getRequiredProperty(hostProps, HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE);
+        File trustedPatchCerts = new File(patchTrustStore);
+        if (!trustedPatchCerts.exists())
+            throw new IllegalArgumentException("Patch certificates truststore not found: " + patchTrustStore);
+        return readCerts(
+            getRequiredProperty(hostProps, HOSTPROPERTIES_PATCH_TRUSTSTORE_TYPE),
+            trustedPatchCerts,
+            getRequiredProperty(hostProps, HOSTPROPERTIES_PATCH_TRUSTSTORE_PASSWORD)
+        );
+    }
+
+    private Set<X509Certificate> readCerts(String trustStoreType, File trustStoreFile, String encryptedPassword) throws GeneralSecurityException, IOException {
+
         char[] keystorePass = masterPasswordManager.decryptPasswordIfEncrypted(encryptedPassword);
 
         final KeyStore ks = KeyStore.getInstance(trustStoreType);
@@ -320,8 +354,8 @@ public class ConfigServiceImpl implements ConfigService {
                         final X509Certificate xc = (X509Certificate)cert;
                         trustedCerts.add(xc);
                         logger.log(Level.INFO,
-                                   "Certificate trusted for remote node management: dn=\"{0}\", serial=\"{1}\", thumbprintSha1=\"{2}\"",
-                                   new Object[] {xc.getSubjectDN().getName(), xc.getSerialNumber(), CertUtils.getThumbprintSHA1(xc)});
+                                   "Read trusted certificate from {0}: dn=\"{1}\", serial=\"{2}\", thumbprintSha1=\"{3}\"",
+                                   new Object[] {trustStoreFile.getName(), xc.getSubjectDN().getName(), xc.getSerialNumber(), CertUtils.getThumbprintSHA1(xc)});
                     } else {
                         logger.warning("Skipping non-X.509 certificate with alias " + alias);
                     }
@@ -374,6 +408,16 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     @Override
+    public String getServicesContextBasePath() {
+        return SERVICES_CONTEXT_BASE_PATH;
+    }
+
+    @Override
+    public String getApiEndpoint(ApiWebEndpoint endpoint) {
+        return "https://" + getSslIPAddress() + ":" + getSslPort() + SERVICES_CONTEXT_BASE_PATH + apiEndpointPaths.getProperty(endpoint.getPropName());
+    }
+
+    @Override
     public void addServiceNode( final NodeConfig node ) throws IOException {
         refreshNodeConfiguration( node.getName() );
     }
@@ -387,6 +431,16 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     public File getNodeBaseDirectory() {
         return nodeBaseDirectory;
+    }
+
+    @Override
+    public File getPatchesDirectory() {
+        return patchesDirectory;
+    }
+
+    @Override
+    public String getPatchesLog() {
+        return patchesLog;
     }
 
     @Override
@@ -416,6 +470,11 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     public Set<X509Certificate> getTrustedRemoteNodeManagementCerts() {
         return trustedRemoteNodeManagementCerts;
+    }
+
+    @Override
+    public Set<X509Certificate> getTrustedPatchCerts() {
+        return trustedPatchCerts;
     }
 
     @Override

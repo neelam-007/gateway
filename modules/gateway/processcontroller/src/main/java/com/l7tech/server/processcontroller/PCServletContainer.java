@@ -144,7 +144,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
         final CXFServlet cxfServlet = new CXFServlet();
         final ServletHolder cxfHolder = new ServletHolder(cxfServlet);
-        root.addServlet(cxfHolder, "/services/*");
+        root.addServlet(cxfHolder, configService.getServicesContextBasePath() + "/*");
 
         //Set DefaultServlet to handle all static resource requests
         final DefaultServlet defaultServlet = new DefaultServlet();

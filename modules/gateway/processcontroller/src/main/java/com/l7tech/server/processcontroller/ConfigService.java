@@ -28,6 +28,11 @@ public interface ConfigService {
     String HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_FILE = "host.controller.remoteNodeManagement.truststore.file";
     String HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_TYPE = "host.controller.remoteNodeManagement.truststore.type";
     String HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_PASSWORD = "host.controller.remoteNodeManagement.truststore.password";
+    String HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE = "host.controller.patch.truststore.file";
+    String HOSTPROPERTIES_PATCH_TRUSTSTORE_TYPE = "host.controller.patch.truststore.type";
+    String HOSTPROPERTIES_PATCH_TRUSTSTORE_PASSWORD = "host.controller.patch.truststore.password";
+    String HOSTPROPERTIES_PATCHES_DIR = "host.paches.dir";
+    String HOSTPROPERTIES_PATCHES_LOG = "host.paches.logfile";
     String HOSTPROPERTIES_TYPE = "host.type";
     String HOSTPROPERTIES_ID = "host.id";
     String HOSTPROPERTIES_SAMPLER_TIMEOUT_SLOW_CONNECT= "host.sampler.timeout.slow.connect";
@@ -35,6 +40,11 @@ public interface ConfigService {
     String HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_CONNECT= "host.sampler.timeout.fast.connect";
     String HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_READ = "host.sampler.timeout.fast.read";
 
+    String DEFAULT_PATCHES_SUBDIR = "var/patches";
+    String DEFAULT_PATCHES_LOGFILE = "var/logs/patches.log";
+    String DEFAULT_PATCHES_CERT_FILENAME = "patchesCert.pem";
+    String DEFAULT_PATCHES_CERT_ALIAS = "l7patchesCert";
+    String DEFAULT_PATCH_TRUSTSTORE_FILENAME = "patches.jks";
     String DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME = "remoteNodeManagementTruststore.p12";
 
     HostConfig getHost();
@@ -45,6 +55,18 @@ public interface ConfigService {
 
     /** The parent directory of the node directories. */
     File getNodeBaseDirectory();
+
+    /** Patch packages repository dir */
+    File getPatchesDirectory();
+
+    /** Patch log file */
+    String getPatchesLog();
+
+    /** The base context-path for services servlets. */
+    String getServicesContextBasePath();
+
+    /** The URL path for the API endpoint configured with the specified property name in processcontroller.properties. */
+    String getApiEndpoint(ApiWebEndpoint endpoint);
 
     /** @return the directory containing scripts that get executed by appliance programs including process controller. */
     File getApplianceLibexecDirectory();
@@ -60,6 +82,9 @@ public interface ConfigService {
 
     /** The client certificates that will be accepted by the remote {@link com.l7tech.server.management.api.node.NodeManagementApi}. */
     Set<X509Certificate> getTrustedRemoteNodeManagementCerts();
+
+    /** The certificates that are trusted to sign patches. */
+    Set<X509Certificate> getTrustedPatchCerts();
 
     /** The $JAVA_HOME/bin/java launcher */
     File getJavaBinary();

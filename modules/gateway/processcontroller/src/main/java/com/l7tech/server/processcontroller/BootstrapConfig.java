@@ -4,21 +4,14 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.BuildInfo;
+import com.l7tech.util.*;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
-import java.security.KeyPair;
-import java.security.KeyStore;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
@@ -83,6 +76,11 @@ public class BootstrapConfig {
             final File ksFile = checkFile(new File(etcDir, "localhost.p12"), false);
             final String ksPass = generatePassword();
             createKeystore(ksFile, ksPass);
+
+            final File patchKeystoreFile = checkFile(new File(etcDir, ConfigService.DEFAULT_PATCH_TRUSTSTORE_FILENAME), false);
+            final File patchCertFile = checkFile(new File(etcDir, ConfigService.DEFAULT_PATCHES_CERT_FILENAME), true);
+            createPatchesKeystore(patchKeystoreFile, ksPass, patchCertFile);
+
             createPropertiesFile(hostPropertiesFile, ksFile, getMasterPasswordManager(etcDir).encryptPassword(ksPass.toCharArray()));
         }
 
@@ -191,6 +189,23 @@ public class BootstrapConfig {
             ResourceUtils.closeQuietly(kfos);
         }
         return pass;
+    }
+
+    /** Create trust keystore for validating patches and import the supplied certificate */
+    private static void createPatchesKeystore(File patchKeystoreFile, String ksPass, File patchCertFile) {
+        logger.info("Initializing trust keystore for patches...");
+        FileOutputStream kfos = null;
+        try {
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(null, null);
+            ks.setCertificateEntry(ConfigService.DEFAULT_PATCHES_CERT_ALIAS, CertUtils.decodeCert(IOUtils.slurpFile(patchCertFile)));
+            kfos = new FileOutputStream(patchKeystoreFile);
+            ks.store(kfos, ksPass.toCharArray());
+        } catch (Exception e) {
+            throw new DieDieDie("Unable to create trust keystore for patches.", 4, e);
+        } finally {
+            ResourceUtils.closeQuietly(kfos);
+        }
     }
 
     private static void createPropertiesFile(final File hostPropertiesFile, final File keystoreFile, final String obfKeystorePass) {
