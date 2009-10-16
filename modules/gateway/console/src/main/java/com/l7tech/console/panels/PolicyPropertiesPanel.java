@@ -62,12 +62,21 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         if (areUnsavedChangesToThisPolicy(policy)) {
             this.canUpdate = false;
             unsavedWarningLabel.setText(resources.getString("unsaved.warning"));
+        } else if (looksLikeAuditSinkPolicy(policy)) {
+            this.canUpdate = false;
+            unsavedWarningLabel.setText(resources.getString("auditsink.warning"));
         } else {
             unsavedWarningLabel.setVisible(false);
             this.canUpdate = canUpdate;
         }
 
         init();
+    }
+
+    private boolean looksLikeAuditSinkPolicy(Policy policy) {
+        return policy != null &&
+               PolicyType.INTERNAL.equals(policy.getType()) &&
+               AuditSinkGlobalPropertiesDialog.INTERNAL_TAG_AUDIT_SINK.equals(policy.getInternalTag());
     }
 
     private static boolean areUnsavedChangesToThisPolicy(Policy policy) {
@@ -148,7 +157,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
 
     private void enableTagChooser() {
         PolicyType policyType = (PolicyType) typeCombo.getSelectedItem();
-        tagCombo.setEnabled(policyType == PolicyType.INTERNAL && !policyTags.isEmpty());
+        tagCombo.setEnabled(policyType == PolicyType.INTERNAL && !policyTags.isEmpty() && canUpdate);
     }
 
     @Override

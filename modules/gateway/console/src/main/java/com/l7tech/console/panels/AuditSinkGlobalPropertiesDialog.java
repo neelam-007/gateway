@@ -33,9 +33,11 @@ import java.util.logging.Logger;
  */
 public class AuditSinkGlobalPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(AuditSinkGlobalPropertiesDialog.class.getName());
-    private static final String INTERNAL_TAG_AUDIT_SINK = "audit-sink";
-    private static final String AUDIT_SINK_POLICY_GUID_CLUSTER_PROP = "audit.sink.policy.guid";
-    private static final String AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP = "audit.sink.alwaysSaveInternal";
+
+    public static final String INTERNAL_TAG_AUDIT_SINK = "audit-sink";
+    public static final String AUDIT_SINK_POLICY_GUID_CLUSTER_PROP = "audit.sink.policy.guid";
+    public static final String AUDIT_SINK_ALWAYS_SAVE_CLUSTER_PROP = "audit.sink.alwaysSaveInternal";
+
 
     private JPanel mainPanel;
     private JButton okButton;
