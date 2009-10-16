@@ -102,6 +102,7 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 /opt/SecureSpan/Appliance/controller/Controller.jar
 %dir /opt/SecureSpan/Appliance/controller/bin
 %dir /opt/SecureSpan/Appliance/controller/etc
+/opt/SecureSpan/Appliance/controller/etc/patchesCert.pem
 /opt/SecureSpan/Appliance/controller/lib
 %attr(0555,layer7,layer7) /opt/SecureSpan/Appliance/controller/bin/*
 
