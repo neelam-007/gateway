@@ -4,6 +4,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
 import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 import com.l7tech.console.util.Registry;
@@ -98,6 +99,12 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         usernameTextField.getDocument().addDocumentListener(docListener);
         passwordField.getDocument().addDocumentListener(docListener);
 
+        connectionNameTextField.setDocument(new MaxLengthDocument(128));
+        ((JTextField)driverClassComboBox.getEditor().getEditorComponent()).setDocument(new MaxLengthDocument(256));
+        jdbcUrlTextField.setDocument(new MaxLengthDocument(256));
+        usernameTextField.setDocument(new MaxLengthDocument(128));
+        passwordField.setDocument(new MaxLengthDocument(64));
+
         final InputValidator inputValidator = new InputValidator(this, resources.getString("dialog.title.jdbc.conn.props"));
         // The values in the spinners will be initialized in the method modelToView().
         minPoolSizeSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_C3P0_POOL_SIZE, UPPER_BOUND_C3P0_POOL_SIZE, 1));
@@ -169,7 +176,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         connection.setDriverClass(((String) driverClassComboBox.getSelectedItem()).trim());
         connection.setJdbcUrl(jdbcUrlTextField.getText().trim());
         connection.setUserName(usernameTextField.getText().trim());
-        connection.setPassword(passwordField.getText()); //todo: passwordField.getPassword()
+        connection.setPassword(passwordField.getText());
         connection.setMinPoolSize((Integer) minPoolSizeSpinner.getValue());
         connection.setMaxPoolSize((Integer) maxPoolSizeSpinner.getValue());
         connection.setEnabled(!disableConnectionCheckBox.isSelected());

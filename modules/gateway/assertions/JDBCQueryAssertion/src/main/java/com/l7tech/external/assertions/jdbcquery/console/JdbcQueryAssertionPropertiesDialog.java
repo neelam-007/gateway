@@ -8,6 +8,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
@@ -101,6 +102,9 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         sqlQueryTextArea.getDocument().addDocumentListener((DocumentListener)changeListener);
         variablePrefixTextField.getDocument().addDocumentListener((DocumentListener)changeListener);
 
+        sqlQueryTextArea.setDocument(new MaxLengthDocument(JdbcAdmin.MAX_QUERY_LENGTH));
+        queryNameTextField.setDocument(new MaxLengthDocument(48));
+
         initNamingTable();
 
         final InputValidator inputValidator = new InputValidator(this, resources.getString("dialog.title.jdbc.query.props"));
@@ -153,7 +157,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         sqlQueryTextArea.setText(assertion.getSqlQuery());
         variablePrefixTextField.setText(assertion.getVariablePrefix());
         maxRecordsSpinner.setValue(assertion.getMaxRecords());
-        if (assertion.getConnectionName() == null) { // This is a new assertion. It means to load maxRecords from the global cluster properties.
+        if (assertion.getConnectionName() == null) { // This is a case where the assertion is a new one.  It means to load maxRecords from the global cluster properties.
             JdbcAdmin admin = getJdbcConnectionAdmin();
             if (admin != null) {
                 maxRecordsSpinner.setValue(admin.getPropertyDefaultMaxRecords());

@@ -27,6 +27,7 @@ public interface JdbcAdmin {
     static final int ORIGINAL_MAX_RECORDS = 10;
     static final int ORIGINAL_C3P0_BASIC_POOL_CONFIG_MINPOOLSIZE = 3;
     static final int ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE = 15;
+    static final int MAX_QUERY_LENGTH = SyspropUtil.getInteger("com.l7tech.jdbcquery.querylength", 4*1024);
     static final int UPPER_BOUND_MAX_RECORDS = SyspropUtil.getInteger("com.l7tech.jdbcquery.maxrecords.upperbound", 10000);
 
     @Transactional(readOnly=true)
