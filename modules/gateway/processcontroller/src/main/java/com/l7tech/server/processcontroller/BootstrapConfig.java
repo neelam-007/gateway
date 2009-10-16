@@ -17,6 +17,8 @@ import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.ConsoleHandler;
@@ -79,9 +81,9 @@ public class BootstrapConfig {
 
             final File patchKeystoreFile = checkFile(new File(etcDir, ConfigService.DEFAULT_PATCH_TRUSTSTORE_FILENAME), false);
             final File patchCertFile = checkFile(new File(etcDir, ConfigService.DEFAULT_PATCHES_CERT_FILENAME), true);
-            createPatchesKeystore(patchKeystoreFile, ksPass, patchCertFile);
+            Map<String,String> patcherProperties = createPatchesKeystore(patchKeystoreFile, ksPass, patchCertFile);
 
-            createPropertiesFile(hostPropertiesFile, ksFile, getMasterPasswordManager(etcDir).encryptPassword(ksPass.toCharArray()));
+            createPropertiesFile(hostPropertiesFile, ksFile, getMasterPasswordManager(etcDir).encryptPassword(ksPass.toCharArray()), patcherProperties);
         }
 
         doOverideProperties(hostPropertiesFile, overrideProperties);
@@ -192,7 +194,7 @@ public class BootstrapConfig {
     }
 
     /** Create trust keystore for validating patches and import the supplied certificate */
-    private static void createPatchesKeystore(File patchKeystoreFile, String ksPass, File patchCertFile) {
+    private static Map<String,String> createPatchesKeystore(final File patchKeystoreFile, final String ksPass, File patchCertFile) {
         logger.info("Initializing trust keystore for patches...");
         FileOutputStream kfos = null;
         try {
@@ -201,6 +203,11 @@ public class BootstrapConfig {
             ks.setCertificateEntry(ConfigService.DEFAULT_PATCHES_CERT_ALIAS, CertUtils.decodeCert(IOUtils.slurpFile(patchCertFile)));
             kfos = new FileOutputStream(patchKeystoreFile);
             ks.store(kfos, ksPass.toCharArray());
+            return new HashMap<String, String>() {{
+                put(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_TYPE, "JKS");
+                put(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE, patchKeystoreFile.getAbsolutePath());
+                put(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_PASSWORD, ksPass);
+            }};
         } catch (Exception e) {
             throw new DieDieDie("Unable to create trust keystore for patches.", 4, e);
         } finally {
@@ -208,12 +215,13 @@ public class BootstrapConfig {
         }
     }
 
-    private static void createPropertiesFile(final File hostPropertiesFile, final File keystoreFile, final String obfKeystorePass) {
+    private static void createPropertiesFile(final File hostPropertiesFile, final File keystoreFile, final String obfKeystorePass, Map<String,String> patcherProperties) {
         final Properties newProps = new Properties();
         newProps.setProperty(ConfigService.HOSTPROPERTIES_ID, UUID.randomUUID().toString());
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREFILE, keystoreFile.getAbsolutePath());
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREPASSWORD, obfKeystorePass);
         newProps.setProperty(ConfigService.HOSTPROPERTIES_JRE, System.getProperty("java.home"));
+        newProps.putAll(patcherProperties);
 
         FileOutputStream pfos = null;
         try {

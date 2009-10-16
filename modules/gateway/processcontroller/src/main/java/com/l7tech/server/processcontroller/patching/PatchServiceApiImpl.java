@@ -33,9 +33,10 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     @Override
     public PatchStatus uploadPatch(byte[] patchData) throws PatchException {
-        File tempPatchFile;
+        File tempPatchFile = null;
         try {
             tempPatchFile = File.createTempFile("patchzip", null);
+            tempPatchFile.deleteOnExit();
             IOUtils.copyStream(new ByteArrayInputStream(patchData), new FileOutputStream(tempPatchFile));
             PatchPackage patch = new PatchPackageImpl(tempPatchFile);
             checkTrustedCertificates(patch);
@@ -45,7 +46,11 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
         } catch (IOException e) {
             throw new PatchException("Error uploading patch file: " + ExceptionUtils.getMessage(e), e);
+        } finally {
+            if (tempPatchFile != null && tempPatchFile.exists())
+                tempPatchFile.delete();
         }
+
     }
 
     @Override
