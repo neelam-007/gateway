@@ -32,7 +32,6 @@ import java.text.MessageFormat;
 public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<JdbcQueryAssertion> {
     private static final int MAX_TABLE_COLUMN_NUM = 2;
     private static final int LOWER_BOUND_MAX_RECORDS = 1;
-    private static final int UPPER_BOUND_MAX_RECORDS = 10000;
     private static final Logger logger = Logger.getLogger(JdbcQueryAssertionDialog.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.jdbcquery.console.resources.JdbcQueryAssertionDialog");
 
@@ -106,7 +105,7 @@ public class JdbcQueryAssertionDialog extends AssertionPropertiesEditorSupport<J
 
         final InputValidator inputValidator = new InputValidator(this, resources.getString("dialog.title.jdbc.query.props"));
         // The values in the spinners will be initialized in the method modelToView().
-        maxRecordsSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_MAX_RECORDS, UPPER_BOUND_MAX_RECORDS, 1));
+        maxRecordsSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_MAX_RECORDS, JdbcConnectionAdmin.UPPER_BOUND_MAX_RECORDS, 1));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxRecordsSpinner, resources.getString("short.lable.max.records")));
 
         testButton.addActionListener(new ActionListener() {

@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.util.SyspropUtil;
 
 import java.util.List;
 
@@ -22,10 +23,11 @@ import java.util.List;
 @Administrative
 public interface JdbcConnectionAdmin {
 
-    static final String ORIGINAL_DRIVERCLASS_LIST = "com.mysql.jdbc.Driver";
+    static final String ORIGINAL_DRIVERCLASS_LIST = "com.mysql.jdbc.Driver"; // If you add more driver classes, separate them by '\n'.
     static final int ORIGINAL_MAX_RECORDS = 10;
     static final int ORIGINAL_C3P0_BASIC_POOL_CONFIG_MINPOOLSIZE = 3;
     static final int ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE = 15;
+    static final int UPPER_BOUND_MAX_RECORDS = SyspropUtil.getInteger("com.l7tech.jdbcquery.maxrecords.upperbound", 10000);
 
     @Transactional(readOnly=true)
     @Secured(types=EntityType.JDBC_CONNECTION, stereotype= MethodStereotype.FIND_ENTITY)
