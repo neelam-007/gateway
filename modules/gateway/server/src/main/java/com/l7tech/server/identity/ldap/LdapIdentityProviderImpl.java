@@ -82,12 +82,13 @@ public class LdapIdentityProviderImpl
             throw new InvalidIdProviderCfgException("GroupManager is not set");
         }
 
-        userManager.configure( this );
-        groupManager.configure( this );
-
         if ( this.config.getReturningAttributes() != null ) {
             returningAttributes = buildReturningAttributes();
         }
+
+        userManager.configure( this );
+        groupManager.configure( this );
+
         ldapTemplate = new LdapUtils.LdapTemplate(config.getSearchBase(), returningAttributes){
             @Override
             DirContext getDirContext() throws NamingException {
@@ -1298,7 +1299,6 @@ public class LdapIdentityProviderImpl
         attributeNames.add( DESCRIPTION_ATTRIBUTE_NAME );
         attributeNames.add( LdapUtils.LDAP_ATTR_USER_ACCOUNT_CONTROL );
         attributeNames.add( LdapUtils.LDAP_ATTR_ACCOUNT_EXPIRES );
-        attributeNames.add( LdapUtils.LDAP_ATTR_USER_CERTIFICATE );
 
         // User mapping attributes
         UserMappingConfig[] userTypes = config.getUserMappings();
@@ -1311,7 +1311,7 @@ public class LdapIdentityProviderImpl
             addValidName( attributeNames, userType.getLoginAttrName() );
             addValidName( attributeNames, userType.getNameAttrName() );
             addValidName( attributeNames, userType.getPasswdAttrName() );
-            addValidName( attributeNames, userType.getUserCertAttrName() );
+            addValidName( attributeNames, userType.getUserCertAttrName(), LdapUtils.LDAP_ATTR_USER_CERTIFICATE );
         }
 
         // Group mapping attributes
@@ -1331,8 +1331,14 @@ public class LdapIdentityProviderImpl
     }
 
     private void addValidName( final Collection<? super String> names, final String name ) {
+        addValidName( names, name, null );
+    }
+
+    private void addValidName( final Collection<? super String> names, final String name, final String defaultValue ) {
         if ( name != null && !name.isEmpty() ) {
             names.add( name.trim() );
+        } else if ( defaultValue != null ) {
+            names.add( defaultValue );           
         }
     }
 

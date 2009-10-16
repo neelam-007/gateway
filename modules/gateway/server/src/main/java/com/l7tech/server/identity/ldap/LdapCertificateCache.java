@@ -41,8 +41,8 @@ class LdapCertificateCache implements Lifecycle {
 
     @Override
     public void start() {
-        scheduleTask( rebuildTask, ldapRuntimeConfig.getRebuildTimerLength() );
-        scheduleTask( cleanupTask, ldapRuntimeConfig.getCleanupTimerLength() );
+        scheduleTask( rebuildTask, true, ldapRuntimeConfig.getRebuildTimerLength() );
+        scheduleTask( cleanupTask, false, ldapRuntimeConfig.getCleanupTimerLength() );
     }
 
     @Override
@@ -189,9 +189,9 @@ class LdapCertificateCache implements Lifecycle {
         return false; // don't assume it was removed if there are errors getting to it
     }
 
-    private void scheduleTask( final ManagedTimerTask task, final long period ) {
+    private void scheduleTask( final ManagedTimerTask task, final boolean immediate,  final long period ) {
         if ( task != null ) {
-            timer.schedule(task, 5000, period);
+            timer.schedule(task, immediate ? 0 : 5000, period);
         }
     }
 
@@ -206,7 +206,7 @@ class LdapCertificateCache implements Lifecycle {
     private void rescheduleIndexRebuildTask() {
         cancelTasks(rebuildTask);
         rebuildTask = new RebuildTask(this, ldapRuntimeConfig, ownerDescription);
-        scheduleTask(rebuildTask, ldapRuntimeConfig.getRebuildTimerLength());
+        scheduleTask(rebuildTask, false, ldapRuntimeConfig.getRebuildTimerLength());
     }
 
     private void cleanupCertCache() {

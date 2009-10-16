@@ -57,74 +57,17 @@ public class LdapUserManagerImpl implements LdapUserManager {
      */
     @Override
     public LdapUser findByPrimaryKey(final String dn) throws FindException {
-        final LdapIdentityProvider identityProvider = getIdentityProvider();
-        final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
         final LdapUser[] userHolder = new LdapUser[1];
         try {
             ldapTemplate.attributes( dn, new LdapUtils.LdapListener(){
                 @Override
                 void attributes( final String dn, final Attributes attributes ) throws NamingException {
-                    if (!identityProvider.isValidEntryBasedOnUserAccountControlAttribute(dn, attributes)) {
-                        // This is warning level because it could
-                        // be caused by a locked out user trying to
-                        // get in using certificate granted by ssg.
-                        logger.warning("User " + dn + " is locked or disabled. Returning null.");
-                        return;
-                    } else if (identityProvider.checkExpiredMSADAccount(dn, attributes)) {
-                        logger.warning("Account " + dn + " is expired. Returning null.");
-                        return;
-                    }
-
-                    UserMappingConfig[] userTypes = ldapIdentityProviderConfig.getUserMappings();
-                    Attribute objectclasses = attributes.get(LdapIdentityProvider.OBJECTCLASS_ATTRIBUTE_NAME);
-                    for (UserMappingConfig userType : userTypes) {
-                        String userclass = userType.getObjClass();
-                        if (LdapUtils.attrContainsCaseIndependent(objectclasses, userclass)) {
-                            LdapUser out = new LdapUser();
-                            out.setProviderId(ldapIdentityProviderConfig.getOid());
-                            out.setDn(dn);
-                            out.setAttributes(attributes);
-                            Object tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getEmailNameAttrName());
-                            if (tmp != null) out.setEmail(tmp.toString());
-                            tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getFirstNameAttrName());
-                            if (tmp != null) out.setFirstName(tmp.toString());
-                            tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getLastNameAttrName());
-                            if (tmp != null) out.setLastName(tmp.toString());
-                            tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getLoginAttrName());
-                            if (tmp != null) out.setLogin(tmp.toString());
-                            tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getNameAttrName());
-                            if (tmp != null) out.setCn(tmp.toString());
-                            tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getPasswdAttrName());
-                            // todo, something about the passwd type
-                            if (tmp != null) {
-                                byte[] tmp2 = (byte[]) tmp;
-                                out.setPassword(new String(tmp2));
-                            }
-
-                            // check for presence of userCertificate
-                            String userCertAttrName = userType.getUserCertAttrName();
-                            if (userCertAttrName == null) {
-                                userCertAttrName = LdapUtils.LDAP_ATTR_USER_CERTIFICATE;
-                            }
-                            tmp = LdapUtils.extractOneAttributeValue(attributes, userCertAttrName);
-                            if (tmp != null) {
-                                if (tmp instanceof byte[]) {
-                                    out.setLdapCertBytes((byte[])tmp);
-                                } else {
-                                    logger.warning("User certificate Ldap property populated with " +
-                                                   "data in an unexpected format " + tmp.getClass());
-                                }
-                            }
-
-                            userHolder[0] = out;
-                            break;
-                        }
-                    }
+                    userHolder[0] = buildUser( dn, attributes );
                 }
             } );
         } catch (NameNotFoundException e) {
             if ( logger.isLoggable(Level.FINEST )) {
-                logger.finest("User " + dn + " does not exist in" + ldapIdentityProviderConfig.getName() + " (" + ExceptionUtils.getMessage(e) + ")");
+                logger.finest("User " + dn + " does not exist in" + getIdentityProviderConfig().getName() + " (" + ExceptionUtils.getMessage(e) + ")");
             }
         } catch (AuthenticationException ae) {
             logger.log(Level.WARNING, "LDAP authentication error: " + ExceptionUtils.getMessage(ae), ExceptionUtils.getDebugException(ae));
@@ -142,6 +85,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
      */
     @Override
     public LdapUser findByLogin( final String login ) throws FindException {
+        final LdapUser[] userHolder = new LdapUser[1];
         try {
             LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
 
@@ -153,26 +97,84 @@ public class LdapUserManagerImpl implements LdapUserManager {
             }
             filter.end();
 
-            final String[] dnHolder = new String[1];
             ldapTemplate.search( filter.buildFilter(), 1, null, new LdapUtils.LdapListener(){
                 @Override
                 boolean searchResult( final SearchResult sr ) throws NamingException {
-                    dnHolder[0] = sr.getNameInNamespace();
+                    userHolder[0] =  buildUser( sr.getNameInNamespace(), sr.getAttributes());
                     return false;
                 }
             } );
 
-            if ( dnHolder[0] == null ) {
+            if ( userHolder[0] == null ) {
                 logger.fine(ldapIdentityProviderConfig.getName() + " cannot find cn=" + login);
-                return null;
             }
-
-            return findByPrimaryKey(dnHolder[0]);
         } catch (AuthenticationException ae) {
             logger.log(Level.WARNING, "LDAP authentication error: " + ae.getMessage(), ExceptionUtils.getDebugException(ae));
         } catch (NamingException ne) {
             logger.log(Level.WARNING, "LDAP error: " + ne.getMessage(), ExceptionUtils.getDebugException(ne));
         }
+
+        return userHolder[0];
+    }
+
+    private LdapUser buildUser( final String dn, final Attributes attributes ) throws NamingException {
+        if (!identityProvider.isValidEntryBasedOnUserAccountControlAttribute(dn, attributes)) {
+            // This is warning level because it could
+            // be caused by a locked out user trying to
+            // get in using certificate granted by ssg.
+            logger.warning("User " + dn + " is locked or disabled. Returning null.");
+            return null;
+        } else if (identityProvider.checkExpiredMSADAccount(dn, attributes)) {
+            logger.warning("Account " + dn + " is expired. Returning null.");
+            return null;
+        }
+
+        final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+        final UserMappingConfig[] userTypes = ldapIdentityProviderConfig.getUserMappings();
+        final Attribute objectclasses = attributes.get(LdapIdentityProvider.OBJECTCLASS_ATTRIBUTE_NAME);
+        for (UserMappingConfig userType : userTypes) {
+            String userclass = userType.getObjClass();
+            if (LdapUtils.attrContainsCaseIndependent(objectclasses, userclass)) {
+                LdapUser out = new LdapUser();
+                out.setProviderId(ldapIdentityProviderConfig.getOid());
+                out.setDn(dn);
+                out.setAttributes(attributes);
+                Object tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getEmailNameAttrName());
+                if (tmp != null) out.setEmail(tmp.toString());
+                tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getFirstNameAttrName());
+                if (tmp != null) out.setFirstName(tmp.toString());
+                tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getLastNameAttrName());
+                if (tmp != null) out.setLastName(tmp.toString());
+                tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getLoginAttrName());
+                if (tmp != null) out.setLogin(tmp.toString());
+                tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getNameAttrName());
+                if (tmp != null) out.setCn(tmp.toString());
+                tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getPasswdAttrName());
+                // todo, something about the passwd type
+                if (tmp != null) {
+                    byte[] tmp2 = (byte[]) tmp;
+                    out.setPassword(new String(tmp2));
+                }
+
+                // check for presence of userCertificate
+                String userCertAttrName = userType.getUserCertAttrName();
+                if (userCertAttrName == null) {
+                    userCertAttrName = LdapUtils.LDAP_ATTR_USER_CERTIFICATE;
+                }
+                tmp = LdapUtils.extractOneAttributeValue(attributes, userCertAttrName);
+                if (tmp != null) {
+                    if (tmp instanceof byte[]) {
+                        out.setLdapCertBytes((byte[])tmp);
+                    } else {
+                        logger.warning("User certificate Ldap property populated with " +
+                                       "data in an unexpected format " + tmp.getClass());
+                    }
+                }
+
+                return out;
+            }
+        }
+
         return null;
     }
 
