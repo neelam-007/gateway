@@ -1,8 +1,8 @@
----
---- Script to update mysql ssg database from 3.7 to 4.0
----
---- Layer 7 Technologies, inc
----
+--
+-- Script to update mysql ssg database from 3.7 to 4.0
+--
+-- Layer 7 Technologies, inc
+--
 
 --
 -- Table structure for new table 'keystore_file'

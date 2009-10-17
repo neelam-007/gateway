@@ -1,7 +1,7 @@
----
---- Script to update mysql ssg database from 3.1 to 3.2
----
---- Layer 7 Technologies, inc
+--
+-- Script to update mysql ssg database from 3.1 to 3.2
+--
+-- Layer 7 Technologies, inc
 
 ALTER TABLE audit_message ADD COLUMN operation_name varchar(255);
 ALTER TABLE audit_message ADD COLUMN response_status int(11);

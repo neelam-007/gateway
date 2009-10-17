@@ -1,8 +1,8 @@
----
---- Script to update mysql ssg database from 4.2 to 4.3
----
---- Layer 7 Technologies, inc
----
+--
+-- Script to update mysql ssg database from 4.2 to 4.3
+--
+-- Layer 7 Technologies, inc
+--
 
 --
 -- Disable FK while manipulating tables
@@ -75,9 +75,9 @@ INSERT INTO rbac_permission VALUES (-803,0,-800,'UPDATE',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-804,0,-800,'DELETE',NULL,'LOG_SINK');
 
 
-----------------------------------------
---           POLICY INCLUDES          --
-----------------------------------------
+--
+-- POLICY INCLUDES 
+--
 
 --
 -- Table structure for table 'policy'
@@ -109,9 +109,9 @@ INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
     values (-400301, 0, "upgrade.task.400301", "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions");
 
----
---- Policy XML rollback support
----
+--
+-- Policy XML rollback support
+--
 
 CREATE TABLE policy_version (
   objectid bigint(20) NOT NULL,
@@ -133,14 +133,14 @@ INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
     values (-400302, 0, "upgrade.task.400302", "com.l7tech.server.upgrade.Upgrade42To43AddInitialPolicyVersions");
 
----
---- Delete the client certificates whose identitiy_provider does not exist.
----
+--
+-- Delete the client certificates whose identitiy_provider does not exist.
+--
 DELETE FROM client_cert WHERE provider NOT IN (SELECT objectid FROM identity_provider);
 
----
---- Add a foreign key in the table client_cert, so when deleting an identity provider, the database will automatically delete the associated client certificate.
----
+--
+-- Add a foreign key in the table client_cert, so when deleting an identity provider, the database will automatically delete the associated client certificate.
+--
 ALTER TABLE client_cert ADD FOREIGN KEY (provider) REFERENCES identity_provider (objectid) ON DELETE CASCADE;
 
 CREATE TABLE config_data (

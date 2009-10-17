@@ -1,8 +1,8 @@
----
---- Script to update mysql ssg database from 3.4(.1) to 3.5
----
---- Layer 7 Technologies, inc
----
+--
+-- Script to update mysql ssg database from 3.4(.1) to 3.5
+--
+-- Layer 7 Technologies, inc
+--
 
 alter table service_resolution drop index `soapaction`;
 alter table service_resolution modify column soapaction mediumtext character set latin1 BINARY default '';
@@ -38,9 +38,9 @@ CREATE TABLE service_metrics (
   PRIMARY KEY (nodeid, published_service_oid, resolution, period_start)
 ) TYPE=InnoDB;
 
-------------------------
--- Cluster Properties --
-------------------------
+--
+-- Cluster Properties
+--
 
 alter table cluster_properties drop primary key;
 
@@ -52,14 +52,14 @@ alter table cluster_properties change objectid objectid bigint(20) not null;
 
 create unique index i_cp_propkey on cluster_properties (propkey);
 
------------------------
--- Community Schemas --
------------------------
+--
+-- Community Schemas
+--
 
 alter table community_schemas add version integer not null;
 alter table community_schemas change `schema` schema_xml mediumtext default '';
 
-------------------------------------
--- GLOBAL COUNTERS IN CLUSTER FIX --
-------------------------------------
+--
+-- GLOBAL COUNTERS IN CLUSTER FIX
+--
 alter table counters modify column userid varchar(128) NOT NULL;

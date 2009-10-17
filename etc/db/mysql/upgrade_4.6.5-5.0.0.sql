@@ -1,8 +1,8 @@
----
---- Script to update mysql ssg database from 4.6.5 to 5.0
----
---- Layer 7 Technologies, inc
----
+--
+-- Script to update mysql ssg database from 4.6.5 to 5.0
+--
+-- Layer 7 Technologies, inc
+--
 
 --
 -- Disable FK while manipulating tables
@@ -149,9 +149,9 @@ CREATE TABLE published_service_alias (
   FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
----
---- All nodes are now assumed always to have access to the CA key
----
+--
+-- All nodes are now assumed always to have access to the CA key
+--
 ALTER TABLE cluster_info DROP COLUMN ismaster, DROP COLUMN partition_name, DROP COLUMN cluster_port;
 
 --
@@ -167,9 +167,9 @@ CREATE TABLE policy_alias (
   FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
----
---- Now Throughput Quota Assertion allows a max value per minute.
----
+--
+-- Now Throughput Quota Assertion allows a max value per minute.
+--
 ALTER TABLE counters ADD COLUMN cnt_min bigint(20) default 0;
 
 
@@ -178,15 +178,15 @@ ALTER TABLE counters ADD COLUMN cnt_min bigint(20) default 0;
 --
 ALTER TABLE community_schemas ADD CONSTRAINT UNIQUE KEY csnm_idx (name);
 
----
---- Add description cols for fed and internal users.
----
+--
+-- Add description cols for fed and internal users.
+--
 ALTER TABLE internal_user ADD COLUMN description varchar(255) default NULL;
 
 
----
---- Add tables for ESM trust and user mapping support
----
+--
+-- Add tables for ESM trust and user mapping support
+--
 
 DROP TABLE IF EXISTS trusted_esm;
 CREATE TABLE trusted_esm (
@@ -355,7 +355,7 @@ ALTER TABLE folder ADD COLUMN version int(11) NOT NULL AFTER objectid;
 -- Add flag for enable/disable wss processing to published service
 ALTER TABLE published_service ADD COLUMN wss_processing TINYINT(1) NOT NULL DEFAULT 1 AFTER lax_resolution;
 
---- Simplified mapping of connector properties
+-- Simplified mapping of connector properties
 ALTER TABLE connector_property DROP COLUMN objectid, DROP COLUMN version;
 
 -- Add properties to keystore files

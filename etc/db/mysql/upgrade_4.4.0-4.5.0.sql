@@ -1,8 +1,8 @@
----
---- Script to update mysql ssg database from 4.4 to 4.5
----
---- Layer 7 Technologies, inc
----
+--
+-- Script to update mysql ssg database from 4.4 to 4.5
+--
+-- Layer 7 Technologies, inc
+--
 
 --
 -- Disable FK while manipulating tables

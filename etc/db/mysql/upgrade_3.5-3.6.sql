@@ -1,8 +1,8 @@
----
---- Script to update mysql ssg database from 3.5 to 3.6
----
---- Layer 7 Technologies, inc
----
+--
+-- Script to update mysql ssg database from 3.5 to 3.6
+--
+-- Layer 7 Technologies, inc
+--
 
 --
 -- Disable FK while manipulating tables
@@ -59,9 +59,9 @@ alter table service_resolution modify column uri mediumtext character set latin1
 --  bgzla #2923
 alter table client_cert add unique key i_identity (provider, user_id);
 
-------------------------
--- META-GROUP SUPPORT --
-------------------------
+--
+-- META-GROUP SUPPORT
+--
 
 -- Get rid of old composite PK
 alter table internal_user_group drop primary key;
@@ -87,14 +87,14 @@ alter table internal_user_group add index (provider_oid);
 alter table internal_user_group add index (user_id);
 alter table internal_user_group add index (subgroup_id);
 
-------------------------------------
--- GLOBAL COUNTERS IN CLUSTER FIX --
-------------------------------------
+--
+-- GLOBAL COUNTERS IN CLUSTER FIX
+--
 alter table counters modify column userid varchar(128) NOT NULL;
 
----------------------
--- RBAC DATA MODEL --
----------------------
+--
+-- RBAC DATA MODEL
+--
 
 --
 -- Table structure for table rbac_role

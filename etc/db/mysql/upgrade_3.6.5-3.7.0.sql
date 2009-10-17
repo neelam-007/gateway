@@ -1,8 +1,8 @@
----
---- Script to update mysql ssg database from 3.6.5 to 3.7
----
---- Layer 7 Technologies, inc
----
+--
+-- Script to update mysql ssg database from 3.6.5 to 3.7
+--
+-- Layer 7 Technologies, inc
+--
 
 --
 -- Table structure for table 'service_documents'

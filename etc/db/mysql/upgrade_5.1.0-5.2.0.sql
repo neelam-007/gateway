@@ -1,8 +1,8 @@
----
---- Script to update mysql ssg database from 5.1.0 to 5.2.0
----
---- Layer 7 Technologies, inc
----
+--
+-- Script to update mysql ssg database from 5.1.0 to 5.2.0
+--
+-- Layer 7 Technologies, inc
+--
 
 --
 -- Disable FK while manipulating tables
