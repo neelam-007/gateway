@@ -1534,8 +1534,6 @@ public class GClient {
 
     public void setSerializedWsdl( final String wsdlStr ) {
         if ( wsdlStr != null && wsdlStr.length() > 0 ) {
-            final String action = soapActionTextField.getText(); // save and restore so setting WSDL doesn't overwrite
-            final String message = requestTextArea.getText();
             ObjectInputStream in = null;
             try {
                 in = new ObjectInputStream( new ByteArrayInputStream( HexUtils.decodeBase64(wsdlStr) ) );
@@ -1543,6 +1541,8 @@ public class GClient {
                 SwingUtilities.invokeLater( new Runnable(){
                     @Override
                     public void run() {
+                        final String action = soapActionTextField.getText(); // save and restore so setting WSDL doesn't overwrite
+                        final String message = requestTextArea.getText();
                         setWsdl( wsdl );                        
                         soapActionTextField.setText( action );
                         soapActionTextField.setCaretPosition( 0 );
