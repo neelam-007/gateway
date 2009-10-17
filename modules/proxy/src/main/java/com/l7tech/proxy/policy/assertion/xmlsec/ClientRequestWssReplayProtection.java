@@ -2,7 +2,7 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
@@ -18,8 +18,6 @@ import java.security.cert.X509Certificate;
 /**
  * Client side support for RequestWssReplayProtection.  When the Bridge sees this assertion, it makes sure that
  * the request includes a signed timestamp.
- *
- * $Id$
  */
 public class ClientRequestWssReplayProtection extends ClientAssertionWithMetaSupport {
     public ClientRequestWssReplayProtection(WssReplayProtection data) {
@@ -43,7 +41,7 @@ public class ClientRequestWssReplayProtection extends ClientAssertionWithMetaSup
             PolicyRetryableException, ClientCertificateException
     {
         // Not applicable if target is not request
-        if (requestWssReplayProtection.getTarget() != TargetMessageType.REQUEST) return AssertionStatus.NONE;
+        if ( !Assertion.isRequest(requestWssReplayProtection) || requestWssReplayProtection.isCustomProtection() ) return AssertionStatus.NONE;
         context.getSsg().getServerCertificateAlways();
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds

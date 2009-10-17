@@ -12,15 +12,20 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.kerberos.KerberosUtils;
 import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -29,7 +34,12 @@ import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Arrays;
 import java.nio.charset.Charset;
+import java.text.MessageFormat;
 
 /**
  * This assertion asserts that this message had a signed timestamp, and that no message with this timestamp signed
@@ -44,18 +54,23 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
     private static final String ID_PREFIX_WSA_HASHED = "uuid:wsa:digest:";
     private static final int MAX_WSA_MESSAGEID_HASHTHRESHOLD = SyspropUtil.getInteger("com.l7tech.server.messageIDHashThrehold" , 255); // 255 is the max we allow in the DB
     private static final int MAX_WSA_MESSAGEID_MAXLENGTH = SyspropUtil.getInteger("com.l7tech.server.messageIDMaxLength" , 8192); // 8k limit
+    private static final String ID_FORMAT_CUSTOM_HASHED = "uuid:custom:scope:{0}:{1}";
 
     private static final Charset UTF8 = Charset.forName( "UTF-8" );
 
     private final Auditor auditor;
     private final MessageIdManager messageIdManager;
     private final SecurityTokenResolver securityTokenResolver;
+    private final TimeSource timeSource;
 
-    public ServerWssReplayProtection(WssReplayProtection subject, ApplicationContext spring) {
+    public ServerWssReplayProtection( final WssReplayProtection subject, final BeanFactory spring ) {
         super(subject, subject);
-        this.auditor = new Auditor(this, spring, logger);
+        this.auditor = spring instanceof ApplicationContext
+                ? new Auditor(this, (ApplicationContext) spring, logger)
+                : new LogOnlyAuditor(logger);
         this.messageIdManager = (MessageIdManager)spring.getBean("distributedMessageIdManager");
         this.securityTokenResolver = (SecurityTokenResolver)spring.getBean("securityTokenResolver");
+        this.timeSource = getTimeSource();
     }
 
     private static final class MultipleSenderIdException extends Exception { }
@@ -75,11 +90,54 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                                               final Message msg,
                                               final String targetName,
                                               final AuthenticationContext authContext ) throws IOException {
+        final Pair<String,Long> messageIdAndExpiry;
+        try {
+            if ( assertion.isCustomProtection() ) {
+                messageIdAndExpiry = getCustomIdentifierAndExpiry( context, targetName );
+            } else {
+                messageIdAndExpiry = getDefaultIdentifierAndExpiry( context, msg, targetName, authContext );
+            }
+        } catch ( AssertionStatusException ase ) {
+            return ase.getAssertionStatus();            
+        }
+
+        MessageId messageId = new MessageId(messageIdAndExpiry.left, messageIdAndExpiry.right);
+        try {
+            messageIdManager.assertMessageIdIsUnique(messageId);
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, messageIdAndExpiry.left, targetName);
+        } catch (MessageIdManager.DuplicateMessageIdException e) {
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdAndExpiry.left, targetName);
+            return getBadMessageStatus();
+        } catch (MessageIdManager.MessageIdCheckException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Error checking for replay : " + ExceptionUtils.getMessage( e )}, e);
+            return AssertionStatus.FAILED;
+        }
+
+        return AssertionStatus.NONE;
+    }
+
+    @Override
+    protected Auditor getAuditor() {
+        return auditor;
+    }
+
+    protected TimeSource getTimeSource() {
+        return new TimeSource();
+    }
+
+    private Pair<String,Long> getDefaultIdentifierAndExpiry( final PolicyEnforcementContext context,
+                                                             final Message msg,
+                                                             final String targetName,
+                                                             final AuthenticationContext authContext ) throws IOException {
+        final long now = timeSource.currentTimeMillis();
+        final String messageIdStr;
+        final long expires;
+
         final ProcessorResult wssResults;
         try {
             if (!msg.isSoap()) {
                 auditor.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_NOT_SOAP, targetName);
-                return AssertionStatus.NOT_APPLICABLE;
+                throw new AssertionStatusException(AssertionStatus.NOT_APPLICABLE);
             }
 
             if ( isRequest() ) {
@@ -97,7 +155,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                     context.setRequestPolicyViolated();
                     context.setAuthenticationMissing();
                 }
-                return AssertionStatus.NOT_APPLICABLE;
+                throw new AssertionStatusException(AssertionStatus.NOT_APPLICABLE);
             }
         } catch (SAXException e) {
             // In practice, this can only happen if a mutating assertion (e.g. XSLT or Regex) has changed this message
@@ -118,7 +176,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             if (DomUtils.elementInNamespace(el, SoapConstants.WSA_NAMESPACE_ARRAY) && SoapConstants.MESSAGEID_EL_NAME.equals(el.getLocalName())) {
                 if (wsaMessageId != null) {
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MULTIPLE_MESSAGE_IDS, targetName);
-                    return getBadMessageStatus();
+                    throw new AssertionStatusException(getBadMessageStatus());
                 } else {
                     wsaMessageId = DomUtils.getTextValue(el);
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_GOT_SIGNED_MESSAGE_ID, targetName, wsaMessageId);
@@ -136,23 +194,22 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             if ( isRequest() )
                 context.setRequestPolicyViolated();
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_TIMESTAMP, targetName);
-            return getBadMessageStatus();
+            throw new AssertionStatusException(getBadMessageStatus());
         }
         if (ProcessorResultUtil.getParsedElementsForNode(timestamp.asElement(), signedElements).isEmpty()) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NOT_SIGNED, targetName);
-            return getBadMessageStatus();
+            throw new AssertionStatusException(getBadMessageStatus());
         }
 
         final WssTimestampDate createdTimestamp = timestamp.getCreated();
         if (createdTimestamp == null) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_CREATED_ELEMENT, targetName);
-            return getBadMessageStatus();
+            throw new AssertionStatusException(getBadMessageStatus());
         }
 
         final String createdIsoString = createdTimestamp.asIsoString().trim();
         final long created = createdTimestamp.asTime();
-        final long now = System.currentTimeMillis();
-        long expires;
+
         if (timestamp.getExpires() != null) {
             expires = timestamp.getExpires().asTime();
         } else {
@@ -162,7 +219,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
 
         if (expires <= (now - EXPIRY_GRACE_TIME_MILLIS)) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_STALE_TIMESTAMP, targetName);
-            return getBadMessageStatus();
+            throw new AssertionStatusException(getBadMessageStatus());
         }
 
         if (created > now)
@@ -170,51 +227,65 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
 
         if (created <= (now - MAXIMUM_MESSAGE_AGE_MILLIS)) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CREATED_TOO_OLD, targetName);
-            return getBadMessageStatus();
+            throw new AssertionStatusException(getBadMessageStatus());
         }
 
-        final String messageIdStr;
         if ( wsaMessageId != null ) {
             if ( wsaMessageId.length() > MAX_WSA_MESSAGEID_MAXLENGTH ) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MESSAGE_ID_TOO_LARGE, Integer.toString(wsaMessageId.length()));
-                return getBadMessageStatus();
+                throw new AssertionStatusException(getBadMessageStatus());
             }
 
             // hash if id is too large to store natively
             if ( wsaMessageId.length() > MAX_WSA_MESSAGEID_HASHTHRESHOLD ) {
-                messageIdStr = ID_PREFIX_WSA_HASHED + HexUtils.encodeBase64( HexUtils.getSha512Digest( HexUtils.encodeUtf8(wsaMessageId) ), true );
+                messageIdStr = ID_PREFIX_WSA_HASHED + hash( wsaMessageId );
             } else {
                 messageIdStr = wsaMessageId;
             }
         } else {
             try {
                 String senderId = getSenderId(timestamp.asElement(), signedElements, createdIsoString, targetName);
-                if (senderId == null) return getBadMessageStatus();
+                if (senderId == null) throw new AssertionStatusException(getBadMessageStatus());
                 messageIdStr = senderId;
             } catch (MultipleSenderIdException e) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MULTIPLE_SENDER_IDS, targetName);
-                return getBadMessageStatus();
+                throw new AssertionStatusException(getBadMessageStatus());
             }
         }
-
-        MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
-        try {
-            messageIdManager.assertMessageIdIsUnique(messageId);
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, messageIdStr, targetName);
-        } catch (MessageIdManager.DuplicateMessageIdException e) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdStr, targetName);
-            return getBadMessageStatus();
-        } catch (MessageIdManager.MessageIdCheckException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Error checking for replay : " + ExceptionUtils.getMessage( e )}, e);
-            return AssertionStatus.FAILED;
-        }
-
-        return AssertionStatus.NONE;
+        return new Pair<String,Long>( messageIdStr, expires  + CACHE_ID_EXTRA_TIME_MILLIS);
     }
 
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
+    private Pair<String,Long> getCustomIdentifierAndExpiry( final PolicyEnforcementContext context,
+                                                            final String targetName ) {
+        final long now = timeSource.currentTimeMillis();
+        final String messageIdStr;
+        final long expires;
+        try {
+            final String varName = assertion.getCustomIdentifierVariable();
+            final List<String> variableNames = new ArrayList<String>();
+            if ( varName != null ) variableNames.add(varName);
+            if ( assertion.getCustomScope() != null ){
+                variableNames.addAll(Arrays.asList(Syntax.getReferencedNames(assertion.getCustomScope())));
+            }
+            final Map<String,Object> vars = context.getVariableMap( variableNames.toArray(new String[variableNames.size()]), auditor );
+            final String scope = assertion.getCustomScope()==null ? "" : ExpandVariables.process( assertion.getCustomScope(), vars, auditor, true);
+            final String id = ExpandVariables.process(Syntax.SYNTAX_PREFIX+varName+Syntax.SYNTAX_SUFFIX, vars, auditor, true);
+            if ( id.isEmpty() ) {
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CUSTOM_VAR_EMPTY, targetName);
+                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+
+            }
+            auditor.logAndAudit( AssertionMessages.REQUEST_WSS_REPLAY_USING_SCOPE_AND_ID, targetName, scope, id);
+            messageIdStr = MessageFormat.format( ID_FORMAT_CUSTOM_HASHED, hash(scope), hash(id));
+            expires = now + assertion.getCustomExpiryTime();
+        } catch (IllegalArgumentException e) {
+            auditor.logAndAudit(
+                    AssertionMessages.REQUEST_WSS_REPLAY_CUSTOM_VAR_ERROR,
+                    new String[]{targetName, ExceptionUtils.getMessage(e)},
+                    ExceptionUtils.getDebugException(e));
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+        return new Pair<String,Long>( messageIdStr, expires );
     }
 
     private String getSenderId( final Element timestampElement,
@@ -273,7 +344,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                 sb.append(createdIsoString);
                 sb.append(";");
                 sb.append("EncryptedKeySHA1=");
-                sb.append(encryptedKeySha1);
+                sb.append(encode(encryptedKeySha1));
                 senderId = sb.toString();
             } else if (signingToken instanceof KerberosSigningSecurityToken) {
                 if (senderId != null) throw new MultipleSenderIdException();
@@ -285,7 +356,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                 sb.append(createdIsoString);
                 sb.append(";");
                 sb.append("Kerberosv5APREQSHA1=");
-                sb.append(kerberosTokenSha1);
+                sb.append(encode(kerberosTokenSha1));
                 senderId = sb.toString();
             } else {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_UNSUPPORTED_TOKEN_TYPE, what, signingToken.getClass().getName());
@@ -294,6 +365,17 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
         }
 
         return senderId;
+    }
+
+    private String hash( final String text ) {
+        return encode(HexUtils.encodeBase64( HexUtils.getSha512Digest( HexUtils.encodeUtf8(text) ), true ));
+    }
+
+    /**
+     * Encode BASE64 text for safe use as a message identifier. 
+     */
+    private String encode( final String base64Text ) {
+        return base64Text.replace( '/', '-' ).replace( '+', '_' );
     }
 
     private String skiToString(X509Certificate signingCert) throws CertificateEncodingException {

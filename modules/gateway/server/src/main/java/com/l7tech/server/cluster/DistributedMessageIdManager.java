@@ -179,7 +179,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
                 cacheLock.readLock().lock();
                 try {
                     Long expires = cache.get(MESSAGEID_PARENT_NODE + "/" + prospect.getOpaqueIdentifier(), EXPIRES_ATTR);
-                    if (expires == null) {
+                    if ( isExpired( expires, System.currentTimeMillis() ) ) {
                         cache.put(MESSAGEID_PARENT_NODE + "/" + prospect.getOpaqueIdentifier(),
                                  EXPIRES_ATTR, prospect.getNotValidOnOrAfterDate());
                         return;
@@ -399,6 +399,17 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         return handled;
     }
 
+    private static boolean isExpired( final Long expires, final long now ) {
+        boolean expired = true;
+
+        if ( expires != null ) {
+            final long exp = Math.abs( expires.longValue() );
+            expired = exp < now;
+        }
+
+        return expired;
+    }
+
     /**
      * A {@link TimerTask} that periodically purges expired message IDs from the distributed cache and database.
      */
@@ -431,9 +442,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
                         for ( final Object name : names ) {
                             String id = (String) name;
                             Long expires = cache.get(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR);
-                            if ( expires == null ) continue; // Maybe someone else removed it
-                            final long exp = Math.abs( expires.longValue() );
-                            if ( exp < now ) {
+                            if ( expires != null && isExpired( expires, now ) ) {
                                 // Expired
                                 toBeRemoved.add( id );
                             }

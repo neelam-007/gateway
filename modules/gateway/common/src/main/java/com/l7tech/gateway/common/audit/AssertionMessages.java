@@ -219,6 +219,9 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_REPLAY_NO_SIGNED_MESSAGE_ID           = m(4920, Level.FINE, "No signed wsa:MessageID was present in {0}; using Timestamp instead");
     public static final M REQUEST_WSS_REPLAY_MESSAGE_ID_TOO_LARGE           = m(4921, Level.WARNING, "wsa:MessageID too large ''{0}''; unable to proceed");
     public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_KERBEROS = m(4922, Level.FINER, "Timestamp in {0} was signed with a Kerberos token");
+    public static final M REQUEST_WSS_REPLAY_USING_SCOPE_AND_ID             = m(4923, Level.FINE, "{0} replay protection using scope ''{1}'' and identifier ''{2}''");
+    public static final M REQUEST_WSS_REPLAY_CUSTOM_VAR_ERROR               = m(4924, Level.WARNING, "Error processing variables for {0} ''{1}''; unable to proceed");
+    public static final M REQUEST_WSS_REPLAY_CUSTOM_VAR_EMPTY               = m(4925, Level.WARNING, "{0} replay message identifier is empty; unable to proceed");
 
     // ServerCustomAssertionHolder
     public static final M CA_CREDENTIAL_INFO                                = m(5000, Level.FINE, "Service:{0}, custom assertion: {1}, principal:{2}");

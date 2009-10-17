@@ -6,8 +6,10 @@ package com.l7tech.policy.assertion;
 import com.l7tech.policy.assertion.annotation.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.ClassUtils;
 import com.l7tech.util.EmptyIterator;
+import com.l7tech.util.Functions;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -654,7 +656,11 @@ public abstract class Assertion implements Cloneable, Serializable {
 
         if ( assertion != null ) {
             RequiresSOAP soapAnnotation = assertion.getClass().getAnnotation(RequiresSOAP.class);
-            isWss = soapAnnotation != null && soapAnnotation.wss();
+            if ( soapAnnotation != null ) {
+                isWss = soapAnnotation.wss();
+            } else {
+                isWss = hasFlag(assertion, ValidatorFlag.REQUIRE_SIGNATURE);
+            }
         }
 
         return isWss;
@@ -668,6 +674,23 @@ public abstract class Assertion implements Cloneable, Serializable {
         }
 
         return hasAnnotation;
+    }
+
+    /**
+     * Check if the assertions validation metadata contains the given flag
+     */
+    private static boolean hasFlag(final Assertion a, final ValidatorFlag flag) {
+        boolean flagged = false;
+
+        Functions.Unary<Set<ValidatorFlag>,Assertion> flagAccessor =
+             a.meta().get(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY);
+
+        if ( flagAccessor != null ) {
+            Set<ValidatorFlag> flags = flagAccessor.call(a);
+            flagged = flags!=null && flags.contains(flag);
+        }
+
+        return flagged;
     }
 
     /**

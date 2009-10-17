@@ -290,40 +290,25 @@ public class ExpandVariablesTest {
         Assert.assertEquals(bodytext, TINY_BODY);
     }
 
-    @Test
+    @Test(expected=IllegalArgumentException.class)
     public void testStrictNonexistentHeader() throws Exception {
         Message foo = makeTinyRequest();
-
-        try {
-            ExpandVariables.process("${foo.http.header.nonexistent}", makeVars(foo), audit, true);
-            Assert.fail("Expected IAE for nonexistent header in strict mode");
-        } catch (Exception e) {
-            // OK
-        }
+        ExpandVariables.process("${foo.http.header.nonexistent}", makeVars(foo), audit, true);
+        Assert.fail("Expected IAE for nonexistent header in strict mode");
     }
 
-    @Test
+    @Test(expected=IllegalArgumentException.class)
     public void testStrictSuspiciousToString() throws Exception {
         Message foo = makeTinyRequest();
-
-        try {
-            ExpandVariables.process("${foo}", makeVars(foo), audit, true);
-            Assert.fail("Expected IAE for suspicious toString in strict mode");
-        } catch (IllegalArgumentException e) {
-            // OK
-        }
+        ExpandVariables.process("${foo}", makeVars(foo), audit, true);
+        Assert.fail("Expected IAE for suspicious toString in strict mode");
     }
 
-    @Test
+    @Test(expected=IllegalArgumentException.class)
     public void testStrictStatusOnRequest() throws Exception {
         Message foo = makeTinyRequest();
-
-        try {
-            ExpandVariables.process("${foo.http.status}", makeVars(foo), audit, true);
-            Assert.fail("Expected IAE for status on request");
-        } catch (Exception e) {
-            // OK
-        }
+        ExpandVariables.process("${foo.http.status}", makeVars(foo), audit, true);
+        Assert.fail("Expected IAE for status on request");
     }
 
     @Test
@@ -333,15 +318,11 @@ public class ExpandVariablesTest {
         Assert.assertEquals(body, TINY_BODY);
     }
 
-    @Test
+    @Test(expected=IllegalArgumentException.class)
     public void testRequestBodyNotText() throws Exception {
         Message foo = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")));
-        try {
-            ExpandVariables.process("${foo.mainPart}", makeVars(foo), audit, true);
-            Assert.fail("Expected IAE for non-text mainPart");
-        } catch (Exception e) {
-            // OK
-        }
+        ExpandVariables.process("${foo.mainPart}", makeVars(foo), audit, true);
+        Assert.fail("Expected IAE for non-text mainPart");
     }
 
     public void testCertIssuerDnToString() throws Exception {
@@ -598,6 +579,7 @@ public class ExpandVariablesTest {
             {
                 setStatus(123);
             }
+            @Override
             public void addCookie(HttpCookie cookie) {
                 throw new UnsupportedOperationException();
             }
@@ -618,10 +600,12 @@ public class ExpandVariablesTest {
             this.params = Collections.unmodifiableMap(newmap);
         }
 
+        @Override
         public HttpCookie[] getCookies() {
             return new HttpCookie[0];
         }
 
+        @Override
         public HttpMethod getMethod() {
             return HttpMethod.POST;
         }
@@ -631,14 +615,17 @@ public class ExpandVariablesTest {
             return getMethod().name();
         }
 
+        @Override
         public String getRequestUri() {
             return uri;
         }
 
+        @Override
         public String getRequestUrl() {
             return "http://ssg" + uri;
         }
 
+        @Override
         public URL getRequestURL() {
             try {
                 return new URL(getRequestUrl());
@@ -647,24 +634,29 @@ public class ExpandVariablesTest {
             }
         }
 
+        @Override
         public long getDateHeader(String name) throws ParseException {
             return Long.valueOf(headers.get(name).getMainValue());
         }
 
+        @Override
         public int getIntHeader(String name) {
             return Integer.valueOf(headers.get(name).getMainValue());
         }
 
+        @Override
         public String getHeaderSingleValue(String name) throws IOException {
             return getHeaderFirstValue(name);
         }
 
+        @Override
         public String getHeaderFirstValue(String name) {
             final MimeHeader header = headers.get(name);
             if (header == null) return null;
             return header.getMainValue();
         }
 
+        @Override
         public String[] getHeaderNames() {
             List<String> names = new ArrayList<String>();
             for (int i = 0; i < headers.size(); i++) {
@@ -674,59 +666,77 @@ public class ExpandVariablesTest {
             return names.toArray(new String[names.size()]);
         }
 
+        @Override
         public String[] getHeaderValues(String name) {
             if ("magic".equalsIgnoreCase(name)) {
                 return new String[] { "foo", "bar" };
             }
-            return new String[] { headers.get(name).getMainValue() };
+            MimeHeader mimeHeaders = headers.get(name);
+            if ( mimeHeaders==null ) {
+                return new String[0];
+            } else {
+                return new String[] { mimeHeaders.getMainValue() };
+            }
         }
 
+        @Override
         public X509Certificate[] getClientCertificate() throws IOException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public boolean isSecure() {
             return false;
         }
 
+        @Override
         public String getParameter(String name) throws IOException {
             String[] ss = params.get(name);
             if (ss == null || ss.length == 0) return null;
             return ss[0];
         }
 
+        @Override
         public Map getParameterMap() throws IOException {
             return params;
         }
 
+        @Override
         public String[] getParameterValues(String s) throws IOException {
             return params.get(s);
         }
 
+        @Override
         public Enumeration<String> getParameterNames() throws IOException {
             return new IteratorEnumeration<String>(params.keySet().iterator());
         }
 
+        @Override
         public Object getConnectionIdentifier() {
             return null;
         }
 
+        @Override
         public String getQueryString() {
             return getRequestURL().getQuery();
         }
 
+        @Override
         public String getRemoteAddress() {
             return "127.0.0.1";
         }
 
+        @Override
         public String getRemoteHost() {
             return "127.0.0.1";
         }
 
+        @Override
         public int getLocalPort() {
             return 8080;
         }
 
+        @Override
         public String getSoapAction() throws IOException {
             return null;
         }
