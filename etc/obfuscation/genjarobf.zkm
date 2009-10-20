@@ -43,7 +43,10 @@ exclude     public *.^* and
             *.* + implements java.io.Serializable and
             *.* implements java.io.Serializable * and
             *.* implements java.io.Serializable *(*) and
-            *.* @javax.annotation.Resource *;
+            *.* @javax.annotation.Resource * and
+            @com.l7tech.util.NonObfuscatable *.* and
+            *.* @com.l7tech.util.NonObfuscatable * and
+            *.* @com.l7tech.util.NonObfuscatable *(*);
 
 existingSerializedClasses *.* implements java.io.Serializable;
 

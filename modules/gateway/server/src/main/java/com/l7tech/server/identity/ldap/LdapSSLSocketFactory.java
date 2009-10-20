@@ -1,6 +1,7 @@
 package com.l7tech.server.identity.ldap;
 
 import com.l7tech.server.transport.http.SslClientSocketFactorySupport;
+import com.l7tech.util.NonObfuscatable;
 
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
@@ -61,9 +62,12 @@ public class LdapSSLSocketFactory extends SslClientSocketFactorySupport implemen
 
     //- PRIVATE
 
+    @NonObfuscatable
     private static LdapSSLSocketFactory instance;
+    @NonObfuscatable
     private HostnameVerifier hostnameVerifier;
 
+    @NonObfuscatable
     private HostnameVerifier getHostnameVerifier() {
         HostnameVerifier verifier = hostnameVerifier;
 
