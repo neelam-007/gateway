@@ -5,6 +5,8 @@ import com.l7tech.security.cert.TrustedCert;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -23,15 +25,28 @@ public class CertUsagePanel extends WizardStepPanel {
     private JLabel headerLabel;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
 
+    private CertValidationPanel certValidationPanel;
+
     public CertUsagePanel(WizardStepPanel next) {
         super(next);
         initialize();
+        if (next instanceof CertValidationPanel) certValidationPanel = (CertValidationPanel)next;
     }
 
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
         FontUtil.resizeFont(headerLabel, 1.2);
+
+        ActionListener sslOptionListener = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (certValidationPanel != null)
+                    certValidationPanel.setVerifySslHostnameCheckBoxEnabled(
+                        signingServerCertCheckBox.isSelected() || outboundSSLConnCheckBox.isSelected());
+            }
+        };
+        signingServerCertCheckBox.addActionListener(sslOptionListener);
+        outboundSSLConnCheckBox.addActionListener(sslOptionListener);
     }
 
     /**
