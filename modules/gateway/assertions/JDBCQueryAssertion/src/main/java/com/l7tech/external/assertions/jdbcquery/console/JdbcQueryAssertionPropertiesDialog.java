@@ -9,7 +9,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.MaxLengthDocument;
-import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.policy.variable.Syntax;

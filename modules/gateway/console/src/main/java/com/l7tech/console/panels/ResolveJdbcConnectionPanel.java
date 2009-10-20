@@ -5,7 +5,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;

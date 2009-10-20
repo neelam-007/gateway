@@ -1,4 +1,4 @@
-package com.l7tech.server.jdbcconnection;
+package com.l7tech.server.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;

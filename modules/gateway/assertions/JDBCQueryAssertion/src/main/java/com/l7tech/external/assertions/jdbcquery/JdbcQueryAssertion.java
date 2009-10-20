@@ -6,7 +6,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.*;
-import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 
 import java.util.*;
 

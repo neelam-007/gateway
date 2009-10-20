@@ -5,7 +5,7 @@ import com.l7tech.common.audit.AuditAdminStub;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.common.log.LogSinkAdminStub;
 import com.l7tech.gateway.common.VersionException;
-import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.*;

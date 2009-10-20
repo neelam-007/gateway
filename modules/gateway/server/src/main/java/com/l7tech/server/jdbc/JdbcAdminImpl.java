@@ -1,7 +1,7 @@
-package com.l7tech.server.jdbcconnection;
+package com.l7tech.server.jdbc;
 
-import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;

@@ -54,7 +54,7 @@
 
     <bean name="/JdbcAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
         <property name="service" ref="jdbcAdmin"/>
-        <property name="serviceInterface" value="com.l7tech.gateway.common.jdbcconnection.JdbcAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.jdbc.JdbcAdmin"/>
     </bean>
 
     <bean name="/TrustedCertAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">

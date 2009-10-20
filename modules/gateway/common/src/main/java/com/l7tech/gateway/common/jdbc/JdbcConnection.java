@@ -1,4 +1,4 @@
-package com.l7tech.gateway.common.jdbcconnection;
+package com.l7tech.gateway.common.jdbc;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;

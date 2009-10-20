@@ -148,7 +148,7 @@
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingValues</value>
 
                 <!-- JDBC Connection -->
-                <value>com.l7tech.gateway.common.jdbcconnection.JdbcConnection</value>
+                <value>com.l7tech.gateway.common.jdbc.JdbcConnection</value>
 
                 <!-- General -->
                 <value>com.l7tech.gateway.common.cluster.ClusterNodeInfo</value>

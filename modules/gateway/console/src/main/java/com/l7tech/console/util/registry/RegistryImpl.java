@@ -22,7 +22,7 @@ import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.Policy;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;

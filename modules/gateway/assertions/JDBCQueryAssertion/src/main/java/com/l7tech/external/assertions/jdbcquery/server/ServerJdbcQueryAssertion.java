@@ -8,7 +8,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.jdbcconnection.JdbcQueryingManager;
+import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 

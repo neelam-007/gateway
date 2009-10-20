@@ -2,10 +2,10 @@ package com.l7tech.server;
 
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
-import com.l7tech.server.jdbcconnection.JdbcConnectionPoolManager;
-import com.l7tech.server.jdbcconnection.JdbcConnectionManager;
+import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
 
 import java.util.logging.Logger;

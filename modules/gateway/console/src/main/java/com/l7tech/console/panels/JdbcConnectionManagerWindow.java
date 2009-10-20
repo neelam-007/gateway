@@ -2,8 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.UpdateException;

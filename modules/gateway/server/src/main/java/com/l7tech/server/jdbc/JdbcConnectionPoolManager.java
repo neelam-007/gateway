@@ -1,11 +1,11 @@
-package com.l7tech.server.jdbcconnection;
+package com.l7tech.server.jdbc;
 
 import com.l7tech.server.*;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
-import com.l7tech.gateway.common.jdbcconnection.InvalidPropertyException;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Pair;
 import com.mchange.v2.c3p0.ComboPooledDataSource;

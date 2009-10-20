@@ -1,4 +1,4 @@
-package com.l7tech.server.jdbcconnection;
+package com.l7tech.server.jdbc;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
@@ -6,7 +6,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.gateway.common.jdbcconnection.JdbcConnection;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 
 /**
  * The implementation of managing JDBC Connection Entity

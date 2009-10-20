@@ -16,7 +16,7 @@ import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.jdbcconnection.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 
 public interface AdminContext {
 

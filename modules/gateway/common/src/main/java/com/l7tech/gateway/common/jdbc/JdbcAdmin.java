@@ -1,4 +1,4 @@
-package com.l7tech.gateway.common.jdbcconnection;
+package com.l7tech.gateway.common.jdbc;
 
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
