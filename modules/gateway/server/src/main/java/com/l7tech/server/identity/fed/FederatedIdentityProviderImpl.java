@@ -200,7 +200,7 @@ public class FederatedIdentityProviderImpl
     }
 
     @Override
-    public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
+    public boolean hasClientCert(String login) throws AuthenticationException {
         return false;  
     }
 

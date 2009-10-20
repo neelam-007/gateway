@@ -346,11 +346,11 @@ public class ManagerAppletFilter implements Filter {
             }
         }
 
-
-        String username = hreq.getParameter("username");
-        String password = hreq.getParameter("password");
-        String newPassword = hreq.getParameter("new_password");
-        String confirmPassword = hreq.getParameter("confirm_password");
+        final boolean isPost = "POST".equals( hreq.getMethod() );
+        String username = isPost ? hreq.getParameter("username") : null;
+        String password = isPost ? hreq.getParameter("password") : null;
+        String newPassword = isPost ? hreq.getParameter("new_password") : null;
+        String confirmPassword = isPost ? hreq.getParameter("confirm_password") : null;
         try {
             final AssertionStatus result = dogfoodPolicy.checkRequest(context);
             if (result == AssertionStatus.NONE) {

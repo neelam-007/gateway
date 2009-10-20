@@ -234,8 +234,7 @@ public class InternalIdentityProviderImpl
     }
 
     @Override
-    public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
-        String login = lc.getLogin();
+    public boolean hasClientCert(String login) throws AuthenticationException {
         InternalUser dbUser;
         try {
             dbUser = userManager.findByLogin(login);

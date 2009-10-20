@@ -150,7 +150,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     }
 
     @Override
-    public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
+    public boolean hasClientCert(String login) throws AuthenticationException {
         return false;  
     }
 

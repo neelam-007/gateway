@@ -72,9 +72,9 @@ public interface IdentityProvider<UT extends User, GT extends Group, UMT extends
     /**
      * Checks if the user already has a  client certificate for the given provider.
      *
-     * @param lc    Login credentials used for checking client  cert
+     * @param login The users login to use for checking client cert
      * @return  TRUE if user has client cert
      * @throws AuthenticationException
      */
-    public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException;
+    public boolean hasClientCert(String login) throws AuthenticationException;
 }

@@ -982,9 +982,9 @@ public class LdapIdentityProviderImpl
     }
 
     @Override
-    public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
+    public boolean hasClientCert(String login) throws AuthenticationException {
         try {
-            LdapUser ldapUser = userManager.findByLogin(lc.getLogin());
+            LdapUser ldapUser = userManager.findByLogin(login);
             if (ldapUser != null) {
                 //check where we should be looking for the cert, the cert could reside either in LDAP or gateway
                 if (certsAreEnabled()) {
@@ -999,7 +999,7 @@ public class LdapIdentityProviderImpl
                 return false;
             }
         } catch (FindException fe) {
-            throw new AuthenticationException(String.format("Couldn't find user '%s'", lc.getLogin()), fe);
+            throw new AuthenticationException(String.format("Couldn't find user '%s'", login), fe);
         }
     }
 

@@ -158,7 +158,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 //for internal identity provider
                 boolean useSTIG = serverConfig.getBooleanProperty("security.stig.enabled", true);
                 if (useSTIG) {
-                    if (creds.getFormat() == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds)) {
+                    if (creds.getFormat() == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds.getLogin())) {
                         needsClientCert = true;
                         throw new BadCredentialsException("User '" + creds.getLogin() + "' did not use certificate as login credentials.");
                     }
@@ -180,7 +180,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                         logger.info("Authenticated on " + provider.getConfig().getName());
 
                         //Ensure password not expired, ignore password expire checking if have certificate
-                        if (passwordEnforcerManager.isPasswordExpired(authdUser) && !provider.hasClientCert(creds)) {
+                        if (passwordEnforcerManager.isPasswordExpired(authdUser) && !provider.hasClientCert(creds.getLogin())) {
                             throw new CredentialExpiredException("Password expired.");
                         }
 
@@ -228,7 +228,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @return  TRUE if the password was changed
      * @throws ObjectModelException 
      */
-    public boolean changePassword(final String username, final String password, final String newPassword) throws ObjectModelException {
+    public boolean changePassword(final String username, final String password, final String newPassword) throws LoginException, ObjectModelException {
         //try the internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers = getAdminIdentityProviders();
 
@@ -236,7 +236,17 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         User user = null;
         for (IdentityProvider provider : providers) {
             user = provider.getUserManager().findByLogin(username);
-            if (user != null) break;
+            if (user != null) {
+                try {
+                    if ( provider.hasClientCert( username ) ) {
+                        throw new LoginException("Password change not permitted due to issued certificate.");
+                    }
+                    break;
+                } catch (AuthenticationException e) {
+                    logger.log( Level.WARNING, "Error processing user for password change.", e );
+                    user = null;
+                }
+            }
         }
 
         //if failed to find the user from all providers, cannot change the password
