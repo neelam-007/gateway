@@ -143,6 +143,7 @@ public class JdbcConnectionReference extends ExternalReference {
         try {
             JdbcConnection connection = admin.getJdbcConnection(connectionName);
             return
+                connection != null && 
                 connection.getName().equals(connectionName) &&
                 connection.getDriverClass().equals(driverClass) &&
                 connection.getJdbcUrl().equals(jdbcUrl) &&
