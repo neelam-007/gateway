@@ -7,6 +7,15 @@ public class PrivateKeyableSupport implements PrivateKeyable {
 
     //- PUBLIC
 
+    public PrivateKeyableSupport() {
+    }
+
+    public PrivateKeyableSupport( final PrivateKeyableSupport privateKeyableSupport ) {
+        if ( privateKeyableSupport != null ) {
+            copyFrom( privateKeyableSupport );
+        }
+    }
+
     @Override
     public String getKeyAlias() {
         return keyAlias;

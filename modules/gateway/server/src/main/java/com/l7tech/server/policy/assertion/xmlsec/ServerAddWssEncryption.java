@@ -5,7 +5,6 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
-import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
@@ -16,24 +15,20 @@ import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.SigningSecurityToken;
-import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-import java.security.GeneralSecurityException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.IOException;
@@ -174,42 +169,13 @@ public abstract class ServerAddWssEncryption<AT extends Assertion> extends Abstr
                 // NOTE: this includes SAML assertions
                 wssReq.setRecipientCertificate( ((X509SigningSecurityToken)token).getMessageSigningCertificate() );
             } else if ( token instanceof KerberosSigningSecurityToken ) {
-                wssReq.setKerberosTicket( ((KerberosSecurityToken)token).getServiceTicket() );
-            } else if ( token instanceof SecurityContextToken ) {
-                final SecurityContextToken sct = (SecurityContextToken) token;
-                final SecurityContext context = sct.getSecurityContext();
-                if ( context instanceof SecureConversationSession ) {
-                    final SecureConversationSession session = (SecureConversationSession) context;
+                WSSecurityProcessorUtils.setToken( wssReq, token );
+            } else if ( token instanceof SecurityContextToken ||
+                        token instanceof EncryptedKey) {
+                if ( WSSecurityProcessorUtils.setToken( wssReq, token ) ) {
                     wssReq.setSignTimestamp();
-                    wssReq.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
-                        @Override
-                        public String getId() {
-                            return session.getIdentifier();
-                        }
-                        @Override
-                        public byte[] getSecretKey() {
-                            return session.getSharedSecret();
-                        }
-                        @Override
-                        public String getSCNamespace() {
-                            return session.getSecConvNamespaceUsed();
-                        }
-                    });
                 }
-            } else if ( token instanceof EncryptedKey ) {
-                EncryptedKey encryptedKey = (EncryptedKey) token;
-                // As a last resort, we'll use an EncryptedKeySHA1 reference if we have nothing else to go on,
-                // but only if it was already unwrapped.
-                try {
-                    wssReq.setEncryptedKey( encryptedKey.getSecretKey() );
-                    wssReq.setEncryptedKeySha1( encryptedKey.getEncryptedKeySHA1() );
-                } catch (InvalidDocumentFormatException e) {
-                    throw new IllegalStateException(); // can't happen, it's unwrapped already
-                } catch (GeneralSecurityException e) {
-                    throw new IllegalStateException(); // can't happen, it's unwrapped already
-                }
-                wssReq.setSignTimestamp();
-            }
+            } 
         }
     }
 

@@ -17,6 +17,7 @@ import java.util.Collection;
 public class AssertionValidatorSupport<AT extends Assertion> implements AssertionValidator {
     private final AT assertion;
     private Collection<Pair<String, Throwable>> errs = new ArrayList<Pair<String, Throwable>>();
+    private Collection<String> warns = new ArrayList<String>();
 
     public AssertionValidatorSupport(AT assertion) {
         this.assertion = assertion;
@@ -32,6 +33,10 @@ public class AssertionValidatorSupport<AT extends Assertion> implements Assertio
 
     public void addMessageAndException(String message, Throwable exception) {
         errs.add(new Pair<String, Throwable>(message, exception));
+    }
+
+    public void addWarningMessage(String message) {
+        warns.add(message);
     }
 
     public boolean requireNonEmpty(String str, String message) {
@@ -64,6 +69,9 @@ public class AssertionValidatorSupport<AT extends Assertion> implements Assertio
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         for (Pair<String, Throwable> err : errs) {
             result.addError(new PolicyValidatorResult.Error(assertion, path, err.left, err.right));
+        }
+        for (String warn : warns) {
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warn, null));
         }
     }
 

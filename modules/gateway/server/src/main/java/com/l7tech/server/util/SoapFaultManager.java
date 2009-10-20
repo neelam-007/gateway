@@ -9,23 +9,41 @@ import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
+import com.l7tech.message.SecurityKnob;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.wsp.TypeMappingUtils;
 import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Config;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.security.xml.decorator.DecoratorException;
+import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.security.xml.SecurityActor;
+import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
+import com.l7tech.security.token.SecurityContextToken;
+import com.l7tech.security.token.EncryptedKey;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.w3c.dom.Document;
@@ -41,6 +59,8 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
 
 /**
  * Server side SoapFaultLevel utils.
@@ -52,31 +72,31 @@ import java.util.logging.Logger;
  * Date: May 8, 2006<br/>
  */
 public class SoapFaultManager implements ApplicationContextAware {
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final Logger logger = Logger.getLogger(SoapFaultManager.class.getName());
     private long lastParsedFromSettings;
     private SoapFaultLevel fromSettings;
     private Auditor auditor;
     private ClusterPropertyManager clusterPropertiesManager;
-    private ApplicationContext applicationContext;
+    private BeanFactory context;
     private final HashMap<Integer, String> cachedOverrideAuditMessages = new HashMap<Integer, String>();
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     public static final String FAULT_NS = "http://www.layer7tech.com/ws/policy/fault";
 
     private final Timer checker;
 
-    public SoapFaultManager(ServerConfig serverConfig, Timer timer) {
+    public SoapFaultManager( Config config, Timer timer) {
         if (timer == null) timer = new Timer("Soap fault manager refresh", true);
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.checker = timer;
     }
 
     /**
      * For tests only 
      */
-    SoapFaultManager() {
-        serverConfig = null;
-        checker = null;
+    SoapFaultManager( Config config ) {
+        this.config = config;
+        this.checker = null;
     }
 
     /**
@@ -93,16 +113,33 @@ public class SoapFaultManager implements ApplicationContextAware {
     private synchronized SoapFaultLevel constructFaultLevelFromServerConfig() {
         // parse default settings from system settings
         fromSettings = new SoapFaultLevel();
-        String tmp = serverConfig.getPropertyCached("defaultfaultlevel");
+        String tmp = config.getProperty("defaultfaultlevel", null);
         // default setting not available through config ?
         if (tmp == null) {
             logger.warning("Cannot retrieve defaultfaultlevel server properties falling back on hardcoded defaults");
             populateUltimateDefaults(fromSettings);
         } else {
             try {
+                fromSettings.setSignSoapFault( config.getBooleanProperty( "defaultfaultsign", false ) );
+                String keyAlias = config.getProperty( "defaultfaultkeyalias", null );
+                if ( fromSettings.isSignSoapFault() && keyAlias!=null && !keyAlias.trim().isEmpty() ) {
+                    keyAlias = keyAlias.trim();
+                    fromSettings.setUsesDefaultKeyStore( false );
+                    fromSettings.setNonDefaultKeystoreId( -1 );
+                    fromSettings.setKeyAlias( keyAlias );
+                    int index = keyAlias.indexOf( ':' );
+                    if ( index > 0 && index < keyAlias.length()-1 ) {
+                        try {
+                            fromSettings.setNonDefaultKeystoreId( Long.parseLong( keyAlias.substring( 0, index )));
+                            fromSettings.setKeyAlias( keyAlias.substring( index+1 ));
+                        } catch ( NumberFormatException nfe ) {
+                            logger.fine( "Error processing key alias for SOAP fault signing." );                           
+                        }
+                    }
+                }
                 fromSettings.setLevel(Integer.parseInt(tmp));
-                fromSettings.setIncludePolicyDownloadURL(Boolean.parseBoolean(serverConfig.getPropertyCached("defaultfaultpolicyurl")));
-                fromSettings.setFaultTemplate(serverConfig.getPropertyCached("defaultfaulttemplate"));
+                fromSettings.setIncludePolicyDownloadURL(config.getBooleanProperty("defaultfaultpolicyurl", true));
+                fromSettings.setFaultTemplate(config.getProperty("defaultfaulttemplate", null));
             } catch (NumberFormatException e) {
                 logger.log(Level.WARNING, "user setting " + tmp + " for defaultfaultlevel is invalid", e);
                 populateUltimateDefaults(fromSettings);
@@ -121,7 +158,8 @@ public class SoapFaultManager implements ApplicationContextAware {
      * constructs a soap fault based on the pec and the level desired.
      * @return returns a Pair of content type, string.  The string may be empty if faultLevel is SoapFaultLevel.DROP_CONNECTION.
      */
-    public Pair<ContentTypeHeader, String> constructReturningFault(SoapFaultLevel faultLevelInfo, PolicyEnforcementContext pec) {
+    public Pair<ContentTypeHeader, String> constructReturningFault( final SoapFaultLevel faultLevelInfo,
+                                                                    final PolicyEnforcementContext pec ) {
         String output = "";
         AssertionStatus globalstatus = pec.getPolicyResult();
         ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
@@ -168,10 +206,104 @@ public class SoapFaultManager implements ApplicationContextAware {
                 output = buildDetailedFault(pec, globalstatus, true);
                 break;
         }
+
+        if ( faultLevelInfo.isSignSoapFault() ) {
+            output = signFault( output, pec.getAuthenticationContext( pec.getRequest() ), pec.getRequest().getSecurityKnob(), faultLevelInfo );
+        }
+
         return new Pair<ContentTypeHeader, String>(ctype, output);
     }
 
-    public boolean isSoap12(PolicyEnforcementContext pec) {
+    private String signFault( final String soapMessage,
+                              final AuthenticationContext authContext,
+                              final SecurityKnob reqSec,
+                              final PrivateKeyable privateKeyable ) {
+        String signedSoapMessage = soapMessage;
+
+        try {
+            Document soapDoc = XmlUtil.parse( soapMessage );
+            signFault( soapDoc, authContext, reqSec, privateKeyable );
+            signedSoapMessage = XmlUtil.nodeToString( soapDoc );
+        } catch (SAXException e) {
+            logger.log( Level.WARNING, "Error signing SOAP Fault '"+ ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
+        } catch (IOException e) {
+            logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
+        }
+
+        return signedSoapMessage;
+    }
+
+    private void signFault( final Document soapDoc,
+                            final AuthenticationContext authContext,
+                            final SecurityKnob reqSec,
+                            final PrivateKeyable privateKeyable ) {
+        try {
+            final WssDecoratorImpl decorator = new WssDecoratorImpl();
+            final DecorationRequirements reqmts = new DecorationRequirements();
+            final SignerInfo signerInfo = ServerAssertionUtils.getSignerInfo(context, privateKeyable);
+            final boolean isPreferred = ServerAssertionUtils.isPreferredSigner( privateKeyable );
+            SigningSecurityToken signingToken = null;
+
+            if ( !isPreferred ) {
+                SigningSecurityToken[] tokens = WSSecurityProcessorUtils.getSigningSecurityTokens( authContext.getCredentials() );
+                for ( SigningSecurityToken token : tokens ) {
+                    if ( token instanceof KerberosSigningSecurityToken ||
+                         token instanceof SecurityContextToken ||
+                         token instanceof EncryptedKey ) {
+                        if ( signingToken != null ) {
+                            logger.warning( "Found multiple tokens in request, using default key for signing SOAP fault." );
+                            signingToken = null;
+                            break;
+                        }
+                        signingToken = token;
+                    }
+                }
+            }
+
+            // Configure signing token
+            if ( signingToken == null ) {
+                reqmts.setSenderMessageSigningCertificate( signerInfo.getCertificate() );
+                reqmts.setSenderMessageSigningPrivateKey( signerInfo.getPrivate() );
+            } else {
+                WSSecurityProcessorUtils.setToken( reqmts, signingToken );   
+            }
+
+            // If the request was processed on the noactor sec header instead of the l7 sec actor, then
+            // the response's decoration requirements should map this (if applicable)
+            if ( reqSec.getProcessorResult() != null &&
+                 reqSec.getProcessorResult().getProcessedActor() != null ) {
+                String actorUri = reqSec.getProcessorResult().getProcessedActor()== SecurityActor.NOACTOR ?
+                        null :
+                        reqSec.getProcessorResult().getProcessedActorUri();
+
+                reqmts.setSecurityHeaderActor( actorUri );
+            }
+
+            reqmts.setSignTimestamp();
+            reqmts.getElementsToSign().add( SoapUtil.getBodyElement(soapDoc));
+
+            decorator.decorateMessage(new Message(soapDoc), reqmts);
+        } catch (InvalidDocumentFormatException e) {
+            logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
+        } catch (SAXException e) {
+            logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
+        } catch (IOException e) {
+            logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
+        } catch (DecoratorException e) {
+            logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
+        } catch (KeyStoreException kse) {
+            ObjectNotFoundException onfe = ExceptionUtils.getCauseIfCausedBy( kse, ObjectNotFoundException.class );
+            if ( onfe != null ) {
+                logger.log( Level.WARNING, "Error signing SOAP Fault '"+ExceptionUtils.getMessage(onfe)+"'.", ExceptionUtils.getDebugException(kse));
+            } else {
+                logger.log( Level.WARNING, "Error signing SOAP Fault.", kse );
+            }
+        } catch (GeneralSecurityException e) {
+            logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
+        } 
+    }
+
+    private boolean isSoap12(PolicyEnforcementContext pec) {
         // If we can see that the request has a SOAP version, use the version from the request
         try {
             final Message request = pec.getRequest();
@@ -242,6 +374,12 @@ public class SoapFaultManager implements ApplicationContextAware {
             // should not happen
             logger.log(Level.WARNING, "Unexpected exception", el);
         }
+
+        SoapFaultLevel faultLevelInfo = pec.getFaultlevel();
+        if ( faultLevelInfo.isSignSoapFault() ) {
+            output = signFault( output, pec.getAuthenticationContext( pec.getRequest() ), pec.getRequest().getSecurityKnob(), faultLevelInfo );
+        }
+
         return output;
     }
 
@@ -426,10 +564,10 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
 
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        auditor = new Auditor(this, applicationContext, logger);
-        this.applicationContext = applicationContext;
-        clusterPropertiesManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
+    @Override
+    public void setApplicationContext( ApplicationContext applicationContext ) {
+        setBeanFactory( applicationContext );
+        clusterPropertiesManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class);
         final SoapFaultManager tasker = this;
         TimerTask task = new TimerTask() {
             @Override
@@ -444,9 +582,16 @@ public class SoapFaultManager implements ApplicationContextAware {
         checker.schedule(task, 10000, 56893);
     }
 
+    void setBeanFactory( BeanFactory context ) throws BeansException {
+        auditor = context instanceof ApplicationContext ?
+                new Auditor(this, (ApplicationContext)context, logger) :
+                new LogOnlyAuditor(logger);
+        this.context = context;
+    }
+
     private void updateOverrides() {
         if (clusterPropertiesManager == null) {
-            clusterPropertiesManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
+            clusterPropertiesManager = (ClusterPropertyManager)context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
             if (clusterPropertiesManager == null) {
                 logger.info("cant get handle on ClusterPropertiesManager");
                 return;

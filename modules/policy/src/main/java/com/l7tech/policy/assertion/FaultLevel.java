@@ -17,7 +17,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  *
  * @see SoapFaultLevel
  */
-public class FaultLevel extends Assertion implements UsesVariables {
+public class FaultLevel extends Assertion implements PrivateKeyable, UsesVariables {
     private SoapFaultLevel data = new SoapFaultLevel();
     private boolean soap12 = false;
 
@@ -41,9 +41,39 @@ public class FaultLevel extends Assertion implements UsesVariables {
     public boolean isSoap12() {
         return soap12;
     }
-    
+
     public void setSoap12(boolean soap12) {
         this.soap12 = soap12;
+    }
+
+    @Override
+    public String getKeyAlias() {
+        return data.getKeyAlias();
+    }
+
+    @Override
+    public void setKeyAlias( final String keyAlias ) {
+        data.setKeyAlias( keyAlias );
+    }
+
+    @Override
+    public long getNonDefaultKeystoreId() {
+        return data.getNonDefaultKeystoreId();
+    }
+
+    @Override
+    public void setNonDefaultKeystoreId( final long nonDefaultKeystoreId ) {
+        data.setNonDefaultKeystoreId( nonDefaultKeystoreId );
+    }
+
+    @Override
+    public boolean isUsesDefaultKeyStore() {
+        return data.isUsesDefaultKeyStore();
+    }
+
+    @Override
+    public void setUsesDefaultKeyStore( final boolean usesDefaultKeyStore ) {
+        data.setUsesDefaultKeyStore( usesDefaultKeyStore );
     }
 
     private final static String baseName = "Customize SOAP Fault Response";
@@ -70,7 +100,16 @@ public class FaultLevel extends Assertion implements UsesVariables {
 
         meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.FaultLevelPropertiesAction");
         meta.put(PROPERTIES_ACTION_NAME, "Fault Response Properties");
+
+        meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.FaultLevelAssertionValidator");
+
         return meta;
     }
 
+    @Override
+    public FaultLevel clone() {
+        FaultLevel clone = (FaultLevel) super.clone();
+        clone.data = new SoapFaultLevel( data );
+        return clone;
+    }
 }

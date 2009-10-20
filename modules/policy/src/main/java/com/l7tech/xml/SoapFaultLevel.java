@@ -1,6 +1,8 @@
 package com.l7tech.xml;
 
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.assertion.PrivateKeyable;
+import com.l7tech.policy.assertion.PrivateKeyableSupport;
 
 import java.io.Serializable;
 
@@ -16,19 +18,34 @@ import java.io.Serializable;
  * Date: May 4, 2006<br/>
  *
  * @see com.l7tech.policy.assertion.FaultLevel
- * @see com.l7tech.server.message.PolicyEnforcementContext
  */
-public class SoapFaultLevel implements Serializable {
+public class SoapFaultLevel implements PrivateKeyable, Serializable {
     public static final int DROP_CONNECTION = 0;
     public static final int TEMPLATE_FAULT = 1;
     public static final int GENERIC_FAULT = 2;
     public static final int MEDIUM_DETAIL_FAULT = 3;
     public static final int FULL_TRACE_FAULT = 4;
+
     private int level = GENERIC_FAULT;
     private String faultTemplate;
     private boolean includePolicyDownloadURL = true;
+    private boolean signSoapFault = false;
+    private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
     private String[] variablesUsed = new String[0];
 
+    public SoapFaultLevel() {
+    }
+
+    public SoapFaultLevel( final SoapFaultLevel soapFaultLevel ) {
+        if ( soapFaultLevel != null ) {
+            this.level = soapFaultLevel.level;
+            this.faultTemplate = soapFaultLevel.faultTemplate;
+            this.includePolicyDownloadURL = soapFaultLevel.includePolicyDownloadURL;
+            this.signSoapFault = soapFaultLevel.signSoapFault;
+            this.variablesUsed = soapFaultLevel.variablesUsed;
+            this.privatekeyableSupport = new PrivateKeyableSupport( soapFaultLevel.privatekeyableSupport );
+        }
+    }
 
     /**
      * @return the level of the fault that should be returned to requestor in case of a policy evaluation failure
@@ -84,6 +101,45 @@ public class SoapFaultLevel implements Serializable {
         this.includePolicyDownloadURL = includePolicyDownloadURL;
     }
 
+    public boolean isSignSoapFault() {
+        return signSoapFault;
+    }
+
+    public void setSignSoapFault( final boolean signSoapFault ) {
+        this.signSoapFault = signSoapFault;
+    }
+
+    @Override
+    public String getKeyAlias() {
+        return privatekeyableSupport.getKeyAlias();
+    }
+
+    @Override
+    public void setKeyAlias( final String keyAlias ) {
+        privatekeyableSupport.setKeyAlias( keyAlias );
+    }
+
+    @Override
+    public long getNonDefaultKeystoreId() {
+        return privatekeyableSupport.getNonDefaultKeystoreId();
+    }
+
+    @Override
+    public void setNonDefaultKeystoreId( final long nonDefaultKeystoreId ) {
+        privatekeyableSupport.setNonDefaultKeystoreId( nonDefaultKeystoreId );
+    }
+
+    @Override
+    public boolean isUsesDefaultKeyStore() {
+        return privatekeyableSupport.isUsesDefaultKeyStore();
+    }
+
+    @Override
+    public void setUsesDefaultKeyStore( final boolean usesDefaultKeyStore ) {
+        privatekeyableSupport.setUsesDefaultKeyStore( usesDefaultKeyStore );
+    }
+
+    @Override
     public String toString() {
         return getClass().getName() + ". Level: " + level +
                                       ", Include URL: " + includePolicyDownloadURL +

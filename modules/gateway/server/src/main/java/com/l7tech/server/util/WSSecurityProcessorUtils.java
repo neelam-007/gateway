@@ -3,6 +3,7 @@ package com.l7tech.server.util;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.security.xml.processor.ProcessorValidationException;
+import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.token.*;
@@ -17,6 +18,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.identity.User;
@@ -27,6 +29,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.security.GeneralSecurityException;
 
 import org.w3c.dom.Element;
 
@@ -588,6 +591,62 @@ public class WSSecurityProcessorUtils {
         }
         requestSecurityKnob.setNeedsSignatureConfirmations(false);
         securityKnob.setSignatureConfirmationValidated(true); // don't attempt validation on responses with our own signature confirmations
+    }
+
+    /**
+     * Set the given token on the given decoration requirements.
+     *
+     * <p>If the token is an encrypted key it must have been unwrapped to be
+     * used.</p>
+     *
+     * @param decoration The decoration requirements to update
+     * @param signingToken The token to set
+     * @return true if the token was set
+     */
+    public static boolean setToken( final DecorationRequirements decoration,
+                                    final SigningSecurityToken signingToken ) {
+        boolean set = false;
+
+        if ( signingToken instanceof KerberosSigningSecurityToken ) {
+            decoration.setKerberosTicket( ((KerberosSecurityToken)signingToken).getServiceTicket() );
+            set = true;
+        } else if ( signingToken instanceof SecurityContextToken ) {
+            final SecurityContextToken sct = (SecurityContextToken) signingToken;
+            final SecurityContext context = sct.getSecurityContext();
+            if ( context instanceof SecureConversationSession ) {
+                final SecureConversationSession session = (SecureConversationSession) context;
+                decoration.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
+                    @Override
+                    public String getId() {
+                        return session.getIdentifier();
+                    }
+                    @Override
+                    public byte[] getSecretKey() {
+                        return session.getSharedSecret();
+                    }
+                    @Override
+                    public String getSCNamespace() {
+                        return session.getSecConvNamespaceUsed();
+                    }
+                });
+                set = true;
+            }
+        } else if ( signingToken instanceof EncryptedKey ) {
+            EncryptedKey encryptedKey = (EncryptedKey) signingToken;
+            if ( encryptedKey.isUnwrapped() ) {
+                try {
+                    decoration.setEncryptedKey( encryptedKey.getSecretKey() );
+                    decoration.setEncryptedKeySha1( encryptedKey.getEncryptedKeySHA1() );
+                    set = true;
+                } catch (InvalidDocumentFormatException e) {
+                    throw new IllegalStateException(); // can't happen, it's unwrapped already
+                } catch (GeneralSecurityException e) {
+                    throw new IllegalStateException(); // can't happen, it's unwrapped already
+                }
+            }
+        }
+
+        return set;
     }
 
     private static WssSettings getWssSettings() {

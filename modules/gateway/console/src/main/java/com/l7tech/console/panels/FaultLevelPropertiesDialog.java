@@ -185,6 +185,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
     public boolean oked = false;
     private JCheckBox urlCheckBox;
     private JButton helpButton;
+    private JCheckBox signSoapFaultCheckBox;
 
     public FaultLevelPropertiesDialog(Frame owner, FaultLevel subject, boolean readOnly) {
         super(owner, subject, true);
@@ -206,7 +207,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
 
     private void initialize(boolean readOnly) {
         setContentPane(mainPanel);
-        Utilities.equalizeButtonSizes(new AbstractButton[] {okButton, cancelButton, helpButton});
+        Utilities.equalizeButtonSizes(okButton, cancelButton, helpButton);
 
         // populate the combo box with the possible levels
         levelBox.setModel(new DefaultComboBoxModel(new LevelComboItems[] {
@@ -324,6 +325,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
         }
 
         urlCheckBox.setSelected(assertion.getLevelInfo().isIncludePolicyDownloadURL());
+        signSoapFaultCheckBox.setSelected(assertion.getLevelInfo().isSignSoapFault());
     }
 
     private void ok() {
@@ -352,6 +354,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
             assertion.getLevelInfo().setFaultTemplate(maybeXML);
         }
         assertion.getLevelInfo().setIncludePolicyDownloadURL(urlCheckBox.isSelected());
+        assertion.getLevelInfo().setSignSoapFault(signSoapFaultCheckBox.isSelected());
         oked = true;
         cancel();
     }
@@ -398,30 +401,35 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 editor.setText(DROP_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(false);
+                signSoapFaultCheckBox.setEnabled(false);
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 description = GEN_LEVEL_DESCRIPTION;
                 editor.setText(assertion.isSoap12() ? GEN_LEVEL_SAMPLE_SOAP_1_2 : GEN_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(true);
+                signSoapFaultCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
                 description = MEDIUM_LEVEL_DESCRIPTION;
                 editor.setText(assertion.isSoap12() ? MEDIUM_LEVEL_SAMPLE_SOAP_1_2 : MEDIUM_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(true);
+                signSoapFaultCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.FULL_TRACE_FAULT:
                 description = FULL_LEVEL_DESCRIPTION;
                 editor.setText(assertion.isSoap12() ? FULL_LEVEL_SAMPLE_SOAP_1_2 : FULL_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(true);
+                signSoapFaultCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
                 description = TEMPLATE_LEVEL_DESCRIPTION;
                 xmlContainer.setEditable(true);
                 showCustomFault();
                 urlCheckBox.setEnabled(true);
+                signSoapFaultCheckBox.setEnabled(true);
                 break;
             default:
                 // can't happen (unless bug)

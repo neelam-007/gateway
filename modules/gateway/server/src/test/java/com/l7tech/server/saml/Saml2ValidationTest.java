@@ -4,17 +4,10 @@ import junit.framework.TestCase;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.WssTimestamp;
-import com.l7tech.security.xml.SecurityActor;
-import com.l7tech.security.token.EncryptedElement;
-import com.l7tech.security.token.SignedElement;
-import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.xml.processor.MockProcessorResult;
 import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.token.SignedPart;
-import com.l7tech.security.token.SignatureConfirmation;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.policy.assertion.xmlsec.SamlAssertionValidate;
@@ -23,7 +16,6 @@ import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import java.util.*;
 
@@ -336,21 +328,8 @@ public class Saml2ValidationTest extends TestCase {
 
 
     private ProcessorResult fakeProcessorResults(final SamlAssertion assertion) {
-        return new ProcessorResult() {
-            public EncryptedElement[] getElementsThatWereEncrypted() { return new EncryptedElement[0];}
-            public SignedElement[] getElementsThatWereSigned() { return new SignedElement[0]; }
-            public SignedPart[] getPartsThatWereSigned() { return new SignedPart[0]; }
-            public String getLastKeyEncryptionAlgorithm() { return null; }
-            public SecurityActor getProcessedActor() { return SecurityActor.NOACTOR; }
-            public String getProcessedActorUri() { return null; }
-            public List<String> getValidatedSignatureValues() { return Collections.emptyList(); }
-            public SignatureConfirmation getSignatureConfirmation() { return null; }
-            public String getSecurityNS() { return SoapUtil.SECURITY_NAMESPACE; }
-            public SigningSecurityToken[] getSigningTokens(Element element) { return new SigningSecurityToken[0]; }
-            public WssTimestamp getTimestamp() { return null; }
-            public String getWSUNS() { return null; }
-            public boolean isDerivedKeySeen() { return false; }
-            public boolean isWsse11Seen() { return false; }
+        return new MockProcessorResult() {
+            @Override
             public XmlSecurityToken[] getXmlSecurityTokens() {
                 return new XmlSecurityToken[]{assertion};
             }
