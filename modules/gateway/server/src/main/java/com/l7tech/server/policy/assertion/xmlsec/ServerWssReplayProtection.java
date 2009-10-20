@@ -52,7 +52,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
     private static final long DEFAULT_EXPIRY_TIME = 1000L * 60 * 10; // if no Expires, assume expiry after 10 min
 
     private static final String ID_PREFIX_WSA_HASHED = "uuid:wsa:digest:";
-    private static final int MAX_WSA_MESSAGEID_HASHTHRESHOLD = SyspropUtil.getInteger("com.l7tech.server.messageIDHashThrehold" , 255); // 255 is the max we allow in the DB
+    private static final int MAX_WSA_MESSAGEID_HASHTHRESHOLD = SyspropUtil.getInteger("com.l7tech.server.messageIDHashThrehold" , 150); // 255 is the max we allow in the DB
     private static final int MAX_WSA_MESSAGEID_MAXLENGTH = SyspropUtil.getInteger("com.l7tech.server.messageIDMaxLength" , 8192); // 8k limit
     private static final String ID_FORMAT_CUSTOM_HASHED = "uuid:custom:scope:{0}:{1}";
 
@@ -240,7 +240,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             if ( wsaMessageId.length() > MAX_WSA_MESSAGEID_HASHTHRESHOLD ) {
                 messageIdStr = ID_PREFIX_WSA_HASHED + hash( wsaMessageId );
             } else {
-                messageIdStr = wsaMessageId;
+                messageIdStr = encode(wsaMessageId);
             }
         } else {
             try {
@@ -330,7 +330,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                 sb.append(createdIsoString);
                 sb.append(";");
                 sb.append("SessionID=");
-                sb.append(sessionID);
+                sb.append(encode(sessionID));
                 senderId = sb.toString();
             } else if (signingToken instanceof EncryptedKey) {
                 if (senderId != null) throw new MultipleSenderIdException();
@@ -344,7 +344,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                 sb.append(createdIsoString);
                 sb.append(";");
                 sb.append("EncryptedKeySHA1=");
-                sb.append(encode(encryptedKeySha1));
+                sb.append(escapeBASE64(encryptedKeySha1));
                 senderId = sb.toString();
             } else if (signingToken instanceof KerberosSigningSecurityToken) {
                 if (senderId != null) throw new MultipleSenderIdException();
@@ -356,7 +356,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                 sb.append(createdIsoString);
                 sb.append(";");
                 sb.append("Kerberosv5APREQSHA1=");
-                sb.append(encode(kerberosTokenSha1));
+                sb.append(escapeBASE64(kerberosTokenSha1));
                 senderId = sb.toString();
             } else {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_UNSUPPORTED_TOKEN_TYPE, what, signingToken.getClass().getName());
@@ -368,14 +368,18 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
     }
 
     private String hash( final String text ) {
-        return encode(HexUtils.encodeBase64( HexUtils.getSha512Digest( HexUtils.encodeUtf8(text) ), true ));
+        return escapeBASE64(HexUtils.encodeBase64( HexUtils.getSha512Digest( HexUtils.encodeUtf8(text) ), true ));
     }
 
     /**
      * Encode BASE64 text for safe use as a message identifier. 
      */
-    private String encode( final String base64Text ) {
+    private String escapeBASE64( final String base64Text ) {
         return base64Text.replace( '/', '-' ).replace( '+', '_' );
+    }
+
+    private String encode( final String text ) {
+        return escapeBASE64(HexUtils.encodeBase64(HexUtils.encodeUtf8(text)));
     }
 
     private String skiToString(X509Certificate signingCert) throws CertificateEncodingException {
