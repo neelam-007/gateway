@@ -79,6 +79,33 @@ CREATE TABLE uddi_registries (
   UNIQUE(base_url)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+--
+-- Table structure for Gateway WSDLs published to UDDI. Known as 'Proxied Business Services'
+-- Entity UDDIProxiedService
+-- TODO Confirm the max length of valid UDDI v3 keys
+-- the general_keyword value is used to identify all services which originated from the same published service's wsdl
+--
+DROP TABLE IF EXISTS uddi_proxied_service;
+CREATE TABLE uddi_proxied_service (
+  objectid bigint(20) NOT NULL,
+  published_service_oid bigint(20) NOT NULL,
+  uddi_registry_oid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  uddi_business_key varchar(255) NOT NULL,
+  uddi_business_name varchar(255) NOT NULL,
+  general_keyword varchar(255) NOT NULL,
+  wspolicy_tmodel_key varchar(255) NOT NULL,
+  update_proxy_on_local_change tinyint(1) NOT NULL DEFAULT 0,
+  created_from_existing tinyint(1) NOT NULL DEFAULT 0,
+  metrics_enabled tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (objectid),
+  UNIQUE KEY  (published_service_oid),
+  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+
 INSERT INTO rbac_role VALUES (-950,0,'Manage JDBC Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.');
 INSERT INTO rbac_permission VALUES (-951,0,-950,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-952,0,-950,'CREATE',NULL,'JDBC_CONNECTION');
@@ -86,12 +113,17 @@ INSERT INTO rbac_permission VALUES (-953,0,-950,'UPDATE',NULL,'JDBC_CONNECTION')
 INSERT INTO rbac_permission VALUES (-954,0,-950,'DELETE',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-955,0,-950,'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_role VALUES (-1000,0,'Manage UDDI Registries', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections.');
+INSERT INTO rbac_role VALUES (-1000,0,'Manage UDDI Registries', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections  and proxied Business Services.');
 INSERT INTO rbac_permission VALUES (-1001,0,-1000,'READ',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1002,0,-1000,'CREATE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1003,0,-1000,'UPDATE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1004,0,-1000,'DELETE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1005,0,-1000,'READ',NULL,'SERVICE');
+
+INSERT INTO rbac_permission VALUES (-1051,0,-1000,'READ',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-1052,0,-1000,'CREATE',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-1053,0,-1000,'UPDATE',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-1054,0,-1000,'DELETE',NULL,'UDDI_PROXIED_SERVICE');
 
 --
 -- Reenable FK at very end of script

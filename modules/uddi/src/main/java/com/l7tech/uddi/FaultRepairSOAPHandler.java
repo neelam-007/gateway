@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  *
  * @author Steve Jones
  */
-class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
+public class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
 {
     //- PUBLIC
     

@@ -57,6 +57,8 @@ public enum EntityType implements Comparable<EntityType> {
 
     UDDI_REGISTRY("UDDI Registry", true),
 
+    UDDI_PROXIED_SERVICE("UDDI Proxied Service", true),
+
     JDBC_CONNECTION("JDBC Connection", true),
 
     EMAIL_LISTENER("Email Listener", true),

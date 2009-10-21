@@ -1,5 +1,8 @@
 package com.l7tech.uddi;
 
+import com.l7tech.common.uddi.guddiv3.BusinessService;
+import com.l7tech.common.uddi.guddiv3.TModel;
+
 import java.io.Closeable;
 import java.util.Collection;
 
@@ -111,6 +114,49 @@ public interface UDDIClient extends Closeable {
      * @throws UDDIException if an error occurs
      */
     String publishPolicy(String name, String description, String url) throws UDDIException;
+
+    /**
+     * Publish a Business Service to UDDI. The Business Service may already exist
+     * <p/>
+     * If the BusinessService does not already exist it will be created and the serviceKey will be assigned by
+     * the UDDi registry and set on the BusinessService following this operation.
+     *
+     * @param businessService the Business Service to publish
+     * @return true if the BusinessService was created, false otherwise
+     * @throws UDDIException any problems searching / publishing UDDI
+     */
+    boolean publishBusinessService(final BusinessService businessService) throws UDDIException;
+
+    /**
+     * Publish a tModel to UDDI. May already exist. If so the existing tModelKey is returned
+     * <p/>
+     * If the tModel does not already exist, it will be created and the tModelKey assigned to it by the UDDI
+     * registry will be set on the tModel following this operation.
+     *
+     * @param tModel the tModel to publish.
+     * @return true if the TModel was created, false otherwise
+     * @throws UDDIException any problems searching / publishing UDDI
+     */
+    boolean publishTModel(final TModel tModel) throws UDDIException;
+
+    /**
+     * Delete a TModel from the UDDI Registry.
+     *
+     * The delete should only be attempted when a search reveiles that no other Business Service references
+     * this tModel directly or indirectly.
+     *
+     * @param tModel the TModel to delete
+     * @throws UDDIException if any problem during the attempt to delete
+     */
+    void deleteTModel(final TModel tModel) throws UDDIException;
+
+    /**
+     * Delete a BusinessService from the UDDI Registry.
+     *
+     * @param businessService the BusinessService to delete
+     * @throws UDDIException if any problem during the attempt to delete
+     */
+    void deleteBusinessService(final BusinessService businessService) throws UDDIException;
 
     /**
      * Get the URL for the referenced policy.

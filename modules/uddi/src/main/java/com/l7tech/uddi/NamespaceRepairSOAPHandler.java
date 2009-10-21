@@ -57,7 +57,7 @@ import com.l7tech.util.CausedIOException;
  *
  * @author Steve Jones
  */
-class NamespaceRepairSOAPHandler implements SOAPHandler<SOAPMessageContext> {
+public class NamespaceRepairSOAPHandler implements SOAPHandler<SOAPMessageContext> {
 
     //- PUBLIC
 

@@ -108,6 +108,7 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
     public void authenticate() throws UDDIException {
         authToken();   
     }
@@ -115,6 +116,31 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
+    public boolean publishBusinessService(final BusinessService businessService){
+        return false;
+    }
+
+    @Override
+    public boolean publishTModel(TModel tModel) throws UDDIException {
+        return false;
+    }
+
+
+    @Override
+    public void deleteTModel(TModel tModel) throws UDDIException {
+
+    }
+
+    @Override
+    public void deleteBusinessService(BusinessService businessService) throws UDDIException {
+
+    }
+
+    /**
+     *
+     */
+    @Override
     public String publishPolicy(final String name,
                                 final String description,
                                 final String url) throws UDDIException {
