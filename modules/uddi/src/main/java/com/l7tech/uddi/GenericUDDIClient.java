@@ -180,6 +180,7 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
     public Collection<UDDINamedEntity> listServiceWsdls(final String servicePattern,
                                                         final boolean caseSensitive,
                                                         final int offset,
@@ -221,7 +222,7 @@ class GenericUDDIClient implements UDDIClient {
             // check if any more results
             ListDescription listDescription = serviceList.getListDescription();
             if (listDescription != null) {
-                moreAvailable = listDescription.getActualCount() > listDescription.getListHead() + (listDescription.getIncludeCount()-1);
+                setMoreAvailable(listDescription);
             }
 
             // process
@@ -308,9 +309,15 @@ class GenericUDDIClient implements UDDIClient {
         }
     }
 
+    private void setMoreAvailable(ListDescription listDescription) {
+        moreAvailable = (listDescription.getActualCount() > listDescription.getListHead() + (listDescription.getIncludeCount()-1))
+                && listDescription.getActualCount() > 0;
+    }
+
     /**
      *
      */
+    @Override
     public Collection<UDDINamedEntity> listServices(final String servicePattern,
                                                     final boolean caseSensitive,
                                                     final int offset,
@@ -355,7 +362,7 @@ class GenericUDDIClient implements UDDIClient {
             // check if any more results
             ListDescription listDescription = serviceList.getListDescription();
             if (listDescription != null) {
-                moreAvailable = listDescription.getActualCount() > listDescription.getListHead() + (listDescription.getIncludeCount()-1);
+                setMoreAvailable(listDescription);
             }
 
             // display those services in the list instead
@@ -380,6 +387,7 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
     public Collection<UDDINamedEntity> listEndpoints(final String servicePattern,
                                                      final boolean caseSensitive,
                                                      final int offset,
@@ -426,6 +434,7 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
     public Collection<UDDINamedEntity> listOrganizations(final String organizationPattern,
                                                          final boolean caseSensitive,
                                                          final int offset,
@@ -461,7 +470,7 @@ class GenericUDDIClient implements UDDIClient {
             // check if any more results
             ListDescription listDescription = uddiBusinessListRes.getListDescription();
             if (listDescription != null) {
-                moreAvailable = listDescription.getActualCount() > listDescription.getListHead() + (listDescription.getIncludeCount()-1);
+                setMoreAvailable(listDescription);
             }
 
             // display those services in the list instead
@@ -487,6 +496,7 @@ class GenericUDDIClient implements UDDIClient {
      * Note that this currently does not list policies that are remotely
      * attached (only ones with tModels)
      */
+    @Override
     public Collection<UDDINamedEntity> listPolicies(final String policyPattern,
                                                     final String policyUrl) throws UDDIException {
         validateName(policyPattern);
@@ -524,7 +534,7 @@ class GenericUDDIClient implements UDDIClient {
             // check if any more results
             ListDescription listDescription = tModelList.getListDescription();
             if (listDescription != null) {
-                moreAvailable = listDescription.getActualCount() > listDescription.getListHead() + (listDescription.getIncludeCount()-1);
+                setMoreAvailable(listDescription);
             }
 
             List<String> policyKeys = new ArrayList();
@@ -582,6 +592,7 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
     public boolean listMoreAvailable() {
         return moreAvailable;
     }
@@ -589,6 +600,7 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
     public String getPolicyUrl(final String policyKey) throws UDDIException {
         validateKey(policyKey);
 
@@ -640,6 +652,7 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
     public Collection<String> listPolicyUrlsByEndpoint(final String key) throws UDDIException {
         validateKey(key);
         
@@ -670,6 +683,7 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
     public Collection<String> listPolicyUrlsByOrganization(final String key) throws UDDIException {
         validateKey(key);
 
@@ -700,6 +714,7 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
     public Collection<String> listPolicyUrlsByService(final String key) throws UDDIException {
         validateKey(key);
 
@@ -730,7 +745,8 @@ class GenericUDDIClient implements UDDIClient {
     /**
      * 
      */
-    public void referencePolicy(final String serviceKey, 
+    @Override
+    public void referencePolicy(final String serviceKey,
                                 final String serviceUrl,
                                 final String policyKey,
                                 final String policyUrl,
@@ -844,6 +860,7 @@ class GenericUDDIClient implements UDDIClient {
     /**
      * 
      */
+    @Override
     public void close() {
         if (authenticated()) {
             try {
