@@ -38,12 +38,14 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
         }
 
         // Set parameters
-        try {
-            for (int i = 0; i < preparedStmtParams.size(); i++) {
-                pstmt.setObject(i+1, preparedStmtParams.get(i));
+        if (preparedStmtParams != null) {
+            try {
+                for (int i = 0; i < preparedStmtParams.size(); i++) {
+                    pstmt.setObject(i+1, preparedStmtParams.get(i));
+                }
+            } catch (SQLException e) {
+                return "error setting a parameter in a SQL prepared statement.";
             }
-        } catch (SQLException e) {
-            return "error setting a parameter in a SQL prepared statement.";
         }
 
         // Set max number of returned records
