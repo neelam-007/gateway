@@ -3,14 +3,11 @@ package com.l7tech.security.prov.rsa;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
-import com.rsa.jsafe.crypto.CryptoJ;
-import com.rsa.jsafe.crypto.JSAFE_InvalidUseException;
-import com.rsa.jsafe.provider.JsafeJCE;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.logging.Logger;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * A JceProvider engine for RSA Crypto-J 4.0 FIPS 140.
@@ -25,6 +22,7 @@ public class RsaJceProviderEngine extends JceProvider {
     private static final boolean FIPS = SyspropUtil.getBoolean(PROP_FIPS, false);
     private static final boolean SUNJSSE_FIPS = SyspropUtil.getBoolean(PROP_SUNJSSE_FIPS, false);
 
+    private static final CryptoJWrapper cryptoj;
     private static final Provider PROVIDER;
 
     static {
@@ -32,10 +30,11 @@ public class RsaJceProviderEngine extends JceProvider {
             final boolean permafips = SyspropUtil.getBoolean(PROP_PERMAFIPS, false);
             if (FIPS || permafips) {
                 logger.info("Initializing RSA library in FIPS 140 mode");
-                CryptoJ.setMode(CryptoJ.FIPS140_SSL_ECC_MODE);
-                PROVIDER = new JsafeJCE();
+                cryptoj = new CryptoJWrapper(true);
+                cryptoj.setMode(cryptoj.FIPS140_SSL_ECC_MODE);
+                PROVIDER = cryptoj.provider;
                 Security.insertProviderAt(PROVIDER, 1);
-                if (!CryptoJ.isInFIPS140Mode()) {
+                if (!cryptoj.isInFIPS140Mode()) {
                     logger.severe("RSA library failed to initialize in FIPS 140 mode");
                     throw new RuntimeException("RSA JCE Provider is supposed to be in FIPS mode but is not");
                 }
@@ -55,13 +54,12 @@ public class RsaJceProviderEngine extends JceProvider {
                 }
             } else {
                 logger.info("Initializing RSA library in non-FIPS 140 mode");
-                if (CryptoJ.isFIPS140Compliant())
-                    CryptoJ.setMode(CryptoJ.NON_FIPS140_MODE);
-                PROVIDER = new JsafeJCE();
+                cryptoj = new CryptoJWrapper(false);
+                if (cryptoj.isFIPS140Compliant())
+                    cryptoj.setMode(cryptoj.NON_FIPS140_MODE);
+                PROVIDER = cryptoj.provider;
                 Security.insertProviderAt(PROVIDER, 1);
             }
-        } catch (JSAFE_InvalidUseException e) {
-            throw new RuntimeException("Unable to set FIPS 140 mode (with SSL and ECC): " + ExceptionUtils.getMessage(e), e);
         } catch (InvocationTargetException e) {
             throw new RuntimeException("Unable to put SunJSSE SSL library into FIPS mode: " + ExceptionUtils.getMessage(e), e);
         } catch (NoSuchMethodException e) {
@@ -74,12 +72,20 @@ public class RsaJceProviderEngine extends JceProvider {
             // This might happen semi-legitimately if a later Sun JDK removes/renames/changes the com.sun.net.ssl.internal.ssl.Provider class,
             // or if we are running on a non-Sun JDK that nevertheless has a Provider installed named "SunJSSE"
             throw new RuntimeException("Unable to put SunJSSE SSL library into FIPS mode: " + ExceptionUtils.getMessage(e), e);
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException("Unable to set FIPS 140 mode (with SSL and ECC): " + ExceptionUtils.getMessage(e), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to set FIPS 140 mode (with SSL and ECC): " + ExceptionUtils.getMessage(e), e);
         }
     }
 
     @Override
     public boolean isFips140ModeEnabled() {
-        return CryptoJ.isInFIPS140Mode();
+        try {
+            return cryptoj.isInFIPS140Mode();
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to check whether provider is in FIPS mode: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     @Override

@@ -10,12 +10,12 @@ import com.l7tech.console.util.PreferencesChangedEvent;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.HelpUtil;
-import com.rsa.jsafe.provider.JsafeJCE;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.swing.*;
 import java.io.File;
+import java.security.Provider;
 import java.security.Security;
 import java.util.logging.Logger;
 
@@ -133,6 +133,19 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
     }
 
     private void installAdditionalSecurityProviders() {
-        Security.addProvider(new JsafeJCE());
+        log.info("Registering JsafeJCE");
+        Security.addProvider(getJsafeProvider());
+    }
+
+    private Provider getJsafeProvider() {
+        try {
+            return (Provider) getClass().getClassLoader().loadClass("com.rsa.jsafe.provider.JsafeJCE").newInstance();
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
