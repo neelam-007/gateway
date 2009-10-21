@@ -19,7 +19,7 @@ import javax.xml.bind.JAXB;
  * Test the converstion from the WSDL data model to the UDDI information model
  * @author darmstrong
  */
-public class TetstWsdlTUDDIModelConverter {
+public class WsdlTUDDIModelConverterTest {
 
     /**
      * This entire test case depends on the structure of the Warehoumse.wsdl resource
@@ -216,7 +216,7 @@ public class TetstWsdlTUDDIModelConverter {
     }
 
     public static Reader getWsdlReader(String resourcetoread) {
-        InputStream inputStream = TetstWsdlTUDDIModelConverter.class.getClassLoader().getResourceAsStream(resourcetoread);
+        InputStream inputStream = WsdlTUDDIModelConverterTest.class.getClassLoader().getResourceAsStream(resourcetoread);
         return new InputStreamReader(inputStream);
     }
 }

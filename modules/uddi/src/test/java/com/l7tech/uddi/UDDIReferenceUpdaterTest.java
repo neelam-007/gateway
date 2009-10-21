@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 
-public class TestUDDIReferenceUpdater {
+public class UDDIReferenceUpdaterTest {
     private Wsdl wsdl;
     private WsdlToUDDIModelConverter wsdlToUDDIModelConverter;
     private Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels;
@@ -27,7 +27,7 @@ public class TestUDDIReferenceUpdater {
     @Before
     public void setUp() throws WSDLException {
 
-        wsdl = Wsdl.newInstance(null, TetstWsdlTUDDIModelConverter.getWsdlReader("Warehouse.wsdl"));
+        wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("Warehouse.wsdl"));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";

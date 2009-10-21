@@ -14,7 +14,7 @@ import javax.xml.bind.JAXB;
 import java.util.List;
 import java.util.Map;
 
-public class TestBusinessServicePublisher {
+public class BusinessServicePublisherTest {
 
     /**
      * Test the entire process of publishing a list of Business Services
@@ -26,7 +26,7 @@ public class TestBusinessServicePublisher {
      */
     @Test
     public void testBusinessServicePublisher() throws Exception {
-        Wsdl wsdl = Wsdl.newInstance(null, TetstWsdlTUDDIModelConverter.getWsdlReader("Warehouse.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("Warehouse.wsdl"));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
