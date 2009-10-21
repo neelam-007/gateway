@@ -78,17 +78,42 @@ public class BootstrapConfig {
             final File ksFile = checkFile(new File(etcDir, "localhost.p12"), false);
             final String ksPass = generatePassword();
             createKeystore(ksFile, ksPass);
-
-            final File patchKeystoreFile = checkFile(new File(etcDir, ConfigService.DEFAULT_PATCH_TRUSTSTORE_FILENAME), false);
-            final File patchCertFile = checkFile(new File(etcDir, ConfigService.DEFAULT_PATCHES_CERT_FILENAME), true);
-            Map<String,String> patcherProperties = createPatchesKeystore(patchKeystoreFile, ksPass, patchCertFile);
-
-            createPropertiesFile(hostPropertiesFile, ksFile, getMasterPasswordManager(etcDir).encryptPassword(ksPass.toCharArray()), patcherProperties);
+            createPropertiesFile(hostPropertiesFile, ksFile, getMasterPasswordManager(etcDir).encryptPassword(ksPass.toCharArray()));
         }
+
+        checkInitPatcherProperties(etcDir, hostPropertiesFile);
 
         doOverideProperties(hostPropertiesFile, overrideProperties);
         logger.info( "Configuration bootstrap complete." );
         return 0;
+    }
+
+    private static void checkInitPatcherProperties(File etcDir, File hostPropertiesFile) {
+        Properties hostProperties = new Properties();
+        FileInputStream fin = null;
+        try {
+            fin = new FileInputStream(hostPropertiesFile);
+            hostProperties.load(fin);
+        } catch (Exception e) {
+            throw new DieDieDie("Error reading host properties", 5, e);
+        } finally {
+            ResourceUtils.closeQuietly(fin);
+        }
+
+        if (!hostProperties.containsKey(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE)) {
+            final File patchKeystoreFile = checkFile(new File(etcDir, ConfigService.DEFAULT_PATCH_TRUSTSTORE_FILENAME), false);
+            final File patchCertFile = checkFile(new File(etcDir, ConfigService.DEFAULT_PATCHES_CERT_FILENAME), true);
+            hostProperties.putAll(createPatchesKeystore(etcDir, patchKeystoreFile, generatePassword(), patchCertFile));
+            FileOutputStream fos = null;
+            try {
+                fos = new FileOutputStream(hostPropertiesFile);
+                hostProperties.store(fos, null);
+            } catch (Exception e) {
+                throw new DieDieDie("Error storing patcher properties", 5, e);
+            } finally {
+                ResourceUtils.closeQuietly(fos);
+            }
+        }
     }
 
     private static void doOverideProperties(File hostPropertiesFile, File overridePropertiesFile) {
@@ -194,7 +219,7 @@ public class BootstrapConfig {
     }
 
     /** Create trust keystore for validating patches and import the supplied certificate */
-    private static Map<String,String> createPatchesKeystore(final File patchKeystoreFile, final String ksPass, File patchCertFile) {
+    private static Map<String,String> createPatchesKeystore(final File etcDir, final File patchKeystoreFile, final String ksPass, File patchCertFile) {
         logger.info("Initializing trust keystore for patches...");
         FileOutputStream kfos = null;
         try {
@@ -206,7 +231,7 @@ public class BootstrapConfig {
             return new HashMap<String, String>() {{
                 put(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_TYPE, "JKS");
                 put(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE, patchKeystoreFile.getAbsolutePath());
-                put(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_PASSWORD, ksPass);
+                put(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_PASSWORD, getMasterPasswordManager(etcDir).encryptPassword(ksPass.toCharArray()));
             }};
         } catch (Exception e) {
             throw new DieDieDie("Unable to create trust keystore for patches.", 4, e);
@@ -215,13 +240,12 @@ public class BootstrapConfig {
         }
     }
 
-    private static void createPropertiesFile(final File hostPropertiesFile, final File keystoreFile, final String obfKeystorePass, Map<String,String> patcherProperties) {
+    private static void createPropertiesFile(final File hostPropertiesFile, final File keystoreFile, final String obfKeystorePass) {
         final Properties newProps = new Properties();
         newProps.setProperty(ConfigService.HOSTPROPERTIES_ID, UUID.randomUUID().toString());
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREFILE, keystoreFile.getAbsolutePath());
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREPASSWORD, obfKeystorePass);
         newProps.setProperty(ConfigService.HOSTPROPERTIES_JRE, System.getProperty("java.home"));
-        newProps.putAll(patcherProperties);
 
         FileOutputStream pfos = null;
         try {
