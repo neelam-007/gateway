@@ -27,7 +27,11 @@ public class PatchUtils {
     // - PUBLIC
 
     public static File buildPatch(PatchSpec patchSpec, JarSignerParams signerParams) throws IOException, PatchException {
+        // build and sign
+        return signPatch(buildUnsignedPatch(patchSpec), signerParams);
+    }
 
+    public static File buildUnsignedPatch(PatchSpec patchSpec) throws IOException {
         // main class
         Manifest manifest = new Manifest();
         String mainClass = patchSpec.getMainClass();
@@ -58,12 +62,10 @@ public class PatchUtils {
         }
 
         jos.close();
-
-        // sign
-        return sign(patchFile, signerParams);
+        return patchFile;
     }
 
-    public static File sign(File patch, JarSignerParams signParams) throws IOException {
+    public static File signPatch(File patch, JarSignerParams signParams) throws IOException {
 
         ProcResult signResult = ProcUtils.exec(getJavaBinary(), ProcUtils.args("-classpath", getToolsJarPath(), JARSIGNER_CLASS_NAME, signParams.getOptions(), patch.getAbsolutePath(), signParams.getAlias()));
 
@@ -100,7 +102,7 @@ public class PatchUtils {
         }
     }
 
-    private static File getJavaBinary() {
+    public static File getJavaBinary() {
         File java = null;
         IllegalStateException thrown = null;
         try {

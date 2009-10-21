@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
+import java.util.jar.Attributes;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
@@ -31,9 +32,10 @@ public class PatchPackageImpl implements PatchPackage {
         while(entries.hasMoreElements()) {
             JarEntry entry = entries.nextElement();
             this.entries.put(entry.getName(), entry);
-            if (entry.getName().startsWith("META-INF/"))
-                continue;
             checkSignature(entry);
+            if (entry.getName().startsWith("META-INF/")) {
+                continue;
+            }
 
             Certificate[] certificates = entry.getCertificates();
             if(certificates == null || certificates.length == 0)
@@ -59,7 +61,22 @@ public class PatchPackageImpl implements PatchPackage {
             certPaths.add(certPath);
         }
 
+        // main class
+        Object mainClass = jar.getManifest().getMainAttributes().get(Attributes.Name.MAIN_CLASS);
+        if (mainClass == null || ! (mainClass instanceof String) || ((String)mainClass).isEmpty())
+            throw new PatchException("Invalid patch: main class not specified.");
+        checkEntryExists(((String) mainClass).replace('.', File.separatorChar) + ".class");
+
+
+        for(String manifestEntry : jar.getManifest().getEntries().keySet())
+            checkEntryExists(manifestEntry);
+            
         extractPatchProperties();
+    }
+
+    private void checkEntryExists(String entryName) throws PatchException {
+        if (jar.getJarEntry(entryName) == null)
+            throw new PatchException("Invalid patch: entry not present in patch jar: " + entryName);
     }
 
     @Override
@@ -91,7 +108,7 @@ public class PatchPackageImpl implements PatchPackage {
             zis = jar.getInputStream(entry);
             IOUtils.copyStream(zis, new NullOutputStream());
         } catch (SecurityException e) {
-            throw new PatchException("Inalid patch: entry incorrectly signed: " + entry.getName());
+            throw new PatchException("Inalid patch: signature error while processing entry: " + entry.getName() + " : " + ExceptionUtils.getMessage(e), e);
         } finally {
             ResourceUtils.closeQuietly(zis);
         }

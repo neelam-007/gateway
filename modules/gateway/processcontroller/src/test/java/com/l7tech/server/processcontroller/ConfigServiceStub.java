@@ -3,6 +3,7 @@ package com.l7tech.server.processcontroller;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
+import com.l7tech.server.processcontroller.patching.PatchUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.FileUtils;
 import com.l7tech.objectmodel.DeleteException;
@@ -20,7 +21,7 @@ import java.util.Set;
  */
 public class ConfigServiceStub implements ConfigService {
 
-    private Set<X509Certificate> trustedPatchCerts;
+    // - PUBLIC
 
     @Override
     public HostConfig getHost() {
@@ -44,11 +45,7 @@ public class ConfigServiceStub implements ConfigService {
 
     @Override
     public File getPatchesDirectory() {
-        try {
-            return FileUtils.createTempDirectory("patchPackages", "", null, true);
-        } catch (IOException e) {
-            throw new RuntimeException("Can't create temporary sub-directory");
-        }
+        return repository;
     }
 
     @Override
@@ -63,7 +60,7 @@ public class ConfigServiceStub implements ConfigService {
 
     @Override
     public String getApiEndpoint(ApiWebEndpoint endpoint) {
-        throw new UnsupportedOperationException("Not implemented.");
+        return "";
     }
 
     @Override
@@ -98,7 +95,7 @@ public class ConfigServiceStub implements ConfigService {
 
     @Override
     public File getJavaBinary() {
-        throw new UnsupportedOperationException("Not implemented.");
+        return PatchUtils.getJavaBinary();
     }
 
     @Override
@@ -134,5 +131,18 @@ public class ConfigServiceStub implements ConfigService {
     @Override
     public boolean getBooleanProperty(String propertyName, boolean defaultValue) {
         throw new UnsupportedOperationException("Not implemented.");
+    }
+
+    // - PRIVATE
+
+    private Set<X509Certificate> trustedPatchCerts;
+    private File repository = createRepositoryDir();
+
+    private File createRepositoryDir() {
+        try {
+            return FileUtils.createTempDirectory("patchPackages", "", null, false);
+        } catch (IOException e) {
+            throw new RuntimeException("Can't create temporary sub-directory");
+        }
     }
 }

@@ -74,8 +74,8 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         if (result.getExitStatus() == 0) {
             status = packageManager.setPackageStatus(patchId, PatchStatus.State.INSTALLED, null, patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
         } else {
-            // todo: error output
-            status = packageManager.setPackageStatus(patchId, PatchStatus.State.ERROR, new String(result.getErrOutput()), patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
+            byte[] errOut = result.getOutput();
+            status = packageManager.setPackageStatus(patchId, PatchStatus.State.ERROR, errOut != null ? new String(errOut) : "", patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
         }
 
         return status;
@@ -127,7 +127,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     /** Builds the parameter list to be passed to the patch installer */
     private String[] getInstallParams(PatchPackage patch, Collection<String> nodes) {
         List<String> params = new ArrayList<String>();
-        params.add("-jar"); params.add(patch.getFile().getName());
+        params.add("-jar"); params.add(patch.getFile().getAbsolutePath());
         params.add("-D" + ApiWebEndpoint.NODE_MANAGEMENT.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.NODE_MANAGEMENT));
         params.add("-D" + ApiWebEndpoint.OS.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.OS));
         if(! nodes.isEmpty()) {
