@@ -16,6 +16,7 @@
     <property name="classes.test.dir" value="${build.dir}/test-classes"/>
     <property name="classes.obf.dir" value="${build.dir}/obf-classes"/>
     <property name="deps.dir" value="${build.dir}/dependency"/>
+    <property name="deps.alt.dir" value="${build.dir}/dependency/alt"/>
     <property name="src.main.java.dir" value="${basedir}/src/main/java"/>
     <property name="src.main.res.dir" value="${basedir}/src/main/resources"/>
     <property name="src.test.java.dir" value="${basedir}/src/test/java"/>
@@ -436,13 +437,21 @@
 
     <!--
     -->
+    <target name="package.alt.dependencies.resolve" depends="init" if="module.resolve.alternatives" unless="module.package.dependencies.skip">
+        <ivy-resolve conf="alternative"/>
+    </target>
+    <target name="package.alt.dependencies.retrieve" depends="package.alt.dependencies.resolve" if="module.resolve.alternatives" unless="module.package.dependencies.skip">
+        <mkdir dir="${deps.alt.dir}"/>
+        <ivy:retrieve pattern="${deps.alt.dir}/[artifact]-[revision].[ext]"/>
+    </target>
     <target name="package.dependencies.resolve" depends="init">
         <ivy-resolve conf="runtime"/>
     </target>
-    <target name="package.dependencies" depends="package.dependencies.resolve" unless="module.package.dependencies.skip">
+    <target name="package.dependencies.retrieve" depends="package.dependencies.resolve" unless="module.package.dependencies.skip">
         <mkdir dir="${deps.dir}"/>
         <ivy:retrieve pattern="${deps.dir}/[artifact]-[revision].[ext]"/>
     </target>
+    <target name="package.dependencies" depends="package.alt.dependencies.retrieve, package.dependencies.retrieve" unless="module.package.dependencies.skip"/>
     <target name="package.classpath" if="module.main">
         <ivy:cachepath pathid="module.classpath" conf="runtime"/>
         <pathconvert property="module.classpath.text" pathsep=" " refid="module.classpath">

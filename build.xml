@@ -1575,12 +1575,13 @@
 
         <!-- packaging gateway libs -->
         <mkdir dir="${build.dir}/gateway/lib"/>
+        <mkdir dir="${build.dir}/gateway/lib/alt"/>
         <delete>
             <fileset dir="${build.dir}/gateway/lib" includes="layer7-*"/>
         </delete>
         <copy todir="${build.dir}/gateway/lib">
             <fileset dir="modules/gateway/server/build/dependency">
-                <include name="*.jar"/>
+                <include name="**/*.jar"/>
             </fileset>
         </copy>
         <copy file="modules/gateway/server/build/layer7-gateway-server.jar" tofile="${build.dir}/gateway/Gateway.jar"/>
@@ -2944,6 +2945,7 @@
             <mkdir dir="@{dir}/${install.src.ssg.backuprestore.logs}"/>
             <mkdir dir="@{dir}/${install.src.ssg.help}"/>
             <mkdir dir="@{dir}/${install.src.ssg.lib}"/>
+            <mkdir dir="@{dir}/${install.src.ssg.libalt}"/>
             <mkdir dir="@{dir}/${install.src.ssg.libext}"/>
             <mkdir dir="@{dir}/${install.src.ssg.logs}"/>
             <mkdir dir="@{dir}/${install.src.ssg.profile}"/>
@@ -2987,6 +2989,11 @@
             <!-- Copy Gateway libs -->
             <copy todir="@{dir}/${install.src.ssg.lib}" flatten="true">
                 <fileset dir="${build.dir}/gateway/lib" casesensitive="yes">
+                    <include name="*.jar"/>
+                </fileset>
+            </copy>
+            <copy todir="@{dir}/${install.src.ssg.libalt}" flatten="true">
+                <fileset dir="${build.dir}/gateway/lib/alt" casesensitive="yes">
                     <include name="*.jar"/>
                 </fileset>
             </copy>
