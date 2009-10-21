@@ -20,14 +20,15 @@ public class UDDIReferenceUpdater {
     }
 
     /**
-     * Update all placeholder tModelKey's instead of keyedReferences in the list of BusinessServices
+     * Update all placeholder tModelKey's instead of keyedReferences in the list of BusinessServices. This applies
+     * to the bindingTemplates they contain, and not any category bag of the Business Services themselves
      *
      * @param businessServices the list of BusinessService s to update
      * @param dependentTModels the list of dependent TModel s which the BusinessServices depend on. All have valid
      *                         tModelKeys from the correct UDDIRegistry
      */
-    public static void updateReferences(final List<BusinessService> businessServices,
-                                        final Map<String, TModel> dependentTModels) {
+    public static void updateBusinessServiceReferences(final List<BusinessService> businessServices,
+                                                       final Map<String, TModel> dependentTModels) {
 
         for (BusinessService businessService : businessServices) {
             //the business service itself has no references to update
@@ -63,9 +64,7 @@ public class UDDIReferenceUpdater {
             List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
             //find the portType keyedReference
             for (KeyedReference keyedReference : keyedReferences) {
-                if (!keyedReference.getTModelKey().equals(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)) continue;
-                final String keyValue = keyedReference.getKeyValue();
-                if (!keyValue.equals("portType")) continue;
+                if (!keyedReference.getTModelKey().equals(WsdlToUDDIModelConverter.UDDI_WSDL_PORTTYPEREFERENCE)) continue;
                 final TModel publishedTModel = dependentTModels.get(keyedReference.getKeyValue());
                 keyedReference.setKeyValue(publishedTModel.getTModelKey());
             }

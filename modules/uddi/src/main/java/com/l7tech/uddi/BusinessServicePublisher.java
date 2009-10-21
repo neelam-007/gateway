@@ -53,7 +53,7 @@ public class BusinessServicePublisher {
         //next publish TModels which represent wsdl:binding, as they are dependent on wsdl:portType tModels
         publishedTModels.addAll(publishDependentTModels(uddiClient, dependentTModels, WSDL_BINDING));
 
-        UDDIReferenceUpdater.updateReferences(businessServices, dependentTModels);
+        UDDIReferenceUpdater.updateBusinessServiceReferences(businessServices, dependentTModels);
 
         publishBusinessServices(uddiClient, businessServices, publishedTModels);
     }
@@ -70,28 +70,28 @@ public class BusinessServicePublisher {
      * @param rollbackTModelsToDelete list of TModels to attempt to delete on any failure.
      * @throws com.l7tech.uddi.UDDIException if any problems publishing the Business Services to UDDI
      */
-    private void publishBusinessServices(final UDDIClient uddiClient,
-                                         final List<BusinessService> businessServices,
-                                         final List<TModel> rollbackTModelsToDelete) throws UDDIException {
+    public void publishBusinessServices(final UDDIClient uddiClient,
+                                        final List<BusinessService> businessServices,
+                                        final List<TModel> rollbackTModelsToDelete) throws UDDIException {
 
-        final List<BusinessService> publishedServices= new ArrayList<BusinessService>();
+        final List<BusinessService> publishedServices = new ArrayList<BusinessService>();
         for (BusinessService businessService : businessServices) {
             try {
                 final boolean published = uddiClient.publishBusinessService(businessService);
-                if(published) publishedServices.add(businessService);
+                if (published) publishedServices.add(businessService);
 
             } catch (UDDIException e) {
                 logger.log(Level.WARNING, "Exception publishing BusinesService: " + e.getMessage());
                 try {
                     //Roll back any tModels published first
-                    if(!rollbackTModelsToDelete.isEmpty()){
+                    if (!rollbackTModelsToDelete.isEmpty()) {
                         logger.log(Level.WARNING, "Attempting to rollback published tModels: " + e.getMessage());
                         boolean deletedTModel = false;
-                        for(TModel tModel: rollbackTModelsToDelete){
+                        for (TModel tModel : rollbackTModelsToDelete) {
                             uddiClient.deleteTModel(tModel);
                             deletedTModel = true;
                         }
-                        if(deletedTModel) logger.log(Level.WARNING, "Delete published tModels: " + e.getMessage());
+                        if (deletedTModel) logger.log(Level.WARNING, "Delete published tModels: " + e.getMessage());
                     }
 
                     if (!publishedServices.isEmpty()) {
@@ -127,9 +127,9 @@ public class BusinessServicePublisher {
      * @return List of TModels which were successfully published
      * @throws UDDIException any exception publishing the tmodels
      */
-    private List<TModel> publishDependentTModels(final UDDIClient uddiClient,
-                                                 final Map<String, TModel> dependentTModels,
-                                                 final UDDIReferenceUpdater.TMODEL_TYPE tmodelType) throws UDDIException {
+    public List<TModel> publishDependentTModels(final UDDIClient uddiClient,
+                                                final Map<String, TModel> dependentTModels,
+                                                final UDDIReferenceUpdater.TMODEL_TYPE tmodelType) throws UDDIException {
         final List<TModel> publishedTModels = new ArrayList<TModel>();
         try {
             for (Map.Entry<String, TModel> entrySet : dependentTModels.entrySet()) {
