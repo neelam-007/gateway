@@ -16,14 +16,14 @@ public class NodeManagementApiTest {
     @Test
     @Ignore("Destructive and unlikely to work on your computer anyway")
     public void testDeleteNode() throws Exception {
-        NodeManagementApi api = CxfApiTestUtil.makeSslApiStub("https://localhost:8765/services/nodeManagementApi", NodeManagementApi.class);
+        NodeManagementApi api = new CxfUtils.ApiBuilder("https://localhost:8765/services/nodeManagementApi").build(NodeManagementApi.class);
         api.deleteNode("default", 36000);
     }
 
     @Test
     @Ignore("Change the mysql root password if you want to try it")
     public void testCreateDatabase() throws Exception {
-        NodeManagementApi api = CxfApiTestUtil.makeSslApiStub("https://localhost:8765/services/nodeManagementApi", NodeManagementApi.class);
+        NodeManagementApi api = new CxfUtils.ApiBuilder("https://localhost:8765/services/nodeManagementApi").build(NodeManagementApi.class);
         final DatabaseConfig dbc = new DatabaseConfig("localhost", 3306, "ssgtemp", "gatewaytemp", "7layertemp");
         dbc.setDatabaseAdminUsername("root");
         dbc.setDatabaseAdminPassword("thisIsNotMyMysqlPassword");

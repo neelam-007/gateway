@@ -3,10 +3,10 @@ package com.l7tech.server.processcontroller;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
-import com.l7tech.server.processcontroller.patching.PatchUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.FileUtils;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.common.io.JarUtils;
 
 import java.io.IOException;
 import java.io.File;
@@ -95,7 +95,7 @@ public class ConfigServiceStub implements ConfigService {
 
     @Override
     public File getJavaBinary() {
-        return PatchUtils.getJavaBinary();
+        return JarUtils.getJavaBinary();
     }
 
     @Override

@@ -7,20 +7,14 @@ import com.l7tech.common.http.GenericHttpException;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.server.management.api.monitoring.*;
 import com.l7tech.server.management.config.monitoring.*;
+import com.l7tech.server.processcontroller.CxfUtils;
 import com.l7tech.util.ComparisonOperator;
 import static junit.framework.Assert.assertEquals;
-import org.apache.cxf.configuration.jsse.TLSClientParameters;
-import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.interceptor.LoggingInInterceptor;
 import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.apache.cxf.jaxb.JAXBDataBinding;
-import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
-import org.apache.cxf.transport.http.HTTPConduit;
 import org.junit.*;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -28,8 +22,6 @@ import javax.xml.bind.Unmarshaller;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -119,47 +111,11 @@ public class MonitoringKernelTest {
     }
 
     private MonitoringApi getApi() throws JAXBException {
-        JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean();
-        pfb.setDataBinding(new JAXBDataBinding(makeJaxbContext()));
-        pfb.setAddress("https://localhost:8765/services/monitoringApi");
-        pfb.setServiceClass(MonitoringApi.class);
-        Client c = pfb.getClientFactoryBean().create();
-        c.getInInterceptors().add(new LoggingInInterceptor());
-        c.getOutInterceptors().add(new LoggingOutInterceptor());
-        c.getInFaultInterceptors().add(new LoggingInInterceptor());
-        c.getOutFaultInterceptors().add(new LoggingOutInterceptor());
-        HTTPConduit hc = (HTTPConduit) c.getConduit();
-        hc.setTlsClientParameters(new TLSClientParameters() {
-            @Override
-            public TrustManager[] getTrustManagers() {
-                return new TrustManager[]{new X509TrustManager() {
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-                    }
-
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-                    }
-
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-                }};
-            }
-
-            @Override
-            public KeyManager[] getKeyManagers() {
-                return new KeyManager[0];
-            }
-
-            @Override
-            public boolean isDisableCNCheck() {
-                return true;
-            }
-        });
-
-        return (MonitoringApi) pfb.create();
+        // todo: really need to override getKeyManagers() for the TLS params?
+        CxfUtils.ApiBuilder apiBuilder = new CxfUtils.ApiBuilder("https://localhost:8765/services/monitoringApi")
+            .dataBinding(new JAXBDataBinding(makeJaxbContext()))
+            .inFaultInterceptor(new LoggingInInterceptor()).outFaultInterceptor(new LoggingOutInterceptor());
+        return apiBuilder.build(MonitoringApi.class);
     }
 
     public static MonitoringConfiguration makeConfig() {

@@ -20,23 +20,16 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ProcUtils;
-import org.apache.cxf.configuration.jsse.TLSClientParameters;
-import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
-import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.annotation.Resource;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.UnknownHostException;
 import java.net.SocketTimeoutException;
-import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -842,40 +835,15 @@ public class ProcessController implements InitializingBean {
             logger.log(Level.INFO, "{0} does not exist yet, will try default port", portfile.getAbsolutePath());
         }
 
-        final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean();
-        pfb.setServiceClass(NodeApi.class);
-
         String url = node.getProcessControllerApiUrl();
         if (url == null) url = autoUrl;
         if (url == null) url = "https://localhost:2124/ssg/services/processControllerNodeApi";
-        pfb.setAddress(url);
-        final Client c = pfb.getClientFactoryBean().create();
-        final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
 
         final HTTPClientPolicy clientPolicy = new HTTPClientPolicy();
         clientPolicy.setConnectionTimeout(connectTimeout);
         clientPolicy.setReceiveTimeout(receiveTimeout);
-        httpConduit.setClient(clientPolicy);
 
-        httpConduit.setTlsClientParameters(new TLSClientParameters() {
-            @Override
-            public boolean isDisableCNCheck() {
-                return true;
-            }
-
-            @Override
-            public TrustManager[] getTrustManagers() {
-                return new TrustManager[] { new X509TrustManager() {
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {}
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {}
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
-                }};
-            }
-        });
-        return (NodeApi)pfb.create();
+        return new CxfUtils.ApiBuilder(url).clientPolicy(clientPolicy).build(NodeApi.class);
     }
 
     private void spew(String what, byte[] outBytes) {

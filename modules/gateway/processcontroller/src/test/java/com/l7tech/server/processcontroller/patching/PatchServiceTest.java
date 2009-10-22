@@ -5,12 +5,14 @@ import org.junit.Ignore;
 import org.junit.Before;
 import org.junit.After;
 import org.springframework.test.util.ReflectionTestUtils;
-import com.l7tech.server.processcontroller.CxfApiTestUtil;
+import com.l7tech.server.processcontroller.CxfUtils;
 import com.l7tech.server.processcontroller.ConfigService;
 import com.l7tech.server.processcontroller.ConfigServiceStub;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.common.io.JarSignerParams;
+import com.l7tech.common.io.JarUtils;
 import junit.framework.Assert;
 
 import java.io.*;
@@ -77,7 +79,7 @@ public class PatchServiceTest {
     @Test
     @Ignore("Until the full PC / patch service API are deployed for testing")
     public void testDeployedPatchUpload() throws Exception {
-        PatchServiceApi api = CxfApiTestUtil.makeSslApiStub("https://localhost:8765/services/patchServiceApi", PatchServiceApi.class);
+        PatchServiceApi api = new CxfUtils.ApiBuilder("https://localhost:8765/services/patchServiceApi").build(PatchServiceApi.class);
         File patch = PatchUtils.buildPatch(getTestPatchSpec(null), getTestPatchSigningParams());
         PatchStatus status = api.uploadPatch(IOUtils.slurpFile(patch));
         Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
@@ -790,7 +792,7 @@ public class PatchServiceTest {
             if (thrown[0] != null) throw thrown[0];
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
-            File modifiedSignedPatch = PatchUtils.signPatch(modifiedPatch, getTestPatchSigningParams());
+            File modifiedSignedPatch = JarUtils.sign(modifiedPatch, getTestPatchSigningParams());
             try {
                 patchService.uploadPatch(IOUtils.slurpFile(modifiedSignedPatch));
                 Assert.fail("Patch upload should have failed if the jar main class is not specified.");
@@ -872,7 +874,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(PatchUtils.signPatch(modifiedPatch, getTestPatchSigningParams())));
+                patchService.uploadPatch(IOUtils.slurpFile(JarUtils.sign(modifiedPatch, getTestPatchSigningParams())));
                 Assert.fail("Patch upload should have failed if the jar main class was modified.");
             } catch (PatchException expected) {
                 // do nothing

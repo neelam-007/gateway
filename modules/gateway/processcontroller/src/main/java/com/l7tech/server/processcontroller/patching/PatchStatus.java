@@ -114,6 +114,18 @@ public class PatchStatus {
         return State.valueOf(getField(Field.STATE)).allowDelete();
     }
 
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        for(Field field : Field.values()) {
+            String value = getField(field);
+            if (value != null) {
+                result.append(field.name()).append("=").append(value).append("\n");
+            }
+        }
+        return result.toString();
+    }
+
     public static class TypeAdapter extends XmlAdapter<JaxbMapType, PatchStatus> {
 
         @Override

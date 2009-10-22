@@ -130,7 +130,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         params.add("-jar"); params.add(patch.getFile().getAbsolutePath());
         params.add("-D" + ApiWebEndpoint.NODE_MANAGEMENT.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.NODE_MANAGEMENT));
         params.add("-D" + ApiWebEndpoint.OS.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.OS));
-        if(! nodes.isEmpty()) {
+        if(nodes != null && ! nodes.isEmpty()) {
             StringBuilder nodeList = new StringBuilder();
             for(String node : nodes) {
                 nodeList.append(node).append(",");
