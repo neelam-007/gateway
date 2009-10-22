@@ -42,5 +42,7 @@
         <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.5.2" force="true" conf="core"/>
         <dependency org="snoozesoft" name="systray4j" rev="2.3.2" force="true" conf="core"/>
         <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
+        <!-- For the XVC and Bridge API, we'll always use the FIPS version of RSA for the time being -->
+        <dependency org="com.rsa" name="jsafe-jce-fips" rev="4.0" force="true" conf="core"/>
     </dependencies>
 </ivy-module>

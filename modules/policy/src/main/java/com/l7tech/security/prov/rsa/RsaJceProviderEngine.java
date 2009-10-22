@@ -71,7 +71,7 @@ public class RsaJceProviderEngine extends JceProvider {
         } catch (ClassNotFoundException e) {
             // This might happen semi-legitimately if a later Sun JDK removes/renames/changes the com.sun.net.ssl.internal.ssl.Provider class,
             // or if we are running on a non-Sun JDK that nevertheless has a Provider installed named "SunJSSE"
-            throw new RuntimeException("Unable to put SunJSSE SSL library into FIPS mode: " + ExceptionUtils.getMessage(e), e);
+            throw new RuntimeException("Unable to initialize software crypto provider: " + ExceptionUtils.getMessage(e), e);
         } catch (NoSuchFieldException e) {
             throw new RuntimeException("Unable to set FIPS 140 mode (with SSL and ECC): " + ExceptionUtils.getMessage(e), e);
         } catch (Exception e) {

@@ -31,6 +31,7 @@ public class BootstrapConfig {
 
     public static void main(String[] args) {
         try {
+            System.setProperty("com.l7tech.common.security.jceProviderEngineName", "BC");
             System.exit(realMain());
         } catch (DieDieDie e) {
             logger.log(Level.SEVERE, e.getMessage(), e.getCause());

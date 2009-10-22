@@ -93,7 +93,8 @@
         <dependency org="fiorano" name="fiorano-framework" rev="1.0-4507" force="true" conf="optional"/>
 
         <!-- Alternative dependencies -->
-        <!-- <dependency org="" name="" rev="" force="true" conf="alternative"/> -->
+        <dependency org="com.rsa" name="jsafe-jce-fips" rev="4.0" force="true" conf="alternative"/>
+        <dependency org="com.rsa" name="jsafe-jce" rev="4.1.0.1" force="true" conf="alternative"/>
 
         <!-- Test dependencies -->
         <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>

@@ -96,6 +96,7 @@ public abstract class JceProvider {
 
     // Default driver
     private static final String DEFAULT_ENGINE = RSA_ENGINE;
+    private static final String FALLBACK_DEFAULT_ENGINE = BC_ENGINE; // For running tests in modules that lack RSA
 
     private static class Holder {
         private static final String ENGINE_NAME = getEngineClassname();
@@ -119,13 +120,23 @@ public abstract class JceProvider {
             } catch (Throwable t) {
                 String msg = "Requested JceProvider could not be instantiated: " + ExceptionUtils.getMessage(t);
                 logger.log(Level.SEVERE, msg, t);
-                if (DEFAULT_ENGINE.equals(ENGINE_NAME) || SyspropUtil.getBoolean(DISABLE_FALLBACK_PROPERTY, false))
+                final boolean nofallback = SyspropUtil.getBoolean(DISABLE_FALLBACK_PROPERTY, false);
+                if (nofallback)
                     throw new RuntimeException(t);
-                logger.log(Level.SEVERE, "Attempting to fallback to default JceProvider engine: " + DEFAULT_ENGINE);
                 try {
+                    if (DEFAULT_ENGINE.equals(ENGINE_NAME) || nofallback)
+                        throw new RuntimeException(t);
+                    logger.log(Level.SEVERE, "Attempting to fallback to default JceProvider engine: " + DEFAULT_ENGINE);
                     return (JceProvider) Class.forName(DEFAULT_ENGINE).getConstructors()[0].newInstance();
                 } catch (Throwable e) {
-                    throw new RuntimeException("Fallback to default JceProvider engine failed: " + ExceptionUtils.getMessage(e), e);
+                    if (FALLBACK_DEFAULT_ENGINE.equals(DEFAULT_ENGINE) || nofallback)
+                        throw new RuntimeException(e);
+                    try {
+                        logger.log(Level.SEVERE, "Attempting to fallback to emergency default JceProvider engine: " + FALLBACK_DEFAULT_ENGINE);
+                        return (JceProvider) Class.forName(FALLBACK_DEFAULT_ENGINE).getConstructors()[0].newInstance();
+                    } catch (Throwable t3) {
+                        throw new RuntimeException("Fallback to default JceProvider engine failed: " + ExceptionUtils.getMessage(e), e);
+                    }
                 }
             }
         }

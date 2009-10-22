@@ -80,6 +80,10 @@ public class ProcessController implements InitializingBean {
     private static final int NODEAPI_CONNECT_TIMEOUT = 30000;
     private static final int NODEAPI_RECEIVE_TIMEOUT = 60000;
 
+    public ProcessController() {
+        System.setProperty("com.l7tech.common.security.jceProviderEngineName", "BC");
+    }
+
     public int getStopTimeout() {
         return DEFAULT_STOP_TIMEOUT;
     }

@@ -39,6 +39,8 @@
         <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.5.2" force="true" conf="core"/>
         <dependency org="org.snmp4j" name="snmp4j" rev="1.0.4b" force="true" conf="core"/>
 
+        <dependency org="bouncycastle" name="bcprov-jdk16" rev="143" force="true" conf="core"/>
+
         <!-- Hibernate annotations used on SSG common beans -->
         <dependency org="org.hibernate" name="hibernate-annotations" rev="3.4.0.GA" force="true" conf="compile->master"/>
         <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.1.0.GA" force="true" conf="compile->master"/>
