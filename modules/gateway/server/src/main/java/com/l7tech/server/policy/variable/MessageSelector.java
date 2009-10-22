@@ -32,6 +32,9 @@ class MessageSelector implements ExpandVariables.Selector {
     private static final String STATUS_NAME = "http.status";
     private static final String MAINPART_NAME = "mainpart";
     private static final String SIZE_NAME = "size";
+    private static final String CONTENT_TYPE = "contenttype";
+    private static final String MAINPART_CONTENT_TYPE = "mainpart.contenttype";
+    private static final String MAINPART_SIZE_NAME = "mainpart.size";
 
     // NOTE: Variable names must be lower case
     private static final String WSS_PREFIX = "wss.";
@@ -80,6 +83,12 @@ class MessageSelector implements ExpandVariables.Selector {
             selector = sizeSelector;
         } else if (MAINPART_NAME.equals(lname)) {
             selector = mainPartSelector;
+        } else if (MAINPART_SIZE_NAME.equals(lname)) {
+            selector = mainPartSizeSelector;
+        } else if (lname.equals(CONTENT_TYPE)) {
+            selector = contentTypeSelector;
+        } else if (lname.equals(MAINPART_CONTENT_TYPE)) {
+            selector = mainPartContentTypeSelector;
         } else if (lname.startsWith(WSS_PREFIX)) {
             selector = wssSelector;
         } else if (lname.equals(AUTH_USER_PASSWORD) || lname.equals(AUTH_USER_USERNAME)) {
@@ -108,6 +117,7 @@ class MessageSelector implements ExpandVariables.Selector {
                 "mainpart",
                 "wss",
                 SIZE_NAME,
+                CONTENT_TYPE,
                 AUTH_USER_PASSWORD,
                 AUTH_USER_USERNAME,
                 AUTH_USER_USER,
@@ -173,6 +183,29 @@ class MessageSelector implements ExpandVariables.Selector {
         }
     };
 
+    private static final MessageAttributeSelector mainPartSizeSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            MimeKnob mimeKnob = context.getKnob(MimeKnob.class);
+            if (mimeKnob == null) {
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+            try {
+                return new Selection(mimeKnob.getFirstPart().getActualContentLength());
+            } catch (IOException e) {
+                String msg = handler.handleBadVariable(name, e);
+                if (strict) throw new IllegalArgumentException("Unable to determine first part length: " + msg);
+                return null;
+            } catch (NoSuchPartException e) {
+                String msg = handler.handleBadVariable(name, e);
+                if (strict) throw new IllegalArgumentException("Unable to determine first part length: " + msg);
+                return null;
+            }
+        }
+    };
+
     private static final MessageAttributeSelector statusSelector = new MessageAttributeSelector() {
         @Override
         public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
@@ -209,6 +242,39 @@ class MessageSelector implements ExpandVariables.Selector {
                 throw new RuntimeException(e); // Can't happen
             } catch (NoSuchPartException e) {
                 throw new RuntimeException(e); // Can't happen
+            }
+        }
+    };
+
+    private static final MessageAttributeSelector contentTypeSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message message, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            final MimeKnob mk = message.getKnob(MimeKnob.class);
+            if (mk == null) {
+                // Message not yet initialized
+                return null;
+            }
+            try {
+                return new Selection(mk.getOuterContentType().getFullValue());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+
+    private static final MessageAttributeSelector mainPartContentTypeSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message message, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            final MimeKnob mk = message.getKnob(MimeKnob.class);
+            if (mk == null) {
+                // Message not yet initialized
+                return null;
+            }
+
+            try {
+                return new Selection(mk.getFirstPart().getContentType().getFullValue());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
     };
