@@ -36,7 +36,7 @@ public class WsdlToUDDIModelConverter {
     protected static final String HTTP_TRANSPORT_V3 = "uddi:uddi.org:transport:http"; //v2 = uuid:68DE9E80-AD09-469D-8A37-088422BFBC36
     protected static final String WSDL_INTERFACE = "wsdlInterface";
     public static final String UDDI_WSDL_TYPES = "uddi:uddi.org:wsdl:types";
-    protected static final String UDDI_XML_NAMESPACE = "uddi:uddi.org:xml:namespace";
+    public static final String UDDI_XML_NAMESPACE = "uddi:uddi.org:xml:namespace";
     protected static final String UDDI_WSDL_PORTTYPEREFERENCE = "uddi:uddi.org:wsdl:porttypereference";
     protected static final String UDDI_CATEGORIZATION_TYPES = "uddi:uddi.org:categorization:types";
     protected static final String UDDI_WSDL_CATEGORIZATION_TRANSPORT = "uddi:uddi.org:wsdl:categorization:transport";
@@ -48,6 +48,7 @@ public class WsdlToUDDIModelConverter {
     private final Wsdl wsdl;
     private final String wsdlURL;
     private final String gatewayURL;
+    private final long serviceOid;
 
     /**
      * This businessKey will be the parent of all created Business Services
@@ -64,7 +65,8 @@ public class WsdlToUDDIModelConverter {
     public WsdlToUDDIModelConverter(final Wsdl wsdl,
                                     final String wsdlURL,
                                     final String gatewayURL,
-                                    final String businessKey) {
+                                    final String businessKey,
+                                    final long serviceOid) {
         if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
         if(wsdlURL == null || wsdlURL.trim().isEmpty()) throw new IllegalArgumentException("wsdlURL cannot be null or emtpy");
         try {
@@ -82,10 +84,13 @@ public class WsdlToUDDIModelConverter {
 
         if(businessKey == null || businessKey.trim().isEmpty()) throw new IllegalArgumentException("businessKey cannot be null or emtpy");
 
+        if(serviceOid < 1) throw new IllegalArgumentException("Invalid serviceOid: " + serviceOid);
+
         this.wsdl = wsdl;
         this.wsdlURL = wsdlURL;
         this.gatewayURL = gatewayURL;
         this.businessKey = businessKey;
+        this.serviceOid = serviceOid;
     }
 
     /**
@@ -118,7 +123,7 @@ public class WsdlToUDDIModelConverter {
 
     private void createUddiBusinessService(final BusinessService businessService, final Service wsdlService){
         final String serviceName = wsdlService.getQName().getLocalPart();
-        final String localName = "Layer7 " + serviceName;
+        final String localName = "Layer7 " + serviceName+ " " + serviceOid;
         businessService.getName().add(getName(localName));
 
         BindingTemplates bindingTemplates = new BindingTemplates();
@@ -203,7 +208,7 @@ public class WsdlToUDDIModelConverter {
      * @return String key of the created tModel
      */
     private String createUddiBindingTModel(final Binding binding){
-        final String bindingName = binding.getQName().getLocalPart();
+        final String bindingName = binding.getQName().getLocalPart()+ " " + serviceOid;
 
         //A binding name is UNIQUE across all wsdl:bindings in the entire WSDL!
         //See http://www.w3.org/TR/wsdl#_bindings
@@ -258,7 +263,8 @@ public class WsdlToUDDIModelConverter {
         categoryBag.getKeyedReference().add(httpTransportReference);
 
         tModel.setCategoryBag(categoryBag);
-        tModel.setTModelKey(key);
+        //don't set the key, as it's meaningless to the tModel, its just used as a placeholder for references
+//        tModel.setTModelKey(key);
         keysToPublishedTModels.put(key, tModel);
         return key;
     }
@@ -279,7 +285,7 @@ public class WsdlToUDDIModelConverter {
     }
 
     private String createUddiPortTypeTModel(final PortType portType) {
-        final String portTypeName = portType.getQName().getLocalPart();
+        final String portTypeName = portType.getQName().getLocalPart()+ " " + serviceOid;
 
         //A portName is UNIQUE across all wsdl:portTypes in the entire WSDL!
         //See http://www.w3.org/TR/wsdl#_porttypes
@@ -312,8 +318,8 @@ public class WsdlToUDDIModelConverter {
         }
 
         tModel.setCategoryBag(categoryBag);
-        
-        tModel.setTModelKey(key);
+        //don't set the key, as it's meaningless to the tModel, its just used as a placeholder for references
+//        tModel.setTModelKey(key);
         keysToPublishedTModels.put(key, tModel);
         return key;
     }

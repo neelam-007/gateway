@@ -1,53 +1,6 @@
 package com.l7tech.uddi;
 
-import com.l7tech.common.uddi.guddiv3.AccessPoint;
-import com.l7tech.common.uddi.guddiv3.BindingDetail;
-import com.l7tech.common.uddi.guddiv3.BindingTemplate;
-import com.l7tech.common.uddi.guddiv3.BusinessDetail;
-import com.l7tech.common.uddi.guddiv3.BusinessInfo;
-import com.l7tech.common.uddi.guddiv3.BusinessInfos;
-import com.l7tech.common.uddi.guddiv3.BusinessList;
-import com.l7tech.common.uddi.guddiv3.BusinessService;
-import com.l7tech.common.uddi.guddiv3.CategoryBag;
-import com.l7tech.common.uddi.guddiv3.Description;
-import com.l7tech.common.uddi.guddiv3.DiscardAuthToken;
-import com.l7tech.common.uddi.guddiv3.DispositionReportFaultMessage;
-import com.l7tech.common.uddi.guddiv3.ErrInfo;
-import com.l7tech.common.uddi.guddiv3.FindBinding;
-import com.l7tech.common.uddi.guddiv3.FindBusiness;
-import com.l7tech.common.uddi.guddiv3.FindQualifiers;
-import com.l7tech.common.uddi.guddiv3.FindService;
-import com.l7tech.common.uddi.guddiv3.FindTModel;
-import com.l7tech.common.uddi.guddiv3.GetAuthToken;
-import com.l7tech.common.uddi.guddiv3.GetBindingDetail;
-import com.l7tech.common.uddi.guddiv3.GetBusinessDetail;
-import com.l7tech.common.uddi.guddiv3.GetServiceDetail;
-import com.l7tech.common.uddi.guddiv3.GetTModelDetail;
-import com.l7tech.common.uddi.guddiv3.KeyedReference;
-import com.l7tech.common.uddi.guddiv3.ListDescription;
-import com.l7tech.common.uddi.guddiv3.Name;
-import com.l7tech.common.uddi.guddiv3.OverviewDoc;
-import com.l7tech.common.uddi.guddiv3.OverviewURL;
-import com.l7tech.common.uddi.guddiv3.Result;
-import com.l7tech.common.uddi.guddiv3.SaveService;
-import com.l7tech.common.uddi.guddiv3.SaveTModel;
-import com.l7tech.common.uddi.guddiv3.ServiceDetail;
-import com.l7tech.common.uddi.guddiv3.ServiceInfo;
-import com.l7tech.common.uddi.guddiv3.ServiceInfos;
-import com.l7tech.common.uddi.guddiv3.ServiceList;
-import com.l7tech.common.uddi.guddiv3.TModel;
-import com.l7tech.common.uddi.guddiv3.TModelDetail;
-import com.l7tech.common.uddi.guddiv3.TModelInfo;
-import com.l7tech.common.uddi.guddiv3.TModelInfos;
-import com.l7tech.common.uddi.guddiv3.TModelInstanceInfo;
-import com.l7tech.common.uddi.guddiv3.TModelList;
-import com.l7tech.common.uddi.guddiv3.UDDIInquiry;
-import com.l7tech.common.uddi.guddiv3.UDDIInquiryPortType;
-import com.l7tech.common.uddi.guddiv3.UDDIPublication;
-import com.l7tech.common.uddi.guddiv3.UDDIPublicationPortType;
-import com.l7tech.common.uddi.guddiv3.UDDISecurity;
-import com.l7tech.common.uddi.guddiv3.UDDISecurityPortType;
-import com.l7tech.common.uddi.guddiv3.DispositionReport;
+import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.util.SyspropUtil;
 
 import java.util.Collection;
@@ -66,7 +19,7 @@ import javax.xml.namespace.QName;
 /**
  * UDDIv3 client implementation using generated JAX-WS UDDI API
  */
-class GenericUDDIClient implements UDDIClient {
+public class GenericUDDIClient implements UDDIClient {
 
     //- PUBLIC
 
@@ -110,31 +63,184 @@ class GenericUDDIClient implements UDDIClient {
      */
     @Override
     public void authenticate() throws UDDIException {
-        authToken();   
+        getAuthToken();   
     }
 
     /**
      *
      */
     @Override
-    public boolean publishBusinessService(final BusinessService businessService){
-        return false;
+    public boolean publishBusinessService(final BusinessService businessService) throws UDDIException {
+        SaveService saveService = new SaveService();
+        saveService.setAuthInfo(getAuthToken());
+
+        saveService.getBusinessService().add(businessService);
+        try {
+            ServiceDetail serviceDetail = getPublishPort().saveService(saveService);
+            businessService.setServiceKey(serviceDetail.getBusinessService().get(0).getServiceKey());
+            return true;
+        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
+            logger.log(Level.WARNING, "Exception saving business service: " + dispositionReportFaultMessage.getMessage());
+            dispositionReportFaultMessage.printStackTrace();
+            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        }
     }
 
     @Override
-    public boolean publishTModel(TModel tModel) throws UDDIException {
-        return false;
+    public boolean publishTModel(TModel tModelToPublish) throws UDDIException {
+        TModelList tModelList = findMatchingTModels(tModelToPublish);
+        TModelInfos tModelInfos = tModelList.getTModelInfos();
+        if(tModelInfos != null && !tModelInfos.getTModelInfo().isEmpty()){
+            List<TModelInfo> allTModelInfos = tModelInfos.getTModelInfo();
+
+            //tModels published by the gateway will only have a single OverviewDoc with use type wsdlInterface
+            String tModelToPublishWsdlUrl = null;
+            for(OverviewDoc overviewDoc: tModelToPublish.getOverviewDoc()){
+                OverviewURL overviewURL = overviewDoc.getOverviewURL();
+                if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
+                tModelToPublishWsdlUrl = overviewURL.getValue();
+            }
+            if(tModelToPublishWsdlUrl == null) throw new IllegalStateException("tModel to publish does not have an OverviewURl of type 'wsdlInterface'");
+
+            List<TModel> matchingTModels = new ArrayList<TModel>();
+            for(TModelInfo tModelInfo: allTModelInfos){
+                TModel foundModel = findTModel(tModelInfo.getTModelKey());
+                if(foundModel == null) continue;
+                //compare overviewDocs and overviewUrls
+                boolean foundMatchingOverviewUrl = false;
+                for(OverviewDoc overviewDoc: foundModel.getOverviewDoc()){
+                    OverviewURL overviewURL = overviewDoc.getOverviewURL();
+                    if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
+                    if(!overviewURL.getValue().equalsIgnoreCase(tModelToPublishWsdlUrl)) continue;
+                    foundMatchingOverviewUrl = true;
+                }
+                if(foundMatchingOverviewUrl) matchingTModels.add(foundModel);
+            }
+
+            if(!matchingTModels.isEmpty()){
+                if(matchingTModels.size() != 1)
+                    logger.log(Level.INFO, "Found " + matchingTModels.size()+" matching TModels. The first will be used");
+
+                tModelToPublish.setTModelKey(allTModelInfos.get(0).getTModelKey());
+                logger.log(Level.INFO, "Found matching tModel in UDDI Registry. Not publishing supplied tModel");
+                return false;
+            }
+            //fall through to publish below
+        }
+        //TModel does not exist yet in registry. Publish it
+
+        UDDIPublicationPortType uddiPublicationPortType = getPublishPort();
+        SaveTModel saveTModel = new SaveTModel();
+        saveTModel.setAuthInfo(authToken);
+        saveTModel.getTModel().add(tModelToPublish);
+        try {
+            TModelDetail tModelDetail = uddiPublicationPortType.saveTModel(saveTModel);
+            TModel saved = tModelDetail.getTModel().get(0);
+            tModelToPublish.setTModelKey(saved.getTModelKey());
+            return true;
+        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
+            dispositionReportFaultMessage.printStackTrace();
+            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        } catch(RuntimeException e){
+            throw new UDDIException(e.getMessage());
+        }
     }
 
-
     @Override
-    public void deleteTModel(TModel tModel) throws UDDIException {
+    public TModel findTModel(String tModelKey) throws UDDIException {
+        //Turn the tModelInfo into a TModel
+        GetTModelDetail getTModelDetail = new GetTModelDetail();
+        getTModelDetail.setAuthInfo(getAuthToken());
+        getTModelDetail.getTModelKey().add(tModelKey);
+
+        try {
+            TModelDetail tModelDetail = getInquirePort().getTModelDetail(getTModelDetail);
+            List<TModel> tModels = tModelDetail.getTModel();
+            if(tModels.isEmpty()) return null;
+            return tModels.get(0);
+        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
+            dispositionReportFaultMessage.printStackTrace();
+            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        }
+
+    }
+
+    /**
+     * Find a matching tModel based on all searchable attributes of tModelToFind
+     * The search is case insensitive, but exact
+     *
+     * @param tModelToFind TModel to find in the UDDI Registry
+     * @return TModelList containing results, if any. Never null.
+     * @throws UDDIException any problems searching the registry
+     */
+    private TModelList findMatchingTModels(final TModel tModelToFind) throws UDDIException{
+        FindTModel findTModel = new FindTModel();
+        findTModel.setAuthInfo(getAuthToken());
+
+        FindQualifiers findQualifiers = new FindQualifiers();
+        List<String> qualifiers = findQualifiers.getFindQualifier();
+        qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
+        Name name= new Name();
+        name.setValue(tModelToFind.getName().getValue());
+
+        findTModel.setName(name);
+        findTModel.setFindQualifiers(findQualifiers);
+        if(tModelToFind.getCategoryBag() != null){
+            CategoryBag searchCategoryBag = new CategoryBag();
+            searchCategoryBag.getKeyedReference().addAll(tModelToFind.getCategoryBag().getKeyedReference());
+            findTModel.setCategoryBag(searchCategoryBag);
+        }
+
+        if(tModelToFind.getIdentifierBag() != null){
+            IdentifierBag searchIdentifierBag = new IdentifierBag();
+            searchIdentifierBag.getKeyedReference().addAll(tModelToFind.getIdentifierBag().getKeyedReference());
+            findTModel.setIdentifierBag(searchIdentifierBag);
+        }
+
+        UDDIInquiryPortType inquiryPortType = getInquirePort();
+        try {
+            return inquiryPortType.findTModel(findTModel);
+
+        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
+            dispositionReportFaultMessage.printStackTrace();
+            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        }
 
     }
 
     @Override
-    public void deleteBusinessService(BusinessService businessService) throws UDDIException {
+    public void deleteTModel(String tModelKey) throws UDDIException {
 
+        //todo find any service which references this tModelKey
+        //if not found delete
+        DeleteTModel deleteTModel = new DeleteTModel();
+        deleteTModel.setAuthInfo(getAuthToken());
+        deleteTModel.getTModelKey().add(tModelKey);
+        try {
+            getPublishPort().deleteTModel(deleteTModel);
+            logger.log(Level.INFO, "Delete tModel with key: " + tModelKey);
+        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
+            logger.log(Level.WARNING, "Exception deleting tModel with key: " + tModelKey);
+            dispositionReportFaultMessage.printStackTrace();
+            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        }
+
+    }
+
+    @Override
+    public void deleteBusinessService(String serviceKey) throws UDDIException {
+
+        DeleteService deleteService = new DeleteService();
+        deleteService.setAuthInfo(getAuthToken());
+        deleteService.getServiceKey().add(serviceKey);
+
+        try {
+            getPublishPort().deleteService(deleteService);
+        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
+            logger.log(Level.WARNING, "Exception deleting service with key: " + serviceKey);
+            dispositionReportFaultMessage.printStackTrace();
+            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        }
     }
 
     /**
@@ -162,7 +268,7 @@ class GenericUDDIClient implements UDDIClient {
         try {
             UDDIPublicationPortType publicationPort = getPublishPort();
             SaveTModel saveTModel = new SaveTModel();
-            saveTModel.setAuthInfo(authToken());
+            saveTModel.setAuthInfo(getAuthToken());
             saveTModel.getTModel().add(tmodel);
             TModelDetail tModelDetail = publicationPort.saveTModel(saveTModel);
             TModel saved = get(tModelDetail.getTModel(), "policy technical model", true);
@@ -175,6 +281,13 @@ class GenericUDDIClient implements UDDIClient {
         } catch (RuntimeException e) {
             throw new UDDIException("Error publishing model.", e);
         }
+    }
+
+    private void setMoreAvailable(final ListDescription listDescription) {
+        if(listDescription == null) return;
+
+        moreAvailable = (listDescription.getActualCount() > listDescription.getListHead() + (listDescription.getIncludeCount()-1))
+                && listDescription.getActualCount() > 0;
     }
 
     /**
@@ -193,7 +306,7 @@ class GenericUDDIClient implements UDDIClient {
         String filter = servicePattern;
 
         try {
-            String authToken = authToken();
+            String authToken = getAuthToken();
             Name[] names = null;
             if (filter != null && filter.length() > 0) {
                 names = new Name[]{buildName(filter)};
@@ -221,9 +334,7 @@ class GenericUDDIClient implements UDDIClient {
 
             // check if any more results
             ListDescription listDescription = serviceList.getListDescription();
-            if (listDescription != null) {
-                setMoreAvailable(listDescription);
-            }
+            setMoreAvailable(listDescription);
 
             // process
             if ( serviceList.getServiceInfos() != null ) {
@@ -309,11 +420,6 @@ class GenericUDDIClient implements UDDIClient {
         }
     }
 
-    private void setMoreAvailable(ListDescription listDescription) {
-        moreAvailable = (listDescription.getActualCount() > listDescription.getListHead() + (listDescription.getIncludeCount()-1))
-                && listDescription.getActualCount() > 0;
-    }
-
     /**
      *
      */
@@ -330,7 +436,7 @@ class GenericUDDIClient implements UDDIClient {
         String filter = servicePattern;
 
         try {
-            String authToken = authToken();
+            String authToken = getAuthToken();
             Name[] names = null;
             if (filter != null && filter.length() > 0) {
                 names = new Name[]{buildName(filter)};
@@ -361,9 +467,7 @@ class GenericUDDIClient implements UDDIClient {
 
             // check if any more results
             ListDescription listDescription = serviceList.getListDescription();
-            if (listDescription != null) {
-                setMoreAvailable(listDescription);
-            }
+            setMoreAvailable(listDescription);
 
             // display those services in the list instead
             ServiceInfos serviceInfos = serviceList.getServiceInfos();
@@ -387,7 +491,6 @@ class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
-    @Override
     public Collection<UDDINamedEntity> listEndpoints(final String servicePattern,
                                                      final boolean caseSensitive,
                                                      final int offset,
@@ -399,7 +502,7 @@ class GenericUDDIClient implements UDDIClient {
         try {
             Collection<UDDINamedEntity> services = listServices(servicePattern, caseSensitive, offset, maxRows);
 
-            String authToken = authToken();
+            String authToken = getAuthToken();
 
             UDDIInquiryPortType inquiryPort = getInquirePort();
 
@@ -447,7 +550,7 @@ class GenericUDDIClient implements UDDIClient {
         String filter = organizationPattern;
 
         try {
-            String authToken = authToken();
+            String authToken = getAuthToken();
             Name[] names = null;
             if (filter != null && filter.length() > 0) {
                 names = new Name[]{buildName(filter)};
@@ -469,9 +572,7 @@ class GenericUDDIClient implements UDDIClient {
 
             // check if any more results
             ListDescription listDescription = uddiBusinessListRes.getListDescription();
-            if (listDescription != null) {
-                setMoreAvailable(listDescription);
-            }
+            setMoreAvailable(listDescription);
 
             // display those services in the list instead
             BusinessInfos businessInfos = uddiBusinessListRes.getBusinessInfos();
@@ -505,7 +606,7 @@ class GenericUDDIClient implements UDDIClient {
         List<UDDINamedEntity> policies = new ArrayList<UDDINamedEntity>();
         moreAvailable = false;
         try {
-            String authToken = authToken();
+            String authToken = getAuthToken();
             Integer maxRows = 100;
 
             CategoryBag cbag = new CategoryBag();
@@ -533,9 +634,7 @@ class GenericUDDIClient implements UDDIClient {
 
             // check if any more results
             ListDescription listDescription = tModelList.getListDescription();
-            if (listDescription != null) {
-                setMoreAvailable(listDescription);
-            }
+            setMoreAvailable(listDescription);
 
             List<String> policyKeys = new ArrayList();
             TModelInfos tModelInfos = tModelList.getTModelInfos();
@@ -606,7 +705,7 @@ class GenericUDDIClient implements UDDIClient {
 
         String policyURL = null;
         try {
-            String authToken = authToken();
+            String authToken = getAuthToken();
             
             // get the policy url and try to fetch it
             UDDIInquiryPortType inquiryPort = getInquirePort();
@@ -658,7 +757,7 @@ class GenericUDDIClient implements UDDIClient {
         
         Collection<String> policyUrls = new ArrayList<String>();
         try {
-            String authToken = authToken();
+            String authToken = getAuthToken();
 
             // get the policy url and try to fetch it
             UDDIInquiryPortType inquiryPort = getInquirePort();
@@ -689,7 +788,7 @@ class GenericUDDIClient implements UDDIClient {
 
         Collection<String> policyUrls = new ArrayList<String>();
         try {
-            String authToken = authToken();
+            String authToken = getAuthToken();
 
             // get the policy url and try to fetch it
             UDDIInquiryPortType inquiryPort = getInquirePort();
@@ -720,7 +819,7 @@ class GenericUDDIClient implements UDDIClient {
 
         Collection<String> policyUrls = new ArrayList<String>();
         try {
-            String authToken = authToken();
+            String authToken = getAuthToken();
 
             // get the policy url and try to fetch it
             UDDIInquiryPortType inquiryPort = getInquirePort();
@@ -766,7 +865,7 @@ class GenericUDDIClient implements UDDIClient {
 
         boolean isEndpoint = serviceUrl != null &&  serviceUrl.trim().length()>0;
         
-        String authToken = authToken();
+        String authToken = getAuthToken();
         ServiceDetail serviceDetail;
         try {
             UDDIInquiryPortType inquiryPort = getInquirePort();
@@ -866,7 +965,7 @@ class GenericUDDIClient implements UDDIClient {
             try {
                 UDDISecurityPortType securityPort = getSecurityPort();
                 DiscardAuthToken discardAuthToken = new DiscardAuthToken();
-                discardAuthToken.setAuthInfo(authToken());
+                discardAuthToken.setAuthInfo(getAuthToken());
                 securityPort.discardAuthToken(discardAuthToken);
                 authToken = null;
             } catch (DispositionReportFaultMessage drfm) {
@@ -1061,7 +1160,7 @@ class GenericUDDIClient implements UDDIClient {
         context.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
     }
 
-    private String authToken() throws UDDIException {
+    private String getAuthToken() throws UDDIException {
         if (authToken == null && (login!=null && login.trim().length()>0)) {
             authToken = getAuthToken(login.trim(), password);
         }

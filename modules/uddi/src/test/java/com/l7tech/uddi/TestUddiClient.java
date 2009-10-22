@@ -45,12 +45,17 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
-    public void deleteTModel(TModel tModel) throws UDDIException {
+    public TModel findTModel(String tModelKey) throws UDDIException {
+        return null;
+    }
+
+    @Override
+    public void deleteTModel(String tModelKey) throws UDDIException {
 
     }
 
     @Override
-    public void deleteBusinessService(BusinessService businessService) throws UDDIException {
+    public void deleteBusinessService(String serviceKey) throws UDDIException {
 
     }
 

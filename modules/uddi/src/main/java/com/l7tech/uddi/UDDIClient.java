@@ -128,16 +128,29 @@ public interface UDDIClient extends Closeable {
     boolean publishBusinessService(final BusinessService businessService) throws UDDIException;
 
     /**
-     * Publish a tModel to UDDI. May already exist. If so the existing tModelKey is returned
+     * Publish a tModel to UDDI. May already exist.
      * <p/>
      * If the tModel does not already exist, it will be created and the tModelKey assigned to it by the UDDI
      * registry will be set on the tModel following this operation.
      *
-     * @param tModel the tModel to publish.
-     * @return true if the TModel was created, false otherwise
+     * If the tModel does exist the overviewDoc URL with use type = "wsdlInterface" will be compared. If they are the
+     * same then the tModels match, otherwise they do not match and the tModel will be published
+     *
+     * When searching for the TModel in the UDDI Registry, all keyedReferences from the tModel's identifierBag
+     * and categoryBag must be included in the search. The search should be exact, but case insensitive
+     * @param tModelToPublish the tModel to publish.
+     * @return true if the TModel was published, false otherwise i.e. it was found already in the UDDI Registry
      * @throws UDDIException any problems searching / publishing UDDI
      */
-    boolean publishTModel(final TModel tModel) throws UDDIException;
+    boolean publishTModel(final TModel tModelToPublish) throws UDDIException;
+
+    /**
+     * Retrieve the tModel with the supplied key
+     * @param tModelKey String tModelKey of the tModel to find
+     * @return TModel of the supplied key
+     * @throws UDDIException if any problem retireving the TModel from the UDDI registry
+     */
+    TModel findTModel(final String tModelKey) throws UDDIException;
 
     /**
      * Delete a TModel from the UDDI Registry.
@@ -145,18 +158,18 @@ public interface UDDIClient extends Closeable {
      * The delete should only be attempted when a search reveiles that no other Business Service references
      * this tModel directly or indirectly.
      *
-     * @param tModel the TModel to delete
+     * @param tModelKey String tModelKey of the TModel to delete
      * @throws UDDIException if any problem during the attempt to delete
      */
-    void deleteTModel(final TModel tModel) throws UDDIException;
+    void deleteTModel(final String tModelKey) throws UDDIException;
 
     /**
      * Delete a BusinessService from the UDDI Registry.
      *
-     * @param businessService the BusinessService to delete
+     * @param serviceKey String serviceKey of the service to delete
      * @throws UDDIException if any problem during the attempt to delete
      */
-    void deleteBusinessService(final BusinessService businessService) throws UDDIException;
+    void deleteBusinessService(final String serviceKey) throws UDDIException;
 
     /**
      * Get the URL for the referenced policy.

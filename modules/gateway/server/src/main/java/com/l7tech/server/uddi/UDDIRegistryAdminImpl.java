@@ -23,7 +23,6 @@ import javax.wsdl.WSDLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -111,7 +110,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
         final String protectedServiceWsdlURL = relativeURL;
 
         WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
-                protectedServiceUrl, uddiProxiedService.getUddiBusinessKey());
+                protectedServiceUrl, uddiProxiedService.getUddiBusinessKey(), service.getOid());
         Pair<List<BusinessService>, Map<String, TModel>> servicesAndModels = modelConverter.convertWsdlToUDDIModel();
 
         try {

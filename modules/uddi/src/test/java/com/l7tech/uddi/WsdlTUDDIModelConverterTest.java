@@ -33,8 +33,9 @@ public class WsdlTUDDIModelConverterTest {
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
         final String targetNameSpace = wsdl.getTargetNamespace();
-        
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key");
+
+        final int serviceOid = 3828382;
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
         Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
         List<BusinessService> services = servicesAndTModels.left;
@@ -51,7 +52,7 @@ public class WsdlTUDDIModelConverterTest {
         }
 
         BusinessService businessService = services.get(0);
-        Assert.assertEquals("Incorrect Business Service name", "Layer7 Warehouse", businessService.getName().get(0).getValue());
+        Assert.assertEquals("Incorrect Business Service name", "Layer7 Warehouse " + serviceOid, businessService.getName().get(0).getValue());
 
         List<BindingTemplate> bindingTemplates = businessService.getBindingTemplates().getBindingTemplate();
         Assert.assertEquals("Incorrect number of bindingTemplates found", 2, bindingTemplates.size());
@@ -74,9 +75,9 @@ public class WsdlTUDDIModelConverterTest {
 
             testBindingTModel(keysToTModels.get(bindingInfo.getTModelKey()),
                     bindingDetails.getInstanceParms(),
-                    targetNameSpace, bindingInfo.getTModelKey(), portTypeInfo.getTModelKey(), gatewayWsdlUrl);
+                    targetNameSpace, bindingInfo.getTModelKey(), portTypeInfo.getTModelKey(), gatewayWsdlUrl, serviceOid);
 
-            testPortTypeTModel(keysToTModels.get(portTypeInfo.getTModelKey()), portTypeInfo.getTModelKey(), "WarehouseSoap", gatewayWsdlUrl, targetNameSpace);
+            testPortTypeTModel(keysToTModels.get(portTypeInfo.getTModelKey()), portTypeInfo.getTModelKey(), "WarehouseSoap", gatewayWsdlUrl, targetNameSpace, serviceOid);
         }
 
         CategoryBag categoryBag = businessService.getCategoryBag();
@@ -88,7 +89,7 @@ public class WsdlTUDDIModelConverterTest {
         Assert.assertEquals("Incorret tModelKey found", WsdlToUDDIModelConverter.UDDI_WSDL_TYPES, serviceTypeRef.getTModelKey());
 
         KeyedReference serviceLocalName = keyedReferences.get(1);
-        Assert.assertEquals("Incorrect keyValue found", "Layer7 Warehouse", serviceLocalName.getKeyValue());
+        Assert.assertEquals("Incorrect keyValue found", "Layer7 Warehouse " + serviceOid, serviceLocalName.getKeyValue());
         Assert.assertEquals("Incorrect keyName found", "service local name", serviceLocalName.getKeyName());
         Assert.assertEquals("Incorret tModelKey found", WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME, serviceLocalName.getTModelKey());
 
@@ -107,10 +108,12 @@ public class WsdlTUDDIModelConverterTest {
      * @param localName
      * @param gatewayWsdlUrl
      * @param targetNameSpace
+     * @param serviceOid
      */
-    private void testPortTypeTModel(TModel tModel, String tModelKey, String localName, String gatewayWsdlUrl, String targetNameSpace){
-        Assert.assertEquals("Incorrect tModel name found", localName, tModel.getName().getValue());
-        Assert.assertEquals("Incorrect tModel key found", tModelKey, tModel.getTModelKey());
+    private void testPortTypeTModel(TModel tModel, String tModelKey, String localName, String gatewayWsdlUrl, String targetNameSpace, long serviceOid){
+        Assert.assertEquals("Incorrect tModel name found", localName +" " + serviceOid, tModel.getName().getValue());
+        //No longer setting key as it's unnecessary
+//        Assert.assertEquals("Incorrect tModel key found", tModelKey, tModel.getTModelKey());
 
         List<OverviewDoc> overviewDocs = tModel.getOverviewDoc();
         Assert.assertEquals("Incorrect number of overviewDocs found", 2, overviewDocs.size());
@@ -150,16 +153,19 @@ public class WsdlTUDDIModelConverterTest {
      * @param targetNameSpace
      * @param tModelKey
      * @param portTypeTModelKey
+     * @param serviceOid
      */
     private void testBindingTModel(TModel tModel,
                                    String localName,
                                    String targetNameSpace,
                                    String tModelKey,
                                    String portTypeTModelKey,
-                                   String gatewayWsdlUrl){
+                                   String gatewayWsdlUrl,
+                                   long serviceOid){
 
-        Assert.assertEquals("Incorrect tModel name found", localName, tModel.getName().getValue());
-        Assert.assertEquals("Incorrect tModel key found", tModelKey, tModel.getTModelKey());
+        Assert.assertEquals("Incorrect tModel name found", localName + " " + serviceOid, tModel.getName().getValue());
+        //no longer setting key as unnecesssary
+        //Assert.assertEquals("Incorrect tModel key found", tModelKey, tModel.getTModelKey());
 
         List<OverviewDoc> overviewDocs = tModel.getOverviewDoc();
         Assert.assertEquals("Incorrect number of overviewDocs found", 2, overviewDocs.size());

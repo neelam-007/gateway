@@ -88,7 +88,7 @@ public class BusinessServicePublisher {
                         logger.log(Level.WARNING, "Attempting to rollback published tModels: " + e.getMessage());
                         boolean deletedTModel = false;
                         for (TModel tModel : rollbackTModelsToDelete) {
-                            uddiClient.deleteTModel(tModel);
+                            uddiClient.deleteTModel(tModel.getTModelKey());
                             deletedTModel = true;
                         }
                         if (deletedTModel) logger.log(Level.WARNING, "Delete published tModels: " + e.getMessage());
@@ -99,7 +99,7 @@ public class BusinessServicePublisher {
                     }
                     boolean deletedService = false;
                     for (BusinessService publishedService : publishedServices) {
-                        uddiClient.deleteBusinessService(publishedService);
+                        uddiClient.deleteBusinessService(publishedService.getServiceKey());
                         deletedService = true;
                     }
                     if (deletedService) logger.log(Level.WARNING, "Deleted published BusinessServices");
@@ -149,7 +149,7 @@ public class BusinessServicePublisher {
                 }
                 boolean deletedModel = false;
                 for (TModel tModel : publishedTModels) {
-                    uddiClient.deleteTModel(tModel);
+                    uddiClient.deleteTModel(tModel.getTModelKey());
                     deletedModel = true;
                 }
                 if (deletedModel) logger.log(Level.WARNING, "Deleted published TModels");
