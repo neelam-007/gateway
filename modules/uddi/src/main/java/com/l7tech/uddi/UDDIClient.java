@@ -146,11 +146,19 @@ public interface UDDIClient extends Closeable {
 
     /**
      * Retrieve the tModel with the supplied key
-     * @param tModelKey String tModelKey of the tModel to find
-     * @return TModel of the supplied key
+     * @param tModelKey String tModelKey of the tModel to get
+     * @return TModel of the supplied key. Null if not found
      * @throws UDDIException if any problem retireving the TModel from the UDDI registry
      */
-    TModel findTModel(final String tModelKey) throws UDDIException;
+    TModel getTModel(final String tModelKey) throws UDDIException;
+
+    /**
+     * Retrieve the BusinessService with the supplied key
+     * @param serviceKey String serviceKey of the BusinessService to get
+     * @return BusinessService of the supplied key. Null if not found
+     * @throws UDDIException if any problem retireving the BusinessService from the UDDI registry
+     */
+    BusinessService getBusinessService(final String serviceKey) throws UDDIException;
 
     /**
      * Delete a TModel from the UDDI Registry.
@@ -164,7 +172,17 @@ public interface UDDIClient extends Closeable {
     void deleteTModel(final String tModelKey) throws UDDIException;
 
     /**
+     * Delete all tModels which match the supplied TModel
+     * @param prototype the tModel used to find tModels in the UDDI registry, which will then be deleted
+     * @throws UDDIException if any problem during the attempt to find / delete 
+     */
+    void deleteMatchingTModels(final TModel prototype) throws UDDIException;
+
+    /**
      * Delete a BusinessService from the UDDI Registry.
+     *
+     * Any dependent tModels representing wsdl:portType and wsdl:binding should also be deleted. Thd delete for
+     * tModels follows the contact of deleteTModel()
      *
      * @param serviceKey String serviceKey of the service to delete
      * @throws UDDIException if any problem during the attempt to delete

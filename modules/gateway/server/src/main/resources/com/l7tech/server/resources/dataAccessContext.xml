@@ -162,6 +162,7 @@
                 <value>com.l7tech.server.security.keystore.KeystoreFile</value>
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
                 <value>com.l7tech.gateway.common.uddi.UDDIRegistry</value>
+                <value>com.l7tech.gateway.common.uddi.UDDIProxiedService</value>
 
                 <!-- Policy Assertion Related Entities -->
                 <value>com.l7tech.server.sla.CounterIDRecord</value>

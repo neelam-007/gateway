@@ -19,7 +19,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.uddi.UDDIException;
 
 import java.util.Collection;
-import java.util.List;
 
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types= EntityType.UDDI_REGISTRY)

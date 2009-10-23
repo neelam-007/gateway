@@ -91,19 +91,20 @@ CREATE TABLE uddi_proxied_service (
   published_service_oid bigint(20) NOT NULL,
   uddi_registry_oid bigint(20) NOT NULL,
   version integer NOT NULL,
-  name varchar(128) NOT NULL,
   uddi_business_key varchar(255) NOT NULL,
   uddi_business_name varchar(255) NOT NULL,
-  general_keyword varchar(255) NOT NULL,
-  wspolicy_tmodel_key varchar(255) NOT NULL,
+  general_keyword_service_identifier varchar(255) NOT NULL,
   update_proxy_on_local_change tinyint(1) NOT NULL DEFAULT 0,
   created_from_existing tinyint(1) NOT NULL DEFAULT 0,
   metrics_enabled tinyint(1) NOT NULL DEFAULT 0,
+  wspolicy_tmodel_key varchar(255),
   PRIMARY KEY (objectid),
   UNIQUE KEY  (published_service_oid),
+  UNIQUE(general_keyword_service_identifier),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
   FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 
 
 INSERT INTO rbac_role VALUES (-950,0,'Manage JDBC Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.');

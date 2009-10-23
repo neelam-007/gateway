@@ -9,13 +9,14 @@ import org.hibernate.annotations.Proxy;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Column;
+import javax.persistence.Version;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_proxied_service")
-public class UDDIProxiedService extends NamedEntityImp {
+public class UDDIProxiedService extends PersistentEntityImp {
 
     /**
      * Which published service this proxied service was published for
@@ -48,7 +49,7 @@ public class UDDIProxiedService extends NamedEntityImp {
      * in the CateogryBag of the BusinessService. The keyedReference will following the general keyword system.
      * See http://www.uddi.org/pubs/uddi_v3.htm#_Toc85908318
      */
-    private String generalKeyword;
+    private String generalKeywordServiceIdentifier;
 
     /**
      * If the gateway WSDL changes, update UDDI
@@ -70,21 +71,27 @@ public class UDDIProxiedService extends NamedEntityImp {
      */
     private String wsPolicyTModelKey;
 
-    public UDDIProxiedService(long serviceOid, String name, long uddiRegistryOid, String uddiBusinessKey, String uddiBusinessName, String generalKeyword, boolean updateProxyOnLocalChange, boolean createdFromExistingService, boolean metricsEnabled, String wsPolicyTModelKey) {
+    public UDDIProxiedService() {
+    }
+
+    public UDDIProxiedService(long serviceOid, long uddiRegistryOid, String uddiBusinessKey, String uddiBusinessName, boolean updateProxyOnLocalChange, boolean createdFromExistingService, boolean metricsEnabled) {
         super();
-        setOid(serviceOid);
-        setName(name);
         this.serviceOid = serviceOid;
         this.uddiRegistryOid = uddiRegistryOid;
         this.uddiBusinessKey = uddiBusinessKey;
         this.uddiBusinessName = uddiBusinessName;
-        this.generalKeyword = generalKeyword;
         this.updateProxyOnLocalChange = updateProxyOnLocalChange;
         this.createdFromExistingService = createdFromExistingService;
         this.metricsEnabled = metricsEnabled;
-        this.wsPolicyTModelKey = wsPolicyTModelKey;
     }
 
+    @Override
+    @Version
+    @Column(name = "version")
+    public int getVersion() {
+        return super.getVersion();
+    }
+    
     @Column(name = "published_service_oid")
     public long getServiceOid() {
         return serviceOid;
@@ -121,13 +128,13 @@ public class UDDIProxiedService extends NamedEntityImp {
         this.uddiBusinessName = uddiBusinessName;
     }
 
-    @Column(name = "general_keyword")
-    public String getGeneralKeyword() {
-        return generalKeyword;
+    @Column(name = "general_keyword_service_identifier")
+    public String getGeneralKeywordServiceIdentifier() {
+        return generalKeywordServiceIdentifier;
     }
 
-    public void setGeneralKeyword(String generalKeyword) {
-        this.generalKeyword = generalKeyword;
+    public void setGeneralKeywordServiceIdentifier(String generalKeywordServiceIdentifier) {
+        this.generalKeywordServiceIdentifier = generalKeywordServiceIdentifier;
     }
 
     @Column(name = "update_proxy_on_local_change")

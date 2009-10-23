@@ -32,7 +32,8 @@ public class UDDIReferenceUpdaterTest {
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
 
-        wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", 3828382);
+        final int serviceOid = 3828382;
+        wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid, Integer.toString(serviceOid));
         servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
     }
 

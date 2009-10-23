@@ -41,6 +41,9 @@ public class WsdlToUDDIModelConverter {
     protected static final String UDDI_CATEGORIZATION_TYPES = "uddi:uddi.org:categorization:types";
     protected static final String UDDI_WSDL_CATEGORIZATION_TRANSPORT = "uddi:uddi.org:wsdl:categorization:transport";
     protected static final String UDDI_XML_LOCALNAME = "uddi:uddi.org:xml:localname";
+    public static final String PROXY_SERVICE_GENERAL_KEYWORD_URN = "urn_layer7tech-com_proxy_published_service_identifier";
+    public static final String UDDI_GENERAL_KEYWORDS = "uddi:uddi.org:categorization:general_keywords";
+    
 
     public static final String PORT_TMODEL_IDENTIFIER = "_PortType";
     public static final String BINDING_TMODEL_IDENTIFIER = "_Binding";
@@ -55,6 +58,8 @@ public class WsdlToUDDIModelConverter {
      */
     private final String businessKey;
 
+    private final String generalKeywordServiceIdentifier;
+
     /**
      * wsdl:portType, wsdl:binding have a name attribute which is unique in a WSDL. When publishing a WSDL, any models
      * published which generates a key is recorded against the unique name, so it can be retrieved later if the
@@ -66,7 +71,8 @@ public class WsdlToUDDIModelConverter {
                                     final String wsdlURL,
                                     final String gatewayURL,
                                     final String businessKey,
-                                    final long serviceOid) {
+                                    final long serviceOid,
+                                    final String generalKeywordServiceIdentifier) {
         if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
         if(wsdlURL == null || wsdlURL.trim().isEmpty()) throw new IllegalArgumentException("wsdlURL cannot be null or emtpy");
         try {
@@ -86,11 +92,15 @@ public class WsdlToUDDIModelConverter {
 
         if(serviceOid < 1) throw new IllegalArgumentException("Invalid serviceOid: " + serviceOid);
 
+        if(generalKeywordServiceIdentifier == null || generalKeywordServiceIdentifier.trim().isEmpty())
+            throw new IllegalArgumentException("generalKeywordServiceIdentifier cannot be null or emtpy");
+
         this.wsdl = wsdl;
         this.wsdlURL = wsdlURL;
         this.gatewayURL = gatewayURL;
         this.businessKey = businessKey;
         this.serviceOid = serviceOid;
+        this.generalKeywordServiceIdentifier = generalKeywordServiceIdentifier;
     }
 
     /**
@@ -156,6 +166,14 @@ public class WsdlToUDDIModelConverter {
             bindingNameSpace.setTModelKey(UDDI_XML_NAMESPACE);
             categoryBag.getKeyedReference().add(bindingNameSpace);
         }
+
+        //Add in our Layer7 specific general keyword
+        KeyedReference keyWordRef = new KeyedReference();
+        keyWordRef.setKeyName(PROXY_SERVICE_GENERAL_KEYWORD_URN);
+        keyWordRef.setKeyValue(generalKeywordServiceIdentifier);
+        keyWordRef.setTModelKey(UDDI_GENERAL_KEYWORDS);
+        categoryBag.getKeyedReference().add(keyWordRef);
+
         businessService.setCategoryBag(categoryBag);
 
     }

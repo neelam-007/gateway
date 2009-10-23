@@ -40,13 +40,13 @@ public class UDDIRegistry extends NamedEntityImp {
         /**
          * Convert the string into a UDDIRegistryType.
          * @param type the String representation of the enum
-         * @return the UDDIRegistryType which matches the type, or null if not found
+         * @return the UDDIRegistryType which matches the type, or null if not found (for now throwing an exception)
          */
         public static UDDIRegistryType findType(final String type){
             for(UDDIRegistryType regType: values()){
                 if(regType.toString().equals(type)) return regType;
             }
-            return null;
+            throw new IllegalStateException("Unknown registry type requested: " + type);
         }
     }
 

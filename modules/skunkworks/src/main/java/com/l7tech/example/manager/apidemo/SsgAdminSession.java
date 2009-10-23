@@ -11,6 +11,7 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.MainWindow;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.admin.FolderAdmin;
+import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.util.SslCertificateSniffer;
@@ -68,7 +69,7 @@ public class SsgAdminSession {
         try {
             credentialManager.getAuthenticationProvider().login(new PasswordAuthentication(this.adminLogin, this.adminPass.toCharArray()), this.ssgHost, false, null);
         } catch (Throwable e) {
-            logger.log(Level.SEVERE, "version problem!", e);
+            logger.log(Level.SEVERE, "Could not login to SSG (hint: possible version problem | is gateway running?): " +e.getMessage(), e);
         }
     }
 
@@ -142,4 +143,8 @@ public class SsgAdminSession {
     public IdentityAdmin getIdentityAdmin() throws RemoteException {
         return Registry.getDefault().getIdentityAdmin();
 	}
+
+    public UDDIRegistryAdmin getUDDIRegistryAdmin(){
+        return Registry.getDefault().getUDDIRegistryAdmin();
+    }
 }

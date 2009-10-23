@@ -15,9 +15,11 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Pair;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.wsdl.WSDLException;
 import java.util.Collection;
@@ -25,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     protected static final Logger logger = Logger.getLogger(UDDIRegistryAdminImpl.class.getName());
@@ -32,13 +36,16 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     final private UDDIRegistryManager uddiRegistryManager;
     final private UDDIProxiedServiceManager uddiProxiedServiceManager;
     final private ServiceManager serviceManager;
+    final private ServerConfig serverConfig;
 
     public UDDIRegistryAdminImpl(final UDDIRegistryManager uddiRegistryManager,
                                  final UDDIProxiedServiceManager uddiProxiedServiceManager,
-                                 final ServiceManager serviceManager) {
+                                 final ServiceManager serviceManager,
+                                 final ServerConfig serverConfig) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiProxiedServiceManager = uddiProxiedServiceManager;
         this.serviceManager = serviceManager;
+        this.serverConfig = serverConfig;
     }
 
     @Override
@@ -92,7 +99,23 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiProxiedService.getUddiRegistryOid());
         final PublishedService service = serviceManager.findByPrimaryKey(uddiProxiedService.getServiceOid());
 
-        final boolean update = uddiProxiedService.getServiceOid() != PersistentEntity.DEFAULT_OID;
+        final boolean update = uddiProxiedService.getOid() != PersistentEntity.DEFAULT_OID;
+        final String generalKeyword;
+        if(update){
+            //Get the proxied service
+            final UDDIProxiedService original = uddiProxiedServiceManager.findByPrimaryKey(uddiProxiedService.getOid());
+            if(uddiProxiedService.getGeneralKeywordServiceIdentifier() == null)
+                throw new IllegalStateException("General keyword service identifier property must be set on existing UDDIProxiedServices");
+            //the service identifier is not allowed to be modified by client code once saved
+            if(original.getGeneralKeywordServiceIdentifier().equals(uddiProxiedService.getGeneralKeywordServiceIdentifier())){
+                throw new IllegalStateException("It is not possible to modify the general keyword service identifier once the UDDIProxiedService has been saved");
+            }
+            generalKeyword = original.getGeneralKeywordServiceIdentifier();
+        }else{
+            //generate a new identifier
+            generalKeyword = service.getOidAsLong().toString();
+            uddiProxiedService.setGeneralKeywordServiceIdentifier(generalKeyword);
+        }
 
         final Wsdl wsdl;
         try {
@@ -103,22 +126,57 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
             throw new PublishProxiedServiceException(msg);
         }
 
-        final String relativeURL = service.getRoutingUri();
-        //todo get the cluster hostname, error if not set
-        final String protectedServiceUrl = relativeURL;
-        //todo work out the SSG WSDL address for the protected service
-        final String protectedServiceWsdlURL = relativeURL;
+        final String hostName;
+        final String clusterHost = serverConfig.getPropertyCached("clusterHost");
+        if(clusterHost == null || clusterHost.trim().isEmpty()){
+            logger.log(Level.INFO, "Property clusterHost is not set. Defauting to local host name for Gateway URL");
+            try {
+                hostName = InetAddress.getLocalHost().getHostName();
+            } catch (UnknownHostException e) {
+                logger.log(Level.WARNING, "Could not find host name for SSG: " + e.getMessage());
+                //todo - update if necessary, decided not to throw runtime, is this ok? this should not happen 
+                throw new PublishProxiedServiceException("Cannot determine the hostname of the SecureSpan Gateway");
+            }
+        }else{
+            hostName = clusterHost;
+        }
+
+        //protected service external url
+        String port = serverConfig.getPropertyCached("clusterhttpport");
+        String uri = SecureSpanConstants.SERVICE_FILE + service.getOid();
+        final String protectedServiceExternalURL =  "http://" + clusterHost + ":" + port + uri;
+
+        //protected service gateway external wsdl url
+        String wsdlURI = SecureSpanConstants.WSDL_PROXY_FILE;
+        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + service.getOid();
+        final String protectedServiceWsdlURL = "http://" + hostName + ":" + port + wsdlURI + "?" + query;
 
         WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
-                protectedServiceUrl, uddiProxiedService.getUddiBusinessKey(), service.getOid());
+                protectedServiceExternalURL, uddiProxiedService.getUddiBusinessKey(), service.getOid(), generalKeyword);
         Pair<List<BusinessService>, Map<String, TModel>> servicesAndModels = modelConverter.convertWsdlToUDDIModel();
 
+        final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
         try {
             if(!update){
-                uddiProxiedServiceManager.saveUDDIProxiedService(uddiProxiedService, getUDDIClient(uddiRegistry), servicesAndModels.left, servicesAndModels.right);
+                //Generate a general keyword for the first time
+                uddiProxiedServiceManager.saveUDDIProxiedService(uddiProxiedService, uddiClient, servicesAndModels.left, servicesAndModels.right);
             }else{
-                uddiProxiedServiceManager.updateUDDIProxiedService(uddiProxiedService, getUDDIClient(uddiRegistry), servicesAndModels.left, servicesAndModels.right);
+                uddiProxiedServiceManager.updateUDDIProxiedService(uddiProxiedService, uddiClient, servicesAndModels.left, servicesAndModels.right);
             }
+        } catch(SaveException e){
+            try {
+                logger.log(Level.WARNING, "Attempting to rollback UDDI updates");
+                //Attempt to roll back UDDI updates
+                for(BusinessService businessService: servicesAndModels.left){
+                    uddiClient.deleteBusinessService(businessService.getServiceKey());
+                }
+                logger.log(Level.WARNING, "UDDI updates rolled back successfully");
+            } catch (UDDIException e1) {
+                logger.log(Level.WARNING, "Could not rollback UDDI updates: " + e1.getMessage());
+            }
+            throw e;
+        } catch (UpdateException e){
+            //Attempt to roll back UDDI updates?
         } catch (UDDIException e) {
             final String msg = "Could not publish Gateway WSDL to UDDI: " + e.getMessage();
             logger.log(Level.WARNING, msg);

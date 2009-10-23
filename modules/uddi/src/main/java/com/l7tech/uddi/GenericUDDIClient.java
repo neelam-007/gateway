@@ -78,17 +78,33 @@ public class GenericUDDIClient implements UDDIClient {
         try {
             ServiceDetail serviceDetail = getPublishPort().saveService(saveService);
             businessService.setServiceKey(serviceDetail.getBusinessService().get(0).getServiceKey());
+            logger.log(Level.INFO, "Saved service with key: " + businessService.getServiceKey());
             return true;
-        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
-            logger.log(Level.WARNING, "Exception saving business service: " + dispositionReportFaultMessage.getMessage());
-            dispositionReportFaultMessage.printStackTrace();
-            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception saving business service: ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
         }
+    }
+
+    private String getExceptionMessage(String prefix, DispositionReportFaultMessage drfm){
+        final String errorInfo = getFirstFaultMessage(drfm);
+        return prefix + ((errorInfo != null)? errorInfo: drfm.getMessage());
+    }
+    /**
+     * Get the first Fault info's Result's ErrInfo from the disposition report
+     * @param disp DispositionReportFaultMessage to get the error info from
+     * @return String error message, null if none found
+     */
+    private String getFirstFaultMessage(DispositionReportFaultMessage disp){
+        Result result = disp.getFaultInfo().getResult().iterator().next();
+        if(result != null) return result.getErrInfo().getValue();
+        return null;
     }
 
     @Override
     public boolean publishTModel(TModel tModelToPublish) throws UDDIException {
-        TModelList tModelList = findMatchingTModels(tModelToPublish);
+        TModelList tModelList = findMatchingTModels(tModelToPublish, false);
         TModelInfos tModelInfos = tModelList.getTModelInfos();
         if(tModelInfos != null && !tModelInfos.getTModelInfo().isEmpty()){
             List<TModelInfo> allTModelInfos = tModelInfos.getTModelInfo();
@@ -104,7 +120,7 @@ public class GenericUDDIClient implements UDDIClient {
 
             List<TModel> matchingTModels = new ArrayList<TModel>();
             for(TModelInfo tModelInfo: allTModelInfos){
-                TModel foundModel = findTModel(tModelInfo.getTModelKey());
+                TModel foundModel = getTModel(tModelInfo.getTModelKey());
                 if(foundModel == null) continue;
                 //compare overviewDocs and overviewUrls
                 boolean foundMatchingOverviewUrl = false;
@@ -137,17 +153,19 @@ public class GenericUDDIClient implements UDDIClient {
             TModelDetail tModelDetail = uddiPublicationPortType.saveTModel(saveTModel);
             TModel saved = tModelDetail.getTModel().get(0);
             tModelToPublish.setTModelKey(saved.getTModelKey());
+            logger.log(Level.INFO, "Published tModel to UDDI with key: " + tModelToPublish.getTModelKey());
             return true;
-        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
-            dispositionReportFaultMessage.printStackTrace();
-            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception publishing tModel: ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
         } catch(RuntimeException e){
             throw new UDDIException(e.getMessage());
         }
     }
 
     @Override
-    public TModel findTModel(String tModelKey) throws UDDIException {
+    public TModel getTModel(String tModelKey) throws UDDIException {
         //Turn the tModelInfo into a TModel
         GetTModelDetail getTModelDetail = new GetTModelDetail();
         getTModelDetail.setAuthInfo(getAuthToken());
@@ -158,11 +176,29 @@ public class GenericUDDIClient implements UDDIClient {
             List<TModel> tModels = tModelDetail.getTModel();
             if(tModels.isEmpty()) return null;
             return tModels.get(0);
-        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
-            dispositionReportFaultMessage.printStackTrace();
-            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception geting tModel: ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
         }
+    }
 
+    @Override
+    public BusinessService getBusinessService(String serviceKey) throws UDDIException {
+
+        GetServiceDetail getServiceDetail = new GetServiceDetail();
+        getServiceDetail.setAuthInfo(getAuthToken());
+        getServiceDetail.getServiceKey().add(serviceKey);
+        try {
+            ServiceDetail serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);
+            List<BusinessService> services = serviceDetail.getBusinessService();
+            if(services.isEmpty()) return null;
+            return services.get(0);
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception geting BusinessService: ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
     }
 
     /**
@@ -170,16 +206,19 @@ public class GenericUDDIClient implements UDDIClient {
      * The search is case insensitive, but exact
      *
      * @param tModelToFind TModel to find in the UDDI Registry
+     * @param approxomiateMatch
      * @return TModelList containing results, if any. Never null.
      * @throws UDDIException any problems searching the registry
      */
-    private TModelList findMatchingTModels(final TModel tModelToFind) throws UDDIException{
+    private TModelList findMatchingTModels(final TModel tModelToFind, boolean approxomiateMatch) throws UDDIException{
         FindTModel findTModel = new FindTModel();
         findTModel.setAuthInfo(getAuthToken());
 
         FindQualifiers findQualifiers = new FindQualifiers();
         List<String> qualifiers = findQualifiers.getFindQualifier();
         qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
+        if(approxomiateMatch) qualifiers.add(FINDQUALIFIER_APPROXIMATE);
+        
         Name name= new Name();
         name.setValue(tModelToFind.getName().getValue());
 
@@ -201,16 +240,16 @@ public class GenericUDDIClient implements UDDIClient {
         try {
             return inquiryPortType.findTModel(findTModel);
 
-        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
-            dispositionReportFaultMessage.printStackTrace();
-            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception finding matching tModels: ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
         }
 
     }
 
     @Override
     public void deleteTModel(String tModelKey) throws UDDIException {
-
         //todo find any service which references this tModelKey
         //if not found delete
         DeleteTModel deleteTModel = new DeleteTModel();
@@ -219,27 +258,58 @@ public class GenericUDDIClient implements UDDIClient {
         try {
             getPublishPort().deleteTModel(deleteTModel);
             logger.log(Level.INFO, "Delete tModel with key: " + tModelKey);
-        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
-            logger.log(Level.WARNING, "Exception deleting tModel with key: " + tModelKey);
-            dispositionReportFaultMessage.printStackTrace();
-            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception deleting tModel with key: " + tModelKey+ ": ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
         }
+    }
 
+    @Override
+    public void deleteMatchingTModels(TModel prototype) throws UDDIException {
+        TModelList tModelList = findMatchingTModels(prototype, true);
+        TModelInfos tModelInfos = tModelList.getTModelInfos();
+        for(TModelInfo tModelInfo: tModelInfos.getTModelInfo()){
+            deleteTModel(tModelInfo.getTModelKey());
+        }
     }
 
     @Override
     public void deleteBusinessService(String serviceKey) throws UDDIException {
 
-        DeleteService deleteService = new DeleteService();
-        deleteService.setAuthInfo(getAuthToken());
-        deleteService.getServiceKey().add(serviceKey);
+        //We need to delete any tModels it references
+        //find the service
+        final BusinessService businessService = getBusinessService(serviceKey);
+        BindingTemplates bindingTemplates = businessService.getBindingTemplates();
+        List<String> tModelsToDelete = new ArrayList<String>();
+        for(BindingTemplate bindingTemplate: bindingTemplates.getBindingTemplate()){
 
+            //the binding template references both the wsdl:portType and wsdl:binding tModels
+            TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
+            for(TModelInstanceInfo tModelInstanceInfo: tModelInstanceDetails.getTModelInstanceInfo()){
+                tModelsToDelete.add(tModelInstanceInfo.getTModelKey());
+            }
+        }
+
+        //Now delete the service followed by it's dependent tModels
+        //this is not strictly required, but seems like the logical approach, as the services refer to the tModels,
+        //so deleting the service first seems more correct
         try {
-            getPublishPort().deleteService(deleteService);
-        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
-            logger.log(Level.WARNING, "Exception deleting service with key: " + serviceKey);
-            dispositionReportFaultMessage.printStackTrace();
-            throw new UDDIException(dispositionReportFaultMessage.getMessage());
+            final DeleteService deleteService = new DeleteService();
+            deleteService.setAuthInfo(getAuthToken());
+            deleteService.getServiceKey().add(serviceKey);
+            
+            final UDDIPublicationPortType publicationPortType = getPublishPort();
+            publicationPortType.deleteService(deleteService);
+            logger.log(Level.INFO, "Deleted service with key: " + businessService.getServiceKey());
+            for(String tModelKey: tModelsToDelete){
+                deleteTModel(tModelKey);
+            }
+
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception deleting service with key: " + serviceKey+ ": ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
         }
     }
 

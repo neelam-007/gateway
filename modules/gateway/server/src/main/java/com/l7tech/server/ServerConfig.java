@@ -413,7 +413,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         return getPropertyCached(propName, DEFAULT_CACHE_AGE);
     }
 
-    /** @return the requested property, or a cached value if hte cached value is less than maxAge millis old. */
+    /** @return the requested property, or a cached value if the cached value is less than maxAge millis old. */
     public String getPropertyCached(final String propName, final long maxAge) {
         CachedValue cached = valueCache.get(propName);
         final long now = System.currentTimeMillis();

@@ -3,20 +3,13 @@ package com.l7tech.server.uddi;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
-import static com.l7tech.uddi.UDDIReferenceUpdater.TMODEL_TYPE.WSDL_PORT_TYPE;
-import static com.l7tech.uddi.UDDIReferenceUpdater.TMODEL_TYPE.WSDL_BINDING;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.uddi.UDDIClient;
 import com.l7tech.uddi.UDDIException;
-import com.l7tech.uddi.UDDIReferenceUpdater;
 import com.l7tech.uddi.BusinessServicePublisher;
 
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.logging.Level;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -44,6 +37,24 @@ public class UDDIProxiedServiceManagerImpl extends HibernateEntityManager<UDDIPr
     @Override
     public Class<? extends Entity> getImpClass() {
         return UDDIProxiedService.class;
+    }
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE;
+    }
+
+    @Override
+    protected Collection<Map<String, Object>> getUniqueConstraints(final UDDIProxiedService uddiProxiedService) {
+        Map<String,Object> serviceOidMap = new HashMap<String, Object>();
+        serviceOidMap.put("published_service_oid", uddiProxiedService.getServiceOid());
+
+        Map<String,Object> keywordMap = new HashMap<String, Object>();
+        keywordMap.put("general_keyword", uddiProxiedService.getGeneralKeywordServiceIdentifier());
+        
+        return Arrays.asList(serviceOidMap, keywordMap);
+
+
     }
 
     @Override

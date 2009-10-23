@@ -45,7 +45,7 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
-    public TModel findTModel(String tModelKey) throws UDDIException {
+    public TModel getTModel(String tModelKey) throws UDDIException {
         return null;
     }
 
@@ -57,6 +57,16 @@ public class TestUddiClient implements UDDIClient{
     @Override
     public void deleteBusinessService(String serviceKey) throws UDDIException {
 
+    }
+
+    @Override
+    public void deleteMatchingTModels(TModel prototype) throws UDDIException {
+
+    }
+
+    @Override
+    public BusinessService getBusinessService(String serviceKey) throws UDDIException {
+        return null;
     }
 
     // Not really interested in these for Bondo testing

@@ -352,6 +352,7 @@
         <constructor-arg ref="uddiRegistryManager"/>
         <constructor-arg ref="uddiProxiedServiceManager"/>
         <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
 </beans>

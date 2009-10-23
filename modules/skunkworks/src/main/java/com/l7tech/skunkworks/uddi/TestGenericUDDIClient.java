@@ -7,15 +7,28 @@ import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.uddi.*;
 import com.l7tech.util.Pair;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.example.manager.apidemo.SsgAdminSession;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIProxiedService;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.VersionException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 
 import java.util.*;
 import java.io.Reader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.rmi.RemoteException;
 
 import junit.framework.Assert;
 
 import javax.wsdl.WSDLException;
+import javax.security.auth.login.LoginException;
 
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
@@ -42,10 +55,12 @@ public class TestGenericUDDIClient {
     public void tearDown() throws UDDIException {
         //Delete all published info
         for(String key: tModelKeys){
+            System.out.println("Deleting tModel: " + key);
             uddiClient.deleteTModel(key);                        
         }
 
         for(String key: serviceKeys){
+            System.out.println("Deleting service: " + key);
             uddiClient.deleteBusinessService(key);
         }
     }
@@ -106,21 +121,107 @@ public class TestGenericUDDIClient {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("Warehouse.wsdl"));
 
         long serviceOid = Calendar.getInstance().getTimeInMillis();
+        System.out.println("Service OID is: " + serviceOid);
         final String gatewayWsdlUrl = "http://localhost:8080/" + serviceOid + "?wsdl";
         final String gatewayURL = "http://localhost:8080/" + serviceOid;
 
         final String businessKey = "uddi:c4f2cbdd-beab-11de-8126-f78857d54072";//this exists in my local uddi registry
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid, null);
         Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher();
         servicePublisher.publishServicesToUDDIRegistry(uddiClient, servicesAndTModels.left, servicesAndTModels.right);
 
+        //Place a break point here, and examine the UDDI Registry. The code below will delete everything published
         for(BusinessService businessService: servicesAndTModels.left){
             serviceKeys.add(businessService.getServiceKey());
         }
     }
 
+    /**
+     * Test the ServiceAdmin api for creating a UDDIProxiedService and corresponding BusinessService in UDDI Registry
+     *
+     * This test requies a configured UDDI Registry and a running gateway
+     */
+    @Test
+    public void testUDDIProxyEntityCreation()
+            throws MalformedURLException, LoginException, RemoteException, FindException,
+            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException {
+
+        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+
+        SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
+        UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
+
+        Collection<UDDIRegistry> uddiRegistries = uddiRegistryAdmin.findAllUDDIRegistries();
+        UDDIRegistry activeSoa = null;
+        for(UDDIRegistry uddiRegistry: uddiRegistries){
+            if(UDDIRegistry.UDDIRegistryType.findType(uddiRegistry.getUddiRegistryType()) == UDDIRegistry.UDDIRegistryType.CENTRASITE_ACTIVE_SOA){
+                activeSoa = uddiRegistry;
+                break;
+            }
+        }
+
+        if(activeSoa == null) throw new IllegalStateException("Gateway does not have any ActiveSOA UDDI registries configured");
+
+        ServiceAdmin serviceAdmin = ssgAdminSession.getServiceAdmin();
+        final String serviceOid = "70615040";
+        PublishedService serviceToPublish = serviceAdmin.findServiceByID(serviceOid);
+        Assert.assertNotNull("Service with id not found: " + serviceOid, serviceToPublish);
+
+        final String businessKey = "uddi:c4f2cbdd-beab-11de-8126-f78857d54072";//this exists in my local uddi registry
+        UDDIProxiedService uddiProxiedService = new UDDIProxiedService(serviceToPublish.getOid(),
+                activeSoa.getOid(),
+                businessKey,
+                "Skunkworks Organization",
+                false,
+                false,
+                false);
+
+        uddiRegistryAdmin.publishGatewayWsdl(uddiProxiedService);
+
+        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+    }
+
+    @Test
+    public void testGenericTModelDelete() throws UDDIException {
+        TModel tModel = new TModel();
+        Name name = new Name();
+        name.setValue("%Warehouse%");
+//        name.setValue("%Skunk%");
+        tModel.setName(name);
+
+        uddiClient.deleteMatchingTModels(tModel);
+    }
+
+    @Test
+    public void testGenericBusinessServiceDelete() throws UDDIException {
+        uddiClient.deleteBusinessService("uddi:03854660-bf6d-11de-8342-ddbdde13f281");
+    }
+
+    @Test
+    public void testTModelWithGeneralKeyword() throws UDDIException {
+        KeyedReference keyWordRef = new KeyedReference();
+//        keyWordRef.setKeyName("Snoopy");
+        keyWordRef.setKeyName(WsdlToUDDIModelConverter.PROXY_SERVICE_GENERAL_KEYWORD_URN);
+        keyWordRef.setKeyValue("Snoopy1");
+        keyWordRef.setTModelKey(WsdlToUDDIModelConverter.UDDI_GENERAL_KEYWORDS);
+
+        CategoryBag categoryBag = new CategoryBag();
+        categoryBag.getKeyedReference().add(keyWordRef);
+
+        TModel testModel = new TModel();
+        Name name = new Name();
+        name.setValue("Test Model");
+        testModel.setName(name);
+
+        testModel.setCategoryBag(categoryBag);
+
+        uddiClient.publishTModel(testModel);
+
+        tModelKeys.add(testModel.getTModelKey());
+
+    }
     /**
      * Bug number 7898
      * @throws UDDIException
