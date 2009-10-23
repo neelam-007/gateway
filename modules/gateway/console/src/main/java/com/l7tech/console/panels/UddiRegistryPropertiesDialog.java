@@ -59,7 +59,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     private JLabel metricsPublishFrequencyLabel;
     private JButton resetUrlButton;
 
-    private com.l7tech.gateway.common.uddi.UDDIRegistry uddiRegistry;
+    private UDDIRegistry uddiRegistry;
     private boolean confirmed;
     private static final String DIALOG_TITLE = "UDDI Registry Properties";
     private Map<String, UDDIRegistryInfo> registryToInfoMap;
@@ -68,11 +68,11 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(okButton);
-        this.uddiRegistry = new com.l7tech.gateway.common.uddi.UDDIRegistry();
+        this.uddiRegistry = new UDDIRegistry();
         initialize();
     }
 
-    public UddiRegistryPropertiesDialog(Window owner, com.l7tech.gateway.common.uddi.UDDIRegistry uddiRegistry) {
+    public UddiRegistryPropertiesDialog(Window owner, UDDIRegistry uddiRegistry) {
         super(owner, DIALOG_TITLE, UddiRegistryPropertiesDialog.DEFAULT_MODALITY_TYPE);
         this.uddiRegistry = uddiRegistry;
         initialize();
@@ -197,7 +197,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             @Override
             public String getValidationError() {
                 final String baseUrl = baseUrlTextField.getText();
-                if (!securityUrlTextField.getText().startsWith(baseUrl)) return "Security URL does not being with base URL";
+                if (!securityUrlTextField.getText().startsWith(baseUrl)) return "Security URL does not begin with base URL";
 
                 try {
                     new URL(securityUrlTextField.getText().trim());
@@ -214,7 +214,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             @Override
             public String getValidationError() {
                 final String baseUrl = baseUrlTextField.getText();
-                if (!inquiryUrlTextField.getText().startsWith(baseUrl)) return "Inquiry URL does not being with base URL";
+                if (!inquiryUrlTextField.getText().startsWith(baseUrl)) return "Inquiry URL does not begin with base URL";
 
                 try {
                     new URL(inquiryUrlTextField.getText().trim());
@@ -231,7 +231,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             @Override
             public String getValidationError() {
                 final String baseUrl = baseUrlTextField.getText();
-                if (!publishUrlTextField.getText().startsWith(baseUrl)) return "Publish URL does not being with base URL";
+                if (!publishUrlTextField.getText().startsWith(baseUrl)) return "Publish URL does not begin with base URL";
 
                 try {
                     new URL(publishUrlTextField.getText().trim());
@@ -251,7 +251,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
                 final String subUrl = subscriptionUrlTextField.getText();
                 if(subUrl == null || subUrl.trim().isEmpty()) return null;
 
-                if (!subscriptionUrlTextField.getText().startsWith(baseUrl)) return "Subscription URL does not being with base URL";
+                if (!subscriptionUrlTextField.getText().startsWith(baseUrl)) return "Subscription URL does not begin with base URL";
 
                 try {
                     new URL(subscriptionUrlTextField.getText().trim());
