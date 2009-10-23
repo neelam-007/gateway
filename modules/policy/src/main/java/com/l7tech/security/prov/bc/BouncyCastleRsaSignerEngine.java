@@ -81,7 +81,11 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         // Verify before returning
         // Convert to Sun cert first so BC won't screw us over by asking for some goofy BC-only algorithm names
         cert = (X509Certificate)CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(cert.getEncoded()));
-        cert.verify(caCert.getPublicKey(), signatureProvider == null ? null : signatureProvider.getName());
+        if (signatureProvider == null) {
+            cert.verify(caCert.getPublicKey());
+        } else {
+            cert.verify(caCert.getPublicKey(), signatureProvider.getName());
+        }
         return cert;
     }
 
