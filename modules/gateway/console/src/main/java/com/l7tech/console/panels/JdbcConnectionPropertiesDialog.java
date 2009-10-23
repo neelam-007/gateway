@@ -87,6 +87,12 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         getRootPane().setDefaultButton(cancelButton);
         Utilities.setEscKeyStrokeDisposes(this);
 
+        connectionNameTextField.setDocument(new MaxLengthDocument(128));
+        ((JTextField)driverClassComboBox.getEditor().getEditorComponent()).setDocument(new MaxLengthDocument(256));
+        jdbcUrlTextField.setDocument(new MaxLengthDocument(256));
+        usernameTextField.setDocument(new MaxLengthDocument(128));
+        passwordField.setDocument(new MaxLengthDocument(64));
+
         final DocumentListener docListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
@@ -98,12 +104,6 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         jdbcUrlTextField.getDocument().addDocumentListener(docListener);
         usernameTextField.getDocument().addDocumentListener(docListener);
         passwordField.getDocument().addDocumentListener(docListener);
-
-        connectionNameTextField.setDocument(new MaxLengthDocument(128));
-        ((JTextField)driverClassComboBox.getEditor().getEditorComponent()).setDocument(new MaxLengthDocument(256));
-        jdbcUrlTextField.setDocument(new MaxLengthDocument(256));
-        usernameTextField.setDocument(new MaxLengthDocument(128));
-        passwordField.setDocument(new MaxLengthDocument(64));
 
         final InputValidator inputValidator = new InputValidator(this, resources.getString("dialog.title.jdbc.conn.props"));
         // The values in the spinners will be initialized in the method modelToView().
