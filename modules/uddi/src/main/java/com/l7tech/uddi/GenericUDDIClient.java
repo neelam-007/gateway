@@ -275,6 +275,45 @@ public class GenericUDDIClient implements UDDIClient {
     }
 
     @Override
+    public void deleteAllBusinessServicesForGatewayWsdl(String generalKeyword) throws UDDIException {
+        FindService findService = new FindService();
+        findService.setAuthInfo(getAuthToken());
+
+
+        CategoryBag categoryBag = new CategoryBag();
+        KeyedReference generalKeywordRef = new KeyedReference();
+        generalKeywordRef.setKeyName(WsdlToUDDIModelConverter.LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN);
+        generalKeywordRef.setKeyValue("%" + generalKeyword + "%");
+        generalKeywordRef.setTModelKey(WsdlToUDDIModelConverter.UDDI_GENERAL_KEYWORDS);
+
+        categoryBag.getKeyedReference().add(generalKeywordRef);
+
+        findService.setCategoryBag(categoryBag);
+
+        FindQualifiers findQualifiers = new FindQualifiers();
+        List<String> qualifiers = findQualifiers.getFindQualifier();
+        qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);//in case we change it from an oid to also contain strings
+        qualifiers.add(FINDQUALIFIER_APPROXIMATE);
+
+        findService.setFindQualifiers(findQualifiers);
+
+        try {
+            ServiceList serviceList = getInquirePort().findService(findService);
+            if(serviceList.getServiceInfos() != null){
+                for(ServiceInfo serviceInfo: serviceList.getServiceInfos().getServiceInfo()){
+                    deleteBusinessService(serviceInfo.getServiceKey());
+                }
+            }else{
+                logger.log(Level.WARNING, "No matching BusinessServices were found. None were deleted");
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception finding services with keyword: " + generalKeyword+ ": ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
+    }
+
+    @Override
     public void deleteBusinessService(String serviceKey) throws UDDIException {
 
         //We need to delete any tModels it references
@@ -358,6 +397,53 @@ public class GenericUDDIClient implements UDDIClient {
 
         moreAvailable = (listDescription.getActualCount() > listDescription.getListHead() + (listDescription.getIncludeCount()-1))
                 && listDescription.getActualCount() > 0;
+    }
+
+    @Override
+    public Collection<UDDINamedEntity> listBusinessEntities(String businessName, boolean caseSensitive, int offset, int maxRows) throws UDDIException {
+        validateName(businessName);
+        Collection<UDDINamedEntity> businesses = new ArrayList<UDDINamedEntity>();
+        moreAvailable = false;
+
+        try {
+            String authToken = getAuthToken();
+            Name[] names = null;
+            if (businessName != null && businessName.length() > 0) {
+                names = new Name[]{buildName(businessName)};
+            }
+            UDDIInquiryPortType inquiryPort = getInquirePort();
+
+            FindBusiness findBusiness = new FindBusiness();
+            findBusiness.setAuthInfo(authToken);
+            if (maxRows>0)
+                findBusiness.setMaxRows(maxRows);
+            if (offset>0)
+                findBusiness.setListHead(offset);
+            findBusiness.setFindQualifiers(buildFindQualifiers(businessName, caseSensitive));
+            if (names != null)
+                findBusiness.getName().addAll(Arrays.asList(names));
+
+            BusinessList businessList = inquiryPort.findBusiness(findBusiness);
+
+            // check if any more results
+            ListDescription listDescription = businessList.getListDescription();
+            setMoreAvailable(listDescription);
+
+            // process
+            if ( businessList.getBusinessInfos() != null ) {
+                for (BusinessInfo businessInfo : businessList.getBusinessInfos().getBusinessInfo() ) {
+                    UDDINamedEntity namedEntity = new UDDINamedEntityImpl(businessInfo.getBusinessKey(), businessInfo.getName().get(0).getValue());
+                    businesses.add(namedEntity);
+                }
+            }
+            return businesses;
+        } catch (UDDIException ue) {
+            throw ue;
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error listing businesses: ", drfm);
+        } catch (RuntimeException e) {
+            throw new UDDIException("Error listing businesses.", e);
+        }
     }
 
     /**

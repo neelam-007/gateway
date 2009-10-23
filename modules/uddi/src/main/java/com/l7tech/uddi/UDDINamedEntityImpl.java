@@ -1,11 +1,13 @@
 package com.l7tech.uddi;
 
+import java.io.Serializable;
+
 /**
  * Default implementation of UDDINamedEntity
  *
  * @author Steve Jones
 */
-class UDDINamedEntityImpl implements UDDINamedEntity {
+class UDDINamedEntityImpl implements UDDINamedEntity, Serializable {
 
     //- PUBLIC
 
@@ -20,18 +22,22 @@ class UDDINamedEntityImpl implements UDDINamedEntity {
         this.wsdlUrl = wsdlUrl;
     }
 
+    @Override
     public String getKey() {
         return key;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getPolicyUrl() {
         return policyUrl;
     }
 
+    @Override
     public String getWsdlUrl() {
         return wsdlUrl;
     }

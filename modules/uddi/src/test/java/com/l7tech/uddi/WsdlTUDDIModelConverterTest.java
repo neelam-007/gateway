@@ -100,7 +100,7 @@ public class WsdlTUDDIModelConverterTest {
 
         KeyedReference keyWordRef = keyedReferences.get(3);
         Assert.assertEquals("Incorrect keyValue found", Integer.toString(serviceOid), keyWordRef.getKeyValue());
-        Assert.assertEquals("Incorrect keyName found", WsdlToUDDIModelConverter.PROXY_SERVICE_GENERAL_KEYWORD_URN, keyWordRef.getKeyName());
+        Assert.assertEquals("Incorrect keyName found", WsdlToUDDIModelConverter.LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN, keyWordRef.getKeyName());
         Assert.assertEquals("Incorret tModelKey found", WsdlToUDDIModelConverter.UDDI_GENERAL_KEYWORDS, keyWordRef.getTModelKey());
 
     }

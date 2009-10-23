@@ -40,20 +40,29 @@ public interface UddiAgent {
     void init(Properties props);
 
     /**
-     * Query the given registry with the given parameters.
+     * Query the given registry for WSDL information with the given parameters.
      *
-     * @param url            The inquiry URL to use
-     * @param info           Type info for the UDDI Registry (optional if auth not present)
-     * @param username       The user account name (optional)
-     * @param password       The user account password (optional)
-     * @param namePattern    The wsdl pattern
-     * @param caseSensitive  Case sensitivity flag
+     * @param uddiClient    UDDIClient to query registry with
+     * @param namePattern   The wsdl pattern
+     * @param caseSensitive Case sensitivity flag
      * @return The array of WsdlInfo objects (not null)
      * @throws UddiAgentException if an error occurs.
      */
-    WsdlInfo[] getWsdlByServiceName(String url,
-                                    UDDIRegistryInfo info,
-                                    String username, char[] password,
+    WsdlInfo[] getWsdlByServiceName(UDDIClient uddiClient,
                                     String namePattern,
                                     boolean caseSensitive) throws UddiAgentException;
+
+    /**
+     * Query the given registry for BusinessService information with the given parameters.
+     *
+     * @param uddiClient    UDDIClient to query registry with
+     * @param namePattern   The business name pattern
+     * @param caseSensitive Case sensitivity flag
+     * @return The array of WsdlInfo objects (not null)
+     * @throws UddiAgentException if an error occurs.
+     */
+    UDDINamedEntity[] getMatchingBusinesses(UDDIClient uddiClient,
+                                    String namePattern,
+                                    boolean caseSensitive) throws UddiAgentException;
+
 }

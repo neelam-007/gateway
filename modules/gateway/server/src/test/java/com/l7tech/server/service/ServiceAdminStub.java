@@ -4,6 +4,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.uddi.UDDIRegistryInfo;
 import com.l7tech.uddi.WsdlInfo;
+import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
 import com.l7tech.wsdl.Wsdl;
@@ -15,6 +16,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.service.*;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -235,18 +237,17 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     /**
-     * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
-     *
-     * @param uddiURL  The URL of the UDDI Registry
-     * @param info     Type info for the UDDI Registry (optional if auth not present)
-     * @param username The user account name (optional)
-     * @param password The user account password (optional)
-     * @param namePattern  The string of the service name (wildcard % is supported)
+     * Not used right now, deleted a test which used it but was no longer needed following the move to UDDIRegistry
+     * Leaving in case we add test coverage
+     * 
+     * @param uddiRegistry UDDIRegistry to search
+     * @param namePattern The string of the service name (wildcard % is supported)
      * @param caseSensitive  True if case sensitive, false otherwise.
-     * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
+     * @return
+     * @throws FindException
      */
     @Override
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, UDDIRegistryInfo info, String username, char[] password, String namePattern, boolean caseSensitive) throws FindException {
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException {
         WsdlInfo[] siList = new WsdlInfo[3];
 
         siList[0]= new WsdlInfo("Google Service", "http://api.google.com/GoogleSearch.wsdl");
@@ -254,6 +255,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         siList[2]= new WsdlInfo("Stock Quote Service", "http://paris/wsdl/StockQuote_WSDL.wsdl");
 
         return siList;
+    }
+
+    @Override
+    public UDDINamedEntity[] findBusinessesFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException {
+        return new UDDINamedEntity[0];
     }
 
     @Override

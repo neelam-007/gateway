@@ -9,9 +9,6 @@ import org.hibernate.annotations.Proxy;
 import javax.persistence.*;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.BeanUtils;
-
-import java.lang.reflect.InvocationTargetException;
 
 @Entity
 @Proxy(lazy=false)
@@ -90,6 +87,7 @@ public class UDDIRegistry extends NamedEntityImp {
 
     public UDDIRegistry(long oid, String name, String uddiRegistryType, String baseUrl, String inquiryUrl, String publishUrl, String securityUrl, String subscriptionUrl, boolean clientAuth, long keystoreOid, String keyAlias, String registryAccountUserName, String registryAccountPassword, boolean metricsEnabled, long metricPublishFrequency, boolean monitoringEnabled, long monitoringFrequency, boolean subscribeForNotifications) {
         super();
+        //todo delete this is not required setOid and remove param also
         setOid(oid);
         setName(name);
         this.uddiRegistryType = uddiRegistryType;

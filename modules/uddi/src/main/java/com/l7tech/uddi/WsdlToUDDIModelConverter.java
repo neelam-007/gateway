@@ -41,7 +41,7 @@ public class WsdlToUDDIModelConverter {
     protected static final String UDDI_CATEGORIZATION_TYPES = "uddi:uddi.org:categorization:types";
     protected static final String UDDI_WSDL_CATEGORIZATION_TRANSPORT = "uddi:uddi.org:wsdl:categorization:transport";
     protected static final String UDDI_XML_LOCALNAME = "uddi:uddi.org:xml:localname";
-    public static final String PROXY_SERVICE_GENERAL_KEYWORD_URN = "urn_layer7tech-com_proxy_published_service_identifier";
+    public static final String LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN = "urn_layer7tech-com_proxy_published_service_identifier";
     public static final String UDDI_GENERAL_KEYWORDS = "uddi:uddi.org:categorization:general_keywords";
     
 
@@ -169,7 +169,7 @@ public class WsdlToUDDIModelConverter {
 
         //Add in our Layer7 specific general keyword
         KeyedReference keyWordRef = new KeyedReference();
-        keyWordRef.setKeyName(PROXY_SERVICE_GENERAL_KEYWORD_URN);
+        keyWordRef.setKeyName(LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN);
         keyWordRef.setKeyValue(generalKeywordServiceIdentifier);
         keyWordRef.setTModelKey(UDDI_GENERAL_KEYWORDS);
         categoryBag.getKeyedReference().add(keyWordRef);

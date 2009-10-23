@@ -69,6 +69,17 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
      */
     ET findByUniqueName(String name) throws FindException;
 
+    /**
+     * Find a single entity by a unique key. Any Entity which defines a unique key can use this.
+     *
+     * @param uniquePropertyName String name of the property (not the field!) which is unique. This value must be
+     * the property from the Entity class without the 'get' prefix.
+     * @param uniqueKey long value of the unique field
+     * @return the entity by that name, or null if none was found.
+     * @throws FindException in the event of a database problem
+     */
+    ET findByUniqueKey(String uniquePropertyName, long uniqueKey) throws FindException;
+
     void delete(long oid) throws DeleteException, FindException;
 
     void update(ET entity) throws UpdateException;

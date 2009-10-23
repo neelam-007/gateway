@@ -176,7 +176,7 @@ public class ServicePanel extends WizardStepPanel {
     private void initComponents() {
         setLayout(new BorderLayout());
         wsdlLocationPanel = new WsdlLocationPanel(getOwner(), logger,
-                true, SearchWsdlDialog.uddiEnabled());
+                true, SearchUddiDialog.uddiEnabled());
         wsdlLocationPanel.addPropertyListener(new PropertyChangeListener(){
             @Override
             public void propertyChange(PropertyChangeEvent evt) {

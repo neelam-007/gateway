@@ -62,9 +62,21 @@ public interface UDDIRegistryAdmin {
      * @throws PublishProxiedServiceException if the Gateway WSDL cannot be found
      * @throws com.l7tech.objectmodel.UpdateException if the UDDIProxiedService cannot be updated
      * @throws com.l7tech.objectmodel.VersionException if the UDDIProxiedService has an incorrect version
+     * @throws com.l7tech.objectmodel.SaveException if the UDDIProxiedService cannot be saved
      */
     @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.SAVE_OR_UPDATE)
     long publishGatewayWsdl(final UDDIProxiedService uddiProxiedService) throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException;
+
+    @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.DELETE_ENTITY)
+    void deleteGatewayWsdlFromUDDI( final UDDIProxiedService uddiProxiedService) throws FindException, UDDIException, DeleteException;
+    /**
+     * Find the UDDIProxiedService for a service, if it exists
+     *
+     * @param serviceOid the service to get the UDDIProxiedServiec for
+     * @return UDDIProxiedService or null if the service does not have one
+     */
+    @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.FIND_ENTITIES)
+    UDDIProxiedService getUDDIProxiedService(long serviceOid) throws FindException;
 
     static class PublishProxiedServiceException extends Exception{
         public PublishProxiedServiceException(String message) {

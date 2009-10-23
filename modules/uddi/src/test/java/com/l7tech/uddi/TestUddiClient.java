@@ -65,7 +65,17 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
+    public void deleteAllBusinessServicesForGatewayWsdl(String generalKeyword) throws UDDIException {
+
+    }
+
+    @Override
     public BusinessService getBusinessService(String serviceKey) throws UDDIException {
+        return null;
+    }
+
+    @Override
+    public Collection<UDDINamedEntity> listBusinessEntities(String businessName, boolean caseSensitive, int offset, int maxRows) throws UDDIException {
         return null;
     }
 

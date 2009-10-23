@@ -1,7 +1,6 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.objectmodel.*;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;

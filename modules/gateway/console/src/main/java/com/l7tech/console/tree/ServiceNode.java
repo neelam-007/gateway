@@ -107,6 +107,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
 
         actions.add(new EditPolicyAction(this));
         actions.add(new EditServiceProperties(this));
+        actions.add(new EditServiceUDDISettingsAction(this));
         if (getEntityHeader().isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
         actions.add(new MarkEntityToAliasAction(this));
@@ -160,14 +161,17 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         }
     }
 
+    @Override
     public void collectSearchableChildren(List<AbstractTreeNode> collect, NodeFilter filter) {
         // Has no searchable children; override to avoid forcing a pointless WSDL download and parse (Bug #6936)
     }
 
+    @Override
     public boolean isSearchable(NodeFilter filter) {
         return filter == null || filter instanceof ServiceNodeFilter;
     }
 
+    @Override
     public void setChildrenCut(boolean cut) {
         if (hasLoadedChildren)
             super.setChildrenCut(cut);

@@ -50,36 +50,42 @@ public class UDDIClientAgent implements UddiAgent {
         }
     }
 
-    /**
-     * Get the WSDL info given the service name pattern.
-     *
-     * @param namePattern The exact name or part of the name
-     * @param info Type info for the UDDI Registry (optional if auth not present)
-     * @param username The user account name (optional)
-     * @param password The user account password (optional)
-     * @param caseSensitive  true if case sensitive, false otherwise.
-     * @return WsdlInfo[] an array of WSDL info.
-     * @throws UddiAgentException   if there was a problem accessing the requested information.
-     */
     @Override
-    public WsdlInfo[] getWsdlByServiceName(final String inquiryUrl,
-                                           final UDDIRegistryInfo info,
-                                           final String username,
-                                           final char[] password,
-                                           final String namePattern,
-                                           final boolean caseSensitive) throws UddiAgentException {
+    public UDDINamedEntity[] getMatchingBusinesses(UDDIClient uddiClient, String namePattern, boolean caseSensitive) throws UddiAgentException {
+        checkInit();
+        List<UDDINamedEntity> uddiNamedEntities = new ArrayList<UDDINamedEntity>();
+        try {
+            for (int i=0; uddiNamedEntities.size() < resultRowsMax; i++) {
+                int head = i*resultBatchSize;
+                if (head > 0) head++; // one based
+
+                Collection<UDDINamedEntity> businesses =
+                        uddiClient.listBusinessEntities(namePattern, caseSensitive, head, resultBatchSize);
+
+                uddiNamedEntities.addAll(businesses);
+
+                if (!uddiClient.listMoreAvailable())
+                    break;
+            }
+        } catch (UDDIException iue) {
+            throw new UddiAgentException(iue.getMessage(), iue);
+        }
+
+        boolean maxedOutSearch = uddiNamedEntities.size()>=resultRowsMax || uddiClient.listMoreAvailable();
+
+        if (maxedOutSearch) {
+            uddiNamedEntities.subList(resultRowsMax, uddiNamedEntities.size()).clear();
+            uddiNamedEntities.add( WsdlInfo.MAXED_OUT_SEARCH_RESULT_ENTITY );
+        }
+
+        return uddiNamedEntities.toArray(new UDDINamedEntity[uddiNamedEntities.size()]);
+    }
+
+    @Override
+    public WsdlInfo[] getWsdlByServiceName(UDDIClient uddiClient, String namePattern, boolean caseSensitive) throws UddiAgentException {
         checkInit();
         // % denotes wildcard of string (any number of characters), underscore denotes wildcard of a single character
 
-        String pwStr = password == null ? null : new String(password);
-        UDDIClient uddi;
-        try {
-            uddi = info == null ?
-                UDDIClientFactory.getInstance().newUDDIClient(inquiryUrl, null, null, username, pwStr, null) :
-                UDDIClientFactory.getInstance().newUDDIClient(inquiryUrl, info, username, pwStr, null);
-        } catch ( IllegalArgumentException iae ) {
-            throw new UddiAgentException("Error creating UDDI client", iae);   
-        }
         List<WsdlInfo> wsdlInfos = new ArrayList<WsdlInfo>();
         try {
             for (int i=0; wsdlInfos.size() < resultRowsMax; i++) {
@@ -87,18 +93,18 @@ public class UDDIClientAgent implements UddiAgent {
                 if (head > 0) head++; // one based
 
                 Collection<UDDINamedEntity> services =
-                        uddi.listServiceWsdls(namePattern, caseSensitive, head, resultBatchSize);
+                        uddiClient.listServiceWsdls(namePattern, caseSensitive, head, resultBatchSize);
 
                 addWsdlInfos(wsdlInfos, services);
 
-                if (!uddi.listMoreAvailable())
+                if (!uddiClient.listMoreAvailable())
                     break;
             }
         } catch (UDDIException iue) {
             throw new UddiAgentException(iue.getMessage(), iue);
         }
 
-        boolean maxedOutSearch = wsdlInfos.size()>=resultRowsMax || uddi.listMoreAvailable();
+        boolean maxedOutSearch = wsdlInfos.size()>=resultRowsMax || uddiClient.listMoreAvailable();
 
         if (maxedOutSearch) {
             wsdlInfos.subList(resultRowsMax, wsdlInfos.size()).clear();

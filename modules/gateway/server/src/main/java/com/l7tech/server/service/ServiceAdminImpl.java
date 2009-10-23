@@ -3,6 +3,7 @@ package com.l7tech.server.service;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.EntityType.SERVICE;
@@ -20,10 +21,7 @@ import com.l7tech.server.service.uddi.UddiAgentFactory;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.uddi.RegistryPublicationManager;
 import com.l7tech.server.uddi.UDDITemplateManager;
-import com.l7tech.uddi.UDDIRegistryInfo;
-import com.l7tech.uddi.UddiAgent;
-import com.l7tech.uddi.UddiAgentException;
-import com.l7tech.uddi.WsdlInfo;
+import com.l7tech.uddi.*;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 import org.apache.commons.httpclient.*;
@@ -498,28 +496,42 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         return urls;
     }
 
-    /**
-     * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
-     *
-     * @param uddiURL  The URL of the UDDI Registry
-     * @param info     Type info for the UDDI Registry (optional if auth not present)
-     * @param username The user account name (optional)
-     * @param password The user account password (optional)
-     * @param namePattern  The string of the service name (wildcard % is supported)
-     * @param caseSensitive  True if case sensitive, false otherwise.
-     * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
-     * @throws FindException   if there was a problem accessing the requested information.
-     */
     @Override
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(final String uddiURL,
-                                                   final UDDIRegistryInfo info,
-                                                   final String username,
-                                                   final char[] password,
-                                                   final String namePattern,
-                                                   final boolean caseSensitive) throws FindException {
+    public UDDINamedEntity[] findBusinessesFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException {
         try {
             UddiAgent uddiAgent = uddiAgentFactory.getUddiAgent();
-            WsdlInfo[] wsdlInfo = uddiAgent.getWsdlByServiceName(uddiURL, info, username, password, namePattern, caseSensitive);
+
+            UDDINamedEntity [] uddiNamedEntities = uddiAgent.getMatchingBusinesses(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
+            //noinspection unchecked
+            Arrays.sort(uddiNamedEntities, new ResolvingComparator(new Resolver<UDDINamedEntity, String>() {
+
+                @Override
+                public String resolve(UDDINamedEntity key) {
+                    return key.getName();
+                }
+            }, false));
+            return uddiNamedEntities;
+        } catch (UddiAgentException e) {
+            String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
+            if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
+                 ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
+                 ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
+                 ExceptionUtils.causedBy( e, ConnectException.class ) ||
+                 ExceptionUtils.causedBy( e, NoRouteToHostException.class )) {
+                logger.log(Level.WARNING, msg + " : '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e ))+ "'", ExceptionUtils.getDebugException( e ));
+            } else {
+                logger.log(Level.WARNING, msg, e);
+            }
+            throw new FindException(msg);
+        }
+    }
+
+    @Override
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException {
+        try {
+            UddiAgent uddiAgent = uddiAgentFactory.getUddiAgent();
+
+            WsdlInfo[] wsdlInfo = uddiAgent.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
             //noinspection unchecked
             Arrays.sort(wsdlInfo, new ResolvingComparator(new Resolver<WsdlInfo,String>(){
                 @Override
@@ -541,6 +553,13 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             }
             throw new FindException(msg);
         }
+    }
+
+    private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
+        final UDDIClient uddiClient = UDDIClientFactory.getInstance().newUDDIClient(uddiRegistry.getInquiryUrl(),
+                uddiRegistry.getPublishUrl(), uddiRegistry.getSecurityUrl(), uddiRegistry.getRegistryAccountUserName(),
+                uddiRegistry.getRegistryAccountPassword(), PolicyAttachmentVersion.v1_5);
+        return uddiClient;
     }
 
     @Override

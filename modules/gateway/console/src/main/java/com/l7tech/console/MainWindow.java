@@ -123,6 +123,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem manageAuditAlertsMenuItem;
     private JMenuItem editPolicyMenuItem = null;
     private JMenuItem servicePropertiesMenuItem = null;
+    private JMenuItem serviceUDDISettingsMenuItem = null;
     private JMenuItem publishToUDDIMenuItem = null;
     private JMenuItem deleteServiceMenuItem = null;
 
@@ -499,6 +500,20 @@ public class MainWindow extends JFrame implements SheetHolder {
             //servicePropertiesMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
         return servicePropertiesMenuItem;
+    }
+
+    private JMenuItem getServiceUDDISettingsMenuItem() {
+        if (serviceUDDISettingsMenuItem == null) {
+            serviceUDDISettingsMenuItem = new JMenuItem();
+            serviceUDDISettingsMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Edit16.gif"));
+            serviceUDDISettingsMenuItem.setIcon(icon);
+            serviceUDDISettingsMenuItem.setText("Service UDDI Settings");
+            //int mnemonic = servicePropertiesMenuItem.getText().toCharArray()[0];
+            //servicePropertiesMenuItem.setMnemonic(mnemonic);
+            //servicePropertiesMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return serviceUDDISettingsMenuItem;
     }
 
     private JMenuItem getPublishToUDDIMenuItem() {
@@ -1466,6 +1481,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     ServiceNode node = (ServiceNode)(servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent());
                     getEditPolicyMenuItem().setAction(new EditPolicyAction(node));
                     getServicePropertiesMenuItem().setAction(new EditServiceProperties(node));
+                    getServiceUDDISettingsMenuItem().setAction(new EditServiceUDDISettingsAction(node));
                     getPublishToUDDIMenuItem().setAction(new PublishPolicyToUDDIRegistry(node));
                     getDeleteServiceMenuItem().setAction((node instanceof ServiceNodeAlias)? new DeleteServiceAliasAction((ServiceNodeAlias)node) : new DeleteServiceAction(node));
                 }

@@ -97,6 +97,11 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
+    public PublishedService findByUniqueKey(String uniqueFieldName, long uniqueKey) throws FindException {
+        return serviceManager.findByUniqueKey(uniqueFieldName, uniqueKey);
+    }
+
+    @Override
     public Map<Long, Integer> findVersionMap() throws FindException {
         return serviceManager.findVersionMap();
     }

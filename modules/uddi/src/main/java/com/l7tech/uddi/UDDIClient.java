@@ -88,6 +88,18 @@ public interface UDDIClient extends Closeable {
     Collection<UDDINamedEntity> listServiceWsdls(String serviceName, boolean caseSensitive, int offset, int maxRows) throws UDDIException;
 
     /**
+     * List BusinessEntities
+     *
+     * @param businessName The business name to match (pattern)
+     * @param caseSensitive True for a case sensitive search
+     * @param offset The offset into the search results (use when paging)
+     * @param maxRows The maximum number of rows to return (can be used for paging)
+     * @return The collection of keys/names/urls
+     * @throws UDDIException if an error occurs
+     */
+    Collection<UDDINamedEntity> listBusinessEntities(String businessName, boolean caseSensitive, int offset, int maxRows) throws UDDIException;
+
+    /**
      * List policies in registry
      *
      * @param policyName The policy name to match (pattern)
@@ -188,6 +200,18 @@ public interface UDDIClient extends Closeable {
      * @throws UDDIException if any problem during the attempt to delete
      */
     void deleteBusinessService(final String serviceKey) throws UDDIException;
+
+    /**
+     * Delete all BusinessServices from the UDDI Registry which contain the value of generalKeyword as the keyValue
+     * for the keyedReference to the UDDI general keywords classification scheme, which have the specific Layer7 general
+     * keyword name value for it's keyName value
+     *
+     * A wild card search is performed, due to initial test results with ActiveSOA. Any value supplied as the
+     * generalKeyword will be surrounded by the '%' characters.
+     *
+     * @param generalKeyword String all BusinessServices which have this keyword will be deleted.
+     */
+    void deleteAllBusinessServicesForGatewayWsdl(final String generalKeyword) throws UDDIException;
 
     /**
      * Get the URL for the referenced policy.

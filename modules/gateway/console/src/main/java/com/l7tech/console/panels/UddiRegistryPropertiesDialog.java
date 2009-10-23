@@ -59,7 +59,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     private JLabel metricsPublishFrequencyLabel;
     private JButton resetUrlButton;
 
-    private UDDIRegistry uddiRegistry;
+    private com.l7tech.gateway.common.uddi.UDDIRegistry uddiRegistry;
     private boolean confirmed;
     private static final String DIALOG_TITLE = "UDDI Registry Properties";
     private Map<String, UDDIRegistryInfo> registryToInfoMap;
@@ -68,11 +68,11 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(okButton);
-        this.uddiRegistry = new UDDIRegistry();
+        this.uddiRegistry = new com.l7tech.gateway.common.uddi.UDDIRegistry();
         initialize();
     }
 
-    public UddiRegistryPropertiesDialog(Window owner, UDDIRegistry uddiRegistry) {
+    public UddiRegistryPropertiesDialog(Window owner, com.l7tech.gateway.common.uddi.UDDIRegistry uddiRegistry) {
         super(owner, DIALOG_TITLE, UddiRegistryPropertiesDialog.DEFAULT_MODALITY_TYPE);
         this.uddiRegistry = uddiRegistry;
         initialize();
@@ -468,7 +468,6 @@ public class UddiRegistryPropertiesDialog extends JDialog {
      */
     private void createUIComponents() {
         privateKeyComboBox = new PrivateKeysComboBox();
-        System.out.println("Created private key combo box");
 
         //Registry type
         UDDIRegistry.UDDIRegistryType[] types = UDDIRegistry.UDDIRegistryType.values();

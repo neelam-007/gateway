@@ -134,12 +134,13 @@ public class SelectWsdlDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
-        wsdlLocationPanel = new WsdlLocationPanel(this, logger, true, SearchWsdlDialog.uddiEnabled());
+        wsdlLocationPanel = new WsdlLocationPanel(this, logger, true, SearchUddiDialog.uddiEnabled());
         controlPanel.setLayout(new BorderLayout());
         controlPanel.add(wsdlLocationPanel, BorderLayout.CENTER);
         add(mainPanel);
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 wsdl = wsdlLocationPanel.getWsdl();
 
@@ -149,6 +150,7 @@ public class SelectWsdlDialog extends JDialog {
             }
         });
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }

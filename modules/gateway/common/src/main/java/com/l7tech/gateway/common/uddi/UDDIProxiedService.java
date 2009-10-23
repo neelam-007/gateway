@@ -74,15 +74,13 @@ public class UDDIProxiedService extends PersistentEntityImp {
     public UDDIProxiedService() {
     }
 
-    public UDDIProxiedService(long serviceOid, long uddiRegistryOid, String uddiBusinessKey, String uddiBusinessName, boolean updateProxyOnLocalChange, boolean createdFromExistingService, boolean metricsEnabled) {
+    public UDDIProxiedService(long serviceOid, long uddiRegistryOid, String uddiBusinessKey, String uddiBusinessName, boolean updateProxyOnLocalChange) {
         super();
         this.serviceOid = serviceOid;
         this.uddiRegistryOid = uddiRegistryOid;
         this.uddiBusinessKey = uddiBusinessKey;
         this.uddiBusinessName = uddiBusinessName;
         this.updateProxyOnLocalChange = updateProxyOnLocalChange;
-        this.createdFromExistingService = createdFromExistingService;
-        this.metricsEnabled = metricsEnabled;
     }
 
     @Override
@@ -91,7 +89,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
     public int getVersion() {
         return super.getVersion();
     }
-    
+
     @Column(name = "published_service_oid")
     public long getServiceOid() {
         return serviceOid;

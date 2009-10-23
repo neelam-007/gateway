@@ -11,12 +11,8 @@ import com.l7tech.example.manager.apidemo.SsgAdminSession;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.VersionException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.gateway.common.uddi.*;
+import com.l7tech.objectmodel.*;
 
 import java.util.*;
 import java.io.Reader;
@@ -144,7 +140,7 @@ public class TestGenericUDDIClient {
      * This test requies a configured UDDI Registry and a running gateway
      */
     @Test
-    public void testUDDIProxyEntityCreation()
+    public void testUDDIProxyEntityPublish()
             throws MalformedURLException, LoginException, RemoteException, FindException,
             UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException {
 
@@ -154,8 +150,8 @@ public class TestGenericUDDIClient {
         UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
 
         Collection<UDDIRegistry> uddiRegistries = uddiRegistryAdmin.findAllUDDIRegistries();
-        UDDIRegistry activeSoa = null;
-        for(UDDIRegistry uddiRegistry: uddiRegistries){
+        com.l7tech.gateway.common.uddi.UDDIRegistry activeSoa = null;
+        for(com.l7tech.gateway.common.uddi.UDDIRegistry uddiRegistry: uddiRegistries){
             if(UDDIRegistry.UDDIRegistryType.findType(uddiRegistry.getUddiRegistryType()) == UDDIRegistry.UDDIRegistryType.CENTRASITE_ACTIVE_SOA){
                 activeSoa = uddiRegistry;
                 break;
@@ -173,14 +169,52 @@ public class TestGenericUDDIClient {
         UDDIProxiedService uddiProxiedService = new UDDIProxiedService(serviceToPublish.getOid(),
                 activeSoa.getOid(),
                 businessKey,
-                "Skunkworks Organization",
-                false,
-                false,
-                false);
+                "Skunkworks Organization", false);
 
         uddiRegistryAdmin.publishGatewayWsdl(uddiProxiedService);
 
         System.clearProperty("com.l7tech.console.suppressVersionCheck");
+    }
+
+    @Test
+    public void testGetUDDIProxiedService() throws MalformedURLException, LoginException, RemoteException, FindException {
+        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+
+        SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
+        UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
+
+        UDDIProxiedService service = uddiRegistryAdmin.getUDDIProxiedService(70615040);
+        System.out.println(service.getGeneralKeywordServiceIdentifier());
+
+        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+    }
+
+    @Test
+    public void testDeleteUDDIProxiedService()
+            throws MalformedURLException, LoginException, RemoteException, FindException, DeleteException, UDDIException {
+        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+
+        SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
+        UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
+
+        UDDIProxiedService proxiedService = uddiRegistryAdmin.getUDDIProxiedService(70615040);
+        uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(proxiedService);
+
+        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+    }
+
+    @Test
+    public void testUDDIClientDeleteServiceByKeyword() throws UDDIException {
+        final String keyWord = "70615040";
+
+        uddiClient.deleteAllBusinessServicesForGatewayWsdl(keyWord);
+    }
+
+    @Test
+    public void testFindBusinessEntity() throws UDDIException {
+        final String keyWord = "70615040";
+
+        uddiClient.deleteAllBusinessServicesForGatewayWsdl(keyWord);
     }
 
     @Test
@@ -196,14 +230,14 @@ public class TestGenericUDDIClient {
 
     @Test
     public void testGenericBusinessServiceDelete() throws UDDIException {
-        uddiClient.deleteBusinessService("uddi:03854660-bf6d-11de-8342-ddbdde13f281");
+        uddiClient.deleteBusinessService("uddi:80477830-bfef-11de-8342-9cc8dec47bb5");
     }
 
     @Test
     public void testTModelWithGeneralKeyword() throws UDDIException {
         KeyedReference keyWordRef = new KeyedReference();
 //        keyWordRef.setKeyName("Snoopy");
-        keyWordRef.setKeyName(WsdlToUDDIModelConverter.PROXY_SERVICE_GENERAL_KEYWORD_URN);
+        keyWordRef.setKeyName(WsdlToUDDIModelConverter.LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN);
         keyWordRef.setKeyValue("Snoopy1");
         keyWordRef.setTModelKey(WsdlToUDDIModelConverter.UDDI_GENERAL_KEYWORDS);
 

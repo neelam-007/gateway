@@ -94,6 +94,28 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @Override
     @Transactional(readOnly=true)
+    public ET findByUniqueKey(final String uniquePropertyName, final long uniqueKey) throws FindException {
+        if (uniquePropertyName == null) throw new NullPointerException();
+        if (uniquePropertyName.trim().isEmpty()) throw new IllegalArgumentException("uniquePropertyName cannot be empty");
+
+        try {
+            //noinspection unchecked
+            return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria crit = session.createCriteria(getImpClass());
+                    addFindByNameCriteria(crit);
+                    crit.add(Restrictions.eq(uniquePropertyName, uniqueKey));
+                    return crit.uniqueResult();
+                }
+            });
+        } catch (HibernateException e) {
+            throw new FindException("Couldn't find unique entity", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly=true)
     public ET findByHeader(EntityHeader header) throws FindException {
         return findByPrimaryKey(header.getOid());
     }
@@ -249,7 +271,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 try {
                     others = findMatching(constraints);
                 } catch (FindException e) {
-                    throw new SaveException("Couldn't find previous version(s) to check uniqueness");
+                    throw new SaveException("Couldn't find previous version(s) to check uniqueness", e);
                 }
 
                 if (!others.isEmpty()) throw new DuplicateObjectException(describeAttributes(constraints));

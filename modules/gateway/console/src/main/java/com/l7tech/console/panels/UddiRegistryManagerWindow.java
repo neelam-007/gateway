@@ -200,7 +200,7 @@ public class UddiRegistryManagerWindow extends JDialog {
         });
     }
 
-    /** @return the TransportAdmin interface, or null if not connected or it's unavailable for some other reason */
+    /** @return the UDDIRegistryAdmin interface, or null if not connected or it's unavailable for some other reason */
     private UDDIRegistryAdmin getUDDIRegistryAdmin() {
         Registry reg = Registry.getDefault();
         if (!reg.isAdminContextPresent())
@@ -221,6 +221,7 @@ public class UddiRegistryManagerWindow extends JDialog {
             for (UDDIRegistry uddiRegistry : registries)
                 rows.add(new UddiRegistryTableRow(uddiRegistry));
             uddiRegistryTable.setData(rows);
+            Utilities.setRowSorter(uddiRegistryTable, uddiRegistryTable.getModel());
         } catch (FindException e) {
             showErrorMessage("Loading failed", "Unable to list all UDDI Registry: " + ExceptionUtils.getMessage(e), e);
         }
@@ -274,9 +275,11 @@ public class UddiRegistryManagerWindow extends JDialog {
 
         /** @return the current selected SsgConnector, or null */
         public UDDIRegistry getSelectedUddiRegistry() {
-            int rowNum = getSelectedRow();
-            if (rowNum < 0)
+            int selectedRow = getSelectedRow();
+            if (selectedRow < 0)
                 return null;
+
+            int rowNum = this.getRowSorter().convertRowIndexToModel(selectedRow);
             UddiRegistryTableRow row = getRowAt(rowNum);
             if (row == null)
                 return null;
@@ -284,13 +287,12 @@ public class UddiRegistryManagerWindow extends JDialog {
         }
 
         public void setSelectedUddiRegistry(UDDIRegistry uddiRegistry) {
-            int rowNum = model.findRowByConnectorOid(uddiRegistry.getOid());
+            int rowNum = model.findRowByRegistryOid(uddiRegistry.getOid());
             if (rowNum >= 0)
                 getSelectionModel().setSelectionInterval(rowNum, rowNum);
             else
                 getSelectionModel().clearSelection();
         }
-
     }
 
     private static class UddiRegistryTableModel extends AbstractTableModel {
@@ -438,10 +440,10 @@ public class UddiRegistryManagerWindow extends JDialog {
         }
 
         /**
-         * @param oid OID of connector whose row to find
-         * @return the row number of the connector with a matching oid, or -1 if no match found
+         * @param oid OID of the UDDIRegistry whose row to find
+         * @return the row number of the UDDIRegistry with a matching oid, or -1 if no match found
          */
-        public int findRowByConnectorOid(long oid) {
+        public int findRowByRegistryOid(long oid) {
             return getRowMap().containsKey(oid) ? getRowMap().get(oid) : -1;
         }
     }

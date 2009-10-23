@@ -20,7 +20,7 @@ public class WsdlTable extends JTable{
          setModel(getWsdlTableModel());
          getTableHeader().setReorderingAllowed(false);
          getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        getColumnModel().getColumn(WsdlTableSorter.WSDL_TABLE_SERVICE_NAME_COLUMN_INDEX).setPreferredWidth(150);
+         getColumnModel().getColumn(WsdlTableSorter.WSDL_TABLE_SERVICE_NAME_COLUMN_INDEX).setPreferredWidth(150);
          getColumnModel().getColumn(WsdlTableSorter.WSDL_TABLE_WSDL_COLUMN_INDEX).setPreferredWidth(350);
 
          addMouseListenerToHeaderInTable();
@@ -50,6 +50,7 @@ public class WsdlTable extends JTable{
              };
 
              tableSorter = new WsdlTableSorter(new DefaultTableModel(rows, cols) {
+                 @Override
                  public boolean isCellEditable(int row, int col) {
                      // the table cells are not editable
                      return false;
@@ -69,6 +70,7 @@ public class WsdlTable extends JTable{
          final JTable tableView = this;
          tableView.setColumnSelectionAllowed(false);
          MouseAdapter listMouseListener = new MouseAdapter() {
+             @Override
              public void mouseClicked(MouseEvent e) {
                  TableColumnModel columnModel = tableView.getColumnModel();
                  int viewColumn = columnModel.getColumnIndexAtX(e.getX());

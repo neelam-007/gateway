@@ -63,7 +63,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
 
     @Override
     public void deleteUDDIRegistry(final long oid) throws DeleteException, FindException {
-        logger.info("Updating UDDI Registry oid = " + oid);
+        logger.log(Level.INFO, "Deleting UDDI Registry oid = " + oid);
         uddiRegistryManager.delete(oid);
     }
 
@@ -91,6 +91,25 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
                 uddiRegistry.getPublishUrl(), uddiRegistry.getSecurityUrl(), uddiRegistry.getRegistryAccountUserName(),
                 uddiRegistry.getRegistryAccountPassword(), getDefaultPolicyAttachmentVersion());
         return uddiClient;
+    }
+
+    @Override
+    public UDDIProxiedService getUDDIProxiedService(long serviceOid) throws FindException {
+        return uddiProxiedServiceManager.findByUniqueKey("serviceOid", serviceOid);
+    }
+
+    @Override
+    public void deleteGatewayWsdlFromUDDI(UDDIProxiedService uddiProxiedService)
+            throws FindException, UDDIException, DeleteException {
+        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiProxiedService.getUddiRegistryOid());
+
+        final UDDIProxiedService proxiedService = uddiProxiedServiceManager.findByPrimaryKey(uddiProxiedService.getOid());
+        final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
+        uddiClient.deleteAllBusinessServicesForGatewayWsdl(proxiedService.getGeneralKeywordServiceIdentifier());
+        logger.log(Level.INFO, "Successfully deleted published Gateway WSDL from UDDI Registry");
+
+        uddiProxiedServiceManager.delete(uddiProxiedService.getOid());
+        logger.log(Level.INFO, "Deleted UDDIProxiedService");
     }
 
     @Override

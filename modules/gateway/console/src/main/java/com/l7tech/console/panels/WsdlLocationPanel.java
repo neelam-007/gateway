@@ -5,8 +5,6 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.console.SsmApplication;
-import com.l7tech.console.event.WsdlEvent;
-import com.l7tech.console.event.WsdlListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -18,6 +16,7 @@ import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.util.*;
+import com.l7tech.uddi.WsdlInfo;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -215,7 +214,7 @@ public class WsdlLocationPanel extends JPanel {
     private final boolean allowFile;
     private final boolean allowUddi;
 
-    private JButton wsdlUrlBrowseButton;
+    private JButton uddiWsdlUrlBrowseButton;
     private JButton wsdlFileButton;
     private JPanel mainPanel;
     private JLabel exampleFileLabel;
@@ -271,8 +270,8 @@ public class WsdlLocationPanel extends JPanel {
         wsdlUrlTextField.getDocument().addDocumentListener(createWsdlUrlDocumentListener());
 
         // buttons
-        if (!allowUddi) wsdlUrlBrowseButton.setVisible(false);
-        wsdlUrlBrowseButton.addActionListener(new ActionListener() {
+        if (!allowUddi) uddiWsdlUrlBrowseButton.setVisible(false);
+        uddiWsdlUrlBrowseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 selectUddi();
@@ -293,12 +292,12 @@ public class WsdlLocationPanel extends JPanel {
 
         try {
             // open UDDI browser
-            SearchWsdlDialog swd = ownerd!=null ? new SearchWsdlDialog(ownerd) : new SearchWsdlDialog(ownerf);
-            swd.addWsdlListener(new WsdlListener() {
-
+            SearchUddiDialog swd = ownerd!=null ? new SearchUddiDialog(ownerd, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH) : new SearchUddiDialog(ownerf, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH);
+            swd.addSelectionListener(new SearchUddiDialog.ItemSelectedListener() {
                 @Override
-                public void wsdlSelected(WsdlEvent event) {
-                    String wsdlURL = event.getWsdlInfo().getWsdlUrl();
+                public void itemSelected(Object item) {
+                    if(!(item instanceof WsdlInfo)) return;
+                    String wsdlURL = ((WsdlInfo) item ).getWsdlUrl();
 
                     // update the wsdlUrlTestField
                     if(wsdlURL != null) wsdlUrlTextField.setText(wsdlURL);
