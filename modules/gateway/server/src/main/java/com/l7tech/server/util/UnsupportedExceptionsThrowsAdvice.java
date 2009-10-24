@@ -96,7 +96,7 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
                 try {
                     allListed.add(Class.forName(className));
                 } catch(ClassNotFoundException cnfe) {
-                    logger.info("Unable to load optional class '"+className+"', ignoring.");
+                    logger.fine("Unable to load optional class '"+className+"', ignoring.");
                 }
             }
 
