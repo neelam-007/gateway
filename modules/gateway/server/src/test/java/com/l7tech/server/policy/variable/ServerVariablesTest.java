@@ -33,6 +33,7 @@ import com.l7tech.util.ExceptionUtils;
 import org.junit.*;
 import static org.junit.Assert.*;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.util.Map;
@@ -349,6 +350,18 @@ public class ServerVariablesTest {
         expandAndCheck(context, "${response.password}", "secret");
     }
 
+    @BugNumber(5336)
+    @Test
+    public void testOriginalRequest() throws Exception {
+        System.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "true");
+        Message req = new Message(XmlUtil.stringAsDocument(REQUEST_BODY));
+        PolicyEnforcementContext c = new PolicyEnforcementContext(req, new Message());
+        addTextNode(c.getRequest(), "reqfoo");
+        String newreq = "<myrequest>reqfoo</myrequest>";
+        expandAndCheck(c, "${request.originalmainpart}", REQUEST_BODY);
+        expandAndCheck(c, "${request.mainpart}", newreq);
+    }
+
     /*
     * Test the service.url context variable and associated suffixes
     * : host, protocol, path, file, query
@@ -501,6 +514,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testMessageAuditRecordFields() throws Exception {
+        System.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "false");
         final AuditSinkPolicyEnforcementContext c = sinkcontext();
         expandAndCheck(c, "${audit.mappingValuesOid}", "49585");
         expandAndCheck(c, "${audit.operationName}", "listProducts");
@@ -508,9 +522,37 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.responseContentLength}", String.valueOf(RESPONSE_BODY.getBytes().length));
         expandAndCheck(c, "${audit.request.mainpart}", REQUEST_BODY);
         expandAndCheck(c, "${audit.response.mainpart}", RESPONSE_BODY);
+        expandAndCheck(c, "${audit.request.originalmainpart}", "");
+        expandAndCheck(c, "${audit.response.originalmainpart}", "");
         expandAndCheck(c, "${audit.var.request.mainpart}", REQUEST_BODY);
         expandAndCheck(c, "${audit.var.response.mainpart}", RESPONSE_BODY);
         expandAndCheck(c, "${audit.var.request.size}", String.valueOf(REQUEST_BODY.getBytes().length));
+        expandAndCheck(c, "${audit.requestSavedFlag}", "false");
+        expandAndCheck(c, "${audit.responseSavedFlag}", "false");
+        expandAndCheck(c, "${audit.routingLatency}", "232");
+        expandAndCheck(c, "${audit.serviceOid}", "8859");
+        expandAndCheck(c, "${audit.status}", "0");
+    }
+
+    @Test
+    public void testMessageAuditRecordFields_with_OrigRequest() throws Exception {
+        System.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "true");
+        final AuditSinkPolicyEnforcementContext c = sinkcontext();
+        addTextNode(c.getOriginalRequest(), "reqfoo");
+        addTextNode(c.getOriginalResponse(), "respfoo");
+        String newreq = "<myrequest>reqfoo</myrequest>";
+        String newresp = "<myresponse>respfoo</myresponse>";
+        expandAndCheck(c, "${audit.mappingValuesOid}", "49585");
+        expandAndCheck(c, "${audit.operationName}", "listProducts");
+        expandAndCheck(c, "${audit.request.mainpart}", newreq);
+        expandAndCheck(c, "${audit.response.mainpart}", newresp);
+        expandAndCheck(c, "${audit.requestContentLength}", String.valueOf(newreq.getBytes().length));
+        expandAndCheck(c, "${audit.responseContentLength}", String.valueOf(newresp.getBytes().length));
+        expandAndCheck(c, "${audit.var.request.mainpart}", newreq);
+        expandAndCheck(c, "${audit.var.response.mainpart}", newresp);
+        expandAndCheck(c, "${audit.var.request.size}", String.valueOf(newreq.getBytes().length));
+        expandAndCheck(c, "${audit.request.originalmainpart}", REQUEST_BODY);
+        expandAndCheck(c, "${audit.response.originalmainpart}", RESPONSE_BODY);
         expandAndCheck(c, "${audit.requestSavedFlag}", "false");
         expandAndCheck(c, "${audit.responseSavedFlag}", "false");
         expandAndCheck(c, "${audit.routingLatency}", "232");
@@ -668,5 +710,10 @@ public class ServerVariablesTest {
         final PolicyEnforcementContext context = context();
         context.getAuthenticationContext(context.getResponse()).addAuthenticationResult(new AuthenticationResult(user, new OpaqueSecurityToken()));
         return context;
+    }
+
+    private void addTextNode(Message message, String text) throws Exception {
+        Document doc = message.getXmlKnob().getDocumentWritable();
+        doc.getDocumentElement().appendChild(doc.createTextNode(text));
     }
 }

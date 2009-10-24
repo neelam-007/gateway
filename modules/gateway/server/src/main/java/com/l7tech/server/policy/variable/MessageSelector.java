@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.*;
@@ -14,6 +15,8 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.IOUtils;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -31,6 +34,7 @@ class MessageSelector implements ExpandVariables.Selector {
     private static final String HTTP_HEADERVALUES_PREFIX = "http.headervalues.";
     private static final String STATUS_NAME = "http.status";
     private static final String MAINPART_NAME = "mainpart";
+    private static final String ORIGINAL_MAINPART_NAME = "originalmainpart";
     private static final String SIZE_NAME = "size";
     private static final String CONTENT_TYPE = "contenttype";
     private static final String MAINPART_CONTENT_TYPE = "mainpart.contenttype";
@@ -83,6 +87,8 @@ class MessageSelector implements ExpandVariables.Selector {
             selector = sizeSelector;
         } else if (MAINPART_NAME.equals(lname)) {
             selector = mainPartSelector;
+        } else if (ORIGINAL_MAINPART_NAME.equals(lname)) {
+            selector = originalMainPartSelector;
         } else if (MAINPART_SIZE_NAME.equals(lname)) {
             selector = mainPartSizeSelector;
         } else if (lname.equals(CONTENT_TYPE)) {
@@ -115,6 +121,7 @@ class MessageSelector implements ExpandVariables.Selector {
         return new String[]{
                 "http",
                 "mainpart",
+                "originalmainpart",
                 "wss",
                 SIZE_NAME,
                 CONTENT_TYPE,
@@ -242,6 +249,41 @@ class MessageSelector implements ExpandVariables.Selector {
                 throw new RuntimeException(e); // Can't happen
             } catch (NoSuchPartException e) {
                 throw new RuntimeException(e); // Can't happen
+            }
+        }
+    };
+
+    private final MessageAttributeSelector originalMainPartSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            try {
+                if (!context.isXml()) {
+                    return null;
+                }
+
+                final XmlKnob xk = context.getXmlKnob();
+                if (xk == null) {
+                    // Message not XML or was never examined
+                    return null;
+                }
+
+                if (!context.isEnableOriginalDocument()) {
+                    // Saving the original document not enabled for this message
+                    return null;
+                }
+
+                Document original = xk.getOriginalDocument();
+                // TODO maximum size? This could be huge and OOM
+                return new Selection(XmlUtil.nodeToString(original));
+
+            } catch (SAXException e) {
+                String msg = handler.handleBadVariable("Message is not well-formed XML");
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            } catch (IOException e) {
+                String msg = handler.handleBadVariable("IOException while retrieving original document");
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
             }
         }
     };

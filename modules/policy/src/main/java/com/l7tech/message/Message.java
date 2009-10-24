@@ -11,6 +11,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.util.CausedIllegalStateException;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.MessageNotSoapException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -18,8 +19,8 @@ import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents an abstract Message in the system.  This can be a request or a reply; over HTTP or JMS or transport
@@ -28,9 +29,15 @@ import java.util.HashMap;
  * All Messages and MessageFacets should be assumed <em>not</em> to be threadsafe.
  */
 public final class Message {
+    public static final String PROPERTY_ENABLE_ORIGINAL_DOCUMENT = "com.l7tech.message.enableOriginalDocument";
+
+    /**
+     * enable this to enable XmlKnob.getOriginalDocument().
+     * This is off by default since only certain messages need this.
+     */
+    private boolean enableOriginalDocument = SyspropUtil.getBoolean(PROPERTY_ENABLE_ORIGINAL_DOCUMENT, false);
+
     private MessageFacet rootFacet;
-    private boolean enableOriginalDocument = false; // enable this to enable XmlKnob.getOriginalDocument().
-                                                    // This is off by default since only certain messages need this.
 
     private Map<MessageRole, Message> relatedMessages = new HashMap<MessageRole, Message>();
 
