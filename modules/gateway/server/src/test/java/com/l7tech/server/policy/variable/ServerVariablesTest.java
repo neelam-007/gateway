@@ -657,6 +657,15 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.details.4.messageId}", "");
     }
 
+    @BugNumber(5485)
+    @Test
+    public void testIsPolicyExecutionAttempted() throws Exception {
+        final AuditSinkPolicyEnforcementContext c = sinkcontext();
+        expandAndCheck(c, "${audit.policyExecutionAttempted}", "false");
+        c.getOriginalContext().setPolicyExecutionAttempted(true);
+        expandAndCheck(c, "${audit.policyExecutionAttempted}", "true");
+    }
+
     private PolicyEnforcementContext context(){
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));

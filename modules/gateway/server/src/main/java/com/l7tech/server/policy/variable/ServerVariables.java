@@ -403,7 +403,12 @@ public class ServerVariables {
         new Variable("audit.response", new AuditOriginalMessageGetter("audit.response", true)),
         new Variable("audit.responseContentLength", new AuditOriginalMessageSizeGetter(true)),
         new Variable("audit.var", new AuditOriginalContextVariableGetter("audit.var")),
-
+        new Variable("audit.policyExecutionAttempted", new AbstractAuditGetter() {
+            @Override
+            Object get(String name, PolicyEnforcementContext context) {
+                return ((AuditSinkPolicyEnforcementContext)context).getOriginalContext().isPolicyExecutionAttempted();
+            }
+        }),
     };
 
     private static X509Certificate getOnlyOneClientCertificateForSource( final List<LoginCredentials> credentials,

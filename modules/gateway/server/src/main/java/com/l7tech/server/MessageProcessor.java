@@ -326,6 +326,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             attemptedRequest = true;
             serviceOid = service.getOid();
 
+            context.setPolicyExecutionAttempted(true);
             status = serverPolicy.checkRequest(context);
             
             // fail early if there are any (I/O) errors reading the response

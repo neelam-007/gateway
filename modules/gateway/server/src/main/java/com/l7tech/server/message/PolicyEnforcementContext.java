@@ -89,6 +89,7 @@ public class PolicyEnforcementContext extends ProcessingContext<AuthenticationCo
     private boolean requestWasCompressed;
     private boolean responseWss11;
     private boolean malformedRequest;
+    private boolean policyExecutionAttempted;
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -642,6 +643,16 @@ public class PolicyEnforcementContext extends ProcessingContext<AuthenticationCo
 
     public boolean isMalformedRequest() {
         return malformedRequest;
+    }
+
+    /** @param policyTried true when the MessageProcessor gets as far as calling checkRequest() for this context. */
+    public void setPolicyExecutionAttempted(boolean policyTried) {
+        this.policyExecutionAttempted = policyTried;
+    }
+
+    /** @return true if the MessageProcessor got as far as calling checkRequest() for this context. */
+    public boolean isPolicyExecutionAttempted() {
+        return policyExecutionAttempted;
     }
 
     public final static class AssertionResult {
