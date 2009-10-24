@@ -3,9 +3,12 @@ package com.l7tech.console.panels;
 import com.l7tech.uddi.*;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.util.Registry;
 import static com.l7tech.console.panels.UddiRegistryPropertiesDialog.UDDI_URL_TYPE.*;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -58,6 +61,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     private JLabel passwordLabel;
     private JLabel metricsPublishFrequencyLabel;
     private JButton resetUrlButton;
+    private JButton testUDDIConnectionButton;
 
     private UDDIRegistry uddiRegistry;
     private boolean confirmed;
@@ -90,7 +94,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
 
         Utilities.setEscKeyStrokeDisposes(this);
 
-        InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
+        final InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -162,6 +166,32 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 keyStoreLabel.setEnabled(clientAuthenticationCheckBox.isSelected());
                 privateKeyComboBox.setEnabled(clientAuthenticationCheckBox.isSelected());
+            }
+        });
+
+        testUDDIConnectionButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final String validate = inputValidator.validate();
+                if(validate != null){
+                    DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this,  validate, "Test UDDI Connection", JOptionPane.ERROR_MESSAGE, null);
+                    return;
+                }
+                viewToModel();
+                UDDIRegistryAdmin uddiRegistryAdmin = getUDDIRegistryAdmin();
+                try {
+                    uddiRegistryAdmin.testUDDIRegistryAuthentication(uddiRegistry);
+                    DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this, "Authentication successful!",
+                            "Test Authentication", JOptionPane.INFORMATION_MESSAGE, null);
+
+                } catch (FindException e1) {
+                    DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this,
+                            "Could not find UDDI Registry", "Test Failed", JOptionPane.ERROR_MESSAGE, null);
+                } catch (UDDIException e1) {
+                    DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this,
+                            "Could not connect to UDDI Registry: " + e1.getMessage(),
+                            "Test Failed", JOptionPane.ERROR_MESSAGE, null);                    
+                }
             }
         });
 
@@ -502,4 +532,12 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         monitoringEnabledCheckBox.setEnabled(enable);
     }
 
+    /** @return the UDDIRegistryAdmin interface, or null if not connected or it's unavailable for some other reason */
+    private UDDIRegistryAdmin getUDDIRegistryAdmin() {
+        Registry reg = Registry.getDefault();
+        if (!reg.isAdminContextPresent())
+            return null;
+        return reg.getUDDIRegistryAdmin();
+    }
+    
 }

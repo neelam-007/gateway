@@ -252,12 +252,12 @@ public class ServiceUDDISettingsDialog extends JDialog {
                                 UDDIProxiedService newProxiedService =
                                         new UDDIProxiedService(service.getOid(), uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, false);
                                 uddiRegistryAdmin.publishGatewayWsdl(newProxiedService);
-                                JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Publication of Gateway WSDL to UDDI successful", "Successful Publication", JOptionPane.INFORMATION_MESSAGE);
+                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
+                                        "Publication of Gateway WSDL to UDDI successful", "Successful Publication", JOptionPane.INFORMATION_MESSAGE, null);
                             } catch (Exception ex) {
                                 logger.log(Level.WARNING, "Could not publish gateway WSDL to UDDI: " + ex.getMessage());
-                                JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this, "Failed to publish Gateway WSDL to UDDI Registry: " + ex.getMessage(),
-                                        "Error publishing to UDDI", JOptionPane.ERROR_MESSAGE);
+                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, "Failed to publish Gateway WSDL to UDDI Registry: " + ex.getMessage(),
+                                        "Error publishing to UDDI", JOptionPane.ERROR_MESSAGE, null);
                             }
                         }
                     }

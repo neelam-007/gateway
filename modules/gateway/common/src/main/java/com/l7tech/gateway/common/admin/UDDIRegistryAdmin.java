@@ -42,13 +42,14 @@ public interface UDDIRegistryAdmin {
     void deleteUDDIRegistry(long oid) throws DeleteException, FindException;
 
     /**
-     * Test if it is possible to authenticate with the registry with the specified oid
-     * @param uddiRegistryOid oid of the UDDIRegistry to test
+     * Test if it is possible to authenticate with the supplied UDDIRegistry
+     *
+     * @param uddiRegistry UDDIRegistry to test. May not exist as an entity yet.
      * @throws FindException if the UDDIRegistry cannot be found
      * @throws UDDIException if it's not possible to authenticate
      */
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
-    void testUDDIRegistryAuthentication(long uddiRegistryOid) throws FindException, UDDIException;
+    void testUDDIRegistryAuthentication(UDDIRegistry uddiRegistry) throws FindException, UDDIException;
 
     /**
      * Publish the Gateway WSDL for a service to UDDI.

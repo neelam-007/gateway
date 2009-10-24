@@ -29,7 +29,6 @@ public class UddiRegistryManagerWindow extends JDialog {
     private JButton propertiesButton;
     private JButton closeButton;
     private JScrollPane mainScrollPane;
-    private JButton testRegistryButton;
     private UddiRegistryTable uddiRegistryTable;
 
     private PermissionFlags flags;
@@ -99,33 +98,6 @@ public class UddiRegistryManagerWindow extends JDialog {
             }
         });
 
-        testRegistryButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                final UDDIRegistry uddiRegistry = uddiRegistryTable.getSelectedUddiRegistry();
-                final String title = "Test UDDI Registry Authentication";
-                if(uddiRegistry == null){
-                    DialogDisplayer.showMessageDialog(UddiRegistryManagerWindow.this,
-                            "Please select a UDDI Registry", title, JOptionPane.ERROR_MESSAGE, null);
-                }
-                UDDIRegistryAdmin uddiRegistryAdmin = getUDDIRegistryAdmin();
-                try {
-                    uddiRegistryAdmin.testUDDIRegistryAuthentication(uddiRegistry.getOid());
-                    DialogDisplayer.showMessageDialog(UddiRegistryManagerWindow.this, "Authentication successful!",
-                            "Test Authentication", JOptionPane.INFORMATION_MESSAGE, null);
-
-                } catch (FindException e1) {
-                    DialogDisplayer.showMessageDialog(UddiRegistryManagerWindow.this,
-                            "Could not find UDDI Registry", title, JOptionPane.ERROR_MESSAGE, null);
-                } catch (UDDIException e1) {
-                    DialogDisplayer.showMessageDialog(UddiRegistryManagerWindow.this,
-                            "Could not connect to UDDI Registry: " + e1.getMessage(),
-                            title, JOptionPane.ERROR_MESSAGE, null);                    
-                }
-
-            }
-        });
-        
         Utilities.setDoubleClickAction(uddiRegistryTable, propertiesButton);
 
         loadUddiRegistries();
@@ -247,7 +219,6 @@ public class UddiRegistryManagerWindow extends JDialog {
         createButton.setEnabled(flags.canCreateSome());
         propertiesButton.setEnabled(haveSel);
         removeButton.setEnabled(haveSel && flags.canDeleteSome());
-        testRegistryButton.setEnabled(haveSel);
     }
 
     private static class UddiRegistryTable extends JTable {

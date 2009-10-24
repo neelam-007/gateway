@@ -73,9 +73,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     @Override
-    public void testUDDIRegistryAuthentication(final long uddiRegistryOid) throws FindException, UDDIException {
-        final UDDIRegistry uddiRegistry= uddiRegistryManager.findByPrimaryKey(uddiRegistryOid);
-
+    public void testUDDIRegistryAuthentication(final UDDIRegistry uddiRegistry) throws FindException, UDDIException {
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
 
         try {
