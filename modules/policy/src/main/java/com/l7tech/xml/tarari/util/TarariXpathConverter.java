@@ -15,8 +15,8 @@ import java.util.regex.Pattern;
 
 public class TarariXpathConverter {
     private static final Pattern FINDPOS = Pattern.compile("^line \\d+:(\\d+): (.*)");
-    private static final Pattern FIND_COUNT_BEFORE = Pattern.compile("^count\\((.*)\\)\\s*(\\=|\\!\\=)\\s*(\\d+)$");
-    private static final Pattern FIND_COUNT_AFTER = Pattern.compile("^(\\d+)\\s*(\\=|\\!\\=)\\s*count\\((.*)\\)$");
+    private static final Pattern FIND_COUNT_BEFORE = Pattern.compile("^\\s*count\\((.*)\\)\\s*(=|!=|<|>|<=|>=)\\s*(\\-?\\s*\\d+)\\s*$");
+    private static final Pattern FIND_COUNT_AFTER = Pattern.compile("^\\s*(\\-?\\s*\\d+)\\s*(=|!=|<|>|<=|>=)\\s*count\\((.*)\\)\\s*$");
 
     /**
      * Convert the specified prefix-adorned XPath expression, which may also compare the count
@@ -54,6 +54,7 @@ public class TarariXpathConverter {
         String tnf = null;
         String cmp = null;
         String num = null;
+        boolean flipGt = false;
         if (m.matches()) {
             tnf = m.group(1);
             cmp = m.group(2);
@@ -64,6 +65,7 @@ public class TarariXpathConverter {
                 tnf = m.group(3);
                 cmp = m.group(2);
                 num = m.group(1);
+                flipGt = true;
             }
         }
 
@@ -71,13 +73,21 @@ public class TarariXpathConverter {
         if ("=".equals(cmp)) {
             op = ComparisonOperator.EQ;
         } else if (">".equals(cmp)) {
-            op = ComparisonOperator.GT;
+            op = flipGt
+                    ? ComparisonOperator.LT
+                    : ComparisonOperator.GT;
         } else if ("<".equals(cmp)) {
-            op = ComparisonOperator.LT;
+            op = flipGt
+                    ? ComparisonOperator.GT
+                    : ComparisonOperator.LT;
         } else if (">=".equals(cmp)) {
-            op = ComparisonOperator.GE;
+            op = flipGt
+                    ? ComparisonOperator.LE
+                    : ComparisonOperator.GE;
         } else if ("<=".equals(cmp)) {
-            op = ComparisonOperator.LT;
+            op = flipGt
+                    ? ComparisonOperator.GE
+                    : ComparisonOperator.LE;
         } else if ("!=".equals(cmp)) {
             op = ComparisonOperator.NE;
         } else {

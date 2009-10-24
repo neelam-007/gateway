@@ -6,6 +6,8 @@
 package com.l7tech.xml.tarari.util;
 
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.ComparisonOperator;
+import com.l7tech.xml.xpath.FastXpath;
 import static org.junit.Assert.*;
 import org.junit.*;
 
@@ -19,7 +21,7 @@ import java.util.Map;
 public class TarariXpathConverterTest {
     @Test
     public void testNestedPredicate() throws Exception {
-        Map m = new HashMap();
+        Map<String, String> m = new HashMap<String, String>();
         m.put("s", "urn:s");
         String got;
         String gave;
@@ -38,7 +40,7 @@ public class TarariXpathConverterTest {
 
     @Test
     public void testAttributePredicate() throws Exception {
-        Map m = new HashMap();
+        Map<String, String> m = new HashMap<String, String>();
         m.put("s", "urn:s");
         String got;
         String gave;
@@ -61,7 +63,7 @@ public class TarariXpathConverterTest {
 
     @Test
     public void testSimple() throws Exception {
-        Map m = new HashMap();
+        Map<String, String> m = new HashMap<String, String>();
         m.put("s", "urn:s");
         String got;
         String gave;
@@ -82,7 +84,7 @@ public class TarariXpathConverterTest {
     @Test
     public void testConverter() throws Exception {
         {
-            Map smallMap = new HashMap();
+            Map<String, String> smallMap = new HashMap<String, String>();
             smallMap.put("e", "http://junk.com/emp");
 
             String got;
@@ -106,7 +108,7 @@ public class TarariXpathConverterTest {
         }
 
         {
-            Map bigMap = new HashMap();
+            Map<String, String> bigMap = new HashMap<String, String>();
             bigMap.put("e", "http://junk.com/emp");
             bigMap.put("foo", "http://www.foo.com");
             bigMap.put("foo1", "http://www.food.com");
@@ -126,6 +128,7 @@ public class TarariXpathConverterTest {
         }
     }
 
+    @SuppressWarnings({"UnusedDeclaration", "UnusedAssignment"})
     @Test(expected = ParseException.class)
     public void testIntegers() throws Exception {
         Map m = new HashMap();
@@ -172,8 +175,8 @@ public class TarariXpathConverterTest {
             "/foo[@bar[]",
         };
 
-        for (int i = 0; i < badones.length; i++) {
-            gave = badones[i];
+        for (String badone : badones) {
+            gave = badone;
             try {
                 got = TarariXpathConverter.convertToTarariXpath(m, gave);
                 fail("Expected exception was not thrown.  got=" + got);
@@ -185,7 +188,7 @@ public class TarariXpathConverterTest {
 
     @Test
     public void testUndeclaredPrefix() throws Exception {
-        Map smallMap = new HashMap();
+        Map<String, String> smallMap = new HashMap<String, String>();
         smallMap.put("asdf", "http://junk.com/emp");
         String gave;
         String got;
@@ -198,7 +201,7 @@ public class TarariXpathConverterTest {
     @Test
     @BugNumber(1711)
     public void testDashInPrefixBug1711() throws Exception {
-        Map map = new HashMap();
+        Map<String, String> map = new HashMap<String, String>();
         map.put("SOAP-ENV", "http://blah");
         map.put("soapenv", "http://blah");
         map.put("typens", "http://bletch");
@@ -218,11 +221,73 @@ public class TarariXpathConverterTest {
 
     @Test(expected = ParseException.class)
     public void testAlexBofaBug() throws Exception {
-        Map map = new HashMap();
+        Map<String, String> map = nsmap();
+        String gave="/soapenv:Envelope/soapenv:Body/api:RetrieveTransactionHistoryV001/api:osaRequestHeader/osa:rulesBag/osa:sets/osa:set[osa:name=\"routingRules\"]/osa:attributes/osa:attribute/osa:value";
+        TarariXpathConverter.convertToTarariXpath(map, gave);
+    }
+
+    private static Map<String, String> nsmap() {
+        Map<String, String> map = new HashMap<String, String>();
         map.put("soapenv", "http://blah/soapenv");
         map.put("api", "http://blah/api");
         map.put("osa", "http://blah/osa");
-        String gave="/soapenv:Envelope/soapenv:Body/api:RetrieveTransactionHistoryV001/api:osaRequestHeader/osa:rulesBag/osa:sets/osa:set[osa:name=\"routingRules\"]/osa:attributes/osa:attribute/osa:value";
-        TarariXpathConverter.convertToTarariXpath(map, gave);
+        return map;
+    }
+
+    @Test
+    public void testZeroEqCount() throws Exception {
+        FastXpath fx = TarariXpathConverter.convertToFastXpath(nsmap(), "0 = count(/soapenv:Envelope/soapenv:Body/api:Blah)");
+        assertEquals(fx.getCountComparison(), ComparisonOperator.EQ);
+        assertEquals(fx.getCountValue(), new Integer(0));
+        assertEquals(fx.getExpression(), "/*[local-name() = \"Envelope\"  and namespace-uri() =\"http://blah/soapenv\" ]/*[local-name() = \"Body\"  and namespace-uri() =\"http://blah/soapenv\" ]/*[local-name() = \"Blah\"  and namespace-uri() =\"http://blah/api\" ]");
+    }
+
+    @Test
+    public void testCountNePos() throws Exception {
+        FastXpath fx = TarariXpathConverter.convertToFastXpath(nsmap(), "count(/soapenv:Envelope/soapenv:Body/api:Blah) != 4");
+        assertEquals(fx.getCountComparison(), ComparisonOperator.NE);
+        assertEquals(fx.getCountValue(), new Integer(4));
+    }
+
+    @Test
+    public void testCountNeNeg() throws Exception {
+        FastXpath fx = TarariXpathConverter.convertToFastXpath(nsmap(), "count(/soapenv:Envelope/soapenv:Body/api:Blah) != -4");
+        assertEquals(fx.getCountComparison(), ComparisonOperator.NE);
+        assertEquals(fx.getCountValue(), new Integer(-4));
+    }
+
+    @Test
+    public void testNegEqCount() throws Exception {
+        FastXpath fx = TarariXpathConverter.convertToFastXpath(nsmap(), "   -4  != count(/soapenv:Envelope/soapenv:Body/api:Blah)");
+        assertEquals(fx.getCountComparison(), ComparisonOperator.NE);
+        assertEquals(fx.getCountValue(), new Integer(-4));
+    }
+
+    @Test
+    public void testCountLtPos() throws Exception {
+        FastXpath fx = TarariXpathConverter.convertToFastXpath(nsmap(), "count(/soapenv:Envelope/soapenv:Body/api:Blah)<59");
+        assertEquals(fx.getCountComparison(), ComparisonOperator.LT);
+        assertEquals(fx.getCountValue(), new Integer(59));
+    }
+
+    @Test
+    public void testCountLtNeg() throws Exception {
+        FastXpath fx = TarariXpathConverter.convertToFastXpath(nsmap(), "count(/soapenv:Envelope/soapenv:Body/api:Blah)<-59");
+        assertEquals(fx.getCountComparison(), ComparisonOperator.LT);
+        assertEquals(fx.getCountValue(), new Integer(-59));
+    }
+
+    @Test
+    public void testNegGtCount() throws Exception {
+        FastXpath fx = TarariXpathConverter.convertToFastXpath(nsmap(), "-59>count(/soapenv:Envelope/soapenv:Body/api:Blah)");
+        assertEquals(fx.getCountComparison(), ComparisonOperator.LT);
+        assertEquals(fx.getCountValue(), new Integer(-59));
+    }
+
+    @Test
+    public void testPosLeCount() throws Exception {
+        FastXpath fx = TarariXpathConverter.convertToFastXpath(nsmap(), "  53   <=count(/soapenv:Envelope/soapenv:Body/api:Blah)");
+        assertEquals(fx.getCountComparison(), ComparisonOperator.GE);
+        assertEquals(fx.getCountValue(), new Integer(53));
     }
 }
