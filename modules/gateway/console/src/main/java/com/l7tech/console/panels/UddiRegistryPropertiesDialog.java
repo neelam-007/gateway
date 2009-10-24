@@ -323,7 +323,13 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     public void modelToView(){
         registryNameTextField.setText(uddiRegistry.getName());
         enabledCheckBox.setSelected(uddiRegistry.isEnabled());
-        uddiRegistryTypeComboBox.setSelectedItem(UDDIRegistry.UDDIRegistryType.findType(uddiRegistry.getUddiRegistryType()));
+        String regType = uddiRegistry.getUddiRegistryType();
+        if(regType != null){
+            uddiRegistryTypeComboBox.setSelectedItem(UDDIRegistry.UDDIRegistryType.findType(regType));
+        }else{
+            uddiRegistryTypeComboBox.setSelectedIndex(-1);
+        }
+
         baseUrlTextField.setText(uddiRegistry.getBaseUrl());
         securityUrlTextField.setText(uddiRegistry.getSecurityUrl());
         inquiryUrlTextField.setText(uddiRegistry.getInquiryUrl());

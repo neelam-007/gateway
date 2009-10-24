@@ -146,26 +146,30 @@ public class UddiRegistryManagerWindow extends JDialog {
     }
 
     private void doRemove() {
-        UDDIRegistry uddiRegistry = uddiRegistryTable.getSelectedUddiRegistry();
+        final UDDIRegistry uddiRegistry = uddiRegistryTable.getSelectedUddiRegistry();
         if (uddiRegistry == null)
             return;
 
-        int result = JOptionPane.showConfirmDialog(this,
+        DialogDisplayer.showConfirmDialog(this,
                                                    "Are you sure you want to remove the UDDI Registry \"" + uddiRegistry.getName() + "\"?",
                                                    "Confirm Removal",
-                                                   JOptionPane.YES_NO_CANCEL_OPTION,
-                                                   JOptionPane.QUESTION_MESSAGE);
-        if (result != JOptionPane.YES_OPTION)
-            return;
+                                                   JOptionPane.YES_NO_OPTION,
+                                                   JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option != JOptionPane.YES_OPTION)
+                            return;
 
-        try {
-            getUDDIRegistryAdmin().deleteUDDIRegistry(uddiRegistry.getOid());
-            loadUddiRegistries();
-        } catch (DeleteException e) {
-            showErrorMessage("Remove Failed", "Failed to remove UDDI Registry: " + ExceptionUtils.getMessage(e), e);
-        } catch (FindException e) {
-            showErrorMessage("Remove Failed", "Failed to remove UDDI Registry: " + ExceptionUtils.getMessage(e), e);
-        }
+                        try {
+                            getUDDIRegistryAdmin().deleteUDDIRegistry(uddiRegistry.getOid());
+                            loadUddiRegistries();
+                        } catch (DeleteException e) {
+                            showErrorMessage("Remove Failed", "Failed to remove UDDI Registry: " + ExceptionUtils.getMessage(e), e);
+                        } catch (FindException e) {
+                            showErrorMessage("Remove Failed", "Failed to remove UDDI Registry: " + ExceptionUtils.getMessage(e), e);
+                        }
+                    }
+                });
     }
 
     private void editAndSave(final UDDIRegistry uddiRegistry) {
