@@ -112,7 +112,7 @@ public class UddiRegistryManagerWindow extends JDialog {
                 try {
                     uddiRegistryAdmin.testUDDIRegistryAuthentication(uddiRegistry.getOid());
                     DialogDisplayer.showMessageDialog(UddiRegistryManagerWindow.this, "Authentication successful!",
-                            title, JOptionPane.OK_OPTION, null);
+                            "Test Authentication", JOptionPane.INFORMATION_MESSAGE, null);
 
                 } catch (FindException e1) {
                     DialogDisplayer.showMessageDialog(UddiRegistryManagerWindow.this,
