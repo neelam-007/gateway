@@ -30,7 +30,6 @@ import com.l7tech.security.token.http.HttpBasicToken;
 
 import java.util.Properties;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.net.URL;
 import java.io.IOException;
 import java.io.InputStream;
@@ -482,11 +481,11 @@ public class LdapIdentityProviderTest {
         Assert.assertNotNull( "Test ou group found", ougroup2 );
 
         // Test isMember nesting
-        //Assert.assertTrue( "Member of group", ldapGroupManager.isMember( user1, ougroup1 )); // user is member of nested group // TODO bug 7873
+        Assert.assertTrue( "Member of group", ldapGroupManager.isMember( user1, ougroup1 )); // user is member of nested group sougroup1
         Assert.assertFalse( "Not Member of group", ldapGroupManager.isMember( user2, ougroup1 ));
 
-        Assert.assertTrue( "Member of group", ldapGroupManager.isMember( user1, sougroup2 )); // user is member of nested ou group
-        Assert.assertTrue( "Member of group", ldapGroupManager.isMember( user2, sougroup2 )); // user is member of nested ou group
+        Assert.assertTrue( "Member of group", ldapGroupManager.isMember( user1, sougroup2 )); // user is member of nested ou group sougroup2
+        Assert.assertTrue( "Member of group", ldapGroupManager.isMember( user2, sougroup2 )); // user is member of nested ou group sougroup2
 
         EntityHeaderSet<IdentityHeader> expectedUsers = new EntityHeaderSet<IdentityHeader>();
         expectedUsers.add( idh( ldapIdentityProvider, "cn=test1, ou=users, ou=system", "test1", EntityType.USER ) );

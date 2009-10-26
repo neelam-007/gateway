@@ -22,6 +22,7 @@ import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -252,21 +253,50 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
             return false;
         }
 
-        return isMember( user, group, 1 );
+        return isMember( user, group, true, 1 );
     }
 
     private boolean isMember( final User user,
                               final LdapGroup group,
+                              final boolean processOuGroups,
                               final int depth ) throws FindException {
         LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
         for(GroupMappingConfig groupMappingConfig : ldapIdentityProviderConfig.getGroupMappings()) {
             final MemberStrategy memberStrategy = groupMappingConfig.getMemberStrategy();
-            if( MemberStrategy.MEMBERS_BY_OU.equals(memberStrategy) ) {
+            if( MemberStrategy.MEMBERS_BY_OU.equals(memberStrategy) && processOuGroups ) {
                 try {
                     final LdapName userDN = new LdapName(user.getId());
                     final LdapName groupDN = new LdapName(group.getDn());
                     if( userDN.startsWith(groupDN) ) {
                         return true;
+                    }
+                    // The user is not a member of this group, need to check subgroups
+                    if ( groupNestingProcessNextDepth(depth) ) {
+                        final List<LdapGroup> subgroups = new ArrayList<LdapGroup>();
+                        if ( !getCachedSubgroups( group, subgroups ) ) {
+                            final String filter = identityProvider.groupSearchFilterWithParam("*");
+                            // use dn of group as base
+                            ldapTemplate.search( group.getDn(), filter, 0, null, new LdapUtils.LdapListener(){
+                                @Override
+                                void attributes( final String dn, final Attributes attributes ) throws NamingException {
+                                    if ( !group.getDn().equals(dn) ) { // avoid recursion on this group
+                                        LdapGroup group = buildGroup(dn, attributes);
+                                        if ( group != null ) {
+                                            subgroups.add( group );
+                                        }
+                                    }
+                                }
+                            });
+                            cacheSubgroups( group, subgroups );
+                        }
+
+                        // Process subgroups but skip any nested OU groups since if the user is a member
+                        // of the nested OU group they would have been a member of this OU group                        
+                        for( LdapGroup subgroup : subgroups ) {
+                            if ( isMember(user, subgroup, false, depth + 1) ) {
+                                return true;
+                            }
+                        }
                     }
                 } catch(NamingException e) {
                     String msg = "failed to check group membership";
@@ -330,7 +360,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                 }
 
                                 if( subgroup != null ) {
-                                    if ( isMember(user, subgroup, depth + 1) ) {
+                                    if ( isMember(user, subgroup, true, depth + 1) ) {
                                         return true;
                                     }
                                 } else {
@@ -1029,6 +1059,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     }
 
     private void cacheGroup( final LdapGroup group ) {
+        final Cache groupCache = this.groupCache;
         if ( groupCache != null && group != null ) {
             GroupCacheEntry entry = new GroupCacheEntry(group);
             groupCache.store( GroupCacheKey.buildDnKey( group.getDn() ), entry, entry.timestamp );
@@ -1039,6 +1070,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     private boolean isNonGroup( final LdapGroup group, final String member ) {
         boolean nonGroup = false;
 
+        final Cache groupCache = this.groupCache;
         if ( groupCache != null ) {
             GroupCacheEntry entry = (GroupCacheEntry) groupCache.retrieve( GroupCacheKey.buildDnKey(group.getDn()) );
             if ( !isExpired(entry) ) {
@@ -1050,10 +1082,39 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     }
 
     private void cacheNonGroups( final LdapGroup group, final Collection<String> nonGroupMembers ) {
+        final Cache groupCache = this.groupCache;
         if ( groupCache != null && !nonGroupMembers.isEmpty() ) {
             GroupCacheEntry entry = (GroupCacheEntry) groupCache.retrieve( GroupCacheKey.buildDnKey(group.getDn()) );
             if ( !isExpired(entry) ) {
                 entry.addNonGroups( nonGroupMembers );
+            }
+        }
+    }
+
+    private boolean getCachedSubgroups( final LdapGroup group, final Collection<LdapGroup> subgroups ) {
+        boolean foundSubgroups = false;
+
+        final Cache groupCache = this.groupCache;
+        if ( groupCache != null ) {
+            GroupCacheEntry entry = (GroupCacheEntry) groupCache.retrieve( GroupCacheKey.buildDnKey(group.getDn()) );
+            if ( !isExpired(entry) ) {
+                Collection<LdapGroup> entrySubgroups = entry.getSubgroups();
+                if ( entrySubgroups != null ) {
+                    foundSubgroups = true;
+                    subgroups.addAll( entrySubgroups );
+                }
+            }
+        }
+
+        return foundSubgroups;
+    }
+
+    private void cacheSubgroups( final LdapGroup group, final Collection<LdapGroup> subgroups ) {
+        final Cache groupCache = this.groupCache;
+        if ( groupCache != null ) {
+            GroupCacheEntry entry = (GroupCacheEntry) groupCache.retrieve( GroupCacheKey.buildDnKey(group.getDn()) );
+            if ( !isExpired(entry) ) {
+                entry.setSubgroups( subgroups );
             }
         }
     }
@@ -1122,6 +1183,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         private final Attributes attributes;
         private final long timestamp = System.currentTimeMillis();
         private final Set<String> nonGroupMembers = Collections.synchronizedSet( new HashSet<String>() );
+        private final AtomicReference<Collection<LdapGroup>> subgroups = new AtomicReference<Collection<LdapGroup>>();
 
         private GroupCacheEntry( final LdapGroup ldapGroup ) {
             this( ldapGroup.getProviderId(),
@@ -1150,6 +1212,14 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
 
         public void addNonGroups( final Collection<String> members ) {
             nonGroupMembers.addAll( members );
+        }
+
+        public Collection<LdapGroup> getSubgroups() {
+            return subgroups.get();    
+        }
+
+        public void setSubgroups( final Collection<LdapGroup> subgroups ) {
+            this.subgroups.set( Collections.unmodifiableCollection(new ArrayList<LdapGroup>(subgroups)) );
         }
     }
 
