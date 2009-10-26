@@ -17,10 +17,10 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.service.uddi.UddiAgentFactory;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.uddi.RegistryPublicationManager;
 import com.l7tech.server.uddi.UDDITemplateManager;
+import com.l7tech.server.uddi.UDDIHelper;
 import com.l7tech.uddi.*;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
@@ -64,7 +64,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     private final AssertionLicense licenseManager;
     private final RegistryPublicationManager registryPublicationManager;
-    private final UddiAgentFactory uddiAgentFactory;
+    private final UDDIHelper uddiHelper;
     private final ServiceManager serviceManager;
     private final ServiceAliasManager serviceAliasManager;
     private final PolicyValidator policyValidator;
@@ -91,7 +91,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
-                            UddiAgentFactory uddiAgentFactory,
+                            UDDIHelper uddiHelper,
                             ServiceManager serviceManager,
                             ServiceAliasManager serviceAliasManager,
                             PolicyValidator policyValidator,
@@ -108,7 +108,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     {
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;
-        this.uddiAgentFactory = uddiAgentFactory;
+        this.uddiHelper = uddiHelper;
         this.serviceManager = serviceManager;
         this.serviceAliasManager = serviceAliasManager;
         this.policyValidator = policyValidator;
@@ -470,38 +470,9 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public String[] findUDDIRegistryURLs() throws FindException {
-        Properties uddiProps;
-        try {
-            uddiProps = uddiAgentFactory.getUddiProperties();
-        } catch ( UddiAgentException uae) {
-            throw new FindException(uae.getMessage());
-        }
-
-        // get all UDDI Registry URLs
-        int uddiNumber = 1;
-        String url;
-        List<String> urlList = new ArrayList<String>();
-        do {
-            url = uddiProps.getProperty( UddiAgent.PROP_INQUIRY_URLS + '.' + uddiNumber++);
-            if (url != null) urlList.add(url);
-        } while (url != null);
-
-        String[] urls = new String[urlList.size()];
-        if(!urlList.isEmpty()) {
-            for (int i = 0; i < urlList.size(); i++) {
-                urls[i] = urlList.get(i);
-            }
-        }
-        return urls;
-    }
-
-    @Override
     public UDDINamedEntity[] findBusinessesFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException {
         try {
-            UddiAgent uddiAgent = uddiAgentFactory.getUddiAgent();
-
-            UDDINamedEntity [] uddiNamedEntities = uddiAgent.getMatchingBusinesses(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
+            UDDINamedEntity [] uddiNamedEntities = uddiHelper.getMatchingBusinesses(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
             //noinspection unchecked
             Arrays.sort(uddiNamedEntities, new ResolvingComparator(new Resolver<UDDINamedEntity, String>() {
 
@@ -511,7 +482,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                 }
             }, false));
             return uddiNamedEntities;
-        } catch (UddiAgentException e) {
+        } catch (UDDIException e) {
             String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
             if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
                  ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
@@ -529,9 +500,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     @Override
     public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException {
         try {
-            UddiAgent uddiAgent = uddiAgentFactory.getUddiAgent();
-
-            WsdlInfo[] wsdlInfo = uddiAgent.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
+            WsdlInfo[] wsdlInfo = uddiHelper.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
             //noinspection unchecked
             Arrays.sort(wsdlInfo, new ResolvingComparator(new Resolver<WsdlInfo,String>(){
                 @Override
@@ -540,7 +509,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                 }
             }, false));
             return wsdlInfo;
-        } catch (UddiAgentException e) {
+        } catch (UDDIException e) {
             String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
             if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
                  ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
@@ -556,10 +525,9 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
-        final UDDIClient uddiClient = UDDIClientFactory.getInstance().newUDDIClient(uddiRegistry.getInquiryUrl(),
+        return UDDIClientFactory.getInstance().newUDDIClient(uddiRegistry.getInquiryUrl(),
                 uddiRegistry.getPublishUrl(), uddiRegistry.getSecurityUrl(), uddiRegistry.getRegistryAccountUserName(),
                 uddiRegistry.getRegistryAccountPassword(), PolicyAttachmentVersion.v1_5);
-        return uddiClient;
     }
 
     @Override

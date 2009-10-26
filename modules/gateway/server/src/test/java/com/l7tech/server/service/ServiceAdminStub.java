@@ -263,16 +263,6 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public String[] findUDDIRegistryURLs() throws FindException {
-        String[] urlList = new String[3];
-        urlList[0] = "http://whale.l7tech.com:8080/uddi/inquiry";
-        urlList[1] = "http://bones.l7tech.com:8080/uddi/inquiry";
-        urlList[2] = "http://hugh.l7tech.com:8080/uddi/inquiry";
-
-        return urlList;
-    }
-
-    @Override
     public String[] listExistingCounterNames() throws FindException {
         return new String[0];
     }

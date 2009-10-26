@@ -172,10 +172,6 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
     @Transactional(readOnly = true)
     UDDINamedEntity[] findBusinessesFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException;
 
-    @Transactional(readOnly=true)
-    @Administrative(licensed=false)
-    String[] findUDDIRegistryURLs() throws FindException;
-
     /**
      * Gets the ThroughputQuota counter names already defined on this gateway. This is used by the ThroughputQuota assertion
      * properties dialog to populate a combo box to choose the counters from.

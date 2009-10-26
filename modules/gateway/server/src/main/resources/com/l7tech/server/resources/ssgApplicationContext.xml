@@ -1108,8 +1108,19 @@
         </constructor-arg>
     </bean>
 
-    <bean id="uddiAgentFactory" class="com.l7tech.server.service.uddi.UddiAgentFactory">
-        <property name="serverConfig" ref="serverConfig"/>
+    <bean id="uddiHelper" class="com.l7tech.server.uddi.UDDIHelper">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1">
+            <bean class="org.springframework.beans.factory.config.PropertiesFactoryBean"
+                  depends-on="systemProperties">
+                <property name="ignoreResourceNotFound" value="true"/>
+                <property name="locations">
+                    <list>
+                        <value>file:${com.l7tech.server.configDirectory}${file.separator}uddi.properties</value>
+                    </list>
+                </property>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
