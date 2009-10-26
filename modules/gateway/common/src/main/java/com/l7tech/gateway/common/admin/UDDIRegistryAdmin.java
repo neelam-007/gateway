@@ -38,8 +38,15 @@ public interface UDDIRegistryAdmin {
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
     Collection<UDDIRegistry> findAllUDDIRegistries() throws FindException;
 
+    /**
+     * Before the UDDIRegistry is deleted, all data published to the registry should be attempted to be removed.
+     *
+     * @param oid
+     * @throws DeleteException
+     * @throws FindException
+     */
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=DELETE_BY_ID)
-    void deleteUDDIRegistry(long oid) throws DeleteException, FindException;
+    void deleteUDDIRegistry(long oid) throws DeleteException, FindException, UDDIException;
 
     /**
      * Test if it is possible to authenticate with the supplied UDDIRegistry
@@ -70,14 +77,25 @@ public interface UDDIRegistryAdmin {
 
     @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.DELETE_ENTITY)
     void deleteGatewayWsdlFromUDDI( final UDDIProxiedService uddiProxiedService) throws FindException, UDDIException, DeleteException;
+
     /**
      * Find the UDDIProxiedService for a service, if it exists
      *
      * @param serviceOid the service to get the UDDIProxiedServiec for
      * @return UDDIProxiedService or null if the service does not have one
+     * @throws com.l7tech.objectmodel.FindException Any problem finding the proxied service
      */
     @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.FIND_ENTITIES)
     UDDIProxiedService getUDDIProxiedService(long serviceOid) throws FindException;
+
+    /**
+     * Find all UDDIProxiedServices which have been published to a UDDIRegistry
+     * @param registryOid the UDDIRegistry to search
+     * @return Collection<UDDIProxiedService> of all proxied services published to the UDDI Registry
+     * @throws FindException if any problems searching
+     */
+    @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.FIND_ENTITIES)
+    Collection<UDDIProxiedService> getAllProxiedServicesForRegistry(long registryOid) throws FindException;
 
     static class PublishProxiedServiceException extends Exception{
         public PublishProxiedServiceException(String message) {

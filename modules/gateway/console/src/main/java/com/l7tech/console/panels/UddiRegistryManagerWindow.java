@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
@@ -122,11 +123,24 @@ public class UddiRegistryManagerWindow extends JDialog {
         if (uddiRegistry == null)
             return;
 
+        UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+        final Collection<UDDIProxiedService> proxiedServices;
+        try {
+            proxiedServices = uddiRegistryAdmin.getAllProxiedServicesForRegistry(uddiRegistry.getOid());
+        } catch (FindException e) {
+            showErrorMessage("Cannot Delete UDDI Registry", "Cannot determine if UDDI Registry contains published information", e);
+            return;
+        }
+
+        final String removalMsg = "Are you sure you want to remove the UDDI Registry \"" + uddiRegistry.getName() + "\"?"
+                + (((!proxiedServices.isEmpty())? " WARNING: Previously published information will be deleted": ""));
+
+        final int msgType = (proxiedServices.isEmpty())? JOptionPane.QUESTION_MESSAGE: JOptionPane.WARNING_MESSAGE;
         DialogDisplayer.showConfirmDialog(this,
-                                                   "Are you sure you want to remove the UDDI Registry \"" + uddiRegistry.getName() + "\"?",
+                                                   removalMsg,
                                                    "Confirm Removal",
                                                    JOptionPane.YES_NO_OPTION,
-                                                   JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
+                                                   msgType, new DialogDisplayer.OptionListener() {
                     @Override
                     public void reportResult(int option) {
                         if (option != JOptionPane.YES_OPTION)
@@ -138,6 +152,8 @@ public class UddiRegistryManagerWindow extends JDialog {
                         } catch (DeleteException e) {
                             showErrorMessage("Remove Failed", "Failed to remove UDDI Registry: " + ExceptionUtils.getMessage(e), e);
                         } catch (FindException e) {
+                            showErrorMessage("Remove Failed", "Failed to remove UDDI Registry: " + ExceptionUtils.getMessage(e), e);
+                        } catch (UDDIException e) {
                             showErrorMessage("Remove Failed", "Failed to remove UDDI Registry: " + ExceptionUtils.getMessage(e), e);
                         }
                     }

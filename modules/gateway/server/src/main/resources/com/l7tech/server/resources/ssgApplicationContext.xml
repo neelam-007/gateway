@@ -1560,7 +1560,9 @@
         </property>
     </bean>
 
-    <bean id="uddiRegistryManager" class="com.l7tech.server.uddi.UDDIRegistryManagerImpl" parent="hibernateBean" />
+    <bean id="uddiRegistryManager" class="com.l7tech.server.uddi.UDDIRegistryManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="uddiProxiedServiceManager"/>    
+    </bean>
 
     <bean id="uddiProxiedServiceManager" class="com.l7tech.server.uddi.UDDIProxiedServiceManagerImpl" parent="hibernateBean" />
     

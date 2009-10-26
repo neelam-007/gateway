@@ -85,29 +85,6 @@ public class UDDIRegistry extends NamedEntityImp {
     public UDDIRegistry() {
     }
 
-    public UDDIRegistry(long oid, String name, String uddiRegistryType, String baseUrl, String inquiryUrl, String publishUrl, String securityUrl, String subscriptionUrl, boolean clientAuth, long keystoreOid, String keyAlias, String registryAccountUserName, String registryAccountPassword, boolean metricsEnabled, long metricPublishFrequency, boolean monitoringEnabled, long monitoringFrequency, boolean subscribeForNotifications) {
-        super();
-        //todo delete this is not required setOid and remove param also
-        setOid(oid);
-        setName(name);
-        this.uddiRegistryType = uddiRegistryType;
-        this.baseUrl = baseUrl;
-        this.inquiryUrl = inquiryUrl;
-        this.publishUrl = publishUrl;
-        this.securityUrl = securityUrl;
-        this.subscriptionUrl = subscriptionUrl;
-        this.clientAuth = clientAuth;
-        this.keystoreOid = keystoreOid;
-        this.keyAlias = keyAlias;
-        this.registryAccountUserName = registryAccountUserName;
-        this.registryAccountPassword = registryAccountPassword;
-        isMetricsEnabled = metricsEnabled;
-        this.metricPublishFrequency = metricPublishFrequency;
-        isMonitoringEnabled = monitoringEnabled;
-        this.monitoringFrequency = monitoringFrequency;
-        isSubscribeForNotifications = subscribeForNotifications;
-    }
-
     @Column(name="enabled")
     public boolean isEnabled() {
         return isEnabled;

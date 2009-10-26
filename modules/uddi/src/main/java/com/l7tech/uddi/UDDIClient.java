@@ -131,7 +131,7 @@ public interface UDDIClient extends Closeable {
      * Publish a Business Service to UDDI. The Business Service may already exist
      * <p/>
      * If the BusinessService does not already exist it will be created and the serviceKey will be assigned by
-     * the UDDi registry and set on the BusinessService following this operation.
+     * the UDDI registry and set on the BusinessService following this operation.
      *
      * @param businessService the Business Service to publish
      * @return true if the BusinessService was created, false otherwise
@@ -194,7 +194,7 @@ public interface UDDIClient extends Closeable {
      * Delete a BusinessService from the UDDI Registry.
      *
      * Any dependent tModels representing wsdl:portType and wsdl:binding should also be deleted. Thd delete for
-     * tModels follows the contact of deleteTModel()
+     * tModels follows the contract of deleteTModel()
      *
      * @param serviceKey String serviceKey of the service to delete
      * @throws UDDIException if any problem during the attempt to delete

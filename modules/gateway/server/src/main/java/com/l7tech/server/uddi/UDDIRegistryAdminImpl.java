@@ -62,7 +62,17 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     @Override
-    public void deleteUDDIRegistry(final long oid) throws DeleteException, FindException {
+    public void deleteUDDIRegistry(final long oid) throws DeleteException, FindException, UDDIException {
+
+        UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(oid);
+        if(uddiRegistry == null) throw new FindException("Could not find UDDI Registry to delete");
+
+        //delete all UDDIProxiedService's which belong to this registry
+        Collection<UDDIProxiedService> allProxiedServices = uddiRegistryManager.findAllByRegistryOid(uddiRegistry.getOid());
+        for(UDDIProxiedService proxiedService: allProxiedServices){
+            deleteGatewayWsdlFromUDDI(proxiedService);
+        }
+
         logger.log(Level.INFO, "Deleting UDDI Registry oid = " + oid);
         uddiRegistryManager.delete(oid);
     }
@@ -108,6 +118,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
 
         uddiProxiedServiceManager.delete(uddiProxiedService.getOid());
         logger.log(Level.INFO, "Deleted UDDIProxiedService");
+    }
+
+    @Override
+    public Collection<UDDIProxiedService> getAllProxiedServicesForRegistry(long registryOid) throws FindException {
+        return uddiRegistryManager.findAllByRegistryOid(registryOid);
     }
 
     @Override

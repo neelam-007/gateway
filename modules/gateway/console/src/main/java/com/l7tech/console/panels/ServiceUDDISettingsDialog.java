@@ -215,7 +215,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     private void removeUDDIProxiedService(){
         DialogDisplayer.showConfirmDialog(this,
-                                                   "Confirm removal of published Gateway WSDL from UDDI Registry",
+                                                   "Removal published Gateway WSDL from UDDI Registry?",
                                                    "Confirm Removal from UDDI",
                                                    JOptionPane.YES_NO_OPTION,
                                                    JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
@@ -239,7 +239,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     private void publishUDDIProxiedService(){
         DialogDisplayer.showConfirmDialog(this,
-                                                   "Confirm publishing of Gateway WSDL to UDDI Registry",
+                                                   "Publish Gateway WSDL to UDDI Registry?",
                                                    "Confirm Publish to UDDI",
                                                    JOptionPane.YES_NO_OPTION,
                                                    JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {

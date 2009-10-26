@@ -6,10 +6,7 @@ package com.l7tech.gateway.common.uddi;
 
 import org.hibernate.annotations.Proxy;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Version;
+import javax.persistence.*;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
