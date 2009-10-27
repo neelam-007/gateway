@@ -302,11 +302,12 @@ public final class RegistryImpl extends Registry
         return (SecurityProvider)applicationContext.getBean("securityProvider", SecurityProvider.class);
     }
 
+    @SuppressWarnings({ "unchecked" })
     @Override
     public GuidBasedEntityManager<Policy> getPolicyFinder() {
         checkAdminContext();
         if (policyFinder != null) return policyFinder;
-        return policyFinder = (GuidBasedEntityManager<Policy>) applicationContext.getBean("managerPolicyCache");
+        return policyFinder = (GuidBasedEntityManager<Policy>) applicationContext.getBean("managerPolicyCache" , GuidBasedEntityManager.class);
     }
 
     @Override
@@ -409,6 +410,7 @@ public final class RegistryImpl extends Registry
         folderAdmin = null;
         rbacAdmin = null;
         logSinkAdmin = null;
+        uddiRegistryAdmin = null;
         emailListenerAdmin = null;
         emailAdmin = null;
     }
