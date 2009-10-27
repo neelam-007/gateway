@@ -85,13 +85,14 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void initialize() {
-        //setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setContentPane(mainPanel);
         setModal(true);
-        //setMinimumSize(new Dimension(600, 400));
         getRootPane().setDefaultButton(cancelButton);
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
+
+        sqlQueryTextArea.setDocument(new MaxLengthDocument(JdbcAdmin.MAX_QUERY_LENGTH));
+        queryNameTextField.setDocument(new MaxLengthDocument(48));
 
         final EventListener changeListener = new RunOnChangeListener(new Runnable() {
             public void run() {
@@ -101,9 +102,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         connectionComboBox.addItemListener((ItemListener)changeListener);
         sqlQueryTextArea.getDocument().addDocumentListener((DocumentListener)changeListener);
         variablePrefixTextField.getDocument().addDocumentListener((DocumentListener)changeListener);
-
-        sqlQueryTextArea.setDocument(new MaxLengthDocument(JdbcAdmin.MAX_QUERY_LENGTH));
-        queryNameTextField.setDocument(new MaxLengthDocument(48));
 
         initNamingTable();
 
