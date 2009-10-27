@@ -7,6 +7,7 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.TimeUnit;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -20,10 +21,13 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.ws.Binding;
 import javax.xml.ws.BindingProvider;
+import javax.xml.ws.Holder;
 import javax.xml.ws.handler.Handler;
 import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.datatype.DatatypeFactory;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -72,6 +76,7 @@ public class UDDIPolicyTool extends JFrame {
     
     private JTextField urlInquiryTextField;
     private JTextField urlPublishTextField;
+    private JTextField urlSubscriptionTextField;
     private JTextField urlSecurityTextField;
     private JTextField searchPolicyNameTextField;
     private JButton searchPolicyButton;
@@ -97,17 +102,22 @@ public class UDDIPolicyTool extends JFrame {
     private JButton serviceFetchButton;
     private JButton serviceInfoButton;
     private JButton serviceFetchBindingButton;
+    private JButton searchSubscriptionsButton;
+    private JList subscriptionSearchList;
+    private JButton deleteSubscriptionButton;
+    private JButton addSubscriptionButton;
+    private JButton subscriptionResultsButton;
 
     private String authToken;
     private String login;
 
     public UDDIPolicyTool() {
-        super("UDDI Tool v0.5");
+        super("UDDI Tool v0.6");
 
         setContentPane(mainPanel);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        policySearchList.setCellRenderer(new TextListCellRenderer(new TextListCellProvider(true), new TextListCellProvider(false), false));
-        serviceForPolicyList.setCellRenderer(new TextListCellRenderer(new TextListCellProvider(true), new TextListCellProvider(false), false));
+        policySearchList.setCellRenderer(new TextListCellRenderer<Object>(new TextListCellProvider(true), new TextListCellProvider(false), false));
+        serviceForPolicyList.setCellRenderer(new TextListCellRenderer<Object>(new TextListCellProvider(true), new TextListCellProvider(false), false));
         initListeners();
         initData();
         pack();
@@ -117,6 +127,7 @@ public class UDDIPolicyTool extends JFrame {
 
     private void initListeners() {
         searchPolicyButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     findPolicies();
@@ -126,6 +137,7 @@ public class UDDIPolicyTool extends JFrame {
             }
         });
         searchPolicyServiceButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     findPolicyServices();
@@ -135,6 +147,7 @@ public class UDDIPolicyTool extends JFrame {
             }
         });
         policyDeleteButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     int result = JOptionPane.showConfirmDialog(
@@ -151,6 +164,7 @@ public class UDDIPolicyTool extends JFrame {
             }
         });
         searchBusinessButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     findBusinesses();
@@ -160,6 +174,7 @@ public class UDDIPolicyTool extends JFrame {
             }
         });
         businessInfoButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     fetchInfoBusiness();
@@ -169,6 +184,7 @@ public class UDDIPolicyTool extends JFrame {
             }
         });
         businessFetchButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     fetchBusiness();
@@ -177,10 +193,8 @@ public class UDDIPolicyTool extends JFrame {
                 }
             }
         });
-
-
-
         searchServiceButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     findServices();
@@ -190,6 +204,7 @@ public class UDDIPolicyTool extends JFrame {
             }
         });
         serviceInfoButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     fetchInfoService();
@@ -199,6 +214,7 @@ public class UDDIPolicyTool extends JFrame {
             }
         });
         serviceFetchButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     fetchService();
@@ -208,6 +224,7 @@ public class UDDIPolicyTool extends JFrame {
             }
         });
         serviceFetchBindingButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     fetchServiceBinding();
@@ -218,6 +235,7 @@ public class UDDIPolicyTool extends JFrame {
         });
 
         searchTModelButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     findTModels();
@@ -227,6 +245,7 @@ public class UDDIPolicyTool extends JFrame {
             }
         });
         fetchButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
                     fetchTModel();
@@ -235,8 +254,49 @@ public class UDDIPolicyTool extends JFrame {
                 }
             }
         });
+        searchSubscriptionsButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                try {
+                    findSubscriptions();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        addSubscriptionButton.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                try {
+                    addSubscription();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }  );
+        subscriptionResultsButton.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                try {
+                    subscriptionResults();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }  );
+        deleteSubscriptionButton.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                try {
+                    deleteSubscription();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        } );
 
         DefaultTableModel businessResultsModel = new DefaultTableModel(new String[]{ "Key", "Name", "Owner", "Created", "Modified" },0){
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -245,6 +305,7 @@ public class UDDIPolicyTool extends JFrame {
         businessResultsTable.setRowSorter(new TableRowSorter<DefaultTableModel>(businessResultsModel));
 
         DefaultTableModel serviceResultsModel = new DefaultTableModel(new String[]{ "Key", "Name", "Owner", "Created", "Modified" },0){
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -253,6 +314,7 @@ public class UDDIPolicyTool extends JFrame {
         serviceResultsTable.setRowSorter(new TableRowSorter<DefaultTableModel>(serviceResultsModel));
 
         DefaultTableModel model = new DefaultTableModel(new String[]{ "Key", "Name", "Desc" },0){
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -262,10 +324,16 @@ public class UDDIPolicyTool extends JFrame {
     }
 
     private void initData() {
-        urlInquiryTextField.setText("http://centrasitegov:2020/registry/uddi/inquiry");
-        urlPublishTextField.setText("http://centrasitegov:2020/registry/uddi/publish");
-        urlSecurityTextField.setText("http://centrasitegov:2020/registry/uddi/security");
-        credsUsernameTextField.setText("administrator@webmethods.com");
+        urlInquiryTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/inquiry");
+        urlPublishTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/publish");
+        urlSubscriptionTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/subscriptions");
+        urlSecurityTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/publish");
+        credsUsernameTextField.setText("administrator");
+
+//        urlInquiryTextField.setText("http://centrasitegov:2020/registry/uddi/inquiry");
+//        urlPublishTextField.setText("http://centrasitegov:2020/registry/uddi/publish");
+//        urlSecurityTextField.setText("http://centrasitegov:2020/registry/uddi/security");
+//        credsUsernameTextField.setText("administrator@webmethods.com");
 
 //        urlInquiryTextField.setText("http://CentrasiteUDDI:53307/UddiRegistry/inquiry");
 //        urlPublishTextField.setText("http://CentrasiteUDDI:53307/UddiRegistry/publish");
@@ -338,7 +406,11 @@ public class UDDIPolicyTool extends JFrame {
                         }
 
                         System.out.println("Key: " + key + " Name: " + businessname + " Desc:" + desc );
-                        model.addRow(new String[]{ key, businessname, info.getAuthorizedName(), info.getCreated().toString(), info.getModified().toString() });
+                        if ( info != null ) {
+                            model.addRow(new String[]{ key, businessname,info.getAuthorizedName(), info.getCreated().toString(), info.getModified().toString() });
+                        } else {
+                            model.addRow(new String[]{ key, businessname,"", "", "" });
+                        }
                     }
                 }
             }
@@ -492,7 +564,11 @@ public class UDDIPolicyTool extends JFrame {
                         }
 
                         System.out.println("Key: " + key + " Name: " + servicename + " Desc:" + desc );
-                        model.addRow(new String[]{ key, servicename, info.getAuthorizedName(), info.getCreated().toString(), info.getModified().toString() });
+                        if ( info != null ) {
+                            model.addRow(new String[]{ key, servicename,info.getAuthorizedName(), info.getCreated().toString(), info.getModified().toString() });
+                        } else {
+                            model.addRow(new String[]{ key, servicename,"", "", "" });
+                        }
                     }
                 }
             }
@@ -986,6 +1062,112 @@ public class UDDIPolicyTool extends JFrame {
         }
     }
 
+    private void findSubscriptions() throws Exception {
+        UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
+
+        List<String> subs = new ArrayList<String>();
+        List<Subscription> subscriptions = subscriptionPort.getSubscriptions( authToken() );
+        if ( subscriptions != null ) {
+            for ( Subscription subscription : subscriptions ) {
+                subs.add( subscription.getSubscriptionKey() + " " + subscription.getExpiresAfter().toString() );
+            }
+        }
+
+        subscriptionSearchList.setListData( subs.toArray( new Object[subs.size()] ) );
+    }
+
+    private void addSubscription() throws Exception {
+        int row = serviceResultsTable.getSelectedRow();
+        if ( row >= 0 ) {
+            int modelRow = serviceResultsTable.convertRowIndexToModel(row);
+            String serviceKey = (String)((DefaultTableModel)serviceResultsTable.getModel()).getValueAt(modelRow, 0);
+            System.out.println( "Selected key is: " + serviceKey );
+
+            UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
+
+            GetServiceDetail getServiceDetail = new GetServiceDetail();
+            getServiceDetail.getServiceKey().add( serviceKey );
+
+            SubscriptionFilter filter = new SubscriptionFilter();
+            filter.setGetServiceDetail( getServiceDetail );
+
+            GregorianCalendar expiresGC = new GregorianCalendar();
+            expiresGC.setTimeInMillis( System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1) );
+            XMLGregorianCalendar expiresAfter = DatatypeFactory.newInstance().newXMLGregorianCalendar( expiresGC );
+
+            Subscription subscription = new Subscription();
+            subscription.setBrief( true );
+            subscription.setExpiresAfter( expiresAfter );
+            subscription.setSubscriptionFilter( filter );
+
+            Holder<List<Subscription>> holder = new Holder<List<Subscription>>( Collections.singletonList( subscription ));
+
+            subscriptionPort.saveSubscription( authToken(), holder );
+
+            for ( Subscription sub : holder.value ) {
+                System.out.println( "Added subscription : " + sub.getSubscriptionKey() );
+            }
+        } else {
+            System.out.println("Select a service before adding subscription.");
+        }
+    }
+
+    private void subscriptionResults() throws Exception {
+        try {
+            String selected = (String) subscriptionSearchList.getSelectedValue();
+            if ( selected != null ) {
+                String subscriptionKey = selected.substring( 0, selected.indexOf(' '));
+                UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
+
+                GregorianCalendar startGC = new GregorianCalendar();
+                startGC.setTimeInMillis( System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1) );
+                XMLGregorianCalendar start = DatatypeFactory.newInstance().newXMLGregorianCalendar( startGC );
+
+                CoveragePeriod period = new CoveragePeriod();
+                period.setStartPoint( start );
+
+                GetSubscriptionResults getSubscriptionResults = new GetSubscriptionResults();
+                getSubscriptionResults.setAuthInfo( authToken() );
+                getSubscriptionResults.setSubscriptionKey( subscriptionKey );
+                getSubscriptionResults.setCoveragePeriod( period );
+
+                SubscriptionResultsList results = subscriptionPort.getSubscriptionResults( getSubscriptionResults );
+                if ( results != null ) {
+                    List<KeyBag> bags = results.getKeyBag();
+                    if ( bags != null ) {
+                        for ( KeyBag bag : bags ) {
+                            if ( bag.isDeleted() ) {
+                                System.out.println( "Deleted " + bag.getServiceKey() );
+                            } else {
+                                System.out.println( "Updated " + bag.getServiceKey() );
+                            }
+                        }
+                    } else {
+                        System.out.println( "Results bag is missing." );
+                    }
+                } else {
+                    System.out.println( "Results missing" );
+                }
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error getting subscription results: ", drfm);
+        }
+    }
+
+    private void deleteSubscription() throws Exception {
+        String selected = (String) subscriptionSearchList.getSelectedValue();
+        if ( selected != null ) {
+            String subscriptionKey = selected.substring( 0, selected.indexOf(' '));
+            UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
+
+            DeleteSubscription deleteSubscription = new DeleteSubscription();
+            deleteSubscription.setAuthInfo( authToken() );
+            deleteSubscription.getSubscriptionKey().add( subscriptionKey );
+
+            subscriptionPort.deleteSubscription( deleteSubscription );
+        }
+    }
+
     private String authToken() throws Exception {
         login = credsUsernameTextField.getText();
         String password = new String(credsPasswordField.getPassword());
@@ -1039,6 +1221,13 @@ public class UDDIPolicyTool extends JFrame {
         return publicationPort;
     }
 
+    private UDDISubscriptionPortType getSubscriptionPort() {
+        UDDISubscription subscription = new UDDISubscription(buildUrl("resources/uddi_v3_service_sub.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDISubscription"));
+        UDDISubscriptionPortType subscriptionPort = subscription.getUDDISubscriptionPort();
+        stubConfig(subscriptionPort, urlSubscriptionTextField.getText());
+        return subscriptionPort;
+    }
+
     private URL buildUrl(String relativeUrl) {
         return UDDIInquiry.class.getResource(relativeUrl);
     }
@@ -1051,10 +1240,12 @@ public class UDDIPolicyTool extends JFrame {
 
         // Add handler to fix any issues with invalid faults
         handlerChain.add(new SOAPHandler<SOAPMessageContext>(){
-            public Set getHeaders() {
+            @Override
+            public Set<QName> getHeaders() {
                 return null;
             }
 
+            @Override
             public boolean handleMessage(SOAPMessageContext context) {
                 SOAPMessage soapMessage = context.getMessage();
 
@@ -1092,10 +1283,12 @@ public class UDDIPolicyTool extends JFrame {
                 return true;
             }
 
+            @Override
             public boolean handleFault(SOAPMessageContext context) {
                 return true;
             }
 
+            @Override
             public void close(MessageContext context) {
             }
         });
@@ -1249,6 +1442,7 @@ public class UDDIPolicyTool extends JFrame {
             this.showName = showName;
         }
 
+        @Override
         public String call(final Object entityObject) {
             UDDINamedEntity uddiNamedEntity = (UDDINamedEntity) entityObject;
             String text;
@@ -1300,6 +1494,7 @@ public class UDDIPolicyTool extends JFrame {
             return wsdlUrl;
         }
 
+        @Override
         @SuppressWarnings({"RedundantIfStatement"})
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -1315,6 +1510,7 @@ public class UDDIPolicyTool extends JFrame {
             return true;
         }
 
+        @Override
         public int hashCode() {
             int result;
             result = (key != null ? key.hashCode() : 0);

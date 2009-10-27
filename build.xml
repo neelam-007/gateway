@@ -3404,7 +3404,7 @@
       Generate the JAX-WS classes for UDDI v3.0.2.
     -->
     <target name="generate-uddi-jar">
-        <property name="build.guddi.jar" value="build/layer7-uddi-lib-1.0.1.jar"/>
+        <property name="build.guddi.jar" value="build/layer7-uddi-lib-1.1.0.jar"/>
         <mkdir dir="build/uddiclasses"/>
         <mkdir dir="build/uddisources"/>
 
@@ -3412,7 +3412,7 @@
         <wsimport wsdl="uddi_v3_service_i.wsdl"/>
         <wsimport wsdl="uddi_v3_service_p.wsdl"/>
         <wsimport wsdl="uddi_v3_service_s.wsdl"/>
-        <!--<wsimport wsdl="uddi_v3_service_sub.wsdl"/>-->
+        <wsimport wsdl="uddi_v3_service_sub.wsdl"/>
 
         <echo level="info">Compiling for 1.6</echo>
         <delete dir="build/uddiclasses"/>

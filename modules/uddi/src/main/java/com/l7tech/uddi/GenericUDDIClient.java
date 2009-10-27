@@ -1,7 +1,6 @@
 package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.*;
-import com.l7tech.util.SyspropUtil;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -35,6 +34,7 @@ public class GenericUDDIClient implements UDDIClient {
      */
     public GenericUDDIClient(final String inquiryUrl,
                              final String publishUrl,
+                             final String subscriptionUrl,
                              final String securityUrl,
                              final String login,
                              final String password,
@@ -46,6 +46,7 @@ public class GenericUDDIClient implements UDDIClient {
         // service urls
         this.inquiryUrl = inquiryUrl;
         this.publishUrl = coalesce(publishUrl, inquiryUrl);
+        this.subscriptionUrl = coalesce(subscriptionUrl, inquiryUrl);
         this.securityUrl = coalesce(securityUrl, publishUrl, inquiryUrl);
 
         // creds
@@ -414,9 +415,7 @@ public class GenericUDDIClient implements UDDIClient {
             TModelDetail tModelDetail = publicationPort.saveTModel(saveTModel);
             TModel saved = get(tModelDetail.getTModel(), "policy technical model", true);
 
-            return saved.getTModelKey().toString();
-        } catch (UDDIException ue) {
-            throw ue;
+            return saved.getTModelKey();
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error publishing model: ", drfm);
         } catch (RuntimeException e) {
@@ -439,10 +438,7 @@ public class GenericUDDIClient implements UDDIClient {
 
         try {
             String authToken = getAuthToken();
-            Name[] names = null;
-            if (businessName != null && businessName.length() > 0) {
-                names = new Name[]{buildName(businessName)};
-            }
+            Name[] names = buildNames( businessName );
             UDDIInquiryPortType inquiryPort = getInquirePort();
 
             FindBusiness findBusiness = new FindBusiness();
@@ -469,8 +465,6 @@ public class GenericUDDIClient implements UDDIClient {
                 }
             }
             return businesses;
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error listing businesses: ", drfm);
         } catch (RuntimeException e) {
@@ -491,14 +485,9 @@ public class GenericUDDIClient implements UDDIClient {
         Collection<UDDINamedEntity> services = new ArrayList<UDDINamedEntity>();
         moreAvailable = false;
 
-        String filter = servicePattern;
-
         try {
             String authToken = getAuthToken();
-            Name[] names = null;
-            if (filter != null && filter.length() > 0) {
-                names = new Name[]{buildName(filter)};
-            }
+            Name[] names = buildNames( servicePattern );
             UDDIInquiryPortType inquiryPort = getInquirePort();
 
             FindService findService = new FindService();
@@ -534,7 +523,7 @@ public class GenericUDDIClient implements UDDIClient {
                     // We only need one, since all bindingTemplates will have the same WSDL
                     // but since searching by type is not reliable we'll have to get all the
                     // bindings and search though them
-                    findBinding.setMaxRows(new Integer(50));
+                    findBinding.setMaxRows(50);
 
                     // This does not work with CentraSite
                     //CategoryBag bindingCategoryBag = new CategoryBag();
@@ -599,8 +588,6 @@ public class GenericUDDIClient implements UDDIClient {
             }
 
             return services;
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error listing services: ", drfm);
         } catch (RuntimeException e) {
@@ -621,14 +608,9 @@ public class GenericUDDIClient implements UDDIClient {
         Collection<UDDINamedEntity> services = new ArrayList<UDDINamedEntity>();
         moreAvailable = false;
 
-        String filter = servicePattern;
-
         try {
             String authToken = getAuthToken();
-            Name[] names = null;
-            if (filter != null && filter.length() > 0) {
-                names = new Name[]{buildName(filter)};
-            }
+            Name[] names = buildNames( servicePattern );
 
             UDDIInquiryPortType inquiryPort = getInquirePort();
             
@@ -662,13 +644,11 @@ public class GenericUDDIClient implements UDDIClient {
             if (serviceInfos != null) {
                 for (ServiceInfo serviceInfo : serviceInfos.getServiceInfo()) {
                     String name = get(serviceInfo.getName(), "service name", false).getValue();
-                    services.add(new UDDINamedEntityImpl(serviceInfo.getServiceKey().toString(), name));
+                    services.add(new UDDINamedEntityImpl(serviceInfo.getServiceKey(), name));
                 }
             }
             
             return services;
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error listing services: ", drfm);
         } catch (RuntimeException e) {
@@ -679,6 +659,7 @@ public class GenericUDDIClient implements UDDIClient {
     /**
      *
      */
+    @Override
     public Collection<UDDINamedEntity> listEndpoints(final String servicePattern,
                                                      final boolean caseSensitive,
                                                      final int offset,
@@ -706,14 +687,12 @@ public class GenericUDDIClient implements UDDIClient {
                 if (bindingTemplates != null) {
                     for (BindingTemplate bindingTemplate : bindingTemplates) {
                         String name = bindingTemplate.getAccessPoint().getValue();
-                        endpoints.add(new UDDINamedEntityImpl(bindingTemplate.getBindingKey().toString(), name));
+                        endpoints.add(new UDDINamedEntityImpl(bindingTemplate.getBindingKey(), name));
                     }
                 }
             }
 
             return endpoints;
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error listing endpoints: ", drfm);
         } catch (RuntimeException e) {
@@ -735,14 +714,9 @@ public class GenericUDDIClient implements UDDIClient {
         Collection<UDDINamedEntity> services = new ArrayList<UDDINamedEntity>();
         moreAvailable = false;
 
-        String filter = organizationPattern;
-
         try {
             String authToken = getAuthToken();
-            Name[] names = null;
-            if (filter != null && filter.length() > 0) {
-                names = new Name[]{buildName(filter)};
-            }
+            Name[] names = buildNames( organizationPattern );
 
             UDDIInquiryPortType inquiryPort = getInquirePort();
 
@@ -767,13 +741,11 @@ public class GenericUDDIClient implements UDDIClient {
             if (businessInfos != null) {
                 for (BusinessInfo businessInfo : businessInfos.getBusinessInfo()) {
                     String name = get(businessInfo.getName(), "business name", false).getValue();
-                    services.add(new UDDINamedEntityImpl(businessInfo.getBusinessKey().toString(), name));
+                    services.add(new UDDINamedEntityImpl(businessInfo.getBusinessKey(), name));
                 }
             }
 
             return services;
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error listing businesses: ", drfm);
         } catch (RuntimeException e) {
@@ -824,12 +796,12 @@ public class GenericUDDIClient implements UDDIClient {
             ListDescription listDescription = tModelList.getListDescription();
             setMoreAvailable(listDescription);
 
-            List<String> policyKeys = new ArrayList();
+            List<String> policyKeys = new ArrayList<String>();
             TModelInfos tModelInfos = tModelList.getTModelInfos();
             if (tModelInfos != null) {
                 for (TModelInfo tModel : tModelInfos.getTModelInfo()) {
                     if (tModel.getName() != null) {
-                        String key = tModel.getTModelKey().toString();
+                        String key = tModel.getTModelKey();
                         policyKeys.add(key);
                         String tmodelname = tModel.getName().getValue();
                         policies.add(new UDDINamedEntityImpl(key, tmodelname));
@@ -856,7 +828,7 @@ public class GenericUDDIClient implements UDDIClient {
                         for (KeyedReference keyedReference : keyedReferences) {
                             if (keyedReference.getTModelKey().equals(tModelKeyRemotePolicyReference)) {
                                 mergePolicyUrlToInfo(
-                                        tModel.getTModelKey().toString(),
+                                        tModel.getTModelKey(),
                                         keyedReference.getKeyValue(),
                                         policies);
                                 break;
@@ -867,8 +839,6 @@ public class GenericUDDIClient implements UDDIClient {
             }
 
             return policies;
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error listing policies: ", drfm);
         } catch (RuntimeException e) {
@@ -925,8 +895,6 @@ public class GenericUDDIClient implements UDDIClient {
             } else {
                 throw new UDDIException("ERROR get_tModelDetail returned zero or multiple tModels");
             }
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error getting policy URL: ", drfm);
         } catch (RuntimeException e) {
@@ -956,8 +924,6 @@ public class GenericUDDIClient implements UDDIClient {
             BindingDetail detail = inquiryPort.getBindingDetail(getBindingDetail);
 
             extractPolicyUrls(get(detail.getBindingTemplate(), "service endpoint", true).getCategoryBag(), policyUrls);
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error getting policy URL: ", drfm);
         } catch (RuntimeException e) {
@@ -987,8 +953,6 @@ public class GenericUDDIClient implements UDDIClient {
             BusinessDetail detail = inquiryPort.getBusinessDetail(getBusinessDetail);
 
             extractPolicyUrls(get(detail.getBusinessEntity(), "business", true).getCategoryBag(), policyUrls);
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error getting policy URL: ", drfm);
         } catch (RuntimeException e) {
@@ -1018,8 +982,6 @@ public class GenericUDDIClient implements UDDIClient {
             ServiceDetail detail = inquiryPort.getServiceDetail(getServiceDetail);
 
             extractPolicyUrls(get(detail.getBusinessService(), "service", true).getCategoryBag(), policyUrls);
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error getting policy URL: ", drfm);
         } catch (RuntimeException e) {
@@ -1069,8 +1031,6 @@ public class GenericUDDIClient implements UDDIClient {
                 throw new UDDIException(msg);
             }
 
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error getting service details: ", drfm);
         } catch (RuntimeException e) {
@@ -1095,8 +1055,8 @@ public class GenericUDDIClient implements UDDIClient {
                 Collection<KeyedReference> updated = new ArrayList<KeyedReference>();
                 if (cbag.getKeyedReference() != null) {
                     for (KeyedReference kref : cbag.getKeyedReference()) {
-                        if (kref.getTModelKey().toString().equals(tModelKeyLocalPolicyReference) ||
-                            kref.getTModelKey().toString().equals(tModelKeyRemotePolicyReference)) {
+                        if (kref.getTModelKey().equals(tModelKeyLocalPolicyReference) ||
+                            kref.getTModelKey().equals(tModelKeyRemotePolicyReference)) {
                             if (force == null)
                                 throw new UDDIExistingReferenceException(kref.getKeyValue());
                             if (!force)
@@ -1135,8 +1095,6 @@ public class GenericUDDIClient implements UDDIClient {
             saveService.setAuthInfo(authToken);
             saveService.getBusinessService().add(toUpdate);
             publicationPort.saveService(saveService);
-        } catch (UDDIException ue) {
-            throw ue;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error updating service details: ", drfm);
         } catch (RuntimeException e) {
@@ -1189,9 +1147,16 @@ public class GenericUDDIClient implements UDDIClient {
         return publicationPort;
     }
 
+    protected UDDISubscriptionPortType getSubscriptionPort() throws UDDIException {
+        UDDISubscription subscription = new UDDISubscription(buildUrl("resources/uddi_v3_service_sub.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDISubscription"));
+        UDDISubscriptionPortType subscriptionPort = subscription.getUDDISubscriptionPort();
+        stubConfig(subscriptionPort, getSubscriptionUrl());
+        return subscriptionPort;
+    }
+
     protected String getAuthToken(final String login,
                                   final String password) throws UDDIException {
-        String authToken = null;
+        String authToken;
 
         try {
             UDDISecurityPortType securityPort = getSecurityPort();
@@ -1295,7 +1260,6 @@ public class GenericUDDIClient implements UDDIClient {
     private static final String OVERVIEW_URL_TYPE_WSDL = "wsdlInterface";
     private static final String FINDQUALIFIER_APPROXIMATE = "approximateMatch";
     private static final String FINDQUALIFIER_CASEINSENSITIVE = "caseInsensitiveMatch";
-    private static final String FINDQUALIFIER_EXACTMATCH = "exactMatch";
 
     // From http://www.uddi.org/pubs/uddi_v3.htm#_Toc85908004
     private static final int MAX_LENGTH_KEY = 255;
@@ -1306,6 +1270,7 @@ public class GenericUDDIClient implements UDDIClient {
 
     private final String inquiryUrl;
     private final String publishUrl;
+    private final String subscriptionUrl;
     private final String securityUrl;
     private final String login;
     private final String password;
@@ -1323,6 +1288,11 @@ public class GenericUDDIClient implements UDDIClient {
         return publishUrl;
     }
 
+    private String getSubscriptionUrl() throws UDDIException {
+        if ( subscriptionUrl == null ) throw new UDDIException("Subscriptions not available"); 
+        return subscriptionUrl;
+    }
+
     private String getSecurityUrl() {
         return securityUrl;
     }
@@ -1331,15 +1301,10 @@ public class GenericUDDIClient implements UDDIClient {
         BindingProvider bindingProvider = (BindingProvider) proxy;
         Binding binding = bindingProvider.getBinding();
         Map<String,Object> context = bindingProvider.getRequestContext();
-        List<Handler> handlerChain = new ArrayList();
+        List<Handler> handlerChain = new ArrayList<Handler>();
 
         // Add handler to fix any issues with invalid faults
         handlerChain.add(new FaultRepairSOAPHandler());
-
-        // Add handler to fix namespace in on Java 5 / SSM
-        if ( "1.5".equals(SyspropUtil.getProperty("java.specification.version")) ) {
-            handlerChain.add(new NamespaceRepairSOAPHandler());
-        }
 
         // Set handlers
         binding.setHandlerChain(handlerChain);
@@ -1387,9 +1352,9 @@ public class GenericUDDIClient implements UDDIClient {
             List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
             if (keyedReferences != null) {
                 for (KeyedReference keyedReference : keyedReferences) {
-                    if (tModelKeyLocalPolicyReference.equals(keyedReference.getTModelKey().toString())) {
+                    if (tModelKeyLocalPolicyReference.equals(keyedReference.getTModelKey())) {
                         policyUrls.add(getPolicyUrl(keyedReference.getKeyValue()));
-                    } else if (tModelKeyRemotePolicyReference.equals(keyedReference.getTModelKey().toString())) {
+                    } else if (tModelKeyRemotePolicyReference.equals(keyedReference.getTModelKey())) {
                         policyUrls.add(keyedReference.getKeyValue());
                     }
                 }
@@ -1531,6 +1496,14 @@ public class GenericUDDIClient implements UDDIClient {
         keyedReference.setKeyName(name);
         keyedReference.setKeyValue(value);
         return keyedReference;
+    }
+
+    private Name[] buildNames( final String namePattern ) {
+        Name[] names = null;
+        if (namePattern != null && namePattern.length() > 0) {
+            names = new Name[]{buildName(namePattern)};
+        }
+        return names;
     }
 
     private Name buildName(String value) {

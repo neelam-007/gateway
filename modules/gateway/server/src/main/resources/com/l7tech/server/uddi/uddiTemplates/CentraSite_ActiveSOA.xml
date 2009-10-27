@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.4.2" class="java.beans.XMLDecoder">
+ <object class="java.util.HashMap">
+  <void method="put">
+   <string>inquiry</string>
+   <string>inquiry</string>
+  </void>
+  <void method="put">
+   <string>publication</string>
+   <string>publish</string>
+  </void>
+  <void method="put">
+   <string>securityPolicy</string>
+   <string>publish</string>
+  </void>
+  <void method="put">
+   <string>subscription</string>
+   <string>publish</string>
+  </void>
+  <void method="put">
+   <string>metricsMap</string>
+   <object class="java.util.HashMap">
+    <void method="put">
+     <string>TOTAL_REQUEST_COUNT</string>
+     <string>uddi:centrasite.com:management:metrics:total.request.count</string>
+    </void>
+    <void method="put">
+     <string>SUCCESS_REQUEST_COUNT</string>
+     <string>uddi:centrasite.com:management:metrics:success.request.count</string>
+   </void>
+    <void method="put">
+     <string>FAILURE_REQUEST_COUNT</string>
+     <string>uddi:centrasite.com:management:metrics:fault.request.count</string>
+    </void>
+    <void method="put">
+     <string>AVERAGE_RESPONSE_TIME</string>
+     <string>uddi:centrasite.com:management:metrics:average.response.time</string>
+    </void>
+    <void method="put">
+     <string>MINIMUM_RESPONSE_TIME</string>
+     <string>uddi:centrasite.com:management:metrics:minimum.response.time</string>
+    </void>
+    <void method="put">
+     <string>MAXIMUM_RESPONSE_TIME</string>
+     <string>uddi:centrasite.com:management:metrics:maximum.response.time</string>
+    </void>
+    <void method="put">
+     <string>AVAILABILITY</string>
+     <string>uddi:centrasite.com:management:metrics:availability</string>
+    </void>
+   </object>
+  </void>
+ </object>
+</java>

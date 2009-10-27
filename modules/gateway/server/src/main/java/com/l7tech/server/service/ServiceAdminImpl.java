@@ -526,8 +526,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
         return UDDIClientFactory.getInstance().newUDDIClient(uddiRegistry.getInquiryUrl(),
-                uddiRegistry.getPublishUrl(), uddiRegistry.getSecurityUrl(), uddiRegistry.getRegistryAccountUserName(),
-                uddiRegistry.getRegistryAccountPassword(), PolicyAttachmentVersion.v1_5);
+                uddiRegistry.getPublishUrl(), uddiRegistry.getSubscriptionUrl() ,uddiRegistry.getSecurityUrl(), uddiRegistry.getRegistryAccountUserName(),
+                uddiRegistry.getRegistryAccountPassword(), null);
     }
 
     @Override

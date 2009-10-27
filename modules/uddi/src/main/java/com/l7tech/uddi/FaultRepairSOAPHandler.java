@@ -36,10 +36,11 @@ import java.util.logging.Logger;
  *
  * @author Steve Jones
  */
-public class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
+class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
 {
     //- PUBLIC
     
+    @Override
     public Set<QName> getHeaders() {
         return null;
     }
@@ -53,6 +54,7 @@ public class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
      * @param context the SOAP message context
      * @return true
      */
+    @Override
     public boolean handleMessage(final SOAPMessageContext context) {
         Boolean outboundProperty = (Boolean) context.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 
@@ -82,6 +84,7 @@ public class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
      * @param context The soap message context to process
      * @return true
      */
+    @Override
     public boolean handleFault(final SOAPMessageContext context) {
         Boolean outboundProperty = (Boolean) context.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 
@@ -108,6 +111,7 @@ public class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
      *
      * @param context ignored
      */
+    @Override
     public void close(final MessageContext context) {
     }
 

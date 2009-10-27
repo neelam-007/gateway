@@ -191,7 +191,7 @@ public class TestGenericUDDIClient {
      */
     @Test
     public void testUDDIProxyEntityUpdate()
-            throws IOException, LoginException, RemoteException, FindException,
+            throws IOException, LoginException, FindException,
             UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException {
 
         System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
@@ -238,7 +238,7 @@ public class TestGenericUDDIClient {
      */
     @Test
     public void testUDDIProxyEntityPartialUpdate()
-            throws IOException, LoginException, RemoteException, FindException,
+            throws IOException, LoginException, FindException,
             UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException {
 
         System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
@@ -364,6 +364,7 @@ public class TestGenericUDDIClient {
     public void testUDDIBug() throws UDDIException {
         UDDIClient uddiClient = new GenericUDDIClient("http://rsbcentos.l7tech.com:8080/juddiv3/services/inquiry",
                         "http://rsbcentos.l7tech.com:8080/juddiv3/services/publish",
+                        null,
                         "http://rsbcentos.l7tech.com:8080/juddiv3/services/security",
                         "root",
                         "root",
@@ -382,6 +383,7 @@ public class TestGenericUDDIClient {
     private UDDIClient getUDDIClient(){
         return new GenericUDDIClient("http://DONALWINXP:53307/UddiRegistry/inquiry",
                         "http://DONALWINXP:53307/UddiRegistry/publish",
+                        null,
                         "http://DONALWINXP:53307/UddiRegistry/security",
                         "administrator",
                         "7layer",

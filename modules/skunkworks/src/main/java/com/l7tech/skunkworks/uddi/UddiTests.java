@@ -2,18 +2,13 @@ package com.l7tech.skunkworks.uddi;
 
 import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.uddi.*;
-import com.l7tech.util.SyspropUtil;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
-import javax.xml.ws.Binding;
-import javax.xml.ws.handler.Handler;
 import java.net.URL;
 import java.net.MalformedURLException;
-import java.util.logging.Level;
 import java.util.Map;
 import java.util.List;
-import java.util.ArrayList;
 
 import org.junit.Test;
 
@@ -125,16 +120,6 @@ public class UddiTests {
         }
     }
 
-    private <T> T get(List<T> list, String description, boolean onlyOne) throws UDDIException {
-        if (list == null || list.isEmpty()) {
-            throw new UDDIException("Missing " + description);
-        } else if (onlyOne && list.size()!=1) {
-            throw new UDDIException("Duplicate " + description);
-        }
-
-        return list.get(0);
-    }
-
     private UDDISecurityPortType getSecurityPort() {
         UDDISecurity security = new UDDISecurity(buildUrl("resources/uddi_v3_service_s.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDISecurity"));
         UDDISecurityPortType securityPort = security.getUDDISecurityPort();
@@ -155,20 +140,7 @@ public class UddiTests {
 
     private void stubConfig(Object proxy, String url) {
         BindingProvider bindingProvider = (BindingProvider) proxy;
-        Binding binding = bindingProvider.getBinding();
         Map<String,Object> context = bindingProvider.getRequestContext();
-        List<Handler> handlerChain = new ArrayList();
-
-        // Add handler to fix any issues with invalid faults
-        handlerChain.add(new FaultRepairSOAPHandler());
-
-        // Add handler to fix namespace in on Java 5 / SSM
-        if ( "1.5".equals(SyspropUtil.getProperty("java.specification.version")) ) {
-            handlerChain.add(new NamespaceRepairSOAPHandler());
-        }
-
-        // Set handlers
-        binding.setHandlerChain(handlerChain);
 
         // Set endpoint
         context.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);

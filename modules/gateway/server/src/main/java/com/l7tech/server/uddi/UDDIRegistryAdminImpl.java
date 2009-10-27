@@ -95,10 +95,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
-        final UDDIClient uddiClient = UDDIClientFactory.getInstance().newUDDIClient(uddiRegistry.getInquiryUrl(),
-                uddiRegistry.getPublishUrl(), uddiRegistry.getSecurityUrl(), uddiRegistry.getRegistryAccountUserName(),
-                uddiRegistry.getRegistryAccountPassword(), getDefaultPolicyAttachmentVersion());
-        return uddiClient;
+        return UDDIClientFactory.getInstance().newUDDIClient(uddiRegistry.getInquiryUrl(),
+                uddiRegistry.getPublishUrl(), uddiRegistry.getSubscriptionUrl(), uddiRegistry.getSecurityUrl(), uddiRegistry.getRegistryAccountUserName(),
+                uddiRegistry.getRegistryAccountPassword(), null);
     }
 
     @Override
@@ -232,11 +231,4 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     private static final String SYSPROP_DEFAULT_VERSION = "com.l7tech.uddi.defaultVersion";
-
-    private PolicyAttachmentVersion getDefaultPolicyAttachmentVersion() {
-        String id = SyspropUtil.getString(
-                SYSPROP_DEFAULT_VERSION,
-                PolicyAttachmentVersion.v1_2.toString());
-        return PolicyAttachmentVersion.valueOf(id);
-    }
 }

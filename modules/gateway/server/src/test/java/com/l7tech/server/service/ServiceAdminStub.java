@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -95,11 +96,6 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return serviceAliasManager.save(serviceAlias);
     }
 
-    public long savePublishedService(PublishedService service, boolean activateAsWell)
-            throws UpdateException, SaveException, VersionException, PolicyAssertionException {
-        return serviceManager.save(service);
-    }
-
     /**
      * saves a published service along with it's policy assertions
      *
@@ -121,7 +117,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      */
     @Override
     public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws FindException {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     /**
@@ -131,10 +127,9 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      */
     @Override
     public void deletePublishedService(String id) throws DeleteException {
-        PublishedService service = null;
         try {
             long oid = toLong(id);
-            service = serviceManager.findByPrimaryKey(oid);
+            PublishedService service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
@@ -202,7 +197,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      */
     @Override
     public ServiceHeader[] findAllPublishedServices() throws FindException {
-        Collection res = serviceManager.findAllHeaders();
+        Collection<ServiceHeader> res = serviceManager.findAllHeaders();
         return collectionToHeaderArray(res);
     }
 
@@ -215,7 +210,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      */
     @Override
     public ServiceHeader[] findAllPublishedServices(boolean includeAliases) throws FindException {
-        Collection res = serviceManager.findAllHeaders(includeAliases);
+        Collection<ServiceHeader> res = serviceManager.findAllHeaders(includeAliases);
         return collectionToHeaderArray(res);
     }
 
@@ -284,11 +279,6 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     @Override
     public void deleteSampleMessage(SampleMessage message) throws DeleteException {
-
-    }
-
-    private EntityHeader fromService(PublishedService s) {
-        return new EntityHeader(Long.toString(s.getOid()), EntityType.SERVICE, s.getName(), null);
     }
 
     public void setPolicyValidator(PolicyValidator policyValidator) {
@@ -310,7 +300,6 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         }
     }
 
-
     /**
      * Parse the String service ID to long (database format). Throws runtime exc
      *
@@ -327,20 +316,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return Long.parseLong(serviceID);
     }
 
-    private ServiceHeader[] collectionToHeaderArray(Collection input) {
+    private ServiceHeader[] collectionToHeaderArray(Collection<ServiceHeader> input) {
         if (input == null) return new ServiceHeader[0];
-        ServiceHeader[] output = new ServiceHeader[input.size()];
-        int count = 0;
-        java.util.Iterator i = input.iterator();
-        while (i.hasNext()) {
-            try {
-                output[count] = (ServiceHeader)i.next();
-            } catch (ClassCastException e) {
-                throw new RuntimeException("Collection contained something other than a EntityHeader", e);
-            }
-            ++count;
-        }
-        return output;
+        Collection<ServiceHeader> checked =  Collections.checkedCollection( new ArrayList<ServiceHeader>(), ServiceHeader.class );
+        checked.addAll( input );
+        return checked.toArray( new ServiceHeader[input.size()] );
     }
 
     @Override

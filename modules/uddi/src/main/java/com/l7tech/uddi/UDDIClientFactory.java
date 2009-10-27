@@ -51,18 +51,22 @@ public class UDDIClientFactory {
                                     final PolicyAttachmentVersion attachmentVersion) {
         String inquiryUrl = url;
         String publishUrl = url;
+        String subscriptionUrl = null;
         String securityUrl = url;
 
         if ( uddiRegistryInfo != null ) {
             String baseUrl = calculateBaseUrl(url, uddiRegistryInfo.getInquiry());
             inquiryUrl = buildUrl(baseUrl, uddiRegistryInfo.getInquiry());
             publishUrl = buildUrl(baseUrl, uddiRegistryInfo.getPublication());
+            if ( uddiRegistryInfo.getSubscription() != null ) {
+                subscriptionUrl = buildUrl(baseUrl, uddiRegistryInfo.getSubscription());
+            }
             securityUrl = buildUrl(baseUrl, uddiRegistryInfo.getSecurityPolicy());
-
         }
         return newUDDIClient(
                 inquiryUrl,
                 publishUrl,
+                subscriptionUrl,
                 securityUrl,
                 login,
                 password,
@@ -82,6 +86,7 @@ public class UDDIClientFactory {
      */
     public UDDIClient newUDDIClient(final String inquiryUrl,
                                     final String publishUrl,
+                                    final String subscriptionUrl,
                                     final String securityUrl,
                                     final String login,
                                     final String password,
@@ -94,8 +99,8 @@ public class UDDIClientFactory {
 
         try {
             Class genericUddiClass = Class.forName(clientClass);
-            Constructor constructor = genericUddiClass.getConstructor(String.class, String.class, String.class, String.class, String.class, PolicyAttachmentVersion.class);
-            client = (UDDIClient) constructor.newInstance(inquiryUrl, publishUrl, securityUrl, login, password, policyAttachmentVersion);
+            Constructor constructor = genericUddiClass.getConstructor(String.class, String.class, String.class, String.class, String.class, String.class, PolicyAttachmentVersion.class);
+            client = (UDDIClient) constructor.newInstance(inquiryUrl, publishUrl, subscriptionUrl, securityUrl, login, password, policyAttachmentVersion);
         } catch (Exception e) {
             throw new RuntimeException("Generic UDDI client error.", e);
         }

@@ -24,6 +24,7 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.MappedMethodInvocationHandler;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ClassUtils;
+import com.l7tech.util.Config;
 import com.l7tech.uddi.UDDIRegistryInfo;
 
 /**
@@ -41,10 +42,10 @@ public class UDDITemplateManager {
     /**
      * Create a new UDDI template manager.
      *
-     * @param serverConfig The server configuration to use
+     * @param config The configuration to use
      */
-    public UDDITemplateManager(final ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public UDDITemplateManager(final Config config) {
+        this.config = config;
         this.templates = Collections.unmodifiableMap(loadTemplates());
     }
 
@@ -91,7 +92,7 @@ public class UDDITemplateManager {
     private static final int NAME_SUFFIX_LENGTH = 4;
     private static final String PROP_NAME = "name";
 
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final Map<String,Map<String,Object>> templates;
 
     private Map<String,Map<String,Object>> loadTemplates() {
@@ -108,7 +109,7 @@ public class UDDITemplateManager {
      *
      */
     private Map<String,Map<String,Object>> loadTemplateResources() {
-        Map<String,Map<String,Object>> templates = new TreeMap<String, Map<String,Object>>();
+        final Map<String,Map<String,Object>> templates = new TreeMap<String, Map<String,Object>>();
 
         Collection<URL> resourceUrls = Collections.emptyList();
         try {
@@ -118,7 +119,7 @@ public class UDDITemplateManager {
         }
 
         for ( URL resourceUrl : resourceUrls ) {
-            String filePath = resourceUrl.getPath();
+            final String filePath = resourceUrl.getPath();
             if ( filePath.endsWith(".xml") ) {
                 String name = buildName(filePath);            
                 try {
@@ -139,9 +140,9 @@ public class UDDITemplateManager {
      *
      */
     private Map<String,Map<String,Object>> loadTemplatesFromFile() {
-        Map<String,Map<String,Object>> templates = new TreeMap<String, Map<String,Object>>();
+        final Map<String,Map<String,Object>> templates = new TreeMap<String, Map<String,Object>>();
 
-        String rootPath = serverConfig.getPropertyCached(ServerConfig.PARAM_UDDI_TEMPLATES);
+        final String rootPath = config.getProperty(ServerConfig.PARAM_UDDI_TEMPLATES, null);
         if ( rootPath != null ) {
             logger.config("Loading UDDI templates from directory '"+rootPath+"'.");
 
@@ -174,7 +175,7 @@ public class UDDITemplateManager {
     /**
      * Construct a display name from a file name.
      */
-    private String buildName(final String filename) {
+    private String buildName( final String filename ) {
         String name = filename.substring(0, filename.length() - NAME_SUFFIX_LENGTH);
 
         if ( name.indexOf('/') >= 0 ) {
@@ -188,9 +189,9 @@ public class UDDITemplateManager {
      *
      */
     @SuppressWarnings({"unchecked"})
-    private Map<String,Object> loadTemplate(final String name,
-                                            final URL url ) throws IOException {
-        Map<String,Object> template = new HashMap<String,Object>();
+    private Map<String,Object> loadTemplate( final String name,
+                                             final URL url ) throws IOException {
+        final Map<String,Object> template = new HashMap<String,Object>();
 
         InputStream is = null;
         try {
@@ -215,8 +216,8 @@ public class UDDITemplateManager {
     /**
      *
      */
-    private Collection<UDDIRegistryInfo> toUDDIRegistryInfo(Collection<Map<String,Object>> templates) {
-        List<UDDIRegistryInfo> registryInfos = new ArrayList<UDDIRegistryInfo> ();
+    private Collection<UDDIRegistryInfo> toUDDIRegistryInfo( final Collection<Map<String,Object>> templates ) {
+        final List<UDDIRegistryInfo> registryInfos = new ArrayList<UDDIRegistryInfo> ();
 
         for ( Map<String,Object> template : templates ) {
             registryInfos.add(toUDDIRegistryInfo(template));
@@ -228,7 +229,7 @@ public class UDDITemplateManager {
     /**
      *
      */
-    private UDDIRegistryInfo toUDDIRegistryInfo(Map<String,Object> template) {
+    private UDDIRegistryInfo toUDDIRegistryInfo( final Map<String,Object> template ) {
         return (UDDIRegistryInfo) Proxy.newProxyInstance(
                 UDDITemplateManager.class.getClassLoader(),
                 new Class[]{UDDIRegistryInfo.class},
@@ -239,7 +240,8 @@ public class UDDITemplateManager {
      * FilenameFilter for XML files
      */
     private static class XmlFileFilter implements FilenameFilter {
-        public boolean accept(File dir, String name) {
+        @Override
+        public boolean accept( final File dir, final String name ) {
             boolean accept = false;
 
             if (name.length() > NAME_SUFFIX_LENGTH && name.endsWith(".xml")) {
