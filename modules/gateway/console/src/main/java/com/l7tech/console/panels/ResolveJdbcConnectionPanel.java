@@ -77,7 +77,12 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
         JdbcConnectionManagerWindow connMgrWindow = new JdbcConnectionManagerWindow(TopComponents.getInstance().getTopParent());
         connMgrWindow.pack();
         Utilities.centerOnScreen(connMgrWindow);
-        DialogDisplayer.display(connMgrWindow);
+        DialogDisplayer.display(connMgrWindow, new Runnable() {
+            @Override
+            public void run() {
+                populateConnectionCombobox();
+            }
+        });
     }
 
     private void populateConnectionCombobox() {
@@ -101,7 +106,6 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
         for (String driverClass: connNameList) {
             connectionComboBox.addItem(driverClass);
         }
-        //connectionComboBox.setSelectedIndex(0);
     }
 
     private JdbcAdmin getJdbcConnectionAdmin() {
