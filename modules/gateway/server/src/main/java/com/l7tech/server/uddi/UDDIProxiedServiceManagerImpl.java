@@ -61,23 +61,33 @@ public class UDDIProxiedServiceManagerImpl extends HibernateEntityManager<UDDIPr
     public long saveUDDIProxiedService(final UDDIProxiedService uddiProxiedService,
                                        final UDDIClient uddiClient,
                                        final List<BusinessService> businessServices,
-                                       final Map<String, TModel> dependentTModels)
+                                       final Map<String, TModel> dependentTModels,
+                                       final String generalKeyword)
             throws SaveException, VersionException, UDDIException {
 
         BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher();
-        businessServicePublisher.publishServicesToUDDIRegistry(uddiClient, businessServices, dependentTModels);
+        businessServicePublisher.publishServicesToUDDIRegistry(uddiClient, businessServices, dependentTModels, generalKeyword);
 
         return super.save(uddiProxiedService);
     }
 
+    /**
+     * See http://sarek.l7tech.com/mediawiki/index.php?title=CentraSite_ActiveSOA_Design#Strategy_for_publishing_and_updating_BusinessServices_to_UDDI
+     *
+     */
     @Override
     public void updateUDDIProxiedService(final UDDIProxiedService uddiProxiedService,
                                          final UDDIClient uddiClient,
-                                         final List<BusinessService> businessServices,
-                                         final Map<String, TModel> dependentTModels)
-            throws UpdateException, VersionException {
+                                         final List<BusinessService> wsdlBusinessServices,
+                                         final Map<String, TModel> wsdlDependentTModels,
+                                         final List<BusinessService> uddiBusinessServices,
+                                         final Map<String, TModel> uddiDependentTModels, String generalKeyword)
+            throws UpdateException, VersionException, UDDIException {
 
-        //todo implement according to http://sarek.l7tech.com/mediawiki/index.php?title=CentraSite_ActiveSOA_Design#Strategy_for_publishing_and_updating_BusinessServices_to_UDDI
+        BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher();
+        businessServicePublisher.updateServicesToUDDIRegistry(
+                uddiClient, wsdlBusinessServices, wsdlDependentTModels, uddiBusinessServices, uddiDependentTModels, generalKeyword);
+
         super.update(uddiProxiedService);
     }
 }

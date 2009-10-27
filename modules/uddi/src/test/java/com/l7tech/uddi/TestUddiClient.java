@@ -10,13 +10,22 @@ import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.common.uddi.guddiv3.BindingTemplate;
 import com.l7tech.common.uddi.guddiv3.BindingTemplates;
+import com.l7tech.util.Pair;
 
-import java.util.Collection;
-import java.util.UUID;
-import java.util.List;
+import java.util.*;
 import java.io.IOException;
 
 public class TestUddiClient implements UDDIClient{
+
+    private List<BusinessService> dataStructureForDownloaderTest;
+
+    public TestUddiClient(List<BusinessService> dataStructureForDownloaderTest) {
+        this.dataStructureForDownloaderTest = dataStructureForDownloaderTest;
+    }
+
+    public TestUddiClient() {
+    }
+
     @Override
     public void authenticate() throws UDDIException {
 
@@ -46,7 +55,9 @@ public class TestUddiClient implements UDDIClient{
 
     @Override
     public TModel getTModel(String tModelKey) throws UDDIException {
-        return null;
+        TModel testModel = new TModel();
+        testModel.setTModelKey(tModelKey);
+        return testModel;
     }
 
     @Override
@@ -77,6 +88,11 @@ public class TestUddiClient implements UDDIClient{
     @Override
     public Collection<UDDINamedEntity> listBusinessEntities(String businessName, boolean caseSensitive, int offset, int maxRows) throws UDDIException {
         return null;
+    }
+
+    @Override
+    public List<BusinessService> findMatchingBusinessServices(String generalKeyword) throws UDDIException {
+        return (dataStructureForDownloaderTest != null)? dataStructureForDownloaderTest: Collections.<BusinessService>emptyList();
     }
 
     // Not really interested in these for Bondo testing

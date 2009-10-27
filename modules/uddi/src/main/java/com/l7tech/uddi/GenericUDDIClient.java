@@ -275,7 +275,53 @@ public class GenericUDDIClient implements UDDIClient {
     }
 
     @Override
-    public void deleteAllBusinessServicesForGatewayWsdl(String generalKeyword) throws UDDIException {
+    public void deleteAllBusinessServicesForGatewayWsdl(final String generalKeyword) throws UDDIException {
+        final FindService findService = getFindQualifiersForServiceKeyword(generalKeyword);
+
+        try {
+            ServiceList serviceList = getInquirePort().findService(findService);
+            if(serviceList.getServiceInfos() != null){
+                for(ServiceInfo serviceInfo: serviceList.getServiceInfos().getServiceInfo()){
+                    deleteBusinessService(serviceInfo.getServiceKey());
+                }
+            }else{
+                logger.log(Level.WARNING, "No matching BusinessServices were found. None were deleted");
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception finding services with keyword: " + generalKeyword+ ": ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
+    }
+
+    @Override
+    public List<BusinessService> findMatchingBusinessServices(final String generalKeyword) throws UDDIException {
+        final FindService findService = getFindQualifiersForServiceKeyword(generalKeyword);
+
+        final List<BusinessService> businessServices = new ArrayList<BusinessService>();
+        try {
+            final ServiceList serviceList = getInquirePort().findService(findService);
+            if(serviceList.getServiceInfos() != null){
+                for(ServiceInfo serviceInfo: serviceList.getServiceInfos().getServiceInfo()){
+                    final BusinessService businessService = getBusinessService(serviceInfo.getServiceKey());
+                    if(businessService == null)
+                        throw new UDDIException("Could not find Business Service with serviceKey: " + serviceInfo.getServiceKey());
+
+                    businessServices.add(businessService);
+                }
+            }else{
+                logger.log(Level.INFO, "No matching BusinessServices were found for keyword: " + generalKeyword);
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception finding services with keyword: " + generalKeyword+ ": ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
+
+        return businessServices;
+    }
+
+    private FindService getFindQualifiersForServiceKeyword(String generalKeyword) throws UDDIException {
         FindService findService = new FindService();
         findService.setAuthInfo(getAuthToken());
 
@@ -296,21 +342,7 @@ public class GenericUDDIClient implements UDDIClient {
         qualifiers.add(FINDQUALIFIER_APPROXIMATE);
 
         findService.setFindQualifiers(findQualifiers);
-
-        try {
-            ServiceList serviceList = getInquirePort().findService(findService);
-            if(serviceList.getServiceInfos() != null){
-                for(ServiceInfo serviceInfo: serviceList.getServiceInfos().getServiceInfo()){
-                    deleteBusinessService(serviceInfo.getServiceKey());
-                }
-            }else{
-                logger.log(Level.WARNING, "No matching BusinessServices were found. None were deleted");
-            }
-        } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception finding services with keyword: " + generalKeyword+ ": ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
-        }
+        return findService;
     }
 
     @Override

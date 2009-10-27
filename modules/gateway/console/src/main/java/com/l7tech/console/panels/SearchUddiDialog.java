@@ -44,7 +44,6 @@ public class SearchUddiDialog extends JDialog {
     private JButton selectButton;
     private JButton cancelButton;
     private WsdlTable wsdlTable = null;
-    private EventListenerList listenerList = new EventListenerList();
     private JCheckBox caseSensitiveCheckBox;
     private JLabel retrievedRows;
     private JComboBox uddiRegistryComboBox;

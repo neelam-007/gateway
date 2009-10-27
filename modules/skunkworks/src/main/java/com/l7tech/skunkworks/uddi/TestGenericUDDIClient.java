@@ -3,7 +3,10 @@ package com.l7tech.skunkworks.uddi;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
+import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 import com.l7tech.common.uddi.guddiv3.*;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.uddi.*;
 import com.l7tech.util.Pair;
 import com.l7tech.wsdl.Wsdl;
@@ -13,11 +16,13 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import java.util.*;
 import java.io.Reader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
 
@@ -126,7 +131,7 @@ public class TestGenericUDDIClient {
         Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher();
-        servicePublisher.publishServicesToUDDIRegistry(uddiClient, servicesAndTModels.left, servicesAndTModels.right);
+        servicePublisher.publishServicesToUDDIRegistry(uddiClient, servicesAndTModels.left, servicesAndTModels.right, null);
 
         //Place a break point here, and examine the UDDI Registry. The code below will delete everything published
         for(BusinessService businessService: servicesAndTModels.left){
@@ -171,6 +176,101 @@ public class TestGenericUDDIClient {
                 businessKey,
                 "Skunkworks Organization", false);
 
+        uddiRegistryAdmin.publishGatewayWsdl(uddiProxiedService);
+
+        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+    }
+
+    /**
+     * Test the ServiceAdmin api for updating a UDDIProxiedService and corresponding BusinessService in UDDI Registry
+     *
+     * This test completely overwrites the WSDL, which results in the complete removal of the initial WSDL in UDDI
+     * and is replaced by a brand new set of BusinessServices and tModels
+     *
+     * This test requies a configured UDDI Registry, with a previously published BusinessService and a running gateway
+     */
+    @Test
+    public void testUDDIProxyEntityUpdate()
+            throws IOException, LoginException, RemoteException, FindException,
+            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException {
+
+        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+
+        SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
+        UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
+
+        Collection<UDDIRegistry> uddiRegistries = uddiRegistryAdmin.findAllUDDIRegistries();
+        com.l7tech.gateway.common.uddi.UDDIRegistry activeSoa = null;
+        for(com.l7tech.gateway.common.uddi.UDDIRegistry uddiRegistry: uddiRegistries){
+            if(UDDIRegistry.UDDIRegistryType.findType(uddiRegistry.getUddiRegistryType()) == UDDIRegistry.UDDIRegistryType.CENTRASITE_ACTIVE_SOA){
+                activeSoa = uddiRegistry;
+                break;
+            }
+        }
+
+        if(activeSoa == null) throw new IllegalStateException("Gateway does not have any ActiveSOA UDDI registries configured");
+
+        ServiceAdmin serviceAdmin = ssgAdminSession.getServiceAdmin();
+        final String serviceOid = "70615040";
+        PublishedService serviceToPublish = serviceAdmin.findServiceByID(serviceOid);
+        //this service has already had it's WSDL published
+        Assert.assertNotNull("Service with id not found: " + serviceOid, serviceToPublish);
+
+        //update the contents of the wsdl's xml to simulate it's WSDL having changed
+        InputStream inputStream = this.getClass().getResourceAsStream("PlayerStats.wsdl"); //completely change the wsdl - a different namespace!
+        Document dom = XmlUtil.parse(inputStream);
+        serviceToPublish.setWsdlXml(XmlUtil.nodeToString(dom));
+        serviceAdmin.savePublishedService(serviceToPublish);
+
+        UDDIProxiedService uddiProxiedService = uddiRegistryAdmin.getUDDIProxiedService(serviceToPublish.getOid());
+        if(uddiProxiedService == null) throw new IllegalStateException("UDDIProxiedService not found");
+        uddiRegistryAdmin.publishGatewayWsdl(uddiProxiedService);
+
+        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+    }
+
+    /**
+     * Test the ServiceAdmin api for updating a UDDIProxiedService and corresponding BusinessService in UDDI Registry
+     *
+     * This test only updates the wsdl:binding, so the existing BusinessService in UDDI should be resused.
+     *
+     * This test requies a configured UDDI Registry, with a previously published BusinessService and a running gateway
+     */
+    @Test
+    public void testUDDIProxyEntityPartialUpdate()
+            throws IOException, LoginException, RemoteException, FindException,
+            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException {
+
+        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+
+        SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
+        UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
+
+        Collection<UDDIRegistry> uddiRegistries = uddiRegistryAdmin.findAllUDDIRegistries();
+        com.l7tech.gateway.common.uddi.UDDIRegistry activeSoa = null;
+        for(com.l7tech.gateway.common.uddi.UDDIRegistry uddiRegistry: uddiRegistries){
+            if(UDDIRegistry.UDDIRegistryType.findType(uddiRegistry.getUddiRegistryType()) == UDDIRegistry.UDDIRegistryType.CENTRASITE_ACTIVE_SOA){
+                activeSoa = uddiRegistry;
+                break;
+            }
+        }
+
+        if(activeSoa == null) throw new IllegalStateException("Gateway does not have any ActiveSOA UDDI registries configured");
+
+        ServiceAdmin serviceAdmin = ssgAdminSession.getServiceAdmin();
+        final String serviceOid = "70615040";
+        PublishedService serviceToPublish = serviceAdmin.findServiceByID(serviceOid);
+        //this service has already had it's WSDL published
+        Assert.assertNotNull("Service with id not found: " + serviceOid, serviceToPublish);
+
+        //update the contents of the wsdl's xml to simulate it's WSDL having changed
+        InputStream inputStream = this.getClass().getResourceAsStream("Warehouse_modified.wsdl"); //completely change the wsdl - a different namespace!
+        Document dom = XmlUtil.parse(inputStream);
+        serviceToPublish.setWsdlXml(XmlUtil.nodeToString(dom));
+        serviceAdmin.savePublishedService(serviceToPublish);
+
+        UDDIProxiedService uddiProxiedService = uddiRegistryAdmin.getUDDIProxiedService(serviceToPublish.getOid());
+        if(uddiProxiedService == null) throw new IllegalStateException("UDDIProxiedService not found");
         uddiRegistryAdmin.publishGatewayWsdl(uddiProxiedService);
 
         System.clearProperty("com.l7tech.console.suppressVersionCheck");
@@ -230,7 +330,7 @@ public class TestGenericUDDIClient {
 
     @Test
     public void testGenericBusinessServiceDelete() throws UDDIException {
-        uddiClient.deleteBusinessService("uddi:80477830-bfef-11de-8342-9cc8dec47bb5");
+        uddiClient.deleteBusinessService("uddi:03c6fc80-c02c-11de-8342-cc4d177a16de");
     }
 
     @Test

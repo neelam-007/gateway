@@ -47,7 +47,7 @@ public class BusinessServicePublisherTest {
         }
 
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher();
-        servicePublisher.publishServicesToUDDIRegistry(uddiClient, servicesAndTModels.left, servicesAndTModels.right);
+        servicePublisher.publishServicesToUDDIRegistry(uddiClient, servicesAndTModels.left, servicesAndTModels.right, Integer.toString(serviceOid));
 
         //after
         for(BusinessService businessService: servicesAndTModels.left){

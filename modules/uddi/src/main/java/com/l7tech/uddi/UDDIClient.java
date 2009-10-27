@@ -5,6 +5,7 @@ import com.l7tech.common.uddi.guddiv3.TModel;
 
 import java.io.Closeable;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * This provides a facade around interesting aspects of the following UDDI apis:
@@ -212,6 +213,15 @@ public interface UDDIClient extends Closeable {
      * @param generalKeyword String all BusinessServices which have this keyword will be deleted.
      */
     void deleteAllBusinessServicesForGatewayWsdl(final String generalKeyword) throws UDDIException;
+
+    /**
+     * Find all BusinessServices which contain the generalKeyword supplied.
+     *
+     * @param generalKeyword
+     * @return
+     * @throws UDDIException
+     */
+    List<BusinessService> findMatchingBusinessServices(final String generalKeyword) throws UDDIException;
 
     /**
      * Get the URL for the referenced policy.

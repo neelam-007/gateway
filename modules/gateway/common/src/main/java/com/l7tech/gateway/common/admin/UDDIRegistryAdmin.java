@@ -31,7 +31,7 @@ public interface UDDIRegistryAdmin {
     /**
      * Download all UDDI Registry records on this cluster.
      *
-     * @return a List of UDDIRegistry instances.  Never null.  
+     * @return a List of UDDIRegistry instances.  Never null.
      * @throws FindException if there is a problem reading from the database
      */
     @Transactional(readOnly=true)
@@ -41,9 +41,9 @@ public interface UDDIRegistryAdmin {
     /**
      * Before the UDDIRegistry is deleted, all data published to the registry should be attempted to be removed.
      *
-     * @param oid
-     * @throws DeleteException
-     * @throws FindException
+     * @param oid long oid of the UDDI Registry to delete
+     * @throws DeleteException any problems deleting
+     * @throws FindException any problems find the UDDI Registry
      */
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=DELETE_BY_ID)
     void deleteUDDIRegistry(long oid) throws DeleteException, FindException, UDDIException;
@@ -62,8 +62,8 @@ public interface UDDIRegistryAdmin {
      * Publish the Gateway WSDL for a service to UDDI.
      *
      * This operation will be as transactional as possible with a non transactional decoupled UDDI registry.
-     * If any save operatoin fails, the best attempt to roll back changes to the UDDI registry will be made.
-     * 
+     * If any save operation fails, the best attempt to roll back changes to the UDDI registry will be made.
+     *
      * @param uddiProxiedService the UDDIProxiedService to publish.
      * @return oid of the created UDDIProxiedService
      * @throws FindException if the published service or uddi registry could not be found

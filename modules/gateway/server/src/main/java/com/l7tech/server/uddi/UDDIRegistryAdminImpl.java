@@ -139,7 +139,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
             if(uddiProxiedService.getGeneralKeywordServiceIdentifier() == null)
                 throw new IllegalStateException("General keyword service identifier property must be set on existing UDDIProxiedServices");
             //the service identifier is not allowed to be modified by client code once saved
-            if(original.getGeneralKeywordServiceIdentifier().equals(uddiProxiedService.getGeneralKeywordServiceIdentifier())){
+            if(!original.getGeneralKeywordServiceIdentifier().equals(uddiProxiedService.getGeneralKeywordServiceIdentifier())){
                 throw new IllegalStateException("It is not possible to modify the general keyword service identifier once the UDDIProxiedService has been saved");
             }
             generalKeyword = original.getGeneralKeywordServiceIdentifier();
@@ -190,12 +190,21 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
         try {
             if(!update){
-                //Generate a general keyword for the first time
-                uddiProxiedServiceManager.saveUDDIProxiedService(uddiProxiedService, uddiClient, servicesAndModels.left, servicesAndModels.right);
+                uddiProxiedServiceManager.saveUDDIProxiedService(uddiProxiedService, uddiClient, servicesAndModels.left, servicesAndModels.right, generalKeyword);
             }else{
-                uddiProxiedServiceManager.updateUDDIProxiedService(uddiProxiedService, uddiClient, servicesAndModels.left, servicesAndModels.right);
+                //Get the info on all published business services from UDDI
+                UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+                Pair<List<BusinessService>, Map<String, TModel>> modelFromUddi = serviceDownloader.downloadAllBusinessServicesForService(generalKeyword);
+
+                //the management of whether any existing tModels need to be deleted is left to the uddi proxied service manager
+                //as it can only tell what needs to be deleted after it has published the representation of the gateway wsdl to UDDI
+                uddiProxiedServiceManager.updateUDDIProxiedService(uddiProxiedService,
+                        uddiClient,
+                        servicesAndModels.left, servicesAndModels.right,
+                        modelFromUddi.left, modelFromUddi.right, generalKeyword);
             }
         } catch(SaveException e){
+            logger.log(Level.WARNING, "Could not save UDDIProxiedService: " + e.getMessage());
             try {
                 logger.log(Level.WARNING, "Attempting to rollback UDDI updates");
                 //Attempt to roll back UDDI updates
@@ -208,7 +217,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
             }
             throw e;
         } catch (UpdateException e){
-            //Attempt to roll back UDDI updates?
+            logger.log(Level.WARNING, "Could not update UDDIProxiedService: " + e.getMessage());
+            //Attempt to roll back UDDI updates? - no, as the information in the entity is still valid.
+            //it contains a keyword which has not changed. If we successfully published to UDDI, then leave it like
+            //that. We don't hold any references to anything UDDI specific in the entity.
+            throw e;
         } catch (UDDIException e) {
             final String msg = "Could not publish Gateway WSDL to UDDI: " + e.getMessage();
             logger.log(Level.WARNING, msg);
