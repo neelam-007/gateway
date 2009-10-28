@@ -15,6 +15,8 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 @Table(name="uddi_proxied_service")
 public class UDDIProxiedService extends PersistentEntityImp {
 
+    public static final String ATTR_SERVICE_OID = "serviceOid";
+
     /**
      * Which published service this proxied service was published for
      */
@@ -78,6 +80,30 @@ public class UDDIProxiedService extends PersistentEntityImp {
         this.uddiBusinessKey = uddiBusinessKey;
         this.uddiBusinessName = uddiBusinessName;
         this.updateProxyOnLocalChange = updateProxyOnLocalChange;
+    }
+
+    /**
+     * Used to determine if 'this' UDDIProxiedService has had a property modified which should not be modified once
+     * the entity has been created based on application logic
+     *
+     * @param original UDDIProxiedService last known version of 'this' UDDIProxiedService used to compare what has
+     * changed in 'this'
+     */
+    public void throwIfFinalPropertyModified(final UDDIProxiedService original){
+        testProperty("general keyword servce identifier", this.getGeneralKeywordServiceIdentifier(), original.getGeneralKeywordServiceIdentifier());
+        testProperty("business key", this.getUddiBusinessKey(), original.getUddiBusinessKey());
+        testProperty("business name", this.getUddiBusinessName(), original.getUddiBusinessName());
+        testProperty("registry oid", Long.toString(this.getUddiRegistryOid()), Long.toString(original.getUddiRegistryOid()));
+        testProperty("created from existing", Boolean.toString(this.isCreatedFromExistingService()), Boolean.toString(original.isCreatedFromExistingService()));
+    }
+
+    private void testProperty(final String propName, final String propValue, final String lastKnownValue){
+        if(propValue == null)
+            throw new IllegalStateException(propName + " property must be set");
+        //the service identifier is not allowed to be modified by client code once saved
+        if(!lastKnownValue.equals(propValue)){
+            throw new IllegalStateException("It is not possible to modify property " + propName);
+        }
     }
 
     @Override

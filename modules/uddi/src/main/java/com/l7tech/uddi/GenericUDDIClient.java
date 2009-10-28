@@ -212,6 +212,21 @@ public class GenericUDDIClient implements UDDIClient {
      * @throws UDDIException any problems searching the registry
      */
     private TModelList findMatchingTModels(final TModel tModelToFind, boolean approxomiateMatch) throws UDDIException{
+        FindTModel findTModel = getFindTModel(tModelToFind, approxomiateMatch);
+
+        UDDIInquiryPortType inquiryPortType = getInquirePort();
+        try {
+            return inquiryPortType.findTModel(findTModel);
+
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception finding matching tModels: ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
+
+    }
+
+    private FindTModel getFindTModel(TModel tModelToFind, boolean approxomiateMatch) throws UDDIException {
         FindTModel findTModel = new FindTModel();
         findTModel.setAuthInfo(getAuthToken());
 
@@ -219,7 +234,7 @@ public class GenericUDDIClient implements UDDIClient {
         List<String> qualifiers = findQualifiers.getFindQualifier();
         qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
         if(approxomiateMatch) qualifiers.add(FINDQUALIFIER_APPROXIMATE);
-        
+
         Name name= new Name();
         name.setValue(tModelToFind.getName().getValue());
 
@@ -236,22 +251,33 @@ public class GenericUDDIClient implements UDDIClient {
             searchIdentifierBag.getKeyedReference().addAll(tModelToFind.getIdentifierBag().getKeyedReference());
             findTModel.setIdentifierBag(searchIdentifierBag);
         }
+        return findTModel;
+    }
 
-        UDDIInquiryPortType inquiryPortType = getInquirePort();
+    @Override
+    public void deleteTModel(TModel tModel) throws UDDIException{
+        //See if any services reference this tModelKey, is so then don't delete
+        final FindService findService = new FindService();
+        findService.setAuthInfo(getAuthToken());
+
+        final FindTModel findTModel = getFindTModel(tModel, false);
+        findService.setFindTModel(findTModel);
+
         try {
-            return inquiryPortType.findTModel(findTModel);
-
+            final ServiceList serviceList = getInquirePort().findService(findService);
+            if(serviceList.getServiceInfos() != null && !serviceList.getServiceInfos().getServiceInfo().isEmpty()){
+                logger.log(Level.INFO, "Not deleting tModel as BusinessService found which references tModel with key: " + tModel.getTModelKey());
+                return;
+            }
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception finding matching tModels: ", drfm);
+            final String msg =
+                    getExceptionMessage("Exception searching for BusinessServices which reference tModel with key: "
+                            + tModel.getTModelKey(), drfm);
             logger.log(Level.WARNING, msg);
             throw new UDDIException(msg, drfm);
         }
 
-    }
-
-    @Override
-    public void deleteTModel(String tModelKey) throws UDDIException {
-        //todo find any service which references this tModelKey
+        final String tModelKey = tModel.getTModelKey();
         //if not found delete
         DeleteTModel deleteTModel = new DeleteTModel();
         deleteTModel.setAuthInfo(getAuthToken());
@@ -264,6 +290,12 @@ public class GenericUDDIClient implements UDDIClient {
             logger.log(Level.WARNING, msg);
             throw new UDDIException(msg, drfm);
         }
+    }
+
+    @Override
+    public void deleteTModel(String tModelKey) throws UDDIException {
+        final TModel tModel = getTModel(tModelKey);
+        deleteTModel(tModel);
     }
 
     @Override
@@ -325,7 +357,6 @@ public class GenericUDDIClient implements UDDIClient {
     private FindService getFindQualifiersForServiceKeyword(String generalKeyword) throws UDDIException {
         FindService findService = new FindService();
         findService.setAuthInfo(getAuthToken());
-
 
         CategoryBag categoryBag = new CategoryBag();
         KeyedReference generalKeywordRef = new KeyedReference();

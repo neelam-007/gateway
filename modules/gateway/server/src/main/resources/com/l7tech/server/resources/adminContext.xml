@@ -225,6 +225,7 @@
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="serviceTemplateManager"/>
+        <constructor-arg ref="uddiRegistryAdmin"/>
     </bean>
 
     <bean id="folderAdmin" class="com.l7tech.server.folder.FolderAdminImpl">

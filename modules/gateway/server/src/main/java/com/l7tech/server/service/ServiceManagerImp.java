@@ -21,6 +21,7 @@ import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.gateway.common.service.*;
+import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -285,6 +286,15 @@ public class ServiceManagerImp
         newRole.setEntityType(SERVICE);
         newRole.setEntityOid(service.getOid());
         newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the {1} service.");
+
+        //Read all UDDIRegistries
+        newRole.addEntityPermission(READ, UDDI_REGISTRY, null);
+
+        //add attribute predicate to allow crud on a uddi_proxied_service if one gets created
+        newRole.addAttributePermission(CREATE, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
+        newRole.addAttributePermission(READ, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
+        newRole.addAttributePermission(UPDATE, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
+        newRole.addAttributePermission(DELETE, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
 
         if (currentUser != null) {
             // See if we should give the current user admin permission for this service

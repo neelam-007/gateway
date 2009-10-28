@@ -83,6 +83,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     @Override
+    public UDDIRegistry findByPrimaryKey(long registryOid) throws FindException {
+        return uddiRegistryManager.findByPrimaryKey(registryOid);
+    }
+
+    @Override
     public void testUDDIRegistryAuthentication(final UDDIRegistry uddiRegistry) throws FindException, UDDIException {
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
 
@@ -120,6 +125,18 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     @Override
+    public void updateProxiedServiceOnly(UDDIProxiedService uddiProxiedService) throws UpdateException, FindException {
+        final UDDIProxiedService original = uddiProxiedServiceManager.findByPrimaryKey(uddiProxiedService.getOid());
+        if(original == null) throw new FindException("Could not find UDDIProxiedService with id: " + uddiProxiedService);
+
+        uddiProxiedService.throwIfFinalPropertyModified(original);
+
+        if(original.isUpdateProxyOnLocalChange() == uddiProxiedService.isUpdateProxyOnLocalChange()) return;
+
+        uddiProxiedServiceManager.update(uddiProxiedService);
+    }
+
+    @Override
     public Collection<UDDIProxiedService> getAllProxiedServicesForRegistry(long registryOid) throws FindException {
         return uddiRegistryManager.findAllByRegistryOid(registryOid);
     }
@@ -133,14 +150,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
         final boolean update = uddiProxiedService.getOid() != PersistentEntity.DEFAULT_OID;
         final String generalKeyword;
         if(update){
-            //Get the proxied service
             final UDDIProxiedService original = uddiProxiedServiceManager.findByPrimaryKey(uddiProxiedService.getOid());
-            if(uddiProxiedService.getGeneralKeywordServiceIdentifier() == null)
-                throw new IllegalStateException("General keyword service identifier property must be set on existing UDDIProxiedServices");
-            //the service identifier is not allowed to be modified by client code once saved
-            if(!original.getGeneralKeywordServiceIdentifier().equals(uddiProxiedService.getGeneralKeywordServiceIdentifier())){
-                throw new IllegalStateException("It is not possible to modify the general keyword service identifier once the UDDIProxiedService has been saved");
-            }
+            uddiProxiedService.throwIfFinalPropertyModified(original);
             generalKeyword = original.getGeneralKeywordServiceIdentifier();
         }else{
             //generate a new identifier
@@ -165,7 +176,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
                 hostName = InetAddress.getLocalHost().getHostName();
             } catch (UnknownHostException e) {
                 logger.log(Level.WARNING, "Could not find host name for SSG: " + e.getMessage());
-                //todo - update if necessary, decided not to throw runtime, is this ok? this should not happen 
                 throw new PublishProxiedServiceException("Cannot determine the hostname of the SecureSpan Gateway");
             }
         }else{

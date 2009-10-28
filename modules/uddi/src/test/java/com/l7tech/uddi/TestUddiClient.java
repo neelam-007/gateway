@@ -95,6 +95,11 @@ public class TestUddiClient implements UDDIClient{
         return (dataStructureForDownloaderTest != null)? dataStructureForDownloaderTest: Collections.<BusinessService>emptyList();
     }
 
+    @Override
+    public void deleteTModel(TModel tModel) throws UDDIException {
+
+    }
+
     // Not really interested in these for Bondo testing
 
     @Override

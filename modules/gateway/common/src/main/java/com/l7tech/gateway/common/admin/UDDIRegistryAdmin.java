@@ -38,6 +38,9 @@ public interface UDDIRegistryAdmin {
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
     Collection<UDDIRegistry> findAllUDDIRegistries() throws FindException;
 
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=MethodStereotype.FIND_ENTITY)
+    UDDIRegistry findByPrimaryKey(long registryOid) throws FindException;
     /**
      * Before the UDDIRegistry is deleted, all data published to the registry should be attempted to be removed.
      *
@@ -79,13 +82,22 @@ public interface UDDIRegistryAdmin {
     void deleteGatewayWsdlFromUDDI( final UDDIProxiedService uddiProxiedService) throws FindException, UDDIException, DeleteException;
 
     /**
+     * Allows for non final properties which do not rely on UDDI data like the UDDIProxiedService's
+     * 'updateProxyOnLocalChange' property to be udpated without any any UDDI interaction.
+     *
+     * @param uddiProxiedService
+     */
+    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
+    void updateProxiedServiceOnly(final UDDIProxiedService uddiProxiedService) 
+            throws UpdateException, FindException;
+    /**
      * Find the UDDIProxiedService for a service, if it exists
      *
      * @param serviceOid the service to get the UDDIProxiedServiec for
      * @return UDDIProxiedService or null if the service does not have one
      * @throws com.l7tech.objectmodel.FindException Any problem finding the proxied service
      */
-    @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.FIND_ENTITIES)
+    @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.FIND_ENTITY)
     UDDIProxiedService getUDDIProxiedService(long serviceOid) throws FindException;
 
     /**

@@ -16,7 +16,6 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.service.*;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -234,26 +233,25 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     /**
      * Not used right now, deleted a test which used it but was no longer needed following the move to UDDIRegistry
      * Leaving in case we add test coverage
-     * 
-     * @param uddiRegistry UDDIRegistry to search
-     * @param namePattern The string of the service name (wildcard % is supported)
-     * @param caseSensitive  True if case sensitive, false otherwise.
-     * @return
+     *
+     * @param registryOid
+     * @param namePattern   The string of the service name (wildcard % is supported)
+     * @param caseSensitive True if case sensitive, false otherwise.   @return
      * @throws FindException
      */
     @Override
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException {
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException {
         WsdlInfo[] siList = new WsdlInfo[3];
 
-        siList[0]= new WsdlInfo("Google Service", "http://api.google.com/GoogleSearch.wsdl");
-        siList[1]= new WsdlInfo("Delayed Quote Service", "http://services.xmethods.net/soap/urn:xmethods-delayed-quotes.wsdl");
-        siList[2]= new WsdlInfo("Stock Quote Service", "http://paris/wsdl/StockQuote_WSDL.wsdl");
+        siList[0] = new WsdlInfo("Google Service", "http://api.google.com/GoogleSearch.wsdl");
+        siList[1] = new WsdlInfo("Delayed Quote Service", "http://services.xmethods.net/soap/urn:xmethods-delayed-quotes.wsdl");
+        siList[2] = new WsdlInfo("Stock Quote Service", "http://paris/wsdl/StockQuote_WSDL.wsdl");
 
         return siList;
     }
 
     @Override
-    public UDDINamedEntity[] findBusinessesFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException {
+    public UDDINamedEntity[] findBusinessesFromUDDIRegistry(long uddiRegistryOid, String namePattern, boolean caseSensitive) throws FindException {
         return new UDDINamedEntity[0];
     }
 

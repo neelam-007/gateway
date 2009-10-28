@@ -177,12 +177,20 @@ public interface UDDIClient extends Closeable {
      * Delete a TModel from the UDDI Registry.
      *
      * The delete should only be attempted when a search reveiles that no other Business Service references
-     * this tModel directly or indirectly.
+     * this tModel.
      *
      * @param tModelKey String tModelKey of the TModel to delete
-     * @throws UDDIException if any problem during the attempt to delete
+     * @throws UDDIException if any problem during the find or the attempt to delete
      */
     void deleteTModel(final String tModelKey) throws UDDIException;
+
+    /**
+     * Follows the same contract as deleteTModel(tModelKey)
+     *
+     * @param tModel TModel to delete, iff no BusinessService references it
+     * @throws UDDIException if any problem during the find or the attempt to delete
+     */
+    public void deleteTModel(TModel tModel) throws UDDIException;
 
     /**
      * Delete all tModels which match the supplied TModel

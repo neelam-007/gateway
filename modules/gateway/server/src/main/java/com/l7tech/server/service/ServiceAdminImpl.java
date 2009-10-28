@@ -3,7 +3,9 @@ package com.l7tech.server.service;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
+import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.EntityType.SERVICE;
@@ -53,8 +55,7 @@ import java.util.logging.Logger;
  *
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
- * User: flascelles<br/>
- * Date: Jun 6, 2003
+ * @author flascelles<br/>
  * @noinspection OverloadedMethodsWithSameNumberOfParameters,ValidExternallyBoundObject,NonJaxWsWebServices
  */
 public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
@@ -81,6 +82,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private final ExecutorService validatorExecutor;
 
+    private final UDDIRegistryAdmin uddiRegistryAdmin;
+
     private CollectionUpdateProducer<ServiceHeader, FindException> publishedServicesUpdateProducer =
             new CollectionUpdateProducer<ServiceHeader, FindException>(5 * 60 * 1000, 100, new ServiceHeaderDifferentiator()) {
                 @Override
@@ -104,7 +107,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             UDDITemplateManager uddiTemplateManager,
                             PolicyVersionManager policyVersionManager,
                             ServerConfig serverConfig,
-                            ServiceTemplateManager serviceTemplateManager)
+                            ServiceTemplateManager serviceTemplateManager, UDDIRegistryAdmin uddiRegistryAdmin)
     {
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;
@@ -121,6 +124,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.uddiTemplateManager = uddiTemplateManager;
         this.policyVersionManager = policyVersionManager;
         this.serviceTemplateManager = serviceTemplateManager;
+        this.uddiRegistryAdmin = uddiRegistryAdmin;
 
         int maxConcurrency = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
         BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
@@ -314,6 +318,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         try {
             if (!isDefaultOid(service)) {
                 // UPDATING EXISTING SERVICE
+                final boolean wsdlXmlChanged = service.isParsedWsdlNull();
+
                 oid = service.getOid();
                 logger.fine("Updating PublishedService: " + oid);
 
@@ -327,6 +333,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                 }
 
                 serviceManager.update(service);
+                //check if UDDI needs to be updated
+                if(wsdlXmlChanged) checkUpdateUDDI(service);
             } else {
                 // SAVING NEW SERVICE
                 logger.fine("Saving new PublishedService");
@@ -348,6 +356,38 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             throw new SaveException(e);
         }
         return oid;
+    }
+
+    /**
+     * Check if this service has published a proxied BusinessService to UDDI. If so update it following an update
+     * to the WSDL xml of the service
+     * @param service
+     */
+    private void checkUpdateUDDI(PublishedService service){
+        try {
+            final UDDIProxiedService uddiProxiedService = uddiRegistryAdmin.getUDDIProxiedService(service.getOid());
+            if(uddiProxiedService == null) return;//nothing published for this service
+
+            //check it's configured for updates
+            if(!uddiProxiedService.isUpdateProxyOnLocalChange()) return;
+
+            logger.log(Level.INFO, "Updating Gateway WSDL in UDDI");
+            uddiRegistryAdmin.publishGatewayWsdl(uddiProxiedService);
+
+            logger.log(Level.INFO, "Gateway WSDL in UDDI has been updated");
+
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Could not look up if this service '" + service.getOid()+"' has published to UDDI");
+        } catch (UDDIRegistryAdmin.PublishProxiedServiceException e) {
+            logger.log(Level.WARNING, "Could not update UDDI following update to Published Service's WSDL. Serivce oid: " + service.getOid(), e);
+        } catch (VersionException e) {
+            logger.log(Level.WARNING, "Version exception trying to save UDDIProxiedService following update UDDI. Serivce oid: " + service.getOid(), e);
+        } catch (SaveException e) {
+            logger.log(Level.WARNING, "Could not save UDDIProxiedService following update UDDI. Serivce oid: " + service.getOid(), e);
+            //this should not happen, as this is always an update
+        } catch (UpdateException e) {
+            logger.log(Level.WARNING, "Could not update UDDIProxiedService following update UDDI. Serivce oid: " + service.getOid(), e);
+        }
     }
 
     @Override
@@ -470,8 +510,9 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public UDDINamedEntity[] findBusinessesFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException {
+    public UDDINamedEntity[] findBusinessesFromUDDIRegistry(final long registryOid, String namePattern, boolean caseSensitive) throws FindException {
         try {
+            final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
             UDDINamedEntity [] uddiNamedEntities = uddiHelper.getMatchingBusinesses(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
             //noinspection unchecked
             Arrays.sort(uddiNamedEntities, new ResolvingComparator(new Resolver<UDDINamedEntity, String>() {
@@ -498,8 +539,9 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException {
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(final long registryOid, String namePattern, boolean caseSensitive) throws FindException {
         try {
+            final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
             WsdlInfo[] wsdlInfo = uddiHelper.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
             //noinspection unchecked
             Arrays.sort(wsdlInfo, new ResolvingComparator(new Resolver<WsdlInfo,String>(){

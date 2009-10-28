@@ -236,9 +236,9 @@ public class SearchUddiDialog extends JDialog {
 
                             switch(searchType){
                                 case WSDL_SEARCH:
-                                    return serviceAdmin.findWsdlUrlsFromUDDIRegistry(uddiRegistry, searchString, caseSensitiveCheckBox.isSelected());
+                                    return serviceAdmin.findWsdlUrlsFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected());
                                 case BUSINESS_ENTITY_SEARCH:
-                                    return serviceAdmin.findBusinessesFromUDDIRegistry(uddiRegistry, searchString, caseSensitiveCheckBox.isSelected());
+                                    return serviceAdmin.findBusinessesFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected());
                             }
 
                             return null;

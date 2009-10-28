@@ -1102,6 +1102,7 @@ INSERT INTO rbac_permission VALUES (-352,0,-350,'READ',NULL,'ID_PROVIDER_CONFIG'
 INSERT INTO rbac_permission VALUES (-353,0,-350,'READ',NULL,'USER');
 INSERT INTO rbac_permission VALUES (-354,0,-350,'CREATE',NULL,'SERVICE');
 INSERT INTO rbac_permission VALUES (-355,0,-350,'READ',NULL,'SERVICE_TEMPLATE');
+INSERT INTO rbac_permission VALUES (-356,0,-350,'READ',NULL,'UDDI_REGISTRY');
 
 INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.');
 INSERT INTO rbac_permission VALUES (-401,0,-400,'READ',NULL,'ID_PROVIDER_CONFIG');
@@ -1132,6 +1133,11 @@ INSERT INTO rbac_permission VALUES (-425,0,-400,'CREATE',NULL,'SERVICE_ALIAS');
 INSERT INTO rbac_permission VALUES (-426,0,-400,'READ',  NULL,'SERVICE_ALIAS');
 INSERT INTO rbac_permission VALUES (-427,0,-400,'UPDATE',NULL,'SERVICE_ALIAS');
 INSERT INTO rbac_permission VALUES (-428,0,-400,'DELETE',NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission VALUES (-429,0,-400,'READ',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission VALUES (-430,0,-400,'READ',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-431,0,-400,'UPDATE',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-432,0,-400,'DELETE',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-433,0,-400,'CREATE',NULL,'UDDI_PROXIED_SERVICE');
 
 INSERT INTO rbac_role VALUES (-450,0,'View Audit Records and Logs', null,null,null, 'Users assigned to the {0} role have the ability to view audit and log details in manager.');
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');
@@ -1224,11 +1230,6 @@ INSERT INTO rbac_permission VALUES (-1002,0,-1000,'CREATE',NULL,'UDDI_REGISTRY')
 INSERT INTO rbac_permission VALUES (-1003,0,-1000,'UPDATE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1004,0,-1000,'DELETE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1005,0,-1000,'READ',NULL,'SERVICE');
-
-INSERT INTO rbac_permission VALUES (-1051,0,-1000,'READ',NULL,'UDDI_PROXIED_SERVICE');
-INSERT INTO rbac_permission VALUES (-1052,0,-1000,'CREATE',NULL,'UDDI_PROXIED_SERVICE');
-INSERT INTO rbac_permission VALUES (-1053,0,-1000,'UPDATE',NULL,'UDDI_PROXIED_SERVICE');
-INSERT INTO rbac_permission VALUES (-1054,0,-1000,'DELETE',NULL,'UDDI_PROXIED_SERVICE');
 
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');

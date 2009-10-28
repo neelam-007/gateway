@@ -318,7 +318,7 @@ public class TestGenericUDDIClient {
     }
 
     @Test
-    public void testGenericTModelDelete() throws UDDIException {
+    public void testMatchingTModelDelete() throws UDDIException {
         TModel tModel = new TModel();
         Name name = new Name();
         name.setValue("%Warehouse%");
@@ -326,6 +326,21 @@ public class TestGenericUDDIClient {
         tModel.setName(name);
 
         uddiClient.deleteMatchingTModels(tModel);
+    }
+
+    /**
+     * Test that the deleteTModel successfully determines when a tModel is safe to delete
+     *
+     * Test is for stepping through, Asserts not used here
+     *
+     * Requirements: Test requires a running UDDI. Gateway is not needed
+     * Need a tModelKey for a tModel which is referenced by a Business Service
+     *
+     * @throws UDDIException
+     */
+    @Test
+    public void testTModelReferencedDelete() throws UDDIException{
+        uddiClient.deleteTModel("uddi:b219fd60-c319-11de-a82a-a6a2e065da04");
     }
 
     @Test

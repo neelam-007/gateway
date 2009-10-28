@@ -3,7 +3,6 @@ package com.l7tech.gateway.common.service;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.admin.AliasAdmin;
 import com.l7tech.gateway.common.AsyncAdminMethods;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.policy.PolicyType;
@@ -151,26 +150,26 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
     /**
      * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
      *
-     * @param uddiRegistry UDDIRegistry to search
-     * @param namePattern The string of the service name (wildcard % is supported)
-     * @param caseSensitive  True if case sensitive, false otherwise.
-     * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
-     * @throws FindException   if there was a problem accessing the requested information.
+     * @param registryOid   long oid of the UDDIRegistry to search
+     * @param namePattern   The string of the service name (wildcard % is supported)
+     * @param caseSensitive True if case sensitive, false otherwise.   @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
+     * @throws FindException if there was a problem accessing the requested information.
      */
-    @Transactional(readOnly=true)
-    WsdlInfo[] findWsdlUrlsFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException ;
+    @Transactional(readOnly = true)
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
+    WsdlInfo[] findWsdlUrlsFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException;
 
     /**
      * Find all Businesses from the UDDI Registry given the service name pattern.
      *
-     * @param uddiRegistry  UDDIRegistry to search
+     * @param registryOid   long oid of the UDDIRegistry to search
      * @param namePattern   The string of the business name (wildcard % is supported)
-     * @param caseSensitive True if case sensitive, false otherwise.
-     * @return A list of UDDINamedEntities of businesses whose name matches the namePattern.
+     * @param caseSensitive True if case sensitive, false otherwise.   @return A list of UDDINamedEntities of businesses whose name matches the namePattern.
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
-    UDDINamedEntity[] findBusinessesFromUDDIRegistry(UDDIRegistry uddiRegistry, String namePattern, boolean caseSensitive) throws FindException;
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
+    UDDINamedEntity[] findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException;
 
     /**
      * Gets the ThroughputQuota counter names already defined on this gateway. This is used by the ThroughputQuota assertion

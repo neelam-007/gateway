@@ -105,8 +105,6 @@ CREATE TABLE uddi_proxied_service (
   FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
-
-
 INSERT INTO rbac_role VALUES (-950,0,'Manage JDBC Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.');
 INSERT INTO rbac_permission VALUES (-951,0,-950,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-952,0,-950,'CREATE',NULL,'JDBC_CONNECTION');
@@ -121,10 +119,15 @@ INSERT INTO rbac_permission VALUES (-1003,0,-1000,'UPDATE',NULL,'UDDI_REGISTRY')
 INSERT INTO rbac_permission VALUES (-1004,0,-1000,'DELETE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1005,0,-1000,'READ',NULL,'SERVICE');
 
-INSERT INTO rbac_permission VALUES (-1051,0,-1000,'READ',NULL,'UDDI_PROXIED_SERVICE');
-INSERT INTO rbac_permission VALUES (-1052,0,-1000,'CREATE',NULL,'UDDI_PROXIED_SERVICE');
-INSERT INTO rbac_permission VALUES (-1053,0,-1000,'UPDATE',NULL,'UDDI_PROXIED_SERVICE');
-INSERT INTO rbac_permission VALUES (-1054,0,-1000,'DELETE',NULL,'UDDI_PROXIED_SERVICE');
+--Update to the 'Manage Webservices Role'
+INSERT INTO rbac_permission VALUES (-429,0,-400,'READ',NULL,'UDDI_REGISTRY');
+INSERT INTO rbac_permission VALUES (-430,0,-400,'READ',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-431,0,-400,'UPDATE',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-432,0,-400,'DELETE',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-433,0,-400,'CREATE',NULL,'UDDI_PROXIED_SERVICE');
+
+-- Updated Roles which require permission to read UDDIRegistries - 'Publish Webservices'
+INSERT INTO rbac_permission VALUES (-356,0,-350,'READ',NULL,'UDDI_REGISTRY');
 
 --
 -- Reenable FK at very end of script
