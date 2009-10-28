@@ -47,7 +47,7 @@ public class EditServiceUDDISettingsAction extends NodeAction{
         PublishedService svc;
         try {
             svc = serviceNode.getEntity();
-            hasUpdatePermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.UDDI_REGISTRY, svc));
+            hasUpdatePermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get service", e);
             throw new RuntimeException(e);

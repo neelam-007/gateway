@@ -29,6 +29,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
         setVersion(entity.getVersion());
     }
 
+    @Override
     @Id @XmlTransient
     @Column(name="objectid", nullable=false, updatable=false)
     @GenericGenerator( name="generator", strategy = "hilo" )
@@ -42,6 +43,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
         return _oidObject;
     }
 
+    @Override
     @Transient
     @XmlID @XmlAttribute
     public String getId() {
@@ -58,18 +60,21 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
         }
     }
 
+    @Override
     public void setOid( long oid ) {
         checkLocked();
         _oid = oid;
         _oidObject = oid;
     }
 
+    @Override
     @Transient
     @XmlAttribute
     public int getVersion() {
         return _version;
     }
 
+    @Override
     public void setVersion(int version) {
         checkLocked();
         _version = version;
