@@ -33,8 +33,8 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JRadioButton donTPublishRadioButton;
-    private JRadioButton publishProxiedWsdlButton;
+    private JRadioButton dontPublishRadioButton;
+    private JRadioButton publishProxiedWsdlRadioButton;
     private JCheckBox updateWhenGatewayWSDLCheckBox;
     private JComboBox uddiRegistriesComboBox;
     private JButton selectBusinessEntityButton;
@@ -93,13 +93,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
             }
         });
 
-        RunOnChangeListener enableDisableChangeListener = new RunOnChangeListener( new Runnable(){
-            @Override
-            public void run() {
-                enableAndDisableComponents();
-            }
-        } );
-
         selectBusinessEntityButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -126,6 +119,15 @@ public class ServiceUDDISettingsDialog extends JDialog {
             }
         });
 
+        RunOnChangeListener enableDisableChangeListener = new RunOnChangeListener( new Runnable(){
+            @Override
+            public void run() {
+                enableAndDisableComponents();
+            }
+        } );
+
+        publishProxiedWsdlRadioButton.addActionListener(enableDisableChangeListener);
+        dontPublishRadioButton.addActionListener(enableDisableChangeListener);
         monitoringEnabledCheckBox.addActionListener( enableDisableChangeListener );
 
         //Populate registry drop down
@@ -163,16 +165,14 @@ public class ServiceUDDISettingsDialog extends JDialog {
         enableAndDisableComponents();
     }
 
+    /**
+     * Only responsible for transferring data from model to view.
+     * The enabling or disabling of UI components it done in the enable / disable methods
+     */
     private void modelToView() {
 
+        //publish tab configuration
         if (uddiProxyService != null) {
-            publishProxiedWsdlButton.setSelected(true);
-            publishProxiedWsdlButton.setEnabled(false);
-            donTPublishRadioButton.setEnabled(true);
-            enableDisablePublishGatewayWsdlControls(false);
-            //we will allow this setting to be modified when the other settings cannot be
-            updateWhenGatewayWSDLCheckBox.setEnabled(true);
-
             //find which registry to select
             long uddiRegOid = uddiProxyService.getUddiRegistryOid();
             boolean found = false;
@@ -184,31 +184,45 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 }
             }
             if(!found) throw new IllegalStateException("UDDI Registry not found for pulished Gateway WSDL");
-
             businessEntityNameLabel.setText(uddiProxyService.getUddiBusinessName());
             updateWhenGatewayWSDLCheckBox.setSelected(uddiProxyService.isUpdateProxyOnLocalChange());
-
-            // Monitoring settings
-            monitoringEnabledCheckBox.setSelected( false ); //TODO implement when UDDIServiceControl is available
-            monitoringDisableServicecheckBox.setSelected( false );
+            publishProxiedWsdlRadioButton.setSelected(true);
         }else{
             //set other buttons values when implemented
-            donTPublishRadioButton.setSelected(true);
-            publishProxiedWsdlButton.setEnabled(true);
-            enableDisablePublishGatewayWsdlControls(true);
+            dontPublishRadioButton.setSelected(true);
             uddiRegistriesComboBox.setSelectedIndex(-1);
             businessEntityNameLabel.setText(businessEntityDefault);
+        }
 
-            // Monitoring settings
-            monitoringEnabledCheckBox.setSelected( false );
-            monitoringDisableServicecheckBox.setSelected( false );
+        // Monitoring tab settings
+        monitoringEnabledCheckBox.setSelected( false ); //TODO implement when UDDIServiceControl is available
+        monitoringDisableServicecheckBox.setSelected( false );
+
+    }
+
+    /**
+     * Enable or disable UI components in the 'Publish' tab only
+     */
+    private void publishTabEnableDisableComponents(){
+
+        if(dontPublishRadioButton.isSelected()){
+            enableDisablePublishGatewayWsdlControls(false);
+        }else if(publishProxiedWsdlRadioButton.isSelected()){
+            final boolean proxyPublished = uddiProxyService != null;
+            enableDisablePublishGatewayWsdlControls(!proxyPublished);
+            updateWhenGatewayWSDLCheckBox.setEnabled(true);
         }
     }
 
     private void enableAndDisableComponents() {
         if ( canUpdate ) {
             monitoringDisableServicecheckBox.setEnabled( monitoringEnabledCheckBox.isSelected() );
+            publishTabEnableDisableComponents();
         } else {
+            //publish tab
+            enableDisablePublishGatewayWsdlControls(false);            
+
+            //monitor tab
             monitoringEnabledCheckBox.setEnabled( false );
             monitoringDisableServicecheckBox.setEnabled( false );
         }
@@ -221,8 +235,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
         businessEntityLabel.setEnabled(enable);
         businessEntityNameLabel.setEnabled(enable);
         selectBusinessEntityButton.setEnabled(enable);
-        
-        //undo when this feature is implemented
         updateWhenGatewayWSDLCheckBox.setEnabled(enable);
     }
 
@@ -231,7 +243,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
      * @return true if view is valid and can be converted to model, false otherwise
      */
     private boolean viewToModel(){
-        if(publishProxiedWsdlButton.isSelected()){
+        if(publishProxiedWsdlRadioButton.isSelected()){
             if(uddiProxyService == null){
                 if(publishWsdlValidators.validateWithDialog()) publishUDDIProxiedService();
                 else return false;
@@ -253,7 +265,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     }
                 }
             }
-        } else if(donTPublishRadioButton.isSelected()){
+        } else if(dontPublishRadioButton.isSelected()){
             if(uddiProxyService != null){
                 removeUDDIProxiedService();
             }
@@ -275,9 +287,15 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         if (option == JOptionPane.YES_OPTION){
                             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             try {
-                                uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyService);
-                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Removal of Gateway WSDL from UDDI successful", "Successful Deletion", JOptionPane.INFORMATION_MESSAGE, null);
+                                final String errorMsg = uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyService);
+                                if(errorMsg == null){
+                                    DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
+                                            "Removal of Gateway WSDL from UDDI successful", "Successful Deletion", JOptionPane.INFORMATION_MESSAGE, null);
+                                }else{
+                                    DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
+                                            "Problem removing Gateway WSDL from UDDI: " + errorMsg+"\nManual updates to UDDI may be required",
+                                            "Problem updating UDDI", JOptionPane.WARNING_MESSAGE , null);
+                                }
                             } catch (Exception ex) {
                                 logger.log(Level.WARNING, "Problem deleting pubished Gateway WSDL from UDDI: " + ex.getMessage());
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, "Problem deleting Gateway WSDL from UDDI Registry: " + ex.getMessage()
@@ -325,8 +343,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private void loadUddiRegistries() {
         try {
             UDDIRegistryAdmin uddiRegistryAdmin = getUDDIRegistryAdmin();
-            //todo what are the rbac requirements here? Does the user need the permission to be able to read all registries?
-            //todo canUpdate is set when the user has update on UDDI_REGISTRIES
 
             allRegistries = new HashMap<String, UDDIRegistry>();
             Collection<UDDIRegistry> registries = uddiRegistryAdmin.findAllUDDIRegistries();
