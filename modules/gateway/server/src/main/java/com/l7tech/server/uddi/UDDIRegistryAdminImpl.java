@@ -22,9 +22,7 @@ import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.wsdl.WSDLException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.net.InetAddress;
@@ -111,17 +109,25 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     @Override
-    public void deleteGatewayWsdlFromUDDI(UDDIProxiedService uddiProxiedService)
-            throws FindException, UDDIException, DeleteException {
+    public String deleteGatewayWsdlFromUDDI(UDDIProxiedService uddiProxiedService)
+            throws FindException, DeleteException {
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiProxiedService.getUddiRegistryOid());
 
         final UDDIProxiedService proxiedService = uddiProxiedServiceManager.findByPrimaryKey(uddiProxiedService.getOid());
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
-        uddiClient.deleteAllBusinessServicesForGatewayWsdl(proxiedService.getGeneralKeywordServiceIdentifier());
-        logger.log(Level.INFO, "Successfully deleted published Gateway WSDL from UDDI Registry");
+
+        String errorMsg = null;
+        try {
+            uddiClient.deleteAllBusinessServicesForGatewayWsdl(proxiedService.getGeneralKeywordServiceIdentifier());
+            logger.log(Level.INFO, "Successfully deleted published Gateway WSDL from UDDI Registry");
+        } catch (UDDIException e) {
+            errorMsg = "Errors deleting published Business Services from UDDI: " + e.getMessage();
+            logger.log(Level.WARNING, errorMsg, e);
+        }
 
         uddiProxiedServiceManager.delete(uddiProxiedService.getOid());
         logger.log(Level.INFO, "Deleted UDDIProxiedService");
+        return errorMsg;
     }
 
     @Override
@@ -217,9 +223,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
             try {
                 logger.log(Level.WARNING, "Attempting to rollback UDDI updates");
                 //Attempt to roll back UDDI updates
-                for(BusinessService businessService: servicesAndModels.left){
-                    uddiClient.deleteBusinessService(businessService.getServiceKey());
-                }
+                uddiClient.deleteBusinessServices(servicesAndModels.left);
                 logger.log(Level.WARNING, "UDDI updates rolled back successfully");
             } catch (UDDIException e1) {
                 logger.log(Level.WARNING, "Could not rollback UDDI updates: " + e1.getMessage());

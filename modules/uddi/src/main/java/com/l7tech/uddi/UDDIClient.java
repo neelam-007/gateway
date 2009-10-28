@@ -6,6 +6,7 @@ import com.l7tech.common.uddi.guddiv3.TModel;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This provides a facade around interesting aspects of the following UDDI apis:
@@ -179,6 +180,7 @@ public interface UDDIClient extends Closeable {
      * The delete should only be attempted when a search reveiles that no other Business Service references
      * this tModel.
      *
+     * //todo this is inefficient - should allow a collection of tModels which only requires a single Business Service search
      * @param tModelKey String tModelKey of the TModel to delete
      * @throws UDDIException if any problem during the find or the attempt to delete
      */
@@ -202,13 +204,35 @@ public interface UDDIClient extends Closeable {
     /**
      * Delete a BusinessService from the UDDI Registry.
      *
-     * Any dependent tModels representing wsdl:portType and wsdl:binding should also be deleted. Thd delete for
-     * tModels follows the contract of deleteTModel()
+     * Any dependent tModels representing wsdl:portType and wsdl:binding are not deleted. This should be done after
+     * the call to deletedBusinessService, as it's possible that more than one Business Service, which originates
+     * from the same WSDL, will reference the same tModel. Some UDDI Registries will throw an exception when
+     * an attempt is made to delete a tModel which has been previously deleted (CentraSite Gov v7)
      *
      * @param serviceKey String serviceKey of the service to delete
      * @throws UDDIException if any problem during the attempt to delete
+     * @return Set<String> contaning the tModelKeys of all referenced tModels
      */
-    void deleteBusinessService(final String serviceKey) throws UDDIException;
+    Set<String> deleteBusinessService(final String serviceKey) throws UDDIException;
+
+    /**
+     * Delete all supplied BusinessServices and safely delete all referenced tModels
+     *
+     * Calls deleteBusinessService(BusinessService) for each BusinessService in the collection, following that the
+     * Set<String> of tModelKeys are deleted.
+     *
+     * @param businessServices Collection<BusinessService> all BusinessServices to delete. Required.
+     * @throws UDDIException any problems searching / deleting
+     */
+    void deleteBusinessServices(final Collection<BusinessService> businessServices) throws UDDIException;
+
+    /**
+     * Same contract as deleteBusinessServices
+     *
+     * @param serviceKeys Collection<String> serviceKeys of BusinessServices to delete. Required.
+     * @throws UDDIException any problems searching / deleting
+     */
+    void deleteBusinessServicesByKey(final Collection<String> serviceKeys) throws UDDIException;
 
     /**
      * Delete all BusinessServices from the UDDI Registry which contain the value of generalKeyword as the keyValue

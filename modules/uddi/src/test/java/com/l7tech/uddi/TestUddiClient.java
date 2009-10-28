@@ -66,7 +66,17 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
-    public void deleteBusinessService(String serviceKey) throws UDDIException {
+    public Set<String> deleteBusinessService(String serviceKey) throws UDDIException {
+        return null;
+    }
+
+    @Override
+    public void deleteBusinessServices(Collection<BusinessService> businessServices) throws UDDIException {
+
+    }
+
+    @Override
+    public void deleteBusinessServicesByKey(Collection<String> serviceKeys) throws UDDIException {
 
     }
 

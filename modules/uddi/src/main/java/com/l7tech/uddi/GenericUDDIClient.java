@@ -2,11 +2,7 @@ package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.*;
 
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.URL;
@@ -72,6 +68,7 @@ public class GenericUDDIClient implements UDDIClient {
      */
     @Override
     public boolean publishBusinessService(final BusinessService businessService) throws UDDIException {
+        //TODO implement search for existing matching service
         SaveService saveService = new SaveService();
         saveService.setAuthInfo(getAuthToken());
 
@@ -314,9 +311,11 @@ public class GenericUDDIClient implements UDDIClient {
         try {
             ServiceList serviceList = getInquirePort().findService(findService);
             if(serviceList.getServiceInfos() != null){
+                Set<String> serviceKeys = new HashSet<String>();
                 for(ServiceInfo serviceInfo: serviceList.getServiceInfos().getServiceInfo()){
-                    deleteBusinessService(serviceInfo.getServiceKey());
+                    serviceKeys.add(serviceInfo.getServiceKey());
                 }
+                deleteBusinessServicesByKey(serviceKeys);
             }else{
                 logger.log(Level.WARNING, "No matching BusinessServices were found. None were deleted");
             }
@@ -378,13 +377,36 @@ public class GenericUDDIClient implements UDDIClient {
     }
 
     @Override
-    public void deleteBusinessService(String serviceKey) throws UDDIException {
+    public void deleteBusinessServices(Collection<BusinessService> businessServices) throws UDDIException {
+        Set<String> serviceKeys = new HashSet<String>();
+        for(BusinessService businessService: businessServices){
+            serviceKeys.add(businessService.getServiceKey());
+        }
+        deleteBusinessServicesByKey(serviceKeys);
+    }
+
+    @Override
+    public void deleteBusinessServicesByKey(Collection<String> serviceKeys) throws UDDIException {
+        Set<String> tModelsToDelete = new HashSet<String>();
+        for(String serviceKey: serviceKeys){
+            tModelsToDelete.addAll(deleteBusinessService(serviceKey));
+        }
+
+        for(String tModelKey: tModelsToDelete){
+            deleteTModel(tModelKey);
+        }
+    }
+
+    @Override
+    public Set<String> deleteBusinessService(String serviceKey) throws UDDIException {
 
         //We need to delete any tModels it references
         //find the service
         final BusinessService businessService = getBusinessService(serviceKey);
         BindingTemplates bindingTemplates = businessService.getBindingTemplates();
-        List<String> tModelsToDelete = new ArrayList<String>();
+
+        Set<String> tModelsToDelete = new HashSet<String>();
+
         for(BindingTemplate bindingTemplate: bindingTemplates.getBindingTemplate()){
 
             //the binding template references both the wsdl:portType and wsdl:binding tModels
@@ -405,15 +427,17 @@ public class GenericUDDIClient implements UDDIClient {
             final UDDIPublicationPortType publicationPortType = getPublishPort();
             publicationPortType.deleteService(deleteService);
             logger.log(Level.INFO, "Deleted service with key: " + businessService.getServiceKey());
-            for(String tModelKey: tModelsToDelete){
-                deleteTModel(tModelKey);
-            }
+
+//            for(String tModelKey: tModelsToDelete){
+//                deleteTModel(tModelKey);
+//            }
 
         } catch (DispositionReportFaultMessage drfm) {
             final String msg = getExceptionMessage("Exception deleting service with key: " + serviceKey+ ": ", drfm);
             logger.log(Level.WARNING, msg);
             throw new UDDIException(msg, drfm);
         }
+        return tModelsToDelete;
     }
 
     /**

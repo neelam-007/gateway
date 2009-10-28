@@ -78,8 +78,18 @@ public interface UDDIRegistryAdmin {
     @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.SAVE_OR_UPDATE)
     long publishGatewayWsdl(final UDDIProxiedService uddiProxiedService) throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException;
 
-    @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.DELETE_ENTITY)
-    void deleteGatewayWsdlFromUDDI( final UDDIProxiedService uddiProxiedService) throws FindException, UDDIException, DeleteException;
+    /**
+     * Delete all published Business Services which were published to UDDI from the Gateway's WSDL.
+     * <p/>
+     * This is a best effort only. Regardless of the success from UDDI, we will delete our UDDIProxiedService.
+     *
+     * @param uddiProxiedService UDDIProxiedService and associated data in UDDI to delete
+     * @return String error message if there were any problems deleting from UDDI. null if no errors
+     * @throws FindException   any problems searching UDDI
+     * @throws DeleteException any problems deleting from UDDI
+     */
+    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE}, stereotype = MethodStereotype.DELETE_ENTITY)
+    String deleteGatewayWsdlFromUDDI(final UDDIProxiedService uddiProxiedService) throws FindException, DeleteException;
 
     /**
      * Allows for non final properties which do not rely on UDDI data like the UDDIProxiedService's

@@ -345,7 +345,11 @@ public class TestGenericUDDIClient {
 
     @Test
     public void testGenericBusinessServiceDelete() throws UDDIException {
-        uddiClient.deleteBusinessService("uddi:03c6fc80-c02c-11de-8342-cc4d177a16de");
+        Set<String> tModelsToDelete = new HashSet<String>();
+        tModelsToDelete.addAll(uddiClient.deleteBusinessService("uddi:03c6fc80-c02c-11de-8342-cc4d177a16de"));
+        for(String tModelKey: tModelsToDelete){
+            uddiClient.deleteTModel(tModelKey);
+        }
     }
 
     @Test

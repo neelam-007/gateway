@@ -120,16 +120,12 @@ public class BusinessServicePublisher {
 
         if(!serviceDeleteSet.isEmpty()){
             logger.log(Level.INFO, "Attemping to delete BusinessServices no longer referenced by Gateway's WSDL");
-            boolean noErrors = true;
-            for(final BusinessService businessService: serviceDeleteSet){
-                try {
-                    uddiClient.deleteBusinessService(businessService.getServiceKey());
-                } catch (UDDIException e) {
-                    logger.log(Level.WARNING, "Could not delete BusinessServices with key: " + businessService.getServiceKey());
-                    noErrors = false;
-                }
+            try {
+                uddiClient.deleteBusinessServices(serviceDeleteSet);
+                logger.log(Level.INFO, "Successfully deleted all BusinessServices no longer referenced by Gateway's WSDL");
+            } catch (UDDIException e) {
+                logger.log(Level.WARNING, "Problem deleting BusinessServices: " + e.getMessage());
             }
-            if(!noErrors) logger.log(Level.INFO, "Successfully deleted all BusinessServices no longer referenced by Gateway's WSDL");
         }
     }
 
@@ -229,6 +225,9 @@ public class BusinessServicePublisher {
                                     final List<TModel> rollbackTModelsToDelete,
                                     final List<BusinessService> publishedServices,
                                     final UDDIException exception) {
+        //this is just a convenience method. Either rolls back tModels OR BusinessServices
+        if(!rollbackTModelsToDelete.isEmpty() && !publishedServices.isEmpty())
+            throw new IllegalArgumentException("Can only roll back either tModels or BusinessServices");
         try {
             //Roll back any tModels published first
             if (!rollbackTModelsToDelete.isEmpty()) {
@@ -239,17 +238,12 @@ public class BusinessServicePublisher {
                     deletedTModel = true;
                 }
                 if (deletedTModel) logger.log(Level.WARNING, "Delete published tModels: " + exception.getMessage());
+            } else if (!publishedServices.isEmpty()){
+                logger.log(Level.WARNING, "Attempting to rollback published BusinessServices");
+                uddiClient.deleteBusinessServices(publishedServices);
+                logger.log(Level.WARNING, "Deleted published BusinessServices");
             }
 
-            if (!publishedServices.isEmpty()) {
-                logger.log(Level.WARNING, "Attempting to rollback published BusinessServices");
-            }
-            boolean deletedService = false;
-            for (BusinessService publishedService : publishedServices) {
-                uddiClient.deleteBusinessService(publishedService.getServiceKey());
-                deletedService = true;
-            }
-            if (deletedService) logger.log(Level.WARNING, "Deleted published BusinessServices");
         } catch (UDDIException e1) {
             //Not going to throw e1, just log it, as the main error happend in the above publish try block
             //just log it
