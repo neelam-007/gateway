@@ -1047,6 +1047,8 @@ public class CertUtils {
                 impl = null;
         } catch (ClassNotFoundException e) {
             logger.log(Level.FINE, "No sun.security.ec.ECPublicKeyImpl available; will not attempt to guess EC curve names");
+        } catch (AccessControlException ace) {
+            logger.log(Level.FINE, "No sun.security.ec.ECPublicKeyImpl available (access denied); will not attempt to guess EC curve names");
         }
         //noinspection unchecked
         sunECPublicKeyImpl = impl;
