@@ -41,7 +41,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private JLabel uddiRegistryLabel;
     private JLabel businessEntityLabel;
     private JLabel businessEntityNameLabel;
-    private JLabel publishOptionLabel;
     private JCheckBox monitoringEnabledCheckBox;
     private JCheckBox monitoringDisableServicecheckBox;
 
@@ -229,7 +228,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
     }
 
     private void enableDisablePublishGatewayWsdlControls(boolean enable){
-        publishOptionLabel.setEnabled(enable);
         uddiRegistryLabel.setEnabled(enable);
         uddiRegistriesComboBox.setEnabled(enable);
         businessEntityLabel.setEnabled(enable);
