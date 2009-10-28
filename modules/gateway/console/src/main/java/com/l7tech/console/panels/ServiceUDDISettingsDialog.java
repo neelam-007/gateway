@@ -97,9 +97,16 @@ public class ServiceUDDISettingsDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 try {
                     if(uddiRegistriesComboBox.getSelectedIndex() == -1){
-                        showErrorMessage("Select a UDDI Registry", "Select a UDDI Registry to search", null);
+                        showErrorMessage("Select a UDDI Registry", "Select a UDDI Registry to search", null, false);
                         return;
                     }
+
+                    UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
+                    if(!uddiRegistry.isEnabled()){
+                        showErrorMessage("Cannot Search", "UDDI Registry is not currently enabled", null, false);
+                        return;
+                    }
+
                     SearchUddiDialog uddiDialog = new SearchUddiDialog(ServiceUDDISettingsDialog.this,
                             SearchUddiDialog.SEARCH_TYPE.BUSINESS_ENTITY_SEARCH, uddiRegistriesComboBox.getSelectedItem().toString());
                     uddiDialog.addSelectionListener(new SearchUddiDialog.ItemSelectedListener(){
@@ -118,7 +125,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     DialogDisplayer.display(uddiDialog);
 
                 } catch (FindException e1) {
-                    showErrorMessage("Cannot search for BusinessEntities", "Exception UDDIRegistry information", e1);
+                    showErrorMessage("Problem Searching UDDI", "Cannot search for BusinessEntities", e1, true);
                 }
             }
         });
@@ -150,6 +157,10 @@ public class ServiceUDDISettingsDialog extends JDialog {
             @Override
             public String getValidationError() {
                 if(uddiRegistriesComboBox.getSelectedIndex() == -1) return "Please select a UDDI Registry";
+
+                UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
+                if(!uddiRegistry.isEnabled()) return "UDDI Registry is not currently enabled.";
+                
                 return null;
             }
         });
@@ -270,6 +281,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
             }
         } else if(dontPublishRadioButton.isSelected()){
             if(uddiProxyService != null){
+                UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
+                if(!uddiRegistry.isEnabled()){
+                    showErrorMessage("Cannot Update UDDI", "UDDI Registry is not currently enabled", null, false);
+                    return false;
+                }
                 removeUDDIProxiedService();
             }
         }
@@ -355,16 +371,16 @@ public class ServiceUDDISettingsDialog extends JDialog {
             }
 
         } catch (FindException e) {
-            showErrorMessage("Loading failed", "Unable to list all UDDI Registry: " + ExceptionUtils.getMessage(e), e);
+            showErrorMessage("Loading failed", "Unable to list all UDDI Registry: " + ExceptionUtils.getMessage(e), e, true);
         }
     }
 
-    private void showErrorMessage(String title, String msg, Throwable e) {
-        showErrorMessage(title, msg, e, null);
+    private void showErrorMessage(String title, String msg, Throwable e, boolean log) {
+        showErrorMessage(title, msg, e, null, log);
     }
 
-    private void showErrorMessage(String title, String msg, Throwable e, Runnable continuation) {
-        logger.log(Level.WARNING, msg, e);
+    private void showErrorMessage(String title, String msg, Throwable e, Runnable continuation, boolean log) {
+        if(log) logger.log(Level.WARNING, msg, e);
         DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, continuation);
     }
 

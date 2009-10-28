@@ -60,7 +60,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     @Override
-    public void deleteUDDIRegistry(final long oid) throws DeleteException, FindException, UDDIException {
+    public void deleteUDDIRegistry(final long oid) throws DeleteException, FindException, UDDIException, UDDIRegistryNotEnabledException {
 
         UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(oid);
         if(uddiRegistry == null) throw new FindException("Could not find UDDI Registry to delete");
@@ -86,7 +86,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     @Override
-    public void testUDDIRegistryAuthentication(final UDDIRegistry uddiRegistry) throws FindException, UDDIException {
+    public void testUDDIRegistryAuthentication(final UDDIRegistry uddiRegistry) throws UDDIException {
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
 
         try {
@@ -110,8 +110,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
 
     @Override
     public String deleteGatewayWsdlFromUDDI(UDDIProxiedService uddiProxiedService)
-            throws FindException, DeleteException {
+            throws FindException, DeleteException, UDDIRegistryNotEnabledException {
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiProxiedService.getUddiRegistryOid());
+        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
 
         final UDDIProxiedService proxiedService = uddiProxiedServiceManager.findByPrimaryKey(uddiProxiedService.getOid());
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
@@ -149,8 +150,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
 
     @Override
     public long publishGatewayWsdl(final UDDIProxiedService uddiProxiedService)
-            throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException {
+            throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException, UDDIRegistryNotEnabledException {
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiProxiedService.getUddiRegistryOid());
+        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
+
         final PublishedService service = serviceManager.findByPrimaryKey(uddiProxiedService.getServiceOid());
 
         final boolean update = uddiProxiedService.getOid() != PersistentEntity.DEFAULT_OID;

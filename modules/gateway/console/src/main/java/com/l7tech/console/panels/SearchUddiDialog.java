@@ -18,7 +18,6 @@ import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import javax.swing.*;
 import javax.swing.table.*;
 import javax.swing.text.AbstractDocument;
-import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -181,6 +180,7 @@ public class SearchUddiDialog extends JDialog {
 
         cancelButton.addActionListener(new ActionListener() {
 
+            @Override
             public void actionPerformed(ActionEvent e) {
                 SearchUddiDialog.this.dispose();
             }
@@ -188,12 +188,15 @@ public class SearchUddiDialog extends JDialog {
 
         searchButton.addActionListener(new ActionListener() {
 
+            @Override
             public void actionPerformed(ActionEvent e) {
 
                 InputValidator.ValidationRule comboValidator = new InputValidator.ValidationRule() {
                     @Override
                     public String getValidationError() {
                         if(uddiRegistryComboBox.getSelectedIndex() == -1) return "Please select a UDDI Registry";
+                        UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistryComboBox.getSelectedItem().toString());
+                        if(!uddiRegistry.isEnabled()) return "UDDI Registry is not currently enabled.";
                         return null;
                     }
                 };
@@ -235,6 +238,7 @@ public class SearchUddiDialog extends JDialog {
 
                 final SwingWorker worker = new SwingWorker() {
 
+                    @Override
                     public Object construct() {
                         try {
 
@@ -258,6 +262,7 @@ public class SearchUddiDialog extends JDialog {
                         }
                     }
 
+                    @Override
                     public void finished() {
                         dlg.dispose();
                     }
@@ -266,6 +271,7 @@ public class SearchUddiDialog extends JDialog {
                 worker.start();
 
                 DialogDisplayer.display(dlg, new Runnable() {
+                    @Override
                     public void run() {
                         worker.interrupt();
                         Object result = worker.get();
@@ -408,6 +414,7 @@ public class SearchUddiDialog extends JDialog {
      */
     private void fireItemSelectedEvent(final Object item) {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 for(ItemSelectedListener itemSelectedListener: listeners) {
                     itemSelectedListener.itemSelected(item);
