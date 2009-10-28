@@ -292,7 +292,7 @@ public class WsdlLocationPanel extends JPanel {
 
         try {
             // open UDDI browser
-            SearchUddiDialog swd = ownerd!=null ? new SearchUddiDialog(ownerd, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH) : new SearchUddiDialog(ownerf, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH);
+            SearchUddiDialog swd = ownerd!=null ? new SearchUddiDialog(ownerd, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH, null) : new SearchUddiDialog(ownerf, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH);
             swd.addSelectionListener(new SearchUddiDialog.ItemSelectedListener() {
                 @Override
                 public void itemSelected(Object item) {

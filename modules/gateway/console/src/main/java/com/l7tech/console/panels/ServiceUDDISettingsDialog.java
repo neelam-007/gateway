@@ -96,7 +96,12 @@ public class ServiceUDDISettingsDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    SearchUddiDialog uddiDialog = new SearchUddiDialog(ServiceUDDISettingsDialog.this,  SearchUddiDialog.SEARCH_TYPE.BUSINESS_ENTITY_SEARCH);
+                    if(uddiRegistriesComboBox.getSelectedIndex() == -1){
+                        showErrorMessage("Select a UDDI Registry", "Select a UDDI Registry to search", null);
+                        return;
+                    }
+                    SearchUddiDialog uddiDialog = new SearchUddiDialog(ServiceUDDISettingsDialog.this,
+                            SearchUddiDialog.SEARCH_TYPE.BUSINESS_ENTITY_SEARCH, uddiRegistriesComboBox.getSelectedItem().toString());
                     uddiDialog.addSelectionListener(new SearchUddiDialog.ItemSelectedListener(){
                         @Override
                         public void itemSelected(Object item) {

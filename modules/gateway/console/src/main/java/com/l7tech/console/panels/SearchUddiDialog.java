@@ -65,15 +65,24 @@ public class SearchUddiDialog extends JDialog {
 
     private final SEARCH_TYPE searchType;
 
-    public SearchUddiDialog(JDialog parent, SEARCH_TYPE searchType) throws FindException {
+    /**
+     * When this holds a non null value, the UDDI Registry drop down is constrained to only show a single value
+     */
+    private final String onlyAvailableRegistry;
+
+    public SearchUddiDialog(JDialog parent, SEARCH_TYPE searchType, String onlyAvailableRegistry) throws FindException {
         super(parent, resources.getString("window.title"), true);
         this.searchType = searchType;
+        if(onlyAvailableRegistry != null && onlyAvailableRegistry.trim().isEmpty())
+            throw new IllegalArgumentException("onlyAvailableRegistry cannot be the empty string");
+        this.onlyAvailableRegistry = onlyAvailableRegistry;
         initialize();
     }
 
     public SearchUddiDialog(JFrame parent, SEARCH_TYPE searchType) throws FindException {
         super(parent, resources.getString("window.title"), true);
         this.searchType = searchType;
+        onlyAvailableRegistry = null;
         initialize();
     }
 
@@ -334,24 +343,42 @@ public class SearchUddiDialog extends JDialog {
     private void loadUddiRegistries() {
         try {
             UDDIRegistryAdmin uddiRegistryAdmin = getUDDIRegistryAdmin();
-            //todo what are the rbac requirements here? Does the user need the permission to be able to read all registries?
-            //todo canUpdate is set when the user has update on UDDI_REGISTRIES
 
             allRegistries = new HashMap<String, UDDIRegistry>();
             Collection<UDDIRegistry> registries = uddiRegistryAdmin.findAllUDDIRegistries();
             for (UDDIRegistry uddiRegistry : registries){
-                uddiRegistryComboBox.addItem(uddiRegistry.getName());
-                allRegistries.put(uddiRegistry.getName(), uddiRegistry);
+                if(onlyAvailableRegistry != null){
+                    if(uddiRegistry.getName().equals(onlyAvailableRegistry)){
+                        allRegistries.put(uddiRegistry.getName(), uddiRegistry);
+                        break;
+                    }
+                }else{
+                    allRegistries.put(uddiRegistry.getName(), uddiRegistry);
+                }
             }
 
-            // load prefs
-            String registryName = preferences.getString(UDDI_REGISTRY, "");
-            if(!registryName.equals("")){
-                uddiRegistryComboBox.setSelectedItem(registryName);
+            if(onlyAvailableRegistry != null){
+                if(allRegistries.keySet().size() != 1){
+                    logger.log(Level.WARNING, "Could not find UDDI Registry '"+onlyAvailableRegistry+"'. May have been deleted");
+                    showErrorMessage("Cannot display Dialog", "Required UDDI Registry '"+onlyAvailableRegistry+"' was not found. It may have been deleted", null);
+                    return;
+                }
+
+                uddiRegistryComboBox.addItem(onlyAvailableRegistry);
+                uddiRegistryComboBox.setSelectedItem(onlyAvailableRegistry);
             }else{
-                uddiRegistryComboBox.setSelectedIndex(-1);
-            }
+                for(String regName: allRegistries.keySet()){
+                    uddiRegistryComboBox.addItem(regName);
+                }
 
+                // load prefs
+                String registryName = preferences.getString(UDDI_REGISTRY, "");
+                if(!registryName.equals("")){
+                    uddiRegistryComboBox.setSelectedItem(registryName);
+                }else{
+                    uddiRegistryComboBox.setSelectedIndex(-1);
+                }
+            }
         } catch (FindException e) {
             showErrorMessage("Loading failed", "Unable to list all UDDI Registry: " + ExceptionUtils.getMessage(e), e);
         }
