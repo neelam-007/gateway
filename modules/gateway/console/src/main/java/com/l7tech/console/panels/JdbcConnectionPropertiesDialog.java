@@ -428,8 +428,11 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         viewToModel();
 
         String warningMessage = admin.testJdbcConnection(connection);
-        String message = warningMessage == null? "JDBC connection testing passed" : "Testing failed: " + warningMessage;
-        DialogDisplayer.showMessageDialog(this, message, null);
+        String message = warningMessage == null?
+            resources.getString("message.testing.jdbc.conn.passed") : MessageFormat.format(resources.getString("message.testing.jdbc.conn.failed"), warningMessage);
+
+        DialogDisplayer.showMessageDialog(this, message, resources.getString("dialog.title.jdbc.conn.test"),
+            warningMessage == null? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE, null);
     }
 
     private void doOk() {
@@ -438,8 +441,8 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, warningMessage,
                 resources.getString("dialog.title.error.saving.conn"), JOptionPane.WARNING_MESSAGE, null);
             return;
-        } else if (! isMinNoGreaterThanMax()) {
-            DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, "Minimum Pool Size must not be greater than Maximum Pool Size.",
+        } else if (isMinGreaterThanMax()) {
+            DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, resources.getString("warning.minpoolsize.greaterthan.maxpoolsize"),
                 resources.getString("dialog.title.error.saving.conn"), JOptionPane.WARNING_MESSAGE, null);
             return;
         }
@@ -475,9 +478,9 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         return null;
     }
 
-    private boolean isMinNoGreaterThanMax() {
+    private boolean isMinGreaterThanMax() {
         int min = (Integer) minPoolSizeSpinner.getValue();
         int max = (Integer) maxPoolSizeSpinner.getValue();
-        return min <= max;
+        return min > max;
     }
 }
