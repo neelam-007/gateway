@@ -344,14 +344,14 @@ public class WsdlToUDDIModelConverter {
 
     private Description getDescription(final String value){
         Description description = new Description();
-        description.setLang(LANAGUAGE);
+        //don't set the language see bug 7922
         description.setValue(value);
         return description;
     }
 
     private Name getName(final String value){
         Name name = new Name();
-        name.setLang(LANAGUAGE);
+        //don't set the language see bug 7922
         name.setValue(value);
         return name;
     }
