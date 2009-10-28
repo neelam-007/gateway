@@ -31,6 +31,8 @@ function fail() {
   exit ${1}
 }
 
+PC_JAVAOPT="-Djava.security.egd=file:/dev/./urandom"
+
 cd "${SSPC_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSPC_HOME}"
 [ -r "${PC_JAR}" ] || fail 2 "Missing or unreadable file: ${PC_JAR}"
 [ -x "${JAVA_HOME}/bin/java" ] || fail 2 "Invalid JAVA_HOME: ${JAVA_HOME}"
@@ -57,9 +59,10 @@ if [ -f "${SSPC_HOME}/etc/DEBUG" ] ; then
   if [ -z "$JPDA_OPTS" ]; then
     JPDA_OPTS="-Xdebug -Xrunjdwp:transport=$JPDA_TRANSPORT,address=$JPDA_ADDRESS,server=y,suspend=n"
   fi
-  PC_JAVAOPT="$JPDA_OPTS"
-  export PC_JAVAOPT
+  PC_JAVAOPT="$PC_JAVAOPT $JPDA_OPTS"
 fi
+
+export PC_JAVAOPT
 
 #
 if [ -z "${PC_USER}" ] ; then
