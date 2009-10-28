@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
@@ -21,16 +22,17 @@ import java.awt.*;
 import java.util.Map;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServiceUDDISettingsDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(ServiceUDDISettingsDialog.class.getName());
-    
+    private static final ResourceBundle resources = ResourceBundle.getBundle(ServiceUDDISettingsDialog.class.getName());
+
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JTabbedPane tabbedPane1;
     private JRadioButton donTPublishRadioButton;
     private JRadioButton publishProxiedWsdlButton;
     private JCheckBox updateWhenGatewayWSDLCheckBox;
@@ -40,6 +42,8 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private JLabel businessEntityLabel;
     private JLabel businessEntityNameLabel;
     private JLabel publishOptionLabel;
+    private JCheckBox monitoringEnabledCheckBox;
+    private JCheckBox monitoringDisableServicecheckBox;
 
     private PublishedService service;
     private boolean canUpdate;
@@ -56,8 +60,10 @@ public class ServiceUDDISettingsDialog extends JDialog {
         initialize();
     }
 
-    public ServiceUDDISettingsDialog(Frame owner, PublishedService svc, boolean hasUpdatePermission) {
-        super(owner, "Service UDDI Settings", true);
+    public ServiceUDDISettingsDialog( final Window owner,
+                                      final PublishedService svc,
+                                      final boolean hasUpdatePermission ) {
+        super(owner, resources.getString( "dialog.title" ), ServiceUDDISettingsDialog.DEFAULT_MODALITY_TYPE);
         service = svc;
         if (areUnsavedChangesToThisPolicy()) {
             //readOnlyWarningLabel.setText("Service has unsaved policy changes");
@@ -71,27 +77,28 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private void initialize(){
         setContentPane(contentPane);
         setModal(true);
-
-        DialogDisplayer.suppressSheetDisplay(this);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
         buttonOK.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onOK();
             }
         });
 
         buttonCancel.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                onCancel();
+                dispose();
             }
         });
 
-        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                onCancel();
+        RunOnChangeListener enableDisableChangeListener = new RunOnChangeListener( new Runnable(){
+            @Override
+            public void run() {
+                enableAndDisableComponents();
             }
-        });
+        } );
 
         selectBusinessEntityButton.addActionListener(new ActionListener() {
             @Override
@@ -118,6 +125,9 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 }
             }
         });
+
+        monitoringEnabledCheckBox.addActionListener( enableDisableChangeListener );
+
         //Populate registry drop down
         loadUddiRegistries();
 
@@ -150,6 +160,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
         pack();
         modelToView();
+        enableAndDisableComponents();
     }
 
     private void modelToView() {
@@ -176,6 +187,10 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
             businessEntityNameLabel.setText(uddiProxyService.getUddiBusinessName());
             updateWhenGatewayWSDLCheckBox.setSelected(uddiProxyService.isUpdateProxyOnLocalChange());
+
+            // Monitoring settings
+            monitoringEnabledCheckBox.setSelected( false ); //TODO implement when UDDIServiceControl is available
+            monitoringDisableServicecheckBox.setSelected( false );
         }else{
             //set other buttons values when implemented
             donTPublishRadioButton.setSelected(true);
@@ -183,6 +198,19 @@ public class ServiceUDDISettingsDialog extends JDialog {
             enableDisablePublishGatewayWsdlControls(true);
             uddiRegistriesComboBox.setSelectedIndex(-1);
             businessEntityNameLabel.setText(businessEntityDefault);
+
+            // Monitoring settings
+            monitoringEnabledCheckBox.setSelected( false );
+            monitoringDisableServicecheckBox.setSelected( false );
+        }
+    }
+
+    private void enableAndDisableComponents() {
+        if ( canUpdate ) {
+            monitoringDisableServicecheckBox.setEnabled( monitoringEnabledCheckBox.isSelected() );
+        } else {
+            monitoringEnabledCheckBox.setEnabled( false );
+            monitoringDisableServicecheckBox.setEnabled( false );
         }
     }
 
@@ -230,6 +258,8 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 removeUDDIProxiedService();
             }
         }
+
+        //TODO implement monitoring persistence when UDDIServiceControl is available
 
         return true;
     }
@@ -286,12 +316,10 @@ public class ServiceUDDISettingsDialog extends JDialog {
     }
 
     private void onOK() {
-        if(viewToModel()) dispose();
-    }
-
-    private void onCancel() {
-// add your code here if necessary
-        dispose();
+        if(viewToModel()) {
+            confirmed = true;
+            dispose();
+        }
     }
 
     private void loadUddiRegistries() {
@@ -344,9 +372,5 @@ public class ServiceUDDISettingsDialog extends JDialog {
         dialog.pack();
         dialog.setVisible(true);
         System.exit(0);
-    }
-
-    private void createUIComponents() {
-        // TODO: place custom component creation code here
     }
 }
