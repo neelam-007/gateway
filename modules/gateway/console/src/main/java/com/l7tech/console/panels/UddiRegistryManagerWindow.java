@@ -349,7 +349,7 @@ public class UddiRegistryManagerWindow extends JDialog {
                     }
                 },
 
-                new Col("UDDI Base URL", 60, 90, 999999) {
+                new Col("Base URL", 60, 90, 999999) {
                     @Override
                     Object getValueForRow(UddiRegistryTableRow row) {
                         return row.getBaseUrl();
@@ -463,7 +463,7 @@ public class UddiRegistryManagerWindow extends JDialog {
         }
 
         public Object getUddiRegistryType(){
-            return uddiRegistry.getUddiRegistryType().toString();
+            return uddiRegistry.getUddiRegistryType();
         }
     }
 

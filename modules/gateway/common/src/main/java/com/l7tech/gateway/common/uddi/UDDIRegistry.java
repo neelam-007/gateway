@@ -16,10 +16,9 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 public class UDDIRegistry extends NamedEntityImp {
 
     public enum UDDIRegistryType{
-        CENTRASITE_ACTIVE_SOA("CentraSite Active SOA"),
+        CENTRASITE_ACTIVE_SOA("CentraSite ActiveSOA"),
         CENTRASITE_GOVERNANCE_EDITION("CentraSite Governance Edition"),
         CENTRASITE("CentraSite"),
-        ORACLE_REGISTRY("Oracle Registry"),
         SYSTINET("Systinet"),
         GENERIC("Generic");
 
