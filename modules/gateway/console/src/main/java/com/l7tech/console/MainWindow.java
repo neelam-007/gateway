@@ -1970,6 +1970,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageEmailListenersAction());
             menu.add(getConfigureFtpAuditArchiverAction());
             menu.add(getManageTrustedEsmUsersAction());
+            menu.add(getManageUDDIRegistriesAction());
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/Properties16.gif");
 
