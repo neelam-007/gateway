@@ -37,18 +37,6 @@ cd "${SSPC_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSPC_HOME}"
 [ -r "${PC_JAR}" ] || fail 2 "Missing or unreadable file: ${PC_JAR}"
 [ -x "${JAVA_HOME}/bin/java" ] || fail 2 "Invalid JAVA_HOME: ${JAVA_HOME}"
 
-# Run the config bootstrapper if it looks like this is the first time we've run
-if [ -z "${PC_USER}" ] ; then
-    "${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig
-else
-    export JAVA_HOME SSPC_HOME PC_JAR
-    runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig'
-fi
-
-if [ ${?} -ne 0 ]; then
-    fail "${?}" "Error saving initial configuration."
-fi
-
 if [ -f "${SSPC_HOME}/etc/DEBUG" ] ; then
   if [ -z "$JPDA_TRANSPORT" ]; then
     JPDA_TRANSPORT="dt_socket"
@@ -63,6 +51,19 @@ if [ -f "${SSPC_HOME}/etc/DEBUG" ] ; then
 fi
 
 export PC_JAVAOPT
+
+# Run the config bootstrapper if it looks like this is the first time we've run
+if [ -z "${PC_USER}" ] ; then
+    "${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig
+else
+    export JAVA_HOME SSPC_HOME PC_JAR
+    runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig'
+fi
+
+if [ ${?} -ne 0 ]; then
+    fail "${?}" "Error saving initial configuration."
+fi
+
 
 #
 if [ -z "${PC_USER}" ] ; then
