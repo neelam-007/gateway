@@ -192,43 +192,23 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
 
         prompt += " : ";
 
-        boolean isValid;
-
         String timeserverLine;
-        String tsAddress = null;
 
-        Map<String, String> goodOnes = new HashMap<String, String>();
-        do {
-            ntpBean.reset();
-            isValid = false;
-            timeserverLine = getData(
-                    new String[]{prompt},
-                    existingNtpServer,
-                    (String[]) null,
-                    null
-            );
+        ntpBean.reset();
+        timeserverLine = getData(
+                new String[]{prompt},
+                existingNtpServer,
+                (String[]) null,
+                null
+        );
 
-            if (StringUtils.isEmpty(timeserverLine))
-                timeserverLine = "";
-
-
-                String[] timeServers = timeserverLine.split(",");
-                for (String singleTimeServer : timeServers) {
-                    try {
-                        tsAddress = consoleWizardUtils.resolveHostName(singleTimeServer);
-                        isValid = (tsAddress != null);
-                    } catch (UnknownHostException e) {
-                        isValid = false;
-                    }
-                    if (isValid) {
-                        ntpBean.addTimeServer(tsAddress, singleTimeServer);
-                    } else {
-                        printText("*** " + singleTimeServer + " cannot be resolved to a valid host ***" + getEolChar());
-                        isValid = false;
-                        break;
-                    }
-                }
-        } while (!isValid);
+        if (StringUtils.isEmpty(timeserverLine)) {
+            timeserverLine = "";
+        }
+        String[] timeServers = timeserverLine.split(",");
+        for (String singleTimeServer : timeServers) {
+            ntpBean.addTimeServer(singleTimeServer);
+        }
     }
 
     public String getTitle() {

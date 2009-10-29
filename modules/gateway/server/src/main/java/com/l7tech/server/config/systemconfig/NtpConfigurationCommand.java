@@ -93,7 +93,7 @@ public class NtpConfigurationCommand extends BaseConfigurationCommand {
 
                 pw = new PrintWriter(new FileOutputStream(ntpConfFile));
 
-                for (String tsInfo : ntpBean.getTimeServers().keySet()) {
+                for (String tsInfo : ntpBean.getTimeServers()) {
                     pw.println(tsInfo);
                 }
             } catch (IOException e) {

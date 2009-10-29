@@ -11,7 +11,7 @@ import java.util.*;
  * Time: 10:24:14 AM
  */
 public class NtpConfigurationBean extends BaseConfigurationBean {
-    private Map< String, String > timeServerAddresses;
+    private List<String > timeServerAddresses;
     private String timeServerName;
     private String timezone;
 
@@ -21,7 +21,7 @@ public class NtpConfigurationBean extends BaseConfigurationBean {
     }
 
     private void init() {
-        timeServerAddresses = new LinkedHashMap<String, String>();
+        timeServerAddresses = new ArrayList<String>();
     }
 
     public void reset() {
@@ -29,18 +29,13 @@ public class NtpConfigurationBean extends BaseConfigurationBean {
     }
 
     protected void populateExplanations() {
-        Map<String, String> tsInfos = getTimeServers();
+        List<String> timeServers = getTimeServers();
 
-        if (!tsInfos.isEmpty()) {
+        if (!timeServers.isEmpty()) {
             explanations.add("Configure NTP on this server");
 
-            for (Map.Entry<String, String> tsInfo : tsInfos.entrySet()) {
-                String address = tsInfo.getKey();
-                String name = tsInfo.getValue();
-                String s = "\tTime server: " + address;
-                if (!StringUtils.equals(address, name)) {
-                    s += " (" + name + ")";
-                }
+            for (String tsInfo : timeServers) {
+                String s = "\tTime server: " + tsInfo;
                 explanations.add(s);
             }
         }
@@ -50,12 +45,12 @@ public class NtpConfigurationBean extends BaseConfigurationBean {
         }
     }
 
-    public Map<String, String> getTimeServers() {
+    public List<String> getTimeServers() {
         return timeServerAddresses;
     }
 
-    public void addTimeServer(String timeServerAddress, String timeServerName) {
-        timeServerAddresses.put(timeServerAddress, timeServerName);
+    public void addTimeServer(String timeServer) {
+        timeServerAddresses.add(timeServer);
     }
 
     public String getTimeServerName() {
