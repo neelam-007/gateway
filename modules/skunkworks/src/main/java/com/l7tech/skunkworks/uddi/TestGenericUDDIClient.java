@@ -147,7 +147,7 @@ public class TestGenericUDDIClient {
     @Test
     public void testUDDIProxyEntityPublish()
             throws MalformedURLException, LoginException, RemoteException, FindException,
-            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException {
+            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException {
 
         System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
 
@@ -192,7 +192,7 @@ public class TestGenericUDDIClient {
     @Test
     public void testUDDIProxyEntityUpdate()
             throws IOException, LoginException, FindException,
-            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException {
+            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException {
 
         System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
 
@@ -239,7 +239,7 @@ public class TestGenericUDDIClient {
     @Test
     public void testUDDIProxyEntityPartialUpdate()
             throws IOException, LoginException, FindException,
-            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException {
+            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException {
 
         System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
 
@@ -291,7 +291,7 @@ public class TestGenericUDDIClient {
 
     @Test
     public void testDeleteUDDIProxiedService()
-            throws MalformedURLException, LoginException, RemoteException, FindException, DeleteException, UDDIException {
+            throws MalformedURLException, LoginException, RemoteException, FindException, DeleteException, UDDIException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException {
         System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
 
         SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
