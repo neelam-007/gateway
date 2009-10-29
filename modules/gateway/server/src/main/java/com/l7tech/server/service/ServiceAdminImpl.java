@@ -387,6 +387,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             //this should not happen, as this is always an update
         } catch (UpdateException e) {
             logger.log(Level.WARNING, "Could not update UDDIProxiedService following update UDDI. Serivce oid: " + service.getOid(), e);
+        } catch (UDDIRegistryAdmin.UDDIRegistryNotEnabledException e) {
+            logger.log(Level.WARNING, "Could not update UDDIProxiedService following update UDDI. Serivce oid: " + service.getOid(), e);
         }
     }
 
