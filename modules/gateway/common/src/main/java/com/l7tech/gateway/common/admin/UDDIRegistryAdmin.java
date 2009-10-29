@@ -15,6 +15,7 @@ import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTI
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.objectmodel.*;
 import com.l7tech.uddi.UDDIException;
 
@@ -60,6 +61,7 @@ public interface UDDIRegistryAdmin {
      * @param uddiRegistry UDDIRegistry to test. May not exist as an entity yet.
      * @throws UDDIException if it's not possible to authenticate
      */
+    @Transactional(readOnly=true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
     void testUDDIRegistryAuthentication(UDDIRegistry uddiRegistry) throws UDDIException;
 
@@ -133,6 +135,37 @@ public interface UDDIRegistryAdmin {
     @Transactional(readOnly=true)
     @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.FIND_ENTITIES)
     Collection<UDDIProxiedService> getAllProxiedServicesForRegistry(long registryOid) throws FindException;
+
+    /**
+     * Update UDDIServiceControl without changes to related UDDI.
+     *
+     * @param uddiServiceControl the updated UDDIServiceControl
+     */
+    @Secured(types = {EntityType.UDDI_SERVICE_CONTROL}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
+    void updateUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl)
+            throws UpdateException;
+    /**
+     * Find the UDDIServiceControl for a service, if it exists
+     *
+     * @param serviceOid the service to get the UDDIServiceControl for
+     * @return UDDIServiceControl or null if the service does not have one
+     * @throws com.l7tech.objectmodel.FindException Any problem finding the service control
+     */
+    @Transactional(readOnly=true)
+    @Secured(types={EntityType.UDDI_SERVICE_CONTROL}, stereotype= MethodStereotype.FIND_ENTITY)
+    UDDIServiceControl getUDDIServiceControl(long serviceOid) throws FindException;
+
+    /**
+     * Find all UDDIServiceControls for a UDDIRegistry
+     *
+     * @param registryOid the UDDIRegistry to search
+     * @return Collection<UDDIServiceControl> of all service controls for the UDDI Registry
+     * @throws FindException if any problems occur
+     */
+    @Transactional(readOnly=true)
+    @Secured(types={EntityType.UDDI_SERVICE_CONTROL}, stereotype= MethodStereotype.FIND_ENTITIES)
+    Collection<UDDIServiceControl> getAllServiceControlsForRegistry(long registryOid) throws FindException;
+
 
     static class PublishProxiedServiceException extends Exception{
         public PublishProxiedServiceException(String message) {

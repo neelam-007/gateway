@@ -9,10 +9,10 @@ package com.l7tech.server.uddi;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Pair;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.ServerConfig;
@@ -33,15 +33,18 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
 
     final private UDDIRegistryManager uddiRegistryManager;
     final private UDDIProxiedServiceManager uddiProxiedServiceManager;
+    final private UDDIServiceControlManager uddiServiceControlManager;
     final private ServiceManager serviceManager;
     final private ServerConfig serverConfig;
 
     public UDDIRegistryAdminImpl(final UDDIRegistryManager uddiRegistryManager,
                                  final UDDIProxiedServiceManager uddiProxiedServiceManager,
+                                 final UDDIServiceControlManager uddiServiceControlManager,
                                  final ServiceManager serviceManager,
                                  final ServerConfig serverConfig) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiProxiedServiceManager = uddiProxiedServiceManager;
+        this.uddiServiceControlManager = uddiServiceControlManager;
         this.serviceManager = serviceManager;
         this.serverConfig = serverConfig;
     }
@@ -98,9 +101,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
-        return UDDIClientFactory.getInstance().newUDDIClient(uddiRegistry.getInquiryUrl(),
-                uddiRegistry.getPublishUrl(), uddiRegistry.getSubscriptionUrl(), uddiRegistry.getSecurityUrl(), uddiRegistry.getRegistryAccountUserName(),
-                uddiRegistry.getRegistryAccountPassword(), null);
+        return UDDIHelper.newUDDIClient( uddiRegistry );
     }
 
     @Override
@@ -146,6 +147,22 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     @Override
     public Collection<UDDIProxiedService> getAllProxiedServicesForRegistry(long registryOid) throws FindException {
         return uddiRegistryManager.findAllByRegistryOid(registryOid);
+    }
+
+    @Override
+    public void updateUDDIServiceControlOnly( final UDDIServiceControl uddiServiceControl ) throws UpdateException {
+        if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ) throw new UpdateException("Cannot update new UDDIServiceControl");
+        uddiServiceControlManager.update( uddiServiceControl );
+    }
+
+    @Override
+    public UDDIServiceControl getUDDIServiceControl( final long serviceOid ) throws FindException {
+        return uddiServiceControlManager.findByPublishedServiceOid( serviceOid );
+    }
+
+    @Override
+    public Collection<UDDIServiceControl> getAllServiceControlsForRegistry( final long registryOid ) throws FindException {
+        return uddiServiceControlManager.findByUDDIRegistryOid( registryOid );
     }
 
     @Override
@@ -246,6 +263,4 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
 
         return uddiProxiedService.getOid();
     }
-
-    private static final String SYSPROP_DEFAULT_VERSION = "com.l7tech.uddi.defaultVersion";
 }

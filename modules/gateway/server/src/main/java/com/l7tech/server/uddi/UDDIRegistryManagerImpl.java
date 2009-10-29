@@ -25,16 +25,6 @@ public class UDDIRegistryManagerImpl extends HibernateEntityManager<UDDIRegistry
     }
 
     @Override
-    public String getTableName() {
-        return "uddi_registries";
-    }
-
-    @Override
-    public Class<? extends Entity> getInterfaceClass() {
-        return UDDIRegistry.class;
-    }
-    
-    @Override
     public Class<? extends Entity> getImpClass() {
         return UDDIRegistry.class;
     }

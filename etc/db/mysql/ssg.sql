@@ -920,6 +920,52 @@ CREATE TABLE uddi_proxied_service (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Table for a service published from (or otherwise associated with) UDDI
+--
+DROP TABLE IF EXISTS uddi_service_control;
+CREATE TABLE uddi_service_control (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  published_service_oid bigint(20) NOT NULL,
+  uddi_registry_oid bigint(20) NOT NULL,
+  uddi_business_key varchar(255) NOT NULL,
+  uddi_business_name varchar(255) NOT NULL,
+  uddi_service_key varchar(255) NOT NULL,
+  uddi_service_name varchar(255) NOT NULL,
+  wsdl_service_name varchar(255) NOT NULL,
+  wsdl_port_name varchar(255) NOT NULL,
+  wsdl_port_binding varchar(255) NOT NULL,
+  wsdl_port_binding_namespace varchar(255) NOT NULL,
+  under_uddi_control tinyint(1) NOT NULL DEFAULT 0,
+  proxy_binding_key varchar(255) NOT NULL,
+  monitoring_enabled tinyint(1) NOT NULL DEFAULT 0,
+  disable_service_on_change tinyint(1) NOT NULL DEFAULT 0,
+  metrics_enabled tinyint(1) NOT NULL DEFAULT 0,
+  wspolicy_tmodel_key varchar(255),
+  PRIMARY KEY (objectid),
+  UNIQUE KEY  (published_service_oid),
+  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Table for UDDI runtime information
+--
+DROP TABLE IF EXISTS uddi_runtime;
+CREATE TABLE uddi_runtime (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  published_service_oid bigint(20) NOT NULL,
+  uddi_registry_oid bigint(20) NOT NULL,
+  uddi_subscription_key varchar(255),
+  uddi_subscription_check_time bigint NOT NULL,
+  PRIMARY KEY (objectid),
+  UNIQUE KEY  (published_service_oid),
+  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 -- Table structure for table rbac_role
 --
 
@@ -1138,6 +1184,10 @@ INSERT INTO rbac_permission VALUES (-430,0,-400,'READ',NULL,'UDDI_PROXIED_SERVIC
 INSERT INTO rbac_permission VALUES (-431,0,-400,'UPDATE',NULL,'UDDI_PROXIED_SERVICE');
 INSERT INTO rbac_permission VALUES (-432,0,-400,'DELETE',NULL,'UDDI_PROXIED_SERVICE');
 INSERT INTO rbac_permission VALUES (-433,0,-400,'CREATE',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-434,0,-400,'READ',NULL,'UDDI_SERVICE_CONTROL');
+INSERT INTO rbac_permission VALUES (-435,0,-400,'UPDATE',NULL,'UDDI_SERVICE_CONTROL');
+INSERT INTO rbac_permission VALUES (-436,0,-400,'DELETE',NULL,'UDDI_SERVICE_CONTROL');
+INSERT INTO rbac_permission VALUES (-437,0,-400,'CREATE',NULL,'UDDI_SERVICE_CONTROL');
 
 INSERT INTO rbac_role VALUES (-450,0,'View Audit Records and Logs', null,null,null, 'Users assigned to the {0} role have the ability to view audit and log details in manager.');
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');

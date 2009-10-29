@@ -25,32 +25,22 @@ public class UDDIProxiedServiceManagerImpl extends HibernateEntityManager<UDDIPr
     }
 
     @Override
-    public String getTableName() {
-        return "uddi_proxied_service";
-    }
-    
-    @Override
-    public Class<? extends Entity> getInterfaceClass() {
-        return UDDIProxiedService.class;
-    }
-
-    @Override
     public Class<? extends Entity> getImpClass() {
         return UDDIProxiedService.class;
     }
 
     @Override
     protected UniqueType getUniqueType() {
-        return UniqueType.NONE;
+        return UniqueType.OTHER;
     }
 
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints(final UDDIProxiedService uddiProxiedService) {
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
-        serviceOidMap.put("published_service_oid", uddiProxiedService.getServiceOid());
+        serviceOidMap.put("serviceOid", uddiProxiedService.getServiceOid());
 
         Map<String,Object> keywordMap = new HashMap<String, Object>();
-        keywordMap.put("general_keyword", uddiProxiedService.getGeneralKeywordServiceIdentifier());
+        keywordMap.put("generalKeywordServiceIdentifier", uddiProxiedService.getGeneralKeywordServiceIdentifier());
         
         return Arrays.asList(serviceOidMap, keywordMap);
 

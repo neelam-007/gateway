@@ -1576,5 +1576,9 @@
     </bean>
 
     <bean id="uddiProxiedServiceManager" class="com.l7tech.server.uddi.UDDIProxiedServiceManagerImpl" parent="hibernateBean" />
-    
+
+    <bean id="uddiServiceControlManager" class="com.l7tech.server.uddi.UDDIServiceControlManagerImpl" parent="hibernateBean" />
+
+    <bean id="uddiRuntimeServiceInfoManager" class="com.l7tech.server.uddi.UDDIRuntimeServiceInfoManagerImpl" parent="hibernateBean" />
+
 </beans>

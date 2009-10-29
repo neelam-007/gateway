@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.persistence.Table;
 import java.lang.ref.WeakReference;
 import java.sql.SQLException;
 import java.util.*;
@@ -562,9 +563,27 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     @Override
-    public void delete(long oid) throws DeleteException, FindException {
-        //getHibernateTemplate().d
-        delete(getImpClass(), oid);
+    public void delete(final long oid) throws DeleteException, FindException {
+        try {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_DELETE_BY_OID);
+                    q.setLong(0, oid);
+                    List todelete = q.list();
+                    if (todelete.size() == 0) {
+                        return false;
+                    } else if (todelete.size() == 1) {
+                        session.delete(todelete.get(0));
+                        return true;
+                    } else {
+                        throw new RuntimeException("More than one entity found with oid = " + oid);
+                    }
+                }
+            });
+        } catch (Exception he) {
+            throw new DeleteException(he.toString(), he);
+        }
     }
 
     @Override
@@ -878,37 +897,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     /**
-     * Delete the persistent object of given class for
-     *
-     * @param entityClass the Class of Entity to delete
-     * @param oid the OID of the Entity to be deleted
-     * @throws DeleteException if the Entity cannot be deleted
-     * @return true if the entity was deleted; false otherwise
-     */
-    protected boolean delete(Class entityClass, final long oid) throws DeleteException {
-        try {
-            return (Boolean)getHibernateTemplate().execute(new HibernateCallback() {
-                @Override
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    Query q = session.createQuery(HQL_DELETE_BY_OID);
-                    q.setLong(0, oid);
-                    List todelete = q.list();
-                    if (todelete.size() == 0) {
-                        return false;
-                    } else if (todelete.size() == 1) {
-                        session.delete(todelete.get(0));
-                        return true;
-                    } else {
-                        throw new RuntimeException("More than one entity found with oid = " + oid);
-                    }
-                }
-            });
-        } catch (Exception he) {
-            throw new DeleteException(he.toString(), he);
-        }
-    }
-
-    /**
      * Lookup the entity by oid and delete(ET) it.
      *
      * @param oid The entity oid.
@@ -928,6 +916,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         return deleted;
     }
 
+    @SuppressWarnings({ "unchecked" })
     protected List<ET> findByPropertyMaybeNull(final String property, final Object value) throws FindException {
         try {
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
@@ -951,11 +940,43 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         return UniqueType.NAME;
     }
 
+    /**
+     * Convenience implementation that accesses the table name from the entity annotation.
+     *
+     * <p>If the implementation class is not annotated with the table name this method
+     * must be overridden.</p>
+     *
+     * @return The name from the Table annotation on the implementation entity.
+     * @throws IllegalStateException if the entity is not annotated.
+     */
+    @Override
+    public String getTableName() {
+        String tableName = this.tableName;
+        if ( tableName==null ) {
+            Class<?> impClass = getImpClass();
+            Table table = impClass.getAnnotation( Table.class );
+            if ( table == null ) throw new IllegalStateException( "Implementation class is not annotated" );
+            this.tableName = tableName = table.name();
+        }
+        return tableName;
+    }
+
+    /**
+     * Convenience implementation that returns the implementation class.
+     *
+     * @return The implementation class.
+     */
+    @Override
+    public Class<? extends Entity> getInterfaceClass() {
+        return getImpClass();
+    }
+
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Map<Long, WeakReference<CacheInfo<ET>>> cacheInfoByOid = new HashMap<Long, WeakReference<CacheInfo<ET>>>();
     private Map<String, WeakReference<CacheInfo<ET>>> cacheInfoByName = new HashMap<String, WeakReference<CacheInfo<ET>>>();
+    private String tableName;
 
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;

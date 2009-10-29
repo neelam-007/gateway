@@ -4,7 +4,9 @@ import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.uddi.UDDIClient;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.WsdlInfo;
+import com.l7tech.uddi.UDDIClientFactory;
 import com.l7tech.util.Config;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 
 import java.util.Properties;
 import java.util.List;
@@ -110,6 +112,19 @@ public class UDDIHelper {
         }
 
         return wsdlInfos.toArray(new WsdlInfo[wsdlInfos.size()]);
+    }
+
+    /**
+     * Create a UDDIClient for accessing the given registry.
+     *
+     * @param uddiRegistry The registry to access.
+     * @return The UDDIClient
+     */
+    public static UDDIClient newUDDIClient( final UDDIRegistry uddiRegistry ) {
+        UDDIClientFactory factory = UDDIClientFactory.getInstance();
+        return factory.newUDDIClient( uddiRegistry.getInquiryUrl(),
+                        uddiRegistry.getPublishUrl(), uddiRegistry.getSubscriptionUrl(), uddiRegistry.getSecurityUrl(),
+                        uddiRegistry.getRegistryAccountUserName(), uddiRegistry.getRegistryAccountPassword(), null );
     }
 
     //- PRIVATE

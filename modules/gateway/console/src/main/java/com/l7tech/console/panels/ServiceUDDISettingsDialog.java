@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -49,6 +50,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private boolean confirmed;
     private Map<String, UDDIRegistry> allRegistries;
     private UDDIProxiedService uddiProxyService;
+    private UDDIServiceControl uddiServiceControl;
     private InputValidator publishWsdlValidators;
 
     private final static String businessEntityDefault = "<<None Selected>>";
@@ -150,6 +152,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
         } catch (FindException e) {
             uddiProxyService = null;
         }
+        try {
+            uddiServiceControl = getUDDIRegistryAdmin().getUDDIServiceControl(service.getOid());
+        } catch (FindException e) {
+            uddiServiceControl = null;
+        }
 
         //Input validators
         publishWsdlValidators = new InputValidator(this, "Publish Gateway WSDL Validation");
@@ -208,13 +215,19 @@ public class ServiceUDDISettingsDialog extends JDialog {
             uddiRegistriesComboBox.setSelectedIndex(-1);
             businessEntityNameLabel.setText(businessEntityDefault);
         }
-
-        // Monitoring tab settings
-        monitoringEnabledCheckBox.setSelected( false ); //TODO implement when UDDIServiceControl is available
-        monitoringDisableServicecheckBox.setSelected( false );
-
+        
+        if ( uddiServiceControl != null ) {
+            // Monitoring settings
+            monitoringEnabledCheckBox.setSelected( uddiServiceControl.isMonitoringEnabled() );
+            monitoringDisableServicecheckBox.setSelected( uddiServiceControl.isDisableServiceOnChange() );
+        } else {
+            // Monitoring settings
+            monitoringEnabledCheckBox.setSelected( false );
+            monitoringDisableServicecheckBox.setSelected( false );
+        }
+        
     }
-
+    
     /**
      * Enable or disable UI components in the 'Publish' tab only
      */
@@ -227,10 +240,10 @@ public class ServiceUDDISettingsDialog extends JDialog {
             enableDisablePublishGatewayWsdlControls(!proxyPublished);
             updateWhenGatewayWSDLCheckBox.setEnabled(true);
         }
-    }
+    }    
 
     private void enableAndDisableComponents() {
-        if ( canUpdate ) {
+        if ( canUpdate && uddiServiceControl != null ) {
             monitoringDisableServicecheckBox.setEnabled( monitoringEnabledCheckBox.isSelected() );
             publishTabEnableDisableComponents();
         } else {
@@ -257,6 +270,8 @@ public class ServiceUDDISettingsDialog extends JDialog {
      * @return true if view is valid and can be converted to model, false otherwise
      */
     private boolean viewToModel(){
+        final UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+
         if(publishProxiedWsdlRadioButton.isSelected()){
             if(uddiProxyService == null){
                 if(publishWsdlValidators.validateWithDialog()) publishUDDIProxiedService();
@@ -265,7 +280,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 //update if the check box's value has changed
                 if(uddiProxyService.isUpdateProxyOnLocalChange() != updateWhenGatewayWSDLCheckBox.isSelected()){
                     uddiProxyService.setUpdateProxyOnLocalChange(updateWhenGatewayWSDLCheckBox.isSelected());
-                    UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                     try {
                         uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyService);
                     } catch (UpdateException e) {
@@ -290,7 +304,22 @@ public class ServiceUDDISettingsDialog extends JDialog {
             }
         }
 
-        //TODO implement monitoring persistence when UDDIServiceControl is available
+        if ( uddiServiceControl != null ) {
+            if ( monitoringEnabledCheckBox.isSelected() ) {
+                uddiServiceControl.setMonitoringEnabled( true );
+                uddiServiceControl.setDisableServiceOnChange( monitoringDisableServicecheckBox.isSelected() );
+            } else {
+                uddiServiceControl.setMonitoringEnabled( false );
+                uddiServiceControl.setDisableServiceOnChange( false );
+            }
+            try {
+                uddiRegistryAdmin.updateUDDIServiceControlOnly( uddiServiceControl );
+            } catch (UpdateException e) {
+                logger.log(Level.WARNING, "Error updating UDDIServiceControl '" + ExceptionUtils.getMessage(e) + "'.", e);
+                DialogDisplayer.showMessageDialog(this, "Error saving UDDI settings: " + ExceptionUtils.getMessage(e)
+                        , "Error saving settings", JOptionPane.ERROR_MESSAGE, null);
+            }
+        }
 
         return true;
     }
