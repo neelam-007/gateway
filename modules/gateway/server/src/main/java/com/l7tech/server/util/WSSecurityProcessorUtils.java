@@ -1,37 +1,36 @@
 package com.l7tech.server.util;
 
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.WssProcessorImpl;
-import com.l7tech.security.xml.processor.ProcessorValidationException;
-import com.l7tech.security.xml.processor.SecurityContext;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.token.*;
-import com.l7tech.message.Message;
-import com.l7tech.message.SecurityKnob;
-import com.l7tech.message.MessageRole;
-import com.l7tech.util.*;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.message.AuthenticationContext;
-import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.User;
+import com.l7tech.message.Message;
+import com.l7tech.message.MessageRole;
+import com.l7tech.message.SecurityKnob;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.identity.User;
-import com.l7tech.identity.GroupBean;
+import com.l7tech.security.token.*;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.ProcessorValidationException;
+import com.l7tech.security.xml.processor.SecurityContext;
+import com.l7tech.security.xml.processor.WssProcessorImpl;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
+import org.w3c.dom.Element;
 
+import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.security.GeneralSecurityException;
-
-import org.w3c.dom.Element;
+import java.util.logging.Logger;
 
 /**
  * WS-Security Processor utility methods.
@@ -45,13 +44,13 @@ public class WSSecurityProcessorUtils {
      * Get the processor result for the given message, running the processor if necessary.
      *
      * @param msg The message whose security is being evaluated
-     * @param what A description for the mesage being evaluated
+     * @param messageDescriptionForLogging A description for the mesage being evaluated
      * @param securityTokenResolver The resolver to use to locate security tokens
      * @param audit The auditor to use for errors.
      * @return The processor result or null.
      */
     public static ProcessorResult getWssResults(final Message msg,
-                                                final String what,
+                                                final String messageDescriptionForLogging,
                                                 final SecurityTokenResolver securityTokenResolver,
                                                 final Audit audit)
     {
@@ -76,17 +75,17 @@ public class WSSecurityProcessorUtils {
             return wssResults;
         } catch (ProcessorValidationException e) {
             if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
-                    new String[] { what, ExceptionUtils.getMessage(e) },
+                    new String[] { messageDescriptionForLogging, ExceptionUtils.getMessage(e) },
                     ExceptionUtils.getDebugException( e ));
             return null;
         } catch (InvalidDocumentSignatureException e) {
             if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
-                    new String[] { what, ExceptionUtils.getMessage(e) },
+                    new String[] { messageDescriptionForLogging, ExceptionUtils.getMessage(e) },
                     ExceptionUtils.getDebugException( e ));
             return null;
         } catch (Exception e) {
             if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
-                    new String[] { what, ExceptionUtils.getMessage(e) }, 
+                    new String[] { messageDescriptionForLogging, ExceptionUtils.getMessage(e) },
                     e );
             return null;
         }

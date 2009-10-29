@@ -1,6 +1,8 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.BeanFactory;
 
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
 
@@ -13,7 +15,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
  */
 public class ServerRequireWssSaml2 extends ServerRequireWssSaml<RequireWssSaml2> {
 
-    public ServerRequireWssSaml2(RequireWssSaml2 sa, ApplicationContext context) {
-        super(sa, context);
+    public ServerRequireWssSaml2(RequireWssSaml2 sa, BeanFactory beanFactory, ApplicationEventPublisher eventPub) {
+        super(sa, beanFactory, eventPub);
     }
 }

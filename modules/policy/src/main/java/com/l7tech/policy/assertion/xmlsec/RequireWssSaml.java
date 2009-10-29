@@ -1,9 +1,12 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.util.Functions;
+
+import java.util.regex.Pattern;
 
 /**
  * The <code>RequestWssSaml</code> assertion describes the common SAML constraints
@@ -11,7 +14,9 @@ import com.l7tech.util.Functions;
  * authentication, authorization and attribute statements.
  */
 @RequiresSOAP(wss=true)
-public class RequireWssSaml extends SamlPolicyAssertion implements MessageTargetable, UsesVariables, SecurityHeaderAddressable {
+public class RequireWssSaml extends SamlPolicyAssertion implements MessageTargetable, UsesVariables, SetsVariables, SecurityHeaderAddressable {
+    public static final String PREFIX_SAML_ATTR = "saml.attr";
+
     private String[] subjectConfirmations = new String[]{};
     private String[] nameFormats = new String[]{};
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
@@ -270,5 +275,30 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         }
 
         return AssertionUtils.decorateName(this, "Require SAML Token " + st);
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return new VariableMetadata[] {
+                new VariableMetadata(PREFIX_SAML_ATTR, true, true, PREFIX_SAML_ATTR, false)
+        };
+    }
+
+    private static final Pattern converter = Pattern.compile("[^a-zA-Z0-9]");
+
+    /**
+     * Convert a SAML attribute name into a String suitable for use as a context variable suffix.  This
+     * just converts any non-alphanumeric characters into an underscore, and prepends an "n" if the name
+     * starts with a digit.
+     *
+     * @param attributeName the name to convert, ie "Ranking 1.2 Person of Rank Level"
+     * @return the value converted into a context variable suffix, ie "ranking_1_2_person_of_rank_level".  Never null.
+     */
+    public static String toContextVariableName(String attributeName) {
+        if (attributeName == null) throw new NullPointerException();
+        attributeName = attributeName.trim();
+        if (attributeName.length() < 1) throw new IllegalArgumentException();
+        String ret = converter.matcher(attributeName).replaceAll("_");
+        return Character.isDigit(ret.charAt(0)) ? "n" + ret : ret;
     }
 }

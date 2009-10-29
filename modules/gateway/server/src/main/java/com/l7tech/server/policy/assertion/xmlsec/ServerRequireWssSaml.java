@@ -1,26 +1,28 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.message.XmlKnob;
 import com.l7tech.message.Message;
-import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.security.token.SamlSecurityToken;
-import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
+import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.token.SamlSecurityToken;
+import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
-import org.springframework.context.ApplicationContext;
+import com.l7tech.util.Pair;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -49,19 +51,16 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
      *
      * @param sa the saml
      */
-    public ServerRequireWssSaml(AT sa, ApplicationContext context) {
+    public ServerRequireWssSaml(AT sa, BeanFactory beanFactory, ApplicationEventPublisher eventPub) {
         super(sa,sa);
         if (sa == null) {
             throw new IllegalArgumentException();
         }
-        if (context == null) {
-            throw new IllegalArgumentException("The Application Context is required");
-        }
 
         assertionValidate = new SamlAssertionValidate(sa);
-        auditor = new Auditor(this, context, logger);
-        securityTokenResolver = (SecurityTokenResolver)context.getBean("securityTokenResolver", SecurityTokenResolver.class);
-        messageIdManager = (MessageIdManager)context.getBean("distributedMessageIdManager", MessageIdManager.class);
+        auditor = new Auditor(this, beanFactory, eventPub, logger);
+        securityTokenResolver = (SecurityTokenResolver)beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
+        messageIdManager = (MessageIdManager)beanFactory.getBean("distributedMessageIdManager", MessageIdManager.class);
     }
 
     /**
@@ -142,8 +141,9 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                 return AssertionStatus.AUTH_REQUIRED;
             }
             Collection validateResults = new ArrayList();
+            Collection<Pair<String, String[]>> collectAttrValues = new ArrayList<Pair<String, String[]>>();
             LoginCredentials credentials = authContext.getLastCredentials();
-            assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults);
+            assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults, collectAttrValues);
             if (validateResults.size() > 0) {
                 StringBuffer sb2 = new StringBuffer();
                 boolean firstPass = true;
@@ -179,6 +179,12 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
             }
 
             authContext.addCredentials( LoginCredentials.makeLoginCredentials( samlAssertion, RequireWssSaml.class ) ) ;
+
+            // Record attribute values
+            for (Pair<String, String[]> av : collectAttrValues) {
+                context.setVariable("saml.attr." + RequireWssSaml.toContextVariableName(av.left.toLowerCase()), av.right);
+            }
+
             return AssertionStatus.NONE;
         } catch (SAXException e) {
             throw new IOException(e);

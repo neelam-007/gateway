@@ -70,8 +70,9 @@ public class SamlAssertionValidate {
      * @param credentials       the  credenaitls that may have been collected, null otherwise
      * @param wssResults        the wssresults
      * @param validationResults
+     * @param collectAttrValues
      */
-    public void validate(Document soapMessageDoc, LoginCredentials credentials, ProcessorResult wssResults, Collection validationResults) {
+    public void validate(Document soapMessageDoc, LoginCredentials credentials, ProcessorResult wssResults, Collection validationResults, Collection<Pair<String, String[]>> collectAttrValues) {
         String securityNS = wssResults.getSecurityNS();
         if (null == securityNS) {  // assume no security header was found
             Error result = new Error("No Security Header found", null);
@@ -113,7 +114,7 @@ public class SamlAssertionValidate {
                                     SamlStatementValidate statementValidate = validators.get(clazz);
                                     validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults);
                                     validateConditions(assertionType, validationResults);
-                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults);
+                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults, collectAttrValues);
                                 }
                             }
                         }
@@ -137,7 +138,7 @@ public class SamlAssertionValidate {
                                 if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
                                     assertionMatch = true;
                                     SamlStatementValidate statementValidate = validators.get(clazz);
-                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults);
+                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults, collectAttrValues);
                                 }
                             }
                         }

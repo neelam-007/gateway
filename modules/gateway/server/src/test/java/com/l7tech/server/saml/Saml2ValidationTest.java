@@ -62,7 +62,7 @@ public class Saml2ValidationTest extends TestCase {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List results = new ArrayList();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null);
 
         // check for error message
         String expectedErrorStart = "SAML Constraint Error: SAML ticket has expired as of:";
@@ -101,7 +101,7 @@ public class Saml2ValidationTest extends TestCase {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List results = new ArrayList();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null);
 
         // check for error message
         String expectedError = "SAML Constraint Error: Audience Restriction Check Failed";
@@ -137,7 +137,7 @@ public class Saml2ValidationTest extends TestCase {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List results = new ArrayList();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null);
 
         boolean foundUnsignedError = false;
         for (Iterator iterator = results.iterator(); iterator.hasNext();) {
@@ -171,7 +171,7 @@ public class Saml2ValidationTest extends TestCase {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List results = new ArrayList();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null);
 
         boolean foundError = false;
         String expectedError = "SAML Constraint Error: Multiple OneTimeUse conditions are not permitted.";
@@ -210,7 +210,7 @@ public class Saml2ValidationTest extends TestCase {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List results = new ArrayList();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null);
 
         boolean foundError = false;
         for (Iterator iterator = results.iterator(); iterator.hasNext();) {
@@ -229,7 +229,7 @@ public class Saml2ValidationTest extends TestCase {
         // validate 2
         SamlAssertionValidate sav2 = new SamlAssertionValidate(templateSaml);
         List results2 = new ArrayList();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results2);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results2, null);
 
         boolean foundError2 = false;
         boolean methodError = false;
@@ -273,7 +273,7 @@ public class Saml2ValidationTest extends TestCase {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List results = new ArrayList();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null);
 
         boolean foundError = false;
         for (Iterator iterator = results.iterator(); iterator.hasNext();) {
@@ -312,7 +312,7 @@ public class Saml2ValidationTest extends TestCase {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List results = new ArrayList();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null);
 
         boolean foundError = false;
         for (Iterator iterator = results.iterator(); iterator.hasNext();) {

@@ -7,6 +7,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.util.Pair;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 
@@ -46,12 +47,13 @@ public abstract class SamlStatementValidate {
      *
      * @param document              the message document
      * @param statementObject       the subject statement type, that may be authentication statement
-     *                              authorization statement or attribute statement
+ *                              authorization statement or attribute statement
      * @param wssResults            the wssresults collection
      * @param validationResults     where the valida
+     * @param collectAttrValues
      */
     protected abstract void validate(Document document,
                                      XmlObject statementObject,
-                                     ProcessorResult wssResults, Collection validationResults);
+                                     ProcessorResult wssResults, Collection validationResults, Collection<Pair<String, String[]>> collectAttrValues);
 
 }

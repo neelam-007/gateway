@@ -4,6 +4,7 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.util.Pair;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 import x0Assertion.oasisNamesTcSAML1.AuthenticationStatementType;
@@ -37,10 +38,11 @@ class SamlAuthenticationStatementValidate extends SamlStatementValidate {
      * @param statementAbstractType
      * @param wssResults
      * @param validationResults where the results are collected
+     * @param collectAttrValues
      */
     protected void validate(Document document,
                             XmlObject statementAbstractType,
-                            ProcessorResult wssResults, Collection validationResults) {
+                            ProcessorResult wssResults, Collection validationResults, Collection<Pair<String, String[]>> collectAttrValues) {
         if (!(statementAbstractType instanceof AuthenticationStatementType)) {
             throw new IllegalArgumentException("Expected "+AuthenticationStatementType.class);
         }

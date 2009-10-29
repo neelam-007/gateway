@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.util.Pair;
 import org.apache.xmlbeans.XmlObject;
 import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML2.ActionType;
@@ -42,10 +43,11 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
      * @param statementAbstractType
      * @param wssResults
      * @param validationResults     where the results are collected
+     * @param collectAttrValues
      */
     protected void validate(Document document,
                             XmlObject statementAbstractType,
-                            ProcessorResult wssResults, Collection validationResults) {
+                            ProcessorResult wssResults, Collection validationResults, Collection<Pair<String, String[]>> collectAttrValues) {
         if (!(statementAbstractType instanceof AuthzDecisionStatementType)) {
             throw new IllegalArgumentException("Expected " + AuthzDecisionStatementType.class);
         }
