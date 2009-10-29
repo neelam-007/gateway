@@ -181,9 +181,6 @@ public class UddiRegistryPropertiesDialog extends JDialog {
                     DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this, "Authentication successful!",
                             "Test Authentication", JOptionPane.INFORMATION_MESSAGE, null);
 
-                } catch (FindException e1) {
-                    DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this,
-                            "Could not find UDDI Registry", "Test Failed", JOptionPane.ERROR_MESSAGE, null);
                 } catch (UDDIException e1) {
                     DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this,
                             "Could not connect to UDDI Registry: " + e1.getMessage(),
