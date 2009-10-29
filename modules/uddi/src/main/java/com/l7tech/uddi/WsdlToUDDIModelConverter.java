@@ -8,9 +8,6 @@ import javax.wsdl.Service;
 import javax.wsdl.Port;
 import javax.wsdl.Binding;
 import javax.wsdl.PortType;
-import javax.wsdl.extensions.ExtensibilityElement;
-import javax.wsdl.extensions.soap12.SOAP12Address;
-import javax.wsdl.extensions.soap.SOAPAddress;
 import java.util.*;
 import java.util.logging.Logger;
 import java.net.URL;
@@ -107,17 +104,17 @@ public class WsdlToUDDIModelConverter {
      * Regardles of what is in UDDI, the job of this method is to convert the Wsdl instance variable into a List
      * of Business Services. These services and everything they contain / reference may already exist in UDDI.
      * All tModelkeys of required tModels contain placeholders
-     *
+     * <p/>
      * Note: BusinessServices and bindingTemplates do not need placeholders, as if they do not already exist, then
      * they will be filled in automatically on save by the UDDI.
-     *
+     * <p/>
      * Note: it is up to the client to work out what tModelKeys need to be created / retrieved from UDDI
-     * 
+     *
      * @return Pair of a List of Business Services and a Map of TModels which are referenced from the Business Services.
-     * The reference from a keyedReference in a BusinessService is the key into the Map to retrieve the tModel.
-     * Remember that <b>no real key references</b> exist for any tModelKeys from keyedReferences
+     *         The reference from a keyedReference in a BusinessService is the key into the Map to retrieve the tModel.
+     *         Remember that <b>no real key references</b> exist for any tModelKeys from keyedReferences
      */
-    public Pair<List<BusinessService>, Map<String, TModel>> convertWsdlToUDDIModel(){
+    public Pair<List<BusinessService>, Map<String, TModel>> convertWsdlToUDDIModel() {
         List<BusinessService> businessServices = new ArrayList<BusinessService>();
 
         Collection<Service> services = wsdl.getServices();
@@ -131,9 +128,9 @@ public class WsdlToUDDIModelConverter {
         return new Pair<List<BusinessService>, Map<String, TModel>>(businessServices, Collections.unmodifiableMap(keysToPublishedTModels));
     }
 
-    private void createUddiBusinessService(final BusinessService businessService, final Service wsdlService){
+    private void createUddiBusinessService(final BusinessService businessService, final Service wsdlService) {
         final String serviceName = wsdlService.getQName().getLocalPart();
-        final String localName = "Layer7 " + serviceName+ " " + serviceOid;
+        final String localName = "Layer7 " + serviceName + " " + serviceOid;
         businessService.getName().add(getName(localName));
 
         BindingTemplates bindingTemplates = new BindingTemplates();
@@ -159,7 +156,7 @@ public class WsdlToUDDIModelConverter {
         categoryBag.getKeyedReference().add(localNameRef);
 
         final String nameSpace = wsdlService.getQName().getNamespaceURI();
-        if(nameSpace != null && !nameSpace.trim().isEmpty()){
+        if (nameSpace != null && !nameSpace.trim().isEmpty()) {
             KeyedReference bindingNameSpace = new KeyedReference();
             bindingNameSpace.setKeyValue(nameSpace);
             bindingNameSpace.setKeyName("service namespace");
@@ -178,21 +175,15 @@ public class WsdlToUDDIModelConverter {
 
     }
 
-    private BindingTemplate createUddiBindingTemplate(final Port wsdlPort) {
+    private BindingTemplate createUddiBindingTemplate(final Port wsdlPort){
         BindingTemplate bindingTemplate = new BindingTemplate();
-        List<ExtensibilityElement> elements = wsdlPort.getExtensibilityElements();
 
-        AccessPoint accessPoint = null;
-        for (ExtensibilityElement ee : elements) {
-            if (ee instanceof SOAPAddress || ee instanceof SOAP12Address) {
-                accessPoint = new AccessPoint();
-                accessPoint.setUseType("http");
-                accessPoint.setValue(gatewayURL);
-                bindingTemplate.setAccessPoint(accessPoint);
-                break;
-            }
-        }
-        if (accessPoint == null) throw new IllegalStateException("No soap:address found in wsdl");
+        //For v3, we don't care about what type of element represents the endPoint e.g. whether it's soap:address
+        //soap12:address or http:addresss, as they all represent an endpoint.
+        AccessPoint accessPoint = new AccessPoint();
+        accessPoint.setUseType("endPoint");
+        accessPoint.setValue(gatewayURL);
+        bindingTemplate.setAccessPoint(accessPoint);
 
         TModelInstanceDetails tModelInstanceDetails = new TModelInstanceDetails();
 

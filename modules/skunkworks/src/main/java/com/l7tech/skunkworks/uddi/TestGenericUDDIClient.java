@@ -118,7 +118,7 @@ public class TestGenericUDDIClient {
     }
 
     @Test
-    public void testPublishProxyBusinessService() throws UDDIException, WSDLException {
+    public void testPublishProxyBusinessService() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("Warehouse.wsdl"));
 
         long serviceOid = Calendar.getInstance().getTimeInMillis();

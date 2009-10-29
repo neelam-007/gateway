@@ -27,7 +27,7 @@ public class UDDIProxiedServiceDownloaderTest {
      * @throws WSDLException
      */
     @Test
-    public void testServiceDownload() throws WSDLException, UDDIException {
+    public void testServiceDownload() throws Exception {
         //Set up the test, need to configure the UDDIClient
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("Warehouse.wsdl"));
 

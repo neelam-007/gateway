@@ -14,7 +14,6 @@ import static com.l7tech.uddi.UDDIReferenceUpdater.TMODEL_TYPE.WSDL_PORT_TYPE;
 import static com.l7tech.uddi.UDDIReferenceUpdater.TMODEL_TYPE.WSDL_BINDING;
 
 import javax.xml.bind.JAXB;
-import javax.wsdl.WSDLException;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
@@ -25,7 +24,7 @@ public class UDDIReferenceUpdaterTest {
     private Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels;
 
     @Before
-    public void setUp() throws WSDLException {
+    public void setUp() throws Exception {
 
         wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("Warehouse.wsdl"));
 

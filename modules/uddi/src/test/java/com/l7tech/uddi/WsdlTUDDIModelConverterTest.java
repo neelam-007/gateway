@@ -4,6 +4,7 @@ import org.junit.Test;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.util.Pair;
+import com.l7tech.test.BugNumber;
 
 import java.io.*;
 import java.util.List;
@@ -60,7 +61,7 @@ public class WsdlTUDDIModelConverterTest {
         String[] bindingNames = new String[]{"WarehouseSoap12", "WarehouseSoap"};
         for (int i = 0; i < bindingTemplates.size(); i++) {
             BindingTemplate bindingTemplate = bindingTemplates.get(i);
-            Assert.assertEquals("Incorrect use type found", "http", bindingTemplate.getAccessPoint().getUseType());
+            Assert.assertEquals("Incorrect use type found", "endPoint", bindingTemplate.getAccessPoint().getUseType());
             Assert.assertEquals("Incorrect gateway url found", gatewayURL, bindingTemplate.getAccessPoint().getValue());
             TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
             List<TModelInstanceInfo> tModelInstanceInfos = tModelInstanceDetails.getTModelInstanceInfo();
@@ -103,6 +104,30 @@ public class WsdlTUDDIModelConverterTest {
         Assert.assertEquals("Incorrect keyName found", WsdlToUDDIModelConverter.LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN, keyWordRef.getKeyName());
         Assert.assertEquals("Incorret tModelKey found", WsdlToUDDIModelConverter.UDDI_GENERAL_KEYWORDS, keyWordRef.getTModelKey());
 
+    }
+
+    /**
+     * Tests that http:address is supported.
+     * @throws Exception
+     */
+    @BugNumber(7925)
+    @Test
+    public void testHttpAddressSupport() throws Exception{
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("httpaddress.wsdl"));
+
+        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+        final String gatewayURL = "http://localhost:8080/3828382";
+        final String targetNameSpace = wsdl.getTargetNamespace();
+
+        final int serviceOid = 3828382;
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid, Integer.toString(serviceOid));
+        Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+
+        List<BusinessService> services = servicesAndTModels.left;
+        Assert.assertEquals("Incorrect number of Business Services found", 1, services.size());
+        //print for debugging
+        printBusinessService(services);
+        //bug is fixed, can successfully convert into UDDI data model
     }
 
     /**
