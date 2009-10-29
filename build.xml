@@ -596,11 +596,11 @@
             <param name="idea.gateway.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.home=&quot;${dev.deploy.dir}/Gateway/node/default&quot; -Djava.net.preferIPv4Stack=true"/>
             <param name="idea.controller.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.log.console=true -Dcom.l7tech.gateway.home=../../Gateway"/>
             <param name="idea.configwiz.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
-            <param name="idea.pcconfig.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.controller.home=&quot;${dev.deploy.dir}/Appliance/controller&quot;"/>
+            <param name="idea.pcconfig.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.controller.home=&quot;${dev.deploy.dir}/Controller&quot;"/>
             <param name="idea.client.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.manager.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.esm.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.em.version} -Dcom.l7tech.server.log.console=true -Dcom.l7tech.ems.outputDbScript=overwrite -Dcom.l7tech.ems.development=true"/>
-            <param name="idea.controller.home" expression="${dev.deploy.dir}/Appliance/controller"/>
+            <param name="idea.controller.home" expression="${dev.deploy.dir}/Controller"/>
             <param name="idea.esm.home" expression="${dev.deploy.dir}/EnterpriseManager"/>
         </xslt>
         <move file="UneasyRooster.iws.tmp" tofile="UneasyRooster.iws" overwrite="true"/>
@@ -1416,7 +1416,7 @@
       Deploy Process Controller for development
     -->
     <target name="deploy-controller-init" depends="init">
-        <property name="dev.deploy.pc.dir" value="${dev.deploy.dir}/Appliance/controller"/>
+        <property name="dev.deploy.pc.dir" value="${dev.deploy.dir}/Controller"/>
         <install-ssg-processcontroller dir="${dev.deploy.pc.dir}"/>
     </target>
     <target name="deploy-controller-config-check" depends="deploy-controller-init">
@@ -2900,6 +2900,9 @@
             <mkdir dir="@{dir}/${install.src.pc.controlpatches}"/>
             <mkdir dir="@{dir}/${install.src.pc.controlvar}"/>
 
+            <copy file="${src.root}/etc/processcontroller/pc.sh" tofile="@{dir}/${install.src.pc.controlbin}/pc.sh"/>
+            <chmod file="@{dir}/${install.src.pc.controlbin}/pc.sh" perm="755"/>
+
             <!-- Copy Controller.jar -->
             <copy todir="@{dir}/${install.src.pc.control}">
                 <fileset dir="${build.dir}/processcontroller" includes="Controller.jar"/>
@@ -3150,6 +3153,9 @@
                 <include name="node/default/var"/>
                 <include name="node/default/var/**"/>
             </tarfileset>
+            <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" mode="644" prefix="${install.target.pc}">
+                <include name="**/*"/>
+            </tarfileset>
         </tar>
 
         <!-- Create appliance tarball -->
@@ -3157,9 +3163,6 @@
         <echo level="info">Creating Appliance Add-On Tarball (${appliance-tarball})...</echo>
         <tar destfile="${appliance-tarball}" compression="gzip" longfile="gnu">
             <tarfileset dir="${install.src.app}" username="gateway" group="gateway" mode="644" prefix="${install.target.app}">
-                <include name="**/*"/>
-            </tarfileset>
-            <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" mode="644" prefix="${install.target.pc}">
                 <include name="**/*"/>
             </tarfileset>
         </tar>

@@ -65,6 +65,9 @@ public class ProcessController implements InitializingBean {
     private final Map<String, NodeState> nodeStates = new ConcurrentHashMap<String, NodeState>();
     private final Map<String, ProcessBuilder> processBuilders = new HashMap<String, ProcessBuilder>();
 
+    private static final String APPLIANCE_GATEWAY_CONTROL = "/opt/SecureSpan/Appliance/libexec/gateway_control";
+    private static final String SOFTWARE_GATEWAY_CONTROL =  "/opt/SecureSpan/Gateway/runtime/bin/gateway.sh";
+
     private static final String LOG_TIMEOUT = "{0} still hasn''t started after {1}ms.  Killing it dead.";
 
     private volatile boolean daemon;
@@ -478,10 +481,10 @@ public class ProcessController implements InitializingBean {
         logger.warning("Killing " + node.getName());
         File ssgPwd = getNodeDirectory(node.getName());
 
-        File gatewayShutdown = new File("/opt/SecureSpan/Appliance/libexec/gateway_control");
+        File gatewayShutdown = new File(getGatewayControl());
         if ( gatewayShutdown.exists() ) {
             try {
-                ProcUtils.exec(ssgPwd, gatewayShutdown, new String[]{"stop", "-force"}, null, false );
+                ProcUtils.exec(ssgPwd, gatewayShutdown, new String[]{"pc", "stop", "-force"}, null, false );
             } catch ( IOException ioe ) {
                 logger.log(Level.WARNING, "Failed to kill node '"+node.getName()+"':\n" + ioe.getMessage() );
             }
@@ -700,19 +703,24 @@ public class ProcessController implements InitializingBean {
         List<String> commands = new LinkedList<String>();
 
         String ssgHome = ssgPwd.getCanonicalPath();
-        String applianceLauncher = "/opt/SecureSpan/Appliance/libexec/gateway_control";
+        String applianceLauncher = getGatewayControl();
         if ( new File(applianceLauncher).exists() ) {
             commands.add( applianceLauncher );
+            commands.add("pc");
             commands.add( "run" );
             addGatewaySystemProperties( commands, "-J-D", ssgHome );
         } else {
             commands.add( System.getProperty("java.home") + "/bin/java" );
             addGatewaySystemProperties( commands, "-D", ssgHome );
             commands.add( "-jar" );
-            commands.add( "../../runtime/Gateway.jar" );
+            commands.add( "../runtime/Gateway.jar" );
         }
 
         return commands;
+    }
+
+    private String getGatewayControl() {
+        return HostConfig.HostType.APPLIANCE == configService.getHost().getHostType() ? APPLIANCE_GATEWAY_CONTROL : SOFTWARE_GATEWAY_CONTROL;
     }
 
     private void addGatewaySystemProperties( final List<String> commands, final String propPrefix, final String ssgHome ) {

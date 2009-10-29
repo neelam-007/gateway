@@ -12,10 +12,10 @@
     <xsl:param name="idea.gateway.vmOptions">-Dcom.l7tech.server.home="build/deploy/Gateway" -Dcom.l7tech.util.buildVersion=5.0</xsl:param>
     <xsl:param name="idea.controller.vmOptions">-Dcom.l7tech.util.buildVersion=5.0 -Dcom.l7tech.server.log.console=true -Dcom.l7tech.gateway.home=../../Gateway</xsl:param>
     <xsl:param name="idea.configwiz.vmOptions">-Dcom.l7tech.util.buildVersion=5.0</xsl:param>
-    <xsl:param name="idea.pcconfig.vmOptions">-Dcom.l7tech.util.buildVersion=5.0 -Dcom.l7tech.server.controller.home=build/deploy/Appliance/controller</xsl:param>
+    <xsl:param name="idea.pcconfig.vmOptions">-Dcom.l7tech.util.buildVersion=5.0 -Dcom.l7tech.server.controller.home=build/deploy/Controller</xsl:param>
     <xsl:param name="idea.manager.vmOptions">-Dcom.l7tech.util.buildVersion=5.0</xsl:param>
     <xsl:param name="idea.esm.vmOptions">-Dcom.l7tech.util.buildVersion=1.0</xsl:param>
-    <xsl:param name="idea.controller.home">build/deploy/Appliance/controller</xsl:param>
+    <xsl:param name="idea.controller.home">build/deploy/Controller</xsl:param>
     <xsl:param name="idea.esm.home">build/deploy/EnterpriseManager</xsl:param>
 
     <!-- Global options -->

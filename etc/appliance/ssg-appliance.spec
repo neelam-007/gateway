@@ -92,20 +92,6 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 # Extra ssg files
 %attr(0555,layer7,layer7) /opt/SecureSpan/Gateway/runtime/etc/profile.d/*.sh
 
-# Gateway process controller
-%defattr(0640,layer7,layer7,0750)
-%dir /opt/SecureSpan/Appliance/controller
-%config /opt/SecureSpan/Appliance/controller/etc/conf
-/opt/SecureSpan/Appliance/controller/var
-
-%defattr(0444,layer7,layer7,0755)
-/opt/SecureSpan/Appliance/controller/Controller.jar
-%dir /opt/SecureSpan/Appliance/controller/bin
-%dir /opt/SecureSpan/Appliance/controller/etc
-/opt/SecureSpan/Appliance/controller/etc/patchesCert.pem
-/opt/SecureSpan/Appliance/controller/lib
-%attr(0555,layer7,layer7) /opt/SecureSpan/Appliance/controller/bin/*
-
 #Appliance Config Wizards
 %defattr(0444,layer7,layer7,0775)
 %dir /opt/SecureSpan/Appliance/config
@@ -248,8 +234,6 @@ fi
 
 # Chown any files that have been left behind by a previous installation
 [ ! -d /opt/SecureSpan/Appliance/config ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/config
-[ ! -d /opt/SecureSpan/Appliance/controller/etc ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/controller/etc
-[ ! -d /opt/SecureSpan/Appliance/controller/var ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/controller/var
 
 %post
 if [ -d "/ssg/appliance" ] ; then

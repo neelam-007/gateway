@@ -10,8 +10,12 @@ if [ -z "${SSPC_HOME}" ] ; then
   cd ..
   SSPC_HOME="$(pwd)"
 fi
-if [ -z "${JAVA_HOME}" ] ; then
+if [ -z "${JAVA_HOME}" -a -d /opt/SecureSpan/JDK ] ; then
   JAVA_HOME="/opt/SecureSpan/JDK"
+fi
+
+if [ -z "${JAVA_HOME}" -a -n "${SSG_JAVA_HOME}" ] ; then
+  JAVA_HOME="${SSG_JAVA_HOME}"
 fi
 
 PC_USER=""

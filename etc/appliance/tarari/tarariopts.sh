@@ -12,8 +12,8 @@ function extractProperty() {
 if [ -e /usr/local/Tarari ]; then
 	TARARIROOT=/usr/local/Tarari
     SSGTARARI=""
-    if [ -f "/opt/SecureSpan/Appliance/controller/etc/host.properties" ] ; then
-        extractProperty "host.tarari" SSGTARARI "/opt/SecureSpan/Appliance/controller/etc/host.properties"
+    if [ -f "/opt/SecureSpan/Controller/etc/host.properties" ] ; then
+        extractProperty "host.tarari" SSGTARARI "/opt/SecureSpan/Controller/etc/host.properties"
     fi
     if [ -z "${SSGTARARI}" ] ; then
         SSGTARARI="true"

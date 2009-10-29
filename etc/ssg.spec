@@ -99,6 +99,24 @@ rm -fr %{buildroot}
 %defattr(0555,layer7,layer7,0755)
 /opt/SecureSpan/Gateway/config/backup/*.sh
 
+# Gateway process controller
+%defattr(0640,layer7,layer7,0750)
+%dir /opt/SecureSpan/Controller
+%config /opt/SecureSpan/Controller/etc/conf
+/opt/SecureSpan/Controller/var
+
+%defattr(0444,layer7,layer7,0755)
+/opt/SecureSpan/Controller/Controller.jar
+%dir /opt/SecureSpan/Controller/bin
+%dir /opt/SecureSpan/Controller/etc
+/opt/SecureSpan/Controller/etc/patchesCert.pem
+/opt/SecureSpan/Controller/lib
+%attr(0755,layer7,layer7) /opt/SecureSpan/Controller
+%attr(0555,layer7,layer7) /opt/SecureSpan/Controller/bin/*
+%attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc
+%attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc/conf
+%attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/logs
+
 %pre
 grep -q ^gateway: /etc/group || groupadd gateway
 grep -q ^layer7: /etc/group || groupadd layer7
@@ -121,6 +139,8 @@ fi
 [ ! -d "${RPM_INSTALL_PREFIX0}/config" ] || chown -R layer7.layer7 "${RPM_INSTALL_PREFIX0}/config"
 [ ! -d "${RPM_INSTALL_PREFIX0}/node/default/etc/conf" ] || chown -R layer7.gateway "${RPM_INSTALL_PREFIX0}/node/default/etc/conf"
 [ ! -d "${RPM_INSTALL_PREFIX0}/node/default/var" ] || chown -R gateway.gateway "${RPM_INSTALL_PREFIX0}/node/default/var"
+[ ! -d /opt/SecureSpan/Controller/etc ] || chown -R layer7.layer7 /opt/SecureSpan/Controller/etc
+[ ! -d /opt/SecureSpan/Controller/var ] || chown -R layer7.layer7 /opt/SecureSpan/Controller/var
 
 %post
 if [ -d "/ssg" ] ; then

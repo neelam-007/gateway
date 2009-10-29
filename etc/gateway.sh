@@ -28,9 +28,15 @@ SSGJDK_VERSION="1.6"
 RUNASUSER="bash"
 export SSGNODE SSGUSER
 
+# appliance check
+RPM=/bin/rpm
+[ -x ${RPM} ] && ${RPM} -q ssg-appliance 2>&1 >/dev/null && IS_APPLIANCE=yes
+
 # Source profile for standard environment
 cd `dirname $0`
 . ../etc/profile
+
+PC_CONTROL="/opt/SecureSpan/Controller/bin/pc.sh"
 
 ensure_JDK "${SSGJDK_VERSION}"
 
@@ -161,6 +167,12 @@ if [ "$1" = "jpda" ] ; then
   shift
 fi
 
+# is the PC calling?
+if [ "$1" = "pc" ] ; then
+    PC_CALL="yes"
+    shift
+fi
+
 # Move to node directory and perform action
 cd "${SSG_HOME}/node/${SSGNODE}"
 
@@ -170,6 +182,11 @@ if [ "$1" = "start" ] ; then
     if [ "$1" = "-console" ]; then
         shift
         JAVA_OPTS="${JAVA_OPTS} -Dcom.l7tech.server.log.console=true"
+    fi
+
+    if [ -z "${IS_APPLIANCE}" -a -z "${PC_CALL}" ] ; then
+      echo "Starting Process Controller..."
+      ${PC_CONTROL} start
     fi
 
     ensureNotRunning
@@ -187,6 +204,11 @@ if [ "$1" = "start" ] ; then
 elif [ "$1" = "run" ] ; then
     shift
 
+    if [ -z "${IS_APPLIANCE}" -a -z "${PC_CALL}" ] ; then
+      echo "Starting Process Controller..."
+      ${PC_CONTROL} start
+    fi
+
     ensureNotRunning
 
     if [ -n "${GATEWAY_PID}" ]; then
@@ -198,6 +220,11 @@ elif [ "$1" = "run" ] ; then
 
 elif [ "$1" = "stop" ] ; then
   shift
+
+    if [ -z "${IS_APPLIANCE}" -a -z "${PC_CALL}" ] ; then
+    echo "Stopping Process Controller..."
+    ${PC_CONTROL} stop
+  fi
 
   FORCE=0
   if [ "$1" = "-force" ]; then

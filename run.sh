@@ -89,7 +89,7 @@ if [ -z "${DEPLOY_HOME}" ] ; then
 fi
 SSG_HOME="${DEPLOY_HOME}/Gateway"
 ESM_HOME="${DEPLOY_HOME}/EnterpriseManager"
-PC_HOME="${DEPLOY_HOME}/Appliance/controller"
+PC_HOME="${DEPLOY_HOME}/Controller"
 INSTALLER_HOME="$(test -f ~/build.properties && grep "^build.installer" ~/build.properties | awk -F'=' '{print $NF}' | sed 's/ //g')"
 if [ -z "${INSTALLER_HOME}" ] ; then INSTALLER_HOME="$(dirname $0)/build/installer"; fi
 

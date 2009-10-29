@@ -72,7 +72,7 @@ public class NodeApiImpl implements NodeApi {
     }
 
     private void checkRequest() {
-        if (!isProcessControllerPresent()) throw new IllegalStateException(NODE_NOT_CONFIGURED_FOR_PC);
+        //if (!isProcessControllerPresent()) throw new IllegalStateException(NODE_NOT_CONFIGURED_FOR_PC);
         final HttpServletRequest hsr = (HttpServletRequest)wscontext.getMessageContext().get(MessageContext.SERVLET_REQUEST);
         if (hsr == null) throw new IllegalStateException("Request received outside of expected servlet context");
         try {
@@ -83,6 +83,7 @@ public class NodeApiImpl implements NodeApi {
             }
         } catch (ListenerException e) {
             // TODO come up with a friendlier way to throw a SOAP fault here
+            // if (!isProcessControllerPresent()) throw new IllegalStateException(NODE_NOT_CONFIGURED_FOR_PC);
             throw new IllegalStateException(e);
         } catch (UnknownHostException uhe) {
             throw new IllegalStateException("Request denied for non-local address.", uhe);

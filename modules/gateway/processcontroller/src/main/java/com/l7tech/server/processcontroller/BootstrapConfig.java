@@ -5,9 +5,12 @@ package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.ProcUtils;
+import com.l7tech.common.io.ProcResult;
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.*;
+import com.l7tech.server.management.config.host.HostConfig;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
@@ -247,6 +250,7 @@ public class BootstrapConfig {
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREFILE, keystoreFile.getAbsolutePath());
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREPASSWORD, obfKeystorePass);
         newProps.setProperty(ConfigService.HOSTPROPERTIES_JRE, System.getProperty("java.home"));
+        newProps.setProperty(ConfigService.HOSTPROPERTIES_TYPE, isAppliance() ? HostConfig.HostType.APPLIANCE.name() : HostConfig.HostType.SOFTWARE.name());
 
         FileOutputStream pfos = null;
         try {
@@ -260,4 +264,18 @@ public class BootstrapConfig {
         }
     }
 
+    private static boolean isAppliance() {
+        // rpm -q ssg-appliance
+        try {
+            File rpm = new File("/bin/rpm");
+            if (! rpm.exists())
+                rpm = new File("/usr/bin/rpm");
+            ProcResult result = ProcUtils.exec(rpm, new String[] {"-q", "ssg-appliance"});
+            logger.info("Appliance check (rpm -q ssg-appliance) returned: " + result.getExitStatus());
+            return result.getExitStatus() == 0;
+        } catch (Exception e) {
+            logger.log(Level.INFO, "Error encountered while trying to determine if the host is an appliance: " + ExceptionUtils.getMessage(e));
+            return false;
+        }
+    }
 }

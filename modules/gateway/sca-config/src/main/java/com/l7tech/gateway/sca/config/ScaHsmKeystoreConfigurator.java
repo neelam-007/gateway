@@ -45,7 +45,7 @@ public class ScaHsmKeystoreConfigurator {
 
     private static final String DEFAULT_ZEROHSM_PATH = "/opt/SecureSpan/Appliance/libexec/zerohsm.sh";
     private static final String DEFAULT_MASTERKEYMANAGE_PATH = "/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl";
-    private static final String DEFAULT_HOST_PROPERTIES_PATH = "/opt/SecureSpan/Appliance/controller/etc/host.properties";
+    private static final String DEFAULT_HOST_PROPERTIES_PATH = "/opt/SecureSpan/Controller/etc/host.properties";
 
     private static final String SSG_VAR_DIR = "/opt/SecureSpan/Gateway/node/default/var/";
     private static final String HSM_INIT_FILE = "hsm_init.properties";

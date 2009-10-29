@@ -70,7 +70,7 @@ public class ConfigServiceImpl implements ConfigService {
         String s = System.getProperty("com.l7tech.server.processcontroller.nodeBaseDirectory");
         if (s == null) {
             File parent = processControllerHomeDirectory.getParentFile();
-            nodeBaseDirectory = new File(parent, ".."+SLASH+"Gateway"+SLASH+"node");
+            nodeBaseDirectory = new File(parent, "Gateway"+SLASH+"node");
         } else {
             nodeBaseDirectory = new File(s);
         }

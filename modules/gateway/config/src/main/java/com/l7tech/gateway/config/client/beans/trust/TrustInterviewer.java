@@ -51,7 +51,7 @@ public class TrustInterviewer {
     }
 
     void run() {
-        final File pcHomeDir = new File(SyspropUtil.getString("com.l7tech.server.controller.home", "/opt/SecureSpan/Appliance/controller"));
+        final File pcHomeDir = new File(SyspropUtil.getString("com.l7tech.server.controller.home", "/opt/SecureSpan/Controller"));
         final File etcDirectory = new File(pcHomeDir, "etc");
         final File etcConfDirectory = new File(etcDirectory, "conf");
         final File hostPropsFile = new File(etcDirectory, "host.properties");

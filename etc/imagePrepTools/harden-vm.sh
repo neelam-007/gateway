@@ -14,7 +14,7 @@ chmod o-w /var/log/*
 rm -f /var/log/*/*
 find /var/log -maxdepth 1 -type f | grep -v '/btmp$' | xargs rm -f
 service ssg stop
-rm -f /opt/SecureSpan/Appliance/controller/var/logs/*.log
+rm -f /opt/SecureSpan/Controller/var/logs/*.log
 rm -f /opt/SecureSpan/Gateway/node/default/var/logs/*.log
 
 echo "Zeroing disk space..."

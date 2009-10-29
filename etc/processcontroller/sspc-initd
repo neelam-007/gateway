@@ -10,8 +10,8 @@
 . /etc/rc.d/init.d/functions
 
 # See how we were called.
-USER=$(whoami)
-if [ $USER != "root" ] ; then
+USER_ID=$(id | sed "s/uid=\([0-9]*\).*/\1/g")
+if [ "$USER_ID" != "0" ] ; then
     echo "Need to be root to run this script";
     exit
 fi
@@ -19,10 +19,10 @@ fi
 # Config
 PID_FILE="sspcd"
 PC_USER="layer7"
-PC_SCRIPT="/opt/SecureSpan/Appliance/controller/bin/processcontroller.sh"
+PC_SCRIPT="/opt/SecureSpan/Controller/bin/processcontroller.sh"
+PC_CONFIG="/opt/SecureSpan/Controller/etc/host.properties"
 PC_FIREWALL_CONTROL="/opt/SecureSpan/Appliance/libexec/update_firewall"
-PC_FIREWALL_RULES="/opt/SecureSpan/Appliance/controller/var/firewall_rules"
-PC_CONFIG="/opt/SecureSpan/Appliance/controller/etc/host.properties"
+PC_FIREWALL_RULES="/opt/SecureSpan/Controller/var/firewall_rules"
 
 start() {
         if [ ! -x "${PC_SCRIPT}" ] ; then
@@ -35,8 +35,20 @@ start() {
         RETVAL=$?
         echo
         [ $RETVAL -eq 0 ] && touch /var/lock/subsys/ssg
-        [ ! -f "${PC_FIREWALL_RULES}" ] || rm -f "${PC_FIREWALL_RULES}" &>/dev/null
-        if [ -f "${PC_CONFIG}" ] ; then
+        [ -f /bin/rpm ] && RPM=/bin/rpm
+        [ -z ${RPM} -a -f /usr/bin/rpm ] && RPM=/usr/bin/rpm
+        if [ -n ${RPM} ] ; then
+            ${RPM} -q ssg-appliance >/dev/null
+            if [ $? -eq 0 ] ; then
+                HOST_TYPE=APPLIANCE
+            else
+                HOST_TYPE=SOFTWARE
+            fi
+        else
+            HOST_TYPE=SOFTWARE
+        fi
+        if [ "APPLIANCE" == "${HOST_TYPE}" ] ; then
+            [ ! -f "${PC_FIREWALL_RULES}" ] || rm -f "${PC_FIREWALL_RULES}" &>/dev/null
             PC_ADDR=$(grep host.controller.sslIpAddress "${PC_CONFIG}" | sed 's/host.controller.sslIpAddress\s\{0,128\}=\s\{0,128\}//')
             PC_PORT=$(grep host.controller.sslPort "${PC_CONFIG}" | sed 's/host.controller.sslPort\s\{0,128\}=\s\{0,128\}//')
             if [ ! -z "${PC_ADDR}" ] && [ "${PC_ADDR}" != "127.0.0.1" ] ; then
@@ -48,9 +60,10 @@ start() {
                 else
                     echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
                 fi
+                chown gateway.gateway "${PC_FIREWALL_RULES}" 
             fi
+            [ $RETVAL -eq 0 ] && [ -x "${PC_FIREWALL_CONTROL}" ] && [ -f "${PC_FIREWALL_RULES}" ] && "${PC_FIREWALL_CONTROL}" "${PC_FIREWALL_RULES}" start
         fi
-        [ $RETVAL -eq 0 ] && [ -x "${PC_FIREWALL_CONTROL}" ] && [ -f "${PC_FIREWALL_RULES}" ] && "${PC_FIREWALL_CONTROL}" "${PC_FIREWALL_RULES}" start
         return $RETVAL
 }
 
