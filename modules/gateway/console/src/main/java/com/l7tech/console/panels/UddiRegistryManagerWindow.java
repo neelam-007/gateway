@@ -155,6 +155,8 @@ public class UddiRegistryManagerWindow extends JDialog {
                             showErrorMessage("Remove Failed", "Failed to remove UDDI Registry: " + ExceptionUtils.getMessage(e), e);
                         } catch (UDDIException e) {
                             showErrorMessage("Remove Failed", "Failed to remove UDDI Registry: " + ExceptionUtils.getMessage(e), e);
+                        } catch (UDDIRegistryAdmin.UDDIRegistryNotEnabledException e) {
+                            showErrorMessage("Remove Failed", "UDDI Registry is not enabled and contains published data. Cannot remove: " + ExceptionUtils.getMessage(e), e);
                         }
                     }
                 });
