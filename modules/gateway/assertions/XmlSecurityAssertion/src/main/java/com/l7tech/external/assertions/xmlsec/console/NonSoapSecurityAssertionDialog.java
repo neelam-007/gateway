@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.xmlsec.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
+import com.l7tech.external.assertions.xmlsec.HasVariablePrefix;
 import com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAssertion;
 import com.l7tech.external.assertions.xmlsec.NonSoapSecurityAssertionBase;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -20,6 +21,8 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     private JTextField xpathExpressionField;
     private JButton editXpathButton;
     private JPanel controlsBelowXpath;
+    private JTextField variablePrefixField;
+    private JLabel variablePrefixLabel;
 
     private final XpathExpression defaultXpathExpression;
     private XpathExpression xpathExpression;
@@ -101,11 +104,26 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     @Override
     public void setData(AT assertion) {
         setXpathExpression(assertion.getXpathExpression());
+        if (assertion instanceof HasVariablePrefix) {
+            HasVariablePrefix hvp = (HasVariablePrefix) assertion;
+            String variablePrefix = hvp.getVariablePrefix();
+            variablePrefixField.setText(variablePrefix == null ? "" : variablePrefix);
+            variablePrefixField.setVisible(true);
+            variablePrefixLabel.setVisible(true);
+        } else {
+            variablePrefixField.setVisible(false);
+            variablePrefixLabel.setVisible(false);
+        }
     }
 
     @Override
     public AT getData(AT assertion) throws ValidationException {
         assertion.setXpathExpression(getXpathExpression());
+        if (assertion instanceof HasVariablePrefix) {
+            HasVariablePrefix hvp = (HasVariablePrefix) assertion;
+            String variablePrefix = variablePrefixField.getText().trim();
+            hvp.setVariablePrefix(variablePrefix.length() < 1 ? null : variablePrefix);
+        }
         return assertion;
     }
 }

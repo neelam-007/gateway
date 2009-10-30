@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * Utility assertion for more easily checking the results of a NonSoapVerifyElementAssertion.
  */
-public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertionBase {
+public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertionBase implements HasVariablePrefix {
     private static final String META_INITIALIZED = NonSoapCheckVerifyResultsAssertion.class.getName() + ".metadataInitialized";
 
     protected String variablePrefix = "";
@@ -142,13 +142,6 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
         this.permittedDigestMethodUris = permittedDigestMethodUris;
     }
 
-    /**
-     * Prepend the current variable prefix, if any, to the specified variable name.  If the current prefix is
-     * null or empty this will return the input variable name unchanged.
-     *
-     * @param var  the variable name to prefix.  Required.
-     * @return the variable name with the current prefix prepended, along with a dot; or the variable name unchanged if the prefix is currently null or empty.
-     */
     public String prefix(String var) {
         String prefix = getVariablePrefix();
         return prefix == null || prefix.trim().length() < 1 ? var : prefix.trim() + "." + var;

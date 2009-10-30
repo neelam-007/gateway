@@ -11,7 +11,7 @@ import com.l7tech.policy.validator.XpathBasedAssertionValidator;
 /**
  * Immediately verify one or more signed Elements in a non-SOAP XML message.
  */
-public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase implements SetsVariables {
+public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase implements SetsVariables, HasVariablePrefix {
     private static final String META_INITIALIZED = NonSoapVerifyElementAssertion.class.getName() + ".metadataInitialized";
     public static final String VAR_ELEMENTS_VERIFIED = "elementsVerified";
     public static final String VAR_SIGNATURE_METHOD_URIS = "signatureMethodUris";

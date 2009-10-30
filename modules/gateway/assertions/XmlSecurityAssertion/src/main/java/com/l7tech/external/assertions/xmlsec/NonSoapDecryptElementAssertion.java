@@ -11,7 +11,7 @@ import com.l7tech.policy.validator.XpathBasedAssertionValidator;
 /**
  * Immediately decrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
  */
-public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase implements SetsVariables {
+public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase implements SetsVariables, HasVariablePrefix {
     private static final String META_INITIALIZED = NonSoapDecryptElementAssertion.class.getName() + ".metadataInitialized";
     
     public static final String VAR_ELEMENTS_DECRYPTED = "elementsDecrypted";
