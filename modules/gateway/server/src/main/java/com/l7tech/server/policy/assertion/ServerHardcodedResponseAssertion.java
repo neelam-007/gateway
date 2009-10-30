@@ -59,7 +59,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         } catch (IOException e) {
             // fla bugfix, instead of breaking policy completly, log the problem (which was not done before)
             // as warning and fallback on a safe value
-            logger.log(Level.WARNING, "Error parsing content type. Falling back on text/plain", e);
+            logger.log(Level.WARNING, "Error parsing content type. Falling back on text/plain: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             try {
                 ctype = ContentTypeHeader.parseValue("text/plain");
             } catch (IOException e1) {
