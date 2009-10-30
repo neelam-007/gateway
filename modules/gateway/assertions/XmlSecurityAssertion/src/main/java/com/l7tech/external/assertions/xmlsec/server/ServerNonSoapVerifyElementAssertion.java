@@ -35,10 +35,7 @@ import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -145,6 +142,8 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
             throw new InvalidDocumentFormatException("KeyInfo element not found in Signature Element");
 
         X509Certificate signingCert = resolveKeyInfoByX509Data(keyInfoElement, securityTokenResolver);
+        if (signingCert == null)
+            throw new SignatureException("Unable to determine signing certificate");
 
         PublicKey signingKey = signingCert.getPublicKey();
 
