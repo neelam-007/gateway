@@ -2,8 +2,9 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.util.SwingWorker;
-import com.l7tech.uddi.WsdlInfo;
+import com.l7tech.uddi.WsdlPortInfoImpl;
 import com.l7tech.uddi.UDDINamedEntity;
+import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.table.WsdlTable;
 import com.l7tech.console.table.WsdlTableSorter;
@@ -78,6 +79,13 @@ public class SearchUddiDialog extends JDialog {
         initialize();
     }
 
+    public SearchUddiDialog(JDialog parent, SEARCH_TYPE searchType) throws FindException {
+        super(parent, resources.getString("window.title"), true);
+        this.searchType = searchType;
+        this.onlyAvailableRegistry = null;
+        initialize();
+    }
+
     public SearchUddiDialog(JFrame parent, SEARCH_TYPE searchType) throws FindException {
         super(parent, resources.getString("window.title"), true);
         this.searchType = searchType;
@@ -147,7 +155,7 @@ public class SearchUddiDialog extends JDialog {
 
                         int row = wsdlTable.getSelectedRow();
                         if (row != -1) {
-                            WsdlInfo si = (WsdlInfo) wsdlTable.getTableSorter().getData(row);
+                            WsdlPortInfo si = (WsdlPortInfo) wsdlTable.getTableSorter().getData(row);
                             fireItemSelectedEvent(si);
                         }
                         dispose();
@@ -277,15 +285,15 @@ public class SearchUddiDialog extends JDialog {
                         Object result = worker.get();
                         if (result == null)
                             return;    // canceled
-                        if (result instanceof WsdlInfo[]) {
+                        if (result instanceof WsdlPortInfo[]) {
                             // store prefs on successful search
                             preferences.putProperty(UDDI_REGISTRY, registryName);
 
                             boolean searchTruncated = false;
                             Vector urlList = new Vector();
-                            for (int i = 0; i < ((WsdlInfo[])result).length; i++) {
-                                final WsdlInfo wi = ((WsdlInfo[])result)[i];
-                                if (WsdlInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(wi.getWsdlUrl())) {
+                            for (int i = 0; i < ((WsdlPortInfo[])result).length; i++) {
+                                final WsdlPortInfo wi = ((WsdlPortInfoImpl[])result)[i];
+                                if (WsdlPortInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(wi.getWsdlUrl())) {
                                     // Flag value indicating that search results were truncated
                                     searchTruncated = true;
                                 } else {
@@ -314,7 +322,7 @@ public class SearchUddiDialog extends JDialog {
                             List<BusinessEntityTableRow> rows = new ArrayList<BusinessEntityTableRow>();
                             for (int i = 0; i < ((UDDINamedEntity[]) result).length; i++) {
                                 final UDDINamedEntity entity = ((UDDINamedEntity[]) result)[i];
-                                if (WsdlInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(entity.getName())) {
+                                if (WsdlPortInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(entity.getName())) {
                                     // Flag value indicating that search results were truncated
                                     searchTruncated = true;
                                 } else {

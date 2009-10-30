@@ -157,7 +157,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * This method will only return true after setWsdlXml has been called and before parsedWsdl() is called
      *
      * @return true if the wsdl xml has been reset, false otherwise
-     */
+     */            //TODO DELETE WHEN UDDICoordinator is completed
     public boolean isParsedWsdlNull(){
         return _parsedWsdl == null;
     }

@@ -18,6 +18,7 @@ import java.util.Set;
  * </ul>
  *
  * @author Steve Jones
+ * @author darmstrong
  */
 public interface UDDIClient extends Closeable {
 
@@ -87,7 +88,7 @@ public interface UDDIClient extends Closeable {
      * @return The collection of keys/names/urls
      * @throws UDDIException if an error occurs
      */
-    Collection<UDDINamedEntity> listServiceWsdls(String serviceName, boolean caseSensitive, int offset, int maxRows) throws UDDIException;
+    Collection<WsdlPortInfo> listServiceWsdls(String serviceName, boolean caseSensitive, int offset, int maxRows) throws UDDIException;
 
     /**
      * List BusinessEntities
@@ -138,7 +139,7 @@ public interface UDDIClient extends Closeable {
      * @param businessService the Business Service to publish
      * @return true if the BusinessService was created, false otherwise
      * @throws UDDIException any problems searching / publishing UDDI
-     */
+     */     //todo move out of interface as it exposes jax-ws classes
     boolean publishBusinessService(final BusinessService businessService) throws UDDIException;
 
     /**
@@ -155,7 +156,7 @@ public interface UDDIClient extends Closeable {
      * @param tModelToPublish the tModel to publish.
      * @return true if the TModel was published, false otherwise i.e. it was found already in the UDDI Registry
      * @throws UDDIException any problems searching / publishing UDDI
-     */
+     *///todo move out of interface as it exposes jax-ws classes
     boolean publishTModel(final TModel tModelToPublish) throws UDDIException;
 
     /**
@@ -163,7 +164,7 @@ public interface UDDIClient extends Closeable {
      * @param tModelKey String tModelKey of the tModel to get
      * @return TModel of the supplied key. Null if not found
      * @throws UDDIException if any problem retireving the TModel from the UDDI registry
-     */
+     *///todo move out of interface as it exposes jax-ws classes
     TModel getTModel(final String tModelKey) throws UDDIException;
 
     /**
@@ -171,8 +172,17 @@ public interface UDDIClient extends Closeable {
      * @param serviceKey String serviceKey of the BusinessService to get
      * @return BusinessService of the supplied key. Null if not found
      * @throws UDDIException if any problem retireving the BusinessService from the UDDI registry
-     */
+     *///todo move out of interface as it exposes jax-ws classes
     BusinessService getBusinessService(final String serviceKey) throws UDDIException;
+
+    /**
+     * Get the name of a BusinessEntity from UDDI
+     *
+     * @param businessKey String key of the BusinessEntity in UDDI
+     * @return String name of business, or null if not found
+     * @throws UDDIException an problems searching UDDI
+     */
+    String getBusinessEntityName(String businessKey) throws UDDIException;
 
     /**
      * Delete a TModel from the UDDI Registry.
@@ -191,14 +201,14 @@ public interface UDDIClient extends Closeable {
      *
      * @param tModel TModel to delete, iff no BusinessService references it
      * @throws UDDIException if any problem during the find or the attempt to delete
-     */
+     *///todo move out of interface as it exposes jax-ws classes
     public void deleteTModel(TModel tModel) throws UDDIException;
 
     /**
      * Delete all tModels which match the supplied TModel
      * @param prototype the tModel used to find tModels in the UDDI registry, which will then be deleted
      * @throws UDDIException if any problem during the attempt to find / delete 
-     */
+     *///todo move out of interface as it exposes jax-ws classes
     void deleteMatchingTModels(final TModel prototype) throws UDDIException;
 
     /**
@@ -223,7 +233,7 @@ public interface UDDIClient extends Closeable {
      *
      * @param businessServices Collection<BusinessService> all BusinessServices to delete. Required.
      * @throws UDDIException any problems searching / deleting
-     */
+     *///todo move out of interface as it exposes jax-ws classes
     void deleteBusinessServices(final Collection<BusinessService> businessServices) throws UDDIException;
 
     /**

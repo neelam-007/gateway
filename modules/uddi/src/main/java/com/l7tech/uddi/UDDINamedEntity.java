@@ -3,7 +3,6 @@ package com.l7tech.uddi;
 /**
  * Interface for UDDI entities with keys and names.
  *
- * //todo why do we need this? to not depend on jax-ws generated uddi classes?
  * @author Steve Jones
 */
 public interface UDDINamedEntity {

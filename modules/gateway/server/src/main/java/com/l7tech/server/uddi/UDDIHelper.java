@@ -1,10 +1,7 @@
 package com.l7tech.server.uddi;
 
-import com.l7tech.uddi.UDDINamedEntity;
-import com.l7tech.uddi.UDDIClient;
-import com.l7tech.uddi.UDDIException;
-import com.l7tech.uddi.WsdlInfo;
-import com.l7tech.uddi.UDDIClientFactory;
+import com.l7tech.uddi.WsdlPortInfoImpl;
+import com.l7tech.uddi.*;
 import com.l7tech.util.Config;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 
@@ -76,42 +73,42 @@ public class UDDIHelper {
 
         if (maxedOutSearch) {
             uddiNamedEntities.subList(resultRowsMax, uddiNamedEntities.size()).clear();
-            uddiNamedEntities.add( WsdlInfo.MAXED_OUT_SEARCH_RESULT_ENTITY );
+            uddiNamedEntities.add( WsdlPortInfoImpl.MAXED_OUT_SEARCH_RESULT_ENTITY );
         }
 
         return uddiNamedEntities.toArray(new UDDINamedEntity[uddiNamedEntities.size()]);
     }
 
-    public WsdlInfo[] getWsdlByServiceName( final UDDIClient uddiClient,
-                                            final String namePattern,
-                                            final boolean caseSensitive ) throws UDDIException {
+    public WsdlPortInfo[] getWsdlByServiceName(final UDDIClient uddiClient,
+                                               final String namePattern,
+                                               final boolean caseSensitive) throws UDDIException {
         // % denotes wildcard of string (any number of characters), underscore denotes wildcard of a single character
 
-        final List<WsdlInfo> wsdlInfos = new ArrayList<WsdlInfo>();
+        final List<WsdlPortInfo> wsdlPortInfos = new ArrayList<WsdlPortInfo>();
         final int resultRowsMax = getResultRowsMax();
         final int resultBatchSize = getResultBatchSize();
 
-        for (int i=0; wsdlInfos.size() < resultRowsMax; i++) {
-            int head = i*resultBatchSize;
+        for (int i = 0; wsdlPortInfos.size() < resultRowsMax; i++) {
+            int head = i * resultBatchSize;
             if (head > 0) head++; // one based
 
-            Collection<UDDINamedEntity> services =
+            Collection<WsdlPortInfo> foundWsdlPortInfos =
                     uddiClient.listServiceWsdls(namePattern, caseSensitive, head, resultBatchSize);
 
-            addWsdlInfos(wsdlInfos, services);
+            wsdlPortInfos.addAll(foundWsdlPortInfos);
 
             if (!uddiClient.listMoreAvailable())
                 break;
         }
 
-        boolean maxedOutSearch = wsdlInfos.size()>=resultRowsMax || uddiClient.listMoreAvailable();
+        boolean maxedOutSearch = wsdlPortInfos.size() >= resultRowsMax || uddiClient.listMoreAvailable();
 
         if (maxedOutSearch) {
-            wsdlInfos.subList(resultRowsMax, wsdlInfos.size()).clear();
-            wsdlInfos.add( WsdlInfo.MAXED_OUT_SEARCH_RESULT );
+            wsdlPortInfos.subList(resultRowsMax, wsdlPortInfos.size()).clear();
+            wsdlPortInfos.add(WsdlPortInfoImpl.MAXED_OUT_SEARCH_RESULT);
         }
 
-        return wsdlInfos.toArray(new WsdlInfo[wsdlInfos.size()]);
+        return wsdlPortInfos.toArray(new WsdlPortInfoImpl[wsdlPortInfos.size()]);
     }
 
     /**
@@ -136,10 +133,10 @@ public class UDDIHelper {
     /**
      * Process the URLs of the given services.
      */
-    private void addWsdlInfos( final List<WsdlInfo> wsdlList,
+    private void addWsdlInfos( final List<WsdlPortInfo> wsdlListInfo,
                                final Collection<UDDINamedEntity> services) {
         for ( UDDINamedEntity info : services ) {
-            wsdlList.add(new WsdlInfo(info.getName(), info.getWsdlUrl()));
+            wsdlListInfo.add(new WsdlPortInfoImpl(info.getName(), info.getWsdlUrl()));
         }
     }
 

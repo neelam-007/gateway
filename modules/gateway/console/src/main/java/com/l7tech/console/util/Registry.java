@@ -65,51 +65,81 @@ public abstract class Registry {
     protected Registry() {
     }
 
+    /**
+     * Is the admin context available? Must return true for each getXXXAdmin() method to return successfully.
+     * @return true if the admin context is available
+     */
     public abstract boolean isAdminContextPresent();
 
     /**
-     * @return the {@link IdentityAdmin} implementation
+     * @return the {@link IdentityAdmin} implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract AdminLogin getAdminLogin();
 
     /**
-     * @return the {@link IdentityAdmin} implementation
+     * @return the {@link IdentityAdmin} implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract IdentityAdmin getIdentityAdmin();
 
     /**
-     * @return the {@link IdentityProviderConfig} object for the internal identity provider
+     * @return the {@link IdentityProviderConfig} object for the internal identity provider. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public IdentityProviderConfig getInternalProviderConfig();
 
     /**
-     * @return the service managerr
+     * @return the service manager. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public ServiceAdmin getServiceManager();
 
-    abstract public FolderAdmin getFolderAdmin();
     /**
-     * @return the jms provider manager
+     * @return the folder admin. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    abstract public FolderAdmin getFolderAdmin();
+
+    /**
+     * @return the jms provider manager. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public JmsAdmin getJmsManager();
 
      /**
-     * @return the JDBC Connection and Pool managers
+     * @return the JDBC Connection and Pool managers. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public JdbcAdmin getJdbcConnectionAdmin();
 
+    /**
+    * @return the Ftp Admin. Never null.
+    * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+    */
     abstract public FtpAdmin getFtpManager();
 
+    /**
+    * @return the trusted cert admin. Never null.
+    * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+    */
     abstract public TrustedCertAdmin getTrustedCertManager();
 
-    abstract public SchemaAdmin getSchemaAdmin();
     /**
-     * @return the custome assertions registrar
+    * @return the schema admin. Never null.
+    * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+    */
+    abstract public SchemaAdmin getSchemaAdmin();
+
+    /**
+     * @return the custome assertions registrar. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public CustomAssertionsRegistrar getCustomAssertionsRegistrar();
 
     /**
-     * @return the audit admin interface implementation.
+     * @return the audit admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public AuditAdmin getAuditAdmin();
 
@@ -119,61 +149,76 @@ public abstract class Registry {
     abstract public ClusterStatusAdmin getClusterStatusAdmin();
 
     /**
-     * @return the kerberos admin interface implementation.
+     * @return the kerberos admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public KerberosAdmin getKerberosAdmin();
 
     /**
-     * @return the RBAC admin interface implementation.
+     * @return the RBAC admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract RbacAdmin getRbacAdmin();
 
     /**
-     * @return the transport admin interface implementation.
+     * @return the transport admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract TransportAdmin getTransportAdmin();
 
     /**
-     * @return the email listener admin interface implementation.
+     * @return the email listener admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract EmailListenerAdmin getEmailListenerAdmin();
 
     /**
-     * @return the email admin interface implementation.
+     * @return the email admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract EmailAdmin getEmailAdmin();
 
     /**
-     * @return the Policy admin interface implementation.
+     * @return the Policy admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract PolicyAdmin getPolicyAdmin();
 
     /**
-     * @return the security provider implementation.
+     * @return the security provider implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public SecurityProvider getSecurityProvider();
 
+    /**
+     * @return the policy validator implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
     public abstract PolicyValidator getPolicyValidator();
 
     /**
-     * @return the policy path builder factory
+     * @return the policy path builder factory. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract PolicyPathBuilderFactory getPolicyPathBuilderFactory();
 
     /**
      * Get the PolicyFinder to use for policy lookup.
      *
-     * @return The PolicyFinder.
+     * @return The PolicyFinder. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract GuidBasedEntityManager<Policy> getPolicyFinder();
 
     /**
-     * @return the log sink admin interface implementation
+     * @return the log sink admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract LogSinkAdmin getLogSinkAdmin();
 
     /**
-     * @return the UDDI Registry admin interface implementation
+     * @return the UDDI Registry admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent() 
      */
     public abstract UDDIRegistryAdmin getUDDIRegistryAdmin();
 

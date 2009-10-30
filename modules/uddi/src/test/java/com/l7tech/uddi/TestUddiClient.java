@@ -32,6 +32,11 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
+    public String getBusinessEntityName(String businessKey) throws UDDIException {
+        return null;
+    }
+
+    @Override
     public boolean publishBusinessService(BusinessService businessService) throws UDDIException {
         final String key = "uddi:"+UUID.randomUUID();
         businessService.setServiceKey(key);
@@ -158,7 +163,7 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
-    public Collection<UDDINamedEntity> listServiceWsdls(String serviceName, boolean caseSensitive, int offset, int maxRows) throws UDDIException {
+    public Collection<WsdlPortInfo> listServiceWsdls(String serviceName, boolean caseSensitive, int offset, int maxRows) throws UDDIException {
         return null;
     }
 

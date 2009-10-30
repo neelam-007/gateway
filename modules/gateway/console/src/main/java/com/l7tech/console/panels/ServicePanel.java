@@ -24,6 +24,7 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
+import com.l7tech.uddi.WsdlPortInfo;
 
 /**
  * Service panel is the first stage for the Publish Service wizard.
@@ -32,6 +33,7 @@ import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
  * @version $Revision$
  */
 public class ServicePanel extends WizardStepPanel {
+    private WsdlPortInfo wsdlPortInfo;
 
     //- PUBLIC
 
@@ -105,6 +107,7 @@ public class ServicePanel extends WizardStepPanel {
         try {
             PublishServiceWizard.ServiceAndAssertion
               sa = (PublishServiceWizard.ServiceAndAssertion)settings;
+            sa.setWsdlPortInfo(wsdlPortInfo);
             PublishedService publishedService = sa.getService();
 
             publishedService.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
@@ -199,6 +202,7 @@ public class ServicePanel extends WizardStepPanel {
         final String wsdlUrl = wsdlLocationPanel.getWsdlUrl(true);
         try {
             wsdl = wsdlLocationPanel.getWsdl();
+            wsdlPortInfo = wsdlLocationPanel.getWsdlPortInfo();
             if (wsdl != null) {
                 final String resolvedDoc = wsdlLocationPanel.getWsdlContent(0);
 

@@ -243,8 +243,12 @@ public class ServiceUDDISettingsDialog extends JDialog {
     }    
 
     private void enableAndDisableComponents() {
-        if ( canUpdate && uddiServiceControl != null ) {
-            monitoringDisableServicecheckBox.setEnabled( monitoringEnabledCheckBox.isSelected() );
+        if ( canUpdate ) {
+            if( uddiServiceControl != null){
+                monitoringDisableServicecheckBox.setEnabled( monitoringEnabledCheckBox.isSelected() );
+            }
+
+            //configure enable / disable for publish tab
             publishTabEnableDisableComponents();
         } else {
             //publish tab
@@ -266,7 +270,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     }
 
     /**
-     * Validation the view and update model.
+     * Validate the view and update model if valid.
      * @return true if view is valid and can be converted to model, false otherwise
      */
     private boolean viewToModel(){
@@ -313,9 +317,9 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 uddiServiceControl.setDisableServiceOnChange( false );
             }
             try {
-                uddiRegistryAdmin.updateUDDIServiceControlOnly( uddiServiceControl );
-            } catch (UpdateException e) {
-                logger.log(Level.WARNING, "Error updating UDDIServiceControl '" + ExceptionUtils.getMessage(e) + "'.", e);
+                uddiRegistryAdmin.saveUDDIServiceControlOnly( uddiServiceControl );
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Error saving UDDIServiceControl '" + ExceptionUtils.getMessage(e) + "'.", e);
                 DialogDisplayer.showMessageDialog(this, "Error saving UDDI settings: " + ExceptionUtils.getMessage(e)
                         , "Error saving settings", JOptionPane.ERROR_MESSAGE, null);
             }
@@ -413,12 +417,9 @@ public class ServiceUDDISettingsDialog extends JDialog {
         DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, continuation);
     }
 
-    /** @return the UDDIRegistryAdmin interface, or null if not connected or it's unavailable for some other reason */
+    /** @return the UDDIRegistryAdmin interface*/
     private UDDIRegistryAdmin getUDDIRegistryAdmin() {
-        Registry reg = Registry.getDefault();
-        if (!reg.isAdminContextPresent())
-            return null;
-        return reg.getUDDIRegistryAdmin();
+        return Registry.getDefault().getUDDIRegistryAdmin();
     }
     
     private boolean areUnsavedChangesToThisPolicy() {

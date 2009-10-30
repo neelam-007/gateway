@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.PersistentEntity;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -19,7 +20,57 @@ public class UDDIServiceControl extends PersistentEntityImp {
 
     //- PUBLIC
 
-    @Column(name = "published_service_oid")
+    public UDDIServiceControl(long publishedServiceOid,
+                              long uddiRegistryOid,
+                              String uddiBusinessKey,
+                              String uddiServiceKey,
+                              String uddiServiceName,
+                              String wsdlServiceName,
+                              String wsdlPortName,
+                              String wsdlPortBinding,
+                              boolean underUddiControl) {
+        this.publishedServiceOid = publishedServiceOid;
+        this.uddiRegistryOid = uddiRegistryOid;
+        this.uddiBusinessKey = uddiBusinessKey;
+        this.uddiServiceKey = uddiServiceKey;
+        this.uddiServiceName = uddiServiceName;
+        this.wsdlServiceName = wsdlServiceName;
+        this.wsdlPortName = wsdlPortName;
+        this.wsdlPortBinding = wsdlPortBinding;
+        this.underUddiControl = underUddiControl;
+    }
+
+    public UDDIServiceControl() {
+    }
+
+    /**
+     * Used to determine if 'this' UDDIProxiedService has had a property modified which should not be modified once
+     * the entity has been created based on application logic
+     *
+     * All properties can be modified except those which define the WSDL at a high level - the uddi registry
+     * and the business entity. As there is a 1:1 mapping from UDDIServiceControl there is no use case where the
+     * published service oid can change.
+     * Values like the business service key and wsdl port can change, as its still the same WSDL.
+     * //todo go over this 
+     * @param original UDDIProxiedService last known version of 'this' UDDIProxiedService used to compare what has
+     * changed in 'this'
+     */
+    public void throwIfFinalPropertyModified(final UDDIServiceControl original){
+        testProperty("published service oid", Long.toString(this.getPublishedServiceOid()), Long.toString(original.getPublishedServiceOid()));
+        testProperty("registry oid", Long.toString(this.getUddiRegistryOid()), Long.toString(original.getUddiRegistryOid()));
+        testProperty("business key", this.getUddiBusinessKey(), original.getUddiBusinessKey());
+    }
+
+    private void testProperty(final String propName, final String propValue, final String lastKnownValue){
+        if(propValue == null)
+            throw new IllegalStateException(propName + " property must be set");
+        //the service identifier is not allowed to be modified by client code once saved
+        if(!lastKnownValue.equals(propValue)){
+            throw new IllegalStateException("It is not possible to modify property " + propName);
+        }
+    }
+
+    @Column(name = "published_service_oid", updatable = false)
     public long getPublishedServiceOid() {
         return publishedServiceOid;
     }
@@ -28,7 +79,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.publishedServiceOid = publishedServiceOid;
     }
 
-    @Column(name = "uddi_registry_oid")
+    @Column(name = "uddi_registry_oid", updatable = false)
     public long getUddiRegistryOid() {
         return uddiRegistryOid;
     }
@@ -37,7 +88,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.uddiRegistryOid = uddiRegistryOid;
     }
 
-    @Column(name = "uddi_business_key")
+    @Column(name = "uddi_business_key", updatable = false)
     public String getUddiBusinessKey() {
         return uddiBusinessKey;
     }
@@ -98,15 +149,6 @@ public class UDDIServiceControl extends PersistentEntityImp {
 
     public void setWsdlPortBinding( final String wsdlPortBinding ) {
         this.wsdlPortBinding = wsdlPortBinding;
-    }
-
-    @Column(name = "wsdl_port_binding_namespace")
-    public String getWsdlPortBindingNamespace() {
-        return wsdlPortBindingNamespace;
-    }
-
-    public void setWsdlPortBindingNamespace( final String wsdlPortBindingNamespace ) {
-        this.wsdlPortBindingNamespace = wsdlPortBindingNamespace;
     }
 
     @Column(name = "under_uddi_control")
@@ -181,7 +223,6 @@ public class UDDIServiceControl extends PersistentEntityImp {
     private String wsdlServiceName;
     private String wsdlPortName;
     private String wsdlPortBinding;
-    private String wsdlPortBindingNamespace;
     private boolean underUddiControl;
     private String proxyBindingKey;
     private boolean monitoringEnabled;

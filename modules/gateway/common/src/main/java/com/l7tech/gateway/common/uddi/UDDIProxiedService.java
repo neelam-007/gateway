@@ -113,7 +113,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
         return super.getVersion();
     }
 
-    @Column(name = "published_service_oid")
+    @Column(name = "published_service_oid", updatable = false)
     public long getServiceOid() {
         return serviceOid;
     }
@@ -122,7 +122,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
         this.serviceOid = serviceOid;
     }
 
-    @Column(name = "uddi_registry_oid")
+    @Column(name = "uddi_registry_oid", updatable = false)
     public long getUddiRegistryOid() {
         return uddiRegistryOid;
     }
@@ -131,7 +131,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
         this.uddiRegistryOid = uddiRegistryOid;
     }
 
-    @Column(name = "uddi_business_key")
+    @Column(name = "uddi_business_key", updatable = false)
     public String getUddiBusinessKey() {
         return uddiBusinessKey;
     }
@@ -140,7 +140,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
         this.uddiBusinessKey = uddiBusinessKey;
     }
 
-    @Column(name = "uddi_business_name")
+    @Column(name = "uddi_business_name", updatable = false)
     public String getUddiBusinessName() {
         return uddiBusinessName;
     }
@@ -149,7 +149,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
         this.uddiBusinessName = uddiBusinessName;
     }
 
-    @Column(name = "general_keyword_service_identifier")
+    @Column(name = "general_keyword_service_identifier", updatable = false)
     public String getGeneralKeywordServiceIdentifier() {
         return generalKeywordServiceIdentifier;
     }
@@ -167,7 +167,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
         this.updateProxyOnLocalChange = updateProxyOnLocalChange;
     }
 
-    @Column(name = "created_from_existing")
+    @Column(name = "created_from_existing", updatable = false)
     public boolean isCreatedFromExistingService() {
         return createdFromExistingService;
     }

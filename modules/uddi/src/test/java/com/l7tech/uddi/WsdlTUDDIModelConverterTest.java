@@ -130,6 +130,25 @@ public class WsdlTUDDIModelConverterTest {
         //bug is fixed, can successfully convert into UDDI data model
     }
 
+//    @Test
+//    public void testProblemWsdl() throws Exception{
+//        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("problemwsdl.wsdl"));
+//
+//        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+//        final String gatewayURL = "http://localhost:8080/3828382";
+//        final String targetNameSpace = wsdl.getTargetNamespace();
+//
+//        final int serviceOid = 3828382;
+//        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid, Integer.toString(serviceOid));
+//        Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+//
+//        List<BusinessService> services = servicesAndTModels.left;
+//        Assert.assertEquals("Incorrect number of Business Services found", 1, services.size());
+//        //print for debugging
+//        printBusinessService(services);
+//        //bug is fixed, can successfully convert into UDDI data model
+//    }
+
     /**
      * Confirms that the tModel created confirms to
      * http://www.oasis-open.org/committees/uddi-spec/doc/tn/uddi-spec-tc-tn-wsdl-v2.htm#_Toc76437775

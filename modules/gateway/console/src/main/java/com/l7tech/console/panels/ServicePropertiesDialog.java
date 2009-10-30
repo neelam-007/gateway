@@ -17,10 +17,13 @@ import com.l7tech.console.util.WsdlComposer;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
 import org.w3c.dom.Document;
@@ -45,8 +48,7 @@ import java.util.regex.Pattern;
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Jan 22, 2007<br/>
+ * @author flascell<br/>
  */
 public class ServicePropertiesDialog extends JDialog {
     private PublishedService subject;
@@ -81,8 +83,21 @@ public class ServicePropertiesDialog extends JDialog {
     private JTextField oidField;
     private JCheckBox enableWSSSecurityProcessingCheckBox;
     private JLabel readOnlyWarningLabel;
+    private JButton selectButton;
+    private JButton clearButton;
+    private JCheckBox wsdlUnderUDDIControlCheckBox;
+    private JButton serviceUDDISettingsButton;
+    private JTextField uddiRegistryTextField;
+    private JTextField bsNameTextField;
+    private JTextField bsKeyTextField;
+    private JTextField wsdlPortTextField;
+    private JLabel businessServiceNameLabel;
+    private JLabel businessServiceKeyLabel;
+    private JLabel wsdlPortLabel;
+    private JLabel uddiRegistryLabel;
     private String ssgURL;
     private final boolean canUpdate;
+    private UDDIServiceControl uddiServiceControl;
 
     public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean hasUpdatePermission) {
         super(owner, true);
@@ -104,6 +119,7 @@ public class ServicePropertiesDialog extends JDialog {
         setTitle("Published Service Properties");
 
         nameField.setDocument(new FilterDocument(255, new FilterDocument.Filter() {
+                                                             @Override
                                                              public boolean accept(String str) {
                                                                  return str != null;
                                                              }
@@ -141,6 +157,7 @@ public class ServicePropertiesDialog extends JDialog {
                 uriField.setText(existinguri);
             }
             ActionListener toggleurifield = new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     if (noURIRadio.isSelected()) {
                         uriField.setEnabled(false);
@@ -218,24 +235,28 @@ public class ServicePropertiesDialog extends JDialog {
         }
         // event handlers
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
 
         helpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 help();
             }
         });
 
         uriField.addKeyListener(new KeyListener() {
+            @Override
             public void keyPressed(KeyEvent e) {
                 //always start with "/" for URI
                 if (!uriField.getText().startsWith("/")) {
@@ -243,13 +264,17 @@ public class ServicePropertiesDialog extends JDialog {
                     uriField.setText("/" + uri);
                 }
             }
+            @Override
             public void keyReleased(KeyEvent e) {
                 updateURL();
             }
+            @Override
             public void keyTyped(KeyEvent e) {}
         });
         uriField.addFocusListener(new FocusListener() {
+            @Override
             public void focusGained(FocusEvent e) {}
+            @Override
             public void focusLost(FocusEvent e) {
                 if (customURIRadio.isSelected()) {
                     String url = updateURL();
@@ -260,49 +285,127 @@ public class ServicePropertiesDialog extends JDialog {
         });
         if (!subject.isInternal()) {
             noURIRadio.addActionListener(new ActionListener(){
+                @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     updateURL();
                 }
             });
         }
         customURIRadio.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 updateURL();
             }
         });
 
         resetWSDLButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 resetWSDL();
             }
         });
 
         editWSDLButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 editWsdl();
             }
         });
 
+        //UDDI tab
+        serviceUDDISettingsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final ServiceUDDISettingsDialog dlg =
+                        new ServiceUDDISettingsDialog(ServicePropertiesDialog.this, subject, canUpdate);
+                dlg.pack();
+                Utilities.centerOnScreen(dlg);
+                DialogDisplayer.display(dlg);
+            }
+        });
+
+        selectButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    SearchUddiDialog swd = new SearchUddiDialog(ServicePropertiesDialog.this, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH);
+                    swd.addSelectionListener(new SearchUddiDialog.ItemSelectedListener() {
+                        @Override
+                        public void itemSelected(Object item) {
+                            //todo need to update to return correct type of object with all info required
+                        }
+                    });
+                    swd.setSize(700, 500);
+                    swd.setModal(true);
+                    DialogDisplayer.display(swd);
+                } catch (FindException e1) {
+                    showErrorMessage("Cannot search UDDI", "Unable to show search UDDI dialog", e1, true);
+                }
+            }
+        });
+
         Utilities.setEscAction(this, new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
 
         Utilities.setEnterAction(this, new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
 
+        try {
+            uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(subject.getOid());
+        } catch (FindException e) {
+            uddiServiceControl = null;
+        }
+
         updateURL();
 
-        //ensure appropriate read only status if this service is internal
-        applyReadOnlySettings(subject.isInternal());
+        final boolean underUDDIControl = uddiServiceControl != null && uddiServiceControl.isUnderUddiControl();
+
+        //ensure appropriate read only status if this service is internal or if the WSDL is under UDDI control
+        applyReadOnlySettings(subject.isInternal() || underUDDIControl);
 
         //apply permissions last
         applyPermissions();
 
+        modelToView();
+    }
+
+    /**
+     * Model to View - for UDDI dialog initially
+     */
+    private void modelToView(){
+
+        if(uddiServiceControl != null){
+            try {
+                final UDDIRegistry uddiRegistry = Registry.getDefault().getUDDIRegistryAdmin().findByPrimaryKey(uddiServiceControl.getUddiRegistryOid());
+                uddiRegistryTextField.setText(uddiRegistry.getName());
+            } catch (FindException e) {
+                showErrorMessage("Cannot find UDDI Registry", "UDDI Registry cannot be found", e, true);
+                return;
+            }
+
+            bsNameTextField.setText(uddiServiceControl.getUddiBusinessName());
+            bsKeyTextField.setText(uddiServiceControl.getUddiBusinessKey());
+            wsdlPortTextField.setText(uddiServiceControl.getWsdlPortName());
+            wsdlUnderUDDIControlCheckBox.setSelected(uddiServiceControl.isUnderUddiControl());
+            
+        }
+    }
+
+    private void showErrorMessage(String title, String msg, Throwable e, boolean log) {
+        showErrorMessage(title, msg, e, null, log);
+    }
+
+    private void showErrorMessage(String title, String msg, Throwable e, Runnable continuation, boolean log) {
+        if(log) logger.log(Level.WARNING, msg, e);
+        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, continuation);
     }
 
     private static boolean areUnsavedChangesToThisPolicy(PublishedService subject) {
@@ -494,6 +597,14 @@ public class ServicePropertiesDialog extends JDialog {
             else
                 Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(subject, documents);
 
+            //uddi settings
+            if(uddiServiceControl != null){
+                if(wsdlUnderUDDIControlCheckBox.isSelected() != uddiServiceControl.isUnderUddiControl()){
+                    uddiServiceControl.setUnderUddiControl(wsdlUnderUDDIControlCheckBox.isSelected());
+                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
+                }
+            }
+
             //we are good to close the dialog
             wasoked = true;
             cancel();
@@ -593,6 +704,7 @@ public class ServicePropertiesDialog extends JDialog {
             }
 
             Functions.UnaryVoid<Document> editCallback = new Functions.UnaryVoid<Document>() {
+                @Override
                 public void call(Document wsdlDocument) {
                     // record info
                     newWSDL = wsdlDocument;
@@ -619,6 +731,7 @@ public class ServicePropertiesDialog extends JDialog {
         rwd.pack();
         Utilities.centerOnScreen(rwd);
         DialogDisplayer.display(rwd, new Runnable() {
+            @Override
             public void run() {
                 Wsdl wsdl = rwd.getWsdl();
                 if (wsdl != null) {

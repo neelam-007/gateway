@@ -3,8 +3,9 @@ package com.l7tech.server.service;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.uddi.UDDIRegistryInfo;
-import com.l7tech.uddi.WsdlInfo;
+import com.l7tech.uddi.WsdlPortInfoImpl;
 import com.l7tech.uddi.UDDINamedEntity;
+import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
 import com.l7tech.wsdl.Wsdl;
@@ -240,12 +241,12 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @throws FindException
      */
     @Override
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException {
-        WsdlInfo[] siList = new WsdlInfo[3];
+    public WsdlPortInfo[] findWsdlUrlsFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException {
+        WsdlPortInfo[] siList = new WsdlPortInfo[3];
 
-        siList[0] = new WsdlInfo("Google Service", "http://api.google.com/GoogleSearch.wsdl");
-        siList[1] = new WsdlInfo("Delayed Quote Service", "http://services.xmethods.net/soap/urn:xmethods-delayed-quotes.wsdl");
-        siList[2] = new WsdlInfo("Stock Quote Service", "http://paris/wsdl/StockQuote_WSDL.wsdl");
+        siList[0] = new WsdlPortInfoImpl("Google Service", "http://api.google.com/GoogleSearch.wsdl");
+        siList[1] = new WsdlPortInfoImpl("Delayed Quote Service", "http://services.xmethods.net/soap/urn:xmethods-delayed-quotes.wsdl");
+        siList[2] = new WsdlPortInfoImpl("Stock Quote Service", "http://paris/wsdl/StockQuote_WSDL.wsdl");
 
         return siList;
     }

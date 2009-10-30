@@ -10,8 +10,8 @@ import com.l7tech.policy.Policy;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.uddi.UDDIRegistryInfo;
-import com.l7tech.uddi.WsdlInfo;
 import com.l7tech.uddi.UDDINamedEntity;
+import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -157,7 +157,7 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      */
     @Transactional(readOnly = true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
-    WsdlInfo[] findWsdlUrlsFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException;
+    WsdlPortInfo[] findWsdlUrlsFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException;
 
     /**
      * Find all Businesses from the UDDI Registry given the service name pattern.

@@ -1,6 +1,7 @@
 package com.l7tech.console.table;
 
-import com.l7tech.uddi.WsdlInfo;
+import com.l7tech.uddi.WsdlPortInfo;
+
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Logger;
 import java.util.Vector;
@@ -15,7 +16,8 @@ import java.util.Comparator;
 public class WsdlTableSorter extends FilteredDefaultTableModel {
 
     public static final int WSDL_TABLE_SERVICE_NAME_COLUMN_INDEX = 0;
-    public static final int WSDL_TABLE_WSDL_COLUMN_INDEX = 1;
+    public static final int WSDL_PORT_COLUMN_INDEX = 1;
+    public static final int WSDL_TABLE_WSDL_COLUMN_INDEX = 2;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private boolean ascending = true;
@@ -136,10 +138,13 @@ public class WsdlTableSorter extends FilteredDefaultTableModel {
 
         switch (col) {
             case WSDL_TABLE_SERVICE_NAME_COLUMN_INDEX:
-                return ((WsdlInfo) sortedData[row]).getName();
+                return ((WsdlPortInfo) sortedData[row]).getBusinessServiceName();
+
+            case WSDL_PORT_COLUMN_INDEX:
+                return ((WsdlPortInfo) sortedData[row]).getWsdlPortName();
 
             case WSDL_TABLE_WSDL_COLUMN_INDEX:
-                return ((WsdlInfo) sortedData[row]).getWsdlUrl();
+                return ((WsdlPortInfo) sortedData[row]).getWsdlUrl();
 
             default:
                 throw new IllegalArgumentException("Bad Column");
@@ -173,6 +178,7 @@ public class WsdlTableSorter extends FilteredDefaultTableModel {
          * @param b The other one of the two objects to be compared.
          * @return -1 if a > b, 0 if a = b, and 1 if a < b.
          */
+        @Override
         public int compare(Object a, Object b) {
 
             Object elementA = new Object();
@@ -180,13 +186,17 @@ public class WsdlTableSorter extends FilteredDefaultTableModel {
 
             switch (column) {
                 case WSDL_TABLE_SERVICE_NAME_COLUMN_INDEX:
-                    elementA = ((WsdlInfo) a).getName();
-                    elementB = ((WsdlInfo) b).getName();
+                    elementA = ((WsdlPortInfo) a).getBusinessServiceName();
+                    elementB = ((WsdlPortInfo) b).getBusinessServiceName();
                     break;
 
+                case WSDL_PORT_COLUMN_INDEX:
+                    elementA = ((WsdlPortInfo) a).getWsdlPortName();
+                    elementB = ((WsdlPortInfo) b).getWsdlPortName();
+                    break;
                 case WSDL_TABLE_WSDL_COLUMN_INDEX:
-                    elementA = ((WsdlInfo) a).getWsdlUrl();
-                    elementB = ((WsdlInfo) b).getWsdlUrl();
+                    elementA = ((WsdlPortInfo) a).getWsdlUrl();
+                    elementB = ((WsdlPortInfo) b).getWsdlUrl();
                     break;
 
                 default:

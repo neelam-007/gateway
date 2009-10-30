@@ -16,7 +16,7 @@ import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.util.*;
-import com.l7tech.uddi.WsdlInfo;
+import com.l7tech.uddi.WsdlPortInfo;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -60,6 +60,7 @@ public class WsdlLocationPanel extends JPanel {
 
     public static final String SYSPROP_NO_WSDL_IMPORTS = "com.l7tech.console.noWsdlImports";
     public static final String SYSPROP_IGNORE_WSDL_DTDS = "com.l7tech.console.ignoreWsdlDtds";
+    private WsdlPortInfo wsdlPortInfo;
 
     /**
      * Create a panel with the given owner and logger.
@@ -287,6 +288,10 @@ public class WsdlLocationPanel extends JPanel {
         });
     }
 
+    public WsdlPortInfo getWsdlPortInfo() {
+        return wsdlPortInfo;
+    }
+
     private void selectUddi() {
         final Frame mainWindow = TopComponents.getInstance().getTopParent();
 
@@ -296,8 +301,9 @@ public class WsdlLocationPanel extends JPanel {
             swd.addSelectionListener(new SearchUddiDialog.ItemSelectedListener() {
                 @Override
                 public void itemSelected(Object item) {
-                    if(!(item instanceof WsdlInfo)) return;
-                    String wsdlURL = ((WsdlInfo) item ).getWsdlUrl();
+                    if(!(item instanceof WsdlPortInfo)) return;
+                    wsdlPortInfo = (WsdlPortInfo) item;
+                    String wsdlURL = ((WsdlPortInfo) item ).getWsdlUrl();
 
                     // update the wsdlUrlTestField
                     if(wsdlURL != null) wsdlUrlTextField.setText(wsdlURL);

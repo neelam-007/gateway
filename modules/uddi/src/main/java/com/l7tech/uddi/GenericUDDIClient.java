@@ -182,6 +182,24 @@ public class GenericUDDIClient implements UDDIClient {
     }
 
     @Override
+    public String getBusinessEntityName(String businessKey) throws UDDIException {
+
+        GetBusinessDetail getBusinessDetail = new GetBusinessDetail();
+        getBusinessDetail.setAuthInfo(getAuthToken());
+        getBusinessDetail.getBusinessKey().add(businessKey);
+        try {
+            BusinessDetail businessDetail = getInquirePort().getBusinessDetail(getBusinessDetail);
+            List<BusinessEntity> services = businessDetail.getBusinessEntity();
+            if(services.isEmpty()) return null;
+            return services.get(0).getName().get(0).getValue();
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception geting BusinessService: ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
+    }
+
+    @Override
     public BusinessService getBusinessService(String serviceKey) throws UDDIException {
 
         GetServiceDetail getServiceDetail = new GetServiceDetail();
@@ -527,41 +545,48 @@ public class GenericUDDIClient implements UDDIClient {
         }
     }
 
+    private FindService getConfiguredFindService(final String servicePattern,
+                                                 final boolean caseSensitive,
+                                                 final int offset,
+                                                 final int maxRows) throws UDDIException {
+        String authToken = getAuthToken();
+        Name[] names = buildNames(servicePattern);
+        FindService findService = new FindService();
+        findService.setAuthInfo(authToken);
+        if (maxRows > 0)
+            findService.setMaxRows(maxRows);
+        if (offset > 0)
+            findService.setListHead(offset);
+        findService.setFindQualifiers(buildFindQualifiers(servicePattern, caseSensitive));
+        if (names != null)
+            findService.getName().addAll(Arrays.asList(names));
+
+        KeyedReference keyedReference = new KeyedReference();
+        keyedReference.setKeyValue(WSDL_TYPES_SERVICE);
+        keyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
+        CategoryBag categoryBag = new CategoryBag();
+        categoryBag.getKeyedReference().add(keyedReference);
+        findService.setCategoryBag(categoryBag);
+
+        return findService;
+    }
     /**
      *
      */
     @Override
-    public Collection<UDDINamedEntity> listServiceWsdls(final String servicePattern,
+    public Collection<WsdlPortInfo> listServiceWsdls(final String servicePattern,
                                                         final boolean caseSensitive,
                                                         final int offset,
                                                         final int maxRows) throws UDDIException {
         validateName(servicePattern);
 
-        Collection<UDDINamedEntity> services = new ArrayList<UDDINamedEntity>();
+        Collection<WsdlPortInfo> allWsdlPorts = new ArrayList<WsdlPortInfo>();
         moreAvailable = false;
 
         try {
-            String authToken = getAuthToken();
-            Name[] names = buildNames( servicePattern );
+
+            FindService findService = getConfiguredFindService(servicePattern, caseSensitive, offset, maxRows);
             UDDIInquiryPortType inquiryPort = getInquirePort();
-
-            FindService findService = new FindService();
-            findService.setAuthInfo(authToken);
-            if (maxRows>0)
-                findService.setMaxRows(maxRows);
-            if (offset>0)
-                findService.setListHead(offset);
-            findService.setFindQualifiers(buildFindQualifiers(servicePattern, caseSensitive));
-            if (names != null)
-                findService.getName().addAll(Arrays.asList(names));
-
-            KeyedReference keyedReference = new KeyedReference();
-            keyedReference.setKeyValue(WSDL_TYPES_SERVICE);
-            keyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
-            CategoryBag categoryBag = new CategoryBag();
-            categoryBag.getKeyedReference().add(keyedReference);
-            findService.setCategoryBag(categoryBag);
-
             ServiceList serviceList = inquiryPort.findService(findService);
 
             // check if any more results
@@ -570,84 +595,197 @@ public class GenericUDDIClient implements UDDIClient {
 
             // process
             if ( serviceList.getServiceInfos() != null ) {
+                //Get the actual service, so we can get it's local name => the wsdl:service unique name
+                final GetServiceDetail getServiceDetail = new GetServiceDetail();
+                getServiceDetail.setAuthInfo(authToken);
                 for (ServiceInfo serviceInfo : serviceList.getServiceInfos().getServiceInfo() ) {
-                    FindBinding findBinding = new FindBinding();
-                    findBinding.setAuthInfo(authToken);
-                    findBinding.setServiceKey(serviceInfo.getServiceKey());
+                    getServiceDetail.getServiceKey().add(serviceInfo.getServiceKey());
+                }
 
-                    // We only need one, since all bindingTemplates will have the same WSDL
-                    // but since searching by type is not reliable we'll have to get all the
-                    // bindings and search though them
-                    findBinding.setMaxRows(50);
+                final ServiceDetail serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);
+                List<BusinessService> services = serviceDetail.getBusinessService();
+                if(services.isEmpty()){
+                    logger.log(Level.WARNING, "Could not find BusinessService's from UDDI");
+                    return allWsdlPorts;
+                }
 
-                    // This does not work with CentraSite
-                    //CategoryBag bindingCategoryBag = new CategoryBag();
-                    //KeyedReference bindingKeyedReference = new KeyedReference();
-                    //bindingKeyedReference.setKeyValue(WSDL_TYPES_PORT);
-                    //bindingKeyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
-                    //bindingCategoryBag.getKeyedReference().add(bindingKeyedReference);
-                    //findBinding.setCategoryBag(bindingCategoryBag);
+                final Map<String, BusinessService> keyToService = new HashMap<String, BusinessService>();
+                for(BusinessService businessService: services){
+                    keyToService.put(businessService.getServiceKey(), businessService);                    
+                }
+
+                for (ServiceInfo serviceInfo : serviceList.getServiceInfos().getServiceInfo() ) {
+
+                    FindBinding findBinding = getConfiguredFindBinding(serviceInfo);
 
                     // Find tModel keys for the WSDL portType/binding
-                    List<String> modelKeys = new ArrayList<String>();
-                    List<String> modelInstanceUrl = new ArrayList<String>();
                     BindingDetail bd = inquiryPort.findBinding(findBinding);
+
+                    final String businessServiceKey = serviceInfo.getServiceKey();
+                    final String businessServiceName = get(serviceInfo.getName(), "BusinessService Name", false).getValue();
+                    final String businessEntityKey = serviceInfo.getBusinessKey();
+
+                    String businessServiceWsdlLocalName = null;
+                    //get the wsdl:service name from the local name keyed reference
+                    CategoryBag categoryBag = keyToService.get(serviceInfo.getServiceKey()).getCategoryBag();
+                    List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
+                    for(KeyedReference keyedReference: keyedReferences){
+                        if(keyedReference.getTModelKey().equals(WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME)){
+                            //fyi - this helps prevent circular references on save - our published business services
+                            //value for local name will never match the wsdl by default
+                            businessServiceWsdlLocalName = keyedReference.getKeyValue();
+                        }
+                    }
+
+                    //for every valid BindingTemplate we will add one WsdlPortInfo to the allWsdlPorts collection
                     for (BindingTemplate bindingTemplate : bd.getBindingTemplate()) {
+                        List<String> modelInstanceUrl = new ArrayList<String>();
+
+                        //return a WSDLInfo per BindingTemplate - as it maps 1:1 to wsdl:port
                         AccessPoint accessPoint = bindingTemplate.getAccessPoint();
                         if (bindingTemplate.getTModelInstanceDetails() == null ||
                             accessPoint==null ) {
                             continue;
                         }
 
-                        List<TModelInstanceInfo> infos = bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo();
-                        for (TModelInstanceInfo tmii : infos) {
+                        //this should only ever contain two keys
+                        List<String> modelKeys = new ArrayList<String>();
+
+                        String instanceParamForWsdlBinding = null;
+                        String bindingTModelKeyToValidate = null;
+
+                        for (TModelInstanceInfo tmii : bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo()) {
                             modelKeys.add(tmii.getTModelKey());
 
                             // bug 5330 - workaround for Centrasite problem with fetching wsdl
                             String tmiiWsdlUrl = extractOverviewUrl(tmii);
                             if (tmiiWsdlUrl != null) {
                                 modelInstanceUrl.add(tmiiWsdlUrl);
-                                break;
                             }
+
+                            //we need the instance param from the instance of for the wsdl:binding so we know what
+                            //the name of the wsdl:port is
+                            InstanceDetails instanceDetails = tmii.getInstanceDetails();
+                            if(instanceDetails == null) continue;
+                            instanceParamForWsdlBinding = instanceDetails.getInstanceParms();
+                            bindingTModelKeyToValidate = tmii.getTModelKey();
+
                         }
-                    }
 
-                    // Get the WSDL url
-                    if ( !modelInstanceUrl.isEmpty() ) {
+                        if(modelKeys.isEmpty() || modelKeys.size() < 2){
+                            logger.log(Level.INFO,
+                                    "Not including binding in results as it contains less than 2 tModels so is not spec " +
+                                            "conformant. serviceKey: " + serviceInfo.getServiceKey());
+                            continue;
+                        }
 
-                        // there should only be one
-                        String name = get(serviceInfo.getName(), "service name", false).getValue();
-                        services.add(new UDDINamedEntityImpl(serviceInfo.getServiceKey(), name, null, modelInstanceUrl.get(0)));
-
-                    } else if ( !modelKeys.isEmpty() ) {
-                        GetTModelDetail getTModels = new GetTModelDetail();
+                        //Get all the TModels
+                        final GetTModelDetail getTModels = new GetTModelDetail();
                         getTModels.setAuthInfo(authToken);
                         getTModels.getTModelKey().addAll(modelKeys);
-                        TModelDetail tmd = inquiryPort.getTModelDetail(getTModels);
+                        final TModelDetail tmd = inquiryPort.getTModelDetail(getTModels);
+                        final List<TModel> resolvedTMomdels = tmd.getTModel();
+                        if(resolvedTMomdels.isEmpty() || resolvedTMomdels.size() < 2){
+                            logger.log(Level.INFO,
+                                    "Not including binding in results as we could not resolve at least 2 tModels " +
+                                            "serviceKey: " + serviceInfo.getServiceKey());
+                            continue;
+                        }
 
-                        modelloop:
-                        for(TModel tm : tmd.getTModel()) {
-                            if ( isBinding(tm) ) {
-                                for ( OverviewDoc doc : tm.getOverviewDoc() ) {
-                                    OverviewURL url = doc.getOverviewURL();
-                                    if ( url!= null && OVERVIEW_URL_TYPE_WSDL.equals(url.getUseType()) ) {
-                                        String name = get(serviceInfo.getName(), "service name", false).getValue();
-                                        services.add(new UDDINamedEntityImpl(serviceInfo.getServiceKey(), name, null, url.getValue()));
-                                        break modelloop;
-                                    }
+                        //extract the specific tModels - should only be one of each
+                        TModel bindingTModel = null;
+                        TModel portTypeTModel = null;
+                        for(final TModel tModel: resolvedTMomdels){
+                            UDDIReferenceUpdater.TMODEL_TYPE tModelType = UDDIReferenceUpdater.getTModelType(tModel);
+                            switch(tModelType){
+                                case WSDL_BINDING:
+                                    bindingTModel = tModel;
+                                    break;
+                                case WSDL_PORT_TYPE:
+                                    portTypeTModel = tModel;
+                                    break;
+                            }
+                        }
+
+                        if(bindingTModel == null){
+                            logger.log(Level.INFO,
+                                    "Not including binding in results as we could not find the wsdl:binding tModel " +
+                                            "serviceKey: " + serviceInfo.getServiceKey());
+                            continue;
+                        }
+
+                        if(portTypeTModel == null){
+                            logger.log(Level.INFO,
+                                    "Not including binding in results as we could not find the wsdl:portType tModel " +
+                                            "serviceKey: " + serviceInfo.getServiceKey());
+                            continue;
+                        }
+
+                        if(!bindingTModel.getTModelKey().equals(bindingTModelKeyToValidate)){
+                            logger.log(Level.INFO,
+                                    "Invalid instanceParam value found for binding tModel with key: " + bindingTModelKeyToValidate);
+                            continue;
+                        }
+
+                        final WsdlPortInfoImpl wsdlPortInfo = new WsdlPortInfoImpl();
+                        wsdlPortInfo.setBusinessEntityKey(businessEntityKey);
+                        wsdlPortInfo.setBusinessServiceKey(businessServiceKey);
+                        wsdlPortInfo.setBusinessServiceName(businessServiceName);
+                        wsdlPortInfo.setWsdlServiceName(businessServiceWsdlLocalName);
+                        //the instance param value from the bindingTemplate is the name of the wsdl:port
+                        wsdlPortInfo.setWsdlPortName(instanceParamForWsdlBinding);
+                        wsdlPortInfo.setWsdlPortBinding(bindingTModel.getName().getValue());
+
+                        // Get the WSDL url
+                        if ( !modelInstanceUrl.isEmpty() ) {
+                            wsdlPortInfo.setWsdlUrl(modelInstanceUrl.get(0));
+                        } else if ( !modelKeys.isEmpty() ) {
+                            for ( OverviewDoc doc : bindingTModel.getOverviewDoc() ) {
+                                OverviewURL url = doc.getOverviewURL();
+
+                                if ( url!= null && OVERVIEW_URL_TYPE_WSDL.equals(url.getUseType()) ) {
+                                    wsdlPortInfo.setWsdlUrl(url.getValue());
                                 }
                             }
                         }
+
+                        //check everything required is found, otherwise don't add it to collection
+                        final String validateMsg = wsdlPortInfo.validate();
+                        if(validateMsg != null){
+                            logger.log(Level.INFO,
+                                    "Ignoring bindingTemplate from serviceKey: "+ serviceInfo.getServiceKey()+
+                                            " as some required information was not found: "+ validateMsg);
+                            continue;
+                        }
+                        allWsdlPorts.add(wsdlPortInfo);
                     }
                 }
             }
 
-            return services;
+            return allWsdlPorts;
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error listing services: ", drfm);
         } catch (RuntimeException e) {
             throw new UDDIException("Error listing services.", e);
         }
+    }
+
+    private FindBinding getConfiguredFindBinding(ServiceInfo serviceInfo) {
+        FindBinding findBinding = new FindBinding();
+        findBinding.setAuthInfo(authToken);
+        findBinding.setServiceKey(serviceInfo.getServiceKey());
+
+        // We want them all, but setting limit at 50 //todo accecpt this value as a param from cluster variable
+        findBinding.setMaxRows(50);
+
+        // This does not work with CentraSite
+        //CategoryBag bindingCategoryBag = new CategoryBag();
+        //KeyedReference bindingKeyedReference = new KeyedReference();
+        //bindingKeyedReference.setKeyValue(WSDL_TYPES_PORT);
+        //bindingKeyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
+        //bindingCategoryBag.getKeyedReference().add(bindingKeyedReference);
+        //findBinding.setCategoryBag(bindingCategoryBag);
+        return findBinding;
     }
 
     /**

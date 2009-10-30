@@ -13,7 +13,9 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
@@ -25,6 +27,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.uddi.WsdlPortInfo;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -97,11 +100,23 @@ public class PublishServiceWizard extends Wizard {
             this.sharedPolicy = sharedPolicy;
         }
 
+        public WsdlPortInfo getWsdlPortInfo() {
+            return wsdlPortInfo;
+        }
+
+        public void setWsdlPortInfo(WsdlPortInfo wsdlPortInfo) {
+            this.wsdlPortInfo = wsdlPortInfo;
+        }
+
         private boolean sharedPolicy = false;
         private RoutingAssertion routingAssertion;
         private PublishedService service = new PublishedService();
         private Collection<ServiceDocument> serviceDocuments = new ArrayList();
         private CompositeAssertion assertions = new AllAssertion();
+        /**
+         * If the service was created from UDDI, then this will be non null;
+         */
+        private WsdlPortInfo wsdlPortInfo;
     }
 
     private ServiceAndAssertion saBundle = new ServiceAndAssertion();
@@ -188,6 +203,23 @@ public class PublishServiceWizard extends Wizard {
             Registry.getDefault().getSecurityProvider().refreshPermissionCache();
 
             PublishServiceWizard.this.notify(new ServiceHeader(saBundle.service));
+
+            //was the service created from UDDI, if the WSDL url still matches what was saved, then
+            //record this
+            final WsdlPortInfo wsdlPortInfo = saBundle.getWsdlPortInfo();
+            if(wsdlPortInfo != null && wsdlPortInfo.getWsdlUrl().equals(saBundle.getService().getWsdlUrl())){
+                UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
+                        wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
+                        wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(), true);
+
+                try {
+                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
+                } catch (Exception e) {
+                    final String msg = "Cannot record UDDI information for service: " + e.getMessage();
+                    logger.log(Level.WARNING, msg, e);
+                    DialogDisplayer.showMessageDialog(this, msg, "Error saving UDDI information", e);
+                }
+            }
         } catch (Exception e) {
             if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                 logger.log(Level.WARNING, "Cannot publish service as is (duplicate)");
@@ -195,27 +227,31 @@ public class PublishServiceWizard extends Wizard {
                              "parameters (SOAPAction, namespace, and possibly routing URI)\n" +
                              "are already used by an existing published service.\n\nWould " +
                              "you like to publish this service using a different routing URI?";
-                int answer = JOptionPane.showConfirmDialog(null, msg, "Service Resolution Conflict", JOptionPane.YES_NO_OPTION);
-                if (answer == JOptionPane.YES_OPTION) {
-                    // get new routing URI
-                    SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(this, saBundle.getService());
-                    dlg.pack();
-                    Utilities.centerOnScreen(dlg);
-                    dlg.setVisible(true);
-                    if (dlg.wasSubjectAffected()) {
-                        completeTask();
-                    } else {
-                        logger.info("Service publication aborted.");
+                DialogDisplayer.showConfirmDialog(null, msg, "Service Resolution Conflict", JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.YES_OPTION) {
+                            // get new routing URI
+                            SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(PublishServiceWizard.this, saBundle.getService());
+                            dlg.pack();
+                            Utilities.centerOnScreen(dlg);
+                            dlg.setVisible(true);
+                            if (dlg.wasSubjectAffected()) {
+                                completeTask();
+                            } else {
+                                logger.info("Service publication aborted.");
+                            }
+                        } else {
+                            logger.info("Service publication aborted.");
+                        }
                     }
-                } else {
-                    logger.info("Service publication aborted.");
-                }
+                });
             } else {
                 logger.log(Level.WARNING, "Cannot publish service as is", e);
-                JOptionPane.showMessageDialog(null,
+                DialogDisplayer.showMessageDialog(null,
                   "Unable to save the service '" + saBundle.service.getName() + "'\n",
                   "Error",
-                  JOptionPane.ERROR_MESSAGE);
+                  JOptionPane.ERROR_MESSAGE, null);
             }
         }
     }

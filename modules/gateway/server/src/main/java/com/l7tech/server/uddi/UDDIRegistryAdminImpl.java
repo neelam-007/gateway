@@ -150,9 +150,29 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     @Override
-    public void updateUDDIServiceControlOnly( final UDDIServiceControl uddiServiceControl ) throws UpdateException {
-        if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ) throw new UpdateException("Cannot update new UDDIServiceControl");
-        uddiServiceControlManager.update( uddiServiceControl );
+    public void saveUDDIServiceControlOnly( final UDDIServiceControl uddiServiceControl )
+            throws UpdateException, SaveException, FindException {
+        if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ){
+            //todo validate information against the services wsdl
+            final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiServiceControl.getUddiRegistryOid());
+            if(uddiRegistry == null) throw new FindException("Cannot find UDDIRegistry");
+
+            final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
+            try {
+                final String businessName = uddiClient.getBusinessEntityName(uddiServiceControl.getUddiBusinessKey());
+                uddiServiceControl.setUddiBusinessName(businessName);
+            } catch (UDDIException e) {
+                final String msg = "Cannot find BusinessEntity with businessKey: " + uddiServiceControl.getUddiBusinessKey();
+                logger.log(Level.WARNING, msg, e);
+                throw new SaveException(msg);
+            }
+            uddiServiceControlManager.save(uddiServiceControl);
+        }else{
+            UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());
+            if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
+            uddiServiceControl.throwIfFinalPropertyModified(original);
+            uddiServiceControlManager.update( uddiServiceControl );
+        }
     }
 
     @Override

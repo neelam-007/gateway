@@ -21,6 +21,7 @@ public class WsdlTable extends JTable{
          getTableHeader().setReorderingAllowed(false);
          getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
          getColumnModel().getColumn(WsdlTableSorter.WSDL_TABLE_SERVICE_NAME_COLUMN_INDEX).setPreferredWidth(150);
+         getColumnModel().getColumn(WsdlTableSorter.WSDL_PORT_COLUMN_INDEX).setPreferredWidth(150);         
          getColumnModel().getColumn(WsdlTableSorter.WSDL_TABLE_WSDL_COLUMN_INDEX).setPreferredWidth(350);
 
          addMouseListenerToHeaderInTable();
@@ -46,7 +47,7 @@ public class WsdlTable extends JTable{
              Object[][] rows = new Object[][]{};
 
              String[] cols = new String[]{
-                 "Service Name", "WSDL Location"
+                 "Business Service Name", "wsdl:port", "WSDL Location"
              };
 
              tableSorter = new WsdlTableSorter(new DefaultTableModel(rows, cols) {

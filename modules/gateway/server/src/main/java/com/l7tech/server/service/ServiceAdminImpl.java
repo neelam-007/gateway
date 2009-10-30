@@ -541,18 +541,21 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(final long registryOid, String namePattern, boolean caseSensitive) throws FindException {
+    public WsdlPortInfo[] findWsdlUrlsFromUDDIRegistry(final long registryOid, String namePattern, boolean caseSensitive) throws FindException {
         try {
             final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
-            WsdlInfo[] wsdlInfo = uddiHelper.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
+            WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
+            for(WsdlPortInfo wsdlPortInfo: wsdlPortInfoInfo){
+                wsdlPortInfo.setUddiRegistryOid(registryOid);
+            }
             //noinspection unchecked
-            Arrays.sort(wsdlInfo, new ResolvingComparator(new Resolver<WsdlInfo,String>(){
+            Arrays.sort(wsdlPortInfoInfo, new ResolvingComparator(new Resolver<WsdlPortInfo,String>(){
                 @Override
-                public String resolve(WsdlInfo key) {
-                    return key.getName();
+                public String resolve(WsdlPortInfo key) {
+                    return key.getBusinessServiceKey() + "" + key.getWsdlPortName();
                 }
             }, false));
-            return wsdlInfo;
+            return wsdlPortInfoInfo;
         } catch (UDDIException e) {
             String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
             if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||

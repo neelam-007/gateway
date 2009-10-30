@@ -47,5 +47,5 @@ class UDDINamedEntityImpl implements UDDINamedEntity, Serializable {
     private final String key;
     private final String name;
     private final String wsdlUrl;
-    private final String policyUrl;    
+    private final String policyUrl;
 }

@@ -1,6 +1,6 @@
 package com.l7tech.console.event;
 
-import com.l7tech.uddi.WsdlInfo;
+import com.l7tech.uddi.WsdlPortInfo;
 
 import java.util.EventObject;
 
@@ -11,19 +11,19 @@ import java.util.EventObject;
  */
 public class WsdlEvent extends EventObject {
 
-    private WsdlInfo wsdlInfo;
+    private WsdlPortInfo wsdlPortInfo;
 
     /**
      * create the Certificate event
      *
      * @param source the event source
      */
-     public WsdlEvent(Object source, WsdlInfo wsdlInfo) {
+     public WsdlEvent(Object source, WsdlPortInfo wsdlPortInfo) {
         super(source);
-        this.wsdlInfo = wsdlInfo;
+        this.wsdlPortInfo = wsdlPortInfo;
     }
 
-    public WsdlInfo getWsdlInfo() {
-        return wsdlInfo;
+    public WsdlPortInfo getWsdlInfo() {
+        return wsdlPortInfo;
     }
 }

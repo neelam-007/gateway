@@ -137,13 +137,15 @@ public interface UDDIRegistryAdmin {
     Collection<UDDIProxiedService> getAllProxiedServicesForRegistry(long registryOid) throws FindException;
 
     /**
-     * Update UDDIServiceControl without changes to related UDDI.
+     * Save / Update UDDIServiceControl without changes to related UDDI.
      *
      * @param uddiServiceControl the updated UDDIServiceControl
+     * @throws com.l7tech.objectmodel.UpdateException if the UDDIServiceControl cannot be updated
+     * @throws com.l7tech.objectmodel.SaveException if the UDDIServiceControl cannot be saved
      */
     @Secured(types = {EntityType.UDDI_SERVICE_CONTROL}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
-    void updateUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl)
-            throws UpdateException;
+    void saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl)
+            throws UpdateException, SaveException, FindException;
     /**
      * Find the UDDIServiceControl for a service, if it exists
      *
