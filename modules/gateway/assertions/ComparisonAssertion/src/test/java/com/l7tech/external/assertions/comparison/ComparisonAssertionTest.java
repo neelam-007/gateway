@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.ComparisonOperator;
 import junit.framework.Assert;
 import org.junit.Test;
 
@@ -21,6 +22,20 @@ public class ComparisonAssertionTest {
 
         String what = WspWriter.getPolicyXml(ass);
         Assert.assertEquals("what", what, POLICY_XML);
+    }
+
+    /**
+     * Tests that required resource bundle keys are present
+     */
+    @Test
+    public void testPredicates() {
+        for ( ComparisonOperator op : ComparisonOperator.values() ) {
+            String right =  op.isUnary() ? null : "right";
+            System.out.println(new BinaryPredicate(op, right, true, true).toString());
+            System.out.println(new BinaryPredicate(op, right, true, false).toString());
+            System.out.println(new BinaryPredicate(op, right, false, true).toString());
+            System.out.println(new BinaryPredicate(op, right, false, false).toString());
+        }
     }
 
     public static final String POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
