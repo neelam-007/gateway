@@ -355,7 +355,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
 
     private void editAndSave(final MutablePair<String, String> namePair) {
         if (namePair == null || namePair.left == null || namePair.right == null) return;
-        final String originalQueryResultName = namePair.left;
+        final MutablePair<String, String> originalPair = new MutablePair<String, String>(namePair.left, namePair.right);
 
         final ContextVariableNamingDialog dlg = new ContextVariableNamingDialog(this, namePair);
         dlg.pack();
@@ -365,7 +365,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
             public void run() {
                 if (dlg.isConfirmed()) {
                     // Check if the input entry is duplicated.
-                    String warningMessage = isDuplicatedColumnOrVariable(namePair);
+                    String warningMessage = isDuplicatedColumnOrVariable(namePair, originalPair);
                     if (warningMessage != null) {
                         DialogDisplayer.showMessageDialog(JdbcQueryAssertionPropertiesDialog.this, warningMessage,
                             resources.getString("dialog.titie.invalid.input"), JOptionPane.WARNING_MESSAGE, null);
@@ -373,12 +373,15 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                     }
 
                     // Save the namePair into the map
-                    if (! originalQueryResultName.isEmpty()) { // This is for doEdit
-                        namingMap.remove(originalQueryResultName);
+                    String originalColumnLabel = originalPair.left;
+                    if (! originalColumnLabel.isEmpty()) { // This is for doEdit
+                        namingMap.remove(originalColumnLabel);
                     }
                     namingMap.put(namePair.left, namePair.right);
+
                     // Refresh the table
                     namingTableModel.fireTableDataChanged();
+
                     // Refresh the selection highlight
                     ArrayList<String> keyset = new ArrayList<String>();
                     keyset.addAll(namingMap.keySet());
@@ -389,30 +392,32 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         });
     }
 
-    private String isDuplicatedColumnOrVariable(final MutablePair<String, String> pair) {
+    private String isDuplicatedColumnOrVariable(final MutablePair<String, String> newPair, final MutablePair<String, String> originalPair) {
 
         // Check Column
         boolean duplicated = false;
+        String originalColumnLabel = originalPair.left;
         for (String key: namingMap.keySet()) {
-            if (pair.left.compareToIgnoreCase(key) == 0) {
+            if (originalColumnLabel.compareToIgnoreCase(key) != 0 && newPair.left.compareToIgnoreCase(key) == 0) {
                 duplicated = true;
                 break;
             }
         }
         if (duplicated) {
-            return MessageFormat.format(resources.getString("warning.message.duplicated.column"), pair.left);
+            return MessageFormat.format(resources.getString("warning.message.duplicated.column"), newPair.left);
         }
 
         // Check Variable
         duplicated = false;
+        String originalVariable = originalPair.right;
         for (String value: namingMap.values()) {
-            if (pair.right.compareToIgnoreCase(value) == 0) {
+            if (originalVariable.compareToIgnoreCase(value) != 0 && newPair.right.compareToIgnoreCase(value) == 0) {
                 duplicated = true;
                 break;
             }
         }
         if (duplicated) {
-            return MessageFormat.format(resources.getString("warning.message.duplicated.variable"), pair.right);
+            return MessageFormat.format(resources.getString("warning.message.duplicated.variable"), newPair.right);
         }
 
         return null;
