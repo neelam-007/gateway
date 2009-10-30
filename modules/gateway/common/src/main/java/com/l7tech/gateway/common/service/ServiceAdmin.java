@@ -218,11 +218,13 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
 
     /**
      * @param serviceoid id of the service to publish on the systinet (or other UDDI) registry
-     * @return registrykey
+     * @param fullPolicyURL boolean if true, the String returned is configured to get the full Layer7 policy (Requires IP of who ever uses this information to be white listed for it to work)
+     * @return String the external URL from where the policy for the service can be downloaded
+     * @throws com.l7tech.objectmodel.FindException if the hostname cannot be determined
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
-    String getPolicyURL(String serviceoid) throws FindException;
+    String getPolicyURL(String serviceoid, boolean fullPolicyURL) throws FindException;
 
     @Transactional(readOnly=true)
     @Administrative(licensed=false)

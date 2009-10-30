@@ -15,18 +15,14 @@ import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.Pair;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
-import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.wsdl.WSDLException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     protected static final Logger logger = Logger.getLogger(UDDIRegistryAdminImpl.class.getName());
@@ -35,18 +31,18 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     final private UDDIProxiedServiceManager uddiProxiedServiceManager;
     final private UDDIServiceControlManager uddiServiceControlManager;
     final private ServiceManager serviceManager;
-    final private ServerConfig serverConfig;
+    final private ExternalGatewayURLManager externalGatewayURLManager;
 
     public UDDIRegistryAdminImpl(final UDDIRegistryManager uddiRegistryManager,
                                  final UDDIProxiedServiceManager uddiProxiedServiceManager,
                                  final UDDIServiceControlManager uddiServiceControlManager,
                                  final ServiceManager serviceManager,
-                                 final ServerConfig serverConfig) {
+                                 final ExternalGatewayURLManager externalGatewayURLManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiProxiedServiceManager = uddiProxiedServiceManager;
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.serviceManager = serviceManager;
-        this.serverConfig = serverConfig;
+        this.externalGatewayURLManager = externalGatewayURLManager;
     }
 
     @Override
@@ -220,29 +216,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
             throw new PublishProxiedServiceException(msg);
         }
 
-        final String hostName;
-        final String clusterHost = serverConfig.getPropertyCached("clusterHost");
-        if(clusterHost == null || clusterHost.trim().isEmpty()){
-            logger.log(Level.INFO, "Property clusterHost is not set. Defauting to local host name for Gateway URL");
-            try {
-                hostName = InetAddress.getLocalHost().getHostName();
-            } catch (UnknownHostException e) {
-                logger.log(Level.WARNING, "Could not find host name for SSG: " + e.getMessage());
-                throw new PublishProxiedServiceException("Cannot determine the hostname of the SecureSpan Gateway");
-            }
-        }else{
-            hostName = clusterHost;
-        }
-
         //protected service external url
-        String port = serverConfig.getPropertyCached("clusterhttpport");
-        String uri = SecureSpanConstants.SERVICE_FILE + service.getOid();
-        final String protectedServiceExternalURL =  "http://" + clusterHost + ":" + port + uri;
-
+        final String protectedServiceExternalURL = externalGatewayURLManager.getExternalSsgURLForService(service.getOidAsLong().toString());
         //protected service gateway external wsdl url
-        String wsdlURI = SecureSpanConstants.WSDL_PROXY_FILE;
-        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + service.getOid();
-        final String protectedServiceWsdlURL = "http://" + hostName + ":" + port + wsdlURI + "?" + query;
+        final String protectedServiceWsdlURL = externalGatewayURLManager.getExternalWsdlUrlForService(service.getOidAsLong().toString());
 
         WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
                 protectedServiceExternalURL, uddiProxiedService.getUddiBusinessKey(), service.getOid(), generalKeyword);

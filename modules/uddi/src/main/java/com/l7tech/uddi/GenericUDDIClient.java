@@ -570,14 +570,15 @@ public class GenericUDDIClient implements UDDIClient {
 
         return findService;
     }
+
     /**
      * //TODO this entire method needs to be converted into only requiring 2 single searches of UDDI, which is possible
      */
     @Override
     public Collection<WsdlPortInfo> listServiceWsdls(final String servicePattern,
-                                                        final boolean caseSensitive,
-                                                        final int offset,
-                                                        final int maxRows) throws UDDIException {
+                                                     final boolean caseSensitive,
+                                                     final int offset,
+                                                     final int maxRows) throws UDDIException {
         validateName(servicePattern);
 
         Collection<WsdlPortInfo> allWsdlPorts = new ArrayList<WsdlPortInfo>();
@@ -594,27 +595,27 @@ public class GenericUDDIClient implements UDDIClient {
             setMoreAvailable(listDescription);
 
             // process
-            if ( serviceList.getServiceInfos() != null ) {
+            if (serviceList.getServiceInfos() != null) {
                 //Get the actual service, so we can get it's local name => the wsdl:service unique name
                 final GetServiceDetail getServiceDetail = new GetServiceDetail();
                 getServiceDetail.setAuthInfo(authToken);
-                for (ServiceInfo serviceInfo : serviceList.getServiceInfos().getServiceInfo() ) {
+                for (ServiceInfo serviceInfo : serviceList.getServiceInfos().getServiceInfo()) {
                     getServiceDetail.getServiceKey().add(serviceInfo.getServiceKey());
                 }
 
                 final ServiceDetail serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);
                 List<BusinessService> services = serviceDetail.getBusinessService();
-                if(services.isEmpty()){
+                if (services.isEmpty()) {
                     logger.log(Level.WARNING, "Could not find BusinessService's from UDDI");
                     return allWsdlPorts;
                 }
 
                 final Map<String, BusinessService> keyToService = new HashMap<String, BusinessService>();
-                for(BusinessService businessService: services){
-                    keyToService.put(businessService.getServiceKey(), businessService);                    
+                for (BusinessService businessService : services) {
+                    keyToService.put(businessService.getServiceKey(), businessService);
                 }
 
-                for (ServiceInfo serviceInfo : serviceList.getServiceInfos().getServiceInfo() ) {
+                for (ServiceInfo serviceInfo : serviceList.getServiceInfos().getServiceInfo()) {
 
                     FindBinding findBinding = getConfiguredFindBinding(serviceInfo);
 
@@ -629,8 +630,8 @@ public class GenericUDDIClient implements UDDIClient {
                     //get the wsdl:service name from the local name keyed reference
                     CategoryBag categoryBag = keyToService.get(serviceInfo.getServiceKey()).getCategoryBag();
                     List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
-                    for(KeyedReference keyedReference: keyedReferences){
-                        if(keyedReference.getTModelKey().equals(WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME)){
+                    for (KeyedReference keyedReference : keyedReferences) {
+                        if (keyedReference.getTModelKey().equals(WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME)) {
                             //fyi - this helps prevent circular references on save - our published business services
                             //value for local name will never match the wsdl by default
                             businessServiceWsdlLocalName = keyedReference.getKeyValue();
@@ -644,7 +645,7 @@ public class GenericUDDIClient implements UDDIClient {
                         //return a WSDLInfo per BindingTemplate - as it maps 1:1 to wsdl:port
                         AccessPoint accessPoint = bindingTemplate.getAccessPoint();
                         if (bindingTemplate.getTModelInstanceDetails() == null ||
-                            accessPoint==null ) {
+                                accessPoint == null) {
                             continue;
                         }
 
@@ -666,13 +667,13 @@ public class GenericUDDIClient implements UDDIClient {
                             //we need the instance param from the instance of for the wsdl:binding so we know what
                             //the name of the wsdl:port is
                             InstanceDetails instanceDetails = tmii.getInstanceDetails();
-                            if(instanceDetails == null) continue;
+                            if (instanceDetails == null) continue;
                             instanceParamForWsdlBinding = instanceDetails.getInstanceParms();
                             bindingTModelKeyToValidate = tmii.getTModelKey();
 
                         }
 
-                        if(modelKeys.isEmpty() || modelKeys.size() < 2){
+                        if (modelKeys.isEmpty() || modelKeys.size() < 2) {
                             logger.log(Level.INFO,
                                     "Not including binding in results as it contains less than 2 tModels so is not spec " +
                                             "conformant. serviceKey: " + serviceInfo.getServiceKey());
@@ -685,7 +686,7 @@ public class GenericUDDIClient implements UDDIClient {
                         getTModels.getTModelKey().addAll(modelKeys);
                         final TModelDetail tmd = inquiryPort.getTModelDetail(getTModels);
                         final List<TModel> resolvedTMomdels = tmd.getTModel();
-                        if(resolvedTMomdels.isEmpty() || resolvedTMomdels.size() < 2){
+                        if (resolvedTMomdels.isEmpty() || resolvedTMomdels.size() < 2) {
                             logger.log(Level.INFO,
                                     "Not including binding in results as we could not resolve at least 2 tModels " +
                                             "serviceKey: " + serviceInfo.getServiceKey());
@@ -695,9 +696,9 @@ public class GenericUDDIClient implements UDDIClient {
                         //extract the specific tModels - should only be one of each
                         TModel bindingTModel = null;
                         TModel portTypeTModel = null;
-                        for(final TModel tModel: resolvedTMomdels){
+                        for (final TModel tModel : resolvedTMomdels) {
                             UDDIReferenceUpdater.TMODEL_TYPE tModelType = UDDIReferenceUpdater.getTModelType(tModel);
-                            switch(tModelType){
+                            switch (tModelType) {
                                 case WSDL_BINDING:
                                     bindingTModel = tModel;
                                     break;
@@ -707,21 +708,21 @@ public class GenericUDDIClient implements UDDIClient {
                             }
                         }
 
-                        if(bindingTModel == null){
+                        if (bindingTModel == null) {
                             logger.log(Level.INFO,
                                     "Not including binding in results as we could not find the wsdl:binding tModel " +
                                             "serviceKey: " + serviceInfo.getServiceKey());
                             continue;
                         }
 
-                        if(portTypeTModel == null){
+                        if (portTypeTModel == null) {
                             logger.log(Level.INFO,
                                     "Not including binding in results as we could not find the wsdl:portType tModel " +
                                             "serviceKey: " + serviceInfo.getServiceKey());
                             continue;
                         }
 
-                        if(!bindingTModel.getTModelKey().equals(bindingTModelKeyToValidate)){
+                        if (!bindingTModel.getTModelKey().equals(bindingTModelKeyToValidate)) {
                             logger.log(Level.INFO,
                                     "Invalid instanceParam value found for binding tModel with key: " + bindingTModelKeyToValidate);
                             continue;
@@ -737,13 +738,13 @@ public class GenericUDDIClient implements UDDIClient {
                         wsdlPortInfo.setWsdlPortBinding(bindingTModel.getName().getValue());
 
                         // Get the WSDL url
-                        if ( !modelInstanceUrl.isEmpty() ) {
+                        if (!modelInstanceUrl.isEmpty()) {
                             wsdlPortInfo.setWsdlUrl(modelInstanceUrl.get(0));
-                        } else if ( !modelKeys.isEmpty() ) {
-                            for ( OverviewDoc doc : bindingTModel.getOverviewDoc() ) {
+                        } else if (!modelKeys.isEmpty()) {
+                            for (OverviewDoc doc : bindingTModel.getOverviewDoc()) {
                                 OverviewURL url = doc.getOverviewURL();
 
-                                if ( url!= null && OVERVIEW_URL_TYPE_WSDL.equals(url.getUseType()) ) {
+                                if (url != null && OVERVIEW_URL_TYPE_WSDL.equals(url.getUseType())) {
                                     wsdlPortInfo.setWsdlUrl(url.getValue());
                                 }
                             }
@@ -751,10 +752,10 @@ public class GenericUDDIClient implements UDDIClient {
 
                         //check everything required is found, otherwise don't add it to collection
                         final String validateMsg = wsdlPortInfo.validate();
-                        if(validateMsg != null){
+                        if (validateMsg != null) {
                             logger.log(Level.INFO,
-                                    "Ignoring bindingTemplate from serviceKey: "+ serviceInfo.getServiceKey()+
-                                            " as some required information was not found: "+ validateMsg);
+                                    "Ignoring bindingTemplate from serviceKey: " + serviceInfo.getServiceKey() +
+                                            " as some required information was not found: " + validateMsg);
                             continue;
                         }
                         allWsdlPorts.add(wsdlPortInfo);

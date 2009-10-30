@@ -986,9 +986,8 @@
         <property name="schemaManager" ref="schemaManager"/>
     </bean>
 
-    <bean id="registryPublicationManager" class="com.l7tech.server.uddi.RegistryPublicationManager">
-        <property name="serverConfig" ref="serverConfig"/>
-        <property name="keystore" ref="defaultKey"/>
+    <bean id="externalGatewayURLManager" class="com.l7tech.server.uddi.ExternalGatewayURLManager">
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" parent="hibernateBean">

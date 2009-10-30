@@ -52,7 +52,7 @@ public class PublishPolicyToUDDIRegistry extends NodeAction {
         String policyURL;
         String serviceConsumptionURL;
         try {
-            policyURL = Registry.getDefault().getServiceManager().getPolicyURL(Long.toString(svc.getOid()));
+            policyURL = Registry.getDefault().getServiceManager().getPolicyURL(Long.toString(svc.getOid()), true);
             serviceConsumptionURL = Registry.getDefault().getServiceManager().getConsumptionURL(Long.toString(svc.getOid()));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get service detail from SSG", e);

@@ -323,7 +323,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public String getPolicyURL(String serviceoid) throws FindException {
+    public String getPolicyURL(String serviceoid, boolean fullPolicyURL) throws FindException {
         throw new RuntimeException("Not Implemented");
     }
 

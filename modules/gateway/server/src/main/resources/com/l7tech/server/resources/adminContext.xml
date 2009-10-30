@@ -206,7 +206,7 @@
     <!-- service admin servant -->
     <bean id="serviceAdmin" class="com.l7tech.server.service.ServiceAdminImpl">
         <constructor-arg ref="licenseManager"/>
-        <constructor-arg ref="registryPublicationManager"/>
+        <constructor-arg ref="externalGatewayURLManager"/>
         <constructor-arg ref="uddiHelper"/>
         <constructor-arg ref="serviceManager"/>
         <constructor-arg ref="serviceAliasManager"/>
@@ -354,7 +354,7 @@
         <constructor-arg ref="uddiProxiedServiceManager"/>
         <constructor-arg ref="uddiServiceControlManager"/>        
         <constructor-arg ref="serviceManager"/>
-        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="externalGatewayURLManager"/>
     </bean>
 
 </beans>

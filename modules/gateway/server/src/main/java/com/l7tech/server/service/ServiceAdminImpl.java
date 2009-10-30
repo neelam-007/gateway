@@ -20,7 +20,7 @@ import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.sla.CounterIDManager;
-import com.l7tech.server.uddi.RegistryPublicationManager;
+import com.l7tech.server.uddi.ExternalGatewayURLManager;
 import com.l7tech.server.uddi.UDDITemplateManager;
 import com.l7tech.server.uddi.UDDIHelper;
 import com.l7tech.uddi.*;
@@ -64,7 +64,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private SSLContext sslContext;
 
     private final AssertionLicense licenseManager;
-    private final RegistryPublicationManager registryPublicationManager;
+    private final ExternalGatewayURLManager externalGatewayURLManager;
     private final UDDIHelper uddiHelper;
     private final ServiceManager serviceManager;
     private final ServiceAliasManager serviceAliasManager;
@@ -93,7 +93,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             };
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
-                            RegistryPublicationManager registryPublicationManager,
+                            ExternalGatewayURLManager externalGatewayURLManager,
                             UDDIHelper uddiHelper,
                             ServiceManager serviceManager,
                             ServiceAliasManager serviceAliasManager,
@@ -110,7 +110,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             ServiceTemplateManager serviceTemplateManager, UDDIRegistryAdmin uddiRegistryAdmin)
     {
         this.licenseManager = licenseManager;
-        this.registryPublicationManager = registryPublicationManager;
+        this.externalGatewayURLManager = externalGatewayURLManager;
         this.uddiHelper = uddiHelper;
         this.serviceManager = serviceManager;
         this.serviceAliasManager = serviceAliasManager;
@@ -705,13 +705,13 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public String getPolicyURL(String serviceoid) throws FindException {
-        return registryPublicationManager.getExternalSSGPolicyURL(serviceoid);
+    public String getPolicyURL(String serviceoid, boolean fullPolicyURL) throws FindException {
+        return externalGatewayURLManager.getExternalSSGPolicyURL(serviceoid, fullPolicyURL);
     }
 
     @Override
     public String getConsumptionURL(String serviceoid) throws FindException {
-        return registryPublicationManager.getExternalSSGConsumptionURL(serviceoid);
+        return externalGatewayURLManager.getExternalSsgURLForService(serviceoid);
     }
 
     @Override
