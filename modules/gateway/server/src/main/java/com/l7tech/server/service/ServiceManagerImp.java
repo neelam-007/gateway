@@ -22,6 +22,7 @@ import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -295,6 +296,13 @@ public class ServiceManagerImp
         newRole.addAttributePermission(READ, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
         newRole.addAttributePermission(UPDATE, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
         newRole.addAttributePermission(DELETE, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
+
+        //add attribute predicate to allow crud on a uddi_service_control if one gets created
+        newRole.addAttributePermission(CREATE, UDDI_SERVICE_CONTROL, UDDIServiceControl.ATTR_SERVICE_OID, service.getId());
+        newRole.addAttributePermission(READ, UDDI_SERVICE_CONTROL, UDDIServiceControl.ATTR_SERVICE_OID, service.getId());
+        newRole.addAttributePermission(UPDATE, UDDI_SERVICE_CONTROL, UDDIServiceControl.ATTR_SERVICE_OID, service.getId());
+        newRole.addAttributePermission(DELETE, UDDI_SERVICE_CONTROL, UDDIServiceControl.ATTR_SERVICE_OID, service.getId());
+
 
         if (currentUser != null) {
             // See if we should give the current user admin permission for this service

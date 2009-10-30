@@ -18,6 +18,8 @@ import org.hibernate.annotations.Proxy;
 @Table(name="uddi_service_control")
 public class UDDIServiceControl extends PersistentEntityImp {
 
+    public static final String ATTR_SERVICE_OID = "publishedServiceOid";
+
     //- PUBLIC
 
     public UDDIServiceControl(long publishedServiceOid,
