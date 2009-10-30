@@ -203,10 +203,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                         if(!foundUsableCredSource) {
                             r.addError(new PolicyValidatorResult.Error(a,
                               ap,
-                              "This identity can only authenticate using " +
-                              "its client cert. " +
-                              "The specified type of credential " +
-                              "source is not supported by that user.",
+                              "This identity can only authenticate using its client cert. The specified type of credential source is not supported by that user.",
                               null));
                         }
                     }
@@ -216,9 +213,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                         if (pathContext.contains(targetName, HttpDigest.class)) {
                             r.addWarning(new PolicyValidatorResult.Warning(a,
                               ap,
-                              "This identity may not be able to authenticate with the " +
-                              "type of credential " +
-                              "source specified.",
+                              "This identity may not be able to authenticate with the type of credential source specified.",
                               null));
                         }
                     }

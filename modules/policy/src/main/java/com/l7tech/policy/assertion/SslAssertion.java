@@ -190,7 +190,7 @@ public class SslAssertion extends ConfidentialityAssertion {
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SslAssertion>(){
         @Override
         public String getAssertionName( final SslAssertion assertion, final boolean decorate) {
-            final String assertionName = "Set SSL or TLS Transport";
+            final String assertionName = " SSL or TLS Transport";
             final String sslOrTls = "SSL or TLS Transport";
             final String prefix;
             if (SslAssertion.FORBIDDEN.equals(assertion.getOption())){
@@ -222,7 +222,7 @@ public class SslAssertion extends ConfidentialityAssertion {
     private static DefaultAssertionMetadata makeMeta(boolean requireClientCert) {
         DefaultAssertionMetadata meta = new DefaultAssertionMetadata(new SslAssertion(requireClientCert));
 
-        meta.put(AssertionMetadata.SHORT_NAME, requireClientCert ? "Require SSL or TLS Client Authentication" : "Require SSL or TLS Transport");
+        meta.put(AssertionMetadata.SHORT_NAME, requireClientCert ? "Require SSL or TLS Transport with Client Authentication" : "Require SSL or TLS Transport");
         meta.put(AssertionMetadata.DESCRIPTION, "The incoming request must either use, optionally use, or is forbidden to use SSL/TLS transport. Client certificate authentication is optional if SSL / TLS is required.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ssl.gif");
 
