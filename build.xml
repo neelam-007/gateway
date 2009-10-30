@@ -2903,6 +2903,9 @@
             <copy file="${src.root}/etc/processcontroller/pc.sh" tofile="@{dir}/${install.src.pc.controlbin}/pc.sh"/>
             <chmod file="@{dir}/${install.src.pc.controlbin}/pc.sh" perm="755"/>
 
+            <copy file="${src.root}/etc/processcontroller/patch.sh" tofile="@{dir}/${install.src.pc.controlbin}/patch.sh"/>
+            <chmod file="@{dir}/${install.src.pc.controlbin}/patch.sh" perm="755"/>
+
             <!-- Copy Controller.jar -->
             <copy todir="@{dir}/${install.src.pc.control}">
                 <fileset dir="${build.dir}/processcontroller" includes="Controller.jar"/>

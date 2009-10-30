@@ -2,6 +2,8 @@ package com.l7tech.server.processcontroller.patching.client;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.server.processcontroller.patching.PatchServiceApi;
 import com.l7tech.server.processcontroller.patching.PatchStatus;
 import com.l7tech.server.processcontroller.patching.PatchException;
@@ -13,6 +15,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.logging.Logger;
+import java.util.logging.ConsoleHandler;
 
 /**
  * @author jbufu
@@ -25,6 +29,9 @@ public class PatchCli {
     public static final int PATCH_API_ERROR = 2;
 
     public static void main(String[] args) {
+        initLogging();
+
+        logger.info("Running PatchCli patch client...");
 
         PatchAction patchAction = null;
         try {
@@ -38,8 +45,10 @@ public class PatchCli {
         PatchServiceApi api = new CxfUtils.ApiBuilder(patchAction.getEndpoint().toString()).build(PatchServiceApi.class);
         try {
             Collection<PatchStatus> result = patchAction.call(api);
-            for(PatchStatus status : result) {
-                System.out.println(status.toString());
+            if (result != null) {
+                for(PatchStatus status : result) {
+                    System.out.println(status.toString());
+                }
             }
         } catch (Exception e) {
             System.out.println(ExceptionUtils.getMessage(e));
@@ -48,6 +57,19 @@ public class PatchCli {
     }
 
     // - PRIVATE
+
+    private static final Logger logger = Logger.getLogger(PatchCli.class.getName());
+
+    private static void initLogging() {
+        // configure logging if the logs directory is found, else leave console output
+        final File logsDir = new File("/opt/SecureSpan/Controller/var/logs");
+        if ( logsDir.exists() && logsDir.canWrite() ) {
+            JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller.patching.client", "com/l7tech/server/processcontroller/patching/client/resources/logging.properties", "etc/conf/patchinglogging.properties", false, true);
+        }
+        if ( SyspropUtil.getBoolean("com.l7tech.server.log.console") ) {
+            Logger.getLogger("").addHandler( new ConsoleHandler() );
+        }
+    }
 
     private static enum PatchAction {
 

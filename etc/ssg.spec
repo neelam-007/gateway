@@ -116,6 +116,7 @@ rm -fr %{buildroot}
 %attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc
 %attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc/conf
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/logs
+%attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/patches
 
 %pre
 grep -q ^gateway: /etc/group || groupadd gateway

@@ -97,17 +97,8 @@ public class CxfUtils {
             if (clientPolicy != null) {
                 httpConduit.setClient(clientPolicy);
             }
-            if (inInterceptors.isEmpty()) {
-                pfb.getInInterceptors().add(new LoggingInInterceptor());
-            } else {
-                pfb.getInInterceptors().addAll(inInterceptors);
-            }
-            if (outInterceptors.isEmpty()) {
-                pfb.getOutInterceptors().add(new LoggingOutInterceptor());
-            } else {
-                pfb.getOutInterceptors().addAll(outInterceptors);
-            }
-
+            pfb.getInInterceptors().addAll(inInterceptors);
+            pfb.getOutInterceptors().addAll(outInterceptors);
             pfb.getInFaultInterceptors().addAll(inFaultInterceptors);
             pfb.getOutFaultInterceptors().addAll(outFaultInterceptors);
 
