@@ -571,7 +571,7 @@ public class GenericUDDIClient implements UDDIClient {
         return findService;
     }
     /**
-     *
+     * //TODO this entire method needs to be converted into only requiring 2 single searches of UDDI, which is possible
      */
     @Override
     public Collection<WsdlPortInfo> listServiceWsdls(final String servicePattern,

@@ -150,7 +150,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     @Override
-    public void saveUDDIServiceControlOnly( final UDDIServiceControl uddiServiceControl )
+    public long saveUDDIServiceControlOnly( final UDDIServiceControl uddiServiceControl )
             throws UpdateException, SaveException, FindException {
         if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ){
             //todo validate information against the services wsdl
@@ -166,13 +166,19 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
                 logger.log(Level.WARNING, msg, e);
                 throw new SaveException(msg);
             }
-            uddiServiceControlManager.save(uddiServiceControl);
+            return uddiServiceControlManager.save(uddiServiceControl);
         }else{
             UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());
             if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
             uddiServiceControl.throwIfFinalPropertyModified(original);
             uddiServiceControlManager.update( uddiServiceControl );
+            return uddiServiceControl.getOid();
         }
+    }
+
+    @Override
+    public void deleteUDDIServiceControl(long uddiServiceControlOid) throws FindException, DeleteException {
+        uddiServiceControlManager.delete(uddiServiceControlOid);
     }
 
     @Override

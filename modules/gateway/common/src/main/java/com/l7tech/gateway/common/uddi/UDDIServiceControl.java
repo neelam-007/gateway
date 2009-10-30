@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.uddi.WsdlPortInfo;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -50,7 +50,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
      * All properties can be modified except those which define the WSDL at a high level - the uddi registry
      * and the business entity. As there is a 1:1 mapping from UDDIServiceControl there is no use case where the
      * published service oid can change.
-     * Values like the business service key and wsdl port can change, as its still the same WSDL.
+     * Values like the wsdl port can change, as its still the same WSDL.
      * //todo go over this 
      * @param original UDDIProxiedService last known version of 'this' UDDIProxiedService used to compare what has
      * changed in 'this'
@@ -59,6 +59,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         testProperty("published service oid", Long.toString(this.getPublishedServiceOid()), Long.toString(original.getPublishedServiceOid()));
         testProperty("registry oid", Long.toString(this.getUddiRegistryOid()), Long.toString(original.getUddiRegistryOid()));
         testProperty("business key", this.getUddiBusinessKey(), original.getUddiBusinessKey());
+        testProperty("services key", this.getUddiServiceKey(), original.getUddiServiceKey());
     }
 
     private void testProperty(final String propName, final String propValue, final String lastKnownValue){
@@ -68,6 +69,30 @@ public class UDDIServiceControl extends PersistentEntityImp {
         if(!lastKnownValue.equals(propValue)){
             throw new IllegalStateException("It is not possible to modify property " + propName);
         }
+    }
+
+    /**
+     * Set the properties which can change in either UDDI or in the selection of wsdl:port from the existing
+     * BusinessService in UDDI
+     * @param portInfo WsdlPortInfo info from UDDI
+     * @return true if a property was changed, false otherwise
+     */
+    public boolean setUddiModifiableProperties(WsdlPortInfo portInfo){
+        boolean modified = false;
+
+        if(!this.getUddiBusinessName().equals(portInfo.getBusinessServiceName())) modified = true;
+        this.setUddiBusinessName(portInfo.getBusinessServiceName());
+
+        if(!this.getUddiServiceName().equals(portInfo.getWsdlServiceName())) modified = true;
+        this.setUddiServiceName(portInfo.getWsdlServiceName());
+
+        if(!this.getWsdlPortName().equals(portInfo.getWsdlPortName())) modified = true;
+        this.setWsdlPortName(portInfo.getWsdlPortName());
+
+        if(!this.getWsdlPortBinding().equals(portInfo.getWsdlPortBinding())) modified = true;
+        this.setWsdlPortBinding(portInfo.getWsdlPortBinding());
+
+        return modified;
     }
 
     @Column(name = "published_service_oid", updatable = false)
@@ -106,7 +131,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.uddiBusinessName = uddiBusinessName;
     }
 
-    @Column(name = "uddi_service_key")
+    @Column(name = "uddi_service_key", updatable = false)
     public String getUddiServiceKey() {
         return uddiServiceKey;
     }

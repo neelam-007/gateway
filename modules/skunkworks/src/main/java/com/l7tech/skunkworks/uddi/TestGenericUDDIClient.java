@@ -399,6 +399,18 @@ public class TestGenericUDDIClient {
 
     }
 
+    @Test
+    public void testDeleteUDDIServiceControl() throws Exception {
+        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+
+        SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
+        UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
+
+        uddiRegistryAdmin.deleteUDDIServiceControl(70615040);
+
+        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+    }
+
     private UDDIClient getUDDIClient(){
         return new GenericUDDIClient("http://DONALWINXP:53307/UddiRegistry/inquiry",
                         "http://DONALWINXP:53307/UddiRegistry/publish",

@@ -22,10 +22,11 @@ import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.uddi.WsdlPortInfo;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -324,6 +325,24 @@ public class ServicePropertiesDialog extends JDialog {
             }
         });
 
+        clearButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                if(uddiServiceControl == null) return;
+                try {
+                    Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
+                    uddiServiceControl = null;
+                } catch (Exception e1) {
+                    showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
+                    return;
+                }
+
+                modelToView();
+                enableDisableControls();
+            }
+        });
+
         selectButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -332,7 +351,53 @@ public class ServicePropertiesDialog extends JDialog {
                     swd.addSelectionListener(new SearchUddiDialog.ItemSelectedListener() {
                         @Override
                         public void itemSelected(Object item) {
-                            //todo need to update to return correct type of object with all info required
+                            if(!(item instanceof WsdlPortInfo)) return;
+                            WsdlPortInfo wsdlPortInfo = (WsdlPortInfo) item;
+
+                            //if none of the UDDI related final values have changed, then we can reuse the existing UDDIServiceControl
+                            final boolean existingOk = uddiServiceControl != null &&
+                                    wsdlPortInfo.getUddiRegistryOid() == uddiServiceControl.getUddiRegistryOid() &&
+                                    wsdlPortInfo.getBusinessEntityKey().equals(uddiServiceControl.getUddiBusinessKey()) &&
+                                    wsdlPortInfo.getBusinessServiceKey().equals(uddiServiceControl.getUddiServiceKey());
+
+                            final boolean needsToBeSaved;
+                            final boolean needToDelete;
+                            if(!existingOk){
+                                needToDelete = uddiServiceControl != null;//do this before variable is reset on next line
+                                uddiServiceControl = getNewUDDIServiceControl(wsdlPortInfo);
+                                needsToBeSaved = true;
+                            }else{
+                                //repopulate the existing UDDIServiceControl
+                                needsToBeSaved = uddiServiceControl.setUddiModifiableProperties(wsdlPortInfo);
+                                needToDelete = false;
+                            }
+
+                            if(needsToBeSaved){
+                                try {
+                                    if(needToDelete) Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
+
+                                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
+                                    //download it again as it gets populated with info on save
+                                    uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(uddiServiceControl.getPublishedServiceOid());
+                                } catch (DeleteException e1) {
+                                    showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway", e1, true);
+                                    return;
+                                } catch (FindException e1) {
+                                    showErrorMessage("Cannot find", "Cannot find UDDI information from Gateway", e1, true);
+                                    return;
+                                } catch (Exception e1) {
+                                    //save and update exception
+                                    if(e1 instanceof SaveException || e1 instanceof UpdateException){
+                                        showErrorMessage("Cannot save", "Cannot save UDDI information to Gateway", e1, true);
+                                        return;
+                                    }else throw new RuntimeException(e1);
+                                }
+                            }
+
+
+                            //now update the UI with selections
+                            modelToView();
+                            enableDisableControls();
                         }
                     });
                     swd.setSize(700, 500);
@@ -366,15 +431,34 @@ public class ServicePropertiesDialog extends JDialog {
 
         updateURL();
 
-        final boolean underUDDIControl = uddiServiceControl != null && uddiServiceControl.isUnderUddiControl();
-
-        //ensure appropriate read only status if this service is internal or if the WSDL is under UDDI control
-        applyReadOnlySettings(subject.isInternal() || underUDDIControl);
-
+        enableDisableControls();
         //apply permissions last
         applyPermissions();
 
         modelToView();
+    }
+
+    private void enableDisableControls(){
+
+        final boolean underUDDIControl = uddiServiceControl != null && uddiServiceControl.isUnderUddiControl();
+        //ensure appropriate read only status if this service is internal or if the WSDL is under UDDI control
+        applyReadOnlySettings(subject.isInternal() || underUDDIControl);
+
+        selectButton.setEnabled(canUpdate);
+
+        if(uddiServiceControl == null){
+            clearButton.setEnabled(false);
+            wsdlUnderUDDIControlCheckBox.setEnabled(false);
+        }else{
+            clearButton.setEnabled(canUpdate);
+            wsdlUnderUDDIControlCheckBox.setEnabled(canUpdate);
+        }
+    }
+
+    private UDDIServiceControl getNewUDDIServiceControl(WsdlPortInfo wsdlPortInfo) {
+        return new UDDIServiceControl(subject.getOid(), wsdlPortInfo.getUddiRegistryOid(),
+                wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(), wsdlPortInfo.getWsdlServiceName(),
+                wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(), wsdlUnderUDDIControlCheckBox.isSelected());
     }
 
     /**
@@ -395,7 +479,13 @@ public class ServicePropertiesDialog extends JDialog {
             bsKeyTextField.setText(uddiServiceControl.getUddiBusinessKey());
             wsdlPortTextField.setText(uddiServiceControl.getWsdlPortName());
             wsdlUnderUDDIControlCheckBox.setSelected(uddiServiceControl.isUnderUddiControl());
-            
+        }else{
+            //make sure all text fields are cleared
+            uddiRegistryTextField.setText("");
+            bsNameTextField.setText("");
+            bsKeyTextField.setText("");
+            wsdlPortTextField.setText("");
+            wsdlUnderUDDIControlCheckBox.setSelected(false);
         }
     }
 

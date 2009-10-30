@@ -105,7 +105,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
-                    addFindByNameCriteria(crit);
                     crit.add(Restrictions.eq(uniquePropertyName, uniqueKey));
                     return crit.uniqueResult();
                 }
