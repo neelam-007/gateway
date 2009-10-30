@@ -240,7 +240,14 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
 
         WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
                 protectedServiceExternalURL, uddiProxiedService.getUddiBusinessKey(), service.getOid(), generalKeyword);
-        Pair<List<BusinessService>, Map<String, TModel>> servicesAndModels = modelConverter.convertWsdlToUDDIModel();
+        final Pair<List<BusinessService>, Map<String, TModel>> servicesAndModels;
+        try {
+            servicesAndModels = modelConverter.convertWsdlToUDDIModel();
+        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
+            final String msg = e.getMessage();
+            logger.log(Level.WARNING, msg);
+            throw new PublishProxiedServiceException(msg);
+        }
 
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
         try {
