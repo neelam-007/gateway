@@ -745,8 +745,14 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                                            String baseURI)
             {
                 try {
-                    if (systemId == null) throw new CausedIOException("No systemId, cannot resolve resource");
-
+                    if (systemId == null) {
+                        String resolvedSystemId = generateURN(namespaceURI);
+                        if (! globalSchemasByUrl.containsKey(resolvedSystemId)) {
+                            throw new CausedIOException("No systemId, cannot resolve resource");
+                        } else {
+                            systemId = resolvedSystemId;
+                        }
+                    }
                     LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
                     assert lsi != null;
                     imports.add(lsi.getSystemId());
@@ -767,6 +773,17 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             if (unres != null) throw new CausedIOException("Unable to resolve remote subschema for resource " + unres.getResourceDescription(), unres.getCause());
             throw e;
         }
+    }
+
+    private String generateURN(String namespace) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("urn:uuid:");
+        try {
+            sb.append(UUID.nameUUIDFromBytes(namespace.getBytes("UTF-8")).toString());
+        } catch (UnsupportedEncodingException e) {
+            sb.append(UUID.nameUUIDFromBytes(namespace.getBytes()).toString());
+        }
+        return sb.toString();
     }
 
     /**
@@ -876,8 +893,14 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         final LSResourceResolver lsrr = new LSResourceResolver() {
             public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
                 try {
-                    if (systemId == null) throw new CausedIOException("No systemId, cannot resolve resource");
-
+                    if (systemId == null) {
+                        String resolvedSystemId = generateURN(namespaceURI);
+                        if (! globalSchemasByUrl.containsKey(resolvedSystemId)) {
+                            throw new CausedIOException("No systemId, cannot resolve resource");
+                        } else {
+                            systemId = resolvedSystemId;
+                        }
+                    }
                     LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
                     assert lsi != null;
 

@@ -15,13 +15,16 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.schema.SchemaAdmin;
+import com.l7tech.gateway.common.schema.FetchSchemaFailureException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
-import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
@@ -31,12 +34,14 @@ import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.WsdlSchemaAnalizer;
 import org.dom4j.DocumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -56,10 +61,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,6 +75,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private static final ResourceBundle resources =
             ResourceBundle.getBundle("com.l7tech.console.resources.SchemaValidationPropertiesDialog", Locale.getDefault());
     private final String BORDER_TITLE_PREFIX = resources.getString("modeBorderTitlePrefix.text");
+    private static final String WSDL_NSURI = "http://schemas.xmlsoap.org/wsdl/";
+    private static final String W3C_SCHEMA_NSURI = "http://www.w3.org/2001/XMLSchema";
     public static final String NOTSET = "<not set>";
 
     // Top-level widgets
@@ -405,7 +410,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             //before we update the model we need to remember what was the old selection for global schema
             String previousSchemaSelection;
             previousSchemaSelection = (String) globalSchemaCombo.getSelectedItem();
-            globalSchemaCombo.setModel(new DefaultComboBoxModel(schemaNames.toArray(new String[]{})));
+            globalSchemaCombo.setModel(new DefaultComboBoxModel(schemaNames.toArray(new String[schemaNames.size()])));
 
             //set back the selected item if in the new list
             if (previousSchemaSelection != null && schemaNames.contains(previousSchemaSelection)) {
@@ -479,69 +484,222 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     }
 
     /**
-     * returns true if there was at least one unresolved import
+     * Check if there are unresolved schemas in the given schema.  If so, extract them and save them into the database.
      *
-     * NOTE this code is reused (copy/paste) in GlobalSchemaDialog
+     * @param schemaDoc: a document of a root schema.
+     *
+     * @return true if there is at least one imported schema unabled to resolve.
      */
     private boolean checkForUnresolvedImports(Document schemaDoc) {
-        Element schemael = schemaDoc.getDocumentElement();
-        java.util.List<Element> listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
-        if (listofimports.isEmpty()) return false;
-        ArrayList<String> unresolvedImportsList = new ArrayList<String>();
-        ArrayList<String> resolutionSuggestionList = new ArrayList<String>();
-        Registry reg = Registry.getDefault();
-        if (reg == null || reg.getSchemaAdmin() == null) {
-            throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
-        }
-        for (Element importEl : listofimports) {
-            String importns = importEl.getAttribute("namespace");
-            String importloc = importEl.getAttribute("schemaLocation");
-            try {
-                if (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) {
-                    //if (importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty()) {
-                    if (importloc != null) {
-                        unresolvedImportsList.add(importloc);
+        try {
+            resolveImportedSchemas(null, schemaDoc, new HashSet<String>()); // "null" means this is a root schema.  A hashset is for tracking circular imports.
+        } catch (FetchSchemaFailureException e) {
+            StringBuilder messageBuilder = new StringBuilder("<html>").append(e.getMessage());
+            messageBuilder.append("<center>Would you like to manually add the unresolved schema?</center></html>");
 
-                        // Check for the desired namespace with different location
-                        if (importns != null) {
-                            for (SchemaEntry entry : reg.getSchemaAdmin().findByTNS(importns)) {
-                                if (entry.getName() != null && entry.getName().length() > 0)
-                                    resolutionSuggestionList.add(entry.getName());
-                            }
-                        }
-                    } else {
-                        unresolvedImportsList.add(importns);
-                    }
-                    //}
-                }
-            } catch (ObjectModelException e) {
-                throw new RuntimeException("Error trying to look for import schema in global schema");
-            }
-        }
-        if (!unresolvedImportsList.isEmpty()) {
-            StringBuffer msg = new StringBuffer("The assertion cannot be saved because the schema\n" +
-                                                "contains the following unresolved imported schemas:\n");
-            for (String anUnresolvedImportsList : unresolvedImportsList) {
-                msg.append("  ").append(anUnresolvedImportsList);
-                msg.append("\n");
-            }
-            if (!resolutionSuggestionList.isEmpty()) {
-                msg.append("Note that these schemas are imported but the locations do not match:\n");
-                for (String aResolutionSuggestionList : resolutionSuggestionList) {
-                    msg.append("  ").append(aResolutionSuggestionList);
-                    msg.append("\n");
-                }
-            }
-            msg.append("Would you like to import those unresolved schemas now?");
-            if (JOptionPane.showConfirmDialog(this, msg, "Unresolved Imports", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            if (JOptionPane.showConfirmDialog(this, messageBuilder, "Unresolved Import", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                 GlobalSchemaDialog globalSchemaManager = new GlobalSchemaDialog(this);
                 globalSchemaManager.pack();
                 Utilities.centerOnScreen(globalSchemaManager);
-                globalSchemaManager.setVisible(true); // TODO change to use DialogDisplayer
+                DialogDisplayer.display(globalSchemaManager);
             }
             return true;
         }
         return false;
+    }
+
+    /**
+     * Recursively resolve all imported schemas from the bottom to the top and save them into the database.
+     *
+     * @param systemId: System ID of an imported schema.  It is null when the schema is a root schema.
+     * @param schemaDoc: the w3c document of the imported schema.  If systemId is null, then the schemaDoc is a root schema document.
+     * @param seenSystemIds: to keep tracking circular imports.
+     *
+     * @throws FetchSchemaFailureException: thrown when cannot to fetch an imported schema due to invalid schema URL or namespace, etc.
+     */
+    private void resolveImportedSchemas(String systemId, Document schemaDoc, HashSet<String> seenSystemIds) throws FetchSchemaFailureException {
+        Element schemaElmt = schemaDoc.getDocumentElement();
+        List<Element> listofimports = XmlUtil.findChildElementsByName(schemaElmt, schemaElmt.getNamespaceURI(), "import");
+
+        // If the imported schema has no other imports, then save the schema.
+        if (listofimports.isEmpty() && systemId != null) {
+            saveImportedSchema(systemId, node2String(schemaDoc));
+            return;
+        }
+
+        // Detect if the schema is a circular imported schema.
+        if (seenSystemIds.contains(systemId)) {
+            return;
+        } else {
+            seenSystemIds.add(systemId);
+        }
+
+        Registry reg = Registry.getDefault();
+        if (reg == null || reg.getSchemaAdmin() == null) {
+            throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
+        }
+
+        for (Element importEl : listofimports) {
+            try {
+                Pair<String, String> result = fetchImportedSchema(importEl, reg.getSchemaAdmin());
+                if (result != null) {
+                    // Recursively resolved imported schema as long as there exists import elements.
+                    resolveImportedSchemas(result.left, XmlUtil.stringToDocument(result.right), seenSystemIds);
+                }
+            } catch (FindException e) {
+                throw new RuntimeException("Error trying to look for import schema in global schema");
+            } catch (SAXException e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        }
+
+        // Afer finishing all child imports, then save the parent import.
+        if (systemId != null) {
+            saveImportedSchema(systemId, node2String(schemaDoc));
+        }
+    }
+
+    /**
+     * Fetch an imported schema by a given import element.
+     *
+     * @param importEl: the import element with attribute(s), schemaLocation and/or namespace.
+     * @param schemaAdmin: the Schema Admin API
+     *
+     * @return a result containing systemId and schemaContent of the imported schema.
+     *
+     * @throws FindException: thrown when admin cannot find schemas.
+     * @throws FetchSchemaFailureException: thrown when cannot fetch the imported schema due to invalid schema URL or namespace, etc.
+     */
+    private Pair<String, String> fetchImportedSchema(Element importEl, SchemaAdmin schemaAdmin) throws FindException, FetchSchemaFailureException {
+        String importloc = importEl.getAttribute("schemaLocation");
+        String importns = importEl.getAttribute("namespace");
+        if (importns == null || importloc == null) {
+            throw new IllegalStateException("The Element method, getAttribute should never return null.");
+        } else {
+            importloc = importloc.trim();
+            importns = importns.trim();
+        }
+
+        String systemId = null;
+        String importedSchemaContent = null;
+        String errorMessage = null;
+
+        // Case 1: schemaLocation exists
+        if (!importloc.isEmpty()) {
+            systemId = importloc;
+            boolean foundSchemaInDatabase = ! schemaAdmin.findByName(systemId).isEmpty();
+
+            boolean reportErrorEnabled = ! foundSchemaInDatabase;
+            importedSchemaContent = fetchSchemaFromUrl(importloc, reportErrorEnabled);
+
+            if (!foundSchemaInDatabase && importedSchemaContent == null) {
+                errorMessage = "<center>Cannot fetch the imported schema from the URL:</center><center>" + importloc + "</center>";
+            }
+        }
+        // Case 2: schemaLocation does not exist
+        else if (importloc.isEmpty()) {
+            systemId = generateURN(importns);
+            boolean foundSchemaInDatabase = ! schemaAdmin.findByName(systemId).isEmpty();
+
+            boolean reportErrorEnabled = ! foundSchemaInDatabase;
+            importedSchemaContent = fetchSchemaByTargetNamespace(importns, reportErrorEnabled);
+
+            if (!foundSchemaInDatabase && importedSchemaContent == null) {
+                errorMessage = "<center>Cannot fetch the imported schema from the target namespace:</center><center>" + importns + "</center>";
+            }
+        }
+
+        if (errorMessage != null) {
+            throw new FetchSchemaFailureException(errorMessage);
+        }
+        if (systemId != null && importedSchemaContent != null) {
+            return new Pair<String, String>(systemId, importedSchemaContent);
+        }
+        return null;
+    }
+
+    /**
+     * Generate a URN based on a namespace.
+     * @param namespace: the URL of a namespace
+     * @return a URN string
+     */
+    private String generateURN(String namespace) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("urn:uuid:");
+        try {
+            sb.append(UUID.nameUUIDFromBytes(namespace.getBytes("UTF-8")).toString());
+        } catch (UnsupportedEncodingException e) {
+            sb.append(UUID.nameUUIDFromBytes(namespace.getBytes()).toString());
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Save the resolved imported schemas into the community_schema table.  If the schema is a new one, then the schema
+     * will be created and saved.  If the schemas has been in the database, then the schema will be updated.
+     *
+     * @param systemId: the schema name.
+     * @param schemaContent: the schema XML content.
+     *
+     * @return true if the schema is successfully saved or updated.
+     */
+    private boolean saveImportedSchema(String systemId, String schemaContent) {
+        // Get current target namespace and precheck it and systemId
+        String tns;
+        try {
+            tns = XmlUtil.getSchemaTNS(schemaContent);
+        } catch (XmlUtil.BadSchemaException e) {
+            logger.warning("Problem parsing schemaContent");
+            return false;
+        }
+        if (tns == null || tns.isEmpty()) {
+            logger.warning("This schemaContent does not declare a target namespace.");
+            return false;
+        }
+        if (systemId == null || systemId.isEmpty()) {
+            logger.warning("You must provide a system id (name) for this schemaContent to be referenced by another schemaContent.");
+            return false;
+        }
+
+        // Get Schema Admin
+        SchemaAdmin schemaAdmin;
+        Registry reg = Registry.getDefault();
+        if (reg == null || reg.getSchemaAdmin() == null) {
+            throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
+        } else {
+            schemaAdmin = reg.getSchemaAdmin();
+        }
+
+        // Check if the schema has been in the database, since it isn't able to save a duplicate schema with a same schema name.
+        List<SchemaEntry> entries;
+        try {
+            entries = (List<SchemaEntry>) schemaAdmin.findByName(systemId);
+        } catch (FindException e) {
+            throw new RuntimeException("Error trying to look for import schema in global schema");
+        }
+        SchemaEntry schemaEntry;
+        if (entries.isEmpty()) {
+            schemaEntry = new SchemaEntry();
+        } else if (entries.size() != 1) {
+            throw new IllegalStateException("Schema name is a unique key in community_schemas.");
+        } else {
+            schemaEntry = entries.get(0);
+        }
+
+        // Save or update it
+        schemaEntry.setName(systemId);
+        schemaEntry.setSchema(schemaContent);
+        schemaEntry.setTns(tns);
+        try {
+            schemaAdmin.saveSchemaEntry(schemaEntry);
+            return true;
+        } catch (SaveException e) {
+            logger.warning("Unable to save schema entry.");
+            return false;
+        } catch (UpdateException e) {
+            logger.warning("Unable to update schema entry.");
+            return false;
+        }
     }
 
     /** @return true iff. info was committed successfully */
@@ -693,12 +851,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
     private String reformatxml(String input) {
         Document doc = stringToDoc(input);
-        try {
-            return doc2String(doc);
-        } catch (IOException e) {
-            log.log(Level.INFO, "reformat could not serialize", e);
-            return null;
-        }
+        return node2String(doc);
     }
 
     private void cancel() {
@@ -712,14 +865,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     }
 
     private void readFromWsdl() {
-        if (service == null) {
-            displayError(resources.getString("error.noaccesstowsdl"), null);
-            return;
-        }
-        String wsdl;
-        wsdl = service.getWsdlXml();
-
-        Document wsdlDoc = stringToDoc(wsdl);
+        Document wsdlDoc = getWsdlDocument();
         if (wsdlDoc == null) {
             displayError(resources.getString("error.nowsdl"), null);
             return;
@@ -748,6 +894,15 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 }
             }
         });
+    }
+
+    private Document getWsdlDocument() {
+        if (service == null) {
+            displayError(resources.getString("error.noaccesstowsdl"), null);
+            return null;
+        }
+        String wsdl = service.getWsdlXml();
+        return stringToDoc(wsdl);
     }
 
     private void readFromFile() {
@@ -788,86 +943,118 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         // check if it's a schema
         if (docIsSchema(doc)) {
             // set the new schema
-            String printedSchema;
-            try {
-                printedSchema = doc2String(doc);
-            } catch (IOException e) {
-                String msg = "error serializing document";
-                displayError(msg, null);
-                log.log(Level.FINE, msg, e);
-                return;
-            }
+            String printedSchema = node2String(doc);
             uiAccessibility.getEditor().setText(printedSchema);
-            //okButton.setEnabled(true);
         } else {
             displayError(resources.getString("error.urlnoschema") + " " + filename, null);
         }
     }
 
     private void readFromUrl(String urlstr) {
+        // get the schema
+        String schema = fetchSchemaFromUrl(urlstr, true);
+        // set the schema
+        uiAccessibility.getEditor().setText(schema);
+    }
+
+    /**
+     * Fetch a schema by using the URL of a schema location.
+     *
+     * @param urlstr: the URL of the schema location
+     * @param reportErrorEnabled: a flag indicating if an error dialog pops up if some errors occur.
+     *
+     * @return the schema XML content
+     */
+    private String fetchSchemaFromUrl(String urlstr, boolean reportErrorEnabled) {
         if (urlstr == null || urlstr.length() < 1) {
-            displayError(resources.getString("error.nourl"), null);
-            return;
+            if (reportErrorEnabled) displayError(resources.getString("error.nourl"), null);
+            return null;
         }
         // compose input source
         URL url;
         try {
             url = new URL(urlstr);
         } catch (MalformedURLException e) {
-            displayError(urlstr + " " + resources.getString("error.badurl"), null);
+            if (reportErrorEnabled) displayError(urlstr + " " + resources.getString("error.badurl"), null);
             log.log(Level.FINE, "malformed url", e);
-            return;
+            return null;
         }
         // try to get document
         InputStream is;
         try {
             is = url.openStream();
         } catch (IOException e) {
-            displayError(resources.getString("error.urlnocontent") + " " + urlstr, null);
-            return;
+            if (reportErrorEnabled) displayError(resources.getString("error.urlnocontent") + " " + urlstr, null);
+            return null;
         }
 
         Document doc;
         try {
             doc = XmlUtil.parse(is);
         } catch (SAXException e) {
-            displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
+            if (reportErrorEnabled) displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
-            return;
+            return null;
         } catch (IOException e) {
-            displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
+            if (reportErrorEnabled) displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
-            return;
+            return null;
         }
         // check if it's a schema
         if (docIsSchema(doc)) {
             // set the new schema
-            String printedSchema;
-            try {
-                printedSchema = doc2String(doc);
-            } catch (IOException e) {
-                String msg = "error serializing document";
-                displayError(msg, null);
-                log.log(Level.FINE, msg, e);
-                return;
-            }
-            uiAccessibility.getEditor().setText(printedSchema);
-            //okButton.setEnabled(true);
+            return node2String(doc);
         } else {
-            displayError(resources.getString("error.urlnoschema") + " " + urlstr, null);
+            if (reportErrorEnabled) displayError(resources.getString("error.urlnoschema") + " " + urlstr, null);
         }
+        return null;
     }
 
-    private String doc2String(Document doc) throws IOException {
+    /**
+     * Fetch a schema by using the URI of a target namespace
+     *
+     * @param targetNamespace: the URI of the target namespace
+     * @param reportErrorEnabled: a flag indicating if an error dialog pops up if some errors occur.
+     *
+     * @return the schema XML content
+     */
+    private String fetchSchemaByTargetNamespace(String targetNamespace, boolean reportErrorEnabled) {
+        Document wsdlDocument = getWsdlDocument();
+        if (wsdlDocument == null) {
+            if (reportErrorEnabled) displayError(resources.getString("error.nowsdl"), null);
+            return null;
+        }
+
+        NodeList typesElmtList = wsdlDocument.getElementsByTagNameNS(WSDL_NSURI, "types");
+        if (typesElmtList.getLength() != 1) {
+            if (reportErrorEnabled) displayError(resources.getString("error.incorrect.wsdl.types"), null);
+            return null;
+        }
+
+        Element typesElmt = (Element) typesElmtList.item(0);
+        List<Element> schemaElmtList = XmlUtil.findChildElementsByName(typesElmt, W3C_SCHEMA_NSURI, "schema");
+
+        for (Element schemaElmt: schemaElmtList) {
+            String targetNs = schemaElmt.getAttribute("targetNamespace");
+            if (targetNs == null) {
+                throw new IllegalStateException("The Element method, getAttribute never returns null.");
+            } else if (targetNs.equals(targetNamespace)) {
+                return node2String(schemaElmt);
+            }
+        }
+
+        if (reportErrorEnabled) displayError(MessageFormat.format(resources.getString("error.invalid.targetnamespace"), targetNamespace), null);
+        return null;
+    }
+
+    private String node2String(Node node) {
         StringWriter sw = new StringWriter(1024);
         try {
             TransformerFactory tf = TransformerFactory.newInstance();
             Transformer t = tf.newTransformer();
             t.setOutputProperty(OutputKeys.INDENT, "yes");
-            t.transform(new DOMSource(doc), new StreamResult(sw));
+            t.transform(new DOMSource(node), new StreamResult(sw));
             return sw.toString();
-        } catch (TransformerConfigurationException e) {
-            throw new RuntimeException(e); // Can't happen
         } catch (TransformerException e) {
             throw new RuntimeException(e); // Can't happen
         }

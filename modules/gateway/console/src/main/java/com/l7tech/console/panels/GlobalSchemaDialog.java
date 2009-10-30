@@ -331,6 +331,13 @@ public class GlobalSchemaDialog extends JDialog {
             String importns = importEl.getAttribute("namespace");
             String importloc = importEl.getAttribute("schemaLocation");
 
+            if (importns == null || importloc == null) {
+                throw new IllegalStateException("The Element method, getAttribute should never return null.");
+            } else {
+                importloc = importloc.trim();
+                importns = importns.trim();
+            }
+
             // first, check dependants
             if (dependants != null) {
                 boolean foundindep = false;
@@ -349,12 +356,12 @@ public class GlobalSchemaDialog extends JDialog {
 
             // then check on SSG
             try {
-                final boolean tnsFound = !(importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty());
-                final boolean locFound = !(importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty());
+                final boolean tnsFound = !(importns.isEmpty() || reg.getSchemaAdmin().findByTNS(importns).isEmpty());
+                final boolean locFound = !(importloc.isEmpty() || reg.getSchemaAdmin().findByName(importloc).isEmpty());
                 if ( !locFound ) {
-                    if (importloc != null) {
+                    if (! importloc.isEmpty()) {
                         unresolvedImportsList.add(importloc);
-                    } else {
+                    } else if (reg.getSchemaAdmin().findByTNS(importns).isEmpty()) {
                         unresolvedImportsList.add(importns);
                     }
                 } else if ( !tnsFound ) {
