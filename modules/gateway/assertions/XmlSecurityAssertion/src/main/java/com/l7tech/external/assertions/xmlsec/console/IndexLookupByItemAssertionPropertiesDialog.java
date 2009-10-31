@@ -47,6 +47,7 @@ public class IndexLookupByItemAssertionPropertiesDialog extends AssertionPropert
 
     @Override
     protected JPanel createPropertyPanel() {
+        allowMultipleMatchesCheckBox.setVisible(false); // Hide for now (Bug #7895)
         return contentPane;
     }
 }

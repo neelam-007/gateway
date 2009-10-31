@@ -39,6 +39,8 @@ public class NonSoapCheckVerifyResultsAssertionPropertiesDialog extends NonSoapS
     }
 
     private JPanel createExtraPanel() {
+        allowMultipleSigsCheckBox.setVisible(false); // Hide for now (Bug #7895)
+
         getSignatureMethodsModel().attachToJList(signatureMethodsList);
         getDigestMethodsModel().attachToJList(digestMethodsList);
         Utilities.deuglifySplitPane(splitPane);
