@@ -2,8 +2,8 @@ package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
-import static com.l7tech.uddi.UDDIReferenceUpdater.TMODEL_TYPE.WSDL_PORT_TYPE;
-import static com.l7tech.uddi.UDDIReferenceUpdater.TMODEL_TYPE.WSDL_BINDING;
+import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE;
+import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -142,16 +142,16 @@ public class BusinessServicePublisher {
 
         final List<TModel> bindingTModels = new ArrayList<TModel>();
         for (final TModel tModel : dependentTModels.values()) {
-            if (UDDIReferenceUpdater.getTModelType(tModel) != UDDIReferenceUpdater.TMODEL_TYPE.WSDL_BINDING) continue;
+            if (UDDIUtilities.getTModelType(tModel) != UDDIUtilities.TMODEL_TYPE.WSDL_BINDING) continue;
             bindingTModels.add(tModel);
         }
         if (bindingTModels.isEmpty()) throw new IllegalStateException("No binding tModels were found");
 
-        UDDIReferenceUpdater.updateBindingTModelReferences(bindingTModels, dependentTModels);
+        UDDIUtilities.updateBindingTModelReferences(bindingTModels, dependentTModels);
         //next publish TModels which represent wsdl:binding, as they are dependent on wsdl:portType tModels
         publishedTModels.addAll(publishDependentTModels(uddiClient, dependentTModels, WSDL_BINDING));
 
-        UDDIReferenceUpdater.updateBusinessServiceReferences(businessServices, dependentTModels);
+        UDDIUtilities.updateBusinessServiceReferences(businessServices, dependentTModels);
 
         publishBusinessServices(uddiClient, businessServices, publishedTModels);
     }
@@ -202,13 +202,13 @@ public class BusinessServicePublisher {
      */
     public List<TModel> publishDependentTModels(final UDDIClient uddiClient,
                                                 final Map<String, TModel> dependentTModels,
-                                                final UDDIReferenceUpdater.TMODEL_TYPE tmodelType) throws UDDIException {
+                                                final UDDIUtilities.TMODEL_TYPE tmodelType) throws UDDIException {
         final List<TModel> publishedTModels = new ArrayList<TModel>();
         try {
             for (Map.Entry<String, TModel> entrySet : dependentTModels.entrySet()) {
                 final TModel tModel = entrySet.getValue();
                 //only publish the type were currently interested in
-                if (UDDIReferenceUpdater.getTModelType(tModel) != tmodelType) continue;
+                if (UDDIUtilities.getTModelType(tModel) != tmodelType) continue;
 
                 final boolean published = uddiClient.publishTModel(tModel);
                 if (published) publishedTModels.add(tModel);

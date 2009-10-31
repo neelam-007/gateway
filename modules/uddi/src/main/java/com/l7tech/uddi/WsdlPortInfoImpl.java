@@ -22,6 +22,9 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     private String businessEntityKey;
     private String wsdlServiceName;
     private long uddiRegistryOid;
+    private boolean gatewayWsdl;
+    private boolean likelyGatewayWsdl;
+    private String accessPointURL;
 
     public WsdlPortInfoImpl() {
     }
@@ -43,7 +46,26 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
         if(!checkStringValue(businessServiceKey)) return "serviceKey not set";
         if(!checkStringValue(businessEntityKey)) return "businessKey not set";
         if(!checkStringValue(wsdlServiceName)) return "wsdl:service name not set";
+        if(!checkStringValue(accessPointURL)) return "accessPointURL name not set";
         return null;
+    }
+
+    @Override
+    public boolean isGatewayWsdl() {
+        return gatewayWsdl;
+    }
+
+    public void setGatewayWsdl(boolean gatewayWsdl) {
+        this.gatewayWsdl = gatewayWsdl;
+    }
+
+    @Override
+    public boolean isLikelyGatewayWsdl() {
+        return likelyGatewayWsdl;
+    }
+
+    public void setLikelyGatewayWsdl(boolean likelyGatewayWsdl) {
+        this.likelyGatewayWsdl = likelyGatewayWsdl;
     }
 
     private boolean checkStringValue(final String value){
@@ -56,6 +78,7 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
         return uddiRegistryOid;
     }
 
+    @Override
     public void setUddiRegistryOid(long uddiRegistryOid) {
         this.uddiRegistryOid = uddiRegistryOid;
     }
@@ -121,5 +144,14 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
 
     public void setBusinessEntityKey(String businessEntityKey) {
         this.businessEntityKey = businessEntityKey;
+    }
+
+    @Override
+    public String getAccessPointURL() {
+        return accessPointURL;
+    }
+
+    public void setAccessPointURL(String accessPointURL) {
+        this.accessPointURL = accessPointURL;
     }
 }

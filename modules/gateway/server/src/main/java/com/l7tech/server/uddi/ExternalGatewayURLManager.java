@@ -33,12 +33,28 @@ public class ExternalGatewayURLManager {
 //        return hostName.substring(0, (firstIndex == -1)? hostName.length(): firstIndex);
 //    }
     
-    public String getExternalWsdlUrlForService(String serviceoid) throws FindException {
+    public String getExternalWsdlUrlForService(String serviceoid)  {
         String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceoid;
         return getCompleteGatewayURL(SecureSpanConstants.WSDL_PROXY_FILE) + "?" + query;
     }
 
-    public String getExternalSSGPolicyURL(String serviceoid, final boolean fullPolicyURL) throws FindException {
+    /**
+     * Get the base WSDL URL
+     * @return String base WSDL URL
+     */
+    public String getBaseWsdlUrl(){
+        return getCompleteGatewayURL(SecureSpanConstants.WSDL_PROXY_FILE);
+    }
+
+    /**
+     * Get the query string portion of the WSDL URL
+     * @return String query portion of WSDL URL
+     */
+    public String getQueryWsdlString(){
+        return SecureSpanConstants.WSDL_PROXY_FILE + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID;
+    }
+
+    public String getExternalSSGPolicyURL(String serviceoid, final boolean fullPolicyURL){
         String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID +
                 "=" + serviceoid +
                 "&fulldoc=" + ((fullPolicyURL) ? "yes" : "no")+ "&" +
@@ -51,7 +67,7 @@ public class ExternalGatewayURLManager {
         return getCompleteGatewayURL(SecureSpanConstants.SERVICE_FILE) + serviceoid;
     }
 
-    private String getCompleteGatewayURL(String relativeUri) throws FindException {
+    private String getCompleteGatewayURL(String relativeUri) {
         return "http://" + getHostName() + ":" + getPortNumber() + relativeUri;
     }
     /**
@@ -60,7 +76,7 @@ public class ExternalGatewayURLManager {
      * @return String cluster hostname or hostname if the cluster property "clusterHost" is not set
      * @throws FindException if the hostname cannot be found
      */
-    private String getHostName() throws FindException {
+    private String getHostName() {
         final String hostName;
         final String clusterHost = serverConfig.getPropertyCached("clusterHost");
         if(clusterHost == null || clusterHost.trim().isEmpty()){

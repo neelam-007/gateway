@@ -10,15 +10,15 @@ import org.junit.Assert;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.util.Pair;
-import static com.l7tech.uddi.UDDIReferenceUpdater.TMODEL_TYPE.WSDL_PORT_TYPE;
-import static com.l7tech.uddi.UDDIReferenceUpdater.TMODEL_TYPE.WSDL_BINDING;
+import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE;
+import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
 
 import javax.xml.bind.JAXB;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 
-public class UDDIReferenceUpdaterTest {
+public class UDDIUtilitiesTest {
     private Wsdl wsdl;
     private WsdlToUDDIModelConverter wsdlToUDDIModelConverter;
     private Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels;
@@ -44,7 +44,7 @@ public class UDDIReferenceUpdaterTest {
     public void testUDDIReferenceUpdater() throws Exception {
         final Map<String, TModel> tModels = servicesAndTModels.right;
         for(TModel tModel: tModels.values()){
-            UDDIReferenceUpdater.TMODEL_TYPE type = UDDIReferenceUpdater.getTModelType(tModel);
+            UDDIUtilities.TMODEL_TYPE type = UDDIUtilities.getTModelType(tModel);
             final CategoryBag categoryBag = tModel.getCategoryBag();
             List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
             for (KeyedReference keyedReference : keyedReferences) {
@@ -73,12 +73,12 @@ public class UDDIReferenceUpdaterTest {
 
         final ArrayList<TModel> models = new ArrayList<TModel>();
         models.addAll(servicesAndTModels.right.values());
-        UDDIReferenceUpdater.updateBindingTModelReferences(models, servicesAndTModels.right);
+        UDDIUtilities.updateBindingTModelReferences(models, servicesAndTModels.right);
 
         int numBindingTModelsFound = 0;
         //Now each binding tModel should have a real tModelKey in it's keyedReference to the wsdl:portType tModel
         for(TModel tModel: servicesAndTModels.right.values()){
-            if(UDDIReferenceUpdater.getTModelType(tModel) != WSDL_BINDING) continue;
+            if(UDDIUtilities.getTModelType(tModel) != WSDL_BINDING) continue;
             numBindingTModelsFound++;
             //get it's portType keyedReference
             final CategoryBag categoryBag = tModel.getCategoryBag();
@@ -94,7 +94,7 @@ public class UDDIReferenceUpdaterTest {
                 //now find a portType tModel with this tModelKey
                 boolean refFound = false;
                 for(TModel aTModel: servicesAndTModels.right.values()){
-                    if(UDDIReferenceUpdater.getTModelType(aTModel) != WSDL_PORT_TYPE) continue;
+                    if(UDDIUtilities.getTModelType(aTModel) != WSDL_PORT_TYPE) continue;
                     if(!aTModel.getTModelKey().equals(keyValue)) continue;
                     refFound = true;
                 }
@@ -120,12 +120,12 @@ public class UDDIReferenceUpdaterTest {
 
         final ArrayList<TModel> models = new ArrayList<TModel>();
         models.addAll(servicesAndTModels.right.values());
-        UDDIReferenceUpdater.updateBindingTModelReferences(models, servicesAndTModels.right);
+        UDDIUtilities.updateBindingTModelReferences(models, servicesAndTModels.right);
 
         servicePublisher.publishDependentTModels(getUDDIClient(), servicesAndTModels.right, WSDL_BINDING);        
         //finish setup
 
-        UDDIReferenceUpdater.updateBusinessServiceReferences(servicesAndTModels.left, servicesAndTModels.right);
+        UDDIUtilities.updateBusinessServiceReferences(servicesAndTModels.left, servicesAndTModels.right);
         
         for(BusinessService businessService: servicesAndTModels.left){
             JAXB.marshal(businessService, System.out);
@@ -141,14 +141,14 @@ public class UDDIReferenceUpdaterTest {
                             servicesAndTModels.right.containsKey(modelKey));
                     numUpdatedReferences++;
                     //confirm the tModelKey found is valid and exists in the correct type of tModel
-                    final UDDIReferenceUpdater.TMODEL_TYPE currentTModelInstanceInfoType =
+                    final UDDIUtilities.TMODEL_TYPE currentTModelInstanceInfoType =
                             (tModelInstanceInfo.getInstanceDetails() != null)? WSDL_BINDING: WSDL_PORT_TYPE;
                     //iterate through all bindings, find the tModel, confirm it's key and value
                     boolean tModelReferencedFound = false;
 
                     for(TModel aRefTModel: servicesAndTModels.right.values()){
                         if(!aRefTModel.getTModelKey().equals(modelKey)) continue;
-                        UDDIReferenceUpdater.TMODEL_TYPE modelType = UDDIReferenceUpdater.getTModelType(aRefTModel);
+                        UDDIUtilities.TMODEL_TYPE modelType = UDDIUtilities.getTModelType(aRefTModel);
                         if(modelType != currentTModelInstanceInfoType) continue;
                         tModelReferencedFound = true;
                     }
@@ -161,13 +161,37 @@ public class UDDIReferenceUpdaterTest {
 
     }
 
+    @Test
+    public void testGetEndPoint() throws Exception {
+        String endPoint = UDDIUtilities.extractEndPointFromWsdl(wsdl, "Warehouse", "WarehouseSoap", "WarehouseSoap");
+        System.out.println(endPoint);
+        Assert.assertEquals("Invalid end point found", "http://hugh/ACMEWarehouseWS/Service1.asmx", endPoint);
+
+        //now ask for a binding which is not implemented by the service requested
+        endPoint = UDDIUtilities.extractEndPointFromWsdl(wsdl, "Warehouse which does not exist", "WarehouseSoap", "WarehouseSoap");
+        System.out.println(endPoint);
+        Assert.assertEquals("Invalid end point found", "http://hugh/ACMEWarehouseWS/Service1.asmx", endPoint);
+
+        //now ask for a binding which is not implemented by the service requested, or the port
+        endPoint = UDDIUtilities.extractEndPointFromWsdl(wsdl, "Warehouse which does not exist", "WarehouseSoap does not exist", "WarehouseSoap");
+        System.out.println(endPoint);
+        Assert.assertEquals("Invalid end point found", "http://hugh/ACMEWarehouseWS/Service1.asmx", endPoint);
+    }
+
+    @Test(expected = UDDIUtilities.WsdlEndPointNotFoundException.class)
+    public void testGetNonExistentBinding() throws UDDIUtilities.WsdlEndPointNotFoundException {
+        String endPoint = UDDIUtilities.extractEndPointFromWsdl(wsdl, "Warehouse", "WarehouseSoap", "WarehouseSoap does not exist");
+        System.out.println(endPoint);
+    }
+
+
     /**
      * Test the getTModelType method
      */
-    @Test
-    public void testGetTModelType(){
-
-    }
+//    @Test
+//    public void testGetTModelType(){
+//
+//    }
 
     public UDDIClient getUDDIClient() throws UDDIException {
         TestUddiClient uddiClient = new TestUddiClient();

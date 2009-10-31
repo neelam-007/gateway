@@ -121,6 +121,7 @@ CREATE TABLE uddi_service_control (
   wsdl_service_name varchar(255) NOT NULL,
   wsdl_port_name varchar(255) NOT NULL,
   wsdl_port_binding varchar(255) NOT NULL,
+  access_point_url varchar(255) NOT NULL,
   under_uddi_control tinyint(1) NOT NULL DEFAULT 0,
   proxy_binding_key varchar(255),
   monitoring_enabled tinyint(1) NOT NULL DEFAULT 0,

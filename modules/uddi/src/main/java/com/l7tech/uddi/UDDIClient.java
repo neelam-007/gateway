@@ -79,7 +79,7 @@ public interface UDDIClient extends Closeable {
     Collection<UDDINamedEntity> listOrganizations(String orgName, boolean caseSensitive, int offset, int maxRows) throws UDDIException;
 
     /**
-     * List services with their WSDL URLs. 
+     * List services with their WSDL URLs.
      *
      * @param serviceName The service name to match (pattern)
      * @param caseSensitive True for a case sensitive search

@@ -30,6 +30,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
                               String wsdlServiceName,
                               String wsdlPortName,
                               String wsdlPortBinding,
+                              String accessPointUrl,
                               boolean underUddiControl) {
         this.publishedServiceOid = publishedServiceOid;
         this.uddiRegistryOid = uddiRegistryOid;
@@ -39,6 +40,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.wsdlServiceName = wsdlServiceName;
         this.wsdlPortName = wsdlPortName;
         this.wsdlPortBinding = wsdlPortBinding;
+        this.accessPointUrl = accessPointUrl;
         this.underUddiControl = underUddiControl;
     }
 
@@ -93,6 +95,9 @@ public class UDDIServiceControl extends PersistentEntityImp {
 
         if(!this.getWsdlPortBinding().equals(portInfo.getWsdlPortBinding())) modified = true;
         this.setWsdlPortBinding(portInfo.getWsdlPortBinding());
+
+        if(!this.getAccessPointUrl().equals(portInfo.getAccessPointURL())) modified = true;
+        this.setAccessPointUrl(portInfo.getAccessPointURL());
 
         return modified;
     }
@@ -232,6 +237,15 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.wsPolicyTModelKey = wsPolicyTModelKey;
     }
 
+    @Column(name = "access_point_url")
+    public String getAccessPointUrl() {
+        return accessPointUrl;
+    }
+
+    public void setAccessPointUrl(String accessPointUrl) {
+        this.accessPointUrl = accessPointUrl;
+    }
+
     @Override
     @Version
     @Column(name = "version")
@@ -250,6 +264,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
     private String wsdlServiceName;
     private String wsdlPortName;
     private String wsdlPortBinding;
+    private String accessPointUrl;
     private boolean underUddiControl;
     private String proxyBindingKey;
     private boolean monitoringEnabled;

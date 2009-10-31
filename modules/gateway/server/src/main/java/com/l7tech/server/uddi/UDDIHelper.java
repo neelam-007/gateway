@@ -4,6 +4,7 @@ import com.l7tech.uddi.WsdlPortInfoImpl;
 import com.l7tech.uddi.*;
 import com.l7tech.util.Config;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.server.ServerConfig;
 
 import java.util.Properties;
 import java.util.List;
@@ -88,18 +89,51 @@ public class UDDIHelper {
         final int resultRowsMax = getResultRowsMax();
         final int resultBatchSize = getResultBatchSize();
 
+        ExternalGatewayURLManager gatewayURLManager = new ExternalGatewayURLManager(ServerConfig.getInstance());
+        final String wsdlUrl = gatewayURLManager.getBaseWsdlUrl();
+        final String queryUrl = gatewayURLManager.getQueryWsdlString();
+        final String hostName = ServerConfig.getInstance().getHostname();
+        final String hName;
+        if(hostName.indexOf("[") != -1){
+            hName = hostName.substring(0, hostName.indexOf("["));
+        }else if(hostName.indexOf(".") != -1){
+            hName = hostName.substring(0, hostName.indexOf("."));
+        }else{
+            hName = hostName;
+        }
+
         for (int i = 0; wsdlPortInfos.size() < resultRowsMax; i++) {
             int head = i * resultBatchSize;
             if (head > 0) head++; // one based
 
             Collection<WsdlPortInfo> foundWsdlPortInfos =
                     uddiClient.listServiceWsdls(namePattern, caseSensitive, head, resultBatchSize);
+            for(WsdlPortInfo wsdlPortInfo: foundWsdlPortInfos){
+                final String wsdl = wsdlPortInfo.getWsdlUrl();
+                if(wsdl.indexOf(wsdlUrl) != -1){
+                    if(wsdlPortInfo instanceof WsdlPortInfoImpl){
+                        WsdlPortInfoImpl impl = (WsdlPortInfoImpl) wsdlPortInfo;
+                        impl.setGatewayWsdl(true);//ssm will not allow this wsdl to be used
+                    }
+                } else if(wsdl.indexOf(queryUrl) != -1){
+                    if(wsdlPortInfo instanceof WsdlPortInfoImpl){
+                        WsdlPortInfoImpl impl = (WsdlPortInfoImpl) wsdlPortInfo;
+                        impl.setLikelyGatewayWsdl(true);//ssm will warn the user
+                    }
+                }else if(wsdl.indexOf(hName) != -1){
+                    if(wsdlPortInfo instanceof WsdlPortInfoImpl){
+                        WsdlPortInfoImpl impl = (WsdlPortInfoImpl) wsdlPortInfo;
+                        impl.setLikelyGatewayWsdl(true);//ssm will warn the user
+                    }
+                }
+            }
 
             wsdlPortInfos.addAll(foundWsdlPortInfos);
 
             if (!uddiClient.listMoreAvailable())
                 break;
         }
+
 
         boolean maxedOutSearch = wsdlPortInfos.size() >= resultRowsMax || uddiClient.listMoreAvailable();
 

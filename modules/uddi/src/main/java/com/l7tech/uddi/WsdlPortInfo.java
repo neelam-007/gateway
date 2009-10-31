@@ -31,4 +31,18 @@ public interface WsdlPortInfo {
      * @param oid long oid of the Entity from another package which we have no knowledge about here
      */
     void setUddiRegistryOid(long oid);
+
+    /**
+     * Return true when absoutely certain that the WSDL url contained in this class is from this SecureSpan Gate
+     * @return true means the WSDL is from this Gateway. This Gateway may be in a cluster
+     */
+    boolean isGatewayWsdl();
+
+    /**
+     * Return true when it is very likely that the WSDL is from this Gateway.
+     * @return true when the WSDL is likely from this gateway
+     */
+    boolean isLikelyGatewayWsdl();
+
+    String getAccessPointURL();
 }

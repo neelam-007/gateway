@@ -362,8 +362,10 @@ public class ServicePropertiesDialog extends JDialog {
 
                             final boolean needsToBeSaved;
                             final boolean needToDelete;
+                            long oldOid = -1L;
                             if(!existingOk){
                                 needToDelete = uddiServiceControl != null;//do this before variable is reset on next line
+                                oldOid = uddiServiceControl.getOid();
                                 uddiServiceControl = getNewUDDIServiceControl(wsdlPortInfo);
                                 needsToBeSaved = true;
                             }else{
@@ -374,7 +376,7 @@ public class ServicePropertiesDialog extends JDialog {
 
                             if(needsToBeSaved){
                                 try {
-                                    if(needToDelete) Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
+                                    if(needToDelete) Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(oldOid);
 
                                     Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
                                     //download it again as it gets populated with info on save
@@ -388,7 +390,8 @@ public class ServicePropertiesDialog extends JDialog {
                                 } catch (Exception e1) {
                                     //save and update exception
                                     if(e1 instanceof SaveException || e1 instanceof UpdateException){
-                                        showErrorMessage("Cannot save", "Cannot save UDDI information to Gateway", e1, true);
+                                        final String msg = "Cannot save UDDI information to Gateway: " + ExceptionUtils.getMessage(e1);
+                                        showErrorMessage("Cannot save", msg, ExceptionUtils.getDebugException(e1), true);
                                         return;
                                     }else throw new RuntimeException(e1);
                                 }
@@ -458,7 +461,7 @@ public class ServicePropertiesDialog extends JDialog {
     private UDDIServiceControl getNewUDDIServiceControl(WsdlPortInfo wsdlPortInfo) {
         return new UDDIServiceControl(subject.getOid(), wsdlPortInfo.getUddiRegistryOid(),
                 wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(), wsdlPortInfo.getWsdlServiceName(),
-                wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(), wsdlUnderUDDIControlCheckBox.isSelected());
+                wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getAccessPointURL(), wsdlUnderUDDIControlCheckBox.isSelected());
     }
 
     /**

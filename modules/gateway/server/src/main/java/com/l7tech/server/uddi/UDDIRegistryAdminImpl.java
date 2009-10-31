@@ -14,7 +14,9 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
@@ -149,7 +151,36 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     public long saveUDDIServiceControlOnly( final UDDIServiceControl uddiServiceControl )
             throws UpdateException, SaveException, FindException {
         if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ){
-            //todo validate information against the services wsdl
+            final PublishedService service = serviceManager.findByPrimaryKey(uddiServiceControl.getPublishedServiceOid());
+            final Wsdl wsdl;
+            try {
+                wsdl = service.parsedWsdl();
+            } catch (WSDLException e) {
+                final String msg = "Could not obtain WSDL for associated published service: " + ExceptionUtils.getMessage(e);
+                logger.log(Level.WARNING, msg, e);
+                throw new SaveException(msg);
+            }
+
+            //validate that an end point can be found
+            final String endPoint = uddiServiceControl.getAccessPointUrl();
+            //todo take appropriate action as WSDL definition may have just changed - UDDICoordinator
+//            try {
+//                endPoint = UDDIUtilities.extractEndPointFromWsdl(wsdl, uddiServiceControl.getWsdlServiceName(),
+//                        uddiServiceControl.getWsdlPortName(), uddiServiceControl.getWsdlPortBinding());
+//            } catch (UDDIUtilities.WsdlEndPointNotFoundException e) {
+//                final String msg = "Cannot save UDDIServiceControl as no valid endpoint can be found from the Published Service's WSDL: "
+//                        + ExceptionUtils.getMessage(e);
+//                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+//                throw new SaveException(msg);
+//            }
+
+            //make sure that we are not monitoring an endpoint of this SSG
+            if(UDDIUtilities.isGatewayUrl(endPoint, ServerConfig.getInstance().getHostname())){
+                final String msg = "Cannot save UDDIServiceControl as the WSDL endpoint routes back to the SecureSpan Gateway";
+                logger.log(Level.WARNING, msg);
+                throw new SaveException(msg);
+            }
+
             final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiServiceControl.getUddiRegistryOid());
             if(uddiRegistry == null) throw new FindException("Cannot find UDDIRegistry");
 

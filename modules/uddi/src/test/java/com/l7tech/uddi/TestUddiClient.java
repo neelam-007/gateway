@@ -10,7 +10,6 @@ import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.common.uddi.guddiv3.BindingTemplate;
 import com.l7tech.common.uddi.guddiv3.BindingTemplates;
-import com.l7tech.util.Pair;
 
 import java.util.*;
 import java.io.IOException;

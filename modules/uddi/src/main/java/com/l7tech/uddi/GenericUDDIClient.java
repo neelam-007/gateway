@@ -645,10 +645,11 @@ public class GenericUDDIClient implements UDDIClient {
                         //return a WSDLInfo per BindingTemplate - as it maps 1:1 to wsdl:port
                         AccessPoint accessPoint = bindingTemplate.getAccessPoint();
                         if (bindingTemplate.getTModelInstanceDetails() == null ||
-                                accessPoint == null) {
+                                accessPoint == null || !accessPoint.getUseType().equals("endPoint")) {
                             continue;
                         }
 
+                        final String accessPointURL = accessPoint.getValue();
                         //this should only ever contain two keys
                         List<String> modelKeys = new ArrayList<String>();
 
@@ -697,7 +698,7 @@ public class GenericUDDIClient implements UDDIClient {
                         TModel bindingTModel = null;
                         TModel portTypeTModel = null;
                         for (final TModel tModel : resolvedTMomdels) {
-                            UDDIReferenceUpdater.TMODEL_TYPE tModelType = UDDIReferenceUpdater.getTModelType(tModel);
+                            UDDIUtilities.TMODEL_TYPE tModelType = UDDIUtilities.getTModelType(tModel);
                             switch (tModelType) {
                                 case WSDL_BINDING:
                                     bindingTModel = tModel;
@@ -736,6 +737,7 @@ public class GenericUDDIClient implements UDDIClient {
                         //the instance param value from the bindingTemplate is the name of the wsdl:port
                         wsdlPortInfo.setWsdlPortName(instanceParamForWsdlBinding);
                         wsdlPortInfo.setWsdlPortBinding(bindingTModel.getName().getValue());
+                        wsdlPortInfo.setAccessPointURL(accessPointURL);
 
                         // Get the WSDL url
                         if (!modelInstanceUrl.isEmpty()) {

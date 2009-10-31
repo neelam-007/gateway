@@ -210,7 +210,8 @@ public class PublishServiceWizard extends Wizard {
             if(wsdlPortInfo != null && wsdlPortInfo.getWsdlUrl().equals(saBundle.getService().getWsdlUrl())){
                 UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
                         wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
-                        wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(), true);
+                        wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
+                        wsdlPortInfo.getAccessPointURL(), true);
 
                 try {
                     Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);

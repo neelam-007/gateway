@@ -154,11 +154,33 @@ public class SearchUddiDialog extends JDialog {
                     public void actionPerformed(ActionEvent e) {
 
                         int row = wsdlTable.getSelectedRow();
+                        final boolean [] canFireEventAndDispose = new boolean[]{true};
                         if (row != -1) {
-                            WsdlPortInfo si = (WsdlPortInfo) wsdlTable.getTableSorter().getData(row);
-                            fireItemSelectedEvent(si);
+                            final WsdlPortInfo wsdlPortInfo = (WsdlPortInfo) wsdlTable.getTableSorter().getData(row);
+
+                            //Check if the selected WSDL may be from this Gateway
+                            if(wsdlPortInfo.isGatewayWsdl()){
+                                DialogDisplayer.showMessageDialog(SearchUddiDialog.this,  "This WSDL is from the SecureSpan Gateway. Cannot route to self",
+                                        "Cannot select WSDL", JOptionPane.WARNING_MESSAGE, null);
+                                return;
+                            }
+                            
+                            if(wsdlPortInfo.isLikelyGatewayWsdl()){
+                                DialogDisplayer.showConfirmDialog(SearchUddiDialog.this,
+                                        "It is likely this WSDL is from the SecureSpan Gateway. Please confirm selection",
+                                        "Confirm WSDL selection", JOptionPane.YES_NO_OPTION,
+                                        new DialogDisplayer.OptionListener() {
+                                    @Override
+                                    public void reportResult(int option) {
+                                        if(option != JOptionPane.YES_OPTION) canFireEventAndDispose[0] = false;
+                                    }
+                                });
+
+                            }
+
+                            if(canFireEventAndDispose[0]) fireItemSelectedEvent(wsdlPortInfo);
                         }
-                        dispose();
+                        if(canFireEventAndDispose[0]) dispose();
                     }
                 });
                 Utilities.setDoubleClickAction(wsdlTable, selectButton);
