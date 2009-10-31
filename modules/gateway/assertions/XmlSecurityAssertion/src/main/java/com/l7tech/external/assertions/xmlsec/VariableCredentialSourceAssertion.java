@@ -1,11 +1,10 @@
 package com.l7tech.external.assertions.xmlsec;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.util.Functions;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * An assertion that can gather arbitrary context variables as credentials, if they are X509Certificates
@@ -68,6 +67,8 @@ public class VariableCredentialSourceAssertion extends MessageTargetableAssertio
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, VariableCredentialSourceValidator.class.getName());
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
