@@ -201,6 +201,11 @@ public class UDDIRegistry extends NamedEntityImp {
         isMetricsEnabled = metricsEnabled;
     }
 
+    /**
+     * Get the metrics publish frequency in milliseconds.
+     *
+     * @return The metrics publish interval
+     */
     @Column(name="metrics_publish_frequency")
     public long getMetricPublishFrequency() {
         return metricPublishFrequency;
@@ -219,6 +224,11 @@ public class UDDIRegistry extends NamedEntityImp {
         isMonitoringEnabled = monitoringEnabled;
     }
 
+    /**
+     * Get the monitoring frequency in milliseconds.
+     *
+     * @return The monitoring interval
+     */
     @Column(name="monitor_frequency")
     public long getMonitoringFrequency() {
         return monitoringFrequency;
@@ -228,6 +238,11 @@ public class UDDIRegistry extends NamedEntityImp {
         this.monitoringFrequency = monitoringFrequency;
     }
 
+    /**
+     * Should subscription notifications be asynchronous.
+     *
+     * @return True for asynchronous notification, false for synchronous change tracking
+     */
     @Column(name="subscribe_for_notifications")
     public boolean isSubscribeForNotifications() {
         return isSubscribeForNotifications;

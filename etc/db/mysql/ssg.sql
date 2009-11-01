@@ -894,6 +894,23 @@ CREATE TABLE uddi_registries (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Table for UDDI registry subscription information
+--
+DROP TABLE IF EXISTS uddi_registry_subscription;
+CREATE TABLE uddi_registry_subscription (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  uddi_registry_oid bigint(20) NOT NULL,
+  uddi_subscription_key varchar(255),
+  uddi_subscription_expiry_time bigint NOT NULL,
+  uddi_subscription_notified_time bigint NOT NULL,
+  uddi_subscription_check_time bigint NOT NULL,
+  PRIMARY KEY (objectid),
+  UNIQUE KEY  (uddi_registry_oid),
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 -- Table structure for Gateway WSDLs published to UDDI. Known as 'Proxied Business Services'
 -- Entity UDDIProxiedService
 -- TODO Confirm the max length of valid UDDI v3 keys
@@ -942,23 +959,6 @@ CREATE TABLE uddi_service_control (
   disable_service_on_change tinyint(1) NOT NULL DEFAULT 0,
   metrics_enabled tinyint(1) NOT NULL DEFAULT 0,
   wspolicy_tmodel_key varchar(255),
-  PRIMARY KEY (objectid),
-  UNIQUE KEY  (published_service_oid),
-  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
-) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
-
---
--- Table for UDDI runtime information
---
-DROP TABLE IF EXISTS uddi_runtime;
-CREATE TABLE uddi_runtime (
-  objectid bigint(20) NOT NULL,
-  version integer NOT NULL,
-  published_service_oid bigint(20) NOT NULL,
-  uddi_registry_oid bigint(20) NOT NULL,
-  uddi_subscription_key varchar(255),
-  uddi_subscription_check_time bigint NOT NULL,
   PRIMARY KEY (objectid),
   UNIQUE KEY  (published_service_oid),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,

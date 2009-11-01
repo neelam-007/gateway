@@ -2,9 +2,9 @@ package com.l7tech.server.uddi;
 
 import com.l7tech.uddi.WsdlPortInfoImpl;
 import com.l7tech.uddi.*;
-import com.l7tech.util.Config;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import java.util.Properties;
 import java.util.List;
@@ -33,9 +33,9 @@ public class UDDIHelper {
      */
     public static final String PROP_RESULT_BATCH_SIZE = "uddi.result.batch_size";
 
-    public UDDIHelper( final Config config,
+    public UDDIHelper( final ServerConfig serverConfig,
                        final Properties properties ) {
-        this.config = config;
+        this.serverConfig = serverConfig;
 
         String rowsMax = properties.getProperty(PROP_RESULT_ROWS_MAX, "100");     // default 100 rows max
         int resultRowsMax = Integer.parseInt(rowsMax);
@@ -48,6 +48,48 @@ public class UDDIHelper {
 
         this.defaultResultBatchSize = resultBatchSize;
         this.defaultResultRowsMax = resultRowsMax;
+    }
+
+    /**
+     * Get the WSDL download URL for the given service identifier (OID)
+     *
+     * @param serviceOid The oid for the service
+     * @return The URL
+     */
+    public String getExternalWsdlUrlForService( final long serviceOid )  {
+        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceOid;
+        return buildCompleteGatewayUrl(SecureSpanConstants.WSDL_PROXY_FILE) + "?" + query;
+    }
+
+    /**
+     * Get the base WSDL URL
+     *
+     * @return String base WSDL URL
+     */
+    public String getBaseWsdlUrl(){
+        return buildCompleteGatewayUrl(SecureSpanConstants.WSDL_PROXY_FILE);
+    }
+
+    /**
+     * Get the query string portion of the WSDL URL
+     *
+     * @return String query portion of WSDL URL
+     */
+    public String getQueryWsdlString(){
+        return SecureSpanConstants.WSDL_PROXY_FILE + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID;
+    }
+
+    public String getExternalPolicyUrlForService( final long serviceOid, final boolean fullPolicyURL ){
+        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID +
+                "=" + serviceOid +
+                "&fulldoc=" + ((fullPolicyURL) ? "yes" : "no")+ "&" +
+                SecureSpanConstants.HttpQueryParameters.PARAM_INLINE + "=no";
+
+        return buildCompleteGatewayUrl(SecureSpanConstants.POLICY_SERVICE_FILE) + "?" + query;
+    }
+
+    public String getExternalUrlForService( final long serviceOid ) {
+        return buildCompleteGatewayUrl(SecureSpanConstants.SERVICE_FILE) + serviceOid;
     }
 
     public UDDINamedEntity[] getMatchingBusinesses( final UDDIClient uddiClient,
@@ -89,9 +131,8 @@ public class UDDIHelper {
         final int resultRowsMax = getResultRowsMax();
         final int resultBatchSize = getResultBatchSize();
 
-        ExternalGatewayURLManager gatewayURLManager = new ExternalGatewayURLManager(ServerConfig.getInstance());
-        final String wsdlUrl = gatewayURLManager.getBaseWsdlUrl();
-        final String queryUrl = gatewayURLManager.getQueryWsdlString();
+        final String wsdlUrl = getBaseWsdlUrl();
+        final String queryUrl = getQueryWsdlString();
         final String hostName = ServerConfig.getInstance().getHostname();
         final String hName;
         if(hostName.indexOf("[") != -1){
@@ -142,7 +183,7 @@ public class UDDIHelper {
             wsdlPortInfos.add(WsdlPortInfoImpl.MAXED_OUT_SEARCH_RESULT);
         }
 
-        return wsdlPortInfos.toArray(new WsdlPortInfoImpl[wsdlPortInfos.size()]);
+        return wsdlPortInfos.toArray(new WsdlPortInfo[wsdlPortInfos.size()]);
     }
 
     /**
@@ -160,25 +201,46 @@ public class UDDIHelper {
 
     //- PRIVATE
 
-    private final Config config;
+    private final ServerConfig serverConfig;
     private final int defaultResultRowsMax;
     private final int defaultResultBatchSize;
 
-    /**
-     * Process the URLs of the given services.
-     */
-    private void addWsdlInfos( final List<WsdlPortInfo> wsdlListInfo,
-                               final Collection<UDDINamedEntity> services) {
-        for ( UDDINamedEntity info : services ) {
-            wsdlListInfo.add(new WsdlPortInfoImpl(info.getName(), info.getWsdlUrl()));
-        }
-    }
-
     private int getResultRowsMax() {
-        return config.getIntProperty( PROP_RESULT_ROWS_MAX, defaultResultRowsMax );
+        return serverConfig.getIntProperty( PROP_RESULT_ROWS_MAX, defaultResultRowsMax );
     }
 
     private int getResultBatchSize() {
-        return config.getIntProperty( PROP_RESULT_BATCH_SIZE, defaultResultBatchSize );
+        return serverConfig.getIntProperty( PROP_RESULT_BATCH_SIZE, defaultResultBatchSize );
+    }
+
+    private String buildCompleteGatewayUrl( final String relativeUri ) {
+        return "http://" + getExternalHostName() + getPrefixedExternalPort() + relativeUri;
+    }
+
+    /**
+     * Get the hostname from the clusterHost cluster property.
+     *
+     * <p>If it's not set, then the SSG's host name will be returned</p>
+     *
+     * @return String cluster hostname or hostname if the cluster property "clusterHost" is not set
+     * @throws com.l7tech.objectmodel.FindException if the hostname cannot be found
+     */
+    private String getExternalHostName() {
+        final String hostName;
+        final String clusterHost = serverConfig.getProperty("clusterHost");
+        if(clusterHost == null || clusterHost.trim().isEmpty()){
+            hostName = serverConfig.getHostname();
+        }else{
+            hostName = clusterHost;
+        }
+        return hostName;
+    }
+
+    private String getPrefixedExternalPort() {
+        String port = serverConfig.getProperty("clusterhttpport", "");
+        if ( port.length() > 0 ) {
+            port = ":" + port;
+        }
+        return port;
     }
 }

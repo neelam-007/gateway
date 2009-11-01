@@ -507,6 +507,10 @@ public class GatewayFeatureSets {
         fsr("set:JdbcQuery:Assertions", "The necessary assertions to enable JDBC Query functionality",
             mass("assertion:JdbcQuery"));
 
+        GatewayFeatureSet uddiNotificationAssertions =
+        fsr("set:UDDINotification:Assertions", "The necessary assertions to enable UDDI Notification functionality",
+            mass("assertion:UDDINotification"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -546,6 +550,7 @@ public class GatewayFeatureSets {
             fs(policyAccel),
             fs(uiDs),
             fs(customDs),
+            fs(uddiNotificationAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -562,6 +567,7 @@ public class GatewayFeatureSets {
             fs(threatAccel),
             fs(uiAccel),
             fs(moduleLoader),
+            fs(uddiNotificationAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -580,6 +586,7 @@ public class GatewayFeatureSets {
             fs(uiFw),
             fs(ssb),
             fs(jdbcQueryAssertions),
+            fs(uddiNotificationAssertions),
             fs(customFw));
 
         GatewayFeatureSet profileGateway =
@@ -602,6 +609,7 @@ public class GatewayFeatureSets {
             fs(samlpAssertions),
             fs(xacmlAssertions),
             fs(jdbcQueryAssertions),
+            fs(uddiNotificationAssertions),
             fs(uiFw),
             fs(wssp));
 
@@ -633,6 +641,7 @@ public class GatewayFeatureSets {
             fs(modularAssertions),
             fs(wssp),
             fs(jdbcQueryAssertions),
+            fs(uddiNotificationAssertions),
             fs(uiFw));
 
         PROFILE_ALL =

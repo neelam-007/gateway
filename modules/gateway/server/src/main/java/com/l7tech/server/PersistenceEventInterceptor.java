@@ -27,7 +27,7 @@ import com.l7tech.server.event.admin.*;
 import com.l7tech.server.logon.LogonInfo;
 import com.l7tech.server.service.resolution.ResolutionParameters;
 import com.l7tech.server.wsdm.subscription.Subscription;
-import com.l7tech.server.uddi.UDDIRuntimeServiceInfo;
+import com.l7tech.server.uddi.UDDIRegistrySubscription;
 import org.hibernate.CallbackException;
 import org.hibernate.EntityMode;
 import org.hibernate.Interceptor;
@@ -72,7 +72,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(RoleAssignment.class.getName());
         ignoredClassNames.add("com.l7tech.server.ems.standardreports.StandardReportArtifact");
         ignoredClassNames.add("com.l7tech.server.ems.migration.MigrationMappingRecord");
-        ignoredClassNames.add(UDDIRuntimeServiceInfo.class.getName());
+        ignoredClassNames.add(UDDIRegistrySubscription.class.getName());
 
         // System entities that should generate application events but should not be audited
         noAuditClassNames = new HashSet<String>();

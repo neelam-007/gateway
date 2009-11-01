@@ -67,4 +67,13 @@ public interface UDDIProxiedServiceManager extends EntityManager<UDDIProxiedServ
                                   final List<BusinessService> uddiBusinessServices,
                                   final Map<String, TModel> uddiDependentTModels, String generalKeyword)
             throws UpdateException, VersionException, UDDIException;
+
+    /**
+     * Find a UDDIProxiedService by published service identifier (OID)
+     *
+     * @param publishedServiceOid The identifier for the service
+     * @return The UDDIProxiedService or null
+     * @throws FindException if an error occurs
+     */
+    UDDIProxiedService findByPublishedServiceOid( long publishedServiceOid ) throws FindException;
 }

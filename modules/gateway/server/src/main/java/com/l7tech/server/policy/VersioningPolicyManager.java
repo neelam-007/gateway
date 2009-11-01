@@ -136,11 +136,6 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
-    public Policy findByUniqueKey(String uniqueFieldName, long uniqueKey) throws FindException {
-        return policyManager.findByUniqueKey(uniqueFieldName, uniqueKey);
-    }
-
-    @Override
     public void delete(long oid) throws DeleteException, FindException {
         policyManager.delete(oid);
     }

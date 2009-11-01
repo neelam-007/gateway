@@ -8,8 +8,12 @@ import java.util.logging.Logger;
 import java.net.URL;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Binding;
+import javax.xml.ws.Holder;
 import javax.xml.ws.handler.Handler;
 import javax.xml.namespace.QName;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.datatype.DatatypeConfigurationException;
 
 /**
  * UDDIv3 client implementation using generated JAX-WS UDDI API
@@ -645,7 +649,7 @@ public class GenericUDDIClient implements UDDIClient {
                         //return a WSDLInfo per BindingTemplate - as it maps 1:1 to wsdl:port
                         AccessPoint accessPoint = bindingTemplate.getAccessPoint();
                         if (bindingTemplate.getTModelInstanceDetails() == null ||
-                                accessPoint == null || !accessPoint.getUseType().equals("endPoint")) {
+                                accessPoint == null || !accessPoint.getUseType().equals( USE_TYPE_END_POINT )) {
                             continue;
                         }
 
@@ -781,7 +785,7 @@ public class GenericUDDIClient implements UDDIClient {
         // We want them all, but setting limit at 50 //todo accecpt this value as a param from cluster variable
         findBinding.setMaxRows(50);
 
-        // This does not work with CentraSite
+        // TODO This does not work with CentraSite
         //CategoryBag bindingCategoryBag = new CategoryBag();
         //KeyedReference bindingKeyedReference = new KeyedReference();
         //bindingKeyedReference.setKeyValue(WSDL_TYPES_PORT);
@@ -1050,6 +1054,48 @@ public class GenericUDDIClient implements UDDIClient {
         return moreAvailable;
     }
 
+    @Override
+    public String getBindingKeyForService( final String uddiServiceKey ) throws UDDIException {
+        validateKey(uddiServiceKey);
+
+        String bindingKey = null;
+        try {
+            String authToken = getAuthToken();
+            UDDIInquiryPortType inquiryPort = getInquirePort();
+
+            GetServiceDetail getServiceDetail = new GetServiceDetail();
+            getServiceDetail.setAuthInfo(authToken);
+            getServiceDetail.getServiceKey().add(uddiServiceKey);
+            ServiceDetail detail = inquiryPort.getServiceDetail(getServiceDetail);
+
+            List<BusinessService> services = detail.getBusinessService();
+            if ( services != null && !services.isEmpty() ) {
+                BusinessService service = services.get( 0 );
+                if ( service != null ) {
+                    BindingTemplates bindingTemplates = service.getBindingTemplates();
+                    if ( bindingTemplates != null ) {
+                        List<BindingTemplate> bindingTemplateList = bindingTemplates.getBindingTemplate();
+                        if ( bindingTemplateList != null ) {
+                            for ( BindingTemplate bindingTemplate : bindingTemplateList ) {
+                                if ( bindingTemplate.getAccessPoint() != null &&
+                                     USE_TYPE_END_POINT.equals(bindingTemplate.getAccessPoint().getUseType()) ) {
+                                    bindingKey = bindingTemplate.getBindingKey();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error getting policy URL: ", drfm);
+        } catch (RuntimeException e) {
+            throw new UDDIException("Error getting policy URL.", e);
+        }
+
+        return bindingKey;
+    }
+
     /**
      *
      */
@@ -1298,6 +1344,216 @@ public class GenericUDDIClient implements UDDIClient {
         }
     }
 
+    @Override
+    public UDDIOperationalInfo getOperationalInfo( final String entityKey ) throws UDDIException {
+        UDDIOperationalInfo info = null;
+
+        Collection<UDDIOperationalInfo> uddiInfos = getOperationalInfos( entityKey );
+        if ( uddiInfos != null ) {
+            for ( UDDIOperationalInfo uddiInfo : uddiInfos ) {
+                if ( entityKey.equals(uddiInfo.getEntityKey()) ) {
+                    info = uddiInfo;
+                    break;
+                }
+            }
+        }
+
+        if ( info == null ) {
+            // This should not occur, the getOperationalInfo call should fault for invalid keys
+            throw new UDDIException("Entity key not found '"+entityKey+"'.");
+        }
+
+        return info;
+    }
+
+    @Override
+    public Collection<UDDIOperationalInfo> getOperationalInfos( final String... entityKey ) throws UDDIException {
+        Collection<UDDIOperationalInfo> uddiInfos = new ArrayList<UDDIOperationalInfo>();
+
+        if ( entityKey != null && entityKey.length>0 ) {
+            try {
+                final String authToken = getAuthToken();
+
+                final UDDIInquiryPortType inquiryPort = getInquirePort();
+
+                // find info
+                final GetOperationalInfo getOperationalInfo = new GetOperationalInfo();
+                getOperationalInfo.setAuthInfo(authToken);
+                getOperationalInfo.getEntityKey().addAll(Arrays.asList(entityKey));
+
+                OperationalInfos infos = inquiryPort.getOperationalInfo(getOperationalInfo);
+                if (infos != null) {
+                    List<OperationalInfo> OperationalInfos = infos.getOperationalInfo();
+                    for ( OperationalInfo operationalInfo : OperationalInfos ) {
+                        uddiInfos.add(new UDDIOperationalInfoImpl( operationalInfo ));
+                    }
+                }
+            } catch (DispositionReportFaultMessage drfm) {
+                throw buildFaultException("Error accessing entity operational information: ", drfm);
+            }
+        }
+
+        return uddiInfos;
+    }
+
+    @Override
+    public String subscribe( final long expiryTime,
+                             final long notificationInterval,
+                             final String bindingKey ) throws UDDIException {
+        String subscriptionKey = null;
+        try {
+            final DatatypeFactory factory = DatatypeFactory.newInstance();
+            final UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
+
+            final FindService findService = new FindService();
+            KeyedReference keyedReference = new KeyedReference();
+            keyedReference.setKeyValue(WSDL_TYPES_SERVICE);
+            keyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
+            CategoryBag categoryBag = new CategoryBag();
+            categoryBag.getKeyedReference().add(keyedReference);
+            findService.setCategoryBag(categoryBag);            
+
+            final SubscriptionFilter filter = new SubscriptionFilter();
+            filter.setFindService( findService );
+
+            final GregorianCalendar expiresGC = new GregorianCalendar();
+            expiresGC.setTimeInMillis( expiryTime );
+            final XMLGregorianCalendar expiresAfter = factory.newXMLGregorianCalendar( expiresGC );
+
+            final Subscription subscription = new Subscription();
+            subscription.setBrief( true );
+            subscription.setExpiresAfter( expiresAfter );
+            subscription.setSubscriptionFilter( filter );
+            if ( bindingKey != null ) {
+                subscription.setBindingKey( bindingKey );
+                if ( notificationInterval < 1 ) {
+                    throw new UDDIException("notifcationInterval is required when bindingKey is present");
+                }
+                subscription.setNotificationInterval( factory.newDuration( notificationInterval ) );
+            } else if ( notificationInterval > 0 ) {
+                subscription.setNotificationInterval( factory.newDuration( notificationInterval ) );
+            }
+
+            Holder<List<Subscription>> holder = new Holder<List<Subscription>>( Collections.singletonList( subscription ));
+
+            subscriptionPort.saveSubscription( getAuthToken(), holder );
+
+            if ( !holder.value.isEmpty() ) {
+                subscriptionKey = holder.value.get( 0 ).getSubscriptionKey();
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error subscribing: ", drfm);
+        } catch (RuntimeException e) {
+            throw new UDDIException("Error subscribing.", e);
+        } catch (DatatypeConfigurationException e) {
+            throw new UDDIException("Error subscribing.", e);
+        }
+
+        if ( subscriptionKey == null ) {
+            throw new UDDIException( "Subscription Key error." );
+        }
+
+        return subscriptionKey;
+    }
+
+    @Override
+    public void deleteSubscription( final String subscriptionKey ) throws UDDIException {
+        try {
+            final UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
+
+            final DeleteSubscription deleteSubscription = new DeleteSubscription();
+            deleteSubscription.setAuthInfo( getAuthToken() );
+            deleteSubscription.getSubscriptionKey().add( subscriptionKey );
+
+            subscriptionPort.deleteSubscription( deleteSubscription );
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error deleting subscription '"+subscriptionKey+"': ", drfm);
+        } catch (RuntimeException e) {
+            throw new UDDIException("Error deleting subscription '"+subscriptionKey+"'", e);
+        }
+    }
+
+    @Override
+    public UDDISubscriptionResults pollSubscription( final long startTime,
+                                                     final long endTime,
+                                                     final String subscriptionKey ) throws UDDIException {
+        final UDDISubscriptionResultsImpl uddiResults = new UDDISubscriptionResultsImpl( subscriptionKey, startTime, endTime );
+
+        try {
+            if ( subscriptionKey != null ) {
+                final UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
+                final DatatypeFactory factory = DatatypeFactory.newInstance();
+
+                final CoveragePeriod period = new CoveragePeriod();
+                final GregorianCalendar startGC = new GregorianCalendar();
+                startGC.setTimeInMillis( startTime );
+                period.setStartPoint( factory.newXMLGregorianCalendar( startGC ) );
+
+                if ( endTime > 0 ) {
+                    GregorianCalendar endGC = new GregorianCalendar();
+                    endGC.setTimeInMillis( endTime );
+                    period.setEndPoint( factory.newXMLGregorianCalendar( endGC ) );
+                }
+
+                GetSubscriptionResults getSubscriptionResults = new GetSubscriptionResults();
+                getSubscriptionResults.setAuthInfo( getAuthToken() );
+                getSubscriptionResults.setSubscriptionKey( subscriptionKey );
+                getSubscriptionResults.setCoveragePeriod( period );
+
+                String chunkToken = null;
+                boolean moreResults = true;
+                while ( moreResults ) {
+                    getSubscriptionResults.setChunkToken( chunkToken );
+                    SubscriptionResultsList results = subscriptionPort.getSubscriptionResults( getSubscriptionResults );
+                    if ( results != null ) {
+                        chunkToken = results.getChunkToken();
+                        if ( chunkToken != null && !"0".equals(chunkToken.trim()) ) {
+                            chunkToken = chunkToken.trim();
+                        } else {
+                            moreResults = false;
+                        }
+
+                        // Long format results
+                        ServiceList serviceList = results.getServiceList();
+                        if ( serviceList != null ) {
+                            ServiceInfos serviceInfos = serviceList.getServiceInfos();
+                            if ( serviceInfos != null ) {
+                                List<ServiceInfo> serviceInfoList = serviceInfos.getServiceInfo();
+                                if ( serviceInfoList != null ) {
+                                    for ( ServiceInfo serviceInfo : serviceInfoList ) {
+                                        uddiResults.add( new UDDISubscriptionResultsImpl.ResultImpl( serviceInfo.getServiceKey(), false ) );
+                                    }
+                                }
+                            }
+                        }
+
+                        // Brief format/deleted entity results
+                        List<KeyBag> bags = results.getKeyBag();
+                        if ( bags != null ) {
+                            for ( KeyBag bag : bags ) {
+                                boolean deleted = bag.isDeleted();
+                                List<String> serviceKeys = bag.getServiceKey();
+                                if ( serviceKeys != null ) {
+                                    for ( String servicekey : serviceKeys ) {
+                                        uddiResults.add( new UDDISubscriptionResultsImpl.ResultImpl( servicekey, deleted ) );
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        moreResults = false;
+                    }
+                }
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error getting subscription results: ", drfm);
+        } catch (DatatypeConfigurationException e) {
+            throw new UDDIException("Error getting subscription results.", e);
+        }
+
+        return uddiResults;
+    }
+
     /**
      * 
      */
@@ -1456,6 +1712,7 @@ public class GenericUDDIClient implements UDDIClient {
     private static final String OVERVIEW_URL_TYPE_WSDL = "wsdlInterface";
     private static final String FINDQUALIFIER_APPROXIMATE = "approximateMatch";
     private static final String FINDQUALIFIER_CASEINSENSITIVE = "caseInsensitiveMatch";
+    private static final String USE_TYPE_END_POINT = "endPoint";
 
     // From http://www.uddi.org/pubs/uddi_v3.htm#_Toc85908004
     private static final int MAX_LENGTH_KEY = 255;
@@ -1780,5 +2037,63 @@ public class GenericUDDIClient implements UDDIClient {
         logger.log(Level.FINE, "String after : " + temp);
         if (temp.contains("%") || temp.contains("_")) result = true;
         return result;
+    }
+
+    private static class UDDIOperationalInfoImpl implements UDDIOperationalInfo {
+        private final OperationalInfo info;
+        private Calendar createdCalendar;
+        private Calendar modifiedCalendar;
+        private Calendar modifiedIncludingChildrenCalendar;
+
+        private UDDIOperationalInfoImpl( final OperationalInfo info ) {
+            this.info = info;            
+        }
+
+        @Override
+        public String getEntityKey() {
+            return info.getEntityKey();
+        }
+
+        @Override
+        public String getAuthorizedName() {
+            return info.getAuthorizedName();
+        }
+
+        @Override
+        public long getCreatedTime() {
+            if ( createdCalendar == null ) {
+                createdCalendar = toCalendar(info.getCreated());
+            }
+            return createdCalendar.getTimeInMillis();
+        }
+
+        @Override
+        public long getModifiedTime() {
+            if ( modifiedCalendar == null ) {
+                modifiedCalendar = toCalendar(info.getModified());
+            }
+            return modifiedCalendar.getTimeInMillis();
+        }
+
+        @Override
+        public long getModifiedIncludingChildrenTime() {
+            if ( modifiedIncludingChildrenCalendar == null ) {
+                modifiedIncludingChildrenCalendar = toCalendar(info.getModifiedIncludingChildren());
+            }
+            return modifiedIncludingChildrenCalendar.getTimeInMillis();
+        }
+
+        private Calendar toCalendar( final XMLGregorianCalendar xmlGregorianCalendar ) {
+            Calendar calendar;
+
+            if ( xmlGregorianCalendar == null ) {
+                calendar = Calendar.getInstance();
+                calendar.setTimeInMillis( 0 );
+            } else {
+                calendar = xmlGregorianCalendar.toGregorianCalendar();
+            }
+
+            return calendar;
+        }
     }
 }

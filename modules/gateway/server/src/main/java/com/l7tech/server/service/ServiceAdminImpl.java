@@ -20,7 +20,6 @@ import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.sla.CounterIDManager;
-import com.l7tech.server.uddi.ExternalGatewayURLManager;
 import com.l7tech.server.uddi.UDDITemplateManager;
 import com.l7tech.server.uddi.UDDIHelper;
 import com.l7tech.uddi.*;
@@ -64,7 +63,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private SSLContext sslContext;
 
     private final AssertionLicense licenseManager;
-    private final ExternalGatewayURLManager externalGatewayURLManager;
     private final UDDIHelper uddiHelper;
     private final ServiceManager serviceManager;
     private final ServiceAliasManager serviceAliasManager;
@@ -93,7 +91,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             };
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
-                            ExternalGatewayURLManager externalGatewayURLManager,
                             UDDIHelper uddiHelper,
                             ServiceManager serviceManager,
                             ServiceAliasManager serviceAliasManager,
@@ -110,7 +107,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             ServiceTemplateManager serviceTemplateManager, UDDIRegistryAdmin uddiRegistryAdmin)
     {
         this.licenseManager = licenseManager;
-        this.externalGatewayURLManager = externalGatewayURLManager;
         this.uddiHelper = uddiHelper;
         this.serviceManager = serviceManager;
         this.serviceAliasManager = serviceAliasManager;
@@ -187,7 +183,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     @Override
     public PublishedService findServiceByID(String serviceID) throws FindException {
-        long oid = toLong(serviceID);
+        long oid = parseServiceOid(serviceID);
         PublishedService service = serviceManager.findByPrimaryKey(oid);
         if (service != null) {
             logger.finest("Returning service id " + oid + ", version " + service.getVersion());
@@ -203,7 +199,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     @Override
     public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws FindException  {
-        long oid = toLong(serviceID);
+        long oid = parseServiceOid(serviceID);
         return serviceDocumentManager.findByServiceId(oid);
     }
 
@@ -463,12 +459,13 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     public void deletePublishedService(String serviceID) throws DeleteException {
         final PublishedService service;
         try {
+            long oid = parseServiceOid(serviceID);
+
             //Check to see if this service has any aliases
             Collection<PublishedServiceAlias> aliases = serviceAliasManager.findAllAliasesForEntity(new Long(serviceID));
             for(PublishedServiceAlias psa: aliases){
                 serviceAliasManager.delete(psa);
             }
-            long oid = toLong(serviceID);
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
             roleManager.deleteEntitySpecificRoles(SERVICE, service.getOid());
@@ -482,7 +479,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     public void deleteEntityAlias(String serviceID) throws DeleteException {
         final PublishedServiceAlias alias;
         try {
-            long oid = toLong(serviceID);
+            long oid = parseServiceOid(serviceID);
             alias = serviceAliasManager.findByPrimaryKey(oid);
             serviceAliasManager.delete(alias);
             logger.info("Deleted PublishedServiceAlias: " + oid);
@@ -572,9 +569,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
-        return UDDIClientFactory.getInstance().newUDDIClient(uddiRegistry.getInquiryUrl(),
-                uddiRegistry.getPublishUrl(), uddiRegistry.getSubscriptionUrl() ,uddiRegistry.getSecurityUrl(), uddiRegistry.getRegistryAccountUserName(),
-                uddiRegistry.getRegistryAccountPassword(), null);
+        return UDDIHelper.newUDDIClient( uddiRegistry );
     }
 
     @Override
@@ -619,19 +614,21 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     /**
-     * Parse the String service ID to long (database format). Throws runtime exc
-     * @param serviceID the service ID, must not be null, and .
-     * @return the service ID representing <code>long</code>
+     * Parse the String service ID to long (database format)
      *
-     * @throws IllegalArgumentException if service ID is null
-     * @throws NumberFormatException on parse error
+     * @param serviceoid the service ID, must not be null, and .
+     * @return the service ID representing <code>long</code>
+     * @throws FindException if service ID is missing or invalid
      */
-    private static long toLong(String serviceID)
-      throws IllegalArgumentException {
-        if (serviceID == null) {
-                throw new IllegalArgumentException();
-            }
-        return Long.parseLong(serviceID);
+    private static long parseServiceOid( final String serviceoid ) throws FindException {
+        if ( serviceoid == null ) {
+            throw new FindException("Missing required service identifier");
+        }
+        try {
+            return Long.parseLong(serviceoid);
+        } catch ( NumberFormatException nfe ) {
+            throw new FindException("Invalid service identifier '"+serviceoid+"'.");
+        }
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
@@ -705,13 +702,13 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public String getPolicyURL(String serviceoid, boolean fullPolicyURL) throws FindException {
-        return externalGatewayURLManager.getExternalSSGPolicyURL(serviceoid, fullPolicyURL);
+    public String getPolicyURL(final String serviceoid, final boolean fullPolicyUrl) throws FindException {
+        return uddiHelper.getExternalPolicyUrlForService( parseServiceOid(serviceoid), fullPolicyUrl);
     }
 
     @Override
-    public String getConsumptionURL(String serviceoid) throws FindException {
-        return externalGatewayURLManager.getExternalSsgURLForService(serviceoid);
+    public String getConsumptionURL(final String serviceoid) throws FindException {
+        return uddiHelper.getExternalUrlForService( parseServiceOid(serviceoid));
     }
 
     @Override

@@ -15,7 +15,7 @@ import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
@@ -26,25 +26,28 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
+public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     protected static final Logger logger = Logger.getLogger(UDDIRegistryAdminImpl.class.getName());
 
     final private UDDIRegistryManager uddiRegistryManager;
     final private UDDIProxiedServiceManager uddiProxiedServiceManager;
     final private UDDIServiceControlManager uddiServiceControlManager;
-    final private ServiceManager serviceManager;
-    final private ExternalGatewayURLManager externalGatewayURLManager;
+    final private UDDIHelper uddiHelper;
+    final private UDDICoordinator uddiCoordinator;
+    final private ServiceCache serviceCache;
 
     public UDDIRegistryAdminImpl(final UDDIRegistryManager uddiRegistryManager,
                                  final UDDIProxiedServiceManager uddiProxiedServiceManager,
                                  final UDDIServiceControlManager uddiServiceControlManager,
-                                 final ServiceManager serviceManager,
-                                 final ExternalGatewayURLManager externalGatewayURLManager) {
+                                 final UDDIHelper uddiHelper,
+                                 final UDDICoordinator uddiCoordinator,
+                                 final ServiceCache serviceCache) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiProxiedServiceManager = uddiProxiedServiceManager;
         this.uddiServiceControlManager = uddiServiceControlManager;
-        this.serviceManager = serviceManager;
-        this.externalGatewayURLManager = externalGatewayURLManager;
+        this.uddiHelper = uddiHelper;
+        this.uddiCoordinator = uddiCoordinator;
+        this.serviceCache = serviceCache;
     }
 
     @Override
@@ -87,6 +90,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     }
 
     @Override
+    public boolean subscriptionNotificationsAvailable( final long registryOid ) {
+        return uddiCoordinator.isNotificationServiceAvailable( registryOid );
+    }
+
+    @Override
     public void testUDDIRegistryAuthentication(final UDDIRegistry uddiRegistry) throws UDDIException {
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
 
@@ -104,7 +112,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
 
     @Override
     public UDDIProxiedService getUDDIProxiedService(long serviceOid) throws FindException {
-        return uddiProxiedServiceManager.findByUniqueKey("serviceOid", serviceOid);
+        return uddiProxiedServiceManager.findByPublishedServiceOid(serviceOid);
     }
 
     @Override
@@ -151,7 +159,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
     public long saveUDDIServiceControlOnly( final UDDIServiceControl uddiServiceControl )
             throws UpdateException, SaveException, FindException {
         if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ){
-            final PublishedService service = serviceManager.findByPrimaryKey(uddiServiceControl.getPublishedServiceOid());
+            final PublishedService service = serviceCache.getCachedService(uddiServiceControl.getPublishedServiceOid());
             final Wsdl wsdl;
             try {
                 wsdl = service.parsedWsdl();
@@ -224,7 +232,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiProxiedService.getUddiRegistryOid());
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
 
-        final PublishedService service = serviceManager.findByPrimaryKey(uddiProxiedService.getServiceOid());
+        final PublishedService service = serviceCache.getCachedService(uddiProxiedService.getServiceOid());
 
         final boolean update = uddiProxiedService.getOid() != PersistentEntity.DEFAULT_OID;
         final String generalKeyword;
@@ -248,9 +256,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin{
         }
 
         //protected service external url
-        final String protectedServiceExternalURL = externalGatewayURLManager.getExternalSsgURLForService(service.getOidAsLong().toString());
+        final String protectedServiceExternalURL = uddiHelper.getExternalUrlForService(service.getOid());
         //protected service gateway external wsdl url
-        final String protectedServiceWsdlURL = externalGatewayURLManager.getExternalWsdlUrlForService(service.getOidAsLong().toString());
+        final String protectedServiceWsdlURL = uddiHelper.getExternalWsdlUrlForService(service.getOid());
 
         WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
                 protectedServiceExternalURL, uddiProxiedService.getUddiBusinessKey(), service.getOid(), generalKeyword);

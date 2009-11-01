@@ -120,6 +120,15 @@ public interface UDDIClient extends Closeable {
     boolean listMoreAvailable();
 
     /**
+     * Get a binding key for the given service.
+     * 
+     * @param uddiServiceKey The key for the service
+     * @return The binding key or null
+     * @throws UDDIException if an error occurs
+     */
+    String getBindingKeyForService( String uddiServiceKey ) throws UDDIException;
+
+    /**
      * Publish policy to UDDI.
      *
      * @param name The name of the policy
@@ -317,4 +326,53 @@ public interface UDDIClient extends Closeable {
      * @throws UDDIExistingReferenceException if force is not set and there is an existing (local or remote) reference
      */
     void referencePolicy(String serviceKey, String serviceUrl, String policyKey, String policyUrl, String description, Boolean force) throws UDDIException;
+
+    /**
+     * Get the operational information for a UDDI entity.
+     *
+     * @param entityKey The key for the entity
+     * @return The UDDIOperationalInfo for the entity.
+     */
+    UDDIOperationalInfo getOperationalInfo(String entityKey) throws UDDIException;
+
+    /**
+     * Get the operational information for multiple UDDI entities.
+     *
+     * @param entityKey The key for the entity
+     * @return The UDDIOperationalInfo for the entity.
+     */
+    Collection<UDDIOperationalInfo> getOperationalInfos(String... entityKey) throws UDDIException;
+
+    /**
+     * Subscribe for updates from UDDI.
+     *
+     * <p>For asynchronous notifications the notificationInterval and bindingKey
+     * should be provided.</p>
+     *
+     * @param expiryTime The expiry time for the subscription
+     * @param notificationInterval The notification interval in milliseconds
+     * @param bindingKey The binding key for the notification mechanism
+     * @return The subscription key
+     * @throws UDDIException If an error occurs
+     */
+    String subscribe( long expiryTime, long notificationInterval, String bindingKey ) throws UDDIException;
+
+    /**
+     * Delete the subscription for the given key.
+     *
+     * @param subscriptionKey The subscription to delete.
+     * @throws UDDIException If an error occurs
+     */
+    void deleteSubscription( String subscriptionKey ) throws UDDIException;
+
+    /**
+     * Poll subscriptions for updates.
+     *
+     * @param startTime The start date for the subscription poll
+     * @param endTime The end date for the subscription poll
+     * @param subscriptionKey The subscription key to check.
+     * @return the subscription results (never null)
+     * @throws UDDIException If an error occurs
+     */
+    UDDISubscriptionResults pollSubscription( long startTime, long endTime, String subscriptionKey ) throws UDDIException;
 }

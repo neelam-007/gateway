@@ -10,7 +10,6 @@ import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.BusinessServicePublisher;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
@@ -18,8 +17,6 @@ import java.util.logging.Logger;
  */
 public class UDDIProxiedServiceManagerImpl extends HibernateEntityManager<UDDIProxiedService, EntityHeader>
         implements UDDIProxiedServiceManager{
-
-    private static final Logger logger = Logger.getLogger(UDDIProxiedServiceManagerImpl.class.getName());
 
     public UDDIProxiedServiceManagerImpl() {
     }
@@ -45,6 +42,11 @@ public class UDDIProxiedServiceManagerImpl extends HibernateEntityManager<UDDIPr
         return Arrays.asList(serviceOidMap, keywordMap);
 
 
+    }
+
+    @Override
+    public UDDIProxiedService findByPublishedServiceOid( final long publishedServiceOid ) throws FindException {
+        return findByUniqueKey( "serviceOid", publishedServiceOid );
     }
 
     @Override

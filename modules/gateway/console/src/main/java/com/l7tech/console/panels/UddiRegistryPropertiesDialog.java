@@ -8,9 +8,9 @@ import com.l7tech.console.util.Registry;
 import static com.l7tech.console.panels.UddiRegistryPropertiesDialog.UDDI_URL_TYPE.*;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TimeUnit;
 
 import javax.swing.*;
 import java.awt.*;
@@ -62,6 +62,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     private JButton testUDDIConnectionButton;
 
     private UDDIRegistry uddiRegistry;
+    private boolean subscriptionServiceAvailable;
     private boolean confirmed;
     private static final String DIALOG_TITLE = "UDDI Registry Properties";
     private Map<String, UDDIRegistryInfo> registryToInfoMap;
@@ -77,6 +78,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     public UddiRegistryPropertiesDialog(Window owner, UDDIRegistry uddiRegistry) {
         super(owner, DIALOG_TITLE, UddiRegistryPropertiesDialog.DEFAULT_MODALITY_TYPE);
         this.uddiRegistry = uddiRegistry;
+        this.subscriptionServiceAvailable = isSubscriptionServiceAvailable(uddiRegistry);
         initialize();
     }
 
@@ -255,6 +257,24 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         inputValidator.constrainTextFieldToNumberRange( "Metrics Publish Frequency", metricsPublishFrequencyTextField, 1, 1440 );
         inputValidator.constrainTextFieldToNumberRange( "Frequency", notificationFrequencyTextField, 1, 1440 );
 
+        inputValidator.addRule(new InputValidator.ValidationRule(){
+            @Override
+            public String getValidationError() {
+                String error = null;
+                if ( monitoringEnabledCheckBox.isEnabled() &&
+                     monitoringEnabledCheckBox.isSelected() &&
+                     subscribeForNotificationRadioButton.isSelected() &&
+                     !subscriptionServiceAvailable ) {
+                    error = "'Subscribe for notifications' requires a published UDDI Notification service.\n" +
+                            "Please disable monitoring or choose 'Poll for notifications'.\n\n" +
+                            "To allow 'Subscribe for notifications' please create and publish a\n" +
+                            "UDDI Notification service to this registry and try again.";
+                }
+                return error;
+            }
+        });
+
+
         modelToView();
     }
 
@@ -363,7 +383,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         passwordTextField.setText(uddiRegistry.getRegistryAccountPassword()==null ? "" : uddiRegistry.getRegistryAccountPassword());
         metricsEnabledCheckBox.setSelected(uddiRegistry.isMetricsEnabled());
         if ( uddiRegistry.isMetricsEnabled() ) {
-            metricsPublishFrequencyTextField.setText(Long.toString(uddiRegistry.getMetricPublishFrequency()));
+            metricsPublishFrequencyTextField.setText(Long.toString(uddiRegistry.getMetricPublishFrequency()/TimeUnit.MINUTES.getMultiplier()));
         } else {
             metricsPublishFrequencyTextField.setText( "15" );
         }
@@ -371,7 +391,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         if ( uddiRegistry.isMonitoringEnabled() ) {
             subscribeForNotificationRadioButton.setSelected(uddiRegistry.isSubscribeForNotifications());
             pollForNotificationsRadioButton.setSelected(!uddiRegistry.isSubscribeForNotifications());
-            notificationFrequencyTextField.setText(Long.toString(uddiRegistry.getMonitoringFrequency()));
+            notificationFrequencyTextField.setText(Long.toString(uddiRegistry.getMonitoringFrequency()/TimeUnit.MINUTES.getMultiplier()));
         } else {
             subscribeForNotificationRadioButton.setSelected(true);
             notificationFrequencyTextField.setText( "15" );
@@ -483,7 +503,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         final boolean metricsEnabled = metricsEnabledCheckBox.isSelected() && metricsEnabledCheckBox.isEnabled();
         uddiRegistry.setMetricsEnabled(metricsEnabled);
         if(metricsEnabled){
-            uddiRegistry.setMetricPublishFrequency(Long.parseLong(metricsPublishFrequencyTextField.getText()));
+            uddiRegistry.setMetricPublishFrequency(Long.parseLong(metricsPublishFrequencyTextField.getText())*TimeUnit.MINUTES.getMultiplier());
         } else {
             uddiRegistry.setMetricPublishFrequency(0);
         }
@@ -492,7 +512,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         uddiRegistry.setMonitoringEnabled(monitoringEnabled);
         if(monitoringEnabled){
             uddiRegistry.setSubscribeForNotifications(subscribeForNotificationRadioButton.isSelected());
-            uddiRegistry.setMonitoringFrequency(Long.parseLong(notificationFrequencyTextField.getText()));
+            uddiRegistry.setMonitoringFrequency(Long.parseLong(notificationFrequencyTextField.getText())*TimeUnit.MINUTES.getMultiplier());
         } else {
             uddiRegistry.setMonitoringFrequency(0);
         }
@@ -540,6 +560,19 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         privateKeyComboBox.setEnabled(enable);
         metricsEnabledCheckBox.setEnabled(enable);
         monitoringEnabledCheckBox.setEnabled(enable);
+    }
+
+    private boolean isSubscriptionServiceAvailable( final UDDIRegistry registry ) {
+        boolean available = false;
+
+        if ( registry != null && registry.getOid()!=UDDIRegistry.DEFAULT_OID ) {
+            UDDIRegistryAdmin admin = getUDDIRegistryAdmin();
+            if ( admin != null ) {
+                available = admin.subscriptionNotificationsAvailable( registry.getOid() );   
+            }
+        }
+
+        return available;
     }
 
     /** @return the UDDIRegistryAdmin interface, or null if not connected or it's unavailable for some other reason */

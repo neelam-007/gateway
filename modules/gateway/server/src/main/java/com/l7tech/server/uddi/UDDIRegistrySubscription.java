@@ -4,29 +4,20 @@ import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import javax.persistence.Version;
 import javax.persistence.Column;
+import javax.persistence.Version;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
- * Runtime information for a Services UDDI related data.
+ * Subscription information for a UDDI registry
  */
 @Entity
 @Proxy(lazy=false)
-@Table(name="uddi_runtime")
-public class UDDIRuntimeServiceInfo extends PersistentEntityImp {
+@Table(name="uddi_registry_subscription")
+public class UDDIRegistrySubscription extends PersistentEntityImp {
 
-    //- PUBLIC
-
-    @Column(name = "published_service_oid")
-    public long getPublishedServiceOid() {
-        return publishedServiceOid;
-    }
-
-    public void setPublishedServiceOid( final long publishedServiceOid ) {
-        this.publishedServiceOid = publishedServiceOid;
-    }
+   //- PUBLIC
 
     @Column(name = "uddi_registry_oid")
     public long getUddiRegistryOid() {
@@ -44,6 +35,24 @@ public class UDDIRuntimeServiceInfo extends PersistentEntityImp {
 
     public void setSubscriptionKey( final String subscriptionKey ) {
         this.subscriptionKey = subscriptionKey;
+    }
+
+    @Column(name = "uddi_subscription_expiry_time")
+    public long getSubscriptionExpiryTime() {
+        return subscriptionExpiryTime;
+    }
+
+    public void setSubscriptionExpiryTime( final long subscriptionExpiryTime ) {
+        this.subscriptionExpiryTime = subscriptionExpiryTime;
+    }
+
+    @Column(name = "uddi_subscription_notified_time")
+    public long getSubscriptionNotifiedTime() {
+        return subscriptionNotifiedTime;
+    }
+
+    public void setSubscriptionNotifiedTime( final long subscriptionNotifiedTime ) {
+        this.subscriptionNotifiedTime = subscriptionNotifiedTime;
     }
 
     @Column(name = "uddi_subscription_check_time")
@@ -64,8 +73,9 @@ public class UDDIRuntimeServiceInfo extends PersistentEntityImp {
 
     //- PRIVATE
 
-    private long publishedServiceOid;
     private long uddiRegistryOid;
     private String subscriptionKey;
+    private long subscriptionExpiryTime;
+    private long subscriptionNotifiedTime;
     private long subscriptionCheckTime;
 }

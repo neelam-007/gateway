@@ -177,8 +177,36 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
+    public String getBindingKeyForService( final String uddiServiceKey ) {
+        return null; 
+    }
+
+    @Override
     public String publishPolicy(String name, String description, String url) throws UDDIException {
         return null;
     }
 
+    @Override
+    public UDDIOperationalInfo getOperationalInfo( final String entityKey ) throws UDDIException {
+        return null;
+    }
+
+    @Override
+    public Collection<UDDIOperationalInfo> getOperationalInfos( final String... entityKey ) throws UDDIException {
+        return null;
+    }
+
+    @Override
+    public String subscribe( final long expiryTime, final long notificationInterval, final String bindingKey ) throws UDDIException {
+        return null;
+    }
+
+    @Override
+    public void deleteSubscription( final String subscriptionKey ) throws UDDIException {
+    }
+
+    @Override
+    public UDDISubscriptionResults pollSubscription( final long startTime, final long endTime, final String subscriptionKey ) throws UDDIException {
+        return null;
+    }
 }

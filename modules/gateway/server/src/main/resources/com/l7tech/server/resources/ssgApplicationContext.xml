@@ -986,8 +986,25 @@
         <property name="schemaManager" ref="schemaManager"/>
     </bean>
 
-    <bean id="externalGatewayURLManager" class="com.l7tech.server.uddi.ExternalGatewayURLManager">
-        <constructor-arg ref="serverConfig"/>
+    <bean id="uddiCoordinator" class="com.l7tech.server.uddi.UDDICoordinator">
+        <constructor-arg index="0" ref="uddiHelper"/>
+        <constructor-arg index="1" ref="uddiRegistryManager"/>
+        <constructor-arg index="2" ref="uddiProxiedServiceManager"/>
+        <constructor-arg index="3" ref="serviceCache"/>
+        <constructor-arg index="4">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="UDDI Coordinator"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="5">
+            <list>
+                <bean class="com.l7tech.server.uddi.SubscriptionUDDITaskFactory">
+                    <constructor-arg index="0" ref="uddiRegistryManager"/>
+                    <constructor-arg index="1" ref="uddiRegistrySubscriptionManager"/>
+                    <constructor-arg index="2" ref="uddiServiceControlManager"/>
+                </bean>
+            </list>
+        </constructor-arg>
     </bean>
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" parent="hibernateBean">
@@ -1091,6 +1108,7 @@
                 <ref bean="policyManager"/>
                 <ref bean="keystoreFileManager"/>
                 <ref bean="messageContextMappingKeyManager"/>
+                <ref bean="uddiRegistryManager"/>
             </list>
         </property>
         <property name="timer">
@@ -1580,6 +1598,6 @@
 
     <bean id="uddiServiceControlManager" class="com.l7tech.server.uddi.UDDIServiceControlManagerImpl" parent="hibernateBean" />
 
-    <bean id="uddiRuntimeServiceInfoManager" class="com.l7tech.server.uddi.UDDIRuntimeServiceInfoManagerImpl" parent="hibernateBean" />
+    <bean id="uddiRegistrySubscriptionManager" class="com.l7tech.server.uddi.UDDIRegistrySubscriptionManagerImpl" parent="hibernateBean" />
 
 </beans>

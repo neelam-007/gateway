@@ -105,11 +105,6 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     }
 
     @Override
-    public ET findByUniqueKey(String uniqueFieldName, long uniqueKey) throws FindException {
-        return null;
-    }
-
-    @Override
     public synchronized Collection<ET> findAll() throws FindException {
         return Collections.unmodifiableCollection(entities.values());
     }

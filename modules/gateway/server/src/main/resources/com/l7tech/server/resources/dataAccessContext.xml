@@ -166,7 +166,7 @@
                 <value>com.l7tech.gateway.common.uddi.UDDIRegistry</value>
                 <value>com.l7tech.gateway.common.uddi.UDDIProxiedService</value>
                 <value>com.l7tech.gateway.common.uddi.UDDIServiceControl</value>
-                <value>com.l7tech.server.uddi.UDDIRuntimeServiceInfo</value>
+                <value>com.l7tech.server.uddi.UDDIRegistrySubscription</value>
 
                 <!-- Policy Assertion Related Entities -->
                 <value>com.l7tech.server.sla.CounterIDRecord</value>

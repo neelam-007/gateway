@@ -107,6 +107,7 @@ public class UDDIPolicyTool extends JFrame {
     private JButton deleteSubscriptionButton;
     private JButton addSubscriptionButton;
     private JButton subscriptionResultsButton;
+    private JTextField subscriptionBindingKeyTextField;
 
     private String authToken;
     private String login;
@@ -324,11 +325,17 @@ public class UDDIPolicyTool extends JFrame {
     }
 
     private void initData() {
-        urlInquiryTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/inquiry");
-        urlPublishTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/publish");
-        urlSubscriptionTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/subscriptions");
-        urlSecurityTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/publish");
-        credsUsernameTextField.setText("administrator");
+        urlInquiryTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/inquiry");
+        urlPublishTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/publish");
+        urlSubscriptionTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/publish");
+        urlSecurityTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/publish");
+        credsUsernameTextField.setText("layer7");
+
+//        urlInquiryTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/inquiry");
+//        urlPublishTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/publish");
+//        urlSubscriptionTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/subscriptions");
+//        urlSecurityTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/publish");
+//        credsUsernameTextField.setText("administrator");
 
 //        urlInquiryTextField.setText("http://centrasitegov:2020/registry/uddi/inquiry");
 //        urlPublishTextField.setText("http://centrasitegov:2020/registry/uddi/publish");
@@ -1063,52 +1070,72 @@ public class UDDIPolicyTool extends JFrame {
     }
 
     private void findSubscriptions() throws Exception {
-        UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
+        try {
+            UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
 
-        List<String> subs = new ArrayList<String>();
-        List<Subscription> subscriptions = subscriptionPort.getSubscriptions( authToken() );
-        if ( subscriptions != null ) {
-            for ( Subscription subscription : subscriptions ) {
-                subs.add( subscription.getSubscriptionKey() + " " + subscription.getExpiresAfter().toString() );
+            List<String> subs = new ArrayList<String>();
+            List<Subscription> subscriptions = subscriptionPort.getSubscriptions( authToken() );
+            if ( subscriptions != null ) {
+                for ( Subscription subscription : subscriptions ) {
+                    subs.add( subscription.getSubscriptionKey() + " " + subscription.getExpiresAfter().toString() );
+                }
             }
-        }
 
-        subscriptionSearchList.setListData( subs.toArray( new Object[subs.size()] ) );
+            subscriptionSearchList.setListData( subs.toArray( new Object[subs.size()] ) );
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error adding subscription: ", drfm);
+        }
     }
 
     private void addSubscription() throws Exception {
-        int row = serviceResultsTable.getSelectedRow();
-        if ( row >= 0 ) {
-            int modelRow = serviceResultsTable.convertRowIndexToModel(row);
-            String serviceKey = (String)((DefaultTableModel)serviceResultsTable.getModel()).getValueAt(modelRow, 0);
-            System.out.println( "Selected key is: " + serviceKey );
+        try {
+            int row = serviceResultsTable.getSelectedRow();
+            if ( row >= 0 ) {
+                int modelRow = serviceResultsTable.convertRowIndexToModel(row);
+                String serviceKey = (String)((DefaultTableModel)serviceResultsTable.getModel()).getValueAt(modelRow, 0);
+                System.out.println( "Selected key is: " + serviceKey );
 
-            UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
+                DatatypeFactory factory = DatatypeFactory.newInstance();
 
-            GetServiceDetail getServiceDetail = new GetServiceDetail();
-            getServiceDetail.getServiceKey().add( serviceKey );
+                UDDISubscriptionPortType subscriptionPort = getSubscriptionPort();
 
-            SubscriptionFilter filter = new SubscriptionFilter();
-            filter.setGetServiceDetail( getServiceDetail );
+                GetServiceDetail getServiceDetail = new GetServiceDetail();
+                getServiceDetail.getServiceKey().add( serviceKey );
 
-            GregorianCalendar expiresGC = new GregorianCalendar();
-            expiresGC.setTimeInMillis( System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1) );
-            XMLGregorianCalendar expiresAfter = DatatypeFactory.newInstance().newXMLGregorianCalendar( expiresGC );
+                SubscriptionFilter filter = new SubscriptionFilter();
+                filter.setGetServiceDetail( getServiceDetail );
 
-            Subscription subscription = new Subscription();
-            subscription.setBrief( true );
-            subscription.setExpiresAfter( expiresAfter );
-            subscription.setSubscriptionFilter( filter );
+                GregorianCalendar expiresGC = new GregorianCalendar();
+                expiresGC.setTimeInMillis( System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1) );
+                XMLGregorianCalendar expiresAfter = factory.newXMLGregorianCalendar( expiresGC );
 
-            Holder<List<Subscription>> holder = new Holder<List<Subscription>>( Collections.singletonList( subscription ));
+                String subscriptionBindingKey = subscriptionBindingKeyTextField.getText();
+                if ( subscriptionBindingKey != null ) {
+                    subscriptionBindingKey = subscriptionBindingKey.trim();
+                    if ( subscriptionBindingKey.isEmpty() ) subscriptionBindingKey = null;
+                }
 
-            subscriptionPort.saveSubscription( authToken(), holder );
+                Subscription subscription = new Subscription();
+                subscription.setBrief( true );
+                subscription.setExpiresAfter( expiresAfter );
+                subscription.setSubscriptionFilter( filter );
+                if ( subscriptionBindingKey != null ) {
+                    subscription.setBindingKey( subscriptionBindingKey );
+                    subscription.setNotificationInterval( factory.newDuration( TimeUnit.MINUTES.toMillis(1)) );
+                }
 
-            for ( Subscription sub : holder.value ) {
-                System.out.println( "Added subscription : " + sub.getSubscriptionKey() );
+                Holder<List<Subscription>> holder = new Holder<List<Subscription>>( Collections.singletonList( subscription ));
+
+                subscriptionPort.saveSubscription( authToken(), holder );
+
+                for ( Subscription sub : holder.value ) {
+                    System.out.println( "Added subscription : " + sub.getSubscriptionKey() );
+                }
+            } else {
+                System.out.println("Select a service before adding subscription.");
             }
-        } else {
-            System.out.println("Select a service before adding subscription.");
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error adding subscription: ", drfm);
         }
     }
 

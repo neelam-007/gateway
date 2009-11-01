@@ -29,4 +29,26 @@ public interface UDDIServiceControlManager extends EntityManager<UDDIServiceCont
      * @throws FindException If an error occurs.
      */
     Collection<UDDIServiceControl> findByUDDIRegistryOid( long registryOid ) throws FindException;
+
+    /**
+     * Find UDDIServiceControls by UDDI business service key.
+     *
+     * @param serviceKey The UDDI business service key
+     * @return The collection of UDDIServiceControls (may be empty but not null)
+     * @throws FindException If an error occurs.
+     */
+    Collection<UDDIServiceControl> findByUDDIServiceKey( String serviceKey ) throws FindException;
+
+    /**
+     * Find UDDIServiceControls by UDDI business service key within the given registry.
+     *
+     * @param registryOid The UDDI registry oid
+     * @param serviceKey The UDDI business service key
+     * @param uddiControlled True to find only UDDI controlled services (null for any)
+     * @return The collection of UDDIServiceControls (may be empty but not null)
+     * @throws FindException If an error occurs.
+     */
+    Collection<UDDIServiceControl> findByUDDIRegistryAndServiceKey( long registryOid,
+                                                                    String serviceKey,
+                                                                    Boolean uddiControlled )  throws FindException;
 }

@@ -50,6 +50,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     public static final String F_NAME = "name";
     public static final String F_VERSION = "version";
 
+    public static final Object NULL = new Object();
+    public static final Object NOTNULL = new Object();
+
     private final String HQL_FIND_ALL_OIDS_AND_VERSIONS =
             "SELECT " +
                     getTableName() + "." + F_OID + ", " +
@@ -93,9 +96,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
-    @Override
-    @Transactional(readOnly=true)
-    public ET findByUniqueKey(final String uniquePropertyName, final long uniqueKey) throws FindException {
+    protected ET findByUniqueKey(final String uniquePropertyName, final long uniqueKey) throws FindException {
         if (uniquePropertyName == null) throw new NullPointerException();
         if (uniquePropertyName.trim().isEmpty()) throw new IllegalArgumentException("uniquePropertyName cannot be empty");
 
@@ -216,8 +217,15 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                         Criteria crit = session.createCriteria(getImpClass());
                         for (Map.Entry<String, ?> entry : map.entrySet()) {
-                            if (entry.getValue() == null) continue;
-                            crit.add(Restrictions.eq(entry.getKey(), entry.getValue()));
+                            Object value = entry.getValue();
+                            if (value == null) continue;
+                            if (value == NULL) {
+                                crit.add(Restrictions.isNull(entry.getKey()));
+                            } else if ( value == NOTNULL ) {
+                                crit.add(Restrictions.isNotNull(entry.getKey()));
+                            } else {
+                                crit.add(Restrictions.eq(entry.getKey(), entry.getValue()));
+                            }
                         }
                         return crit.list();
                     }

@@ -49,6 +49,7 @@
         <dependency name="XacmlPdpAssertion" rev="latest.integration" conf="module"/>
         <dependency name="JdbcQueryAssertion" rev="latest.integration" conf="module"/>
         <dependency name="XmlSecurityAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="UDDINotificationAssertion" rev="latest.integration" conf="module"/>
         
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
