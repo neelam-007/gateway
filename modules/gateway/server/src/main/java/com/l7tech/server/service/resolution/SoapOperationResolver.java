@@ -66,14 +66,13 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
     private List<List<QName>> getAllOperationQNames(Wsdl wsdl) {
         List<List<QName>> operationQnameLists = new ArrayList<List<QName>>();
         //noinspection unchecked
-        Map<QName, Binding> bindings = wsdl.getDefinition().getBindings();
+        Collection<Binding> bindings = wsdl.getBindings();
         if (bindings == null || bindings.isEmpty()) {
             auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_NO_BINDINGS);
             return EMPTY;
         }
 
-        for (QName qName : bindings.keySet()) {
-            Binding binding = bindings.get(qName);
+        for (Binding binding : bindings) {
             String bindingStyle = null;
 
             //noinspection unchecked

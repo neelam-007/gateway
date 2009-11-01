@@ -1682,14 +1682,13 @@ public class SoapUtil extends SoapConstants {
         ArrayList<String> output = new ArrayList<String>();
 
         //noinspection unchecked
-        Map<QName, Binding> bindings = wsdl.getDefinition().getBindings();
+        Collection<Binding> bindings = wsdl.getBindings();
         if (bindings.isEmpty()) {
             log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
             return output;
         }
         boolean foundSoapBinding = false;
-        for (QName bindingName : bindings.keySet()) {
-            Binding binding = bindings.get(bindingName);
+        for ( Binding binding : bindings ) {
             SOAPBinding soapBinding = null;
             SOAP12Binding soap12Binding = null;
             //noinspection unchecked
@@ -1771,15 +1770,14 @@ public class SoapUtil extends SoapConstants {
         };
 
         //noinspection unchecked
-        Map<QName, Binding> bindings = wsdl.getDefinition().getBindings();
+        Collection<Binding> bindings = wsdl.getBindings();
         if (bindings.isEmpty()) {
             log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
             return null;
         }
 
         boolean foundSoapBinding = false;
-        for (QName bindingName : bindings.keySet()) {
-            Binding binding = bindings.get(bindingName);
+        for ( Binding binding : bindings ) {
             SOAPBinding soapBinding = null;
             SOAP12Binding soap12Binding = null;
             //noinspection unchecked
