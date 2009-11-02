@@ -26,6 +26,10 @@ import java.net.URL;
 import java.net.MalformedURLException;
 
 public class UddiRegistryPropertiesDialog extends JDialog {
+
+    private static final String DEFAULT_METRICS_INTERVAL = "10";
+    private static final String DEFAULT_SUBSCRIPTION_INTERVAL = "10";
+
     private JPanel contentPane;
     private JButton okButton;
     private JButton cancelButton;
@@ -385,7 +389,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         if ( uddiRegistry.isMetricsEnabled() ) {
             metricsPublishFrequencyTextField.setText(Long.toString(uddiRegistry.getMetricPublishFrequency()/TimeUnit.MINUTES.getMultiplier()));
         } else {
-            metricsPublishFrequencyTextField.setText( "15" );
+            metricsPublishFrequencyTextField.setText( DEFAULT_METRICS_INTERVAL );
         }
         monitoringEnabledCheckBox.setSelected(uddiRegistry.isMonitoringEnabled());
         if ( uddiRegistry.isMonitoringEnabled() ) {
@@ -394,7 +398,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             notificationFrequencyTextField.setText(Long.toString(uddiRegistry.getMonitoringFrequency()/TimeUnit.MINUTES.getMultiplier()));
         } else {
             subscribeForNotificationRadioButton.setSelected(true);
-            notificationFrequencyTextField.setText( "15" );
+            notificationFrequencyTextField.setText( DEFAULT_SUBSCRIPTION_INTERVAL );
         }
         enableOrDisableComponents();
     }
