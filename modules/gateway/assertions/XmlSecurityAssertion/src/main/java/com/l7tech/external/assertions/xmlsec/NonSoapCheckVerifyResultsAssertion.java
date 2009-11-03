@@ -174,6 +174,7 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, NonSoapCheckVerifyResultsValidator.class.getName());
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
