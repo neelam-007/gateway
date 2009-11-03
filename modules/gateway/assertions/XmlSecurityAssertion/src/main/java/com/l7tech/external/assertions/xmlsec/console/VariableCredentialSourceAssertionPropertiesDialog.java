@@ -29,7 +29,10 @@ public class VariableCredentialSourceAssertionPropertiesDialog extends Assertion
 
     @Override
     public VariableCredentialSourceAssertion getData(VariableCredentialSourceAssertion assertion) throws ValidationException {
-        assertion.setVariableName(variableNameField.getText());
+        String variableName = variableNameField.getText();
+        if (variableName == null || variableName.trim().length() < 1)
+            throw new ValidationException("A variable name must be specified.");
+        assertion.setVariableName(variableName.trim());
         return assertion;
     }
 }

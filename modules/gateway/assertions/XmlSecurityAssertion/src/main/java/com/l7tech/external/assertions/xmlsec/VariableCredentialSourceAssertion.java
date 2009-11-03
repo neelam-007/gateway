@@ -64,6 +64,7 @@ public class VariableCredentialSourceAssertion extends MessageTargetableAssertio
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, -1000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.VariableCredentialSourceAssertionPropertiesDialog");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Credentials from Context Variable Properties");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
