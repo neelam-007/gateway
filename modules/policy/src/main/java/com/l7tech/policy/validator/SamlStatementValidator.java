@@ -68,7 +68,7 @@ public class SamlStatementValidator implements AssertionValidator {
                         }
                     }
                     if (!hasSslAsCrendentialSource) {
-                        String message = "Set SSL or TLS Transport assertion with Client Certificates configured must be used when No Proof Of Possession specified for Holder-Of-Key.";
+                        String message = "Require SSL or TLS Transport assertion with Client Certificates configured must be used when No Proof Of Possession specified for Holder-Of-Key.";
                         result.addError((new PolicyValidatorResult.Error(requestWssSaml, path, message, null)));
                     }
                 }
