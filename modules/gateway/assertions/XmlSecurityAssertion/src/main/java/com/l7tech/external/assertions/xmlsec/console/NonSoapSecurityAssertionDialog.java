@@ -36,7 +36,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
      */
     public NonSoapSecurityAssertionDialog(Window owner, AT assertion) {
         //noinspection unchecked
-        super((Class<AT>)assertion.getClass(), owner, String.valueOf(assertion.meta().get(AssertionMetadata.SHORT_NAME)) + " Properties", true);
+        super((Class<AT>)assertion.getClass(), owner, assertion.getPropertiesDialogTitle(), true);
         editXpathButton.addActionListener(makeEditXpathAction());
         setXpathExpression(null);
         xpathExpressionLabel.setText("Element(s) to " + assertion.getVerb() + " XPath:");

@@ -147,11 +147,16 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
         return prefix == null || prefix.trim().length() < 1 ? var : prefix.trim() + "." + var;
     }
 
-    private final static String baseName = "Check Non-SOAP XML Verify Results";
+    private final static String baseName = "(Non-SOAP) Check Results from XML Verification";
 
     @Override
     public String getDisplayName() {
         return baseName;
+    }
+
+    @Override
+    public String getPropertiesDialogTitle() {
+        return "(Non-SOAP) Check Results from XML Verification Properties";
     }
 
     @Override
@@ -169,6 +174,7 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, -1150);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.NonSoapCheckVerifyResultsAssertionPropertiesDialog");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "(Non-SOAP) XML Verification Properties");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);

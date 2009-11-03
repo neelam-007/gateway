@@ -54,7 +54,7 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
         return prefix == null || prefix.trim().length() < 1 ? var : prefix.trim() + "." + var;
     }
 
-    private final static String baseName = "Immediate Decrypt (Non-SOAP) XML Element";
+    private final static String baseName = "(Non-SOAP) Decrypt XML Element";
 
     @Override
     public String getDefaultXpathExpressionString() {
@@ -81,6 +81,7 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, -1010);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.NonSoapDecryptElementAssertionPropertiesDialog");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "(Non-SOAP) XML Element Decryption Properties");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
 

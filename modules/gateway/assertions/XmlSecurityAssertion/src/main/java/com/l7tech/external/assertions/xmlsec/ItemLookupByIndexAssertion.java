@@ -75,7 +75,7 @@ public class ItemLookupByIndexAssertion extends Assertion implements SetsVariabl
         this.allowMultipleMatches = allowMultipleMatches;
     }
 
-    private final static String baseName = "Item Lookup by Index";
+    private final static String baseName = "Look Up Item by Index Position";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ItemLookupByIndexAssertion>(){
         @Override
@@ -103,6 +103,7 @@ public class ItemLookupByIndexAssertion extends Assertion implements SetsVariabl
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"policyLogic"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, -101);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.ItemLookupByIndexAssertionPropertiesDialog");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, baseName + " Properties");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/xmlsec/console/resources/itemlookup16.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);

@@ -33,7 +33,7 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
         super(TargetMessageType.RESPONSE);
     }
 
-    private final static String baseName = "Immediate Encrypt (Non-SOAP) XML Element";
+    private final static String baseName = "(Non-SOAP) Encrypt XML Element";
 
     @Override
     public String getDefaultXpathExpressionString() {
@@ -59,7 +59,8 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, -1000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.NonSoapEncryptElementAssertionPropertiesDialog");
-        
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "(Non-SOAP) XML Element Encryption Properties");
+
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 

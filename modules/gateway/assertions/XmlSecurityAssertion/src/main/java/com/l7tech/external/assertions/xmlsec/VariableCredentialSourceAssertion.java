@@ -41,13 +41,13 @@ public class VariableCredentialSourceAssertion extends MessageTargetableAssertio
         return true;
     }
 
-    private final static String baseName = "Variable Credential Source";
+    private final static String baseName = "Retrieve Credentials from Context Variable";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<VariableCredentialSourceAssertion>(){
         @Override
         public String getAssertionName( final VariableCredentialSourceAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
-            StringBuilder name = new StringBuilder("Credentials from variable: ");
+            StringBuilder name = new StringBuilder(baseName + ": ");
             name.append(assertion.getVariableName() == null ? "<Not yet set>" : "${" + assertion.getVariableName() + "}");
             return AssertionUtils.decorateName(assertion, name);
         }
@@ -64,6 +64,7 @@ public class VariableCredentialSourceAssertion extends MessageTargetableAssertio
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
         meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, -1000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.xmlsec.console.VariableCredentialSourceAssertionPropertiesDialog");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Credentials from Context Variable Properties");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
