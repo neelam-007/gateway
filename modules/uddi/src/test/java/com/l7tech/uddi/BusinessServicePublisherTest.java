@@ -32,29 +32,29 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://localhost:8080/3828382";
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid, Integer.toString(serviceOid));
-        Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
         UDDIClient uddiClient = getUDDIClient();
 
         //before
-        for(BusinessService businessService: servicesAndTModels.left){
+        for(BusinessService businessService: wsdlToUDDIModelConverter.getBusinessServices()){
             JAXB.marshal(businessService, System.out);
         }
 
-        for(TModel tModel: servicesAndTModels.right.values()){
+        for(TModel tModel: wsdlToUDDIModelConverter.getKeysToPublishedTModels().values()){
             JAXB.marshal(tModel, System.out);
         }
 
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher();
-        servicePublisher.publishServicesToUDDIRegistry(uddiClient, servicesAndTModels.left, servicesAndTModels.right, Integer.toString(serviceOid));
+        servicePublisher.publishServicesToUDDIRegistry(uddiClient, wsdlToUDDIModelConverter.getBusinessServices(), wsdlToUDDIModelConverter.getKeysToPublishedTModels());
 
         //after
-        for(BusinessService businessService: servicesAndTModels.left){
+        for(BusinessService businessService: wsdlToUDDIModelConverter.getBusinessServices()){
             JAXB.marshal(businessService, System.out);
         }
 
-        for(TModel tModel: servicesAndTModels.right.values()){
+        for(TModel tModel: wsdlToUDDIModelConverter.getKeysToPublishedTModels().values()){
             JAXB.marshal(tModel, System.out);
         }
 

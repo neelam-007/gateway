@@ -5,7 +5,7 @@ import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.EntityType.SERVICE;
@@ -357,18 +357,18 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     /**
      * Check if this service has published a proxied BusinessService to UDDI. If so update it following an update
      * to the WSDL xml of the service
-     * @param service
+     * @param service //todo delete when UDDICoordinator can do this
      */
     private void checkUpdateUDDI(PublishedService service){
         try {
-            final UDDIProxiedService uddiProxiedService = uddiRegistryAdmin.getUDDIProxiedService(service.getOid());
-            if(uddiProxiedService == null) return;//nothing published for this service
+            final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.getUDDIProxiedServiceInfo(service.getOid());
+            if(uddiProxiedServiceInfo == null) return;//nothing published for this service
 
             //check it's configured for updates
-            if(!uddiProxiedService.isUpdateProxyOnLocalChange()) return;
+            if(!uddiProxiedServiceInfo.isUpdateProxyOnLocalChange()) return;
 
             logger.log(Level.INFO, "Updating Gateway WSDL in UDDI");
-            uddiRegistryAdmin.publishGatewayWsdl(uddiProxiedService);
+            uddiRegistryAdmin.updatePublishedGatewayWsdl(uddiProxiedServiceInfo.getOid());
 
             logger.log(Level.INFO, "Gateway WSDL in UDDI has been updated");
 
@@ -378,14 +378,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             logger.log(Level.WARNING, "Could not update UDDI following update to Published Service's WSDL. Serivce oid: " + service.getOid(), e);
         } catch (VersionException e) {
             logger.log(Level.WARNING, "Version exception trying to save UDDIProxiedService following update UDDI. Serivce oid: " + service.getOid(), e);
-        } catch (SaveException e) {
-            logger.log(Level.WARNING, "Could not save UDDIProxiedService following update UDDI. Serivce oid: " + service.getOid(), e);
-            //this should not happen, as this is always an update
         } catch (UpdateException e) {
             logger.log(Level.WARNING, "Could not update UDDIProxiedService following update UDDI. Serivce oid: " + service.getOid(), e);
         } catch (UDDIRegistryAdmin.UDDIRegistryNotEnabledException e) {
             logger.log(Level.WARNING, "Could not update UDDIProxiedService following update UDDI. Serivce oid: " + service.getOid(), e);
-        }
+        } 
     }
 
     @Override

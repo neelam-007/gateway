@@ -90,11 +90,6 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
-    public void deleteAllBusinessServicesForGatewayWsdl(String generalKeyword) throws UDDIException {
-
-    }
-
-    @Override
     public BusinessService getBusinessService(String serviceKey) throws UDDIException {
         return null;
     }
@@ -105,7 +100,7 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
-    public List<BusinessService> findMatchingBusinessServices(String generalKeyword) throws UDDIException {
+    public List<BusinessService> getBusinessServices(Set<String> serviceKeys) throws UDDIException {
         return (dataStructureForDownloaderTest != null)? dataStructureForDownloaderTest: Collections.<BusinessService>emptyList();
     }
 

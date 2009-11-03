@@ -39,9 +39,6 @@ public class WsdlToUDDIModelConverter {
     protected static final String UDDI_CATEGORIZATION_TYPES = "uddi:uddi.org:categorization:types";
     protected static final String UDDI_WSDL_CATEGORIZATION_TRANSPORT = "uddi:uddi.org:wsdl:categorization:transport";
     protected static final String UDDI_XML_LOCALNAME = "uddi:uddi.org:xml:localname";
-    public static final String LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN = "urn_layer7tech-com_proxy_published_service_identifier";
-    public static final String UDDI_GENERAL_KEYWORDS = "uddi:uddi.org:categorization:general_keywords";
-    
 
     public static final String PORT_TMODEL_IDENTIFIER = "_PortType";
     public static final String BINDING_TMODEL_IDENTIFIER = "_Binding";
@@ -50,6 +47,8 @@ public class WsdlToUDDIModelConverter {
     private final String wsdlURL;
     private final String gatewayURL;
     private final long serviceOid;
+    private Map<BusinessService, String> serviceKeyToWsdlServiceNameMap;
+    private List<BusinessService> businessServices;
 
     /**
      * When we convert a Published Service's WSDL into a Wsdl object, it does not complain about missing references
@@ -67,21 +66,18 @@ public class WsdlToUDDIModelConverter {
      */
     private final String businessKey;
 
-    private final String generalKeywordServiceIdentifier;
-
     /**
      * wsdl:portType, wsdl:binding have a name attribute which is unique in a WSDL. When publishing a WSDL, any models
      * published which generates a key is recorded against the unique name, so it can be retrieved later if the
      * same wsdl element is referenced
      */
-    private final Map<String, TModel> keysToPublishedTModels = new HashMap<String, TModel>();
+    private Map<String, TModel> keysToPublishedTModels;
 
     public WsdlToUDDIModelConverter(final Wsdl wsdl,
                                     final String wsdlURL,
                                     final String gatewayURL,
                                     final String businessKey,
-                                    final long serviceOid,
-                                    final String generalKeywordServiceIdentifier) {
+                                    final long serviceOid) {
         if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
         if(wsdlURL == null || wsdlURL.trim().isEmpty()) throw new IllegalArgumentException("wsdlURL cannot be null or emtpy");
         try {
@@ -101,15 +97,15 @@ public class WsdlToUDDIModelConverter {
 
         if(serviceOid < 1) throw new IllegalArgumentException("Invalid serviceOid: " + serviceOid);
 
-        if(generalKeywordServiceIdentifier == null || generalKeywordServiceIdentifier.trim().isEmpty())
-            throw new IllegalArgumentException("generalKeywordServiceIdentifier cannot be null or emtpy");
-
         this.wsdl = wsdl;
         this.wsdlURL = wsdlURL;
         this.gatewayURL = gatewayURL;
         this.businessKey = businessKey;
         this.serviceOid = serviceOid;
-        this.generalKeywordServiceIdentifier = generalKeywordServiceIdentifier;
+    }
+
+    public Map<BusinessService, String> getServiceKeyToWsdlServiceNameMap() {
+        return serviceKeyToWsdlServiceNameMap;
     }
 
     /**
@@ -126,16 +122,17 @@ public class WsdlToUDDIModelConverter {
      * <p/>
      * Note: it is up to the client to work out what tModelKeys need to be created / retrieved from UDDI
      *
-     * @return Pair of a List of Business Services and a Map of TModels which are referenced from the Business Services.
-     *         The reference from a keyedReference in a BusinessService is the key into the Map to retrieve the tModel.
-     *         Remember that <b>no real key references</b> exist for any tModelKeys from keyedReferences
+     * Note: Never set the service key on the BusinessService with setServiceKey. This will break publish functionality
+     *
      * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.MissingWsdlReferenceException
      *          if the WSDL contains no valid
      *          wsdl:service definitions due to each wsdl:service containing references to bindings which either themselves
      *          don't exist or reference wsdl:portType elements which dont exist.
      */
-    public Pair<List<BusinessService>, Map<String, TModel>> convertWsdlToUDDIModel() throws MissingWsdlReferenceException {
-        List<BusinessService> businessServices = new ArrayList<BusinessService>();
+    public void convertWsdlToUDDIModel() throws MissingWsdlReferenceException {
+        businessServices = new ArrayList<BusinessService>();
+        keysToPublishedTModels = new HashMap<String, TModel>();
+        serviceKeyToWsdlServiceNameMap = new HashMap<BusinessService, String>();
 
         Collection<Service> services = wsdl.getServices();
         for (final Service wsdlService : services) {
@@ -144,6 +141,7 @@ public class WsdlToUDDIModelConverter {
             try {
                 createUddiBusinessService(businessService, wsdlService);
                 businessServices.add(businessService);
+                serviceKeyToWsdlServiceNameMap.put(businessService, wsdlService.getQName().getLocalPart());
             } catch (MissingWsdlReferenceException e) {
                 //already logged, we ignore the bindingTemplate as it is invalid
                 logger.log(Level.INFO, "Ignored wsdl:service '" + wsdlService.getQName().getLocalPart() + "'as the wsdl:binding contains invalid references");
@@ -155,7 +153,21 @@ public class WsdlToUDDIModelConverter {
             logger.log(Level.INFO, msg);
             throw new MissingWsdlReferenceException(msg);
         }
-        return new Pair<List<BusinessService>, Map<String, TModel>>(businessServices, Collections.unmodifiableMap(keysToPublishedTModels));
+    }
+
+    /**
+     * @return List of Business Services. None of the references are real.
+     */
+    public List<BusinessService> getBusinessServices() {
+        return businessServices;
+    }
+
+    /**
+     * @return Map of TModels which are referenced from the Business Services. The tModelKeys are not real
+     * The reference from a keyedReference in a BusinessService is the key into the Map to retrieve the tModel.
+     */
+    public Map<String, TModel> getKeysToPublishedTModels() {
+        return keysToPublishedTModels;
     }
 
     private void createUddiBusinessService(final BusinessService businessService, final Service wsdlService) throws MissingWsdlReferenceException {
@@ -206,13 +218,6 @@ public class WsdlToUDDIModelConverter {
             bindingNameSpace.setTModelKey(UDDI_XML_NAMESPACE);
             categoryBag.getKeyedReference().add(bindingNameSpace);
         }
-
-        //Add in our Layer7 specific general keyword
-        KeyedReference keyWordRef = new KeyedReference();
-        keyWordRef.setKeyName(LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN);
-        keyWordRef.setKeyValue(generalKeywordServiceIdentifier);
-        keyWordRef.setTModelKey(UDDI_GENERAL_KEYWORDS);
-        categoryBag.getKeyedReference().add(keyWordRef);
 
         businessService.setCategoryBag(categoryBag);
 

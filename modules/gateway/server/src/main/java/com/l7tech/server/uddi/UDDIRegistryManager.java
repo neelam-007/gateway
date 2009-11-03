@@ -11,7 +11,7 @@ import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 
 import java.util.Collection;
 
@@ -24,6 +24,6 @@ public interface UDDIRegistryManager extends EntityManager<UDDIRegistry, EntityH
      * @return Collection of UDDIProxiedServices. Never null
      * @throws FindException if any problem finding entities
      */
-    Collection<UDDIProxiedService> findAllByRegistryOid(long registryOid) throws FindException;
+    Collection<UDDIProxiedServiceInfo> findAllByRegistryOid(long registryOid) throws FindException;
 
 }

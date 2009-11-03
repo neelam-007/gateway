@@ -10,6 +10,8 @@ import com.l7tech.util.Pair;
 import javax.wsdl.WSDLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.io.Reader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,14 +37,19 @@ public class UDDIProxiedServiceDownloaderTest {
         final String gatewayURL = "http://localhost:8080/3828382";
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid, Integer.toString(serviceOid));
-        Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
-        UDDIClient uddiClient = new TestUddiClient(servicesAndTModels.left);
+        UDDIClient uddiClient = new TestUddiClient(wsdlToUDDIModelConverter.getBusinessServices());
 
         UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+        Set<String> serviceKeys = new HashSet<String>();
+        for(BusinessService bs: wsdlToUDDIModelConverter.getBusinessServices()){
+            serviceKeys.add(bs.getServiceKey());
+        }
+
         Pair<List<BusinessService>, Map<String, TModel>>
-                downloadedServicesAndTModels = serviceDownloader.downloadAllBusinessServicesForService(Integer.toString(serviceOid)); 
+                downloadedServicesAndTModels = serviceDownloader.getBusinessServiceModels(serviceKeys);
 
         Assert.assertNotNull("Pair should never be null", downloadedServicesAndTModels);
         Assert.assertNotNull("List<BusinessService> should never be null", downloadedServicesAndTModels.left);
@@ -50,7 +57,7 @@ public class UDDIProxiedServiceDownloaderTest {
 
         Assert.assertEquals("Incorrect number of BusinessServices found", 1, downloadedServicesAndTModels.left.size());
         //confirm all tModels were extracted
-        for(String s: servicesAndTModels.right.keySet()){
+        for(String s: wsdlToUDDIModelConverter.getKeysToPublishedTModels().keySet()){
             Assert.assertTrue("tModel should have been found: " + s, downloadedServicesAndTModels.right.containsKey(s));
         }
     }

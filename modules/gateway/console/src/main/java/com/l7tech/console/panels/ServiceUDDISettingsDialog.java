@@ -2,8 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -49,7 +49,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private boolean canUpdate;
     private boolean confirmed;
     private Map<String, UDDIRegistry> allRegistries;
-    private UDDIProxiedService uddiProxyService;
+    private UDDIProxiedServiceInfo uddiProxyServiceInfo;
     private UDDIServiceControl uddiServiceControl;
     private InputValidator publishWsdlValidators;
 
@@ -148,9 +148,9 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
         //determine if there is a UDDIProxiedService for this service
         try {
-            uddiProxyService = getUDDIRegistryAdmin().getUDDIProxiedService(service.getOid());
+            uddiProxyServiceInfo = getUDDIRegistryAdmin().getUDDIProxiedServiceInfo(service.getOid());
         } catch (FindException e) {
-            uddiProxyService = null;
+            uddiProxyServiceInfo = null;
         }
         try {
             uddiServiceControl = getUDDIRegistryAdmin().getUDDIServiceControl(service.getOid());
@@ -194,9 +194,9 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private void modelToView() {
 
         //publish tab configuration
-        if (uddiProxyService != null) {
+        if (uddiProxyServiceInfo != null) {
             //find which registry to select
-            long uddiRegOid = uddiProxyService.getUddiRegistryOid();
+            long uddiRegOid = uddiProxyServiceInfo.getUddiRegistryOid();
             boolean found = false;
             for(UDDIRegistry registries: allRegistries.values()){
                 if(registries.getOid() == uddiRegOid){
@@ -206,8 +206,8 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 }
             }
             if(!found) throw new IllegalStateException("UDDI Registry not found for pulished Gateway WSDL");
-            businessEntityNameLabel.setText(uddiProxyService.getUddiBusinessName());
-            updateWhenGatewayWSDLCheckBox.setSelected(uddiProxyService.isUpdateProxyOnLocalChange());
+            businessEntityNameLabel.setText(uddiProxyServiceInfo.getUddiBusinessName());
+            updateWhenGatewayWSDLCheckBox.setSelected(uddiProxyServiceInfo.isUpdateProxyOnLocalChange());
             publishProxiedWsdlRadioButton.setSelected(true);
         }else{
             //set other buttons values when implemented
@@ -236,7 +236,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         if(dontPublishRadioButton.isSelected()){
             enableDisablePublishGatewayWsdlControls(false);
         }else if(publishProxiedWsdlRadioButton.isSelected()){
-            final boolean proxyPublished = uddiProxyService != null;
+            final boolean proxyPublished = uddiProxyServiceInfo != null;
             enableDisablePublishGatewayWsdlControls(!proxyPublished);
             updateWhenGatewayWSDLCheckBox.setEnabled(true);
         }
@@ -277,15 +277,15 @@ public class ServiceUDDISettingsDialog extends JDialog {
         final UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
 
         if(publishProxiedWsdlRadioButton.isSelected()){
-            if(uddiProxyService == null){
+            if(uddiProxyServiceInfo == null){
                 if(publishWsdlValidators.validateWithDialog()) publishUDDIProxiedService();
                 else return false;
             }else {
                 //update if the check box's value has changed
-                if(uddiProxyService.isUpdateProxyOnLocalChange() != updateWhenGatewayWSDLCheckBox.isSelected()){
-                    uddiProxyService.setUpdateProxyOnLocalChange(updateWhenGatewayWSDLCheckBox.isSelected());
+                if(uddiProxyServiceInfo.isUpdateProxyOnLocalChange() != updateWhenGatewayWSDLCheckBox.isSelected()){
+                    uddiProxyServiceInfo.setUpdateProxyOnLocalChange(updateWhenGatewayWSDLCheckBox.isSelected());
                     try {
-                        uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyService);
+                        uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyServiceInfo);
                     } catch (UpdateException e) {
                         logger.log(Level.WARNING, "Problem updating UDDIProxiedService: " + e.getMessage());
                         DialogDisplayer.showMessageDialog(this, "Problem updating Gateway: " + e.getMessage()
@@ -298,7 +298,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 }
             }
         } else if(dontPublishRadioButton.isSelected()){
-            if(uddiProxyService != null){
+            if(uddiProxyServiceInfo != null){
                 UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
                 if(!uddiRegistry.isEnabled()){
                     showErrorMessage("Cannot Update UDDI", "UDDI Registry is not currently enabled", null, false);
@@ -339,7 +339,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         if (option == JOptionPane.YES_OPTION){
                             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             try {
-                                final String errorMsg = uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyService);
+                                final String errorMsg = uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
                                 if(errorMsg == null){
                                     DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
                                             "Removal of Gateway WSDL from UDDI successful", "Successful Deletion", JOptionPane.INFORMATION_MESSAGE, null);
@@ -370,9 +370,8 @@ public class ServiceUDDISettingsDialog extends JDialog {
                             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
                             try {
-                                UDDIProxiedService newProxiedService =
-                                        new UDDIProxiedService(service.getOid(), uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected());
-                                uddiRegistryAdmin.publishGatewayWsdl(newProxiedService);
+                                uddiRegistryAdmin.publishGatewayWsdl(service.getOid(), uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected());
+
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
                                         "Publication of Gateway WSDL to UDDI successful", "Successful Publication", JOptionPane.INFORMATION_MESSAGE, null);
                             } catch (Exception ex) {

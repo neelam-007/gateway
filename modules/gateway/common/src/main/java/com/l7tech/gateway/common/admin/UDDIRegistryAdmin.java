@@ -14,8 +14,8 @@ import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITIES;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.uddi.UDDIException;
 
@@ -70,15 +70,15 @@ public interface UDDIRegistryAdmin {
     void testUDDIRegistryAuthentication(UDDIRegistry uddiRegistry) throws UDDIException;
 
     /**
-     * Publish the Gateway WSDL for a service to UDDI.
+     * Publish the WSDL for a PublishedService for the first time. This will create as many BusinessServices in UDDI
+     * as there are wsdl:service's in the PublishedService's WSDL
      *
-     * This operation will be as transactional as possible with a non transactional decoupled UDDI registry.
-     * If any save operation fails, the best attempt to roll back changes to the UDDI registry will be made.
-     *
-     * Registry must be enabled
-     *
-     * @param uddiProxiedService the UDDIProxiedService to publish.
-     * @return oid of the created UDDIProxiedService
+     * @param publishedServiceOid long oid of the published service
+     * @param uddiRegistryOid long oid of the UDDIRegistry
+     * @param uddiBusinessKey String key of the owning BusinessEntity from UDDI
+     * @param uddiBusinessName String name of the owning BusinessEntity from UDDI
+     * @param updateWhenGatewayWsdlChanges boolean if true, then the proxied published service will be udpated as the
+     * Gateway's WSDL changes
      * @throws FindException if the published service or uddi registry could not be found
      * @throws PublishProxiedServiceException if the Gateway WSDL cannot be found
      * @throws com.l7tech.objectmodel.UpdateException if the UDDIProxiedService cannot be updated
@@ -86,9 +86,25 @@ public interface UDDIRegistryAdmin {
      * @throws com.l7tech.objectmodel.SaveException if the UDDIProxiedService cannot be saved
      * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.UDDIRegistryNotEnabledException if the registry is not enabled
      */
-    @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.SAVE_OR_UPDATE)
-    long publishGatewayWsdl(final UDDIProxiedService uddiProxiedService)
+    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.SAVE_OR_UPDATE)//todo why doesn't save only work?
+    void publishGatewayWsdl(long publishedServiceOid, long uddiRegistryOid, String uddiBusinessKey, String uddiBusinessName,
+                            boolean updateWhenGatewayWsdlChanges)
             throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException, UDDIRegistryNotEnabledException;
+
+
+    /**
+     * Updated the UDDI with changes to a Published Service's WSDL
+     *
+     * @param uddiProxiedServiceInfoOid long oid of the UDDIProxiedServiceInfo
+     *
+     * @throws FindException
+     * @throws UDDIRegistryNotEnabledException
+     * @throws PublishProxiedServiceException
+     * @throws UpdateException
+     * @throws VersionException
+     */
+    void updatePublishedGatewayWsdl(long uddiProxiedServiceInfoOid)
+            throws FindException, UDDIRegistryNotEnabledException, PublishProxiedServiceException, UpdateException, VersionException;
 
     /**
      * Delete all published Business Services which were published to UDDI from the Gateway's WSDL.
@@ -97,27 +113,28 @@ public interface UDDIRegistryAdmin {
      *
      * Registry must be enabled
      *
-     * @param uddiProxiedService UDDIProxiedService and associated data in UDDI to delete
+     * @param uddiProxiedServiceInfo UDDIProxiedServiceInfo and associated data in UDDI to delete
      * @return String error message if there were any problems deleting from UDDI. null if no errors
      * @throws FindException if there is a problem reading from the database or if the UDDIProxiedService is not found
      * @throws DeleteException any problems deleting from the database
      * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.UDDIRegistryNotEnabledException if the registry is not enabled
      */
-    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE}, stereotype = MethodStereotype.DELETE_ENTITY)
-    String deleteGatewayWsdlFromUDDI(final UDDIProxiedService uddiProxiedService)
+    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.DELETE_ENTITY)
+    String deleteGatewayWsdlFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
             throws FindException, DeleteException, UDDIRegistryNotEnabledException;
 
     /**
-     * Allows for non final properties which do not rely on UDDI data like the UDDIProxiedService's
+     * Allows for non final properties which do not rely on UDDI data like the UDDIProxiedServiceInfo's
      * 'updateProxyOnLocalChange' property to be udpated without any any UDDI interaction.
      *
-     * @param uddiProxiedService UDDIProxiedService to update
+     * @param uddiProxiedServiceInfo UDDIProxiedServiceInfo to update
      * @throws com.l7tech.objectmodel.FindException any problems finding the entity
      * @throws com.l7tech.objectmodel.UpdateException any problems updating the database
      */
-    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
-    void updateProxiedServiceOnly(final UDDIProxiedService uddiProxiedService) 
+    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
+    void updateProxiedServiceOnly(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
             throws UpdateException, FindException;
+
     /**
      * Find the UDDIProxiedService for a service, if it exists
      *
@@ -125,9 +142,8 @@ public interface UDDIRegistryAdmin {
      * @return UDDIProxiedService or null if the service does not have one
      * @throws com.l7tech.objectmodel.FindException Any problem finding the proxied service
      */
-    @Transactional(readOnly=true)
-    @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.FIND_ENTITY)
-    UDDIProxiedService getUDDIProxiedService(long serviceOid) throws FindException;
+    @Secured(types={EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype= MethodStereotype.FIND_ENTITY)
+    UDDIProxiedServiceInfo getUDDIProxiedServiceInfo(long serviceOid) throws FindException;
 
     /**
      * Find all UDDIProxiedServices which have been published to a UDDIRegistry
@@ -137,8 +153,8 @@ public interface UDDIRegistryAdmin {
      * @throws FindException if any problems reading from the database or the UDDIRegistry cannot be found 
      */
     @Transactional(readOnly=true)
-    @Secured(types={EntityType.UDDI_PROXIED_SERVICE}, stereotype= MethodStereotype.FIND_ENTITIES)
-    Collection<UDDIProxiedService> getAllProxiedServicesForRegistry(long registryOid) throws FindException;
+    @Secured(types={EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype= MethodStereotype.FIND_ENTITIES)
+    Collection<UDDIProxiedServiceInfo> getAllProxiedServicesForRegistry(long registryOid) throws FindException;
 
     /**
      * Save / Update UDDIServiceControl without changes to related UDDI.

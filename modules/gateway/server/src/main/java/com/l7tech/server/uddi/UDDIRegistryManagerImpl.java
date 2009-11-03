@@ -1,8 +1,6 @@
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Oct 14, 2009
- * Time: 12:52:53 PM
+ * @author darmstrong
  */
 package com.l7tech.server.uddi;
 
@@ -11,17 +9,17 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 
 import java.util.*;
 
 public class UDDIRegistryManagerImpl extends HibernateEntityManager<UDDIRegistry, EntityHeader>
     implements UDDIRegistryManager {
 
-    private UDDIProxiedServiceManager proxiedServiceManager;
+    private UDDIProxiedServiceInfoManager proxiedServiceInfoManager;
 
-    public UDDIRegistryManagerImpl(UDDIProxiedServiceManager proxiedServiceManager) {
-        this.proxiedServiceManager = proxiedServiceManager;
+    public UDDIRegistryManagerImpl(UDDIProxiedServiceInfoManager proxiedServiceInfoManager) {
+        this.proxiedServiceInfoManager = proxiedServiceInfoManager;
     }
 
     @Override
@@ -51,13 +49,13 @@ public class UDDIRegistryManagerImpl extends HibernateEntityManager<UDDIRegistry
     }
 
     @Override
-    public Collection<UDDIProxiedService> findAllByRegistryOid(long registryOid) throws FindException {
+    public Collection<UDDIProxiedServiceInfo> findAllByRegistryOid(long registryOid) throws FindException {
         UDDIRegistry uddiRegistry = findByPrimaryKey(registryOid);
         if(uddiRegistry == null) throw new FindException("Could not find UDDI Registry");
 
-        Collection<UDDIProxiedService> allProxiedServices = proxiedServiceManager.findAll();
-        List<UDDIProxiedService> returnList = new ArrayList<UDDIProxiedService>();
-        for(UDDIProxiedService proxiedService: allProxiedServices){
+        Collection<UDDIProxiedServiceInfo> allProxiedServices = proxiedServiceInfoManager.findAll();
+        List<UDDIProxiedServiceInfo> returnList = new ArrayList<UDDIProxiedServiceInfo>();
+        for(UDDIProxiedServiceInfo proxiedService: allProxiedServices){
             if(proxiedService.getUddiRegistryOid() != uddiRegistry.getOid()) continue;
             returnList.add(proxiedService);
         }

@@ -32,8 +32,9 @@ public class UDDIUtilitiesTest {
         final String gatewayURL = "http://localhost:8080/3828382";
 
         final int serviceOid = 3828382;
-        wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid, Integer.toString(serviceOid));
-        servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        servicesAndTModels = new Pair<List<BusinessService>, Map<String, TModel>>(wsdlToUDDIModelConverter.getBusinessServices(), wsdlToUDDIModelConverter.getKeysToPublishedTModels());
     }
 
     /**

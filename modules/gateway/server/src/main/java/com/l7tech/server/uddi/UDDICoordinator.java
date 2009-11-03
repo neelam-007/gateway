@@ -12,17 +12,11 @@ import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 
-import java.util.Collection;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -40,18 +34,18 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
 
     //- PUBLIC
 
-    public UDDICoordinator( final UDDIHelper uddiHelper,
-                            final UDDIRegistryManager uddiRegistryManager,
-                            final UDDIProxiedServiceManager uddiProxiedServiceManager,
-                            final ServiceCache serviceCache,
-                            final Timer timer,
-                            final Collection<UDDITaskFactory> taskFactories ) {
+    public UDDICoordinator(final UDDIHelper uddiHelper,
+                           final UDDIRegistryManager uddiRegistryManager,
+                           final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
+                           final ServiceCache serviceCache,
+                           final Timer timer,
+                           final Collection<UDDITaskFactory> taskFactories) {
         this.uddiHelper = uddiHelper;
         this.uddiRegistryManager = uddiRegistryManager;
-        this.uddiProxiedServiceManager = uddiProxiedServiceManager;
         this.serviceCache = serviceCache;
         this.timer = timer;
         this.taskFactories = taskFactories;
+        this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.taskContext = new UDDICoordinatorTaskContext( this );
     }
 
@@ -108,7 +102,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
 
     private final UDDIHelper uddiHelper;
     private final UDDIRegistryManager uddiRegistryManager;
-    private final UDDIProxiedServiceManager uddiProxiedServiceManager;
+    private final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager;
     private final ServiceCache serviceCache;
     private final Collection<UDDITaskFactory> taskFactories;
     private final Timer timer;
@@ -116,22 +110,22 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
     private final AtomicReference<Map<Long,UDDIRegistryRuntime>> registryRuntimes = // includes disabled registries
             new AtomicReference<Map<Long,UDDIRegistryRuntime>>( Collections.<Long,UDDIRegistryRuntime>emptyMap() );
 
-    private Pair<String,PublishedService> getServiceForHandlingUDDINotifications( final long registryOid ) {
-        Pair<String,PublishedService> notificationService = null;
+    private PublishedService getServiceForHandlingUDDINotifications( final long registryOid ) {
+        PublishedService notificationService = null;
         long notificationServiceOid = Long.MAX_VALUE; // find the matching service with the lowest oid
 
         for( PublishedService service : serviceCache.getInternalServices( )) {
             if ( SUBSCRIPTION_SERVICE_WSDL.equals(service.getWsdlUrl()) ) {
-                UDDIProxiedService uddiService = null;
+                UDDIProxiedServiceInfo uddiService = null;
                 try {
-                    uddiService = uddiProxiedServiceManager.findByPublishedServiceOid( service.getOid() );
+                    uddiService = uddiProxiedServiceInfoManager.findByPublishedServiceOid( service.getOid() );
                 } catch (FindException e) {
                     logger.log( Level.WARNING, "Error finding uddi proxied service", e );
                 }
-                boolean registryMatch = uddiService != null && uddiService.getUddiRegistryOid() == registryOid  && uddiService.getGeneralKeywordServiceIdentifier()!=null;
+                boolean registryMatch = uddiService != null && uddiService.getUddiRegistryOid() == registryOid;
 
                 if ( service.getOid() < notificationServiceOid && registryMatch ) {
-                    notificationService = new Pair<String,PublishedService>(uddiService.getGeneralKeywordServiceIdentifier(),service);
+                    notificationService = service;
                     notificationServiceOid = service.getOid();
                 }
             }
@@ -147,9 +141,9 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
     private String getSubscriptionNotificationUrl( final long registryOid ) {
         String notificationUrl = null;
 
-        Pair<String,PublishedService> service = getServiceForHandlingUDDINotifications( registryOid );
+        PublishedService service = getServiceForHandlingUDDINotifications( registryOid );
         if ( service != null ) {
-            notificationUrl = uddiHelper.getExternalUrlForService( service.right.getOid() ); //TODO [steve] option to get secure URL?
+            notificationUrl = uddiHelper.getExternalUrlForService( service.getOid() ); //TODO [steve] option to get secure URL?
         }
 
         return notificationUrl;
@@ -163,19 +157,28 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
 
         UDDIRegistryRuntime urr = registryRuntimes.get().get( registryOid );
         if ( urr != null && urr.registry.isEnabled() ) {
-            Pair<String,PublishedService> service = getServiceForHandlingUDDINotifications( registryOid );
+            PublishedService service = getServiceForHandlingUDDINotifications( registryOid );
             if ( service != null ) {
-                //TODO [steve] remove use of generalKeywordServiceIdentifier
                 try {
                     UDDIClient uddiClient = urr.getUDDIClient();
-                    List<BusinessService> services = uddiClient.findMatchingBusinessServices( service.left );
+                    UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(service.getOid());
+                    Set<UDDIProxiedService> proxiedServices = serviceInfo.getProxiedServices();
+                    Set<String> serviceKeys = new HashSet<String>();
+                    for(UDDIProxiedService ps: proxiedServices){
+                        serviceKeys.add(ps.getUddiServiceKey());
+                    }
+                    List<BusinessService> services = uddiClient.getBusinessServices( serviceKeys );
                     if ( services.size() == 1 ) {
                         String serviceKey = services.get( 0 ).getServiceKey();
                         bindingKey = uddiClient.getBindingKeyForService( serviceKey );
                     } else {
-                        logger.warning( "Could not find unique business service for identifier '"+service.left+"'." );
+                        logger.warning( "Could not find unique business service for notification listener service." );
                     }
                 } catch (UDDIException e) {
+                    logger.log( Level.WARNING,
+                            "Could not get binding key for service from registry '"+urr.getDescription()+"': " + ExceptionUtils.getMessage(e),
+                            ExceptionUtils.getDebugException( e ));
+                } catch (FindException e) {
                     logger.log( Level.WARNING,
                             "Could not get binding key for service from registry '"+urr.getDescription()+"': " + ExceptionUtils.getMessage(e),
                             ExceptionUtils.getDebugException( e ));

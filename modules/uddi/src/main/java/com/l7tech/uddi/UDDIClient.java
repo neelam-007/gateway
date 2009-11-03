@@ -140,13 +140,15 @@ public interface UDDIClient extends Closeable {
     String publishPolicy(String name, String description, String url) throws UDDIException;
 
     /**
-     * Publish a Business Service to UDDI. The Business Service may already exist
+     * Publish a Business Service to UDDI. The Business Service may already exist. This is known not by searching
+     * UDDI but my whether or not the BusinessService has it's serviceKey property set. Null means it has not
+     * been published to UDDI yet
      * <p/>
      * If the BusinessService does not already exist it will be created and the serviceKey will be assigned by
      * the UDDI registry and set on the BusinessService following this operation.
      *
      * @param businessService the Business Service to publish
-     * @return true if the BusinessService was created, false otherwise
+     * @return true if the BusinessService was created, false otherwise as it already existed
      * @throws UDDIException any problems searching / publishing UDDI
      */     //todo move out of interface as it exposes jax-ws classes
     boolean publishBusinessService(final BusinessService businessService) throws UDDIException;
@@ -254,25 +256,13 @@ public interface UDDIClient extends Closeable {
     void deleteBusinessServicesByKey(final Collection<String> serviceKeys) throws UDDIException;
 
     /**
-     * Delete all BusinessServices from the UDDI Registry which contain the value of generalKeyword as the keyValue
-     * for the keyedReference to the UDDI general keywords classification scheme, which have the specific Layer7 general
-     * keyword name value for it's keyName value
-     *
-     * A wild card search is performed, due to initial test results with ActiveSOA. Any value supplied as the
-     * generalKeyword will be surrounded by the '%' characters.
-     *
-     * @param generalKeyword String all BusinessServices which have this keyword will be deleted.
-     */
-    void deleteAllBusinessServicesForGatewayWsdl(final String generalKeyword) throws UDDIException;
-
-    /**
      * Find all BusinessServices which contain the generalKeyword supplied.
      *
-     * @param generalKeyword
+     * @param serviceKeys
      * @return
      * @throws UDDIException
      */
-    List<BusinessService> findMatchingBusinessServices(final String generalKeyword) throws UDDIException;
+    List<BusinessService> getBusinessServices(final Set<String> serviceKeys) throws UDDIException;
 
     /**
      * Get the URL for the referenced policy.

@@ -99,30 +99,43 @@ CREATE TABLE uddi_registry_subscription (
 --
 -- Table structure for Gateway WSDLs published to UDDI. Known as 'Proxied Business Services'
 -- Entity UDDIProxiedService
--- TODO Confirm the max length of valid UDDI v3 keys
 -- the general_keyword value is used to identify all services which originated from the same published service's wsdl
 --
-DROP TABLE IF EXISTS uddi_proxied_service;
-CREATE TABLE uddi_proxied_service (
+DROP TABLE IF EXISTS uddi_proxied_service_info;
+CREATE TABLE uddi_proxied_service_info (
   objectid bigint(20) NOT NULL,
   published_service_oid bigint(20) NOT NULL,
   uddi_registry_oid bigint(20) NOT NULL,
   version integer NOT NULL,
   uddi_business_key varchar(255) NOT NULL,
   uddi_business_name varchar(255) NOT NULL,
-  general_keyword_service_identifier varchar(255) NOT NULL,
   update_proxy_on_local_change tinyint(1) NOT NULL DEFAULT 0,
   created_from_existing tinyint(1) NOT NULL DEFAULT 0,
   metrics_enabled tinyint(1) NOT NULL DEFAULT 0,
   wspolicy_tmodel_key varchar(255),
   PRIMARY KEY (objectid),
   UNIQUE KEY  (published_service_oid),
-  UNIQUE(general_keyword_service_identifier),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
   FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Child of uddi_proxied_service_info, represents the publishing of a specific wsdl:service from the Gateway's WSDL
+--
+DROP TABLE IF EXISTS uddi_proxied_service;
+CREATE TABLE uddi_proxied_service (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  uddi_proxied_service_info_oid bigint(20) NOT NULL,
+  uddi_service_key varchar(255) NOT NULL,
+  uddi_service_name varchar(255) NOT NULL,
+  wsdl_service_name varchar(255) NOT NULL,
+  PRIMARY KEY (objectid),
+  UNIQUE KEY (uddi_proxied_service_info_oid, wsdl_service_name),
+  UNIQUE (uddi_service_key),
+  FOREIGN KEY (uddi_proxied_service_info_oid) REFERENCES uddi_proxied_service_info (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 -- Table for a service published from (or otherwise associated with) UDDI
 --
 DROP TABLE IF EXISTS uddi_service_control;
@@ -167,10 +180,10 @@ INSERT INTO rbac_permission VALUES (-1005,0,-1000,'READ',NULL,'SERVICE');
 
 --Update to the 'Manage Webservices Role'
 INSERT INTO rbac_permission VALUES (-429,0,-400,'READ',NULL,'UDDI_REGISTRY');
-INSERT INTO rbac_permission VALUES (-430,0,-400,'READ',NULL,'UDDI_PROXIED_SERVICE');
-INSERT INTO rbac_permission VALUES (-431,0,-400,'UPDATE',NULL,'UDDI_PROXIED_SERVICE');
-INSERT INTO rbac_permission VALUES (-432,0,-400,'DELETE',NULL,'UDDI_PROXIED_SERVICE');
-INSERT INTO rbac_permission VALUES (-433,0,-400,'CREATE',NULL,'UDDI_PROXIED_SERVICE');
+INSERT INTO rbac_permission VALUES (-430,0,-400,'READ',NULL,'UDDI_PROXIED_SERVICE_INFO');
+INSERT INTO rbac_permission VALUES (-431,0,-400,'UPDATE',NULL,'UDDI_PROXIED_SERVICE_INFO');
+INSERT INTO rbac_permission VALUES (-432,0,-400,'DELETE',NULL,'UDDI_PROXIED_SERVICE_INFO');
+INSERT INTO rbac_permission VALUES (-433,0,-400,'CREATE',NULL,'UDDI_PROXIED_SERVICE_INFO');
 INSERT INTO rbac_permission VALUES (-434,0,-400,'READ',NULL,'UDDI_SERVICE_CONTROL');
 INSERT INTO rbac_permission VALUES (-435,0,-400,'UPDATE',NULL,'UDDI_SERVICE_CONTROL');
 INSERT INTO rbac_permission VALUES (-436,0,-400,'DELETE',NULL,'UDDI_SERVICE_CONTROL');

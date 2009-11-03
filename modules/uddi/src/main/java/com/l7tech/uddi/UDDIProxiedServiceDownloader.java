@@ -6,6 +6,7 @@ import com.l7tech.util.Pair;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
@@ -24,21 +25,16 @@ public class UDDIProxiedServiceDownloader {
     }
 
     /**
-     * Find all Business Services which contain the supplied generalkeyword.
+     * Get all Business Services from the supplied keys
      *
-     * @param generalkeyword the unique identifier to find all Business Services in a UDDI Registry which originated
-     * from the same WSDL for a Published Service from the Gateway. Requiredd
+     * @param serviceKeys Set String of serviceKeys to download
      * @return Pair of a List of Business Services and a Map of tModelKeys to TModels, which the Business Services are
      * dependant apon. Neverl null. Neither left or right are ever null either.
      * @throws UDDIException any problems searching the UDDI Registry
      */
-    public Pair<List<BusinessService>, Map<String, TModel>> downloadAllBusinessServicesForService(
-            final String generalkeyword) throws UDDIException {
+    public Pair<List<BusinessService>, Map<String, TModel>> getBusinessServiceModels(Set<String> serviceKeys) throws UDDIException {
 
-        if(generalkeyword == null) throw new NullPointerException("generalKeyword cannot be null");
-        if(generalkeyword.trim().isEmpty()) throw new IllegalArgumentException("generalKeyword cannot be the empty string");
-        
-        List<BusinessService> businessServices = uddiClient.findMatchingBusinessServices(generalkeyword);
+        List<BusinessService> businessServices = uddiClient.getBusinessServices(serviceKeys);
 
         Map<String, TModel> tModelKeyToModel = new HashMap<String, TModel>();
         //process all bus services and collect references

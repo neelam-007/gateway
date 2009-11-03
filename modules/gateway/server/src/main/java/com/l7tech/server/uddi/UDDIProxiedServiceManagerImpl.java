@@ -3,11 +3,6 @@ package com.l7tech.server.uddi;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.common.uddi.guddiv3.BusinessService;
-import com.l7tech.common.uddi.guddiv3.TModel;
-import com.l7tech.uddi.UDDIClient;
-import com.l7tech.uddi.UDDIException;
-import com.l7tech.uddi.BusinessServicePublisher;
 
 import java.util.*;
 
@@ -34,52 +29,17 @@ public class UDDIProxiedServiceManagerImpl extends HibernateEntityManager<UDDIPr
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints(final UDDIProxiedService uddiProxiedService) {
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
-        serviceOidMap.put("serviceOid", uddiProxiedService.getServiceOid());
+        serviceOidMap.put("proxiedServiceInfo", uddiProxiedService.getProxiedServiceInfo());
+        serviceOidMap.put("wsdlServiceName", uddiProxiedService.getWsdlServiceName());
 
-        Map<String,Object> keywordMap = new HashMap<String, Object>();
-        keywordMap.put("generalKeywordServiceIdentifier", uddiProxiedService.getGeneralKeywordServiceIdentifier());
-        
-        return Arrays.asList(serviceOidMap, keywordMap);
-
-
+        return Arrays.asList(serviceOidMap);
     }
 
     @Override
-    public UDDIProxiedService findByPublishedServiceOid( final long publishedServiceOid ) throws FindException {
-        return findByUniqueKey( "serviceOid", publishedServiceOid );
-    }
-
-    @Override
-    public long saveUDDIProxiedService(final UDDIProxiedService uddiProxiedService,
-                                       final UDDIClient uddiClient,
-                                       final List<BusinessService> businessServices,
-                                       final Map<String, TModel> dependentTModels,
-                                       final String generalKeyword)
-            throws SaveException, VersionException, UDDIException {
-
-        BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher();
-        businessServicePublisher.publishServicesToUDDIRegistry(uddiClient, businessServices, dependentTModels, generalKeyword);
-
-        return super.save(uddiProxiedService);
-    }
-
-    /**
-     * See http://sarek.l7tech.com/mediawiki/index.php?title=CentraSite_ActiveSOA_Design#Strategy_for_publishing_and_updating_BusinessServices_to_UDDI
-     *
-     */
-    @Override
-    public void updateUDDIProxiedService(final UDDIProxiedService uddiProxiedService,
-                                         final UDDIClient uddiClient,
-                                         final List<BusinessService> wsdlBusinessServices,
-                                         final Map<String, TModel> wsdlDependentTModels,
-                                         final List<BusinessService> uddiBusinessServices,
-                                         final Map<String, TModel> uddiDependentTModels, String generalKeyword)
-            throws UpdateException, VersionException, UDDIException {
-
-        BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher();
-        businessServicePublisher.updateServicesToUDDIRegistry(
-                uddiClient, wsdlBusinessServices, wsdlDependentTModels, uddiBusinessServices, uddiDependentTModels, generalKeyword);
-
-        super.update(uddiProxiedService);
+    public void deleteByServiceKey(String serviceKey) throws FindException, DeleteException {
+        List<UDDIProxiedService> listToDelete = findByPropertyMaybeNull("publishedServiceOid", serviceKey);
+        for(UDDIProxiedService ps: listToDelete){
+            delete(ps);
+        }
     }
 }

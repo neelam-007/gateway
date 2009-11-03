@@ -96,13 +96,24 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
+    /**
+     * Find a single entity by a unique key. Any Entity which defines a unique key can use this.
+     *
+     * @param uniquePropertyName String name of the property (not the field!) which is unique. This value must be
+     * the property from the Entity class without the 'get' prefix.
+     * @param uniqueKey long value of the unique field
+     * @return the entity by that name, or null if none was found.
+     * @throws FindException in the event of a database problem
+     */
+    @Transactional(readOnly = true)
     protected ET findByUniqueKey(final String uniquePropertyName, final long uniqueKey) throws FindException {
         if (uniquePropertyName == null) throw new NullPointerException();
-        if (uniquePropertyName.trim().isEmpty()) throw new IllegalArgumentException("uniquePropertyName cannot be empty");
+        if (uniquePropertyName.trim().isEmpty())
+            throw new IllegalArgumentException("uniquePropertyName cannot be empty");
 
         try {
             //noinspection unchecked
-            return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            return (ET) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());

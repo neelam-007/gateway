@@ -1,7 +1,4 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
+
 package com.l7tech.gateway.common.uddi;
 
 import org.hibernate.annotations.Proxy;
@@ -10,77 +7,27 @@ import javax.persistence.*;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
+/**
+ * Copyright (C) 2008, Layer 7 Technologies Inc.
+ *
+ * Entity which represents an individual wsdl:service which was published as a proxy BusinessService to UDDI
+ * 
+ * @author darmstrong
+ */
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_proxied_service")
 public class UDDIProxiedService extends PersistentEntityImp {
 
-    public static final String ATTR_SERVICE_OID = "serviceOid";
-
-    /**
-     * Which published service this proxied service was published for
-     */
-    private long serviceOid;
-
-    /**
-     * The UDDI Registry where this proxied service was published
-     */
-    private long uddiRegistryOid;
-
-    // -- UDDI information
-
-    /**
-     * businessKey of owning business entity of proxied service in UDDI registry
-     */
-    private String uddiBusinessKey;
-
-    /**
-     * Name of the Business Entity. Persisted to show in the UI
-     * //todo we should probably just retrieve this as required
-     */
-    private String uddiBusinessName;
-
-    // -- MISC information
-
-    /**
-     * All BusinessServices published to UDDI from the WSDL contained by the PublishedService referenced from
-     * this UDDIProxiedService will contain the same generalKeyword. This will be represented as a keyedReference
-     * in the CateogryBag of the BusinessService. The keyedReference will following the general keyword system.
-     * See http://www.uddi.org/pubs/uddi_v3.htm#_Toc85908318
-     */
-    private String generalKeywordServiceIdentifier;
-
-    /**
-     * If the gateway WSDL changes, update UDDI
-     */
-    private boolean updateProxyOnLocalChange;
-
-    /**
-     * Did we take over an existing Business Service? Persisted for the UI
-     */
-    private boolean createdFromExistingService;
-
-    /**
-     * Should metrics be published? Depends on the UDDI also being enabled for metrics
-     */
-    private boolean metricsEnabled;
-
-    /**
-     * If a WS Policy was published at any point, this is the tModelKey for it
-     */
-    private String wsPolicyTModelKey;
-
     public UDDIProxiedService() {
     }
 
-    public UDDIProxiedService(long serviceOid, long uddiRegistryOid, String uddiBusinessKey, String uddiBusinessName, boolean updateProxyOnLocalChange) {
-        super();
-        this.serviceOid = serviceOid;
-        this.uddiRegistryOid = uddiRegistryOid;
-        this.uddiBusinessKey = uddiBusinessKey;
-        this.uddiBusinessName = uddiBusinessName;
-        this.updateProxyOnLocalChange = updateProxyOnLocalChange;
+    public UDDIProxiedService(String uddiServiceKey, String uddiServiceName, String wsdlServiceName) {
+        this.uddiServiceKey = uddiServiceKey;
+        this.uddiServiceName = uddiServiceName;
+        this.wsdlServiceName = wsdlServiceName;
     }
+
 
     /**
      * Used to determine if 'this' UDDIProxiedService has had a property modified which should not be modified once
@@ -90,20 +37,9 @@ public class UDDIProxiedService extends PersistentEntityImp {
      * changed in 'this'
      */
     public void throwIfFinalPropertyModified(final UDDIProxiedService original){
-        testProperty("general keyword servce identifier", this.getGeneralKeywordServiceIdentifier(), original.getGeneralKeywordServiceIdentifier());
-        testProperty("business key", this.getUddiBusinessKey(), original.getUddiBusinessKey());
-        testProperty("business name", this.getUddiBusinessName(), original.getUddiBusinessName());
-        testProperty("registry oid", Long.toString(this.getUddiRegistryOid()), Long.toString(original.getUddiRegistryOid()));
-        testProperty("created from existing", Boolean.toString(this.isCreatedFromExistingService()), Boolean.toString(original.isCreatedFromExistingService()));
-    }
-
-    private void testProperty(final String propName, final String propValue, final String lastKnownValue){
-        if(propValue == null)
-            throw new IllegalStateException(propName + " property must be set");
-        //the service identifier is not allowed to be modified by client code once saved
-        if(!lastKnownValue.equals(propValue)){
-            throw new IllegalStateException("It is not possible to modify property " + propName);
-        }
+        UDDIProxiedServiceInfo.testProperty("service key", this.getUddiServiceKey(), original.getUddiServiceKey());
+        UDDIProxiedServiceInfo.testProperty("service name", this.getUddiServiceName(), original.getUddiServiceName());
+        UDDIProxiedServiceInfo.testProperty("wsdl service name", this.getWsdlServiceName(), original.getWsdlServiceName());
     }
 
     @Override
@@ -112,85 +48,62 @@ public class UDDIProxiedService extends PersistentEntityImp {
     public int getVersion() {
         return super.getVersion();
     }
-
-    @Column(name = "published_service_oid", updatable = false)
-    public long getServiceOid() {
-        return serviceOid;
+    
+    @Column(name = "uddi_service_key", updatable = false)
+    public String getUddiServiceKey() {
+        return uddiServiceKey;
     }
 
-    public void setServiceOid(long serviceOid) {
-        this.serviceOid = serviceOid;
+    public void setUddiServiceKey(String uddiServiceKey) {
+        this.uddiServiceKey = uddiServiceKey;
     }
 
-    @Column(name = "uddi_registry_oid", updatable = false)
-    public long getUddiRegistryOid() {
-        return uddiRegistryOid;
+    @Column(name = "uddi_service_name", updatable = false)
+    public String getUddiServiceName() {
+        return uddiServiceName;
     }
 
-    public void setUddiRegistryOid(long uddiRegistryOid) {
-        this.uddiRegistryOid = uddiRegistryOid;
+    public void setUddiServiceName(String uddiServiceName) {
+        this.uddiServiceName = uddiServiceName;
     }
 
-    @Column(name = "uddi_business_key", updatable = false)
-    public String getUddiBusinessKey() {
-        return uddiBusinessKey;
+    @Column(name = "wsdl_service_name", updatable = false)    
+    public String getWsdlServiceName() {
+        return wsdlServiceName;
     }
 
-    public void setUddiBusinessKey(String uddiBusinessKey) {
-        this.uddiBusinessKey = uddiBusinessKey;
+    public void setWsdlServiceName(String wsdlServiceName) {
+        this.wsdlServiceName = wsdlServiceName;
     }
 
-    @Column(name = "uddi_business_name", updatable = false)
-    public String getUddiBusinessName() {
-        return uddiBusinessName;
+    @ManyToOne(optional=false)
+    @JoinColumn(name="uddi_proxied_service_info_oid", nullable=false)
+    public UDDIProxiedServiceInfo getProxiedServiceInfo() {
+        return proxiedServiceInfo;
     }
 
-    public void setUddiBusinessName(String uddiBusinessName) {
-        this.uddiBusinessName = uddiBusinessName;
+    public void setProxiedServiceInfo(UDDIProxiedServiceInfo proxiedServiceInfo) {
+        this.proxiedServiceInfo = proxiedServiceInfo;
     }
 
-    @Column(name = "general_keyword_service_identifier", updatable = false)
-    public String getGeneralKeywordServiceIdentifier() {
-        return generalKeywordServiceIdentifier;
-    }
+    /**
+     * Serivce key of the proxied business service in UDDI. Always created by the UDDI Registry
+     */
+    private String uddiServiceKey;
 
-    public void setGeneralKeywordServiceIdentifier(String generalKeywordServiceIdentifier) {
-        this.generalKeywordServiceIdentifier = generalKeywordServiceIdentifier;
-    }
+    /**
+     * Name of the proxied business service in UDDI. This is a synthetic name generated automatically by the gateway
+     */
+    private String uddiServiceName;
 
-    @Column(name = "update_proxy_on_local_change")
-    public boolean isUpdateProxyOnLocalChange() {
-        return updateProxyOnLocalChange;
-    }
+    /**
+     * wsdlServiceName represents the original unmodified unique wsdl:service name from the Gateway's WSDL
+     */
+    private String wsdlServiceName;
 
-    public void setUpdateProxyOnLocalChange(boolean updateProxyOnLocalChange) {
-        this.updateProxyOnLocalChange = updateProxyOnLocalChange;
-    }
-
-    @Column(name = "created_from_existing", updatable = false)
-    public boolean isCreatedFromExistingService() {
-        return createdFromExistingService;
-    }
-
-    public void setCreatedFromExistingService(boolean createdFromExistingService) {
-        this.createdFromExistingService = createdFromExistingService;
-    }
-
-    @Column(name = "metrics_enabled")
-    public boolean isMetricsEnabled() {
-        return metricsEnabled;
-    }
-
-    public void setMetricsEnabled(boolean metricsEnabled) {
-        this.metricsEnabled = metricsEnabled;
-    }
-
-    @Column(name = "wspolicy_tmodel_key")
-    public String getWsPolicyTModelKey() {
-        return wsPolicyTModelKey;
-    }
-
-    public void setWsPolicyTModelKey(String wsPolicyTModelKey) {
-        this.wsPolicyTModelKey = wsPolicyTModelKey;
-    }
+    /**
+     * Parent which contains general information about the WSDL and BusinessEntity this individual service
+     * is related to
+     */
+    private UDDIProxiedServiceInfo proxiedServiceInfo;
 }

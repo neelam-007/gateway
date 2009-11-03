@@ -8,7 +8,6 @@ import org.w3c.dom.Document;
 import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.uddi.*;
-import com.l7tech.util.Pair;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.example.manager.apidemo.SsgAdminSession;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -127,14 +126,15 @@ public class TestGenericUDDIClient {
         final String gatewayURL = "http://localhost:8080/" + serviceOid;
 
         final String businessKey = "uddi:c4f2cbdd-beab-11de-8126-f78857d54072";//this exists in my local uddi registry
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid, null);
-        Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher();
-        servicePublisher.publishServicesToUDDIRegistry(uddiClient, servicesAndTModels.left, servicesAndTModels.right, null);
+        servicePublisher.publishServicesToUDDIRegistry(uddiClient, wsdlToUDDIModelConverter.getBusinessServices(),
+                wsdlToUDDIModelConverter.getKeysToPublishedTModels());
 
         //Place a break point here, and examine the UDDI Registry. The code below will delete everything published
-        for(BusinessService businessService: servicesAndTModels.left){
+        for(BusinessService businessService: wsdlToUDDIModelConverter.getBusinessServices()){
             serviceKeys.add(businessService.getServiceKey());
         }
     }
@@ -166,17 +166,13 @@ public class TestGenericUDDIClient {
         if(activeSoa == null) throw new IllegalStateException("Gateway does not have any ActiveSOA UDDI registries configured");
 
         ServiceAdmin serviceAdmin = ssgAdminSession.getServiceAdmin();
-        final String serviceOid = "70615040";
+        final String serviceOid = "87293952";
         PublishedService serviceToPublish = serviceAdmin.findServiceByID(serviceOid);
         Assert.assertNotNull("Service with id not found: " + serviceOid, serviceToPublish);
 
         final String businessKey = "uddi:c4f2cbdd-beab-11de-8126-f78857d54072";//this exists in my local uddi registry
-        UDDIProxiedService uddiProxiedService = new UDDIProxiedService(serviceToPublish.getOid(),
-                activeSoa.getOid(),
-                businessKey,
-                "Skunkworks Organization", false);
 
-        uddiRegistryAdmin.publishGatewayWsdl(uddiProxiedService);
+        uddiRegistryAdmin.publishGatewayWsdl(Long.valueOf(serviceOid), activeSoa.getOid(), businessKey, "Skunkworks Organization", false);
 
         System.clearProperty("com.l7tech.console.suppressVersionCheck");
     }
@@ -192,7 +188,7 @@ public class TestGenericUDDIClient {
     @Test
     public void testUDDIProxyEntityUpdate()
             throws IOException, LoginException, FindException,
-            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException {
+            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException, DeleteException {
 
         System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
 
@@ -222,9 +218,9 @@ public class TestGenericUDDIClient {
         serviceToPublish.setWsdlXml(XmlUtil.nodeToString(dom));
         serviceAdmin.savePublishedService(serviceToPublish);
 
-        UDDIProxiedService uddiProxiedService = uddiRegistryAdmin.getUDDIProxiedService(serviceToPublish.getOid());
-        if(uddiProxiedService == null) throw new IllegalStateException("UDDIProxiedService not found");
-        uddiRegistryAdmin.publishGatewayWsdl(uddiProxiedService);
+        UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.getUDDIProxiedServiceInfo(serviceToPublish.getOid());
+        if(uddiProxiedServiceInfo == null) throw new IllegalStateException("UDDIProxiedService not found");
+        uddiRegistryAdmin.updatePublishedGatewayWsdl(uddiProxiedServiceInfo.getOid());
 
         System.clearProperty("com.l7tech.console.suppressVersionCheck");
     }
@@ -239,7 +235,7 @@ public class TestGenericUDDIClient {
     @Test
     public void testUDDIProxyEntityPartialUpdate()
             throws IOException, LoginException, FindException,
-            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException {
+            UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException, DeleteException {
 
         System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
 
@@ -258,33 +254,20 @@ public class TestGenericUDDIClient {
         if(activeSoa == null) throw new IllegalStateException("Gateway does not have any ActiveSOA UDDI registries configured");
 
         ServiceAdmin serviceAdmin = ssgAdminSession.getServiceAdmin();
-        final String serviceOid = "70615040";
+        final String serviceOid = "91783168";
         PublishedService serviceToPublish = serviceAdmin.findServiceByID(serviceOid);
         //this service has already had it's WSDL published
         Assert.assertNotNull("Service with id not found: " + serviceOid, serviceToPublish);
 
         //update the contents of the wsdl's xml to simulate it's WSDL having changed
-        InputStream inputStream = this.getClass().getResourceAsStream("Warehouse_modified.wsdl"); //completely change the wsdl - a different namespace!
+        InputStream inputStream = this.getClass().getResourceAsStream("Warehouse.wsdl"); //completely change the wsdl - a different namespace!
         Document dom = XmlUtil.parse(inputStream);
         serviceToPublish.setWsdlXml(XmlUtil.nodeToString(dom));
         serviceAdmin.savePublishedService(serviceToPublish);
 
-        UDDIProxiedService uddiProxiedService = uddiRegistryAdmin.getUDDIProxiedService(serviceToPublish.getOid());
-        if(uddiProxiedService == null) throw new IllegalStateException("UDDIProxiedService not found");
-        uddiRegistryAdmin.publishGatewayWsdl(uddiProxiedService);
-
-        System.clearProperty("com.l7tech.console.suppressVersionCheck");
-    }
-
-    @Test
-    public void testGetUDDIProxiedService() throws MalformedURLException, LoginException, RemoteException, FindException {
-        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
-
-        SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
-        UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
-
-        UDDIProxiedService service = uddiRegistryAdmin.getUDDIProxiedService(70615040);
-        System.out.println(service.getGeneralKeywordServiceIdentifier());
+        UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.getUDDIProxiedServiceInfo(serviceToPublish.getOid());
+        if(uddiProxiedServiceInfo == null) throw new IllegalStateException("UDDIProxiedServiceInfo not found");
+        uddiRegistryAdmin.updatePublishedGatewayWsdl(uddiProxiedServiceInfo.getOid());
 
         System.clearProperty("com.l7tech.console.suppressVersionCheck");
     }
@@ -297,24 +280,10 @@ public class TestGenericUDDIClient {
         SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
         UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
 
-        UDDIProxiedService proxiedService = uddiRegistryAdmin.getUDDIProxiedService(70615040);
-        uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(proxiedService);
+//        UDDIProxiedService proxiedService = uddiRegistryAdmin.getUDDIProxiedServiceInfo(70615040);
+//        uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(proxiedService);
 
         System.clearProperty("com.l7tech.console.suppressVersionCheck");
-    }
-
-    @Test
-    public void testUDDIClientDeleteServiceByKeyword() throws UDDIException {
-        final String keyWord = "70615040";
-
-        uddiClient.deleteAllBusinessServicesForGatewayWsdl(keyWord);
-    }
-
-    @Test
-    public void testFindBusinessEntity() throws UDDIException {
-        final String keyWord = "70615040";
-
-        uddiClient.deleteAllBusinessServicesForGatewayWsdl(keyWord);
     }
 
     @Test
@@ -352,29 +321,6 @@ public class TestGenericUDDIClient {
         }
     }
 
-    @Test
-    public void testTModelWithGeneralKeyword() throws UDDIException {
-        KeyedReference keyWordRef = new KeyedReference();
-//        keyWordRef.setKeyName("Snoopy");
-        keyWordRef.setKeyName(WsdlToUDDIModelConverter.LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN);
-        keyWordRef.setKeyValue("Snoopy1");
-        keyWordRef.setTModelKey(WsdlToUDDIModelConverter.UDDI_GENERAL_KEYWORDS);
-
-        CategoryBag categoryBag = new CategoryBag();
-        categoryBag.getKeyedReference().add(keyWordRef);
-
-        TModel testModel = new TModel();
-        Name name = new Name();
-        name.setValue("Test Model");
-        testModel.setName(name);
-
-        testModel.setCategoryBag(categoryBag);
-
-        uddiClient.publishTModel(testModel);
-
-        tModelKeys.add(testModel.getTModelKey());
-
-    }
     /**
      * Bug number 7898
      * @throws UDDIException

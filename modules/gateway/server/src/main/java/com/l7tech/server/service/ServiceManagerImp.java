@@ -21,8 +21,8 @@ import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.gateway.common.service.*;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -292,10 +292,10 @@ public class ServiceManagerImp
         newRole.addEntityPermission(READ, UDDI_REGISTRY, null);
 
         //add attribute predicate to allow crud on a uddi_proxied_service if one gets created
-        newRole.addAttributePermission(CREATE, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
-        newRole.addAttributePermission(READ, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
-        newRole.addAttributePermission(UPDATE, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
-        newRole.addAttributePermission(DELETE, UDDI_PROXIED_SERVICE, UDDIProxiedService.ATTR_SERVICE_OID, service.getId());
+        newRole.addAttributePermission(CREATE, UDDI_PROXIED_SERVICE_INFO, UDDIProxiedServiceInfo.ATTR_SERVICE_OID, service.getId());
+        newRole.addAttributePermission(READ, UDDI_PROXIED_SERVICE_INFO, UDDIProxiedServiceInfo.ATTR_SERVICE_OID, service.getId());
+        newRole.addAttributePermission(UPDATE, UDDI_PROXIED_SERVICE_INFO, UDDIProxiedServiceInfo.ATTR_SERVICE_OID, service.getId());
+        newRole.addAttributePermission(DELETE, UDDI_PROXIED_SERVICE_INFO, UDDIProxiedServiceInfo.ATTR_SERVICE_OID, service.getId());
 
         //add attribute predicate to allow crud on a uddi_service_control if one gets created
         newRole.addAttributePermission(CREATE, UDDI_SERVICE_CONTROL, UDDIServiceControl.ATTR_SERVICE_OID, service.getId());

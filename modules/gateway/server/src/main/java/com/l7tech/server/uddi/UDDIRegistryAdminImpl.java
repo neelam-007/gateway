@@ -10,16 +10,15 @@ import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
-import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.common.uddi.guddiv3.BusinessService;
-import com.l7tech.common.uddi.guddiv3.TModel;
 
 import javax.wsdl.WSDLException;
 import java.util.*;
@@ -30,24 +29,24 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     protected static final Logger logger = Logger.getLogger(UDDIRegistryAdminImpl.class.getName());
 
     final private UDDIRegistryManager uddiRegistryManager;
-    final private UDDIProxiedServiceManager uddiProxiedServiceManager;
+    final private UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager;
     final private UDDIServiceControlManager uddiServiceControlManager;
-    final private UDDIHelper uddiHelper;
     final private UDDICoordinator uddiCoordinator;
     final private ServiceCache serviceCache;
+    final private ServiceManager serviceManager;
 
     public UDDIRegistryAdminImpl(final UDDIRegistryManager uddiRegistryManager,
-                                 final UDDIProxiedServiceManager uddiProxiedServiceManager,
                                  final UDDIServiceControlManager uddiServiceControlManager,
-                                 final UDDIHelper uddiHelper,
                                  final UDDICoordinator uddiCoordinator,
-                                 final ServiceCache serviceCache) {
+                                 final ServiceCache serviceCache,
+                                 final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
+                                 final ServiceManager serviceManager) {
         this.uddiRegistryManager = uddiRegistryManager;
-        this.uddiProxiedServiceManager = uddiProxiedServiceManager;
         this.uddiServiceControlManager = uddiServiceControlManager;
-        this.uddiHelper = uddiHelper;
         this.uddiCoordinator = uddiCoordinator;
         this.serviceCache = serviceCache;
+        this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
+        this.serviceManager = serviceManager;
     }
 
     @Override
@@ -70,8 +69,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(uddiRegistry == null) throw new FindException("Could not find UDDI Registry to delete");
 
         //delete all UDDIProxiedService's which belong to this registry
-        Collection<UDDIProxiedService> allProxiedServices = uddiRegistryManager.findAllByRegistryOid(uddiRegistry.getOid());
-        for(UDDIProxiedService proxiedService: allProxiedServices){
+        Collection<UDDIProxiedServiceInfo> allProxiedServices = uddiRegistryManager.findAllByRegistryOid(uddiRegistry.getOid());
+        for(UDDIProxiedServiceInfo proxiedService: allProxiedServices){
             deleteGatewayWsdlFromUDDI(proxiedService);
         }
 
@@ -102,7 +101,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             uddiClient.authenticate();
         } catch (UDDIException e) {
             //the original exception may not be serializable
-            throw new UDDIException(e.getMessage());
+            throw new UDDIException(ExceptionUtils.getMessage(e));
         }
     }
 
@@ -111,47 +110,51 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public UDDIProxiedService getUDDIProxiedService(long serviceOid) throws FindException {
-        return uddiProxiedServiceManager.findByPublishedServiceOid(serviceOid);
+    public UDDIProxiedServiceInfo getUDDIProxiedServiceInfo(long serviceOid) throws FindException {
+        return uddiProxiedServiceInfoManager.findByPublishedServiceOid(serviceOid);
     }
 
     @Override
-    public String deleteGatewayWsdlFromUDDI(UDDIProxiedService uddiProxiedService)
+    public String deleteGatewayWsdlFromUDDI(UDDIProxiedServiceInfo proxiedServiceInfo)
             throws FindException, DeleteException, UDDIRegistryNotEnabledException {
-        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiProxiedService.getUddiRegistryOid());
+        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
 
-        final UDDIProxiedService proxiedService = uddiProxiedServiceManager.findByPrimaryKey(uddiProxiedService.getOid());
+        final Set<UDDIProxiedService> proxiedServices = proxiedServiceInfo.getProxiedServices();
+        final Set<String> keysToDelete = new HashSet<String>();
+        for(UDDIProxiedService proxiedService: proxiedServices){
+            keysToDelete.add(proxiedService.getUddiServiceKey());
+        }
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
 
         String errorMsg = null;
         try {
-            uddiClient.deleteAllBusinessServicesForGatewayWsdl(proxiedService.getGeneralKeywordServiceIdentifier());
+            uddiClient.deleteBusinessServicesByKey(keysToDelete);
             logger.log(Level.INFO, "Successfully deleted published Gateway WSDL from UDDI Registry");
         } catch (UDDIException e) {
-            errorMsg = "Errors deleting published Business Services from UDDI: " + e.getMessage();
-            logger.log(Level.WARNING, errorMsg, e);
+            errorMsg = "Errors deleting published Business Services from UDDI: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, errorMsg, ExceptionUtils.getDebugException(e));
         }
 
-        uddiProxiedServiceManager.delete(uddiProxiedService.getOid());
-        logger.log(Level.INFO, "Deleted UDDIProxiedService");
+        uddiProxiedServiceInfoManager.delete(proxiedServiceInfo.getOid());//cascade delete
+        logger.log(Level.INFO, "Deleted UDDIProxiedServiceInfo");
         return errorMsg;
     }
 
     @Override
-    public void updateProxiedServiceOnly(UDDIProxiedService uddiProxiedService) throws UpdateException, FindException {
-        final UDDIProxiedService original = uddiProxiedServiceManager.findByPrimaryKey(uddiProxiedService.getOid());
-        if(original == null) throw new FindException("Could not find UDDIProxiedService with id: " + uddiProxiedService);
+    public void updateProxiedServiceOnly(UDDIProxiedServiceInfo proxiedServiceInfo) throws UpdateException, FindException {
+        final UDDIProxiedServiceInfo original = uddiProxiedServiceInfoManager.findByPrimaryKey(proxiedServiceInfo.getOid());
+        if(original == null) throw new FindException("Could not find UDDIProxiedServiceInfo with id: " + proxiedServiceInfo);
 
-        uddiProxiedService.throwIfFinalPropertyModified(original);
+        proxiedServiceInfo.throwIfFinalPropertyModified(original);
 
-        if(original.isUpdateProxyOnLocalChange() == uddiProxiedService.isUpdateProxyOnLocalChange()) return;
+        if(original.isUpdateProxyOnLocalChange() == proxiedServiceInfo.isUpdateProxyOnLocalChange()) return;
 
-        uddiProxiedServiceManager.update(uddiProxiedService);
+        uddiProxiedServiceInfoManager.update(proxiedServiceInfo);
     }
 
     @Override
-    public Collection<UDDIProxiedService> getAllProxiedServicesForRegistry(long registryOid) throws FindException {
+    public Collection<UDDIProxiedServiceInfo> getAllProxiedServicesForRegistry(long registryOid) throws FindException {
         return uddiRegistryManager.findAllByRegistryOid(registryOid);
     }
 
@@ -165,7 +168,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                 wsdl = service.parsedWsdl();
             } catch (WSDLException e) {
                 final String msg = "Could not obtain WSDL for associated published service: " + ExceptionUtils.getMessage(e);
-                logger.log(Level.WARNING, msg, e);
+                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
                 throw new SaveException(msg);
             }
 
@@ -227,89 +230,88 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public long publishGatewayWsdl(final UDDIProxiedService uddiProxiedService)
+    public void publishGatewayWsdl(final long publishedServiceOid,
+                                   final long uddiRegistryOid,
+                                   final String uddiBusinessKey,
+                                   final String uddiBusinessName,
+                                   final boolean updateWhenGatewayWsdlChanges)
             throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException, UDDIRegistryNotEnabledException {
-        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiProxiedService.getUddiRegistryOid());
+
+        if(publishedServiceOid < 1) throw new IllegalArgumentException("publishedServiceOid must be > 1");
+        if(uddiRegistryOid < 1) throw new IllegalArgumentException("uddiRegistryOid must be > 1");
+        if(uddiBusinessKey == null || uddiBusinessKey.trim().isEmpty()) throw new IllegalArgumentException("uddiBusinessKey cannot be null or empty");
+        if(uddiBusinessName == null || uddiBusinessName.trim().isEmpty()) throw new IllegalArgumentException("uddiBusinessName cannot be null or empty");
+
+        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiRegistryOid);
+        if(uddiRegistry == null) throw new IllegalArgumentException("Cannot find UDDIRegistry with oid: " + uddiRegistryOid);
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
 
-        final PublishedService service = serviceCache.getCachedService(uddiProxiedService.getServiceOid());
+//        final PublishedService service = serviceCache.getCachedService(publishedServiceOid);
+        //do not want a cached service, what the most up to date and need its most up to date WSDL
+        final PublishedService service = serviceManager.findByPrimaryKey(publishedServiceOid);
+        if(service == null) throw new SaveException("Cannot find published service with oid: " + publishedServiceOid);
 
-        final boolean update = uddiProxiedService.getOid() != PersistentEntity.DEFAULT_OID;
-        final String generalKeyword;
-        if(update){
-            final UDDIProxiedService original = uddiProxiedServiceManager.findByPrimaryKey(uddiProxiedService.getOid());
-            uddiProxiedService.throwIfFinalPropertyModified(original);
-            generalKeyword = original.getGeneralKeywordServiceIdentifier();
-        }else{
-            //generate a new identifier
-            generalKeyword = service.getOidAsLong().toString();
-            uddiProxiedService.setGeneralKeywordServiceIdentifier(generalKeyword);
+        final Wsdl wsdl = getWsdl(service);
+
+        final UDDIProxiedServiceInfo serviceInfo = new UDDIProxiedServiceInfo(service.getOid(), uddiRegistry.getOid(),
+                uddiBusinessKey, uddiBusinessName, updateWhenGatewayWsdlChanges);
+
+        final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
+        try {
+            uddiProxiedServiceInfoManager.saveUDDIProxiedServiceInfo(serviceInfo, uddiClient, wsdl);
+        } catch (UDDIException e) {
+            final String msg = "Could not publish Gateway WSDL to UDDI: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+            throw new PublishProxiedServiceException(msg);
+        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
+            final String msg = "Could not publish Gateway WSDL to UDDI: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+            throw new PublishProxiedServiceException(msg);
         }
+    }
 
+    private Wsdl getWsdl(PublishedService service) throws PublishProxiedServiceException {
         final Wsdl wsdl;
         try {
             wsdl = service.parsedWsdl();
         } catch (WSDLException e) {
-            final String msg = "Could not obtain Published Service's WSDL: " + e.getMessage();
-            logger.log(Level.WARNING, msg);
+            final String msg = "Could not obtain Published Service's WSDL: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             throw new PublishProxiedServiceException(msg);
         }
+        return wsdl;
+    }
 
-        //protected service external url
-        final String protectedServiceExternalURL = uddiHelper.getExternalUrlForService(service.getOid());
-        //protected service gateway external wsdl url
-        final String protectedServiceWsdlURL = uddiHelper.getExternalWsdlUrlForService(service.getOid());
+    @Override
+    public void updatePublishedGatewayWsdl(long uddiProxiedServiceInfoOid)
+            throws FindException, UDDIRegistryNotEnabledException, PublishProxiedServiceException, UpdateException,
+            VersionException {
+        final UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPrimaryKey(uddiProxiedServiceInfoOid);
+        if(serviceInfo == null) throw new UpdateException("Cannot find UDDIProxiedServiceInfo with id: " + uddiProxiedServiceInfoOid);
 
-        WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
-                protectedServiceExternalURL, uddiProxiedService.getUddiBusinessKey(), service.getOid(), generalKeyword);
-        final Pair<List<BusinessService>, Map<String, TModel>> servicesAndModels;
-        try {
-            servicesAndModels = modelConverter.convertWsdlToUDDIModel();
-        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
-            final String msg = e.getMessage();
-            logger.log(Level.WARNING, msg);
-            throw new PublishProxiedServiceException(msg);
-        }
+        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(serviceInfo.getUddiRegistryOid());
+        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
+
+        //final PublishedService service = serviceCache.getCachedService(serviceInfo.getPublishedServiceOid());
+        //do not want a cached service, what the most up to date and need its most up to date WSDL
+        final PublishedService service = serviceManager.findByPrimaryKey(serviceInfo.getPublishedServiceOid());
+
+        final Wsdl wsdl = getWsdl(service);
 
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
         try {
-            if(!update){
-                uddiProxiedServiceManager.saveUDDIProxiedService(uddiProxiedService, uddiClient, servicesAndModels.left, servicesAndModels.right, generalKeyword);
-            }else{
-                //Get the info on all published business services from UDDI
-                UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
-                Pair<List<BusinessService>, Map<String, TModel>> modelFromUddi = serviceDownloader.downloadAllBusinessServicesForService(generalKeyword);
-
-                //the management of whether any existing tModels need to be deleted is left to the uddi proxied service manager
-                //as it can only tell what needs to be deleted after it has published the representation of the gateway wsdl to UDDI
-                uddiProxiedServiceManager.updateUDDIProxiedService(uddiProxiedService,
-                        uddiClient,
-                        servicesAndModels.left, servicesAndModels.right,
-                        modelFromUddi.left, modelFromUddi.right, generalKeyword);
-            }
-        } catch(SaveException e){
-            logger.log(Level.WARNING, "Could not save UDDIProxiedService: " + e.getMessage());
-            try {
-                logger.log(Level.WARNING, "Attempting to rollback UDDI updates");
-                //Attempt to roll back UDDI updates
-                uddiClient.deleteBusinessServices(servicesAndModels.left);
-                logger.log(Level.WARNING, "UDDI updates rolled back successfully");
-            } catch (UDDIException e1) {
-                logger.log(Level.WARNING, "Could not rollback UDDI updates: " + e1.getMessage());
-            }
-            throw e;
-        } catch (UpdateException e){
-            logger.log(Level.WARNING, "Could not update UDDIProxiedService: " + e.getMessage());
-            //Attempt to roll back UDDI updates? - no, as the information in the entity is still valid.
-            //it contains a keyword which has not changed. If we successfully published to UDDI, then leave it like
-            //that. We don't hold any references to anything UDDI specific in the entity.
-            throw e;
+            //the management of whether any existing tModels need to be deleted is left to the uddi proxied service manager
+            //as it can only tell what needs to be deleted after it has published the representation of the gateway wsdl to UDDI
+            uddiProxiedServiceInfoManager.updateUDDIProxiedService(serviceInfo, uddiClient, wsdl);
         } catch (UDDIException e) {
-            final String msg = "Could not publish Gateway WSDL to UDDI: " + e.getMessage();
-            logger.log(Level.WARNING, msg);
+            final String msg = "Could not publish Gateway WSDL to UDDI: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             throw new PublishProxiedServiceException(msg);
+        } catch (VersionException e) {
+            logger.log(Level.WARNING, "Could not update UDDIProxiedService: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw e;
+        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
+            e.printStackTrace();
         }
-
-        return uddiProxiedService.getOid();
     }
 }

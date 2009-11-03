@@ -36,15 +36,15 @@ public class WsdlTUDDIModelConverterTest {
         final String targetNameSpace = wsdl.getTargetNamespace();
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid, Integer.toString(serviceOid));
-        Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
-        List<BusinessService> services = servicesAndTModels.left;
+        List<BusinessService> services = wsdlToUDDIModelConverter.getBusinessServices();
         Assert.assertEquals("Incorrect number of Business Services found", 1, services.size());
         //print for debugging
         printBusinessService(services);
 
-        Map<String, TModel> keysToTModels = servicesAndTModels.right;
+        Map<String, TModel> keysToTModels = wsdlToUDDIModelConverter.getKeysToPublishedTModels();
         Assert.assertEquals("Incorrect number of tModels published", 3, keysToTModels.keySet().size());
 
         for(Map.Entry<String, TModel> entry: keysToTModels.entrySet()) {
@@ -83,7 +83,7 @@ public class WsdlTUDDIModelConverterTest {
 
         CategoryBag categoryBag = businessService.getCategoryBag();
         List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
-        Assert.assertEquals("Incorrect number of keyedReferences found", 4, keyedReferences.size());
+        Assert.assertEquals("Incorrect number of keyedReferences found", 3, keyedReferences.size());
 
         KeyedReference serviceTypeRef = keyedReferences.get(0);
         Assert.assertEquals("Incorrect keyValue found", "service", serviceTypeRef.getKeyValue());
@@ -98,12 +98,6 @@ public class WsdlTUDDIModelConverterTest {
         Assert.assertEquals("Incorrect keyValue found", targetNameSpace, nameSpaceRef.getKeyValue());
         Assert.assertEquals("Incorrect keyName found", "service namespace", nameSpaceRef.getKeyName());
         Assert.assertEquals("Incorret tModelKey found", WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE, nameSpaceRef.getTModelKey());
-
-        KeyedReference keyWordRef = keyedReferences.get(3);
-        Assert.assertEquals("Incorrect keyValue found", Integer.toString(serviceOid), keyWordRef.getKeyValue());
-        Assert.assertEquals("Incorrect keyName found", WsdlToUDDIModelConverter.LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN, keyWordRef.getKeyName());
-        Assert.assertEquals("Incorret tModelKey found", WsdlToUDDIModelConverter.UDDI_GENERAL_KEYWORDS, keyWordRef.getTModelKey());
-
     }
 
     /**
@@ -120,10 +114,10 @@ public class WsdlTUDDIModelConverterTest {
         final String targetNameSpace = wsdl.getTargetNamespace();
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid, Integer.toString(serviceOid));
-        Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
-        List<BusinessService> services = servicesAndTModels.left;
+        List<BusinessService> services = wsdlToUDDIModelConverter.getBusinessServices();
         Assert.assertEquals("Incorrect number of Business Services found", 1, services.size());
         //print for debugging
         printBusinessService(services);
@@ -139,7 +133,7 @@ public class WsdlTUDDIModelConverterTest {
         final String gatewayURL = "http://localhost:8080/3828382";
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid, Integer.toString(serviceOid));
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
     }
 
@@ -157,9 +151,9 @@ public class WsdlTUDDIModelConverterTest {
         final String gatewayURL = "http://localhost:8080/3828382";
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid, Integer.toString(serviceOid));
-        Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels = wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
-        Assert.assertEquals("Incorrect number of BusinessServices found", 1, servicesAndTModels.left.size());
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        Assert.assertEquals("Incorrect number of BusinessServices found", 1, wsdlToUDDIModelConverter.getBusinessServices().size());
     }
 
     /**

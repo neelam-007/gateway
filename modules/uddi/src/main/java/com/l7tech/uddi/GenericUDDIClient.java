@@ -72,7 +72,8 @@ public class GenericUDDIClient implements UDDIClient {
      */
     @Override
     public boolean publishBusinessService(final BusinessService businessService) throws UDDIException {
-        //TODO implement search for existing matching service
+        final String preSaveKey = businessService.getServiceKey();
+
         SaveService saveService = new SaveService();
         saveService.setAuthInfo(getAuthToken());
 
@@ -81,7 +82,8 @@ public class GenericUDDIClient implements UDDIClient {
             ServiceDetail serviceDetail = getPublishPort().saveService(saveService);
             businessService.setServiceKey(serviceDetail.getBusinessService().get(0).getServiceKey());
             logger.log(Level.INFO, "Saved service with key: " + businessService.getServiceKey());
-            return true;
+
+            return preSaveKey == null;
         } catch (DispositionReportFaultMessage drfm) {
             final String msg = getExceptionMessage("Exception saving business service: ", drfm);
             logger.log(Level.WARNING, msg);
@@ -327,75 +329,28 @@ public class GenericUDDIClient implements UDDIClient {
     }
 
     @Override
-    public void deleteAllBusinessServicesForGatewayWsdl(final String generalKeyword) throws UDDIException {
-        final FindService findService = getFindQualifiersForServiceKeyword(generalKeyword);
-
-        try {
-            ServiceList serviceList = getInquirePort().findService(findService);
-            if(serviceList.getServiceInfos() != null){
-                Set<String> serviceKeys = new HashSet<String>();
-                for(ServiceInfo serviceInfo: serviceList.getServiceInfos().getServiceInfo()){
-                    serviceKeys.add(serviceInfo.getServiceKey());
-                }
-                deleteBusinessServicesByKey(serviceKeys);
-            }else{
-                logger.log(Level.WARNING, "No matching BusinessServices were found. None were deleted");
-            }
-        } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception finding services with keyword: " + generalKeyword+ ": ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
-        }
-    }
-
-    @Override
-    public List<BusinessService> findMatchingBusinessServices(final String generalKeyword) throws UDDIException {
-        final FindService findService = getFindQualifiersForServiceKeyword(generalKeyword);
+    public List<BusinessService> getBusinessServices(final Set<String> serviceKeys) throws UDDIException {
+        final GetServiceDetail getServiceDetail = new GetServiceDetail();
+        getServiceDetail.setAuthInfo(getAuthToken());
+        getServiceDetail.getServiceKey().addAll(serviceKeys);
 
         final List<BusinessService> businessServices = new ArrayList<BusinessService>();
         try {
-            final ServiceList serviceList = getInquirePort().findService(findService);
-            if(serviceList.getServiceInfos() != null){
-                for(ServiceInfo serviceInfo: serviceList.getServiceInfos().getServiceInfo()){
-                    final BusinessService businessService = getBusinessService(serviceInfo.getServiceKey());
-                    if(businessService == null)
-                        throw new UDDIException("Could not find Business Service with serviceKey: " + serviceInfo.getServiceKey());
-
+            final ServiceDetail serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);
+            if(serviceDetail.getBusinessService() != null){
+                for(BusinessService businessService: serviceDetail.getBusinessService()){
                     businessServices.add(businessService);
                 }
             }else{
-                logger.log(Level.INFO, "No matching BusinessServices were found for keyword: " + generalKeyword);
+                logger.log(Level.INFO, "No matching BusinessServices were found");
             }
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception finding services with keyword: " + generalKeyword+ ": ", drfm);
+            final String msg = getExceptionMessage("Exception finding services", drfm);
             logger.log(Level.WARNING, msg);
             throw new UDDIException(msg, drfm);
         }
 
         return businessServices;
-    }
-
-    private FindService getFindQualifiersForServiceKeyword(String generalKeyword) throws UDDIException {
-        FindService findService = new FindService();
-        findService.setAuthInfo(getAuthToken());
-
-        CategoryBag categoryBag = new CategoryBag();
-        KeyedReference generalKeywordRef = new KeyedReference();
-        generalKeywordRef.setKeyName(WsdlToUDDIModelConverter.LAYER7_PROXY_SERVICE_GENERAL_KEYWORD_URN);
-        generalKeywordRef.setKeyValue("%" + generalKeyword + "%");
-        generalKeywordRef.setTModelKey(WsdlToUDDIModelConverter.UDDI_GENERAL_KEYWORDS);
-
-        categoryBag.getKeyedReference().add(generalKeywordRef);
-
-        findService.setCategoryBag(categoryBag);
-
-        FindQualifiers findQualifiers = new FindQualifiers();
-        List<String> qualifiers = findQualifiers.getFindQualifier();
-        qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);//in case we change it from an oid to also contain strings
-        qualifiers.add(FINDQUALIFIER_APPROXIMATE);
-
-        findService.setFindQualifiers(findQualifiers);
-        return findService;
     }
 
     @Override

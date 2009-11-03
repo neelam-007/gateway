@@ -4,7 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
@@ -124,18 +124,18 @@ public class UddiRegistryManagerWindow extends JDialog {
             return;
 
         UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
-        final Collection<UDDIProxiedService> proxiedServices;
+        final Collection<UDDIProxiedServiceInfo> proxiedServicesInfos;
         try {
-            proxiedServices = uddiRegistryAdmin.getAllProxiedServicesForRegistry(uddiRegistry.getOid());
+            proxiedServicesInfos = uddiRegistryAdmin.getAllProxiedServicesForRegistry(uddiRegistry.getOid());
         } catch (FindException e) {
             showErrorMessage("Cannot Delete UDDI Registry", "Cannot determine if UDDI Registry contains published information", e);
             return;
         }
 
         final String removalMsg = "Are you sure you want to remove the UDDI Registry \"" + uddiRegistry.getName() + "\"?"
-                + (((!proxiedServices.isEmpty())? " WARNING: Previously published information will be deleted": ""));
+                + (((!proxiedServicesInfos.isEmpty())? " WARNING: Previously published information will be deleted": ""));
 
-        final int msgType = (proxiedServices.isEmpty())? JOptionPane.QUESTION_MESSAGE: JOptionPane.WARNING_MESSAGE;
+        final int msgType = (proxiedServicesInfos.isEmpty())? JOptionPane.QUESTION_MESSAGE: JOptionPane.WARNING_MESSAGE;
         DialogDisplayer.showConfirmDialog(this,
                                                    removalMsg,
                                                    "Confirm Removal",
