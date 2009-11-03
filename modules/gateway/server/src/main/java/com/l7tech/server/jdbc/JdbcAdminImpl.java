@@ -69,11 +69,6 @@ public class JdbcAdminImpl implements JdbcAdmin {
     }
 
     @Override
-    public Object performJdbcQuery(String connectionName, String query, int maxRecords, List<Object> preparedStmtParams) {
-        return jdbcQueryingManager.performJdbcQuery(connectionName, query, maxRecords, preparedStmtParams);
-    }
-
-    @Override
     public String testJdbcQuery(String connectionName, String query) {
         Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, 1, null);
         return (result instanceof String)? (String)result : null;

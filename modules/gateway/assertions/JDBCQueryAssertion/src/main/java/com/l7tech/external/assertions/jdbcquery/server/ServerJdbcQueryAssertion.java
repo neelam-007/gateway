@@ -11,13 +11,13 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.jdbc.support.rowset.SqlRowSetMetaData;
 
 import java.io.IOException;
 import java.util.logging.Logger;
 import java.util.*;
 import java.util.regex.Matcher;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 /**
@@ -66,9 +66,9 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
             } else {
                 context.setVariable(getVaraiblePrefix(context) + "." + JdbcQueryAssertion.VARIABLE_COUNT, result);
             }
-        } else if (result instanceof ResultSet) {
+        } else if (result instanceof SqlRowSet) {
             try {
-                int affectedRows = setContextVariables((ResultSet)result, context);
+                int affectedRows = setContextVariables((SqlRowSet)result, context);
 
                 if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
                     auditor.logAndAudit(AssertionMessages.MCM_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
@@ -108,14 +108,14 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         return query;
     }
 
-    private int setContextVariables(ResultSet resultSet, PolicyEnforcementContext context) throws SQLException {
+    private int setContextVariables(SqlRowSet resultSet, PolicyEnforcementContext context) throws SQLException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
         Map<String, String> namingMap = assertion.getNamingMap();
         Map<String, String> newNamingMap = new TreeMap<String, String>();
 
         // Get mappings of column names and context varaible names
-        ResultSetMetaData metaData = resultSet.getMetaData();
+        SqlRowSetMetaData metaData = resultSet.getMetaData();
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
             String columnName = metaData.getColumnName(i);
             if (namingMap.containsKey(columnName)) {

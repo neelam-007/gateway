@@ -82,9 +82,8 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         }
     }
 
-    public Connection getRawConnection(String jdbcConnName) throws NamingException, SQLException {
-        DataSource ds = (DataSource)context.lookup(jdbcConnName);
-        return ds.getConnection();
+    public DataSource getDataSource(String jdbcConnName) throws NamingException {
+        return (DataSource) context.lookup(jdbcConnName);
     }
 
     // create and update
@@ -181,7 +180,9 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         } finally {
             if (conn != null) try {
                 conn.close();
-            } catch (SQLException e) {}
+            } catch (SQLException e) {
+                logger.warning("Cannot close a JDBC connection.");
+            }
 
             cpds.close();
         }
