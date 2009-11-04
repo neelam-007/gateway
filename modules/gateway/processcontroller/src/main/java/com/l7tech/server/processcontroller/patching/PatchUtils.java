@@ -39,7 +39,7 @@ public class PatchUtils {
         manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
 
         // jar
-        File patchFile = File.createTempFile("patch", ".zip");
+        File patchFile = File.createTempFile("patch", PatchPackageManager.PATCH_EXTENSION);
         JarOutputStream jos = new JarOutputStream(new FileOutputStream(patchFile), manifest);
         String comment = patchSpec.getProperties().getProperty(PatchPackage.Property.ID.name() ) + " : " +
                          patchSpec.getProperties().getProperty(PatchPackage.Property.DESCRIPTION.name() );

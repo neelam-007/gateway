@@ -31,6 +31,14 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     // - PUBLIC
 
+    public PatchServiceApiImpl() { }
+
+    public PatchServiceApiImpl(ConfigService config, PatchPackageManager packageManager, PatchRecordManager recordManager) {
+        this.config = config;
+        this.packageManager = packageManager;
+        this.recordManager = recordManager;
+    }
+
     @Override
     public PatchStatus uploadPatch(byte[] patchData) throws PatchException {
         File tempPatchFile = null;
@@ -55,8 +63,12 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     @Override
     public PatchStatus installPatch(String patchId, Collection<String> nodes) throws PatchException {
-        PatchPackage patch = packageManager.getPackage(patchId);
+        PatchStatus status1 = packageManager.getPackageStatus(patchId);
+        if (! PatchStatus.State.UPLOADED.name().equals(status1.getField(PatchStatus.Field.STATE)) &&
+            ! PatchStatus.State.ROLLED_BACK.name().equals(status1.getField(PatchStatus.Field.STATE)))
+            throw new PatchException("Cannot install patch when status is " + status1.getField(PatchStatus.Field.STATE));
 
+        PatchPackage patch = packageManager.getPackage(patchId);
         ProcResult result;
         try {
             // todo: exec with timeout?
@@ -70,15 +82,15 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         }
 
         // check exec result and update status
-        PatchStatus status;
+        PatchStatus status2;
         if (result.getExitStatus() == 0) {
-            status = packageManager.setPackageStatus(patchId, PatchStatus.State.INSTALLED, null, patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
+            status2 = packageManager.setPackageStatus(patchId, PatchStatus.State.INSTALLED, null, patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
         } else {
             byte[] errOut = result.getOutput();
-            status = packageManager.setPackageStatus(patchId, PatchStatus.State.ERROR, errOut != null ? new String(errOut) : "", patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
+            status2 = packageManager.setPackageStatus(patchId, PatchStatus.State.ERROR, errOut != null ? new String(errOut) : "", patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
         }
 
-        return status;
+        return status2;
     }
 
     @Override

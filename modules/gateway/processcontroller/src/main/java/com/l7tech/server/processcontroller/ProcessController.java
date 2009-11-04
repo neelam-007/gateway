@@ -713,7 +713,7 @@ public class ProcessController implements InitializingBean {
             commands.add( System.getProperty("java.home") + "/bin/java" );
             addGatewaySystemProperties( commands, "-D", ssgHome );
             commands.add( "-jar" );
-            commands.add( "../../Gateway/runtime/Gateway.jar" );
+            commands.add( "../../runtime/Gateway.jar" );
         }
 
         return commands;

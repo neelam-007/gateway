@@ -27,9 +27,15 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
 
     // - PUBLIC
 
+    public PatchPackageManagerImpl() { }
+
+    public PatchPackageManagerImpl(File repositoryDir) {
+        init(repositoryDir);
+    }
+
     @Override
     public void afterPropertiesSet() throws Exception {
-        this.repositoryDir = configService.getPatchesDirectory();
+        init(configService.getPatchesDirectory());
     }
 
     @Override
@@ -77,13 +83,12 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
                 }
             });
         } catch (IOException e) {
-            throw new PatchException("Error saving patch package: " + patchId);
+            throw new PatchException("Error saving patch package: " + patchId + " : " + ExceptionUtils.getMessage(e), e);
         } finally {
             ResourceUtils.closeQuietly(fis);
         }
 
-        if (! PatchStatus.State.ROLLED_BACK.name().equals(status.getField(PatchStatus.Field.STATE)))
-            status = setPackageStatus(patchId, PatchStatus.State.UPLOADED, null, patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
+        status = setPackageStatus(patchId, PatchStatus.State.UPLOADED, null, patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
 
         return status;
     }
@@ -91,7 +96,7 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
     @Override
     public PatchStatus deletePackage(String patchId) throws PatchException {
         PatchStatus status = getPackageStatus(patchId);
-        if (! status.allowDelete()) {
+        if (! status.allowDelete() || PatchStatus.State.NONE.name().equals(status.getField(PatchStatus.Field.STATE))) {
             throw new PatchException("Cannot delete patch package when status is " + status.getField(PatchStatus.Field.STATE));
         }
 
@@ -146,6 +151,10 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
     private File repositoryDir;
 
     private File getPackageFile(String patchId) {
-        return new File(repositoryDir, patchId + ".zip");
+        return new File(repositoryDir, patchId + PATCH_EXTENSION);
+    }
+
+    private void init(File patchesDirectory) {
+        this.repositoryDir = patchesDirectory;
     }
 }

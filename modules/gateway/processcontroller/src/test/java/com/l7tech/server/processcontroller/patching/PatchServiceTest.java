@@ -134,6 +134,34 @@ public class PatchServiceTest {
         if (! tempDeleteOk)
             throw new IOException("Error deleting patch file.");
     }
+    @Test
+    public void testInstallTwice() throws Exception {
+        String patchId = "install_twice";
+        File patch = null;
+        boolean tempDeleteOk;
+        try {
+            patch = PatchUtils.buildPatch(getTestPatchSpec(patchId), getTestPatchSigningParams());
+            // upload
+            PatchStatus status = patchService.uploadPatch(IOUtils.slurpFile(patch));
+            Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
+            Assert.assertEquals("Uploaded patch id is not the expected one.", patchId, status.getField(PatchStatus.Field.ID));
+            // install
+            status = patchService.installPatch(patchId, new ArrayList<String>());
+            Assert.assertEquals(PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
+            // second install
+            try {
+                patchService.installPatch(patchId, new ArrayList<String>());
+                Assert.fail("Installing a patch twice should have failed.");
+            } catch (PatchException expected) {
+                // do nothing
+            }
+        } finally {
+            tempDeleteOk = patch == null || ! patch.exists() || patch.delete();
+        }
+
+        if (! tempDeleteOk)
+            throw new IOException("Error deleting patch file.");
+    }
 
     @Test
     public void testNoManifestEntry() throws Exception {

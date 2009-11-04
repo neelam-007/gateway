@@ -4,19 +4,20 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.server.processcontroller.patching.PatchServiceApi;
-import com.l7tech.server.processcontroller.patching.PatchStatus;
-import com.l7tech.server.processcontroller.patching.PatchException;
+import com.l7tech.server.processcontroller.patching.*;
 import com.l7tech.server.processcontroller.CxfUtils;
+import com.l7tech.server.processcontroller.ConfigService;
+import com.l7tech.server.processcontroller.ConfigServiceImpl;
+import com.l7tech.server.processcontroller.PCUtils;
 
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
 
 /**
  * @author jbufu
@@ -31,34 +32,43 @@ public class PatchCli {
     public static void main(String[] args) {
         initLogging();
 
-        logger.info("Running PatchCli patch client...");
+        logger.info("Running PatchCli patch client with arguments: " + Arrays.toString(args));
 
         PatchAction patchAction = null;
         try {
             patchAction = PatchAction.fromArgs(args);
         } catch (IllegalArgumentException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             System.out.println("Error: " + ExceptionUtils.getMessage(e) + "\n");
             printUsage();
             System.exit(SYNTAX_ERROR);
         }
 
-        PatchServiceApi api = new CxfUtils.ApiBuilder(patchAction.getEndpoint().toString()).build(PatchServiceApi.class);
         try {
+            PatchServiceApi api = getApi(patchAction);
             Collection<PatchStatus> result = patchAction.call(api);
-            if (result != null) {
+            if (result != null && ! result.isEmpty()) {
                 for(PatchStatus status : result) {
                     System.out.println(status.toString());
                 }
+            } else {
+                System.out.println("<emtpy result>");
             }
         } catch (Exception e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
             System.out.println(ExceptionUtils.getMessage(e));
             System.exit(PATCH_API_ERROR);
         }
+
+        System.exit(0);
     }
 
     // - PRIVATE
 
     private static final Logger logger = Logger.getLogger(PatchCli.class.getName());
+
+    private static final String DEFAULT_PC_HOME = "/opt/SecureSpan/Controller";
+    private static final String DEFAULT_PATCH_API_ENDPOINT = "https://localhost:8765/services/patchServiceApi";
 
     private static void initLogging() {
         // configure logging if the logs directory is found, else leave console output
@@ -71,13 +81,39 @@ public class PatchCli {
         }
     }
 
+    private static PatchServiceApi getApi(PatchAction patchAction) {
+        String target = patchAction.getTarget();
+        if (target.toLowerCase().startsWith("http://") || target.toLowerCase().startsWith("https://")) {
+            logger.log(Level.INFO, "Using Patch Service API");
+            System.out.println("Using Patch Service API endpoint: " + target + "\n");
+            return new CxfUtils.ApiBuilder(patchAction.getTarget())
+                //.inInterceptor(new LoggingInInterceptor())
+                //.outInterceptor(new LoggingOutInterceptor())
+                //.inFaultInterceptor(new LoggingInInterceptor())
+                //.outFaultInterceptor(new LoggingOutInterceptor())
+                .build(PatchServiceApi.class);
+        } else {
+            try {
+                logger.log(Level.INFO, "Using patch configuration from Process Controller.");
+                System.out.println("Using patch configuration from the Process Controller at: " + target + "\n");
+                System.setProperty(ConfigService.PC_HOMEDIR_PROPERTY, target);
+                ConfigService config = new ConfigServiceImpl();
+                PatchPackageManager packageManager = new PatchPackageManagerImpl(config.getPatchesDirectory());
+                PatchRecordManager recordManager = new PatchFileRecordManager(config.getPatchesLog());
+                return new PatchServiceApiImpl(config, packageManager, recordManager);
+            } catch (Exception e) {
+                throw new IllegalStateException("Error getting patch API: " + ExceptionUtils.getMessage(e));
+            }
+        }
+    }
+
     private static enum PatchAction {
 
         // - PUBLIC
 
         UPLOAD(" <filename>", "Uploads the patch represented by the <filename> to the gateway.") {
             @Override
-            void extractActionArguments(String[] args) {
+            void extractActionArguments(List<String> args) {
                 this.argument = extractOneStringActionArgument(args);
             }
             @Override
@@ -87,7 +123,7 @@ public class PatchCli {
             }},
         INSTALL("<patch_id>", "Installs the (previously uploaded) patch represented by the provided ID on the gateway.") {
             @Override
-            void extractActionArguments(String[] args) {
+            void extractActionArguments(List<String> args) {
                 this.argument = extractOneStringActionArgument(args);
             }
             @Override
@@ -97,7 +133,7 @@ public class PatchCli {
             }},
         DELETE("<patch_id>", "Deletes the package archive of patch represented by the provided ID from the gateway patch manager's repository.") {
             @Override
-            void extractActionArguments(String[] args) {
+            void extractActionArguments(List<String> args) {
                 this.argument = extractOneStringActionArgument(args);
             }
             @Override
@@ -107,7 +143,7 @@ public class PatchCli {
             }},
         STATUS("<patch_id>", "Returns the status of the patch represented by the provided ID on the gateway.") {
             @Override
-            void extractActionArguments(String[] args) {
+            void extractActionArguments(List<String> args) {
                 this.argument = extractOneStringActionArgument(args);
             }
             @Override
@@ -117,7 +153,7 @@ public class PatchCli {
             }},
         LIST("", "Returns a list of the patches and their statuses on the gateway.") {
             @Override
-            void extractActionArguments(String[] args) {
+            void extractActionArguments(List<String> args) {
                 /*no extra arguments for list*/
             }
             @Override
@@ -133,8 +169,8 @@ public class PatchCli {
             return description;
         }
 
-        public URL getEndpoint() {
-            return endpoint;
+        public String getTarget() {
+            return target;
         }
 
         public String getArgument() {
@@ -145,25 +181,27 @@ public class PatchCli {
             if (args == null || args.length == 0)
                 throw new IllegalArgumentException("No arguments specified.");
 
-            URL endpoint;
-            try {
-                endpoint = new URL(args[0]);
-            } catch (MalformedURLException e) {
-                throw new IllegalArgumentException("Invalid patch API endpoint URL specified: " + ExceptionUtils.getMessage(e));
+            List<String> argList = new ArrayList<String>(Arrays.asList(args));
+            String target = getTarget(args);
+            if (target != null) {
+                argList.remove(0);
+            } else {
+                target = PCUtils.isAppliance() ? DEFAULT_PATCH_API_ENDPOINT : DEFAULT_PC_HOME;
+                logger.log(Level.INFO, "Using default target: " + target);
             }
 
-            if (args.length < 2)
+            if (argList.isEmpty())
                 throw new IllegalArgumentException("No action specified.");
 
             PatchAction patchAction;
             try {
-                patchAction = PatchAction.valueOf(args[1].toUpperCase());
+                patchAction = PatchAction.valueOf(argList.get(0).toUpperCase());
             } catch (Exception e) {
-                throw new IllegalArgumentException("Invalid action: " + ExceptionUtils.getMessage(e));
+                throw new IllegalArgumentException("Invalid action: " + argList.get(0), e);
             }
 
-            patchAction.endpoint = endpoint;
-            patchAction.extractActionArguments(args);
+            patchAction.target = target;
+            patchAction.extractActionArguments(argList);
             return patchAction;
         }
 
@@ -171,9 +209,9 @@ public class PatchCli {
 
         // - PACKAGE
 
-        abstract void extractActionArguments(String[] args);
+        abstract void extractActionArguments(List<String> args);
 
-        URL endpoint;
+        String target;
         String argument;
 
         // - PRIVATE
@@ -186,18 +224,48 @@ public class PatchCli {
             this.description = description;
         }
 
-        private static String extractOneStringActionArgument(String[] args) {
-            // action argument is #3
-            if (args == null || args.length < 3)
+        private static String extractOneStringActionArgument(List<String> args) {
+            // action argument is #2
+            if (args == null || args.size() < 2)
                 throw new IllegalArgumentException("Argument for the patch action not specified.");
 
-            return args[2];
+            return args.get(1);
+        }
+
+        private static String getTarget(String[] args) {
+            if (args == null || args.length == 0) return null;
+            String firstArg = args[0];
+
+            try {
+                PatchAction.valueOf(firstArg.toUpperCase());
+                return null;
+            } catch (Exception e) {
+                // first arg is not an action
+            }
+
+            File maybePcHome = new File(firstArg);
+            if (firstArg.toLowerCase().startsWith("http://") || firstArg.toLowerCase().startsWith("https://")) {
+                try {
+                    URL endpoint = new URL(firstArg);
+                    return endpoint.toString();
+                } catch (MalformedURLException e) {
+                    throw new IllegalArgumentException("Invalid patch API endpoint specified: " + ExceptionUtils.getMessage(e));
+                }
+            } else if (maybePcHome.exists() && maybePcHome.isDirectory()) {
+                return firstArg;
+            } else {
+                throw new IllegalArgumentException("Invalid target specified: " + firstArg);
+            }
         }
     }
 
     private static void printUsage() {
-        System.out.println("Usage: " + PatchCli.class.getSimpleName() + " <patch API endpoint URL> <action>");
-        System.out.println("\t<action>:");
+        System.out.println("Usage: " + PatchCli.class.getSimpleName() + " [target] <action>");
+        System.out.println("\n\t[target]: [patch API endpoint URL | Process Controller home directory]");
+        System.out.println("\n\tIf not specified, the [target] defaults to:");
+        System.out.println("\t\t\"" + DEFAULT_PATCH_API_ENDPOINT + "\" on appliances.");
+        System.out.println("\t\t\"" + DEFAULT_PC_HOME + "\" on software installations.");
+        System.out.println("\n\t<action>:");
         for (PatchAction o : PatchAction.values()) {
             System.out.println("\t" + o.name().toLowerCase() + " " + o.getSyntax() + "\n\t\t" + o.getDescription());
         }

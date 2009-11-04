@@ -7,6 +7,8 @@ import java.util.Collection;
  */
 public interface PatchPackageManager {
 
+    public static final String PATCH_EXTENSION = ".L7P";
+
     public PatchStatus getPackageStatus(String patchId) throws PatchException;
 
     public PatchStatus setPackageStatus(String patchId, PatchStatus.State state, String errorMsg, String rollbackForId) throws PatchException;

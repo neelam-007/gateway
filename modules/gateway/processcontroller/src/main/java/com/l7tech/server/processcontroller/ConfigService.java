@@ -47,6 +47,8 @@ public interface ConfigService {
     String DEFAULT_PATCH_TRUSTSTORE_FILENAME = "patches.jks";
     String DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME = "remoteNodeManagementTruststore.p12";
 
+    public static final String PC_HOMEDIR_PROPERTY = "com.l7tech.server.processcontroller.homeDirectory";
+
     HostConfig getHost();
 
     void addServiceNode(NodeConfig node) throws IOException;

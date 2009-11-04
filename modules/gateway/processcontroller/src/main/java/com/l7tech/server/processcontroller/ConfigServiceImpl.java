@@ -191,7 +191,7 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     static File getHomeDirectory() {
-        String s = System.getProperty("com.l7tech.server.processcontroller.homeDirectory");
+        String s = System.getProperty(PC_HOMEDIR_PROPERTY);
         if (s == null) {
             final File f = new File(System.getProperty("user.dir"));
             logger.info("Assuming Process Controller home directory is " + f.getAbsolutePath());

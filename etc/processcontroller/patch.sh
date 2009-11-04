@@ -16,7 +16,6 @@ if [ -z "${JAVA_HOME}" -a -s "${DEFAULT_NODE_CONFIG}" ] ; then
 fi
 
 PC_JAR="/opt/SecureSpan/Controller/Controller.jar"
-PATCH_SERVICE_ENDPOINT="https://localhost:8765/services/patchServiceApi"
 
 function fail() {
   echo "$2"
@@ -26,5 +25,4 @@ function fail() {
 [ -r "${PC_JAR}" ] || fail 2 "Missing or unreadable file: ${PC_JAR}"
 [ -x "${JAVA_HOME}/bin/java" ] || fail 2 "Invalid JAVA_HOME: ${JAVA_HOME}"
 
-
-"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" -Dcom.l7tech.server.log.console=false com.l7tech.server.processcontroller.patching.client.PatchCli "${PATCH_SERVICE_ENDPOINT}" "${@}"
+"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" -Dcom.l7tech.server.log.console=false com.l7tech.server.processcontroller.patching.client.PatchCli "${@}"
