@@ -14,7 +14,7 @@ import com.l7tech.common.uddi.guddiv3.BindingTemplates;
 import java.util.*;
 import java.io.IOException;
 
-public class TestUddiClient implements UDDIClient{
+public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
 
     private List<BusinessService> dataStructureForDownloaderTest;
 
@@ -26,7 +26,31 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
+    public boolean publishTModel(TModel tModelToPublish) throws UDDIException {
+        final String key = "uddi:"+UUID.randomUUID();
+        tModelToPublish.setTModelKey(key);
+        return true;
+    }
+
+    @Override
+    public TModel getTModel(String tModelKey) throws UDDIException {
+        TModel testModel = new TModel();
+        testModel.setTModelKey(tModelKey);
+        return testModel;
+    }
+
+    @Override
     public void authenticate() throws UDDIException {
+
+    }
+
+    @Override
+    public String publishTModel(String tModelKey, String name, String description, Collection<UDDIKeyedReference> keyedReferences) throws UDDIException {
+        return null;
+    }
+
+    @Override
+    public void deleteUDDIBusinessServices(Collection<UDDIBusinessService> businessServices) throws UDDIException {
 
     }
 
@@ -35,7 +59,6 @@ public class TestUddiClient implements UDDIClient{
         return null;
     }
 
-    @Override
     public boolean publishBusinessService(BusinessService businessService) throws UDDIException {
         final String key = "uddi:"+UUID.randomUUID();
         businessService.setServiceKey(key);
@@ -51,25 +74,6 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
-    public boolean publishTModel(TModel tModel) throws UDDIException {
-        final String key = "uddi:"+UUID.randomUUID();
-        tModel.setTModelKey(key);
-        return true;
-    }
-
-    @Override
-    public String publishTModel( final String tModelKey, final String name, final String description, final Collection<UDDIKeyedReference> keyedReferences ) {
-        return null;
-    }
-
-    @Override
-    public TModel getTModel(String tModelKey) throws UDDIException {
-        TModel testModel = new TModel();
-        testModel.setTModelKey(tModelKey);
-        return testModel;
-    }
-
-    @Override
     public void deleteTModel(String tModelKey) throws UDDIException {
 
     }
@@ -80,23 +84,8 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
-    public void deleteBusinessServices(Collection<BusinessService> businessServices) throws UDDIException {
-
-    }
-
-    @Override
     public void deleteBusinessServicesByKey(Collection<String> serviceKeys) throws UDDIException {
 
-    }
-
-    @Override
-    public void deleteMatchingTModels(TModel prototype) throws UDDIException {
-
-    }
-
-    @Override
-    public BusinessService getBusinessService(String serviceKey) throws UDDIException {
-        return null;
     }
 
     @Override
@@ -107,11 +96,6 @@ public class TestUddiClient implements UDDIClient{
     @Override
     public List<BusinessService> getBusinessServices(Set<String> serviceKeys) throws UDDIException {
         return (dataStructureForDownloaderTest != null)? dataStructureForDownloaderTest: Collections.<BusinessService>emptyList();
-    }
-
-    @Override
-    public void deleteTModel(TModel tModel) throws UDDIException {
-
     }
 
     // Not really interested in these for Bondo testing

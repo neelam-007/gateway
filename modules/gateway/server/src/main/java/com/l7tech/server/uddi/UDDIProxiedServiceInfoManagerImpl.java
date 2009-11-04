@@ -9,10 +9,9 @@ import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.uddi.*;
-import com.l7tech.common.uddi.guddiv3.BusinessService;
-import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -65,12 +64,9 @@ implements UDDIProxiedServiceInfoManager{
         if(uddiClient == null) throw new NullPointerException("uddiClient cannot be null");
         if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
 
-        WsdlToUDDIModelConverter modelConverter = getConvertedWsdlToUDDIModel(wsdl,
-                uddiProxiedServiceInfo.getPublishedServiceOid(), uddiProxiedServiceInfo.getUddiBusinessKey());
-
-        final List<BusinessService> wsdlBusinessServices = modelConverter.getBusinessServices();
-        final Map<String, TModel> wsdlDependentTModels = modelConverter.getKeysToPublishedTModels();
-        final Map<BusinessService, String> serviceToWsdlServiceName = modelConverter.getServiceKeyToWsdlServiceNameMap();
+        final String protectedServiceExternalURL = uddiHelper.getExternalUrlForService(uddiProxiedServiceInfo.getPublishedServiceOid());
+        //protected service gateway external wsdl url
+        final String protectedServiceWsdlURL = uddiHelper.getExternalWsdlUrlForService(uddiProxiedServiceInfo.getPublishedServiceOid());
 
         //Get existing services
         Set<UDDIProxiedService> allProxiedServices = uddiProxiedServiceInfo.getProxiedServices();
@@ -79,20 +75,20 @@ implements UDDIProxiedServiceInfoManager{
             serviceKeys.add(ps.getUddiServiceKey());
         }
 
-        BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher();
-        //update uddi
-        businessServicePublisher.updateServicesToUDDIRegistry(
-                uddiClient, serviceKeys, wsdlBusinessServices, wsdlDependentTModels);
+        BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(wsdl, uddiClient, uddiProxiedServiceInfo.getPublishedServiceOid());
+
+        final Pair<Set<String>, Set<UDDIBusinessService>> deletedAndNewServices = businessServicePublisher.updateServicesToUDDIRegistry(
+                protectedServiceExternalURL, protectedServiceWsdlURL, uddiProxiedServiceInfo.getUddiBusinessKey(), serviceKeys);
 
         //now manage db entities
-        Set<BusinessService> deleteSet = businessServicePublisher.getServiceDeleteSet();
+        Set<String> deleteSet = deletedAndNewServices.left;
         //update all child entities
         Set<UDDIProxiedService> removeSet = new HashSet<UDDIProxiedService>();
-        for(BusinessService bs: deleteSet){
+        for(String deleteServiceKey: deleteSet){
             for(UDDIProxiedService proxiedService: allProxiedServices){
-                if(proxiedService.getUddiServiceKey().equals(bs.getServiceKey())){
+                if(proxiedService.getUddiServiceKey().equals(deleteServiceKey)){
                     removeSet.add(proxiedService);
-                    logger.log(Level.INFO, "Deleting UDDIProxiedService for serviceKey: " + bs.getServiceKey());
+                    logger.log(Level.INFO, "Deleting UDDIProxiedService for serviceKey: " + deleteServiceKey);
                 }
             }
         }
@@ -100,10 +96,10 @@ implements UDDIProxiedServiceInfoManager{
         uddiProxiedServiceInfo.getProxiedServices().removeAll(removeSet);
 
         //create required new UDDIProxiedServices
-        List<BusinessService> newlyCreatedServices = businessServicePublisher.getNewlyPublishedServices();
-        for(BusinessService bs: newlyCreatedServices){
+        Set<UDDIBusinessService> newlyCreatedServices = deletedAndNewServices.right;
+        for(UDDIBusinessService bs: newlyCreatedServices){
             final UDDIProxiedService proxiedService =
-                    new UDDIProxiedService(bs.getServiceKey(), bs.getName().get(0).getValue(), serviceToWsdlServiceName.get(bs));
+                    new UDDIProxiedService(bs.getServiceKey(), bs.getServiceName(), bs.getWsdlServiceName());
             proxiedService.setUddiProxiedServiceInfo(uddiProxiedServiceInfo);
             uddiProxiedServiceInfo.getProxiedServices().add(proxiedService);
         }
@@ -141,17 +137,4 @@ implements UDDIProxiedServiceInfoManager{
 
     private final UDDIHelper uddiHelper;
 
-    private WsdlToUDDIModelConverter getConvertedWsdlToUDDIModel( final Wsdl wsdl,
-                                                                  final long publishedServiceOid,
-                                                                  final String businessKey)
-            throws WsdlToUDDIModelConverter.MissingWsdlReferenceException {
-        final String protectedServiceExternalURL = uddiHelper.getExternalUrlForService(publishedServiceOid);
-        //protected service gateway external wsdl url
-        final String protectedServiceWsdlURL = uddiHelper.getExternalWsdlUrlForService(publishedServiceOid);
-
-        WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
-                protectedServiceExternalURL, businessKey, publishedServiceOid);
-        modelConverter.convertWsdlToUDDIModel();
-        return modelConverter;
-    }
 }

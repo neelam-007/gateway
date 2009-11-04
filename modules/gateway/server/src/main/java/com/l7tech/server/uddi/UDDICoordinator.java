@@ -63,17 +63,6 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
     }
 
     /**
-     * Notification of a UDDIEvent for asynchronous processing.
-     *
-     * //todo remove and replace with a mechanism for knowing when it's ok to start a task with a max mumber of start attempts
-     *
-     * @param event The event
-     */
-    public void notifyEvent( final UDDIEvent event , long delay) {
-        timer.schedule( new UDDIEventTimerTask( this, event ), delay );
-    }
-
-    /**
      * Notification of a UDDIEvent for immediate processing.
      *
      * @param event The event
@@ -108,7 +97,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
                     char op = entityOps[i];
                     if ( EntityInvalidationEvent.CREATE == op ) {
                         UDDIEvent uddiEvent = new PublishUDDIEvent(PublishUDDIEvent.Type.CREATE_PROXY, id);
-                        notifyEvent(uddiEvent, 0);
+                        notifyEvent(uddiEvent);
                         logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
                     }
                 }

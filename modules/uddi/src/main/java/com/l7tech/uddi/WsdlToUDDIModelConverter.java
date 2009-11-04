@@ -2,7 +2,6 @@ package com.l7tech.uddi;
 
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.*;
-import com.l7tech.util.Pair;
 
 import javax.wsdl.Service;
 import javax.wsdl.Port;
@@ -47,7 +46,7 @@ public class WsdlToUDDIModelConverter {
     private final String wsdlURL;
     private final String gatewayURL;
     private final long serviceOid;
-    private Map<BusinessService, String> serviceKeyToWsdlServiceNameMap;
+    private Map<String, String> serviceNameToWsdlServiceNameMap;
     private List<BusinessService> businessServices;
 
     /**
@@ -104,8 +103,8 @@ public class WsdlToUDDIModelConverter {
         this.serviceOid = serviceOid;
     }
 
-    public Map<BusinessService, String> getServiceKeyToWsdlServiceNameMap() {
-        return serviceKeyToWsdlServiceNameMap;
+    public Map<String, String> getServiceNameToWsdlServiceNameMap() {
+        return serviceNameToWsdlServiceNameMap;
     }
 
     /**
@@ -132,7 +131,7 @@ public class WsdlToUDDIModelConverter {
     public void convertWsdlToUDDIModel() throws MissingWsdlReferenceException {
         businessServices = new ArrayList<BusinessService>();
         keysToPublishedTModels = new HashMap<String, TModel>();
-        serviceKeyToWsdlServiceNameMap = new HashMap<BusinessService, String>();
+        serviceNameToWsdlServiceNameMap = new HashMap<String, String>();
 
         Collection<Service> services = wsdl.getServices();
         for (final Service wsdlService : services) {
@@ -141,7 +140,7 @@ public class WsdlToUDDIModelConverter {
             try {
                 createUddiBusinessService(businessService, wsdlService);
                 businessServices.add(businessService);
-                serviceKeyToWsdlServiceNameMap.put(businessService, wsdlService.getQName().getLocalPart());
+                serviceNameToWsdlServiceNameMap.put(businessService.getName().get(0).getValue(), wsdlService.getQName().getLocalPart());
             } catch (MissingWsdlReferenceException e) {
                 //already logged, we ignore the bindingTemplate as it is invalid
                 logger.log(Level.INFO, "Ignored wsdl:service '" + wsdlService.getQName().getLocalPart() + "'as the wsdl:binding contains invalid references");

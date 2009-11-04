@@ -141,35 +141,13 @@ public interface UDDIClient extends Closeable {
     String publishPolicy(String name, String description, String url) throws UDDIException;
 
     /**
-     * Publish a Business Service to UDDI. The Business Service may already exist. This is known not by searching
-     * UDDI but my whether or not the BusinessService has it's serviceKey property set. Null means it has not
-     * been published to UDDI yet
-     * <p/>
-     * If the BusinessService does not already exist it will be created and the serviceKey will be assigned by
-     * the UDDI registry and set on the BusinessService following this operation.
+     * Get the name of a BusinessEntity from UDDI
      *
-     * @param businessService the Business Service to publish
-     * @return true if the BusinessService was created, false otherwise as it already existed
-     * @throws UDDIException any problems searching / publishing UDDI
-     */     //todo move out of interface as it exposes jax-ws classes
-    boolean publishBusinessService(final BusinessService businessService) throws UDDIException;
-
-    /**
-     * Publish a tModel to UDDI. May already exist.
-     * <p/>
-     * If the tModel does not already exist, it will be created and the tModelKey assigned to it by the UDDI
-     * registry will be set on the tModel following this operation.
-     *
-     * If the tModel does exist the overviewDoc URL with use type = "wsdlInterface" will be compared. If they are the
-     * same then the tModels match, otherwise they do not match and the tModel will be published
-     *
-     * When searching for the TModel in the UDDI Registry, all keyedReferences from the tModel's identifierBag
-     * and categoryBag must be included in the search. The search should be exact, but case insensitive
-     * @param tModelToPublish the tModel to publish.
-     * @return true if the TModel was published, false otherwise i.e. it was found already in the UDDI Registry
-     * @throws UDDIException any problems searching / publishing UDDI
-     *///todo move out of interface as it exposes jax-ws classes
-    boolean publishTModel(final TModel tModelToPublish) throws UDDIException;
+     * @param businessKey String key of the BusinessEntity in UDDI
+     * @return String name of business, or null if not found
+     * @throws UDDIException an problems searching UDDI
+     */
+    String getBusinessEntityName(String businessKey) throws UDDIException;
 
     /**
      * Publish a TModel to UDDI.
@@ -187,31 +165,6 @@ public interface UDDIClient extends Closeable {
                                  Collection<UDDIKeyedReference> keyedReferences ) throws UDDIException;
 
     /**
-     * Retrieve the tModel with the supplied key
-     * @param tModelKey String tModelKey of the tModel to get
-     * @return TModel of the supplied key. Null if not found
-     * @throws UDDIException if any problem retireving the TModel from the UDDI registry
-     *///todo move out of interface as it exposes jax-ws classes
-    TModel getTModel(final String tModelKey) throws UDDIException;
-
-    /**
-     * Retrieve the BusinessService with the supplied key
-     * @param serviceKey String serviceKey of the BusinessService to get
-     * @return BusinessService of the supplied key. Null if not found
-     * @throws UDDIException if any problem retireving the BusinessService from the UDDI registry
-     *///todo move out of interface as it exposes jax-ws classes
-    BusinessService getBusinessService(final String serviceKey) throws UDDIException;
-
-    /**
-     * Get the name of a BusinessEntity from UDDI
-     *
-     * @param businessKey String key of the BusinessEntity in UDDI
-     * @return String name of business, or null if not found
-     * @throws UDDIException an problems searching UDDI
-     */
-    String getBusinessEntityName(String businessKey) throws UDDIException;
-
-    /**
      * Delete a TModel from the UDDI Registry.
      *
      * The delete should only be attempted when a search reveiles that no other Business Service references
@@ -222,21 +175,6 @@ public interface UDDIClient extends Closeable {
      * @throws UDDIException if any problem during the find or the attempt to delete
      */
     void deleteTModel(final String tModelKey) throws UDDIException;
-
-    /**
-     * Follows the same contract as deleteTModel(tModelKey)
-     *
-     * @param tModel TModel to delete, iff no BusinessService references it
-     * @throws UDDIException if any problem during the find or the attempt to delete
-     *///todo move out of interface as it exposes jax-ws classes
-    public void deleteTModel(TModel tModel) throws UDDIException;
-
-    /**
-     * Delete all tModels which match the supplied TModel
-     * @param prototype the tModel used to find tModels in the UDDI registry, which will then be deleted
-     * @throws UDDIException if any problem during the attempt to find / delete 
-     *///todo move out of interface as it exposes jax-ws classes
-    void deleteMatchingTModels(final TModel prototype) throws UDDIException;
 
     /**
      * Delete a BusinessService from the UDDI Registry.
@@ -252,16 +190,17 @@ public interface UDDIClient extends Closeable {
      */
     Set<String> deleteBusinessService(final String serviceKey) throws UDDIException;
 
+
     /**
-     * Delete all supplied BusinessServices and safely delete all referenced tModels
+     * Delete all supplied UDDIBusinessServices and safely delete all referenced tModels
      *
      * Calls deleteBusinessService(BusinessService) for each BusinessService in the collection, following that the
      * Set<String> of tModelKeys are deleted.
      *
-     * @param businessServices Collection<BusinessService> all BusinessServices to delete. Required.
+     * @param businessServices Collection<UDDIBusinessService> all BusinessServices to delete. Required.
      * @throws UDDIException any problems searching / deleting
-     *///todo move out of interface as it exposes jax-ws classes
-    void deleteBusinessServices(final Collection<BusinessService> businessServices) throws UDDIException;
+     **/
+    void deleteUDDIBusinessServices(final Collection<UDDIBusinessService> businessServices) throws UDDIException;
 
     /**
      * Same contract as deleteBusinessServices

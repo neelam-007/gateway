@@ -65,57 +65,6 @@ public class TestGenericUDDIClient {
         }
     }
 
-    /**
-     * Test the successful publish of a tModel to UDDI.
-     *
-     * Also test that once published successfully, a second publish attempt will return false, as the previously
-     * published tModel should have been found
-     */
-    @Test
-    public void testPublishTModel() throws UDDIException {
-        //Create a tModel representing a wsdl:portType
-
-        TModel tModel = new TModel();
-        Name name = new Name();
-        name.setLang("en-US");
-        name.setValue("Skunkworks portType tModel " + Calendar.getInstance().getTimeInMillis());
-        tModel.setName(name);
-
-        CategoryBag categoryBag = new CategoryBag();
-        tModel.setCategoryBag(categoryBag);
-        List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
-
-        //portType type ref
-        KeyedReference typeRef = new KeyedReference();
-        typeRef.setKeyValue("portType");
-        typeRef.setTModelKey(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES);
-        keyedReferences.add(typeRef);
-
-        //namespace ref
-        KeyedReference nameSpaceRef = new KeyedReference();
-        nameSpaceRef.setKeyValue("http://skunkworks.com/porttypenamespace");
-        nameSpaceRef.setKeyName("portType namespace ");
-        nameSpaceRef.setTModelKey(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE);
-        keyedReferences.add(nameSpaceRef);
-
-        //overview docs etc are considered in the logic in TestGenericUDDIClient, but not by UDDI find code
-        OverviewDoc overviewDoc = new OverviewDoc();
-        OverviewURL overviewURL = new OverviewURL();
-        overviewURL.setUseType("wsdlInterface");
-        overviewURL.setValue("http://skunkworks.ssg.com/serviceoid=23423432");
-        overviewDoc.setOverviewURL(overviewURL);
-
-        tModel.getOverviewDoc().add(overviewDoc);
-
-        boolean published = uddiClient.publishTModel(tModel);
-        Assert.assertTrue("TModel should have been published", published);
-        tModelKeys.add(tModel.getTModelKey());
-
-        published = uddiClient.publishTModel(tModel);
-        Assert.assertFalse("TModel should not have been published", published);
-        
-    }
-
     @Test
     public void testPublishProxyBusinessService() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("Warehouse.wsdl"));
@@ -129,9 +78,9 @@ public class TestGenericUDDIClient {
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher();
-        servicePublisher.publishServicesToUDDIRegistry(uddiClient, wsdlToUDDIModelConverter.getBusinessServices(),
-                wsdlToUDDIModelConverter.getKeysToPublishedTModels());
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, uddiClient, serviceOid);
+//        servicePublisher.publishServicesToUDDIRegistry(uddiClient, wsdlToUDDIModelConverter.getBusinessServices(),
+//                wsdlToUDDIModelConverter.getKeysToPublishedTModels());
 
         //Place a break point here, and examine the UDDI Registry. The code below will delete everything published
         for(BusinessService businessService: wsdlToUDDIModelConverter.getBusinessServices()){
@@ -284,17 +233,6 @@ public class TestGenericUDDIClient {
 //        uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(proxiedService);
 
         System.clearProperty("com.l7tech.console.suppressVersionCheck");
-    }
-
-    @Test
-    public void testMatchingTModelDelete() throws UDDIException {
-        TModel tModel = new TModel();
-        Name name = new Name();
-        name.setValue("%Warehouse%");
-//        name.setValue("%Skunk%");
-        tModel.setName(name);
-
-        uddiClient.deleteMatchingTModels(tModel);
     }
 
     /**

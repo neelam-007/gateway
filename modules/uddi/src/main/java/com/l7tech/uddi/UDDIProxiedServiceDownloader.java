@@ -18,10 +18,17 @@ import java.util.Set;
  */
 public class UDDIProxiedServiceDownloader {
 
-    private UDDIClient uddiClient;
+    private final UDDIClient uddiClient;
+    private final JaxWsUDDIClient jaxWsUDDIClient;
 
     public UDDIProxiedServiceDownloader(UDDIClient uddiClient) {
         this.uddiClient = uddiClient;
+        if(uddiClient instanceof JaxWsUDDIClient){
+            jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
+        }else{
+            //hack for now for the good of the module
+            throw new IllegalStateException("Unsupported UDDIClient implementation");
+        }
     }
 
     /**
@@ -54,7 +61,7 @@ public class UDDIProxiedServiceDownloader {
                     //spec does not allow null keys, they will exist
                     final String tModelKey = tModelInstanceInfo.getTModelKey();
                     if(!tModelKeyToModel.containsKey(tModelKey)){
-                        final TModel tModel = uddiClient.getTModel(tModelKey);
+                        final TModel tModel = jaxWsUDDIClient.getTModel(tModelKey);
                         tModelKeyToModel.put(tModelKey, tModel);
                     }
                 }

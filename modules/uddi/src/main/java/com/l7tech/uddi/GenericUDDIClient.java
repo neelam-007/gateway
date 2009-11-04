@@ -18,7 +18,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 /**
  * UDDIv3 client implementation using generated JAX-WS UDDI API
  */
-public class GenericUDDIClient implements UDDIClient {
+public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     //- PUBLIC
 
@@ -241,7 +241,15 @@ public class GenericUDDIClient implements UDDIClient {
         }
     }
 
-    @Override
+    /**
+     * Retrieve the BusinessService with the supplied key
+     *
+     * Note: Non interface method as it returns a BusinessService
+     *
+     * @param serviceKey String serviceKey of the BusinessService to get
+     * @return BusinessService of the supplied key. Null if not found
+     * @throws UDDIException if any problem retireving the BusinessService from the UDDI registry
+     */
     public BusinessService getBusinessService(String serviceKey) throws UDDIException {
 
         GetServiceDetail getServiceDetail = new GetServiceDetail();
@@ -311,8 +319,7 @@ public class GenericUDDIClient implements UDDIClient {
         return findTModel;
     }
 
-    @Override
-    public void deleteTModel(TModel tModel) throws UDDIException{
+    private void deleteTModel(TModel tModel) throws UDDIException{
         //See if any services reference this tModelKey, is so then don't delete
         final FindService findService = new FindService();
         findService.setAuthInfo(getAuthToken());
@@ -356,15 +363,6 @@ public class GenericUDDIClient implements UDDIClient {
     }
 
     @Override
-    public void deleteMatchingTModels(TModel prototype) throws UDDIException {
-        TModelList tModelList = findMatchingTModels(prototype, true);
-        TModelInfos tModelInfos = tModelList.getTModelInfos();
-        for(TModelInfo tModelInfo: tModelInfos.getTModelInfo()){
-            deleteTModel(tModelInfo.getTModelKey());
-        }
-    }
-
-    @Override
     public List<BusinessService> getBusinessServices(final Set<String> serviceKeys) throws UDDIException {
         final GetServiceDetail getServiceDetail = new GetServiceDetail();
         getServiceDetail.setAuthInfo(getAuthToken());
@@ -390,9 +388,9 @@ public class GenericUDDIClient implements UDDIClient {
     }
 
     @Override
-    public void deleteBusinessServices(Collection<BusinessService> businessServices) throws UDDIException {
+    public void deleteUDDIBusinessServices(Collection<UDDIBusinessService> businessServices) throws UDDIException {
         Set<String> serviceKeys = new HashSet<String>();
-        for(BusinessService businessService: businessServices){
+        for(UDDIBusinessService businessService: businessServices){
             serviceKeys.add(businessService.getServiceKey());
         }
         deleteBusinessServicesByKey(serviceKeys);

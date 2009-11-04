@@ -1,20 +1,16 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.server.service.ServiceCache;
-import com.l7tech.uddi.UDDIException;
-import com.l7tech.uddi.WsdlToUDDIModelConverter;
-import com.l7tech.uddi.BusinessServicePublisher;
-import com.l7tech.uddi.UDDIClient;
+import com.l7tech.uddi.*;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.common.uddi.guddiv3.BusinessService;
-import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.wsdl.Wsdl;
 
 import javax.wsdl.WSDLException;
 import java.util.logging.Logger;
@@ -98,43 +94,33 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 if(proxiedServiceInfo.getUddiPublishStatus().getPublishStatus() != UDDIPublishStatus.PublishStatus.PUBLISHING.getStatus()){
                     throw new IllegalStateException("UDDIProxiedServiceInfo is in an incorrect state. Must be in publishing state");
                 }
-                //todo move most of this into UDDIHelper
+
                 final PublishedService publishedService = serviceCache.getCachedService(proxiedServiceInfo.getPublishedServiceOid());
 
                 final String protectedServiceExternalURL = uddiHelper.getExternalUrlForService(publishedService.getOid());
                 //protected service gateway external wsdl url
                 final String protectedServiceWsdlURL = uddiHelper.getExternalWsdlUrlForService(publishedService.getOid());
 
-                final WsdlToUDDIModelConverter modelConverter;
-                try {
-                    modelConverter = new WsdlToUDDIModelConverter(publishedService.parsedWsdl(), protectedServiceWsdlURL,
-                    protectedServiceExternalURL, proxiedServiceInfo.getUddiBusinessKey(), publishedService.getOid());
-                } catch (WSDLException e) {
-                    throw new UDDIException("Unable to parse WSDL from service (#" + publishedService.getOid()+")", e);
-                }
-                try {
-                    modelConverter.convertWsdlToUDDIModel();
-                } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
-                    throw new UDDIException("Unable to convert WSDL from service (#" + publishedService.getOid()+") into UDDI object model.", e);
-                }
-
-                final List<BusinessService> wsdlBusinessServices = modelConverter.getBusinessServices();
-                final Map<String, TModel> wsdlDependentTModels = modelConverter.getKeysToPublishedTModels();
-                final Map<BusinessService, String> serviceToWsdlServiceName = modelConverter.getServiceKeyToWsdlServiceNameMap();
-
-                BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher();
                 //this must be found due to db constraints
                 final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
                 if(!uddiRegistry.isEnabled()) throw new UDDIException("UDDI Registry '"+uddiRegistry.getName()+"' is disabled.");
 
                 final UDDIClient uddiClient = UDDIHelper.newUDDIClient(uddiRegistry);
-                //this is best effort commit / rollback
-                businessServicePublisher.publishServicesToUDDIRegistry(uddiClient, wsdlBusinessServices, wsdlDependentTModels);
 
+                final Wsdl wsdl;
+                try {
+                    wsdl = publishedService.parsedWsdl();
+                } catch (WSDLException e) {
+                    throw new UDDIException("Unable to parse WSDL from service (#" + publishedService.getOid()+")", e);
+                }
+                BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(wsdl, uddiClient, publishedService.getOid());
+                //this is best effort commit / rollback
+                List<UDDIBusinessService> uddiBusinessServices = businessServicePublisher.publishServicesToUDDIRegistry(
+                        protectedServiceExternalURL, protectedServiceWsdlURL, proxiedServiceInfo.getUddiBusinessKey());
                 //Create all required UDDIProxiedService
-                for(BusinessService bs: wsdlBusinessServices){
+                for(UDDIBusinessService bs: uddiBusinessServices){
                     final UDDIProxiedService proxiedService = new UDDIProxiedService(bs.getServiceKey(),
-                            bs.getName().get(0).getValue(), serviceToWsdlServiceName.get(bs));
+                            bs.getServiceName(), bs.getWsdlServiceName());
                     //both parent and child records must be set before save
                     proxiedServiceInfo.getProxiedServices().add(proxiedService);
                     proxiedService.setUddiProxiedServiceInfo(proxiedServiceInfo);
@@ -148,7 +134,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     try {
                         logger.log(Level.WARNING, "Attempting to rollback UDDI updates");
                         //Attempt to roll back UDDI updates
-                        uddiClient.deleteBusinessServices(wsdlBusinessServices);
+                        uddiClient.deleteUDDIBusinessServices(uddiBusinessServices);
                         logger.log(Level.WARNING, "UDDI updates rolled back successfully");
                     } catch (UDDIException e1) {
                         logger.log(Level.WARNING, "Could not rollback UDDI updates", e1);

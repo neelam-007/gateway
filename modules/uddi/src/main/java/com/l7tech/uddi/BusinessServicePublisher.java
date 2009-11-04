@@ -5,6 +5,7 @@ import com.l7tech.common.uddi.guddiv3.BusinessService;
 import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE;
 import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
 import com.l7tech.util.Pair;
+import com.l7tech.wsdl.Wsdl;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -23,55 +24,102 @@ import java.util.logging.Logger;
 public class BusinessServicePublisher {
     private static final Logger logger = Logger.getLogger(BusinessServicePublisher.class.getName());
     private Set<BusinessService> serviceDeleteSet;
-    private List<BusinessService> newlyPublishedServices;
+    private Set<BusinessService> newlyPublishedServices;
+
+    private Wsdl wsdl;
+    private final UDDIClient uddiClient;
+    private final JaxWsUDDIClient jaxWsUDDIClient;
+    private long serviceOid;
 
     /**
-     * Publish the list of Business Services to the UDDI Registry via the supplied UDDIClient
+     * @param wsdl WSDL to publish to UDDI
+     * @param uddiClient UDDIClient configured for the UDDI Registry to publish to
+     * @param serviceOid services OID, which originates from the WSDL
+     */
+    public BusinessServicePublisher(final Wsdl wsdl,
+                                    final UDDIClient uddiClient,
+                                    final long serviceOid) {
+        this.wsdl = wsdl;
+        this.uddiClient = uddiClient;
+        this.serviceOid = serviceOid;
+        if(uddiClient instanceof JaxWsUDDIClient){
+            jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
+        }else{
+            //hack for now for the good of the module
+            throw new IllegalStateException("Unsupported UDDIClient implementation");
+        }
+    }
+
+
+    /**
+     * Publish the list of Business Services from the WSDL to the UDDI Registry
      *
      * Provides best effort commit / rollback behaviour
      *
-     * @param uddiClient       the UDDIClient configured for the UDDI registry to publish the proxied service to
-     * @param businessServices the list of BusinessService s to publish
-     * @param dependentTModels the list of dependent TModel s which the BusinessServices depend on
+     * @param protectedServiceExternalURL accessPoint value in UDDI
+     * @param protectedServiceWsdlURL overviewDoc value in UDDI
+     * @param businessKey String businessKey of the BusinssEntity which owns all of the published BusinessServices
      * @throws UDDIException any problems publishing UDDI info
+     * @return List of UDDIBusinessService, one for each BusinessService published
      */
-    public void publishServicesToUDDIRegistry(final UDDIClient uddiClient,
-                                              final List<BusinessService> businessServices,
-                                              final Map<String, TModel> dependentTModels) throws UDDIException {
-        //make sure this gateway wsdl has not already been published
+    public List<UDDIBusinessService> publishServicesToUDDIRegistry(final String protectedServiceExternalURL,
+                                              final String protectedServiceWsdlURL,
+                                              final String businessKey) throws UDDIException {
         //todo do we need a way to be able to tell if this wsdl for a published service was already published?
-//        if (!uddiClient.getBusinessServices(null).isEmpty())
-//            throw new IllegalStateException("Gateway WSDL has already been published");
+        final WsdlToUDDIModelConverter modelConverter;
+        modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
+        protectedServiceExternalURL, businessKey, serviceOid);
+        try {
+            modelConverter.convertWsdlToUDDIModel();
+        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
+            throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid+") into UDDI object model.", e);
+        }
 
-        publishServicesToUDDI(uddiClient, businessServices, dependentTModels);
+        final List<BusinessService> wsdlBusinessServices = modelConverter.getBusinessServices();
+        final Map<String, TModel> wsdlDependentTModels = modelConverter.getKeysToPublishedTModels();
+        final Map<String, String> serviceToWsdlServiceName = modelConverter.getServiceNameToWsdlServiceNameMap();
+
+        publishServicesToUDDI(wsdlBusinessServices, wsdlDependentTModels);
+
+        List<UDDIBusinessService> wsdlServicesInUDDI = new ArrayList<UDDIBusinessService>();
+        for(BusinessService bs: wsdlBusinessServices){
+            UDDIBusinessService uddiBusService = new UDDIBusinessService(bs.getName().get(0).getValue(),
+                    bs.getServiceKey(), serviceToWsdlServiceName.get(bs.getName().get(0).getValue()));
+            wsdlServicesInUDDI.add(uddiBusService);
+        }
+
+        return wsdlServicesInUDDI;
     }
 
     public Set<BusinessService> getServiceDeleteSet() {
         return serviceDeleteSet;
     }
 
-    public List<BusinessService> getNewlyPublishedServices() {
+    public Set<BusinessService> getNewlyPublishedServices() {
         return newlyPublishedServices;
     }
 
-    /**
-     * @param uddiClient
-     * @param publishedServiceKeys Set of String serviceKeys, which represent all BusinessServices published alredy
-     *                             to UDDI for a Published Service's WSDL
-     * @param wsdlBusinessServices
-     * @param wsdlDependentTModels
-     * @return Set of BusinessService s to delete as they are no longer referenced from the WSDL
-     * @throws UDDIException
-     */
-    public void updateServicesToUDDIRegistry(final UDDIClient uddiClient,
-                                             Set<String> publishedServiceKeys,
-                                             final List<BusinessService> wsdlBusinessServices,
-                                             final Map<String, TModel> wsdlDependentTModels) throws UDDIException {
+    public Pair<Set<String>, Set<UDDIBusinessService>> updateServicesToUDDIRegistry(final String protectedServiceExternalURL,
+                                             final String protectedServiceWsdlURL,
+                                             final String businessKey,
+                                             final Set<String> publishedServiceKeys) throws UDDIException {
+
+        WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
+                protectedServiceExternalURL, businessKey, serviceOid);
+        try {
+            modelConverter.convertWsdlToUDDIModel();
+        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
+            throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid+") into UDDI object model.", e);
+        }
+
+        final List<BusinessService> wsdlBusinessServices = modelConverter.getBusinessServices();
+        final Map<String, TModel> wsdlDependentTModels = modelConverter.getKeysToPublishedTModels();
+        final Map<String, String> serviceToWsdlServiceName = modelConverter.getServiceNameToWsdlServiceNameMap();
 
         //Get the info on all published business services from UDDI
         UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
         Pair<List<BusinessService>, Map<String, TModel>> modelFromUddi = serviceDownloader.getBusinessServiceModels(publishedServiceKeys);
-
+        //TODO [Donal] some keys we requested may not have been returned. When this happens delete from our database
         final List<BusinessService> publishedServices = modelFromUddi.left;
         //check if this service has already been published
         if (publishedServices.isEmpty()) {
@@ -105,7 +153,7 @@ public class BusinessServicePublisher {
             }
         }
 
-        publishServicesToUDDI(uddiClient, wsdlBusinessServices, wsdlDependentTModels);
+        publishServicesToUDDI(wsdlBusinessServices, wsdlDependentTModels);
 
         //find out what tModels need to be deleted
         //do this after initial update, so we have valid references
@@ -140,27 +188,40 @@ public class BusinessServicePublisher {
                 logger.log(Level.INFO, "Successfully deleted all tModels no longer referenced by Gateway's WSDL");
         }
 
-        if (!serviceDeleteSet.isEmpty()) {
+        final Set<String> deleteSet = new HashSet<String>();
+        for(BusinessService bs: serviceDeleteSet){
+            deleteSet.add(bs.getServiceKey());
+        }
+
+        if (!deleteSet.isEmpty()) {
             logger.log(Level.INFO, "Attemping to delete BusinessServices no longer referenced by Gateway's WSDL");
             try {
-                uddiClient.deleteBusinessServices(serviceDeleteSet);
+                uddiClient.deleteBusinessServicesByKey(deleteSet);
                 logger.log(Level.INFO, "Successfully deleted all BusinessServices no longer referenced by Gateway's WSDL");
             } catch (UDDIException e) {
                 logger.log(Level.WARNING, "Problem deleting BusinessServices: " + e.getMessage());
             }
         }
+
+        Set<UDDIBusinessService> newlyCreatedSet = new HashSet<UDDIBusinessService>();
+        for(BusinessService bs: newlyPublishedServices){
+            UDDIBusinessService uddiBs = new UDDIBusinessService(bs.getName().get(0).getValue(),
+                    bs.getServiceKey(), serviceToWsdlServiceName.get(bs.getName().get(0).toString()));
+            newlyCreatedSet.add(uddiBs);
+        }
+
+
+        return new Pair<Set<String>, Set<UDDIBusinessService>>(deleteSet, newlyCreatedSet);
     }
 
-
-    private void publishServicesToUDDI(final UDDIClient uddiClient,
-                                       final List<BusinessService> businessServices,
+    private void publishServicesToUDDI(final List<BusinessService> businessServices,
                                        final Map<String, TModel> dependentTModels) throws UDDIException {
 
         //remember udpates in case they need to be rolled back later
         final List<TModel> publishedTModels = new ArrayList<TModel>();
 
         //first publish TModels which represent wsdl:portType, as they have no keyedReference dependencies
-        publishedTModels.addAll(publishDependentTModels(uddiClient, dependentTModels, WSDL_PORT_TYPE));
+        publishedTModels.addAll(publishDependentTModels(dependentTModels, WSDL_PORT_TYPE));
 
         final List<TModel> bindingTModels = new ArrayList<TModel>();
         for (final TModel tModel : dependentTModels.values()) {
@@ -171,7 +232,7 @@ public class BusinessServicePublisher {
 
         UDDIUtilities.updateBindingTModelReferences(bindingTModels, dependentTModels);
         //next publish TModels which represent wsdl:binding, as they are dependent on wsdl:portType tModels
-        publishedTModels.addAll(publishDependentTModels(uddiClient, dependentTModels, WSDL_BINDING));
+        publishedTModels.addAll(publishDependentTModels(dependentTModels, WSDL_BINDING));
 
         UDDIUtilities.updateBusinessServiceReferences(businessServices, dependentTModels);
 
@@ -191,15 +252,14 @@ public class BusinessServicePublisher {
      * @throws com.l7tech.uddi.UDDIException if any problems publishing the Business Services to UDDI
      */
     private void publishBusinessServices(final UDDIClient uddiClient,
-                                        final List<BusinessService> businessServices,
-                                        final List<TModel> rollbackTModelsToDelete) throws UDDIException {
+                                         final List<BusinessService> businessServices,
+                                         final List<TModel> rollbackTModelsToDelete) throws UDDIException {
 
-        newlyPublishedServices = new ArrayList<BusinessService>();
+        newlyPublishedServices = new HashSet<BusinessService>();
         for (BusinessService businessService : businessServices) {
             try {
-                final boolean published = uddiClient.publishBusinessService(businessService);
+                final boolean published = jaxWsUDDIClient.publishBusinessService(businessService);
                 if (published) newlyPublishedServices.add(businessService);
-
             } catch (UDDIException e) {
                 logger.log(Level.WARNING, "Exception publishing BusinesService: " + e.getMessage());
                 handleUDDIRollback(uddiClient, rollbackTModelsToDelete, newlyPublishedServices, e);
@@ -215,15 +275,13 @@ public class BusinessServicePublisher {
      * <p/>
      * Any exception occurs and an attempt is made to delete any tModels which were successfully published.
      *
-     * @param uddiClient       UDDIClient to publish with
      * @param dependentTModels tModels to publish
      * @param tmodelType       TMODEL_TYPE the type of TModel we should publish.
      * @return List of TModels which were successfully published
      * @throws UDDIException any exception publishing the tmodels
      */
-    public List<TModel> publishDependentTModels(final UDDIClient uddiClient,
-                                                final Map<String, TModel> dependentTModels,
-                                                final UDDIUtilities.TMODEL_TYPE tmodelType) throws UDDIException {
+    List<TModel> publishDependentTModels(final Map<String, TModel> dependentTModels,
+                                         final UDDIUtilities.TMODEL_TYPE tmodelType) throws UDDIException {
         final List<TModel> publishedTModels = new ArrayList<TModel>();
         try {
             for (Map.Entry<String, TModel> entrySet : dependentTModels.entrySet()) {
@@ -231,12 +289,12 @@ public class BusinessServicePublisher {
                 //only publish the type were currently interested in
                 if (UDDIUtilities.getTModelType(tModel, true) != tmodelType) continue;
 
-                final boolean published = uddiClient.publishTModel(tModel);
+                final boolean published = jaxWsUDDIClient.publishTModel(tModel);
                 if (published) publishedTModels.add(tModel);
             }
         } catch (UDDIException e) {
             logger.log(Level.WARNING, "Exception publishing tModels: " + e.getMessage());
-            handleUDDIRollback(uddiClient, publishedTModels, Collections.<BusinessService>emptyList(), e);
+            handleUDDIRollback(uddiClient, publishedTModels, Collections.<BusinessService>emptySet(), e);
             throw e;
         }
         return Collections.unmodifiableList(publishedTModels);
@@ -244,7 +302,7 @@ public class BusinessServicePublisher {
 
     private void handleUDDIRollback(final UDDIClient uddiClient,
                                     final List<TModel> rollbackTModelsToDelete,
-                                    final List<BusinessService> publishedServices,
+                                    final Set<BusinessService> publishedServices,
                                     final UDDIException exception) {
         //this is just a convenience method. Either rolls back tModels OR BusinessServices
         if(!rollbackTModelsToDelete.isEmpty() && !publishedServices.isEmpty())
@@ -261,7 +319,11 @@ public class BusinessServicePublisher {
                 if (deletedTModel) logger.log(Level.WARNING, "Delete published tModels: " + exception.getMessage());
             } else if (!publishedServices.isEmpty()){
                 logger.log(Level.WARNING, "Attempting to rollback published BusinessServices");
-                uddiClient.deleteBusinessServices(publishedServices);
+                Set<String> keysToDelete = new HashSet<String>();
+                for(BusinessService bs: publishedServices){
+                    keysToDelete.add(bs.getServiceKey());
+                }
+                uddiClient.deleteBusinessServicesByKey(keysToDelete);
                 logger.log(Level.WARNING, "Deleted published BusinessServices");
             }
 

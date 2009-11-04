@@ -86,6 +86,30 @@ public class UDDIProxiedService extends PersistentEntityImp {
         this.uddiProxiedServiceInfo = uddiProxiedServiceInfo;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UDDIProxiedService)) return false;
+        if (!super.equals(o)) return false;
+
+        UDDIProxiedService that = (UDDIProxiedService) o;
+
+        if (!uddiServiceKey.equals(that.uddiServiceKey)) return false;
+        if (!uddiServiceName.equals(that.uddiServiceName)) return false;
+        if (!wsdlServiceName.equals(that.wsdlServiceName)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + uddiServiceKey.hashCode();
+        result = 31 * result + uddiServiceName.hashCode();
+        result = 31 * result + wsdlServiceName.hashCode();
+        return result;
+    }
+
     /**
      * Serivce key of the proxied business service in UDDI. Always created by the UDDI Registry
      */

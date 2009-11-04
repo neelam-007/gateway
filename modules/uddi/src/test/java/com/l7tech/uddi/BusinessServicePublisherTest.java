@@ -32,7 +32,8 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://localhost:8080/3828382";
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
+        final String businessKey = "uddi:uddi_business_key";
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
         UDDIClient uddiClient = getUDDIClient();
@@ -46,8 +47,8 @@ public class BusinessServicePublisherTest {
             JAXB.marshal(tModel, System.out);
         }
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher();
-        servicePublisher.publishServicesToUDDIRegistry(uddiClient, wsdlToUDDIModelConverter.getBusinessServices(), wsdlToUDDIModelConverter.getKeysToPublishedTModels());
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, uddiClient, serviceOid);
+        servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey);
 
         //after
         for(BusinessService businessService: wsdlToUDDIModelConverter.getBusinessServices()){

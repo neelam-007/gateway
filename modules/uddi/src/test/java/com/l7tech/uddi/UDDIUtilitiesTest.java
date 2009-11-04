@@ -69,8 +69,8 @@ public class UDDIUtilitiesTest {
     @Test
     public void testUpdateBindingTModelReferences() throws UDDIException {
         //first update all wsdl:portType tModels
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher();
-        servicePublisher.publishDependentTModels(getUDDIClient(), servicesAndTModels.right, WSDL_PORT_TYPE);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(null, getUDDIClient(), 23424323L);
+        servicePublisher.publishDependentTModels(servicesAndTModels.right, WSDL_PORT_TYPE);
 
         final ArrayList<TModel> models = new ArrayList<TModel>();
         models.addAll(servicesAndTModels.right.values());
@@ -116,14 +116,14 @@ public class UDDIUtilitiesTest {
     @Test
     public void testUpdateBusinessServiceReferences() throws UDDIException {
         //setup
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher();
-        servicePublisher.publishDependentTModels(getUDDIClient(), servicesAndTModels.right, WSDL_PORT_TYPE);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(null, getUDDIClient(), 23424323L);
+        servicePublisher.publishDependentTModels(servicesAndTModels.right, WSDL_PORT_TYPE);
 
         final ArrayList<TModel> models = new ArrayList<TModel>();
         models.addAll(servicesAndTModels.right.values());
         UDDIUtilities.updateBindingTModelReferences(models, servicesAndTModels.right);
 
-        servicePublisher.publishDependentTModels(getUDDIClient(), servicesAndTModels.right, WSDL_BINDING);        
+        servicePublisher.publishDependentTModels(servicesAndTModels.right, WSDL_BINDING);        
         //finish setup
 
         UDDIUtilities.updateBusinessServiceReferences(servicesAndTModels.left, servicesAndTModels.right);
