@@ -45,11 +45,11 @@ public class UDDIUtilitiesTest {
     public void testUDDIReferenceUpdater() throws Exception {
         final Map<String, TModel> tModels = servicesAndTModels.right;
         for(TModel tModel: tModels.values()){
-            UDDIUtilities.TMODEL_TYPE type = UDDIUtilities.getTModelType(tModel);
+            UDDIUtilities.TMODEL_TYPE type = UDDIUtilities.getTModelType(tModel, true);
             final CategoryBag categoryBag = tModel.getCategoryBag();
             List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
             for (KeyedReference keyedReference : keyedReferences) {
-                if (!keyedReference.getTModelKey().equals(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)) continue;
+                if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)) continue;
                 final String keyValue = keyedReference.getKeyValue();
                 if (keyValue.equals("portType")) {
                     Assert.assertEquals("Incorrect tModel type found", WSDL_PORT_TYPE, type);
@@ -79,7 +79,7 @@ public class UDDIUtilitiesTest {
         int numBindingTModelsFound = 0;
         //Now each binding tModel should have a real tModelKey in it's keyedReference to the wsdl:portType tModel
         for(TModel tModel: servicesAndTModels.right.values()){
-            if(UDDIUtilities.getTModelType(tModel) != WSDL_BINDING) continue;
+            if(UDDIUtilities.getTModelType(tModel, true) != WSDL_BINDING) continue;
             numBindingTModelsFound++;
             //get it's portType keyedReference
             final CategoryBag categoryBag = tModel.getCategoryBag();
@@ -87,7 +87,7 @@ public class UDDIUtilitiesTest {
             //find the portType keyedReference
             boolean portKeyedReferenceFound = false;
             for (KeyedReference keyedReference : keyedReferences) {
-                if (!keyedReference.getTModelKey().equals(WsdlToUDDIModelConverter.UDDI_WSDL_PORTTYPEREFERENCE)) continue;
+                if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_PORTTYPEREFERENCE)) continue;
                 portKeyedReferenceFound = true;
                 final String keyValue = keyedReference.getKeyValue();
                 Assert.assertFalse("wsdl:portType reference was not updated correctly: " + keyValue, keyValue.endsWith(WsdlToUDDIModelConverter.PORT_TMODEL_IDENTIFIER));
@@ -95,7 +95,7 @@ public class UDDIUtilitiesTest {
                 //now find a portType tModel with this tModelKey
                 boolean refFound = false;
                 for(TModel aTModel: servicesAndTModels.right.values()){
-                    if(UDDIUtilities.getTModelType(aTModel) != WSDL_PORT_TYPE) continue;
+                    if(UDDIUtilities.getTModelType(aTModel, true) != WSDL_PORT_TYPE) continue;
                     if(!aTModel.getTModelKey().equals(keyValue)) continue;
                     refFound = true;
                 }
@@ -149,7 +149,7 @@ public class UDDIUtilitiesTest {
 
                     for(TModel aRefTModel: servicesAndTModels.right.values()){
                         if(!aRefTModel.getTModelKey().equals(modelKey)) continue;
-                        UDDIUtilities.TMODEL_TYPE modelType = UDDIUtilities.getTModelType(aRefTModel);
+                        UDDIUtilities.TMODEL_TYPE modelType = UDDIUtilities.getTModelType(aRefTModel, true);
                         if(modelType != currentTModelInstanceInfoType) continue;
                         tModelReferencedFound = true;
                     }

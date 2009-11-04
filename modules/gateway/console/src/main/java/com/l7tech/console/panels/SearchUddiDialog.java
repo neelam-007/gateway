@@ -314,7 +314,7 @@ public class SearchUddiDialog extends JDialog {
                             boolean searchTruncated = false;
                             Vector urlList = new Vector();
                             for (int i = 0; i < ((WsdlPortInfo[])result).length; i++) {
-                                final WsdlPortInfo wi = ((WsdlPortInfoImpl[])result)[i];
+                                final WsdlPortInfo wi = ((WsdlPortInfo[])result)[i];
                                 if (WsdlPortInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(wi.getWsdlUrl())) {
                                     // Flag value indicating that search results were truncated
                                     searchTruncated = true;

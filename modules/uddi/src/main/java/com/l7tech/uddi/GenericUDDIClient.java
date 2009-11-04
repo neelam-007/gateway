@@ -590,7 +590,7 @@ public class GenericUDDIClient implements UDDIClient {
                     CategoryBag categoryBag = keyToService.get(serviceInfo.getServiceKey()).getCategoryBag();
                     List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
                     for (KeyedReference keyedReference : keyedReferences) {
-                        if (keyedReference.getTModelKey().equals(WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME)) {
+                        if (keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME)) {
                             //fyi - this helps prevent circular references on save - our published business services
                             //value for local name will never match the wsdl by default
                             businessServiceWsdlLocalName = keyedReference.getKeyValue();
@@ -603,8 +603,15 @@ public class GenericUDDIClient implements UDDIClient {
 
                         //return a WSDLInfo per BindingTemplate - as it maps 1:1 to wsdl:port
                         AccessPoint accessPoint = bindingTemplate.getAccessPoint();
+
+                        //for systinet, if accessPoint.getUseType is null, we will just use the url value
+                        //checking for version 2 implementations of techinca note - supporting "http" aswell for oracle
                         if (bindingTemplate.getTModelInstanceDetails() == null ||
-                                accessPoint == null || !accessPoint.getUseType().equals( USE_TYPE_END_POINT )) {
+                                accessPoint == null ||
+                                (accessPoint.getUseType() != null &&
+                                        !accessPoint.getUseType().trim().equals("") &&
+                                        (!accessPoint.getUseType().equals( USE_TYPE_END_POINT ) && !accessPoint.getUseType().trim().equals("http")))) {
+                            logger.log(Level.INFO, "Invalid / unsupported accessPoint useType found: " + accessPoint.getUseType());
                             continue;
                         }
 
@@ -657,7 +664,8 @@ public class GenericUDDIClient implements UDDIClient {
                         TModel bindingTModel = null;
                         TModel portTypeTModel = null;
                         for (final TModel tModel : resolvedTMomdels) {
-                            UDDIUtilities.TMODEL_TYPE tModelType = UDDIUtilities.getTModelType(tModel);
+                            UDDIUtilities.TMODEL_TYPE tModelType = UDDIUtilities.getTModelType(tModel, false);
+                            if(tModelType == null) continue;
                             switch (tModelType) {
                                 case WSDL_BINDING:
                                     bindingTModel = tModel;
@@ -705,7 +713,7 @@ public class GenericUDDIClient implements UDDIClient {
                             for (OverviewDoc doc : bindingTModel.getOverviewDoc()) {
                                 OverviewURL url = doc.getOverviewURL();
 
-                                if (url != null && OVERVIEW_URL_TYPE_WSDL.equals(url.getUseType())) {
+                                if (url != null && OVERVIEW_URL_TYPE_WSDL.equalsIgnoreCase(url.getUseType())) {
                                     wsdlPortInfo.setWsdlUrl(url.getValue());
                                 }
                             }

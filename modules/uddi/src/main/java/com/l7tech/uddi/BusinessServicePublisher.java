@@ -164,7 +164,7 @@ public class BusinessServicePublisher {
 
         final List<TModel> bindingTModels = new ArrayList<TModel>();
         for (final TModel tModel : dependentTModels.values()) {
-            if (UDDIUtilities.getTModelType(tModel) != UDDIUtilities.TMODEL_TYPE.WSDL_BINDING) continue;
+            if (UDDIUtilities.getTModelType(tModel, true) != UDDIUtilities.TMODEL_TYPE.WSDL_BINDING) continue;
             bindingTModels.add(tModel);
         }
         if (bindingTModels.isEmpty()) throw new IllegalStateException("No binding tModels were found");
@@ -229,7 +229,7 @@ public class BusinessServicePublisher {
             for (Map.Entry<String, TModel> entrySet : dependentTModels.entrySet()) {
                 final TModel tModel = entrySet.getValue();
                 //only publish the type were currently interested in
-                if (UDDIUtilities.getTModelType(tModel) != tmodelType) continue;
+                if (UDDIUtilities.getTModelType(tModel, true) != tmodelType) continue;
 
                 final boolean published = uddiClient.publishTModel(tModel);
                 if (published) publishedTModels.add(tModel);

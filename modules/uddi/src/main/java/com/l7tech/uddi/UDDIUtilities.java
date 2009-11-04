@@ -70,13 +70,13 @@ public class UDDIUtilities {
     static void updateBindingTModelReferences(final List<TModel> bindingTModels,
                                                      final Map<String, TModel> dependentTModels) {
         for (TModel tModel : bindingTModels) {
-            if (getTModelType(tModel) != TMODEL_TYPE.WSDL_BINDING) continue;
+            if (getTModelType(tModel, true) != TMODEL_TYPE.WSDL_BINDING) continue;
 
             final CategoryBag categoryBag = tModel.getCategoryBag();
             List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
             //find the portType keyedReference
             for (KeyedReference keyedReference : keyedReferences) {
-                if (!keyedReference.getTModelKey().equals(WsdlToUDDIModelConverter.UDDI_WSDL_PORTTYPEREFERENCE)) continue;
+                if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_PORTTYPEREFERENCE)) continue;
                 final TModel publishedTModel = dependentTModels.get(keyedReference.getKeyValue());
                 keyedReference.setKeyValue(publishedTModel.getTModelKey());
             }
@@ -87,19 +87,21 @@ public class UDDIUtilities {
      * Work out what wsdl element the tModel represents. Either wsdl:portType or wsdl:binding
      *
      * @param tModel the TModel to get the type for
+     * @param throwIfNotFound
      * @return TMODEL_TYPE the type of TModel
      */
-    static TMODEL_TYPE getTModelType(final TModel tModel) {
+    static TMODEL_TYPE getTModelType(final TModel tModel, boolean throwIfNotFound) {
         final CategoryBag categoryBag = tModel.getCategoryBag();
         List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
         for (KeyedReference keyedReference : keyedReferences) {
-            if (!keyedReference.getTModelKey().equals(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)) continue;
+            if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)) continue;
             final String keyValue = keyedReference.getKeyValue();
             if (keyValue.equals("portType")) return TMODEL_TYPE.WSDL_PORT_TYPE;
             if (keyValue.equals("binding")) return TMODEL_TYPE.WSDL_BINDING;
             throw new IllegalStateException("Type of TModel does not follow UDDI Technical Note: '" + keyValue + "'");
         }
-        throw new IllegalStateException("TModel did not contain a KeyedReference of type " + WsdlToUDDIModelConverter.UDDI_WSDL_TYPES);
+        if(throwIfNotFound) throw new IllegalStateException("TModel did not contain a KeyedReference of type " + WsdlToUDDIModelConverter.UDDI_WSDL_TYPES);
+        return null;
     }
 
     /**
