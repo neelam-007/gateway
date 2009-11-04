@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.uddi.UDDIClient;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.WsdlToUDDIModelConverter;
+import com.l7tech.uddi.UDDIClientConfig;
 import com.l7tech.wsdl.Wsdl;
 
 import java.util.Collection;
@@ -37,6 +38,7 @@ public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxied
      * @param uddiProxiedServiceInfo   the UDDIProxiedServiceInfo to save or update
      * @param uddiClient           the UDDIClient configured for the UDDI registry to publish the proxied service to
      * @param wsdl Wsdl of the service
+     * @param uddiClientConfig UDDIClientConfig will all the information required to create a UDDIClient
      * @throws com.l7tech.objectmodel.UpdateException
      *          any problems updating
      * @throws com.l7tech.objectmodel.VersionException
@@ -44,10 +46,13 @@ public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxied
      * @throws com.l7tech.objectmodel.DeleteException
      * @throws com.l7tech.objectmodel.FindException
      * @throws com.l7tech.uddi.UDDIException
+     * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.PublishProxiedServiceException
+     * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.MissingWsdlReferenceException
      */
     void updateUDDIProxiedService( UDDIProxiedServiceInfo uddiProxiedServiceInfo,
                                    UDDIClient uddiClient,
-                                   Wsdl wsdl)
+                                   Wsdl wsdl,
+                                   UDDIClientConfig uddiClientConfig)
             throws UpdateException, VersionException, UDDIException, FindException, UDDIRegistryAdmin.PublishProxiedServiceException, WsdlToUDDIModelConverter.MissingWsdlReferenceException;
 
     /**

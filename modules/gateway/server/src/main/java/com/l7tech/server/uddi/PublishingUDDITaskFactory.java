@@ -113,7 +113,12 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 } catch (WSDLException e) {
                     throw new UDDIException("Unable to parse WSDL from service (#" + publishedService.getOid()+")", e);
                 }
-                BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(wsdl, uddiClient, publishedService.getOid());
+
+                final UDDIClientConfig uddiClientConfig = new UDDIClientConfig(uddiRegistry.getInquiryUrl(),
+                        uddiRegistry.getPublishUrl(), uddiRegistry.getSubscriptionUrl(), uddiRegistry.getSecurityUrl(),
+                        uddiRegistry.getRegistryAccountUserName(), uddiRegistry.getRegistryAccountPassword());
+
+                BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(wsdl, uddiClient, publishedService.getOid(), uddiClientConfig);
                 //this is best effort commit / rollback
                 List<UDDIBusinessService> uddiBusinessServices = businessServicePublisher.publishServicesToUDDIRegistry(
                         protectedServiceExternalURL, protectedServiceWsdlURL, proxiedServiceInfo.getUddiBusinessKey());

@@ -142,7 +142,7 @@ public class UDDIClientFactory {
         return URI.create(url).resolve(suffix).toString();
     }
 
-    private static PolicyAttachmentVersion getDefaultPolicyAttachmentVersion() {
+    static PolicyAttachmentVersion getDefaultPolicyAttachmentVersion() {
         String id = SyspropUtil.getString(
                 SYSPROP_DEFAULT_VERSION,
                 PolicyAttachmentVersion.v1_2.toString());

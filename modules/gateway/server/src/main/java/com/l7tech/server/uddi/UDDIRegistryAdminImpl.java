@@ -287,9 +287,12 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
         try {
+            final UDDIClientConfig uddiClientConfig = new UDDIClientConfig(uddiRegistry.getInquiryUrl(),
+                    uddiRegistry.getPublishUrl(), uddiRegistry.getSubscriptionUrl(), uddiRegistry.getSecurityUrl(),
+                    uddiRegistry.getRegistryAccountUserName(), uddiRegistry.getRegistryAccountPassword());
             //the management of whether any existing tModels need to be deleted is left to the uddi proxied service manager
             //as it can only tell what needs to be deleted after it has published the representation of the gateway wsdl to UDDI
-            uddiProxiedServiceInfoManager.updateUDDIProxiedService(serviceInfo, uddiClient, wsdl);
+            uddiProxiedServiceInfoManager.updateUDDIProxiedService(serviceInfo, uddiClient, wsdl, uddiClientConfig);
         } catch (UDDIException e) {
             final String msg = "Could not publish Gateway WSDL to UDDI: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));

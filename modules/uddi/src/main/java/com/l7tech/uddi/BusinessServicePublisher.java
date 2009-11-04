@@ -30,6 +30,7 @@ public class BusinessServicePublisher {
     private final UDDIClient uddiClient;
     private final JaxWsUDDIClient jaxWsUDDIClient;
     private long serviceOid;
+    private final UDDIClientConfig uddiClientConfig;
 
     /**
      * @param wsdl WSDL to publish to UDDI
@@ -38,16 +39,22 @@ public class BusinessServicePublisher {
      */
     public BusinessServicePublisher(final Wsdl wsdl,
                                     final UDDIClient uddiClient,
-                                    final long serviceOid) {
+                                    final long serviceOid,
+                                    final UDDIClientConfig uddiCfg) {
+        if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
+        if(uddiClient == null) throw new NullPointerException("uddiClient cannot be null");
+        if(uddiCfg == null) throw new NullPointerException("uddiCfg cannot be null");
+
         this.wsdl = wsdl;
         this.uddiClient = uddiClient;
         this.serviceOid = serviceOid;
         if(uddiClient instanceof JaxWsUDDIClient){
             jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
         }else{
-            //hack for now for the good of the module
-            throw new IllegalStateException("Unsupported UDDIClient implementation");
+            jaxWsUDDIClient = new GenericUDDIClient(uddiCfg.getInquiryUrl(), uddiCfg.getPublishUrl(), uddiCfg.getSubscriptionUrl(),
+            uddiCfg.getSecurityUrl(), uddiCfg.getLogin(), uddiCfg.getPassword(), UDDIClientFactory.getDefaultPolicyAttachmentVersion());
         }
+        uddiClientConfig = uddiCfg;
     }
 
 
@@ -117,7 +124,7 @@ public class BusinessServicePublisher {
         final Map<String, String> serviceToWsdlServiceName = modelConverter.getServiceNameToWsdlServiceNameMap();
 
         //Get the info on all published business services from UDDI
-        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient, uddiClientConfig);
         Pair<List<BusinessService>, Map<String, TModel>> modelFromUddi = serviceDownloader.getBusinessServiceModels(publishedServiceKeys);
         //TODO [Donal] some keys we requested may not have been returned. When this happens delete from our database
         final List<BusinessService> publishedServices = modelFromUddi.left;

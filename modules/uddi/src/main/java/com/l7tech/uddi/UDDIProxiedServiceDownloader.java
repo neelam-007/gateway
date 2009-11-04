@@ -21,13 +21,13 @@ public class UDDIProxiedServiceDownloader {
     private final UDDIClient uddiClient;
     private final JaxWsUDDIClient jaxWsUDDIClient;
 
-    public UDDIProxiedServiceDownloader(UDDIClient uddiClient) {
+    public UDDIProxiedServiceDownloader(final UDDIClient uddiClient, final UDDIClientConfig uddiCfg) {
         this.uddiClient = uddiClient;
         if(uddiClient instanceof JaxWsUDDIClient){
             jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
         }else{
-            //hack for now for the good of the module
-            throw new IllegalStateException("Unsupported UDDIClient implementation");
+            jaxWsUDDIClient = new GenericUDDIClient(uddiCfg.getInquiryUrl(), uddiCfg.getPublishUrl(), uddiCfg.getSubscriptionUrl(),
+            uddiCfg.getSecurityUrl(), uddiCfg.getLogin(), uddiCfg.getPassword(), UDDIClientFactory.getDefaultPolicyAttachmentVersion());
         }
     }
 

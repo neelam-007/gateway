@@ -8,11 +8,7 @@ import org.junit.Test;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
-import com.l7tech.util.Pair;
-
 import javax.xml.bind.JAXB;
-import java.util.List;
-import java.util.Map;
 
 public class BusinessServicePublisherTest {
 
@@ -47,7 +43,7 @@ public class BusinessServicePublisherTest {
             JAXB.marshal(tModel, System.out);
         }
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, uddiClient, serviceOid);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, uddiClient, serviceOid, new UDDIClientConfig());
         servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey);
 
         //after

@@ -78,7 +78,7 @@ public class TestGenericUDDIClient {
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, uddiClient, serviceOid);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, uddiClient, serviceOid, new UDDIClientConfig());
 //        servicePublisher.publishServicesToUDDIRegistry(uddiClient, wsdlToUDDIModelConverter.getBusinessServices(),
 //                wsdlToUDDIModelConverter.getKeysToPublishedTModels());
 
