@@ -81,6 +81,7 @@ public class CertificateAttributesAssertion extends Assertion implements SetsVar
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.certificateattributes.console.CertificateAttributesAssertionPropertiesDialog");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.external.assertions.certificateattributes.CertificateAttributesAssertionValidator");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
