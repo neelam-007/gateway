@@ -21,18 +21,10 @@ public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxied
      * for implementation strategy
      *
      * @param uddiProxiedServiceInfo      the UDDIProxiedService to save
-     * @param uddiClient                  the UDDIClient configured for the UDDI registry to publish the proxied service to
-     * @return long oid of the created UDDIProxiedServiceInfo
      * @throws com.l7tech.objectmodel.SaveException
-     *
-     * @throws com.l7tech.objectmodel.VersionException
-     *
-     * @throws com.l7tech.uddi.UDDIException
      */
-    long saveUDDIProxiedServiceInfo(final UDDIProxiedServiceInfo uddiProxiedServiceInfo,
-                                    final UDDIClient uddiClient,
-                                    final Wsdl wsdl)
-            throws SaveException, VersionException, UDDIException, FindException, UDDIRegistryAdmin.PublishProxiedServiceException, WsdlToUDDIModelConverter.MissingWsdlReferenceException;
+    void saveUDDIProxiedServiceInfo(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
+            throws SaveException;
 
     /**
      * Update a UDDIProxiedService. This manages the update of information previously published to a UDDI Registry
@@ -65,4 +57,7 @@ public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxied
      */
     UDDIProxiedServiceInfo findByPublishedServiceOid( long publishedServiceOid ) throws FindException;
 
+    void setUddiCoordinator(UDDICoordinator uddiCoordinator);
+
+    void setUddiHelper(UDDIHelper uddiHelper);
 }

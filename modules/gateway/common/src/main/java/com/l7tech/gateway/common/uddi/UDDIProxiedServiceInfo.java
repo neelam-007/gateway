@@ -19,6 +19,7 @@ import java.util.HashSet;
  * to UDDI. This stores the common information. The actual wsdl:service information is stored in
  * UDDIProxiedService
  *
+ *      //TODO [Donal] RENAME THIS CLASS AND EVERYTHING RELATED TO BE 'UDDIPublishInfo'
  * @author darmstrong
  */
 @Entity
@@ -28,16 +29,52 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
 
     public static final String ATTR_SERVICE_OID = "publishedServiceOid";
 
+    public enum PublishType{
+        PROXY(0),
+        ENDPOINT(1),
+        OVERWRITE(2);
+
+        private int type;
+
+        private PublishType(int typeName) {
+            this.type = typeName;
+        }
+
+        public int getType() {
+            return type;
+        }
+
+        /**
+         * Convert the int into a PublishType.
+         * @param type int represening the enum value
+         * @return the PublishType which matches the type, or an IllegalStateException
+         */
+        public static PublishType findType(final int type){
+            for(PublishType regType: values()){
+                if(regType.getType() == type) return regType;
+            }
+            throw new IllegalStateException("Unknown publish type requested: " + type);
+        }
+    }
+
+
     public UDDIProxiedServiceInfo() {
     }
 
-    public UDDIProxiedServiceInfo(long publishedServiceOid, long uddiRegistryOid, String uddiBusinessKey, String uddiBusinessName, boolean updateProxyOnLocalChange) {
+    public UDDIProxiedServiceInfo(long publishedServiceOid,
+                                  long uddiRegistryOid,
+                                  final String uddiBusinessKey,
+                                  final String uddiBusinessName,
+                                  final boolean updateProxyOnLocalChange,
+                                  final PublishType publishType) {
         super();
         this.publishedServiceOid = publishedServiceOid;
         this.uddiRegistryOid = uddiRegistryOid;
         this.uddiBusinessKey = uddiBusinessKey;
         this.uddiBusinessName = uddiBusinessName;
         this.updateProxyOnLocalChange = updateProxyOnLocalChange;
+        this.type = publishType;
+        this.uddiPublishStatus = new UDDIPublishStatus(this);
     }
 
     /**
@@ -142,7 +179,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.wsPolicyTModelKey = wsPolicyTModelKey;
     }
 
-    @OneToMany(cascade= CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="proxiedServiceInfo")
+    @OneToMany(cascade= CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="uddiProxiedServiceInfo")
     @Fetch(FetchMode.SUBSELECT)
     @Cascade({org.hibernate.annotations.CascadeType.DELETE_ORPHAN, org.hibernate.annotations.CascadeType.ALL})
     @OnDelete(action= OnDeleteAction.CASCADE)
@@ -153,6 +190,27 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     public void setProxiedServices(Set<UDDIProxiedService> proxiedServices) {
         this.proxiedServices = proxiedServices;
     }
+
+    @Column(name = "publish_type")
+    public int getType() {
+        return type.getType();
+    }
+
+    public void setType(int type) {
+        this.type = PublishType.findType(type);
+    }
+
+    @OneToOne(cascade= CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="uddiProxiedServiceInfo")
+    @Cascade({org.hibernate.annotations.CascadeType.DELETE_ORPHAN, org.hibernate.annotations.CascadeType.ALL})
+    @OnDelete(action= OnDeleteAction.CASCADE)
+    public UDDIPublishStatus getUddiPublishStatus() {
+        return uddiPublishStatus;
+    }
+
+    public void setUddiPublishStatus(UDDIPublishStatus uddiPublishStatus) {
+        this.uddiPublishStatus = uddiPublishStatus;
+    }
+
     // PRIVATE
 
     /**
@@ -199,6 +257,10 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     private String wsPolicyTModelKey;
 
     private Set<UDDIProxiedService> proxiedServices = new HashSet<UDDIProxiedService>();
+
+    private PublishType type;
+
+    private UDDIPublishStatus uddiPublishStatus;
 
 }
 

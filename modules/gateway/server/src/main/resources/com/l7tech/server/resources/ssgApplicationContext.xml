@@ -1002,6 +1002,9 @@
                     <constructor-arg index="0" ref="uddiRegistryManager"/>
                     <constructor-arg index="1" ref="uddiRegistrySubscriptionManager"/>
                     <constructor-arg index="2" ref="uddiServiceControlManager"/>
+                    <constructor-arg index="3" ref="uddiProxiedServiceInfoManager" />
+                    <constructor-arg index="4" ref="serviceCache" />
+                    <constructor-arg index="5" ref="uddiHelper" />
                 </bean>
             </list>
         </constructor-arg>
@@ -1595,7 +1598,6 @@
     </bean>
 
     <bean id="uddiProxiedServiceInfoManager" class="com.l7tech.server.uddi.UDDIProxiedServiceInfoManagerImpl" parent="hibernateBean" >
-        <constructor-arg ref="uddiHelper" />
     </bean>
 
     <bean id="uddiServiceControlManager" class="com.l7tech.server.uddi.UDDIServiceControlManagerImpl" parent="hibernateBean" />

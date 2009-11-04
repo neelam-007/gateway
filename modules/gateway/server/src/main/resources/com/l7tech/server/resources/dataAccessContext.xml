@@ -166,6 +166,7 @@
                 <value>com.l7tech.gateway.common.uddi.UDDIRegistry</value>
                 <value>com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo</value>
                 <value>com.l7tech.gateway.common.uddi.UDDIProxiedService</value>
+                <value>com.l7tech.gateway.common.uddi.UDDIPublishStatus</value>
                 <value>com.l7tech.gateway.common.uddi.UDDIServiceControl</value>
                 <value>com.l7tech.server.uddi.UDDIRegistrySubscription</value>
 

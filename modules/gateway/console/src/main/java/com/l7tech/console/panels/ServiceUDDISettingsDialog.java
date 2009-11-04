@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -44,6 +45,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private JLabel businessEntityNameLabel;
     private JCheckBox monitoringEnabledCheckBox;
     private JCheckBox monitoringDisableServicecheckBox;
+    private JLabel statusLabel;
 
     private PublishedService service;
     private boolean canUpdate;
@@ -56,6 +58,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private final static String businessEntityDefault = "<<None Selected>>";
     private String selectedBusinessName;
     private String selectedBusinessKey;
+    private UDDIPublishStatus.PublishStatus publishStatus;
 
     public ServiceUDDISettingsDialog() {
         initialize();
@@ -72,6 +75,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         } else {
             this.canUpdate = hasUpdatePermission;
         }
+        publishStatus = null;
         initialize();
     }
 
@@ -209,11 +213,25 @@ public class ServiceUDDISettingsDialog extends JDialog {
             businessEntityNameLabel.setText(uddiProxyServiceInfo.getUddiBusinessName());
             updateWhenGatewayWSDLCheckBox.setSelected(uddiProxyServiceInfo.isUpdateProxyOnLocalChange());
             publishProxiedWsdlRadioButton.setSelected(true);
+            final String status;
+            publishStatus = UDDIPublishStatus.PublishStatus.findStatus(uddiProxyServiceInfo.getUddiPublishStatus().getPublishStatus());
+            switch (publishStatus){
+                case PUBLISHING:
+                    status = "Status: Publishing";
+                    break;
+                case DELETING:
+                    status = "Status: Deleting";
+                    break;
+                default:
+                    status = "";
+            }
+            statusLabel.setText(status);
         }else{
             //set other buttons values when implemented
             dontPublishRadioButton.setSelected(true);
             uddiRegistriesComboBox.setSelectedIndex(-1);
             businessEntityNameLabel.setText(businessEntityDefault);
+            statusLabel.setText("");
         }
         
         if ( uddiServiceControl != null ) {
@@ -304,6 +322,10 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     showErrorMessage("Cannot Update UDDI", "UDDI Registry is not currently enabled", null, false);
                     return false;
                 }
+                if(publishStatus != null && publishStatus != UDDIPublishStatus.PublishStatus.PUBLISHED){
+                    showErrorMessage("Cannot Update UDDI", "UDDI is being updated. Try again in a few minutes", null, false);
+                    return false;
+                }
                 removeUDDIProxiedService();
             }
         }
@@ -361,7 +383,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private void publishUDDIProxiedService(){
         DialogDisplayer.showConfirmDialog(this,
                                                    "Publish Gateway WSDL to UDDI Registry?",
-                                                   "Confirm Publish to UDDI",
+                                                   "Confirm Publish to UDDI Task",
                                                    JOptionPane.YES_NO_OPTION,
                                                    JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
                     @Override
@@ -373,10 +395,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
                                 uddiRegistryAdmin.publishGatewayWsdl(service.getOid(), uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected());
 
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Publication of Gateway WSDL to UDDI successful", "Successful Publication", JOptionPane.INFORMATION_MESSAGE, null);
+                                        "Task to publish Gateway WSDL to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
                             } catch (Exception ex) {
-                                logger.log(Level.WARNING, "Could not publish gateway WSDL to UDDI: " + ex.getMessage());
-                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, "Failed to publish Gateway WSDL to UDDI Registry: " + ex.getMessage(),
+                                final String msg = "Could not create publish gateway WSDL to UDDI task: " + ExceptionUtils.getMessage(ex);
+                                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(ex));
+                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, msg,
                                         "Error publishing to UDDI", JOptionPane.ERROR_MESSAGE, null);
                             }
                         }

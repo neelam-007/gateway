@@ -35,7 +35,7 @@ public class UDDIRegistry extends NamedEntityImp {
 
         /**
          * Convert the string into a UDDIRegistryType.
-         * @param type the String representation of the enum
+         * @param type String representating the enum
          * @return the UDDIRegistryType which matches the type, or null if not found (for now throwing an exception)
          */
         public static UDDIRegistryType findType(final String type){

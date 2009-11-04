@@ -7,10 +7,7 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
-import com.l7tech.gateway.common.uddi.UDDIServiceControl;
-import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
@@ -235,7 +232,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                    final String uddiBusinessKey,
                                    final String uddiBusinessName,
                                    final boolean updateWhenGatewayWsdlChanges)
-            throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException, UDDIRegistryNotEnabledException {
+            throws FindException, SaveException, UDDIRegistryNotEnabledException {
 
         if(publishedServiceOid < 1) throw new IllegalArgumentException("publishedServiceOid must be > 1");
         if(uddiRegistryOid < 1) throw new IllegalArgumentException("uddiRegistryOid must be > 1");
@@ -246,28 +243,12 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(uddiRegistry == null) throw new IllegalArgumentException("Cannot find UDDIRegistry with oid: " + uddiRegistryOid);
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
 
-//        final PublishedService service = serviceCache.getCachedService(publishedServiceOid);
-        //do not want a cached service, what the most up to date and need its most up to date WSDL
-        final PublishedService service = serviceManager.findByPrimaryKey(publishedServiceOid);
+        final PublishedService service = serviceCache.getCachedService(publishedServiceOid);
         if(service == null) throw new SaveException("Cannot find published service with oid: " + publishedServiceOid);
 
-        final Wsdl wsdl = getWsdl(service);
-
         final UDDIProxiedServiceInfo serviceInfo = new UDDIProxiedServiceInfo(service.getOid(), uddiRegistry.getOid(),
-                uddiBusinessKey, uddiBusinessName, updateWhenGatewayWsdlChanges);
-
-        final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
-        try {
-            uddiProxiedServiceInfoManager.saveUDDIProxiedServiceInfo(serviceInfo, uddiClient, wsdl);
-        } catch (UDDIException e) {
-            final String msg = "Could not publish Gateway WSDL to UDDI: " + ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            throw new PublishProxiedServiceException(msg);
-        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
-            final String msg = "Could not publish Gateway WSDL to UDDI: " + ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            throw new PublishProxiedServiceException(msg);
-        }
+                uddiBusinessKey, uddiBusinessName, updateWhenGatewayWsdlChanges, UDDIProxiedServiceInfo.PublishType.PROXY);
+        uddiProxiedServiceInfoManager.saveUDDIProxiedServiceInfo(serviceInfo);
     }
 
     private Wsdl getWsdl(PublishedService service) throws PublishProxiedServiceException {

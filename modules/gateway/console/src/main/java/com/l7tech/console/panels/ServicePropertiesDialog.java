@@ -365,7 +365,7 @@ public class ServicePropertiesDialog extends JDialog {
                             long oldOid = -1L;
                             if(!existingOk){
                                 needToDelete = uddiServiceControl != null;//do this before variable is reset on next line
-                                oldOid = uddiServiceControl.getOid();
+                                if(needToDelete) oldOid = uddiServiceControl.getOid();
                                 uddiServiceControl = getNewUDDIServiceControl(wsdlPortInfo);
                                 needsToBeSaved = true;
                             }else{

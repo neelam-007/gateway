@@ -6,14 +6,12 @@ package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
-import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.uddi.*;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
@@ -25,7 +23,16 @@ implements UDDIProxiedServiceInfoManager{
 
     protected static final Logger logger = Logger.getLogger(UDDIProxiedServiceInfoManagerImpl.class.getName());
 
-    public UDDIProxiedServiceInfoManagerImpl(final UDDIHelper uddiHelper) {
+    public UDDIProxiedServiceInfoManagerImpl() {
+    }
+
+    @Override
+    public void setUddiCoordinator(UDDICoordinator uddiCoordinator) {
+        this.uddiCoordinator = uddiCoordinator;
+    }
+
+    @Override
+    public void setUddiHelper(UDDIHelper uddiHelper) {
         this.uddiHelper = uddiHelper;
     }
 
@@ -47,43 +54,17 @@ implements UDDIProxiedServiceInfoManager{
     }
 
     @Override
-    public long saveUDDIProxiedServiceInfo(final UDDIProxiedServiceInfo uddiProxiedServiceInfo,
-                                           final UDDIClient uddiClient,
-                                           final Wsdl wsdl)
-            throws SaveException, VersionException, UDDIException, FindException, WsdlToUDDIModelConverter.MissingWsdlReferenceException {
-        WsdlToUDDIModelConverter modelConverter = getConvertedWsdlToUDDIModel(wsdl,
-                uddiProxiedServiceInfo.getPublishedServiceOid(), uddiProxiedServiceInfo.getUddiBusinessKey());
+    public void saveUDDIProxiedServiceInfo(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
+            throws SaveException{
 
-        final List<BusinessService> wsdlBusinessServices = modelConverter.getBusinessServices();
-        final Map<String, TModel> wsdlDependentTModels = modelConverter.getKeysToPublishedTModels();
-        final Map<BusinessService, String> serviceToWsdlServiceName = modelConverter.getServiceKeyToWsdlServiceNameMap();
+        //first thing to do - persit the entity
+        //todo set the status to publishing
+        final long oid = save(uddiProxiedServiceInfo);
 
-        BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher();
-        businessServicePublisher.publishServicesToUDDIRegistry(uddiClient, wsdlBusinessServices, wsdlDependentTModels);
-
-        //Create all required UDDIProxiedService
-        for(BusinessService bs: wsdlBusinessServices){
-            final UDDIProxiedService proxiedService = new UDDIProxiedService(bs.getServiceKey(),
-                    bs.getName().get(0).getValue(), serviceToWsdlServiceName.get(bs));
-            //both parent and child records must be set before save
-            uddiProxiedServiceInfo.getProxiedServices().add(proxiedService);
-            proxiedService.setProxiedServiceInfo(uddiProxiedServiceInfo);
-        }
-
-        try {
-            return save(uddiProxiedServiceInfo);
-        } catch (SaveException e) {
-            logger.log(Level.WARNING, "Could not save UDDIProxiedServiceInfo: " + e.getMessage());
-            try {
-                logger.log(Level.WARNING, "Attempting to rollback UDDI updates");
-                //Attempt to roll back UDDI updates
-                uddiClient.deleteBusinessServices(wsdlBusinessServices);
-                logger.log(Level.WARNING, "UDDI updates rolled back successfully");
-            } catch (UDDIException e1) {
-                logger.log(Level.WARNING, "Could not rollback UDDI updates: " + e1.getMessage());
-            }
-            throw e;
-        }
+        //the above event always gets created even if the above save fails, as save won't be comitted until the trxn exits
+        UDDIEvent uddiEvent = new PublishUDDIEvent(PublishUDDIEvent.Type.CREATE_PROXY, oid);
+        uddiCoordinator.notifyEvent(uddiEvent, 10000);
+        logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
     }
 
     @Override
@@ -140,7 +121,7 @@ implements UDDIProxiedServiceInfoManager{
         for(BusinessService bs: newlyCreatedServices){
             final UDDIProxiedService proxiedService =
                     new UDDIProxiedService(bs.getServiceKey(), bs.getName().get(0).getValue(), serviceToWsdlServiceName.get(bs));
-            proxiedService.setProxiedServiceInfo(uddiProxiedServiceInfo);
+            proxiedService.setUddiProxiedServiceInfo(uddiProxiedServiceInfo);
             uddiProxiedServiceInfo.getProxiedServices().add(proxiedService);
         }
 
@@ -173,5 +154,6 @@ implements UDDIProxiedServiceInfoManager{
 
     //PRIVATE
 
-    final private UDDIHelper uddiHelper;
+    private UDDIHelper uddiHelper;
+    private UDDICoordinator uddiCoordinator;
 }

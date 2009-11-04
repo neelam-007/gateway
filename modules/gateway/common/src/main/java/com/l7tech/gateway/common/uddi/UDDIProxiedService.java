@@ -78,12 +78,12 @@ public class UDDIProxiedService extends PersistentEntityImp {
 
     @ManyToOne(optional=false)
     @JoinColumn(name="uddi_proxied_service_info_oid", nullable=false)
-    public UDDIProxiedServiceInfo getProxiedServiceInfo() {
-        return proxiedServiceInfo;
+    public UDDIProxiedServiceInfo getUddiProxiedServiceInfo() {
+        return uddiProxiedServiceInfo;
     }
 
-    public void setProxiedServiceInfo(UDDIProxiedServiceInfo proxiedServiceInfo) {
-        this.proxiedServiceInfo = proxiedServiceInfo;
+    public void setUddiProxiedServiceInfo(UDDIProxiedServiceInfo uddiProxiedServiceInfo) {
+        this.uddiProxiedServiceInfo = uddiProxiedServiceInfo;
     }
 
     /**
@@ -105,5 +105,5 @@ public class UDDIProxiedService extends PersistentEntityImp {
      * Parent which contains general information about the WSDL and BusinessEntity this individual service
      * is related to
      */
-    private UDDIProxiedServiceInfo proxiedServiceInfo;
+    private UDDIProxiedServiceInfo uddiProxiedServiceInfo;
 }

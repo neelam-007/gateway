@@ -29,7 +29,7 @@ public class UDDIProxiedServiceManagerImpl extends HibernateEntityManager<UDDIPr
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints(final UDDIProxiedService uddiProxiedService) {
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
-        serviceOidMap.put("proxiedServiceInfo", uddiProxiedService.getProxiedServiceInfo());
+        serviceOidMap.put("proxiedServiceInfo", uddiProxiedService.getUddiProxiedServiceInfo());
         serviceOidMap.put("wsdlServiceName", uddiProxiedService.getWsdlServiceName());
 
         return Arrays.asList(serviceOidMap);

@@ -113,6 +113,7 @@ CREATE TABLE uddi_proxied_service_info (
   created_from_existing tinyint(1) NOT NULL DEFAULT 0,
   metrics_enabled tinyint(1) NOT NULL DEFAULT 0,
   wspolicy_tmodel_key varchar(255),
+  publish_type tinyint(1) NOT NULL,        
   PRIMARY KEY (objectid),
   UNIQUE KEY  (published_service_oid),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
@@ -133,6 +134,21 @@ CREATE TABLE uddi_proxied_service (
   PRIMARY KEY (objectid),
   UNIQUE KEY (uddi_proxied_service_info_oid, wsdl_service_name),
   UNIQUE (uddi_service_key),
+  FOREIGN KEY (uddi_proxied_service_info_oid) REFERENCES uddi_proxied_service_info (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Child of uddi_proxied_service_info, runtime information regarding its publish status
+--
+DROP TABLE IF EXISTS uddi_publish_status;
+CREATE TABLE uddi_publish_status (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  uddi_proxied_service_info_oid bigint(20) NOT NULL,
+  publish_status tinyint(1) NOT NULL,
+  last_status_change BIGINT(20) NOT NULL,
+  PRIMARY KEY (objectid),
+  UNIQUE (uddi_proxied_service_info_oid),
   FOREIGN KEY (uddi_proxied_service_info_oid) REFERENCES uddi_proxied_service_info (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 

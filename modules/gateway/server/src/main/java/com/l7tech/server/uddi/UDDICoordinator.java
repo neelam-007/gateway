@@ -46,6 +46,9 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
         this.timer = timer;
         this.taskFactories = taskFactories;
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
+        //todo can spring be configured to set this up and avoid a circular reference?
+        this.uddiProxiedServiceInfoManager.setUddiCoordinator(this);
+        this.uddiProxiedServiceInfoManager.setUddiHelper(uddiHelper);
         this.taskContext = new UDDICoordinatorTaskContext( this );
     }
 
@@ -60,6 +63,17 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
      */
     public void notifyEvent( final UDDIEvent event ) {
         timer.schedule( new UDDIEventTimerTask( this, event ), 0 );
+    }
+
+    /**
+     * Notification of a UDDIEvent for asynchronous processing.
+     *
+     * //todo remove and replace with a mechanism for knowing when it's ok to start a task with a max mumber of start attempts
+     *
+     * @param event The event
+     */
+    public void notifyEvent( final UDDIEvent event , long delay) {
+        timer.schedule( new UDDIEventTimerTask( this, event ), delay );
     }
 
     /**
