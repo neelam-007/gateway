@@ -2,6 +2,7 @@ package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
+import com.l7tech.util.Triple;
 
 import java.io.Closeable;
 import java.util.Collection;
@@ -171,6 +172,21 @@ public interface UDDIClient extends Closeable {
     boolean publishTModel(final TModel tModelToPublish) throws UDDIException;
 
     /**
+     * Publish a TModel to UDDI.
+     *
+     * @param tModelKey The tModel key (optional, null for initial publish)
+     * @param name The name for the TModel
+     * @param description The description for the TModel (optional)
+     * @param keyedReferences The keyed references for the TModel
+     * @return The tModel key
+     * @throws UDDIException If an error occurs
+     */
+    public String publishTModel( String tModelKey,
+                                 String name,
+                                 String description,
+                                 Collection<UDDIKeyedReference> keyedReferences ) throws UDDIException;
+
+    /**
      * Retrieve the tModel with the supplied key
      * @param tModelKey String tModelKey of the tModel to get
      * @return TModel of the supplied key. Null if not found
@@ -306,7 +322,7 @@ public interface UDDIClient extends Closeable {
      * <p>You can specify a key and url for local/remote policy but usually you
      * would only use one of these.</p>
      *
-     * @param serviceKey The service to udpate
+     * @param serviceKey The service to update
      * @param serviceUrl the service endpoint URL (null for no change)
      * @param policyKey The key for the local policy to reference
      * @param policyUrl The URL for the remote policy to reference
@@ -316,6 +332,29 @@ public interface UDDIClient extends Closeable {
      * @throws UDDIExistingReferenceException if force is not set and there is an existing (local or remote) reference
      */
     void referencePolicy(String serviceKey, String serviceUrl, String policyKey, String policyUrl, String description, Boolean force) throws UDDIException;
+
+    /**
+     * Add a keyed reference to a business service.
+     *
+     * @param serviceKey The service to update (required)
+     * @param keyedReferenceKey The TModel key for the reference (required)
+     * @param keyedReferenceName The name for the reference (required)
+     * @param keyedReferenceValue The value for the reference (required)
+     * @throws UDDIException if an error occurs
+     */
+    void addKeyedReference(String serviceKey, String keyedReferenceKey, String keyedReferenceName, String keyedReferenceValue) throws UDDIException;
+
+    /**
+     * Remove a keyed reference from a business service.
+     *
+     * @param serviceKey The service to update (required)
+     * @param keyedReferenceKey The TModel key for the reference (required)
+     * @param keyedReferenceName The name for the reference (optional, null to match any)
+     * @param keyedReferenceValue The value for the reference (optional, null to match any)
+     * @returns true if a matching keyed reference was found and removed
+     * @throws UDDIException if an error occurs
+     */
+    boolean removeKeyedReference(String serviceKey, String keyedReferenceKey, String keyedReferenceName, String keyedReferenceValue) throws UDDIException;
 
     /**
      * Get the operational information for a UDDI entity.
@@ -365,4 +404,35 @@ public interface UDDIClient extends Closeable {
      * @throws UDDIException If an error occurs
      */
     UDDISubscriptionResults pollSubscription( long startTime, long endTime, String subscriptionKey ) throws UDDIException;
+
+    /**
+     * Represents a UDDI KeyedReference.
+     */
+    static final class UDDIKeyedReference extends Triple<String,String,String> {
+
+        /**
+         * Create a new keyed reference with the given values.
+         *
+         * @param key The key (required and must not be empty)
+         * @param name The name (optional)
+         * @param value The value (required)
+         */
+        public UDDIKeyedReference( final String key,
+                                   final String name,
+                                   final String value ) {
+            super( key, name, value );
+        }
+
+        public String getKey() {
+            return this.left;
+        }
+
+        public String getName() {
+            return this.middle;
+        }
+
+        public String getValue() {
+            return this.right;
+        }
+    }
 }

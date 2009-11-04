@@ -58,6 +58,11 @@ public class TestUddiClient implements UDDIClient{
     }
 
     @Override
+    public String publishTModel( final String tModelKey, final String name, final String description, final Collection<UDDIKeyedReference> keyedReferences ) {
+        return null;
+    }
+
+    @Override
     public TModel getTModel(String tModelKey) throws UDDIException {
         TModel testModel = new TModel();
         testModel.setTModelKey(tModelKey);
@@ -135,7 +140,16 @@ public class TestUddiClient implements UDDIClient{
     public void referencePolicy(String serviceKey, String serviceUrl, String policyKey, String policyUrl, String description, Boolean force) throws UDDIException {
 
     }
-    
+
+    @Override
+    public void addKeyedReference( final String serviceKey, final String keyedReferenceKey, final String keyedReferenceName, final String keyedReferenceValue ) {
+    }
+
+    @Override
+    public boolean removeKeyedReference( final String serviceKey, final String keyedReferenceKey, final String keyedReferenceName, final String keyedReferenceValue ) {
+        return false;
+    }
+
     @Override
     public void close() throws IOException {
 

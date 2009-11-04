@@ -12,6 +12,8 @@ import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.WsdlToUDDIModelConverter;
 import com.l7tech.wsdl.Wsdl;
 
+import java.util.Collection;
+
 public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxiedServiceInfo, EntityHeader> {
 
     /**
@@ -23,7 +25,7 @@ public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxied
      * @param uddiProxiedServiceInfo      the UDDIProxiedService to save
      * @throws com.l7tech.objectmodel.SaveException
      */
-    void saveUDDIProxiedServiceInfo(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
+    void saveUDDIProxiedServiceInfo( UDDIProxiedServiceInfo uddiProxiedServiceInfo )
             throws SaveException;
 
     /**
@@ -43,9 +45,9 @@ public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxied
      * @throws com.l7tech.objectmodel.FindException
      * @throws com.l7tech.uddi.UDDIException
      */
-    void updateUDDIProxiedService(final UDDIProxiedServiceInfo uddiProxiedServiceInfo,
-                                  final UDDIClient uddiClient,
-                                  final Wsdl wsdl)
+    void updateUDDIProxiedService( UDDIProxiedServiceInfo uddiProxiedServiceInfo,
+                                   UDDIClient uddiClient,
+                                   Wsdl wsdl)
             throws UpdateException, VersionException, UDDIException, FindException, UDDIRegistryAdmin.PublishProxiedServiceException, WsdlToUDDIModelConverter.MissingWsdlReferenceException;
 
     /**
@@ -57,7 +59,14 @@ public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxied
      */
     UDDIProxiedServiceInfo findByPublishedServiceOid( long publishedServiceOid ) throws FindException;
 
-    void setUddiCoordinator(UDDICoordinator uddiCoordinator);
-
-    void setUddiHelper(UDDIHelper uddiHelper);
+    /**
+     * Find UDDIProxiedServiceInfos with metrics enabled for the given registry.
+     *
+     * @param registryOid The registry OID.
+     * @param metricsEnabled The metrics enabled state to match
+     * @return The collection of UDDIProxiedServiceInfos (may be emptry but never null)
+     * @throws FindException If an error occurs
+     */
+    Collection<UDDIProxiedServiceInfo> findByUDDIRegistryAndMetricsState( long registryOid,
+                                                                          boolean metricsEnabled ) throws FindException;
 }

@@ -15,6 +15,7 @@ import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -149,10 +150,10 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
                         // written to database yet when queried.
                         final long currentTime = System.currentTimeMillis();
                         final long currentPeriodStart = MetricsBin.periodStartFor(resolution == null ? -1 : resolution,
-                                                                                  services.getFineInterval(),
+                                                                                  getFineInterval(),
                                                                                   currentTime - 1000);
                         final long lastestCompletedPeriodStart = MetricsBin.periodStartFor(resolution == null ? -1 : resolution,
-                                                                                           services.getFineInterval(),
+                                                                                           getFineInterval(),
                                                                                            currentPeriodStart - 1);
                         crit.add(Restrictions.le("periodStart", lastestCompletedPeriodStart));
                     }
@@ -213,7 +214,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         // period boundary time. This is to ensure that we will find a full
         // number of bins filling the given duration (e.g., a 24-hour duration
         // will find 24 hourly bins; when they are all available).
-        final long summaryPeriodEnd = MetricsBin.periodStartFor(resolution, services.getFineInterval(), System.currentTimeMillis());
+        final long summaryPeriodEnd = MetricsBin.periodStartFor(resolution, getFineInterval(), System.currentTimeMillis());
         final long summaryPeriodStart = summaryPeriodEnd - duration;
 
         Collection<MetricsBin> bins;
@@ -275,6 +276,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     @Transactional(propagation = Propagation.REQUIRED)
     public Integer delete(final long oldestSurvivor, final int resolution) {
         return (Integer) getHibernateTemplate().execute(new HibernateCallback() {
+            @Override
             public Object doInHibernate(Session session) throws HibernateException {
                 Query query = session.createQuery(HQL_DELETE);
                 query.setLong(0, oldestSurvivor);
@@ -295,6 +297,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     public void doFlush(final ServiceMetrics.MetricsCollectorSet metricsSet, final MetricsBin bin) {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 public Object doInHibernate(Session session) throws HibernateException {
                     Criteria criteria = session.createCriteria(MetricsBin.class);
                     criteria.add(Restrictions.eq("clusterNodeId", bin.getClusterNodeId()));
@@ -439,9 +442,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     private static final Logger _logger = Logger.getLogger(ServiceMetricsManagerImpl.class.getName());
 
     private final String _clusterNodeId;
-
-    @Resource
-    private ServiceMetricsServices services;
+    private int fineBinInterval;
 
     @Resource
     private PlatformTransactionManager _transactionManager;
@@ -473,9 +474,10 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     private void createSummaryBin(final long serviceOid, final ServiceState serviceState, final long startTime, final int binResolution, final int summaryResolution ) throws SaveException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 @SuppressWarnings({"deprecation"})
                 public Object doInHibernate(final Session session) throws HibernateException {
-                    final MetricsBin bin = new MetricsBin(startTime, services.getFineInterval(), binResolution, _clusterNodeId, serviceOid);
+                    final MetricsBin bin = new MetricsBin(startTime, getFineInterval(), binResolution, _clusterNodeId, serviceOid);
                     final Long id = (Long) ((SessionImplementor) session).getEntityPersister(null, bin).getIdentifierGenerator().generate(((SessionImplementor) session), bin);
 
                     session.doWork(new Work() {
@@ -681,5 +683,16 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         return userName;
     }
 
+    private int getFineInterval() {
+        int fineBinInterval = this.fineBinInterval;
+        if ( fineBinInterval == 0 ) {
+            fineBinInterval = ServerConfig.getInstance().getIntProperty("metricsFineInterval", ServiceMetricsServices.DEF_FINE_BIN_INTERVAL);
+            if (fineBinInterval > ServiceMetricsServices.MAX_FINE_BIN_INTERVAL || fineBinInterval < ServiceMetricsServices.MIN_FINE_BIN_INTERVAL) {
+                fineBinInterval = ServiceMetricsServices.DEF_FINE_BIN_INTERVAL;
+            }
+            this.fineBinInterval = fineBinInterval;
+        }
+        return fineBinInterval;
+    }
 
 }

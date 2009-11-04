@@ -74,10 +74,7 @@ public class GenericUDDIClient implements UDDIClient {
     public boolean publishBusinessService(final BusinessService businessService) throws UDDIException {
         final String preSaveKey = businessService.getServiceKey();
 
-        SaveService saveService = new SaveService();
-        saveService.setAuthInfo(getAuthToken());
-
-        saveService.getBusinessService().add(businessService);
+        SaveService saveService = buildSaveService( getAuthToken(), businessService );
         try {
             ServiceDetail serviceDetail = getPublishPort().saveService(saveService);
             businessService.setServiceKey(serviceDetail.getBusinessService().get(0).getServiceKey());
@@ -151,7 +148,7 @@ public class GenericUDDIClient implements UDDIClient {
 
         UDDIPublicationPortType uddiPublicationPortType = getPublishPort();
         SaveTModel saveTModel = new SaveTModel();
-        saveTModel.setAuthInfo(authToken);
+        saveTModel.setAuthInfo(getAuthToken());
         saveTModel.getTModel().add(tModelToPublish);
         try {
             TModelDetail tModelDetail = uddiPublicationPortType.saveTModel(saveTModel);
@@ -166,6 +163,45 @@ public class GenericUDDIClient implements UDDIClient {
         } catch(RuntimeException e){
             throw new UDDIException(e.getMessage());
         }
+    }
+
+    @Override
+    public String publishTModel( final String tModelKey,
+                                 final String name,
+                                 final String description,
+                                 final Collection<UDDIKeyedReference> keyedReferences ) throws UDDIException {
+        String publishedTModelKey;
+
+        final TModel tModel = new TModel();
+        tModel.setName( buildName(name) );
+        if ( description != null ) {
+            tModel.getDescription().add( buildDescription(description) );
+        }
+        final CategoryBag cbag = new CategoryBag();
+        tModel.setCategoryBag( cbag );
+
+        for ( UDDIKeyedReference uddiKeyedReference : keyedReferences ) {
+            cbag.getKeyedReference().add( buildKeyedReference(
+                uddiKeyedReference.getKey(),
+                uddiKeyedReference.getName(),
+                uddiKeyedReference.getValue() ) );
+        }
+
+        final UDDIPublicationPortType uddiPublicationPortType = getPublishPort();
+        final SaveTModel saveTModel = new SaveTModel();
+        saveTModel.setAuthInfo(getAuthToken());
+        saveTModel.getTModel().add(tModel);
+        try {
+            TModelDetail tModelDetail = uddiPublicationPortType.saveTModel(saveTModel);
+            TModel saved = get(tModelDetail.getTModel(), "TModel", true);
+            publishedTModelKey = saved.getTModelKey();
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error publishing TModel: ", drfm);
+        } catch(RuntimeException e){
+            throw new UDDIException("Error publishing TModel.", e);
+        }
+
+        return publishedTModelKey;
     }
 
     @Override
@@ -544,6 +580,7 @@ public class GenericUDDIClient implements UDDIClient {
         moreAvailable = false;
 
         try {
+            String authToken = getAuthToken();
 
             FindService findService = getConfiguredFindService(servicePattern, caseSensitive, offset, maxRows);
             UDDIInquiryPortType inquiryPort = getInquirePort();
@@ -740,9 +777,9 @@ public class GenericUDDIClient implements UDDIClient {
         }
     }
 
-    private FindBinding getConfiguredFindBinding(ServiceInfo serviceInfo) {
+    private FindBinding getConfiguredFindBinding(ServiceInfo serviceInfo) throws UDDIException {
         FindBinding findBinding = new FindBinding();
-        findBinding.setAuthInfo(authToken);
+        findBinding.setAuthInfo(getAuthToken());
         findBinding.setServiceKey(serviceInfo.getServiceKey());
 
         // We want them all, but setting limit at 50 //todo accecpt this value as a param from cluster variable
@@ -1221,26 +1258,7 @@ public class GenericUDDIClient implements UDDIClient {
         boolean isEndpoint = serviceUrl != null &&  serviceUrl.trim().length()>0;
         
         String authToken = getAuthToken();
-        ServiceDetail serviceDetail;
-        try {
-            UDDIInquiryPortType inquiryPort = getInquirePort();
-
-            GetServiceDetail getServiceDetail = new GetServiceDetail();
-            getServiceDetail.setAuthInfo(authToken);
-            getServiceDetail.getServiceKey().add(serviceKey);
-            serviceDetail = inquiryPort.getServiceDetail(getServiceDetail);
-
-            if (serviceDetail.getBusinessService().size() != 1) {
-                String msg = "UDDI registry returned either empty serviceDetail or " +
-                             "more than one business services";
-                throw new UDDIException(msg);
-            }
-
-        } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting service details: ", drfm);
-        } catch (RuntimeException e) {
-            throw new UDDIException("Error getting service details.", e);
-        }
+        ServiceDetail serviceDetail = getServiceDetail( serviceKey, authToken );
 
         //get the bag for the service
         BusinessService toUpdate = get(serviceDetail.getBusinessService(), "service", true);
@@ -1296,15 +1314,93 @@ public class GenericUDDIClient implements UDDIClient {
 
             // update service in uddi
             UDDIPublicationPortType publicationPort = getPublishPort();
-            SaveService saveService = new SaveService();
-            saveService.setAuthInfo(authToken);
-            saveService.getBusinessService().add(toUpdate);
-            publicationPort.saveService(saveService);
+            publicationPort.saveService(buildSaveService( authToken, toUpdate ));
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error updating service details: ", drfm);
         } catch (RuntimeException e) {
             throw new UDDIException("Error updating service details.", e);
         }
+    }
+
+    @Override
+    public void addKeyedReference( final String serviceKey,
+                                   final String keyedReferenceKey,
+                                   final String keyedReferenceName,
+                                   final String keyedReferenceValue ) throws UDDIException {
+        validateKey(serviceKey);
+        validateKey(keyedReferenceKey);
+
+        // first, get service from the service key
+        String authToken = getAuthToken();
+        ServiceDetail serviceDetail = getServiceDetail( serviceKey, authToken );
+
+        //get the bag for the service
+        BusinessService toUpdate = get(serviceDetail.getBusinessService(), "service", true);
+        CategoryBag cbag = toUpdate.getCategoryBag();
+        if (cbag == null) {
+            cbag = new CategoryBag();
+            toUpdate.setCategoryBag(cbag);
+        }
+
+        cbag.getKeyedReference().add( buildKeyedReference(
+                keyedReferenceKey,
+                keyedReferenceName,
+                keyedReferenceValue ) );
+
+        // update service in uddi
+        UDDIPublicationPortType publicationPort = getPublishPort();
+        try {
+            publicationPort.saveService(buildSaveService( authToken, toUpdate ));
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error updating service details: ", drfm);
+        } catch (RuntimeException e) {
+            throw new UDDIException("Error updating service details.", e);
+        }
+    }
+
+    @Override
+    public boolean removeKeyedReference( final String serviceKey,
+                                         final String keyedReferenceKey,
+                                         final String keyedReferenceName,
+                                         final String keyedReferenceValue ) throws UDDIException {
+        boolean referenceRemoved = false;
+
+        validateKey(serviceKey);
+        validateKey(keyedReferenceKey);
+
+        // first, get service from the service key
+        String authToken = getAuthToken();
+        ServiceDetail serviceDetail = getServiceDetail( serviceKey, authToken );
+
+        //get the bag for the service
+        BusinessService toUpdate = get(serviceDetail.getBusinessService(), "service", true);
+        CategoryBag cbag = toUpdate.getCategoryBag();
+        if (cbag != null) {
+            for ( Iterator<KeyedReference> keyedReferenceIter = cbag.getKeyedReference().iterator(); keyedReferenceIter.hasNext(); ) {
+                KeyedReference keyedReference = keyedReferenceIter.next();
+
+                if ( keyedReferenceKey.equals(keyedReference.getTModelKey()) &&
+                     (keyedReferenceName == null || keyedReferenceName.equals(keyedReference.getKeyName())) &&
+                     (keyedReferenceValue == null || keyedReferenceValue.equals(keyedReference.getKeyValue())) ) {
+                    keyedReferenceIter.remove();
+                    referenceRemoved = true;
+                }
+            }
+
+            if ( referenceRemoved ) {
+                // update service in uddi
+                UDDIPublicationPortType publicationPort = getPublishPort();
+                try {
+                    publicationPort.saveService(buildSaveService( authToken, toUpdate ));
+                } catch (DispositionReportFaultMessage drfm) {
+                    throw buildFaultException("Error updating service details: ", drfm);
+                } catch (RuntimeException e) {
+                    throw new UDDIException("Error updating service details.", e);
+                }
+            }
+        }
+
+        return referenceRemoved;
     }
 
     @Override
@@ -1671,7 +1767,7 @@ public class GenericUDDIClient implements UDDIClient {
     private static final String TMODEL_KEY_WSDL_TYPES = "uddi:uddi.org:wsdl:types";
     private static final String WSDL_TYPES_SERVICE = "service";
     //private static final String WSDL_TYPES_PORT = "port"; // don't use port since some UDDIs don't have this v3 feature (CentraSite)
-    private static final String WSDL_TYPES_BINDING = "binding";
+    //private static final String WSDL_TYPES_BINDING = "binding";
     private static final String OVERVIEW_URL_TYPE_WSDL = "wsdlInterface";
     private static final String FINDQUALIFIER_APPROXIMATE = "approximateMatch";
     private static final String FINDQUALIFIER_CASEINSENSITIVE = "caseInsensitiveMatch";
@@ -1823,20 +1919,6 @@ public class GenericUDDIClient implements UDDIClient {
         return buffer.toString();
     }
 
-    private boolean isBinding(final TModel model) {
-        boolean isBinding = false;
-
-        for (KeyedReference reference : model.getCategoryBag().getKeyedReference()) {
-            if (TMODEL_KEY_WSDL_TYPES.equals(reference.getTModelKey()) &&
-                WSDL_TYPES_BINDING.equals(reference.getKeyValue())) {
-                isBinding = true;
-                break;
-            }
-        }
-
-        return isBinding;
-    }    
-
     private void mergePolicyUrlToInfo(final String policyKey,
                                       final String policyUrl,
                                       final List<UDDINamedEntity> uddiNamedEntity) {
@@ -1882,6 +1964,37 @@ public class GenericUDDIClient implements UDDIClient {
                 throw new UDDIDataException("Value for " + description + " exceeds maximum length of " + maxLength + " characters.");
             }
         }
+    }
+
+    private ServiceDetail getServiceDetail( final String serviceKey, final String authToken ) throws UDDIException {
+        ServiceDetail serviceDetail;
+        try {
+            UDDIInquiryPortType inquiryPort = getInquirePort();
+
+            GetServiceDetail getServiceDetail = new GetServiceDetail();
+            getServiceDetail.setAuthInfo(authToken);
+            getServiceDetail.getServiceKey().add(serviceKey);
+            serviceDetail = inquiryPort.getServiceDetail(getServiceDetail);
+
+            if (serviceDetail.getBusinessService().size() != 1) {
+                String msg = "UDDI registry returned either empty serviceDetail or " +
+                             "more than one business services";
+                throw new UDDIException(msg);
+            }
+
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error getting service details: ", drfm);
+        } catch (RuntimeException e) {
+            throw new UDDIException("Error getting service details.", e);
+        }
+        return serviceDetail;
+    }
+
+    private SaveService buildSaveService( final String authToken, final BusinessService toUpdate ) {
+        SaveService saveService = new SaveService();
+        saveService.setAuthInfo(authToken);
+        saveService.getBusinessService().add(toUpdate);
+        return saveService;
     }
 
     private FindQualifiers buildFindQualifiers(String searchStr, boolean caseSensitive) {

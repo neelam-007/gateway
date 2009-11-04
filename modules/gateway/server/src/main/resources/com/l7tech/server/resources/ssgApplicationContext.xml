@@ -998,17 +998,29 @@
         </constructor-arg>
         <constructor-arg index="5">
             <list>
+                <bean class="com.l7tech.server.uddi.PublishingUDDITaskFactory">
+                    <constructor-arg index="0" ref="uddiRegistryManager"/>
+                    <constructor-arg index="1" ref="uddiProxiedServiceInfoManager" />
+                    <constructor-arg index="2" ref="serviceCache" />
+                    <constructor-arg index="3" ref="uddiHelper" />
+                </bean>
                 <bean class="com.l7tech.server.uddi.SubscriptionUDDITaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>
                     <constructor-arg index="1" ref="uddiRegistrySubscriptionManager"/>
                     <constructor-arg index="2" ref="uddiServiceControlManager"/>
-                    <constructor-arg index="3" ref="uddiProxiedServiceInfoManager" />
-                    <constructor-arg index="4" ref="serviceCache" />
-                    <constructor-arg index="5" ref="uddiHelper" />
+                </bean>
+                <bean class="com.l7tech.server.uddi.MetricsUDDITaskFactory">
+                    <constructor-arg index="0" ref="uddiRegistryManager"/>
+                    <constructor-arg index="1" ref="uddiServiceControlManager"/>
+                    <constructor-arg index="2" ref="uddiProxiedServiceInfoManager" />
+                    <constructor-arg index="3" ref="aggregator" />
                 </bean>
             </list>
         </constructor-arg>
     </bean>
+
+    <!-- TODO [steve] is it ok to move this from the JESM modular assertion? -->
+    <bean id="aggregator" class="com.l7tech.server.wsdm.Aggregator"/>
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" parent="hibernateBean">
     </bean>
@@ -1112,6 +1124,7 @@
                 <ref bean="keystoreFileManager"/>
                 <ref bean="messageContextMappingKeyManager"/>
                 <ref bean="uddiRegistryManager"/>
+                <ref bean="uddiProxiedServiceInfoManager"/>
             </list>
         </property>
         <property name="timer">
@@ -1598,6 +1611,7 @@
     </bean>
 
     <bean id="uddiProxiedServiceInfoManager" class="com.l7tech.server.uddi.UDDIProxiedServiceInfoManagerImpl" parent="hibernateBean" >
+        <constructor-arg index="0" ref="uddiHelper"/>
     </bean>
 
     <bean id="uddiServiceControlManager" class="com.l7tech.server.uddi.UDDIServiceControlManagerImpl" parent="hibernateBean" />

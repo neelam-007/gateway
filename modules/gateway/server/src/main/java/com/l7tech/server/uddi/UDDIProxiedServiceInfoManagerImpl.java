@@ -21,31 +21,10 @@ import java.util.logging.Logger;
 public class UDDIProxiedServiceInfoManagerImpl extends HibernateEntityManager<UDDIProxiedServiceInfo, EntityHeader>
 implements UDDIProxiedServiceInfoManager{
 
-    protected static final Logger logger = Logger.getLogger(UDDIProxiedServiceInfoManagerImpl.class.getName());
+    //- PUBLIC
 
-    public UDDIProxiedServiceInfoManagerImpl() {
-    }
-
-    @Override
-    public void setUddiCoordinator(UDDICoordinator uddiCoordinator) {
-        this.uddiCoordinator = uddiCoordinator;
-    }
-
-    @Override
-    public void setUddiHelper(UDDIHelper uddiHelper) {
+    public UDDIProxiedServiceInfoManagerImpl( final UDDIHelper uddiHelper ) {
         this.uddiHelper = uddiHelper;
-    }
-
-    @Override
-    protected UniqueType getUniqueType() {
-        return UniqueType.OTHER;
-    }
-
-    @Override
-    protected Collection<Map<String, Object>> getUniqueConstraints(final UDDIProxiedServiceInfo proxiedServiceInfo) {
-        Map<String,Object> serviceOidMap = new HashMap<String, Object>();
-        serviceOidMap.put("publishedServiceOid", proxiedServiceInfo.getPublishedServiceOid());
-        return Arrays.asList(serviceOidMap);
     }
 
     @Override
@@ -59,17 +38,21 @@ implements UDDIProxiedServiceInfoManager{
 
         //first thing to do - persit the entity
         //todo set the status to publishing
-        final long oid = save(uddiProxiedServiceInfo);
-
-        //the above event always gets created even if the above save fails, as save won't be comitted until the trxn exits
-        UDDIEvent uddiEvent = new PublishUDDIEvent(PublishUDDIEvent.Type.CREATE_PROXY, oid);
-        uddiCoordinator.notifyEvent(uddiEvent, 10000);
-        logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
+        save(uddiProxiedServiceInfo);
     }
 
     @Override
     public UDDIProxiedServiceInfo findByPublishedServiceOid( final long publishedServiceOid ) throws FindException {
         return findByUniqueKey( "publishedServiceOid", publishedServiceOid );
+    }
+
+    @Override
+    public Collection<UDDIProxiedServiceInfo> findByUDDIRegistryAndMetricsState( final long registryOid,
+                                                                             final boolean metricsEnabled ) throws FindException {
+        final Map<String,Object> matchMap = new HashMap<String,Object>();
+        matchMap.put( "uddiRegistryOid", registryOid );
+        matchMap.put( "metricsEnabled", metricsEnabled );
+        return findMatching( Collections.singletonList( matchMap ) );
     }
 
     @Override
@@ -138,6 +121,26 @@ implements UDDIProxiedServiceInfoManager{
         }
     }
 
+    //- PROTECTED
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
+    }
+
+    @Override
+    protected Collection<Map<String, Object>> getUniqueConstraints(final UDDIProxiedServiceInfo proxiedServiceInfo) {
+        Map<String,Object> serviceOidMap = new HashMap<String, Object>();
+        serviceOidMap.put("publishedServiceOid", proxiedServiceInfo.getPublishedServiceOid());
+        return Arrays.asList(serviceOidMap);
+    }
+
+    //- PRIVATE
+
+    private  static final Logger logger = Logger.getLogger(UDDIProxiedServiceInfoManagerImpl.class.getName());
+
+    private final UDDIHelper uddiHelper;
+
     private WsdlToUDDIModelConverter getConvertedWsdlToUDDIModel( final Wsdl wsdl,
                                                                   final long publishedServiceOid,
                                                                   final String businessKey)
@@ -151,9 +154,4 @@ implements UDDIProxiedServiceInfoManager{
         modelConverter.convertWsdlToUDDIModel();
         return modelConverter;
     }
-
-    //PRIVATE
-
-    private UDDIHelper uddiHelper;
-    private UDDICoordinator uddiCoordinator;
 }

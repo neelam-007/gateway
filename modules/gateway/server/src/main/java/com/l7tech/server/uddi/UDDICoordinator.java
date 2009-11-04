@@ -46,9 +46,6 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
         this.timer = timer;
         this.taskFactories = taskFactories;
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
-        //todo can spring be configured to set this up and avoid a circular reference?
-        this.uddiProxiedServiceInfoManager.setUddiCoordinator(this);
-        this.uddiProxiedServiceInfoManager.setUddiHelper(uddiHelper);
         this.taskContext = new UDDICoordinatorTaskContext( this );
     }
 
@@ -102,7 +99,21 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
             EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) applicationEvent;
             if ( UDDIRegistry.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 loadUDDIRegistries(true);
+            } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ) {
+                long[] entityIds = entityInvalidationEvent.getEntityIds();
+                char[] entityOps = entityInvalidationEvent.getEntityOperations();
+
+                for ( int i=0; i<entityIds.length; i++ ) {
+                    long id = entityIds[i];
+                    char op = entityOps[i];
+                    if ( EntityInvalidationEvent.CREATE == op ) {
+                        UDDIEvent uddiEvent = new PublishUDDIEvent(PublishUDDIEvent.Type.CREATE_PROXY, id);
+                        notifyEvent(uddiEvent, 0);
+                        logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
+                    }
+                }
             }
+
         } else if ( applicationEvent instanceof ReadyForMessages ) {
             checkSubscriptions( Collections.<Long,UDDIRegistryRuntime>emptyMap(), registryRuntimes.get() );    
         }

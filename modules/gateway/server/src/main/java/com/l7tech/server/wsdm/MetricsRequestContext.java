@@ -17,6 +17,7 @@ import java.net.URL;
 public class MetricsRequestContext {
     private final long avgResponseTime;
     private final long lastResponseTime;
+    private final long minResponseTime;
     private final long maxResponseTime;
     private final long nrFailedRequests;
     private final long nrSuccessRequests;
@@ -42,6 +43,7 @@ public class MetricsRequestContext {
 
         lastResponseTime = (long)bin.getLastAverageFrontendResponseTime();
         lastUpdated = bin.getLastAttemptedRequest();
+        minResponseTime = bin.getMinFrontendResponseTime()==null?0:bin.getMinFrontendResponseTime();
         maxResponseTime = bin.getMaxFrontendResponseTime()==null?0:bin.getMaxFrontendResponseTime();
         nrFailedRequests = bin.getNumPolicyViolation() + bin.getNumRoutingFailure();
         nrRequests = bin.getNumAttemptedRequest();
@@ -84,6 +86,10 @@ public class MetricsRequestContext {
 
     public long getLastResponseTime() {
         return lastResponseTime;
+    }
+
+    public long getMinResponseTime() {
+        return minResponseTime;
     }
 
     public long getMaxResponseTime() {

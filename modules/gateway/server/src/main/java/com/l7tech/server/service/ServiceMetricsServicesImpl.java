@@ -50,13 +50,13 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
         }
         this.fineBinInterval = fineBinInterval;
 
-        if (Boolean.valueOf(ServerConfig.getInstance().getProperty(CLUSTER_PROP_ENABLED))) {
+        if (Boolean.valueOf(serverConfig.getProperty(CLUSTER_PROP_ENABLED))) {
             enable();
         } else {
             logger.info("Service metrics collection is currently disabled.");
         }
 
-        if (Boolean.valueOf(ServerConfig.getInstance().getProperty(ServerConfig.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS))) {
+        if (Boolean.valueOf(serverConfig.getProperty(ServerConfig.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS))) {
             _addMappingsIntoServiceMetrics.set(true);
         } else {
             _addMappingsIntoServiceMetrics.set(false);

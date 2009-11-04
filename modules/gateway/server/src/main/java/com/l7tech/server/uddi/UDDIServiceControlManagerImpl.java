@@ -44,7 +44,16 @@ public class UDDIServiceControlManagerImpl extends HibernateEntityManager<UDDISe
         if ( uddiControlled != null ) {
             matchMap.put( "underUddiControl", uddiControlled );
         }
-        return this.findMatching( Collections.singletonList( matchMap ) );
+        return findMatching( Collections.singletonList( matchMap ) );
+    }
+
+    @Override
+    public Collection<UDDIServiceControl> findByUDDIRegistryAndMetricsState( final long registryOid,
+                                                                             final boolean metricsEnabled ) throws FindException {
+        final Map<String,Object> matchMap = new HashMap<String,Object>();
+        matchMap.put( "uddiRegistryOid", registryOid );
+        matchMap.put( "metricsEnabled", metricsEnabled );
+        return findMatching( Collections.singletonList( matchMap ) );
     }
 
     @Override
