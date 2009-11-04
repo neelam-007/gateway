@@ -41,6 +41,8 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.util.ExceptionUtils;
 
 /**
  * The <code>IdentityProviderPropertiesAction</code> edits the
@@ -200,7 +202,15 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                             fireEventProviderUpdated(header);
 
                         } catch (Exception e) {
-                            ErrorManager.getDefault().notify(Level.WARNING, e, "Error updating the identity provider.");
+                            if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                                String msg = "An Identity Provider with the same name already exists.\nThe Identity Provider has not been saved.";
+                                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                    msg,
+                                    "Error Saving Identity Provider",
+                                    JOptionPane.WARNING_MESSAGE);
+                            } else {
+                                ErrorManager.getDefault().notify(Level.WARNING, e, "Error updating the identity provider.");
+                            }
                         }
                     }
                 });
