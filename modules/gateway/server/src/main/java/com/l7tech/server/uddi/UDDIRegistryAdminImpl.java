@@ -92,8 +92,14 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
     @Override
     public void testUDDIRegistryAuthentication(final UDDIRegistry uddiRegistry) throws UDDIException {
-        final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
+        final boolean loginSupplied = uddiRegistry.getRegistryAccountUserName() != null && !uddiRegistry.getRegistryAccountUserName().trim().isEmpty();
+        final boolean passwordSupplied = uddiRegistry.getRegistryAccountPassword() != null && !uddiRegistry.getRegistryAccountPassword().trim().isEmpty();
 
+        if(!loginSupplied || !passwordSupplied){
+            throw new UDDIException("A username and password is required to test UDDI authentication");
+        }
+
+        final UDDIClient uddiClient = getUDDIClient(uddiRegistry);        
         try {
             uddiClient.authenticate();
         } catch (UDDIException e) {
