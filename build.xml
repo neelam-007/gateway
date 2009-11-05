@@ -2848,7 +2848,8 @@
                     <include name="gateway_control"/>
                     <include name="hardware-stats.pl"/>
                     <include name="ssgconfig_launch"/>
-                    <include name="systeminfo.sh"/>    
+                    <include name="systeminfo.sh"/>
+                    <include name="patch_launcher"/>
                 </fileset>
             </copy>
 

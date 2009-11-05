@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# Should be run as root, to launch a java process with a patch to install as argument
+# layer7 user has sudo rights for this launcher  
+
+java=$1
+
+shift
+
+${java} $@

@@ -15,6 +15,7 @@ import com.l7tech.util.IOUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.processcontroller.ConfigService;
 import com.l7tech.server.processcontroller.ApiWebEndpoint;
+import com.l7tech.server.processcontroller.PCUtils;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.ProcUtils;
 import com.l7tech.common.io.ProcResult;
@@ -72,7 +73,12 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         ProcResult result;
         try {
             // todo: exec with timeout?
-            result = ProcUtils.exec(getJavaBinary(patch), getInstallParams(patch, nodes));
+            List<String> commandLine = new ArrayList<String>();
+            getPatchLauncher(commandLine, patch);
+            getInstallParams(commandLine, patch, nodes);
+            File command = new File(commandLine.get(0));
+            commandLine.remove(0);
+            result = ProcUtils.exec(command, commandLine.toArray(new String[commandLine.size()]));
             recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.INSTALL, nodes));
             String rollback = patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID);
             if (rollback != null)
@@ -121,6 +127,8 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     @Resource
     private ConfigService config;
 
+    private static final String APPLIANCE_PATCH_LAUNCHER = "/opt/SecureSpan/Appliance/libexec/patch_launcher"; 
+
     private void checkTrustedCertificates(PatchPackage patch) throws PatchException {
         for(List<X509Certificate> certPath : patch.getCertificatePaths()) {
             X509Certificate signer = certPath.get(0); // only verify individual certs, not certificate paths to trusted CAs
@@ -137,25 +145,30 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     }
 
     /** Builds the parameter list to be passed to the patch installer */
-    private String[] getInstallParams(PatchPackage patch, Collection<String> nodes) {
-        List<String> params = new ArrayList<String>();
-        params.add("-jar"); params.add(patch.getFile().getAbsolutePath());
-        params.add("-D" + ApiWebEndpoint.NODE_MANAGEMENT.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.NODE_MANAGEMENT));
-        params.add("-D" + ApiWebEndpoint.OS.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.OS));
+    private void getInstallParams(List<String> commandLine, PatchPackage patch, Collection<String> nodes) {
+        commandLine.add("-jar"); commandLine.add(patch.getFile().getAbsolutePath());
+        commandLine.add("-D" + ApiWebEndpoint.NODE_MANAGEMENT.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.NODE_MANAGEMENT));
+        commandLine.add("-D" + ApiWebEndpoint.OS.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.OS));
         if(nodes != null && ! nodes.isEmpty()) {
             StringBuilder nodeList = new StringBuilder();
             for(String node : nodes) {
                 nodeList.append(node).append(",");
             }
             nodeList.deleteCharAt(nodeList.length() -1);
-            params.add("-D" + TARGET_NODE_IDS + "=" + nodeList.toString());
+            commandLine.add("-D" + TARGET_NODE_IDS + "=" + nodeList.toString());
         }
-
-        return params.toArray(new String[params.size()]);
     }
 
-    private File getJavaBinary(PatchPackage patch) {
+    private void getPatchLauncher(List<String> commandLine, PatchPackage patch) {
+        if (PCUtils.isAppliance()) {
+            commandLine.add("/usr/bin/sudo");
+            commandLine.add(APPLIANCE_PATCH_LAUNCHER);
+        }
+        commandLine.add(getJavaBinary(patch));
+    }
+
+    private String getJavaBinary(PatchPackage patch) {
         String requestedJava = patch.getProperty(PatchPackage.Property.JAVA_BINARY);
-        return requestedJava != null && ! "".equals(requestedJava) ? new File(requestedJava) : config.getJavaBinary();
+        return requestedJava != null && ! "".equals(requestedJava) ? requestedJava : config.getJavaBinary().getAbsolutePath();
     }
 }

@@ -23,7 +23,7 @@ public interface PatchServiceApi {
     enum Action { UPLOAD, INSTALL, ROLLBACK, PACKAGE_DELETE }
 
     /**
-     * System property for specifying the node IDs that a patch need to be applied to.
+     * System property for specifying the node IDs that a patch needs to be applied to.
      * The value is a coma-separated list of node IDs. Used by installPatch() API entry.
      */
     public static final String TARGET_NODE_IDS = "target.node.ids";
