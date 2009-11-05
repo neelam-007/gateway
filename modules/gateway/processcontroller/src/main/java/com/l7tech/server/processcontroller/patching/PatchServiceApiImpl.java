@@ -73,10 +73,10 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         try {
             // todo: exec with timeout?
             result = ProcUtils.exec(getJavaBinary(patch), getInstallParams(patch, nodes));
-            recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.INSTALL));
+            recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.INSTALL, nodes));
             String rollback = patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID);
             if (rollback != null)
-                recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.ROLLBACK));
+                recordManager.save(new PatchRecord(System.currentTimeMillis(), rollback, Action.ROLLBACK, nodes));
         } catch (IOException e) {
             throw new PatchException("Error installing patch: " + patchId + " : " + ExceptionUtils.getMessage(e), e);
         }

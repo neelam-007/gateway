@@ -48,6 +48,7 @@ public class PatchFileRecordManager implements PatchRecordManager, InitializingB
         FileHandler fileHandler = new FileHandler(patchLog, true);
         patchLogger = Logger.getLogger(PATCH_LOGGER_NAME);
         patchLogger.setUseParentHandlers(false);
+        patchLogger.setLevel(Level.INFO);
         patchLogger.addHandler(fileHandler);
     }
 }
