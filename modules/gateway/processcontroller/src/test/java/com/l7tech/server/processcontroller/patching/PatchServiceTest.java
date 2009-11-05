@@ -34,6 +34,7 @@ public class PatchServiceTest {
     public void setUp() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
         // init signing config
         KeyStore keyStore = KeyStore.getInstance(TEST_SIGNER_KEYSTORE_TYPE);
+        untrustedKeystorePath = PatchServiceTest.class.getResource(TEST_UNTRUSTED_SIGNER_KEYSTORE_FILE).getPath();
         keystorePath = PatchServiceTest.class.getResource(TEST_SIGNER_KEYSTORE_FILE).getPath();
         keyStore.load(new FileInputStream(keystorePath), TEST_SIGNER_PASSWORD.toCharArray());
         Enumeration<String> aliases = keyStore.aliases();
@@ -786,12 +787,11 @@ public class PatchServiceTest {
         File patch = null;
         boolean tempDeleteOk;
         try {
-            patch = PatchUtils.buildPatch(getTestPatchSpec(null), getTestPatchSigningParams());
-            ReflectionTestUtils.setField(config, "trustedPatchCerts", new HashSet<X509Certificate>());
+            patch = PatchUtils.buildPatch(getTestPatchSpec(null), getUntrustedPatchSigningParams());
+            //ReflectionTestUtils.setField(config, "trustedPatchCerts", new HashSet<X509Certificate>());
             patchService.uploadPatch(IOUtils.slurpFile(patch));
             Assert.fail("Patch upload should have failed if the signer of the patch is not trusted.");
         } catch (PatchException expected) {
-            // do nothing
         } finally {
             tempDeleteOk = patch == null || ! patch.exists() || patch.delete();
         }
@@ -925,6 +925,42 @@ public class PatchServiceTest {
     }
 
     @Test
+    public void testMissingPatchProperties() throws Exception {
+        File patch = null;
+        boolean tempDeleteOk;
+        try {
+            patch = PatchUtils.buildPatch(getTestPatchSpec(null), getTestPatchSigningParams());
+
+            final Exception[] thrown = new Exception[]{null};
+            final boolean[] modified = new boolean[]{false};
+            File modifiedPatch = modifyPatch(patch, new HashMap<String, Functions.TernaryVoid<JarEntry, InputStream, JarOutputStream>>() {{
+                put(PatchPackage.PATCH_PROPERTIES_ENTRY, new Functions.TernaryVoid<JarEntry, InputStream, JarOutputStream>() {
+                    @Override
+                    public void call(JarEntry jarEntry, InputStream inputStream, JarOutputStream jos) {
+                        // skip it
+                        modified[0] = true;
+                    }
+                });
+            }});
+
+            if (thrown[0] != null) throw thrown[0];
+            Assert.assertTrue("Failed to modify jar.", modified[0]);
+
+            try {
+                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                Assert.fail("Patch upload should have failed if there was no patch.properties file.");
+            } catch (PatchException expected) {
+                // do nothing
+            }
+        } finally {
+            tempDeleteOk = patch == null || ! patch.exists() || patch.delete();
+        }
+
+        if (! tempDeleteOk)
+            throw new IOException("Error deleting patch file.");
+    }
+
+    @Test
     @Ignore("Apparently allowed by the Jar signing spec; would be desirable for the signature verification to fail if extra files are added under META-INF/")
     public void testExtraMetainfEntry() throws Exception {
         File patch = null;
@@ -977,6 +1013,7 @@ public class PatchServiceTest {
     // - PRIVATE
 
     private static final String TEST_SIGNER_KEYSTORE_FILE = "testPatchSigner.jks";
+    private static final String TEST_UNTRUSTED_SIGNER_KEYSTORE_FILE = "testUntrustedPatchSigner.jks";
     private static final String TEST_SIGNER_KEYSTORE_TYPE = "JKS";
     private static final String TEST_SIGNER_PASSWORD = "password"; // for both key and keystore
 
@@ -984,6 +1021,7 @@ public class PatchServiceTest {
     private ConfigService config;
     private X509Certificate patchSignerCert;
     private String keystorePath;
+    private String untrustedKeystorePath;
 
     private PatchSpec getTestPatchSpec(String patchId) {
         String mainClass = "com.l7tech.server.processcontroller.patching.HelloFileWorldPatch";
@@ -994,6 +1032,10 @@ public class PatchServiceTest {
 
     private JarSignerParams getTestPatchSigningParams() {
         return new JarSignerParams(keystorePath, TEST_SIGNER_PASSWORD, "mykey", TEST_SIGNER_PASSWORD);
+    }
+
+    private JarSignerParams getUntrustedPatchSigningParams() {
+        return new JarSignerParams(untrustedKeystorePath, TEST_SIGNER_PASSWORD, "untrustedSigner", TEST_SIGNER_PASSWORD);
     }
 
     /** modifiers must .putNextEntry() and .closeEntry() on the output stream */
