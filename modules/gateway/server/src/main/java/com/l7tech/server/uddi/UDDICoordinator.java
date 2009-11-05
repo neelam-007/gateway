@@ -373,7 +373,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
                 logger.info( "Creating business service status for " + key + "." );
                 uddiBusinessServiceStatusManager.save( serviceStatus );
             } else {
-                logger.info( "Deleting business service status for " + key + "." );
+                logger.info( "Updating business service status for " + key + "." );
                 uddiBusinessServiceStatusManager.update( serviceStatus );
             }
         }

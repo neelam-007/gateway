@@ -1014,11 +1014,16 @@
                 </bean>
                 <bean class="com.l7tech.server.uddi.MetricsUDDITaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>
-                    <constructor-arg index="1" ref="uddiBusinessServiceStatusManager" />
-                    <constructor-arg index="2" ref="aggregator" />
+                    <constructor-arg index="1" ref="uddiTemplateManager"/>
+                    <constructor-arg index="2" ref="uddiBusinessServiceStatusManager" />
+                    <constructor-arg index="3" ref="aggregator" />
                 </bean>
             </list>
         </constructor-arg>
+    </bean>
+
+    <bean id="uddiTemplateManager" class="com.l7tech.server.uddi.UDDITemplateManager">
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <!-- TODO [steve] is it ok to move this from the JESM modular assertion? -->

@@ -97,7 +97,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
         @Override
         public void apply( final UDDITaskContext context ) throws UDDIException {
-            // TODO [steve] Allow renew of subscription rather than delete and replace?
+            // TODO Renew subscription rather than delete and replace?
             logger.info( "Subscribing to UDDI for registry "+registryOid+"." );
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );

@@ -216,11 +216,7 @@
         <constructor-arg ref="trustManager"/>
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="wspReader"/>
-        <constructor-arg>
-            <bean class="com.l7tech.server.uddi.UDDITemplateManager">
-                <constructor-arg ref="serverConfig"/>
-            </bean>
-        </constructor-arg>
+        <constructor-arg ref="uddiTemplateManager"/>
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="serviceTemplateManager"/>

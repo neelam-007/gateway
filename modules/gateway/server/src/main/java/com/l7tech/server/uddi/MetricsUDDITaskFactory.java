@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
+import java.text.MessageFormat;
 
 /**
  *
@@ -28,9 +29,11 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
     //- PUBLIC
 
     public MetricsUDDITaskFactory( final UDDIRegistryManager uddiRegistryManager,
+                                   final UDDITemplateManager uddiTemplateManager,
                                    final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
                                    final Aggregator aggregator ) {
         this.uddiRegistryManager = uddiRegistryManager;
+        this.uddiTemplateManager = uddiTemplateManager;
         this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
         this.aggregator = aggregator;
     }
@@ -44,12 +47,14 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             if ( timerEvent.getType()==TimerUDDIEvent.Type.METRICS_PUBLISH ) {
                 task = new MetricsPublishUDDITask(
                         uddiRegistryManager,
+                        uddiTemplateManager,
                         uddiBusinessServiceStatusManager,
                         aggregator,
                         timerEvent.getRegistryOid() );
             } else if ( timerEvent.getType()==TimerUDDIEvent.Type.METRICS_CLEANUP ) {
                 task = new MetricsCleanupUDDITask(
                         uddiRegistryManager,
+                        uddiTemplateManager,
                         uddiBusinessServiceStatusManager,
                         timerEvent.getRegistryOid() );
             }
@@ -58,9 +63,23 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         return task;
     }
 
+    //- PACKAGE
+
+    enum Metric { 
+            SERVICE_KEY,
+            START_TIME,
+            END_TIME,
+            TOTAL_REQUEST_COUNT,
+            SUCCESS_REQUEST_COUNT,
+            FAILURE_REQUEST_COUNT,
+            AVERAGE_RESPONSE_TIME,
+            MINIMUM_RESPONSE_TIME,
+            MAXIMUM_RESPONSE_TIME }
+
     //- PRIVATE
 
     private final UDDIRegistryManager uddiRegistryManager;
+    private final UDDITemplateManager uddiTemplateManager;
     private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
     private final Aggregator aggregator;
 
@@ -73,15 +92,18 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
         private final UDDIRegistryManager uddiRegistryManager;
+        private final UDDITemplateManager uddiTemplateManager;
         private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
         private final Aggregator aggregator;
         private final long registryOid;
 
         MetricsPublishUDDITask( final UDDIRegistryManager uddiRegistryManager,
+                                final UDDITemplateManager uddiTemplateManager,
                                 final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
                                 final Aggregator aggregator,
                                 final long registryOid ) {
             this.uddiRegistryManager = uddiRegistryManager;
+            this.uddiTemplateManager = uddiTemplateManager;
             this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
             this.aggregator = aggregator;
             this.registryOid = registryOid;
@@ -93,6 +115,11 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
+                    final UDDITemplate template = uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
+                    if ( template == null ) {
+                        throw new UDDIException("Template not found for UDDI registry type '"+uddiRegistry.getUddiRegistryType()+"'.");
+                    }
+
                     final long endTime = System.currentTimeMillis();
 
                     final Collection<UDDIBusinessServiceStatus> toPublish =
@@ -107,13 +134,14 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
 
                     for ( UDDIBusinessServiceStatus businessService : toPublish ) {
                         String metricsTModelKey = publishMetrics(
+                                template,
                                 client,
                                 businessService,
                                 endTime,
                                 metricsMap );
 
                         if ( metricsTModelKey != null ) {
-                            if ( publishMetricsReference( client, businessService, metricsTModelKey ) ) {
+                            if ( publishMetricsReference( template, client, businessService, metricsTModelKey ) ) {
                                 businessService.setUddiMetricsTModelKey( metricsTModelKey );
                                 businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.PUBLISHED );
                                 try {
@@ -127,6 +155,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
 
                     for ( UDDIBusinessServiceStatus businessService : toUpdate ) {
                         publishMetrics(
+                                template,
                                 client,
                                 businessService,
                                 endTime,
@@ -140,7 +169,8 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             }
         }
 
-        private String publishMetrics( final UDDIClient client,
+        private String publishMetrics( final UDDITemplate template,
+                                       final UDDIClient client,
                                        final UDDIBusinessServiceStatus businessService,
                                        final long endTime,
                                        final Map<Long,MetricsRequestContext> metricsMap ) {
@@ -159,28 +189,29 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
 
             final Collection<UDDIClient.UDDIKeyedReference> references = new ArrayList<UDDIClient.UDDIKeyedReference>();
 
-            //TODO [steve] CentraSite specific values should come from UDDI configuration
+            for ( UDDITemplate.KeyedReferenceTemplate keyedReferenceTemplate : template.getMetricsKeyedReferences() ) {
+                String key = keyedReferenceTemplate.getKey();
+                String name = keyedReferenceTemplate.getName();
+                String value = keyedReferenceTemplate.getValue();
 
-            // metadata
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:474e1904-69ad-9a6b-11c2-fc8e41c64350", "Metrics", "Metrics") ); //TODO [steve] is this a constant?
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:service.key", "Service Key", serviceKey) );
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:target", "Target", "Target") ); //TODO [steve] what is this??
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:start.datetime", "Start Time", startDate) );
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:end.datetime", "End Time", endDate) );
+                if ( value == null && keyedReferenceTemplate.getValueProperty() != null ) {
+                    value = getValue( keyedReferenceTemplate.getValueProperty(), serviceKey, startDate, endDate, metricsRequestContext );
+                }
 
-            // metrics
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:metrics:total.request.count", "Count of hits", Long.toString(metricsRequestContext.getNrRequests())) );
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:metrics:success.request.count", "Count of successful hits", Long.toString(metricsRequestContext.getNrSuccessRequests())) );
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:metrics:fault.request.count", "Count of fault hits", Long.toString(metricsRequestContext.getNrFailedRequests())) );
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:metrics:average.response.time", "Average response time", Long.toString(metricsRequestContext.getAvgResponseTime())) );
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:metrics:minimum.response.time", "Minimum response time", Long.toString(metricsRequestContext.getMinResponseTime())) );
-            references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:metrics:maximum.response.time", "Maximum response time", Long.toString(metricsRequestContext.getMaxResponseTime())) );
-            //references.add( new UDDIClient.UDDIKeyedReference("uddi:centrasite.com:management:metrics:availability", "Availability", "100") ); //TODO [steve] do we have an availability metric?
+                if ( value != null ) {
+                    references.add( new UDDIClient.UDDIKeyedReference( key, name, value) );
+                }
+            }
 
+            String description = null;
+            String descriptionFormat = template.getMetricsTModelDescription();
+            if ( descriptionFormat != null ) {
+                description = MessageFormat.format( descriptionFormat, serviceName );
+            }
             try {
                 return client.publishTModel( metricsTModelKey,
-                                      "Metrics",
-                                      "Metrics for " + serviceName,
+                                      template.getMetricsTModelName(),
+                                      description,
                                       references );
             } catch ( UDDIException ue ) {
                 logger.log( Level.WARNING, "Error publishing metrics TModel to UDDI '"+ ExceptionUtils.getMessage( ue )+"'.", ue );
@@ -189,21 +220,70 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             return null;
         }
 
-        private boolean publishMetricsReference( final UDDIClient client,
+        //TODO Do we have an availability metric?
+        private String getValue( final String valueProperty,
+                                 final String serviceKey,
+                                 final String startDate,
+                                 final String endDate,
+                                 final MetricsRequestContext metricsRequestContext ) {
+            String value = null;
+
+            try {
+                Metric metric = Metric.valueOf( valueProperty );
+                switch ( metric ) {
+                    case AVERAGE_RESPONSE_TIME:
+                        value = Long.toString(metricsRequestContext.getAvgResponseTime());
+                        break;
+                    case END_TIME:
+                        value = endDate;
+                        break;
+                    case FAILURE_REQUEST_COUNT:
+                        value = Long.toString(metricsRequestContext.getNrFailedRequests());
+                        break;
+                    case MAXIMUM_RESPONSE_TIME:
+                        value = Long.toString(metricsRequestContext.getMaxResponseTime());
+                        break;
+                    case MINIMUM_RESPONSE_TIME:
+                        value = Long.toString(metricsRequestContext.getMinResponseTime());
+                        break;
+                    case SERVICE_KEY:
+                        value = serviceKey;
+                        break;
+                    case START_TIME:
+                        value = startDate;
+                        break;
+                    case SUCCESS_REQUEST_COUNT:
+                        value = Long.toString(metricsRequestContext.getNrSuccessRequests());
+                        break;
+                    case TOTAL_REQUEST_COUNT:
+                        value = Long.toString(metricsRequestContext.getNrRequests());
+                        break;
+                }
+            } catch ( IllegalArgumentException iae ) {
+                logger.warning( "Invalid template value '"+valueProperty+"'." );
+            }
+
+            return value;
+        }
+
+        private boolean publishMetricsReference( final UDDITemplate template,
+                                                 final UDDIClient client,
                                                  final UDDIBusinessServiceStatus businessService,
                                                  final String metricsTModelKey ) {
             final String serviceKey = businessService.getUddiServiceKey();
 
             boolean published = false;
-            try {
-                client.addKeyedReference( //TODO [steve] CentraSite specific values should come from UDDI configuration
-                        serviceKey,
-                        "uddi:centrasite.com:management:metrics:reference",
-                        "Metrics",
-                        metricsTModelKey  );
-                published = true;
-            } catch ( UDDIException ue ) {
-                logger.log( Level.WARNING, "Error publishing metrics TModel reference to UDDI '"+ ExceptionUtils.getMessage( ue )+"'.", ue );
+            if ( template.getServiceMetricsKeyedReference() != null ) {
+                try {
+                    client.addKeyedReference(
+                            serviceKey,
+                            template.getServiceMetricsKeyedReference().getKey(),
+                            template.getServiceMetricsKeyedReference().getName(),
+                            metricsTModelKey  );
+                    published = true;
+                } catch ( UDDIException ue ) {
+                    logger.log( Level.WARNING, "Error publishing metrics TModel reference to UDDI '"+ ExceptionUtils.getMessage( ue )+"'.", ue );
+                }
             }
 
             return published;
@@ -233,13 +313,16 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         private static final Logger logger = Logger.getLogger( MetricsCleanupUDDITask.class.getName() );
 
         private final UDDIRegistryManager uddiRegistryManager;
+        private final UDDITemplateManager uddiTemplateManager;
         private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
         private final long registryOid;
 
         MetricsCleanupUDDITask( final UDDIRegistryManager uddiRegistryManager,
+                                final UDDITemplateManager uddiTemplateManager,
                                 final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
                                 final long registryOid ) {
             this.uddiRegistryManager = uddiRegistryManager;
+            this.uddiTemplateManager = uddiTemplateManager;
             this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
             this.registryOid = registryOid;
         }
@@ -250,22 +333,31 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                    final Collection<UDDIBusinessServiceStatus> toDelete =
-                            uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
+                    final UDDITemplate template = uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
+                    if ( template == null ) {
+                        throw new UDDIException("Template not found for UDDI registry type '"+uddiRegistry.getUddiRegistryType()+"'.");
+                    }
 
-                    final UDDIClient client = UDDIHelper.newUDDIClient( uddiRegistry );
+                    final String referenceKey = template.getServiceMetricsKeyedReference()==null ?
+                            null : 
+                            template.getServiceMetricsKeyedReference().getKey();
+                    if ( referenceKey != null ) {
+                        final Collection<UDDIBusinessServiceStatus> toDelete =
+                                uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
 
-                    for ( UDDIBusinessServiceStatus businessService : toDelete ) {
-                        final String serviceKey = businessService.getUddiServiceKey();
-                        final String tModelKey = businessService.getUddiMetricsTModelKey();
+                        final UDDIClient client = UDDIHelper.newUDDIClient( uddiRegistry );
 
-                        //TODO [steve] CentraSite specific values should come from UDDI configuration
-                        client.removeKeyedReference( serviceKey, "uddi:centrasite.com:management:metrics:reference", null, tModelKey );
-                        client.deleteTModel( tModelKey );
+                        for ( UDDIBusinessServiceStatus businessService : toDelete ) {
+                            final String serviceKey = businessService.getUddiServiceKey();
+                            final String tModelKey = businessService.getUddiMetricsTModelKey();
 
-                        businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.NONE );
-                        businessService.setUddiPolicyTModelKey( null );
-                        uddiBusinessServiceStatusManager.update( businessService );
+                            client.removeKeyedReference( serviceKey, referenceKey, null, tModelKey );
+                            client.deleteTModel( tModelKey );
+
+                            businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.NONE );
+                            businessService.setUddiPolicyTModelKey( null );
+                            uddiBusinessServiceStatusManager.update( businessService );
+                        }
                     }
                 } else {
                     logger.info( "Ignoring metrics event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );

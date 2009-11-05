@@ -6,16 +6,13 @@ import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Collections;
-import java.util.NoSuchElementException;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.beans.XMLDecoder;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 
@@ -26,6 +23,10 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ClassUtils;
 import com.l7tech.util.Config;
 import com.l7tech.uddi.UDDIRegistryInfo;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.JAXBException;
 
 /**
  * Manager for UDDI templates.
@@ -65,6 +66,17 @@ public class UDDITemplateManager {
      * @return The template Map or null if there is no such template
      */
     public Map<String,Object> getTemplate(final String name) {
+        UDDITemplate template = templates.get(name);
+        return template != null ? template.toClientMap() : null;
+    }
+
+    /**
+     * Get a UDDI template by name.
+     *
+     * @param name The name of the template
+     * @return The template Map or null if there is no such template
+     */
+    public UDDITemplate getUDDITemplate(final String name) {
         return templates.get(name);
     }
 
@@ -74,7 +86,11 @@ public class UDDITemplateManager {
      * @return The collection of templates (never null)
      */
     public Collection<Map<String,Object>> getTemplates() {
-        return new ArrayList<Map<String,Object>>(templates.values());
+        List<Map<String,Object>> templateList = new ArrayList<Map<String,Object>>();
+        for ( UDDITemplate template : templates.values() ) {
+            templateList.add( template.toClientMap() );           
+        }
+        return templateList;
     }
 
     /**
@@ -90,14 +106,13 @@ public class UDDITemplateManager {
 
     private static final Logger logger = Logger.getLogger(UDDITemplateManager.class.getName());
     private static final int NAME_SUFFIX_LENGTH = 4;
-    private static final String PROP_NAME = "name";
 
     private final Config config;
-    private final Map<String,Map<String,Object>> templates;
+    private final Map<String,UDDITemplate> templates;
 
-    private Map<String,Map<String,Object>> loadTemplates() {
-        Map<String,Map<String,Object>> standardTemplates = loadTemplateResources();
-        Map<String,Map<String,Object>> fileTemplates = loadTemplatesFromFile();
+    private Map<String,UDDITemplate> loadTemplates() {
+        Map<String,UDDITemplate> standardTemplates = loadTemplateResources();
+        Map<String,UDDITemplate> fileTemplates = loadTemplatesFromFile();
 
         // file templates override standard templates
         standardTemplates.putAll(fileTemplates);
@@ -108,8 +123,8 @@ public class UDDITemplateManager {
     /**
      *
      */
-    private Map<String,Map<String,Object>> loadTemplateResources() {
-        final Map<String,Map<String,Object>> templates = new TreeMap<String, Map<String,Object>>();
+    private Map<String,UDDITemplate> loadTemplateResources() {
+        final Map<String,UDDITemplate> templates = new TreeMap<String, UDDITemplate>();
 
         Collection<URL> resourceUrls = Collections.emptyList();
         try {
@@ -123,7 +138,7 @@ public class UDDITemplateManager {
             if ( filePath.endsWith(".xml") ) {
                 String name = buildName(filePath);            
                 try {
-                    Map<String, Object> template = loadTemplate(name, resourceUrl);
+                    UDDITemplate template = loadTemplate(name, resourceUrl);
                     templates.put(name, template);
 
                     logger.config("Loaded UDDI template resource '" + resourceUrl.getPath() + "'.");
@@ -139,8 +154,8 @@ public class UDDITemplateManager {
     /**
      *
      */
-    private Map<String,Map<String,Object>> loadTemplatesFromFile() {
-        final Map<String,Map<String,Object>> templates = new TreeMap<String, Map<String,Object>>();
+    private Map<String,UDDITemplate> loadTemplatesFromFile() {
+        final Map<String,UDDITemplate> templates = new TreeMap<String, UDDITemplate>();
 
         final String rootPath = config.getProperty(ServerConfig.PARAM_UDDI_TEMPLATES, null);
         if ( rootPath != null ) {
@@ -155,7 +170,7 @@ public class UDDITemplateManager {
                     for (File templateFile : templateFiles) {
                         String name = buildName(templateFile.getName());
                         try {
-                            Map<String, Object> template = loadTemplate(name, templateFile.toURI().toURL());
+                            UDDITemplate template = loadTemplate(name, templateFile.toURI().toURL());
                             templates.put(name, template);
 
                             logger.config("Loaded UDDI template from file '" + templateFile.getAbsolutePath() + "'.");
@@ -189,23 +204,21 @@ public class UDDITemplateManager {
      *
      */
     @SuppressWarnings({"unchecked"})
-    private Map<String,Object> loadTemplate( final String name,
-                                             final URL url ) throws IOException {
-        final Map<String,Object> template = new HashMap<String,Object>();
+    private UDDITemplate loadTemplate( final String name,
+                                       final URL url ) throws IOException {
+        UDDITemplate template;
 
         InputStream is = null;
         try {
             is = url.openStream();
-            XMLDecoder decoder = new java.beans.XMLDecoder(is);
 
-            Map props = (Map<String, Object>) decoder.readObject();
-            
-            template.putAll(props);
-            template.put(PROP_NAME, name);
-        } catch (ArrayIndexOutOfBoundsException aioobe) {
-            throw new CausedIOException("Error reading object", aioobe);
-        } catch (NoSuchElementException nsee) {
-            throw new CausedIOException("Error reading object", nsee);
+            JAXBContext context = JAXBContext.newInstance("com.l7tech.server.uddi");
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+
+            template = (UDDITemplate) unmarshaller.unmarshal( is );
+            template.setName( name );
+        } catch (JAXBException e) {
+            throw new CausedIOException("Error loading template '"+name+"'.", e);
         } finally {
             ResourceUtils.closeQuietly(is);
         }

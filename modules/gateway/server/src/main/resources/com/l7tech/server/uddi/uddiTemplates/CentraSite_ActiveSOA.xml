@@ -1,54 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<java version="1.4.2" class="java.beans.XMLDecoder">
- <object class="java.util.HashMap">
-  <void method="put">
-   <string>inquiry</string>
-   <string>inquiry</string>
-  </void>
-  <void method="put">
-   <string>publication</string>
-   <string>publish</string>
-  </void>
-  <void method="put">
-   <string>securityPolicy</string>
-   <string>publish</string>
-  </void>
-  <void method="put">
-   <string>subscription</string>
-   <string>publish</string>
-  </void>
-  <void method="put">
-   <string>metricsMap</string>
-   <object class="java.util.HashMap">
-    <void method="put">
-     <string>TOTAL_REQUEST_COUNT</string>
-     <string>uddi:centrasite.com:management:metrics:total.request.count</string>
-    </void>
-    <void method="put">
-     <string>SUCCESS_REQUEST_COUNT</string>
-     <string>uddi:centrasite.com:management:metrics:success.request.count</string>
-   </void>
-    <void method="put">
-     <string>FAILURE_REQUEST_COUNT</string>
-     <string>uddi:centrasite.com:management:metrics:fault.request.count</string>
-    </void>
-    <void method="put">
-     <string>AVERAGE_RESPONSE_TIME</string>
-     <string>uddi:centrasite.com:management:metrics:average.response.time</string>
-    </void>
-    <void method="put">
-     <string>MINIMUM_RESPONSE_TIME</string>
-     <string>uddi:centrasite.com:management:metrics:minimum.response.time</string>
-    </void>
-    <void method="put">
-     <string>MAXIMUM_RESPONSE_TIME</string>
-     <string>uddi:centrasite.com:management:metrics:maximum.response.time</string>
-    </void>
-    <void method="put">
-     <string>AVAILABILITY</string>
-     <string>uddi:centrasite.com:management:metrics:availability</string>
-    </void>
-   </object>
-  </void>
- </object>
-</java>
+<uddiTemplate>
+    <inquiryUrl>inquiry</inquiryUrl>
+    <publicationUrl>publish</publicationUrl>
+    <securityPolicyUrl>publish</securityPolicyUrl>
+    <subscriptionUrl>publish</subscriptionUrl>
+    <serviceMetricsKeyedReference>
+        <key>uddi:centrasite.com:management:metrics:reference</key>
+        <name>Metrics</name>
+    </serviceMetricsKeyedReference>
+    <metricsTModelName>Metrics</metricsTModelName>
+    <metricsTModelDescription>Metrics for {0}</metricsTModelDescription>
+    <metricsKeyedReferences>
+        <metricsKeyedReference>
+            <key>uddi:474e1904-69ad-9a6b-11c2-fc8e41c64350</key>
+            <name>Metrics</name>
+            <value>Metrics</value>
+        </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:service.key</key>
+            <name>Service Key</name>
+            <valueProperty>SERVICE_KEY</valueProperty>
+        </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:target</key>
+            <name>Target</name>
+            <value>Target</value> <!-- TODO Set correct target value (or valueProperty) -->
+        </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:start.datetime</key>
+            <name>Start Time</name>
+            <valueProperty>START_TIME</valueProperty>
+        </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:end.datetime</key>
+            <name>End Time</name>
+            <valueProperty>END_TIME</valueProperty>
+        </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:metrics:total.request.count</key>
+            <name>Count of hits</name>
+            <valueProperty>TOTAL_REQUEST_COUNT</valueProperty>
+        </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:metrics:success.request.count</key>
+            <name>Count of successful hits</name>
+            <valueProperty>SUCCESS_REQUEST_COUNT</valueProperty>
+        </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:metrics:fault.request.count</key>
+            <name>Count of fault hits</name>
+            <valueProperty>FAILURE_REQUEST_COUNT</valueProperty>
+        </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:metrics:average.response.time</key>
+            <name>Average response time</name>
+            <valueProperty>AVERAGE_RESPONSE_TIME</valueProperty>
+        </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:metrics:minimum.response.time</key>
+            <name>Minimum response time</name>
+            <valueProperty>MINIMUM_RESPONSE_TIME</valueProperty>
+        </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:metrics:maximum.response.time</key>
+            <name>Maximum response time</name>
+            <valueProperty>MAXIMUM_RESPONSE_TIME</valueProperty>
+        </metricsKeyedReference>
+    </metricsKeyedReferences>
+</uddiTemplate>
