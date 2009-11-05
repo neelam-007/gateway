@@ -68,7 +68,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
                    boolean transientSchema,
                    boolean fallback)
     {
-        if (targetNamespace == null || softwareSchema == null ||
+        if (softwareSchema == null ||
                 schemaDocument == null || namespaceNormalizedSchemaDocument == null ||
                 imports == null || manager == null || systemId == null)
             throw new NullPointerException();
@@ -85,11 +85,11 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         }
         this.manager = manager;
         this.imports = imports;
-        this.tnsGen = "{" + nextSystemIdGeneratioun(systemId) + "} " + systemId;
+        this.tnsGen = "{" + nextSystemIdGeneration(systemId) + "} " + systemId;
         this.softwareFallback = fallback;
     }
 
-    private synchronized static long nextSystemIdGeneratioun(String systemId) {
+    private synchronized static long nextSystemIdGeneration(String systemId) {
         Long gen = systemIdGeneration.get(systemId);
         if (gen == null)
             gen = 0L;
@@ -172,7 +172,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         TarariMessageContext tmc = tk == null ? null : tk.getContext();
         boolean tryHardware = true;
 
-        if (schemaHandler == null || tk == null || tmc == null || targetNamespace == null)
+        if (schemaHandler == null || tk == null || tmc == null || (targetNamespace == null || targetNamespace.length() < 1))
             tryHardware = false;
 
         setLastUsedTime();
@@ -317,9 +317,17 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
             throw new SAXException("Validation failed: message did not include a recognized payload namespace URI");
 
         // They must all match up
-        for (QName payloadName : payloadNames) {
-            if (!targetNamespace.equals(payloadName.getNamespaceURI()))
-                throw new SAXException("Validation failed: message contained an unexpected payload namespace URI: " + payloadName);
+        if (targetNamespace != null) {
+            for (QName payloadName : payloadNames) {
+                if (!targetNamespace.equals(payloadName.getNamespaceURI()))
+                    throw new SAXException("Validation failed: message contained an unexpected payload namespace URI: " + payloadName);
+            }
+        } else {
+            for (QName payloadName : payloadNames) {
+                String ns = payloadName.getNamespaceURI();
+                if (ns != null && ns.length() > 0)
+                    throw new SAXException("Validation failed: message contained an unexpected payload namespace URI: " + payloadName);
+            }
         }
     }
 
@@ -331,9 +339,15 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         ElementCursor cursor = tmc.getElementCursor();
         cursor.moveToDocumentElement();
         String docNs = cursor.getNamespaceUri();
-        if (!targetNamespace.equals(docNs))
-            throw new SAXException("Hardware schema validation succeeded against non-SOAP message, " +
-                    "but the document element namespace URI did not match the asseriton at hand.");
+        if (targetNamespace != null) {
+            if (!targetNamespace.equals(docNs))
+                throw new SAXException("Hardware schema validation succeeded against non-SOAP message, " +
+                        "but the document element namespace URI did not match the assertion at hand.");
+        } else {
+            if (docNs != null && docNs.length() > 0)
+                throw new SAXException("Hardware schema validation succeeded against non-SOAP message, " +
+                        "but the document element namespace URI did not match the assertion at hand.");
+        }
     }
 
 

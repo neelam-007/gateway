@@ -385,7 +385,9 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                     long useAge = now - lastUsed;
                     if (useAge > maxAge) {
                         // It hasn't been used in a while.  Is it contributing to a TNS conflict?
-                        Map<CompiledSchema,Object> tnsUsers = tnsCache.get(schema.getTargetNamespace());
+                        String schemaTns = schema.getTargetNamespace();
+                        if (schemaTns == null) continue;
+                        Map<CompiledSchema,Object> tnsUsers = tnsCache.get(schemaTns);
                         if (tnsUsers == null || tnsUsers.size() < 2) continue;
 
                         // It is Part Of The Problem.  Throw it out until someone wants it again.
@@ -616,7 +618,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             maybeEnableHardwareForNewSchema(child.getTarget());
 
         String tns = newSchema.getTargetNamespace();
-        if (tns == null) return;
+        if (tns == null || tns.length() < 1) return;
 
         // The new CompiledSchema has a TNS, and may be hardware-accelerated if no other schema current has the same TNS.
         Map<CompiledSchema, Object> compiledSchemasWithThisTns = tnsCache.get(tns);
@@ -986,7 +988,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                 schemasRecentlySuperseded.put(schema.getSystemId(), 1);
             }
 
-            if (tns == null) return;
+            if (tns == null || tns.length() < 1) return;
 
             // The schema had a TNS, and might have been relevant to hardware
             hardwareDisable(schema);
@@ -996,7 +998,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             if (schemas.size() == 1) {
                 // Survivor gets hardware privileges
                 if (logger.isLoggable(Level.INFO))
-                    logger.log(Level.INFO, "Sole remaining schema with tns {0} is now eligible for hardware acceleration", schema.getTargetNamespace());
+                    logger.log(Level.INFO, "Sole remaining schema with tns {0} is now eligible for hardware acceleration", String.valueOf(schema.getTargetNamespace()));
                 Iterator<CompiledSchema> i = schemas.keySet().iterator();
                 // Unlikely to throw ConcurrentModificationException, since all finalizers use this method and take out the write lock
                 if (i.hasNext()) {
@@ -1082,7 +1084,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             for (Map.Entry<String, Map<CompiledSchema, Object>> entry : tnsCache.entrySet()) {
                 String tns = entry.getKey();
                 Map<CompiledSchema,Object> ss = entry.getValue();
-                if (tns == null || ss == null || ss.isEmpty()) continue;
+                if (tns == null || tns.length() < 1 || ss == null || ss.isEmpty()) continue;
                 sb.append("  TNS:").append(tns).append("\n");
                 for (CompiledSchema schema : ss.keySet()) {
                     if (schema == null) continue;
@@ -1110,6 +1112,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         if (!schema.isUniqueTns()) return false;
         if (schema.isRejectedByTarari()) return false;
         if (schema.isHardwareEligible()) return false;
+        String tns = schema.getTargetNamespace();
+        if (tns == null || tns.length() < 1) return false;
 
         // Check that all children are loaded
         Map<String,SchemaHandle> imports = schema.getImports();
@@ -1131,7 +1135,6 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         }
 
         // Schedule the actual hardware load for this schema
-        String tns = schema.getTargetNamespace();
         scheduleLoadHardware(schema);
         logger.log(Level.INFO, "Schema with targetNamespace {0} is eligible for hardware acceleration", tns);
         schema.setHardwareEligible(true);
@@ -1316,7 +1319,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         if (logger.isLoggable(Level.INFO))
             logger.log(Level.INFO, "Disabling hardware acceleration eligibility for schema with tns {0}",
-                       schema.getTargetNamespace());
+                       String.valueOf(schema.getTargetNamespace()));
 
         schemasWaitingToLoad.remove(schema);
         schema.setHardwareEligible(false);

@@ -722,11 +722,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         String contents = uiAccessibility.getEditor().getText();
 
         try {
-            String tns = XmlUtil.getSchemaTNS(contents);
-            if (tns == null) {
-                displayError("The schema must declare a targetNamespace", null);
-                return false;
-            }
+            XmlUtil.getSchemaTNS(contents);
         } catch (XmlUtil.BadSchemaException e) {
             log.log(Level.WARNING, "issue with schema at hand", e);
             String errMsg = ExceptionUtils.getMessage(e);
