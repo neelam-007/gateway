@@ -53,6 +53,7 @@ public class CertDetailsPanel extends WizardStepPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
+    @Override
     public boolean canFinish() {
         return false;
     }
@@ -62,6 +63,7 @@ public class CertDetailsPanel extends WizardStepPanel {
      *
      * @return  String  The descritpion of the step.
      */
+    @Override
     public String getDescription() {
         return "Enter the certificate name and view certificate details.";
     }
@@ -75,6 +77,7 @@ public class CertDetailsPanel extends WizardStepPanel {
      * @exception IllegalArgumentException if the the data provided
      * by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (settings != null) {
 
@@ -139,6 +142,7 @@ public class CertDetailsPanel extends WizardStepPanel {
      *
      * @param settings the object representing wizard panel state
      */
+    @Override
     public void storeSettings(Object settings) {
 
         if (settings != null) {
@@ -149,7 +153,6 @@ public class CertDetailsPanel extends WizardStepPanel {
                 if (cert != null) {
                     tc.setCertificate(cert);
                     tc.setName(truncName(certNameTextField.getText().trim()));
-                    tc.setSubjectDn(cert.getSubjectDN().getName());
                 }
             }
         }
@@ -162,6 +165,7 @@ public class CertDetailsPanel extends WizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "View Certificate Details";
     }
