@@ -25,12 +25,16 @@ import java.util.Map;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.ResourceBundle;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServiceUDDISettingsDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(ServiceUDDISettingsDialog.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle(ServiceUDDISettingsDialog.class.getName());
+    private static final String OPTION_ORIGINAL_BUSINESS_SERVICE = "Original Business Service";
+    private static final String OPTION_PROXIED_BUSINESS_SERVICE = "Proxied Business Service";
+    private static final String OPTION_BOTH_BUSINESS_SERVICES = "Both Business Services";
 
     private JPanel contentPane;
     private JButton buttonOK;
@@ -46,11 +50,15 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private JCheckBox monitoringEnabledCheckBox;
     private JCheckBox monitoringDisableServicecheckBox;
     private JLabel statusLabel;
+    private JCheckBox metricsEnabledCheckBox;
+    private JComboBox metricsServiceComboBox;
+    private JLabel metricsServiceLabel;
 
     private PublishedService service;
     private boolean canUpdate;
     private boolean confirmed;
     private Map<String, UDDIRegistry> allRegistries;
+    private Map<Long, Boolean> registryMetricsEnabled = new HashMap<Long,Boolean>();
     private UDDIProxiedServiceInfo uddiProxyServiceInfo;
     private UDDIServiceControl uddiServiceControl;
     private InputValidator publishWsdlValidators;
@@ -146,6 +154,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         publishProxiedWsdlRadioButton.addActionListener(enableDisableChangeListener);
         dontPublishRadioButton.addActionListener(enableDisableChangeListener);
         monitoringEnabledCheckBox.addActionListener( enableDisableChangeListener );
+        metricsEnabledCheckBox.addActionListener( enableDisableChangeListener );
 
         //Populate registry drop down
         loadUddiRegistries();
@@ -234,16 +243,31 @@ public class ServiceUDDISettingsDialog extends JDialog {
             statusLabel.setText("");
         }
         
+        // Monitoring settings
         if ( uddiServiceControl != null ) {
-            // Monitoring settings
             monitoringEnabledCheckBox.setSelected( uddiServiceControl.isMonitoringEnabled() );
             monitoringDisableServicecheckBox.setSelected( uddiServiceControl.isDisableServiceOnChange() );
         } else {
-            // Monitoring settings
             monitoringEnabledCheckBox.setSelected( false );
             monitoringDisableServicecheckBox.setSelected( false );
         }
         
+        // Metrics settings
+        boolean originalMetricsAvailable = uddiServiceControl != null && isMetricsEnabled(uddiServiceControl.getUddiRegistryOid());
+        boolean proxyMetricsAvailable = uddiProxyServiceInfo != null  && isMetricsEnabled(uddiProxyServiceInfo.getUddiRegistryOid());
+        boolean originalMetricsEnabled = uddiServiceControl != null && uddiServiceControl.isMetricsEnabled();
+        boolean proxyMetricsEnabled = uddiProxyServiceInfo != null && uddiProxyServiceInfo.isMetricsEnabled();
+        if ( originalMetricsAvailable || proxyMetricsAvailable ) {
+            java.util.List<String> options = new ArrayList<String>();
+            if ( originalMetricsAvailable ) options.add( OPTION_ORIGINAL_BUSINESS_SERVICE );
+            if ( proxyMetricsAvailable ) options.add( OPTION_PROXIED_BUSINESS_SERVICE );
+            if ( originalMetricsAvailable && proxyMetricsAvailable ) options.add( OPTION_BOTH_BUSINESS_SERVICES );
+            metricsServiceComboBox.setModel( new DefaultComboBoxModel( options.toArray(new String[options.size()] ) ));
+            metricsEnabledCheckBox.setSelected( originalMetricsEnabled || proxyMetricsEnabled );
+            if ( originalMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_ORIGINAL_BUSINESS_SERVICE );
+            if ( proxyMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_PROXIED_BUSINESS_SERVICE );
+            if ( originalMetricsEnabled && proxyMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_BOTH_BUSINESS_SERVICES );
+        }
     }
     
     /**
@@ -262,12 +286,19 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     private void enableAndDisableComponents() {
         if ( canUpdate ) {
-            if( uddiServiceControl != null){
-                monitoringDisableServicecheckBox.setEnabled( monitoringEnabledCheckBox.isSelected() );
-            }
-
             //configure enable / disable for publish tab
             publishTabEnableDisableComponents();
+
+            // monitoring
+            boolean enableMonitoring = uddiServiceControl != null && uddiServiceControl.isUnderUddiControl();
+            monitoringEnabledCheckBox.setEnabled( enableMonitoring );
+            monitoringDisableServicecheckBox.setEnabled( enableMonitoring && monitoringEnabledCheckBox.isSelected() );
+
+            //metrics tab
+            boolean enableMetrics = metricsServiceComboBox.getModel().getSize() > 0;
+            metricsEnabledCheckBox.setEnabled( enableMetrics );
+            metricsServiceComboBox.setEnabled( enableMetrics && metricsEnabledCheckBox.isSelected() );
+            metricsServiceLabel.setEnabled( enableMetrics && metricsEnabledCheckBox.isSelected() );
         } else {
             //publish tab
             enableDisablePublishGatewayWsdlControls(false);            
@@ -275,6 +306,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
             //monitor tab
             monitoringEnabledCheckBox.setEnabled( false );
             monitoringDisableServicecheckBox.setEnabled( false );
+
+            //metrics tab
+            metricsEnabledCheckBox.setEnabled( false );
+            metricsServiceComboBox.setEnabled( false );
+            metricsServiceLabel.setEnabled( false );            
         }
     }
 
@@ -300,8 +336,10 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 else return false;
             }else {
                 //update if the check box's value has changed
-                if(uddiProxyServiceInfo.isUpdateProxyOnLocalChange() != updateWhenGatewayWSDLCheckBox.isSelected()){
+                if(uddiProxyServiceInfo.isUpdateProxyOnLocalChange() != updateWhenGatewayWSDLCheckBox.isSelected() ||
+                   uddiProxyServiceInfo.isMetricsEnabled() != isProxyMetricsEnabled() ){
                     uddiProxyServiceInfo.setUpdateProxyOnLocalChange(updateWhenGatewayWSDLCheckBox.isSelected());
+                    uddiProxyServiceInfo.setMetricsEnabled(isProxyMetricsEnabled());
                     try {
                         uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyServiceInfo);
                     } catch (UpdateException e) {
@@ -338,6 +376,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 uddiServiceControl.setMonitoringEnabled( false );
                 uddiServiceControl.setDisableServiceOnChange( false );
             }
+            uddiServiceControl.setMetricsEnabled( isMetricsEnabled() );
             try {
                 uddiRegistryAdmin.saveUDDIServiceControlOnly( uddiServiceControl );
             } catch (Exception e) {
@@ -429,6 +468,35 @@ public class ServiceUDDISettingsDialog extends JDialog {
             showErrorMessage("Loading failed", "Unable to list all UDDI Registry: " + ExceptionUtils.getMessage(e), e, true);
         }
     }
+
+    private boolean isMetricsEnabled( long registryOid ) {
+        Boolean enabled = registryMetricsEnabled.get( registryOid );
+
+        if ( enabled == null ) {
+            UDDIRegistryAdmin uddiRegistryAdmin = getUDDIRegistryAdmin();
+            try {
+                enabled = uddiRegistryAdmin.metricsAvailable( registryOid );
+            } catch (FindException e) {
+                enabled = false;
+            }
+            registryMetricsEnabled.put( registryOid, enabled );
+        }
+
+        return enabled;
+    }
+
+    public boolean isProxyMetricsEnabled() {
+        return metricsEnabledCheckBox.isSelected() &&
+                ( OPTION_PROXIED_BUSINESS_SERVICE.equals( metricsServiceComboBox.getSelectedItem() ) ||
+                  OPTION_BOTH_BUSINESS_SERVICES.equals( metricsServiceComboBox.getSelectedItem() ) );
+    }
+
+    public boolean isMetricsEnabled() {
+        return metricsEnabledCheckBox.isSelected() &&
+                ( OPTION_ORIGINAL_BUSINESS_SERVICE.equals( metricsServiceComboBox.getSelectedItem() ) ||
+                  OPTION_BOTH_BUSINESS_SERVICES.equals( metricsServiceComboBox.getSelectedItem() ) );
+    }
+
 
     private void showErrorMessage(String title, String msg, Throwable e, boolean log) {
         showErrorMessage(title, msg, e, null, log);

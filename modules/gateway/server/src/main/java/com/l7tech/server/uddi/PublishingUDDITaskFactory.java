@@ -16,7 +16,6 @@ import javax.wsdl.WSDLException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.List;
-import java.util.Map;
 
 /**
  *

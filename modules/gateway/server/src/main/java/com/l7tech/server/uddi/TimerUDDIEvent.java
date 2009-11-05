@@ -7,7 +7,7 @@ class TimerUDDIEvent extends UDDIEvent {
 
     //- PACKAGE
 
-    enum Type { METRICS, SUBSCRIPTION_POLL }
+    enum Type { METRICS_PUBLISH, METRICS_CLEANUP, SUBSCRIPTION_POLL }
 
     TimerUDDIEvent( final long registryOid,
                     final Type type ) {

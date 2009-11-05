@@ -59,6 +59,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
         return null;
     }
 
+    @Override
     public boolean publishBusinessService(BusinessService businessService) throws UDDIException {
         final String key = "uddi:"+UUID.randomUUID();
         businessService.setServiceKey(key);

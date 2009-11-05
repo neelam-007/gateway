@@ -47,6 +47,10 @@ public interface UDDIRegistryAdmin {
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=MethodStereotype.GET_PROPERTY_BY_ID)
     boolean subscriptionNotificationsAvailable(long registryOid);
 
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=MethodStereotype.GET_PROPERTY_BY_ID)
+    boolean metricsAvailable(long registryOid) throws FindException;
+
     /**
      * Before the UDDIRegistry is deleted, all data published to the registry should be attempted to be removed.
      *

@@ -30,16 +30,5 @@ public abstract class UDDITaskFactory {
          * @throws UDDIException If an error occurs.
          */
         public abstract void apply( UDDITaskContext context ) throws UDDIException;
-
-        /**
-         * Revert changes made for this task.
-         *
-         * <p>This implementatation does nothing.</p>
-         *
-         * @param context The context for the task
-         * @throws UDDIException If an error occurs.
-         */
-        public void revert( UDDITaskContext context ) throws UDDIException {
-        }
     }
 }

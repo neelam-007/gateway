@@ -152,6 +152,26 @@ CREATE TABLE uddi_publish_status (
   FOREIGN KEY (uddi_proxied_service_info_oid) REFERENCES uddi_proxied_service_info (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+--
+-- Tracking table for metrics and policy attachment publishing
+--
+DROP TABLE IF EXISTS uddi_business_service_status;
+CREATE TABLE uddi_business_service_status (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  published_service_oid bigint(20) NOT NULL,
+  uddi_registry_oid bigint(20) NOT NULL,
+  uddi_service_key varchar(255) NOT NULL,
+  uddi_service_name varchar(255) NOT NULL,
+  uddi_policy_tmodel_key varchar(255),
+  policy_status varchar(32) NOT NULL,
+  uddi_metrics_tmodel_key varchar(255),
+  metrics_reference_status varchar(32) NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 -- Table for a service published from (or otherwise associated with) UDDI
 --
 DROP TABLE IF EXISTS uddi_service_control;

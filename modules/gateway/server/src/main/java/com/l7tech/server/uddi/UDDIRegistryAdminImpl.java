@@ -91,6 +91,16 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
+    public boolean metricsAvailable( final long registryOid ) throws FindException {
+        boolean metrics = false;
+        UDDIRegistry registry = findByPrimaryKey( registryOid );
+        if ( registry != null ) {
+            metrics = UDDIRegistry.UDDIRegistryType.CENTRASITE_ACTIVE_SOA.toString().equals(registry.getUddiRegistryType());
+        }
+        return metrics;
+    }
+
+    @Override
     public void testUDDIRegistryAuthentication(final UDDIRegistry uddiRegistry) throws UDDIException {
         final boolean loginSupplied = uddiRegistry.getRegistryAccountUserName() != null && !uddiRegistry.getRegistryAccountUserName().trim().isEmpty();
         final boolean passwordSupplied = uddiRegistry.getRegistryAccountPassword() != null && !uddiRegistry.getRegistryAccountPassword().trim().isEmpty();
@@ -151,7 +161,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
         proxiedServiceInfo.throwIfFinalPropertyModified(original);
 
-        if(original.isUpdateProxyOnLocalChange() == proxiedServiceInfo.isUpdateProxyOnLocalChange()) return;
+        if(original.isUpdateProxyOnLocalChange() == proxiedServiceInfo.isUpdateProxyOnLocalChange() &&
+           original.isMetricsEnabled() == proxiedServiceInfo.isMetricsEnabled() ) return;
 
         uddiProxiedServiceInfoManager.update(proxiedServiceInfo);
     }

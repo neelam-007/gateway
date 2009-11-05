@@ -173,6 +173,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         String publishedTModelKey;
 
         final TModel tModel = new TModel();
+        tModel.setTModelKey( tModelKey );
         tModel.setName( buildName(name) );
         if ( description != null ) {
             tModel.getDescription().add( buildDescription(description) );
@@ -359,7 +360,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     @Override
     public void deleteTModel(String tModelKey) throws UDDIException {
         final TModel tModel = getTModel(tModelKey);
-        deleteTModel(tModel);
+        if ( tModel != null ) {
+            deleteTModel(tModel);
+        }
     }
 
     @Override

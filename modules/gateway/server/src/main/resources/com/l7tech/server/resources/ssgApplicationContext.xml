@@ -987,16 +987,19 @@
     </bean>
 
     <bean id="uddiCoordinator" class="com.l7tech.server.uddi.UDDICoordinator">
-        <constructor-arg index="0" ref="uddiHelper"/>
-        <constructor-arg index="1" ref="uddiRegistryManager"/>
-        <constructor-arg index="2" ref="uddiProxiedServiceInfoManager"/>
-        <constructor-arg index="3" ref="serviceCache"/>
-        <constructor-arg index="4">
+        <constructor-arg index="0" ref="transactionManager"/>
+        <constructor-arg index="1" ref="uddiHelper"/>
+        <constructor-arg index="2" ref="uddiRegistryManager"/>
+        <constructor-arg index="3" ref="uddiProxiedServiceInfoManager"/>
+        <constructor-arg index="4" ref="uddiServiceControlManager"/>
+        <constructor-arg index="5" ref="uddiBusinessServiceStatusManager"/>        
+        <constructor-arg index="6" ref="serviceCache"/>
+        <constructor-arg index="7">
             <bean class="com.l7tech.server.util.ManagedTimer">
                 <constructor-arg value="UDDI Coordinator"/>
             </bean>
         </constructor-arg>
-        <constructor-arg index="5">
+        <constructor-arg index="8">
             <list>
                 <bean class="com.l7tech.server.uddi.PublishingUDDITaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>
@@ -1011,9 +1014,8 @@
                 </bean>
                 <bean class="com.l7tech.server.uddi.MetricsUDDITaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>
-                    <constructor-arg index="1" ref="uddiServiceControlManager"/>
-                    <constructor-arg index="2" ref="uddiProxiedServiceInfoManager" />
-                    <constructor-arg index="3" ref="aggregator" />
+                    <constructor-arg index="1" ref="uddiBusinessServiceStatusManager" />
+                    <constructor-arg index="2" ref="aggregator" />
                 </bean>
             </list>
         </constructor-arg>
@@ -1125,6 +1127,7 @@
                 <ref bean="messageContextMappingKeyManager"/>
                 <ref bean="uddiRegistryManager"/>
                 <ref bean="uddiProxiedServiceInfoManager"/>
+                <ref bean="uddiServiceControlManager"/>
             </list>
         </property>
         <property name="timer">
@@ -1617,5 +1620,7 @@
     <bean id="uddiServiceControlManager" class="com.l7tech.server.uddi.UDDIServiceControlManagerImpl" parent="hibernateBean" />
 
     <bean id="uddiRegistrySubscriptionManager" class="com.l7tech.server.uddi.UDDIRegistrySubscriptionManagerImpl" parent="hibernateBean" />
+
+    <bean id="uddiBusinessServiceStatusManager" class="com.l7tech.server.uddi.UDDIBusinessServiceStatusManagerImpl" parent="hibernateBean" />
 
 </beans>
