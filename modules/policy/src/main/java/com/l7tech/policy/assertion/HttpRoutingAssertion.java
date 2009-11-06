@@ -96,6 +96,10 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected long nonDefaultKeystoreId;
     protected String keyId;
     private HttpMethod httpMethod;
+    private String proxyHost = null;
+    private int proxyPort = -1;
+    private String proxyUsername = "";
+    private String proxyPassword = "";
 
     // WARNING
     // WARNING : If you add properties, update the copyFrom method
@@ -147,6 +151,10 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setUsesDefaultKeyStore(source.isUsesDefaultKeyStore());
         this.setNonDefaultKeystoreId(source.getNonDefaultKeystoreId());
         this.setHttpMethod(source.getHttpMethod());
+        this.setProxyHost(source.getProxyHost());
+        this.setProxyPort(source.getProxyPort());
+        this.setProxyUsername(source.getProxyUsername());
+        this.setProxyPassword(source.getProxyPassword());
     }
 
     @Override
@@ -511,6 +519,38 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
      */
     public void setHttpMethod(HttpMethod httpMethod) {
         this.httpMethod = httpMethod;
+    }
+
+    public String getProxyHost() {
+        return proxyHost;
+    }
+
+    public void setProxyHost(String proxyHost) {
+        this.proxyHost = proxyHost;
+    }
+
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    public void setProxyPort(int proxyPort) {
+        this.proxyPort = proxyPort;
+    }
+
+    public String getProxyUsername() {
+        return proxyUsername;
+    }
+
+    public void setProxyUsername(String proxyUsername) {
+        this.proxyUsername = proxyUsername;
+    }
+
+    public String getProxyPassword() {
+        return proxyPassword;
+    }
+
+    public void setProxyPassword(String proxyPassword) {
+        this.proxyPassword = proxyPassword;
     }
 
     final static String baseName = "Route via HTTP(S)";

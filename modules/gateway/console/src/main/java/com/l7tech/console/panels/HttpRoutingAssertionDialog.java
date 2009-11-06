@@ -130,6 +130,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JComboBox requestMethodComboBox;
     private JRadioButton automaticRequestMethodRadioButton;
     private JRadioButton overrideRequestMethodRadioButton;
+    private JRadioButton rbProxyNone;
+    private JRadioButton rbProxySpecified;
+    private JTextField proxyHostField;
+    private JTextField proxyPortField;
+    private JTextField proxyUsernameField;
+    private JPasswordField proxyPasswordField;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -266,6 +272,9 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         readTimeoutSpinner.setModel(new SpinnerNumberModel(1,1,86400,1));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(readTimeoutSpinner, "Read timeout"));
 
+        inputValidator.constrainTextFieldToNumberRange("proxy port", proxyPortField, -1, 65535);
+        inputValidator.constrainTextFieldToBeNonEmpty("proxy host", proxyHostField, null);
+
         ActionListener enableSpinners = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -379,6 +388,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         automaticRequestMethodRadioButton.addActionListener(requestMethodListener);
 
         initializeHttpRulesTabs();
+        initializeProxyTab();
 
         inputValidator.attachToButton(okButton, okButtonAction);
         okButton.setEnabled( !readOnly );
@@ -393,6 +403,31 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         getRootPane().setDefaultButton(okButton);               
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    private void initializeProxyTab() {
+        Utilities.enableGrayOnDisabled(proxyHostField);
+        Utilities.enableGrayOnDisabled(proxyPortField);
+        Utilities.enableGrayOnDisabled(proxyUsernameField);
+        Utilities.enableGrayOnDisabled(proxyPasswordField);
+
+        ActionListener enabler = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableProxyFields();
+            }
+        };
+        rbProxyNone.addActionListener(enabler);
+        rbProxySpecified.addActionListener(enabler);
+        enableOrDisableProxyFields();
+    }
+
+    private void enableOrDisableProxyFields() {
+        final boolean proxy = rbProxySpecified.isSelected();
+        proxyHostField.setEnabled(proxy);
+        proxyPortField.setEnabled(proxy);
+        proxyUsernameField.setEnabled(proxy);
+        proxyPasswordField.setEnabled(proxy);
     }
 
     private void updateRequestMethodComboBoxEnableState() {
@@ -667,6 +702,19 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         assertion.setHttpMethod(overrideRequestMethodRadioButton.isSelected() ? (HttpMethod)requestMethodComboBox.getSelectedItem() : null);
 
+        final boolean proxy = rbProxySpecified.isSelected();
+        if (proxy) {
+            assertion.setProxyHost(proxyHostField.getText());
+            assertion.setProxyPort(Integer.parseInt(proxyPortField.getText()));
+            assertion.setProxyUsername(proxyUsernameField.getText());
+            assertion.setProxyPassword(new String(proxyPasswordField.getPassword()));
+        } else {
+            assertion.setProxyHost(null);
+            assertion.setProxyPort(-1);
+            assertion.setProxyUsername(null);
+            assertion.setProxyPassword(null);
+        }
+
         confirmed = true;
         fireEventAssertionChanged(assertion);
 
@@ -768,6 +816,24 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         if (bra)
             overrideRequestMethodRadioButton.setEnabled(false);
         updateRequestMethodComboBoxEnableState();
+
+        String host = assertion.getProxyHost();
+        if (host == null || host.trim().length() < 1) {
+            rbProxyNone.setSelected(true);
+            proxyHostField.setText("");
+            proxyPortField.setText("-1");
+            proxyUsernameField.setText("");
+            proxyPasswordField.setText("");
+        } else {
+            rbProxySpecified.setSelected(true);
+            proxyHostField.setText(host);
+            proxyPortField.setText(String.valueOf(assertion.getProxyPort()));
+            proxyUsernameField.setText(assertion.getProxyUsername());
+            proxyPasswordField.setText(assertion.getProxyPassword());
+        }
+        if (bra)
+            rbProxySpecified.setEnabled(false);
+        enableOrDisableProxyFields();
     }
 
     /**

@@ -51,7 +51,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     public static final int DEFAULT_READ_TIMEOUT = SyspropUtil.getInteger(PROP_DEFAULT_READ_TIMEOUT, 60000);
 
     private static HttpParams httpParams;
-    private static final Map protoBySockFac = Collections.synchronizedMap(new WeakHashMap());
+    private static final Map<SSLSocketFactory, Protocol> protoBySockFac = Collections.synchronizedMap(new WeakHashMap<SSLSocketFactory, Protocol>());
 
     /**
      * TODO remove this once all clients use 5.1 if there are no issues
@@ -74,6 +74,10 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     private final int timeout;
     private final Object identity;
     private final boolean isBindingManager;
+    private final String proxyHost;
+    private final int proxyPort;
+    private final String proxyUsername;
+    private final String proxyPassword;
 
     public CommonsHttpClient() {
         this(newConnectionManager(), -1, -1, null);
@@ -87,12 +91,74 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         this(cman, connectTimeout, timeout, null);
     }
 
+    /**
+     * Note: Do not use a proxy at the same time as identity-bound connections.
+     *
+     * @param proxyHost  hostname or string IP address of proxy server, or null to disable proxy.
+     * @param proxyPort   proxy port, or -1 for default
+     * @param proxyUsername  proxy username, or null for no proxy authentication
+     * @param proxyPassword  proxy password
+     */
+    public CommonsHttpClient(String proxyHost, int proxyPort, String proxyUsername, String proxyPassword) {
+        this(proxyHost, proxyPort, proxyUsername, proxyPassword, newConnectionManager(), -1, -1, null);
+    }
+
+    /**
+     * Note: Do not use a proxy at the same time as identity-bound connections.
+     *
+     * @param proxyHost  hostname or string IP address of proxy server, or null to disable proxy.
+     * @param proxyPort   proxy port, or -1 for default
+     * @param proxyUsername  proxy username, or null for no proxy authentication
+     * @param proxyPassword  proxy password
+     * @param cman custom connection manager.  Required.
+     */
+    public CommonsHttpClient(String proxyHost, int proxyPort, String proxyUsername, String proxyPassword, HttpConnectionManager cman) {
+        this(proxyHost, proxyPort, proxyUsername, proxyPassword, cman, -1, -1, null); // default timeouts
+    }
+
+    /**
+     * Note: Do not use a proxy at the same time as identity-bound connections.
+     *
+     * @param proxyHost  hostname or string IP address of proxy server, or null to disable proxy.
+     * @param proxyPort   proxy port, or -1 for default
+     * @param proxyUsername  proxy username, or null for no proxy authentication
+     * @param proxyPassword  proxy password
+     * @param cman custom connection manager.  Required.
+     * @param connectTimeout  connect timeout, or -1 for default
+     * @param timeout   read timeout, or -1 for default
+     */
+    public CommonsHttpClient(String proxyHost, int proxyPort, String proxyUsername, String proxyPassword, HttpConnectionManager cman, int connectTimeout, int timeout) {
+        this(proxyHost, proxyPort, proxyUsername, proxyPassword, cman, connectTimeout, timeout, null);
+    }
+
     public CommonsHttpClient(HttpConnectionManager cman, int connectTimeout, int timeout, Object identity) {
+        this(null, -1, null, null, cman, connectTimeout, timeout, identity);
+    }
+
+    /**
+     * Note: Do not use a proxy at the same time as identity-bound connections.
+     *
+     * @param proxyHost  hostname or string IP address of proxy server, or null to disable proxy.  Must be null if identity is provided.
+     * @param proxyPort   proxy port, or -1 for default
+     * @param proxyUsername  proxy username, or null for no proxy authentication
+     * @param proxyPassword  proxy password
+     * @param cman custom connection manager.  Required.
+     * @param connectTimeout  connect timeout, or -1 for default
+     * @param timeout   read timeout, or -1 for default
+     * @param identity  identity to bind, or null.  Must be null if a proxyHost is provided.
+     */
+    CommonsHttpClient(String proxyHost, int proxyPort, String proxyUsername, String proxyPassword, HttpConnectionManager cman, int connectTimeout, int timeout, Object identity) {
         this.cman = cman;
         int connectionTimeout = connectTimeout <= 0 ? DEFAULT_CONNECT_TIMEOUT : connectTimeout;
         this.timeout = timeout <= 0 ? DEFAULT_READ_TIMEOUT : timeout;
         this.identity = identity;
         this.isBindingManager = cman instanceof IdentityBindingHttpConnectionManager;
+        this.proxyHost = proxyHost;
+        this.proxyPort = proxyPort;
+        this.proxyUsername = proxyUsername;
+        this.proxyPassword = proxyPassword;
+        if (identity != null && proxyHost != null)
+            throw new IllegalArgumentException("Unable to use a binding identity and a proxy host at the same time");
 
         HttpConnectionManagerParams params = cman.getParams();
         params.setConnectionTimeout(connectionTimeout);
@@ -164,6 +230,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         }
 
         final HttpState state = getHttpState(client, params);
+        if (proxyUsername != null && proxyUsername.length() > 0)
+            state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(proxyUsername, proxyPassword));
 
         // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
         //       we end up with the default socket factory for the protocol
@@ -215,8 +283,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
         final Long contentLen = params.getContentLength();
         if (httpMethod instanceof PostMethod && contentLen != null) {
-            final long clen = contentLen.longValue();
-            if (clen > Integer.MAX_VALUE)
+            if (contentLen > Integer.MAX_VALUE)
                 throw new GenericHttpException("Content-Length is too long -- maximum supported is " + Integer.MAX_VALUE);
         }
 
@@ -248,7 +315,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     PostMethod postMethod = (PostMethod)method;
                     postMethod.setRequestEntity(new RequestEntity(){
                         public long getContentLength() {
-                            return contentLen != null ? contentLen.longValue() : -1;
+                            return contentLen != null ? contentLen : -1;
                         }
 
                         public String getContentType() {
@@ -267,7 +334,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     PutMethod putMethod = (PutMethod)method;
                     putMethod.setRequestEntity(new RequestEntity(){
                         public long getContentLength() {
-                            return contentLen != null ? contentLen.longValue() : -1;
+                            return contentLen != null ? contentLen : -1;
                         }
 
                         public String getContentType() {
@@ -315,7 +382,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     PostMethod postMethod = (PostMethod)method;
                     postMethod.setRequestEntity(new RequestEntity(){
                         public long getContentLength() {
-                            return contentLen != null ? contentLen.longValue() : -1;
+                            return contentLen != null ? contentLen : -1;
                         }
 
                         public String getContentType() {
@@ -340,7 +407,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     PutMethod putMethod = (PutMethod)method;
                     putMethod.setRequestEntity(new RequestEntity(){
                         public long getContentLength() {
-                            return contentLen != null ? contentLen.longValue() : -1;
+                            return contentLen != null ? contentLen : -1;
                         }
 
                         public String getContentType() {
@@ -376,6 +443,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     if (hconf == null) {
                         HostConfiguration hc = new HostConfiguration(client.getHostConfiguration());
                         hc.setHost(targetUrl.getHost(), targetUrl.getPort());
+                        if (proxyHost != null)
+                            hc.setProxy(proxyHost, proxyPort);
                         status = client.executeMethod(hc , method, state);
                     }
                     else {
@@ -416,11 +485,11 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                         if (response == null)
                             throw new IllegalStateException("This response has already been closed");
                         Header[] in = response.getResponseHeaders();
-                        List out = new ArrayList();
+                        List<HttpHeader> out = new ArrayList<HttpHeader>();
                         for (Header header : in) {
                             out.add(new GenericHttpHeader(header.getName(), header.getValue()));
                         }
-                        return new GenericHttpHeaders((HttpHeader[])out.toArray(new HttpHeader[0]));
+                        return new GenericHttpHeaders(out.toArray(new HttpHeader[out.size()]));
                     }
 
                     public ContentTypeHeader getContentType() {
@@ -523,7 +592,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
     private HostConfiguration getHostConfig(final URL targetUrl, final SSLSocketFactory sockFac, final HostnameVerifier hostVerifier) {
         HostConfiguration hconf;
-        Protocol protocol = (Protocol)protoBySockFac.get(sockFac);
+        Protocol protocol = protoBySockFac.get(sockFac);
         if (protocol == null) {
             logger.finer("Creating new commons Protocol for https");
             protocol = new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
@@ -580,6 +649,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         hconf = new HostConfiguration();
         HttpHost httpHost = new HttpHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
         hconf.setHost(httpHost);
+        if (proxyHost != null)
+            hconf.setProxy(proxyHost, proxyPort);
         return hconf;
     }
 

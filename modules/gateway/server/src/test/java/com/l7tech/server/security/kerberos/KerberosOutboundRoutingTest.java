@@ -1,26 +1,26 @@
 package com.l7tech.server.security.kerberos;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.security.xml.processor.WssProcessorImpl;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.security.xml.processor.WssProcessorImpl;
-import com.l7tech.message.Message;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.service.PublishedService;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.junit.Ignore;
-import org.junit.BeforeClass;
-import org.junit.Assert;
-import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -129,7 +129,7 @@ public class KerberosOutboundRoutingTest extends KerberosTest {
 //    }
 
     private ServerHttpRoutingAssertion getAssertion(String policyXml)
-            throws IOException, ServerPolicyException
+            throws IOException, PolicyAssertionException
     {
         Assertion as = policyReader.parsePermissively(policyXml, WspReader.INCLUDE_DISABLED);
         Assert.assertNotNull(as);

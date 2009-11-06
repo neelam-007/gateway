@@ -5,6 +5,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
@@ -81,8 +82,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private final URL protectedServiceUrl;
     private boolean customURLList;
 
-    public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
+    public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) throws PolicyAssertionException {
         super(assertion, ctx, logger);
+
+        if ((assertion.getNtlmHost() != null || assertion.isKrbDelegatedAuthentication()) && assertion.getProxyHost() != null) {
+            throw new PolicyAssertionException(assertion, "NTLM and Kerberos delegated authentication are not supported when an HTTP proxy is configured");
+        }
 
         serverConfig = (ServerConfig) ctx.getBean( "serverConfig", ServerConfig.class );
 
@@ -133,14 +138,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             throw new RuntimeException(e);
         }
 
-        GenericHttpClientFactory factory;
-        try {
-            factory = (GenericHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", GenericHttpClientFactory.class);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Could not create HTTP client factory.", e);
-            factory = new IdentityBindingHttpClientFactory();
-        }
-        httpClientFactory = factory;
+        httpClientFactory = makeHttpClientFactory();
 
         StashManagerFactory smFactory;
         try {
@@ -182,6 +180,36 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         varNames = assertion.getVariablesUsed();
+    }
+
+    protected GenericHttpClientFactory makeHttpClientFactory() {
+        final String proxyHost = assertion.getProxyHost();
+        if (proxyHost == null) {
+            GenericHttpClientFactory factory;
+            try {
+                factory = (GenericHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", GenericHttpClientFactory.class);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Could not create HTTP client factory.", e);
+                factory = new IdentityBindingHttpClientFactory();
+            }
+            return factory;
+        }
+
+        // Use a proxy
+        return new GenericHttpClientFactory() {
+            @Override
+            public GenericHttpClient createHttpClient() {
+                return createHttpClient(-1, -1, -1, -1, null);
+            }
+
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return new CommonsHttpClient(proxyHost, assertion.getProxyPort(), assertion.getProxyUsername(), assertion.getProxyPassword(),
+                        CommonsHttpClient.newConnectionManager(),
+                        connectTimeout,
+                        timeout);
+            }
+        };
     }
 
 
