@@ -14,6 +14,8 @@ import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.junit.Test;
 import org.junit.Assert;
 
@@ -39,6 +41,7 @@ public class ApplicationContextTest  {
     private static final Set<String> NON_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "genericLogAdmin" ));
     private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin" ) );
     private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionsAdmin" ) );
+    private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = new HashSet<String>( Arrays.asList( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin" ) );
     private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>( Arrays.asList(
         EntityType.ESM_ENTERPRISE_FOLDER,  
         EntityType.ESM_SSG_CLUSTER,
@@ -160,20 +163,7 @@ public class ApplicationContextTest  {
     public void testAdministrativeAutoProxy() throws Exception {
         //
         DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
-        XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);
-
-        for ( String context : CONTEXTS ) {
-            xbdr.loadBeanDefinitions(new ClassPathResource(context));
-        }
-
-        List<String> beans = new ArrayList<String>();
-        beans.addAll(EXTRA_ADMIN_BEANS);
-
-        for ( String beanId : dlbf.getBeanDefinitionNames() ) {
-            if ( beanId.endsWith("Admin") && !beanId.startsWith("/") && !NON_ADMIN_BEANS.contains(beanId) ) {
-                beans.add(beanId);
-            }
-        }
+        List<String> beans = getAdminBeanIds( dlbf );
 
         for ( String beanId : beans ) {
             System.out.println("Checking bean '"+beanId+"'.");
@@ -204,6 +194,69 @@ public class ApplicationContextTest  {
                 Assert.fail( "Administrative bean '"+beanId+"', has no interface with the '"+Secured.class.getName()+"' annotation." );
             }
         }
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    @Test
+    public void testAdminGettersReadonlyTransaction() throws Exception {
+        DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
+        List<String> beans = getAdminBeanIds( dlbf );
+
+        for ( String beanId : beans ) {
+            if ( TRANSACTIONAL_GETTER_BLACKLIST.contains(beanId) ) {
+                // listed beans either perform db updates in the getter (such as auditing)
+                // or just have not been checked to see if the readOnly option can be added
+                System.out.println("Not checking bean '"+beanId+"'.");
+                continue;
+            }
+            System.out.println("Checking bean '"+beanId+"'.");
+            BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
+            String className = beanDef.getBeanClassName();
+            Class adminClass = Class.forName(className);
+
+            Class adminInterface = null;
+            for ( Class interfaceClass : adminClass.getInterfaces() ) {
+                if ( interfaceClass.getAnnotation(Administrative.class) != null ) {
+                    adminInterface = interfaceClass;
+                    break;
+                }
+            }
+
+            if ( adminInterface != null ) {
+                Transactional classTransAnn = (Transactional) adminInterface.getAnnotation( Transactional.class );
+                if ( classTransAnn != null ) {
+                    boolean classReadonly = classTransAnn.readOnly() || classTransAnn.propagation()==Propagation.SUPPORTS;
+
+                    for ( Method method : adminInterface.getMethods() ) {
+                        if ( method.getName().startsWith("get") ) {
+                            Transactional transAnn = method.getAnnotation( Transactional.class );
+                            if ( (transAnn!=null && !transAnn.readOnly() && transAnn.propagation()!=Propagation.SUPPORTS) || (transAnn==null && !classReadonly) ) {
+                                Assert.fail( "Administration bean '"+beanId+"' method '"+method.getName()+"', is a getter so should be Transactional(readOnly=true)." );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private List<String> getAdminBeanIds( final DefaultListableBeanFactory dlbf ) {
+        XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);
+
+        for ( String context : CONTEXTS ) {
+            xbdr.loadBeanDefinitions(new ClassPathResource(context));
+        }
+
+        List<String> beans = new ArrayList<String>();
+        beans.addAll(EXTRA_ADMIN_BEANS);
+
+        for ( String beanId : dlbf.getBeanDefinitionNames() ) {
+            if ( beanId.endsWith("Admin") && !beanId.startsWith("/") && !NON_ADMIN_BEANS.contains(beanId) ) {
+                beans.add(beanId);
+            }
+        }
+
+        return beans;
     }
 
     /**

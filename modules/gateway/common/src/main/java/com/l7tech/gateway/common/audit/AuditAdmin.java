@@ -113,6 +113,7 @@ public interface AuditAdmin extends GenericLogAdmin {
     /**
      * Retrieves the Audit Archiver FTP destination configured for the cluster.
      */
+    @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITY)
     ClusterProperty getFtpAuditArchiveConfig();
 

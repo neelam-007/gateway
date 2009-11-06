@@ -98,7 +98,7 @@ public interface ClusterStatusAdmin {
      *
      * @return java.util.Date  The current system time
      */
-    @Transactional(propagation=Propagation.SUPPORTS)
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     @Administrative(licensed=false)
     java.util.Date getCurrentClusterSystemTime();
 
@@ -107,7 +107,7 @@ public interface ClusterStatusAdmin {
      *
      * @return the current system time zone on the gateway
      */
-    @Transactional(propagation=Propagation.SUPPORTS)
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     @Administrative(licensed=false)
     String getCurrentClusterTimeZone();
 

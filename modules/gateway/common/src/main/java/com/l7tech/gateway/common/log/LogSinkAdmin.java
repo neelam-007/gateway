@@ -89,6 +89,7 @@ public interface LogSinkAdmin {
      *
      * @return The reserved space in bytes.
      */
+    @Transactional(readOnly=true)
     long getReservedFileSize();
 
     /**
@@ -96,5 +97,6 @@ public interface LogSinkAdmin {
      *
      * @return The maximum space in bytes.
      */
+    @Transactional(readOnly=true)
     long getMaximumFileSize();
 }

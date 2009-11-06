@@ -53,9 +53,15 @@ public interface JdbcAdmin {
     @Transactional(readOnly=true)
     String testJdbcQuery(String connectionName, String query);
 
+    @Transactional(readOnly=true)
     List<String> getPropertyDefaultDriverClassList();
+
+    @Transactional(readOnly=true)
     int getPropertyDefaultMaxRecords();
+
+    @Transactional(readOnly=true)
     int getPropertyDefaultMinPoolSize();
 
+    @Transactional(readOnly=true)
     int getPropertyDefaultMaxPoolSize();
 }

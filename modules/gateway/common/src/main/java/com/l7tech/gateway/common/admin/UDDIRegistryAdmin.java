@@ -165,6 +165,7 @@ public interface UDDIRegistryAdmin {
      * @return UDDIProxiedService or null if the service does not have one
      * @throws com.l7tech.objectmodel.FindException Any problem finding the proxied service
      */
+    @Transactional(readOnly=true)
     @Secured(types={EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype= MethodStereotype.FIND_ENTITY)
     UDDIProxiedServiceInfo getUDDIProxiedServiceInfo(long serviceOid) throws FindException;
 
