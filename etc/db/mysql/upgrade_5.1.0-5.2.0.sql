@@ -214,7 +214,7 @@ INSERT INTO rbac_permission VALUES (-1003,0,-1000,'UPDATE',NULL,'UDDI_REGISTRY')
 INSERT INTO rbac_permission VALUES (-1004,0,-1000,'DELETE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1005,0,-1000,'READ',NULL,'SERVICE');
 
---Update to the 'Manage Webservices Role'
+-- Update to the 'Manage Webservices Role'
 INSERT INTO rbac_permission VALUES (-429,0,-400,'READ',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-430,0,-400,'READ',NULL,'UDDI_PROXIED_SERVICE_INFO');
 INSERT INTO rbac_permission VALUES (-431,0,-400,'UPDATE',NULL,'UDDI_PROXIED_SERVICE_INFO');
