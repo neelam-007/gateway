@@ -76,9 +76,9 @@ public class WsdlTUDDIModelConverterTest {
 
             testBindingTModel(keysToTModels.get(bindingInfo.getTModelKey()),
                     bindingDetails.getInstanceParms(),
-                    targetNameSpace, bindingInfo.getTModelKey(), portTypeInfo.getTModelKey(), gatewayWsdlUrl, serviceOid);
+                    targetNameSpace, portTypeInfo.getTModelKey(), gatewayWsdlUrl);
 
-            testPortTypeTModel(keysToTModels.get(portTypeInfo.getTModelKey()), portTypeInfo.getTModelKey(), "WarehouseSoap", gatewayWsdlUrl, targetNameSpace, serviceOid);
+            testPortTypeTModel(keysToTModels.get(portTypeInfo.getTModelKey()), "WarehouseSoap", gatewayWsdlUrl, targetNameSpace);
         }
 
         CategoryBag categoryBag = businessService.getCategoryBag();
@@ -160,15 +160,9 @@ public class WsdlTUDDIModelConverterTest {
      * Confirms that the tModel created confirms to
      * http://www.oasis-open.org/committees/uddi-spec/doc/tn/uddi-spec-tc-tn-wsdl-v2.htm#_Toc76437775
      * 
-     * @param tModel
-     * @param tModelKey
-     * @param localName
-     * @param gatewayWsdlUrl
-     * @param targetNameSpace
-     * @param serviceOid
      */
-    private void testPortTypeTModel(TModel tModel, String tModelKey, String localName, String gatewayWsdlUrl, String targetNameSpace, long serviceOid){
-        Assert.assertEquals("Incorrect tModel name found", localName +" " + serviceOid, tModel.getName().getValue());
+    private void testPortTypeTModel(TModel tModel, String localName, String gatewayWsdlUrl, String targetNameSpace){
+        Assert.assertEquals("Incorrect tModel name found", localName , tModel.getName().getValue());
         //No longer setting key as it's unnecessary
 //        Assert.assertEquals("Incorrect tModel key found", tModelKey, tModel.getTModelKey());
 
@@ -205,22 +199,14 @@ public class WsdlTUDDIModelConverterTest {
      * Confirms that the tModel created to represent the binding conforms to
      * http://www.oasis-open.org/committees/uddi-spec/doc/tn/uddi-spec-tc-tn-wsdl-v2.htm#_Toc76437776
      * 
-     * @param tModel
-     * @param localName
-     * @param targetNameSpace
-     * @param tModelKey
-     * @param portTypeTModelKey
-     * @param serviceOid
      */
     private void testBindingTModel(TModel tModel,
                                    String localName,
                                    String targetNameSpace,
-                                   String tModelKey,
                                    String portTypeTModelKey,
-                                   String gatewayWsdlUrl,
-                                   long serviceOid){
+                                   String gatewayWsdlUrl){
 
-        Assert.assertEquals("Incorrect tModel name found", localName + " " + serviceOid, tModel.getName().getValue());
+        Assert.assertEquals("Incorrect tModel name found", localName , tModel.getName().getValue());
         //no longer setting key as unnecesssary
         //Assert.assertEquals("Incorrect tModel key found", tModelKey, tModel.getTModelKey());
 

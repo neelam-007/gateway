@@ -135,8 +135,17 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public String deleteGatewayWsdlFromUDDI(UDDIProxiedServiceInfo proxiedServiceInfo)
+    public String deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo proxiedServiceInfo) throws FindException, UDDIRegistryNotEnabledException {
+        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
+        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
+
+        return null;
+    }
+
+    @Override
+    public String deleteGatewayWsdlFromUDDI(final UDDIProxiedServiceInfo proxiedServiceInfo)
             throws FindException, DeleteException, UDDIRegistryNotEnabledException {
+
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
 
@@ -251,6 +260,28 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
+    public void publishGatewayEndpoint(long publishedServiceOid, boolean removeOthers) throws FindException, SaveException, UDDIRegistryNotEnabledException {
+        //todo [Donal] implement removeOthers
+        if(publishedServiceOid < 1) throw new IllegalArgumentException("publishedServiceOid must be >= 1");
+
+        final PublishedService service = serviceCache.getCachedService(publishedServiceOid);
+        if(service == null) throw new SaveException("PublishedService with id #(" + publishedServiceOid + ") was not found");
+
+        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(publishedServiceOid);
+        if(serviceControl == null) throw new SaveException("PublishedService with id #("+publishedServiceOid+") is not under UDDI control");
+
+        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(serviceControl.getUddiRegistryOid());
+        if(uddiRegistry == null) throw new SaveException("UDDIRegistry with id #("+serviceControl.getUddiRegistryOid()+") was not found");
+        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry with id #("+serviceControl.getUddiRegistryOid()+") is not enabled");
+
+        if(!serviceControl.isUnderUddiControl()) throw new SaveException("Published service with id #("+publishedServiceOid+") is not under UDDI control");
+
+        final UDDIProxiedServiceInfo serviceInfo = new UDDIProxiedServiceInfo(service.getOid(), uddiRegistry.getOid(),
+                serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(), false, UDDIProxiedServiceInfo.PublishType.ENDPOINT);
+        uddiProxiedServiceInfoManager.saveUDDIProxiedServiceInfo(serviceInfo);
+    }
+
+    @Override
     public void publishGatewayWsdl(final long publishedServiceOid,
                                    final long uddiRegistryOid,
                                    final String uddiBusinessKey,
@@ -258,21 +289,23 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                    final boolean updateWhenGatewayWsdlChanges)
             throws FindException, SaveException, UDDIRegistryNotEnabledException {
 
-        if(publishedServiceOid < 1) throw new IllegalArgumentException("publishedServiceOid must be > 1");
+        if(publishedServiceOid < 1) throw new IllegalArgumentException("publishedServiceOid must be >= 1");
         if(uddiRegistryOid < 1) throw new IllegalArgumentException("uddiRegistryOid must be > 1");
         if(uddiBusinessKey == null || uddiBusinessKey.trim().isEmpty()) throw new IllegalArgumentException("uddiBusinessKey cannot be null or empty");
         if(uddiBusinessName == null || uddiBusinessName.trim().isEmpty()) throw new IllegalArgumentException("uddiBusinessName cannot be null or empty");
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiRegistryOid);
         if(uddiRegistry == null) throw new IllegalArgumentException("Cannot find UDDIRegistry with oid: " + uddiRegistryOid);
-        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
+        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry with id #("+uddiRegistry.getOid()+") is not enabled");
 
         final PublishedService service = serviceCache.getCachedService(publishedServiceOid);
-        if(service == null) throw new SaveException("Cannot find published service with oid: " + publishedServiceOid);
+        if(service == null) throw new SaveException("PublishedService with id #(" + publishedServiceOid + ") was not found");
 
         final UDDIProxiedServiceInfo serviceInfo = new UDDIProxiedServiceInfo(service.getOid(), uddiRegistry.getOid(),
                 uddiBusinessKey, uddiBusinessName, updateWhenGatewayWsdlChanges, UDDIProxiedServiceInfo.PublishType.PROXY);
         uddiProxiedServiceInfoManager.saveUDDIProxiedServiceInfo(serviceInfo);
+
+        //the save event is picked up by the UDDICoordinator, which does the UDDI work
     }
 
     private Wsdl getWsdl(PublishedService service) throws PublishProxiedServiceException {

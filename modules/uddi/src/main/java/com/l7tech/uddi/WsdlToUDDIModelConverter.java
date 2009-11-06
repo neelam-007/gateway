@@ -38,7 +38,8 @@ public class WsdlToUDDIModelConverter {
     protected static final String UDDI_CATEGORIZATION_TYPES = "uddi:uddi.org:categorization:types";
     protected static final String UDDI_WSDL_CATEGORIZATION_TRANSPORT = "uddi:uddi.org:wsdl:categorization:transport";
     protected static final String UDDI_XML_LOCALNAME = "uddi:uddi.org:xml:localname";
-
+    protected static final String WSDL_BINDING_INSTANCE_DESCRIPTION = "the wsdl:binding that this wsdl:port implements";
+    
     public static final String PORT_TMODEL_IDENTIFIER = "_PortType";
     public static final String BINDING_TMODEL_IDENTIFIER = "_Binding";
 
@@ -171,7 +172,7 @@ public class WsdlToUDDIModelConverter {
 
     private void createUddiBusinessService(final BusinessService businessService, final Service wsdlService) throws MissingWsdlReferenceException {
         final String serviceName = wsdlService.getQName().getLocalPart();
-        final String localName = "Layer7 " + serviceName + " " + serviceOid;
+        final String localName = "Layer7 " + serviceName + " " + serviceOid;//this is ok to modify as the uddi:name of the BusinessService does not map to a wsdl element
         businessService.getName().add(getName(localName));
 
         BindingTemplates bindingTemplates = new BindingTemplates();
@@ -205,7 +206,7 @@ public class WsdlToUDDIModelConverter {
 
         KeyedReference localNameRef = new KeyedReference();
         localNameRef.setKeyName("service local name");
-        localNameRef.setKeyValue(localName);
+        localNameRef.setKeyValue(localName);  //this is ok to use the Layer7 name, allowed to be the name of the service
         localNameRef.setTModelKey(UDDI_XML_LOCALNAME);
         categoryBag.getKeyedReference().add(localNameRef);
 
@@ -246,7 +247,7 @@ public class WsdlToUDDIModelConverter {
         bindingTModelInstanceInfo.setTModelKey(bindingTModelKey);
 
         InstanceDetails instanceDetails = new InstanceDetails();
-        instanceDetails.getDescription().add(getDescription("the wsdl:binding that this wsdl:port implements"));
+        instanceDetails.getDescription().add(getDescription(WSDL_BINDING_INSTANCE_DESCRIPTION));
         instanceDetails.setInstanceParms(binding.getQName().getLocalPart());
         bindingTModelInstanceInfo.setInstanceDetails(instanceDetails);
 
@@ -271,7 +272,7 @@ public class WsdlToUDDIModelConverter {
      * to a wsdl:portType which does not exist
      */
     private String createUddiBindingTModel(final Binding binding) throws MissingWsdlReferenceException {
-        final String bindingName = binding.getQName().getLocalPart()+ " " + serviceOid;
+        final String bindingName = binding.getQName().getLocalPart();//+ " " + serviceOid; - don't do this, it breaks the technical note
 
         //A binding name is UNIQUE across all wsdl:bindings in the entire WSDL!
         //See http://www.w3.org/TR/wsdl#_bindings
@@ -355,7 +356,7 @@ public class WsdlToUDDIModelConverter {
     private String createUddiPortTypeTModel(final PortType portType) {
         //calling code should not have called with null pointer
         if(portType == null) throw new NullPointerException("Missing reference to wsdl:portType");
-        final String portTypeName = portType.getQName().getLocalPart()+ " " + serviceOid;
+        final String portTypeName = portType.getQName().getLocalPart();//+ " " + serviceOid; - this breaks the techincal spec - don't modify the name
 
         //A portName is UNIQUE across all wsdl:portTypes in the entire WSDL!
         //See http://www.w3.org/TR/wsdl#_porttypes

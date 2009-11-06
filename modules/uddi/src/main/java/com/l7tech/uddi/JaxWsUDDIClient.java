@@ -2,6 +2,7 @@ package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
+import com.l7tech.common.uddi.guddiv3.BindingTemplate;
 
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
@@ -27,6 +28,14 @@ interface JaxWsUDDIClient {
     boolean publishBusinessService(final BusinessService businessService) throws UDDIException;
 
     /**
+     * Save the bindingTemplate.
+     *
+     * @param bindingTemplate BindingTemplate to save. It's bindingKey will be set after the save
+     * @throws UDDIException any UDDI problems
+     */
+    public void publishBindingTemplate(final BindingTemplate bindingTemplate) throws UDDIException;
+
+    /**
      * Publish a tModel to UDDI. May already exist.
      * <p/>
      * If the tModel does not already exist, it will be created and the tModelKey assigned to it by the UDDI
@@ -42,6 +51,19 @@ interface JaxWsUDDIClient {
      * @throws UDDIException any problems searching / publishing UDDI
      */
     boolean publishTModel(final TModel tModelToPublish) throws UDDIException;
+
+    /**
+     * Same as publishTModel(final TModel tModelToPublish) except that no search is done first.
+     * When searching it's very important to consier the overviewURL values from the overviewDoc, as it is the only
+     * way we can differeniate between the same tModel published from different PublishedServices, when they
+     * are created from the same WSDL
+     *  
+     * @param tModelToPublish TModel to publish
+     * @param searchFirst boolean if true, then the UDDI is first searched for a matching tModel
+     * @return true if the TModel was published, false otherwise. Always true when searchFirst is false.
+     * @throws UDDIException
+     */
+    boolean publishTModel(final TModel tModelToPublish, final boolean searchFirst) throws UDDIException;
 
     /**
      * Retrieve the tModel with the supplied key

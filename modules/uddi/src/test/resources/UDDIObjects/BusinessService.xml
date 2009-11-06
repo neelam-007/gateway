@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<businessService xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" businessKey="uddi:c4f2cbdd-beab-11de-8126-f78857d54072" serviceKey="uddi:8617fae0-c987-11de-8486-efda8c54fa31">
+    <ns4:name xml:lang="en-US">Layer7 Warehouse 91783168</ns4:name>
+    <ns4:bindingTemplates>
+        <ns4:bindingTemplate serviceKey="uddi:8617fae0-c987-11de-8486-efda8c54fa31" bindingKey="uddi:cf31dba0-c988-11de-8486-d2648020b454">
+            <ns4:accessPoint useType="endPoint">http://irishman.l7tech.com:8080/service/91783168</ns4:accessPoint>
+            <ns4:tModelInstanceDetails>
+                <ns4:tModelInstanceInfo tModelKey="uddi:842cccb0-c987-11de-8486-beff4d0e4a0b">
+                    <ns4:instanceDetails>
+                        <ns4:description xml:lang="en-US">the wsdl:binding that this wsdl:port implements</ns4:description>
+                        <ns4:instanceParms>WarehouseSoap</ns4:instanceParms>
+                    </ns4:instanceDetails>
+                </ns4:tModelInstanceInfo>
+                <ns4:tModelInstanceInfo tModelKey="uddi:82df1700-c987-11de-8486-b1887f65850f"/>
+            </ns4:tModelInstanceDetails>
+        </ns4:bindingTemplate>
+    </ns4:bindingTemplates>
+    <ns4:categoryBag>
+        <ns4:keyedReference keyValue="service" tModelKey="uddi:uddi.org:wsdl:types"/>
+        <ns4:keyedReference keyValue="Layer7 Warehouse 91783168" keyName="service local name" tModelKey="uddi:uddi.org:xml:localname"/>
+        <ns4:keyedReference keyValue="http://warehouse.acme.com/ws" keyName="service namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
+    </ns4:categoryBag>
+</businessService>

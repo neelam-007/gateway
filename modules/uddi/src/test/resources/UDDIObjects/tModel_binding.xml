@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TModel xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" tModelKey="uddi:842cccb0-c987-11de-8486-beff4d0e4a0b">
+    <ns4:name>WarehouseSoap</ns4:name>
+    <ns4:overviewDoc>
+        <ns4:description xml:lang="en-US">the original WSDL document</ns4:description>
+        <ns4:overviewURL useType="wsdlInterface">http://irishman.l7tech.com:8080/ssg/wsdl?serviceoid=91783168</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:overviewDoc>
+        <ns4:description xml:lang="en-US">Technical Note &quot;Using WSDL in a UDDI Registry, Version 2.0.2&quot;</ns4:description>
+        <ns4:overviewURL useType="text">http://www.oasis-open.org/committees/uddi-spec/doc/tn/uddi-spec-tc-tn-wsdl-v202-20040631.htm</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:categoryBag>
+        <ns4:keyedReference keyValue="binding" tModelKey="uddi:uddi.org:wsdl:types"/>
+        <ns4:keyedReference keyValue="uddi:82df1700-c987-11de-8486-b1887f65850f" keyName="portType reference" tModelKey="uddi:uddi.org:wsdl:porttypereference"/>
+        <ns4:keyedReference keyValue="wsdlSpec" tModelKey="uddi:uddi.org:categorization:types"/>
+        <ns4:keyedReference keyValue="http://warehouse.acme.com/ws" keyName="binding namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
+        <ns4:keyedReference keyValue="uddi:uddi.org:protocol:soap" keyName="SOAP protocol" tModelKey="uddi:uddi.org:wsdl:categorization:protocol"/>
+        <ns4:keyedReference keyValue="uddi:uddi.org:transport:http" keyName="HTTP transport" tModelKey="uddi:uddi.org:wsdl:categorization:transport"/>
+    </ns4:categoryBag>
+</TModel>

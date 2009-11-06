@@ -40,6 +40,17 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
+    public void publishBindingTemplate(BindingTemplate bindingTemplate) throws UDDIException {
+        final String key = "uddi:"+UUID.randomUUID();
+        bindingTemplate.setBindingKey(key);
+    }
+
+    @Override
+    public boolean publishTModel(TModel tModelToPublish, boolean searchFirst) throws UDDIException {
+        return publishTModel(tModelToPublish);
+    }
+
+    @Override
     public void authenticate() throws UDDIException {
 
     }
@@ -76,6 +87,11 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
 
     @Override
     public void deleteTModel(String tModelKey) throws UDDIException {
+
+    }
+
+    @Override
+    public void deleteBindingTemplate(String bindingKey) throws UDDIException {
 
     }
 

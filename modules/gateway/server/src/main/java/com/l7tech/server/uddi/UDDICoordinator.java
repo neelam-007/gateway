@@ -109,13 +109,37 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
                     long id = entityIds[i];
                     char op = entityOps[i];
                     if ( EntityInvalidationEvent.CREATE == op ) {
-                        UDDIEvent uddiEvent = new PublishUDDIEvent(PublishUDDIEvent.Type.CREATE_PROXY, id);
-                        notifyEvent(uddiEvent);
-                        logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
+                        try {
+                            final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPrimaryKey(id);
+                            if(uddiProxiedServiceInfo == null){
+                                logger.log(Level.WARNING, "No UDDIProxiedServiceInfo found with id #(" + id + ")");
+                                return;
+                            }
+                            final UDDIProxiedServiceInfo.PublishType type = uddiProxiedServiceInfo.getType();
+                            final UDDIEvent uddiEvent;
+                            switch (type){
+                                case PROXY:
+                                    uddiEvent = new PublishUDDIEvent(PublishUDDIEvent.Type.CREATE_PROXY, id);
+                                    break;
+                                case ENDPOINT:
+                                    uddiEvent = new PublishUDDIEvent(PublishUDDIEvent.Type.ADD_BINDING, id);
+                                    break;
+                                default:
+                                    //todo [Donal] complete when overwrite is done and status refactor is complete
+                                    logger.log(Level.INFO, "Unsupported publish type: " + type.toString());
+                                    return;
+                            }
+                            notifyEvent(uddiEvent);
+                            logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
+                        } catch (FindException e) {
+                            logger.log(Level.WARNING, "Could not find created UDDIProxiedServiceInfo with id #(" + id + ")");
+                            return;
+                        }
                     }
                 }
 
-                timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
+                //todo [Donal] revist once refactoring for publish status is done
+//                timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
             } else if ( UDDIServiceControl.class.equals(entityInvalidationEvent.getEntityClass())) {
                 timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
             }

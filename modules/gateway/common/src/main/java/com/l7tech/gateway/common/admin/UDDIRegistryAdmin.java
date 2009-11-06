@@ -95,6 +95,15 @@ public interface UDDIRegistryAdmin {
                             boolean updateWhenGatewayWsdlChanges)
             throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException, UDDIRegistryNotEnabledException;
 
+    /**
+     * Publish an endpoint to an existing service in UDDI
+     *
+     * Service must be logically under UDDI control
+     * 
+     * @param publishedServiceOid long oid of the published service
+     * @param removeOthers boolean if true, then all other bindingTemplates will be removed from the BusinessService
+     */
+    void publishGatewayEndpoint(long publishedServiceOid, boolean removeOthers) throws FindException, SaveException, UDDIRegistryNotEnabledException;
 
     /**
      * Updated the UDDI with changes to a Published Service's WSDL
@@ -126,6 +135,14 @@ public interface UDDIRegistryAdmin {
     @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.DELETE_ENTITY)
     String deleteGatewayWsdlFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
             throws FindException, DeleteException, UDDIRegistryNotEnabledException;
+
+    /**
+     * Delete the bindingTemplate which was previously published to an existing BusinessService in UDDI
+     *
+     * @param uddiProxiedServiceInfo UDDIProxiedServiceInfo which contains the information on the bindingTemplate
+     * @return String error message if there were any problems deleting from UDDI. null if no errors
+     */
+    String deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) throws FindException, UDDIRegistryNotEnabledException;
 
     /**
      * Allows for non final properties which do not rely on UDDI data like the UDDIProxiedServiceInfo's

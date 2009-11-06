@@ -176,6 +176,14 @@ public interface UDDIClient extends Closeable {
     void deleteTModel(final String tModelKey) throws UDDIException;
 
     /**
+     * Delete a bindingTemplate. This should also attempt to delete its referenced tModels
+     * 
+     * @param bindingKey String bindingKey of the bindingTemplate to delete
+     * @throws UDDIException any problems deleting from UDDI
+     */
+    void deleteBindingTemplate(final String bindingKey) throws UDDIException;
+
+    /**
      * Delete a BusinessService from the UDDI Registry.
      *
      * Any dependent tModels representing wsdl:portType and wsdl:binding are not deleted. This should be done after

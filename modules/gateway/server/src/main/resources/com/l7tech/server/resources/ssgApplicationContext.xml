@@ -1601,6 +1601,7 @@
                     <constructor-arg index="1" ref="uddiProxiedServiceInfoManager" />
                     <constructor-arg index="2" ref="serviceCache" />
                     <constructor-arg index="3" ref="uddiHelper" />
+                    <constructor-arg index="4" ref="uddiServiceControlManager"/>
                 </bean>
                 <bean class="com.l7tech.server.uddi.SubscriptionUDDITaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>

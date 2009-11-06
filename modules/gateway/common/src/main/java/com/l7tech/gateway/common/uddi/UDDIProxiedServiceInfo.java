@@ -30,31 +30,20 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     public static final String ATTR_SERVICE_OID = "publishedServiceOid";
 
     public enum PublishType{
-        PROXY(0),
-        ENDPOINT(1),
-        OVERWRITE(2);
-
-        private int type;
-
-        private PublishType(int typeName) {
-            this.type = typeName;
-        }
-
-        public int getType() {
-            return type;
-        }
-
         /**
-         * Convert the int into a PublishType.
-         * @param type int represening the enum value
-         * @return the PublishType which matches the type, or an IllegalStateException
+         * We have published the Gateway WSDL as a proxy
          */
-        public static PublishType findType(final int type){
-            for(PublishType regType: values()){
-                if(regType.getType() == type) return regType;
-            }
-            throw new IllegalStateException("Unknown publish type requested: " + type);
-        }
+        PROXY,
+        /**
+         * We have published a bindingTemplate as a new endpoint to an existing BusinessService, now owned by
+         * the cluster this SSG is part of
+         */
+        ENDPOINT,
+        /**
+         * We have published to an existing BusinessService and have overwritten all of it's URLs to point to the
+         * Gateway. When this happens we now own the BusinessService.
+         */
+        OVERWRITE
     }
 
 
@@ -192,12 +181,13 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     }
 
     @Column(name = "publish_type")
-    public int getType() {
-        return type.getType();
+    @Enumerated(EnumType.STRING)
+    public PublishType getType() {
+        return type;
     }
 
-    public void setType(int type) {
-        this.type = PublishType.findType(type);
+    public void setType(PublishType type) {
+        this.type = type;
     }
 
     @OneToOne(cascade= CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="uddiProxiedServiceInfo")
@@ -209,6 +199,15 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
 
     public void setUddiPublishStatus(UDDIPublishStatus uddiPublishStatus) {
         this.uddiPublishStatus = uddiPublishStatus;
+    }
+
+    @Column(name = "proxy_binding_template_key")
+    public String getProxyBindingKey() {
+        return proxyBindingKey;
+    }
+
+    public void setProxyBindingKey(String proxyBindingKey) {
+        this.proxyBindingKey = proxyBindingKey;
     }
 
     // PRIVATE
@@ -262,5 +261,10 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
 
     private UDDIPublishStatus uddiPublishStatus;
 
+    /**
+     * If this entity represents the fact that an endpoint was added to a service,
+     * then this is the bindingKey of the added bindingTemplate
+     */
+    private String proxyBindingKey;
 }
 

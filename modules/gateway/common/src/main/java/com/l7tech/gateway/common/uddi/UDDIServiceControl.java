@@ -192,15 +192,6 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.underUddiControl = underUddiControl;
     }
 
-    @Column(name = "proxy_binding_key")
-    public String getProxyBindingKey() {
-        return proxyBindingKey;
-    }
-
-    public void setProxyBindingKey( final String proxyBindingKey ) {
-        this.proxyBindingKey = proxyBindingKey;
-    }
-
     @Column(name = "monitoring_enabled")
     public boolean isMonitoringEnabled() {
         return monitoringEnabled;
@@ -266,7 +257,6 @@ public class UDDIServiceControl extends PersistentEntityImp {
     private String wsdlPortBinding;
     private String accessPointUrl;
     private boolean underUddiControl;
-    private String proxyBindingKey;
     private boolean monitoringEnabled;
     private boolean disableServiceOnChange;
     private boolean metricsEnabled;

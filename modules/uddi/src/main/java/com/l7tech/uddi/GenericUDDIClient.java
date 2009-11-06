@@ -36,6 +36,24 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         getAuthToken();   
     }
 
+    @Override
+    public void publishBindingTemplate(final BindingTemplate bindingTemplate) throws UDDIException {
+
+        SaveBinding saveBinding = new SaveBinding();
+        saveBinding.setAuthInfo(getAuthToken());
+        saveBinding.getBindingTemplate().add(bindingTemplate);
+        try {
+            BindingDetail bindingDetail = getPublishPort().saveBinding(saveBinding);
+            logger.log(Level.INFO, "Saved bindingTemplate with key: " + bindingDetail.getBindingTemplate().get(0).getBindingKey() +
+                    " with serviceKey: " + bindingTemplate.getServiceKey());
+            final String bindingKey =  bindingDetail.getBindingTemplate().get(0).getBindingKey();
+            bindingTemplate.setBindingKey(bindingKey);
+        } catch (DispositionReportFaultMessage drfm) {                      
+            final String msg = getExceptionMessage("Exception saving bindingTemplate: ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
+    }
     /**
      *
      */
@@ -47,56 +65,58 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         try {
             ServiceDetail serviceDetail = getPublishPort().saveService(saveService);
             businessService.setServiceKey(serviceDetail.getBusinessService().get(0).getServiceKey());
-            logger.log(Level.INFO, "Saved service with key: " + businessService.getServiceKey());
+            logger.log(Level.INFO, "Saved BusinessService with key: " + businessService.getServiceKey());
 
             return preSaveKey == null;
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception saving business service: ", drfm);
+            final String msg = getExceptionMessage("Exception saving BusinessService: ", drfm);
             logger.log(Level.WARNING, msg);
             throw new UDDIException(msg, drfm);
         }
     }
 
     @Override
-    public boolean publishTModel(TModel tModelToPublish) throws UDDIException {
-        TModelList tModelList = findMatchingTModels(tModelToPublish, false);
-        TModelInfos tModelInfos = tModelList.getTModelInfos();
-        if(tModelInfos != null && !tModelInfos.getTModelInfo().isEmpty()){
-            List<TModelInfo> allTModelInfos = tModelInfos.getTModelInfo();
+    public boolean publishTModel(TModel tModelToPublish, boolean searchFirst) throws UDDIException {
+        if(searchFirst){
+            TModelList tModelList = findMatchingTModels(tModelToPublish, false);
+            TModelInfos tModelInfos = tModelList.getTModelInfos();
+            if(tModelInfos != null && !tModelInfos.getTModelInfo().isEmpty()){
+                List<TModelInfo> allTModelInfos = tModelInfos.getTModelInfo();
 
-            //tModels published by the gateway will only have a single OverviewDoc with use type wsdlInterface
-            String tModelToPublishWsdlUrl = null;
-            for(OverviewDoc overviewDoc: tModelToPublish.getOverviewDoc()){
-                OverviewURL overviewURL = overviewDoc.getOverviewURL();
-                if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
-                tModelToPublishWsdlUrl = overviewURL.getValue();
-            }
-            if(tModelToPublishWsdlUrl == null) throw new IllegalStateException("tModel to publish does not have an OverviewURl of type 'wsdlInterface'");
-
-            List<TModel> matchingTModels = new ArrayList<TModel>();
-            for(TModelInfo tModelInfo: allTModelInfos){
-                TModel foundModel = getTModel(tModelInfo.getTModelKey());
-                if(foundModel == null) continue;
-                //compare overviewDocs and overviewUrls
-                boolean foundMatchingOverviewUrl = false;
-                for(OverviewDoc overviewDoc: foundModel.getOverviewDoc()){
+                //tModels published by the gateway will only have a single OverviewDoc with use type wsdlInterface
+                String tModelToPublishWsdlUrl = null;
+                for(OverviewDoc overviewDoc: tModelToPublish.getOverviewDoc()){
                     OverviewURL overviewURL = overviewDoc.getOverviewURL();
                     if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
-                    if(!overviewURL.getValue().equalsIgnoreCase(tModelToPublishWsdlUrl)) continue;
-                    foundMatchingOverviewUrl = true;
+                    tModelToPublishWsdlUrl = overviewURL.getValue();
                 }
-                if(foundMatchingOverviewUrl) matchingTModels.add(foundModel);
-            }
+                if(tModelToPublishWsdlUrl == null) throw new IllegalStateException("tModel to publish does not have an OverviewURL of type 'wsdlInterface'");
 
-            if(!matchingTModels.isEmpty()){
-                if(matchingTModels.size() != 1)
-                    logger.log(Level.INFO, "Found " + matchingTModels.size()+" matching TModels. The first will be used");
+                List<TModel> matchingTModels = new ArrayList<TModel>();
+                for(TModelInfo tModelInfo: allTModelInfos){
+                    TModel foundModel = getTModel(tModelInfo.getTModelKey());
+                    if(foundModel == null) continue;
+                    //compare overviewDocs and overviewUrls
+                    boolean foundMatchingOverviewUrl = false;
+                    for(OverviewDoc overviewDoc: foundModel.getOverviewDoc()){
+                        OverviewURL overviewURL = overviewDoc.getOverviewURL();
+                        if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
+                        if(!overviewURL.getValue().equalsIgnoreCase(tModelToPublishWsdlUrl)) continue;
+                        foundMatchingOverviewUrl = true;
+                    }
+                    if(foundMatchingOverviewUrl) matchingTModels.add(foundModel);
+                }
 
-                tModelToPublish.setTModelKey(allTModelInfos.get(0).getTModelKey());
-                logger.log(Level.INFO, "Found matching tModel in UDDI Registry. Not publishing supplied tModel");
-                return false;
+                if(!matchingTModels.isEmpty()){
+                    if(matchingTModels.size() != 1)
+                        logger.log(Level.INFO, "Found " + matchingTModels.size()+" matching TModels. The first will be used");
+
+                    tModelToPublish.setTModelKey(allTModelInfos.get(0).getTModelKey());
+                    logger.log(Level.INFO, "Found matching tModel in UDDI Registry. Not publishing supplied tModel");
+                    return false;
+                }
+                //fall through to publish below
             }
-            //fall through to publish below
         }
         //TModel does not exist yet in registry. Publish it
 
@@ -117,6 +137,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         } catch(RuntimeException e){
             throw new UDDIException(e.getMessage());
         }
+    }
+
+    @Override
+    public boolean publishTModel(TModel tModelToPublish) throws UDDIException {
+        return publishTModel(tModelToPublish, true);
     }
 
     @Override
@@ -227,6 +252,36 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         final TModel tModel = getTModel(tModelKey);
         if ( tModel != null ) {
             deleteTModel(tModel);
+        }
+    }
+
+    @Override
+    public void deleteBindingTemplate(String bindingKey) throws UDDIException {
+        GetBindingDetail getBindingDetail = new GetBindingDetail();
+        getBindingDetail.setAuthInfo(getAuthToken());
+        getBindingDetail.getBindingKey().add(bindingKey);
+        try {
+            BindingDetail bindingDetail = getInquirePort().getBindingDetail(getBindingDetail);
+            BindingTemplate bindingTemplate = bindingDetail.getBindingTemplate().get(0);
+            for(TModelInstanceInfo info: bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo()){
+                deleteTModel(info.getTModelKey());
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception getting bindingTemplate with bindingKey: " + bindingKey+ ": ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
+
+        DeleteBinding deleteBinding = new DeleteBinding();
+        deleteBinding.setAuthInfo(getAuthToken());
+        deleteBinding.getBindingKey().add(bindingKey);
+        try {
+            getPublishPort().deleteBinding(deleteBinding);
+            logger.log(Level.INFO, "Deleting bindingTemplate with key: " + bindingKey);
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception deleting bindingTemplate with bindingKey: " + bindingKey+ ": ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
         }
     }
 
