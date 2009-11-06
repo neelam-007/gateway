@@ -52,7 +52,7 @@ public class PatchCli {
                     System.out.println(status.toString());
                 }
             } else {
-                System.out.println("<emtpy result>");
+                System.out.println("No patches have been uploaded.");
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
