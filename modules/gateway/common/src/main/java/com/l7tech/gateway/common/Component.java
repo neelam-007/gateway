@@ -39,6 +39,7 @@ public class Component {
     public static final Component     GW_TRUST_STORE      = new Component(  90010, "Trusted Certificate Store", GW_SERVER);
     public static final Component     GW_SYSLOG           = new Component(  90020, "Syslog Client", GW_SERVER);
     public static final Component     GW_CSR_SERVLET      = new Component(  90030, "Certificate Signing Service", GW_SERVER);
+    public static final Component     GW_UDDI_SERVICE     = new Component(  90040, "UDDI Service", GW_SERVER);
     // TODO find a way to atomically renumber these in an SQL script or UpgradeTask, this is ridiculous
     public static final Component   GW_CLUSTER            = new Component( 300000, "Cluster", GATEWAY);
     public static final Component   GW_DATABASE           = new Component( 400000, "Database", GATEWAY);

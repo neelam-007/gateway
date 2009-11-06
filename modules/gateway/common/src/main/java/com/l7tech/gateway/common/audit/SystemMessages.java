@@ -103,11 +103,20 @@ public class SystemMessages extends Messages {
     public static final M AUDIT_ARCHIVER_ERROR = m(2205, Level.WARNING, "Audit Archiver error: {0}");
     public static final M AUDIT_ARCHIVER_IMMEDIATE_TRIGGER  = m(2206, Level.WARNING, "Immediate Audit Archive trigger requested.");
 
-
     // FTP Client Utils
     public static final M FTP_SSL_NO_CERT = m(2250, Level.WARNING, "FTP server ({0}) did not identify itself properly: {1}");
     public static final M FTP_SSL_NOT_X509 = m(2251, Level.WARNING, "Cannot handle non-X.509 certificates from FTP server ({0})");
     public static final M FTP_SSL_UNTRUSTED = m(2252, Level.WARNING, "Cannot establish trust of SSL certificate from FTP server ({0}): {1}");
+
+    // UDDI interaction
+    public static final M UDDI_SUBSCRIPTION_NOTIFICATION_FAILED = m(2270, Level.WARNING, "Error processing subscription notification ''{0}''.");
+    public static final M UDDI_SUBSCRIPTION_NOTIFICATION_BADKEY = m(2271, Level.WARNING, "Subscription key not recognized for notification ''{0}''.");
+    public static final M UDDI_SUBSCRIPTION_POLL_FAILED         = m(2272, Level.WARNING, "Error polling subscription ''{0}''.");
+    public static final M UDDI_SUBSCRIPTION_SUBSCRIBE_FAILED    = m(2273, Level.WARNING, "Error adding/renewing subscription ''{0}''.");
+    public static final M UDDI_SUBSCRIPTION_UNSUBSCRIBE_FAILED  = m(2274, Level.WARNING, "Error removing subscription ''{0}''.");
+    public static final M UDDI_METRICS_PUBLISH_FAILED           = m(2275, Level.WARNING, "Error publishing metrics ''{0}''.");
+    public static final M UDDI_METRICS_PUBLISH_TMODEL_ERROR     = m(2276, Level.WARNING, "Error publishing metrics for service ''{0}'' ''{1}''.");
+    public static final M UDDI_METRICS_CLEANUP_FAILED           = m(2277, Level.WARNING, "Error removing metrics ''{0}''.");
 
     // MAX -                                      m(2999
 }

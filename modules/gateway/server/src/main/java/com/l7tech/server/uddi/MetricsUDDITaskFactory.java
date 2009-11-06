@@ -4,7 +4,7 @@ import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIClient;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.wsdm.Aggregator;
@@ -122,7 +122,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         }
 
         @Override
-        public void apply( final UDDITaskContext context ) throws UDDIException {
+        public void apply( final UDDITaskContext context ) {
             logger.fine( "Publishing metrics to UDDI for registry (#"+registryOid+")" );
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
@@ -144,8 +144,14 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
 
                     final UDDIClient client = uddiHelper.newUDDIClient( uddiRegistry );
 
+                    if ( !toPublish.isEmpty() || !toUpdate.isEmpty() ) {
+                        // authenticate early to avoid error for every service 
+                        client.authenticate();
+                    }
+
                     for ( UDDIBusinessServiceStatus businessService : toPublish ) {
                         String metricsTModelKey = publishMetrics(
+                                context,
                                 template,
                                 client,
                                 businessService,
@@ -167,6 +173,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
 
                     for ( UDDIBusinessServiceStatus businessService : toUpdate ) {
                         publishMetrics(
+                                context,
                                 template,
                                 client,
                                 businessService,
@@ -176,12 +183,15 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                 } else {
                     logger.info( "Ignoring metrics event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );
                 }
-            } catch (FindException e) {
-                logger.log( Level.WARNING, "Error accessing UDDIRegistry", e );
+            } catch (ObjectModelException e) {
+                context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_FAILED, e, "Database error when publishing metrics for registry #"+registryOid+".");
+            } catch (UDDIException ue) {
+                context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_FAILED, ue, ExceptionUtils.getMessage(ue));
             }
         }
 
-        private String publishMetrics( final UDDITemplate template,
+        private String publishMetrics( final UDDITaskContext context,
+                                       final UDDITemplate template,
                                        final UDDIClient client,
                                        final UDDIBusinessServiceStatus businessService,
                                        final long endTime,
@@ -226,7 +236,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                       description,
                                       references );
             } catch ( UDDIException ue ) {
-                logger.log( Level.WARNING, "Error publishing metrics TModel to UDDI '"+ ExceptionUtils.getMessage( ue )+"'.", ue );
+                context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_TMODEL_ERROR, ue, serviceName, ExceptionUtils.getMessage( ue ) );
             }
 
             return null;
@@ -345,7 +355,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         }
 
         @Override
-        public void apply( final UDDITaskContext context ) throws UDDIException {
+        public void apply( final UDDITaskContext context ) {
             logger.fine( "Cleanup metrics in UDDI for registry (#"+registryOid+")" );
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
@@ -377,10 +387,12 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                         }
                     }
                 } else {
-                    logger.info( "Ignoring metrics event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );
+                    logger.fine( "Ignoring metrics event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );
                 }
             } catch (ObjectModelException e) {
-                throw new UDDIException("Error in metrics cleanup task.", e );
+                context.logAndAudit( SystemMessages.UDDI_METRICS_CLEANUP_FAILED, e, "Database error when removing metrics for registry #"+registryOid+".");
+            } catch (UDDIException ue) {
+                context.logAndAudit( SystemMessages.UDDI_METRICS_CLEANUP_FAILED, ue, ExceptionUtils.getMessage(ue));
             }
         }
     }

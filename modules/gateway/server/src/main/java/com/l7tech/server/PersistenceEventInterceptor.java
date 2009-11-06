@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsBinDetail;
 import com.l7tech.gateway.common.transport.email.EmailListenerState;
+import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.identity.GroupMembership;
 import com.l7tech.identity.cert.CertEntryRow;
 import com.l7tech.objectmodel.Entity;
@@ -86,6 +87,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         noAuditClassNames.add(FolderPredicate.class.getName());
         noAuditClassNames.add(EntityFolderAncestryPredicate.class.getName());
         noAuditClassNames.add(ResolutionParameters.class.getName());
+        noAuditClassNames.add(UDDIProxiedService.class.getName());
         noAuditClassNames.add("com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRule");
         noAuditClassNames.add("com.l7tech.server.ems.monitoring.SsgClusterNotificationSetup");
         noAuditClassNames.add("com.l7tech.server.ems.monitoring.EntityMonitoringPropertySetup");

@@ -39,7 +39,7 @@ public class UDDISubscriptionResultFactory {
         try {
             NodeList nodes = message.getElementsByTagNameNS( "urn:uddi-org:sub_v3", "subscriptionResultsList" );
             if ( nodes.getLength()!=1 ) {
-                throw new UDDIException( "Error finding results." );                
+                throw new UDDIException( "Invalid subscription results message." );                
             }
 
             JAXBContext context = JAXBContext.newInstance( SubscriptionResultsList.class.getPackage().getName() );

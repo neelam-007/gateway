@@ -9,11 +9,17 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
+import com.l7tech.server.event.system.UDDISystemEvent;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.cluster.ClusterMaster;
+import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.SaveException;
@@ -26,16 +32,21 @@ import java.util.logging.Level;
 
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.BeansException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 
 /**
  * The UDDICoordinator handles events and task processing for UDDI
  */
-public class UDDICoordinator implements ApplicationListener, InitializingBean {
+public class UDDICoordinator implements ApplicationContextAware, ApplicationListener, InitializingBean {
 
     //- PUBLIC
 
@@ -79,6 +90,8 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
 
     /**
      * Notification of a UDDIEvent for immediate processing.
+     *
+     * <p>It is assumed that there is a current auditing context available for use.</p>
      *
      * @param event The event
      * @throws UDDIException if an error occurs handling the event
@@ -152,16 +165,14 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
             }
 
         } else if ( applicationEvent instanceof ReadyForMessages && clusterMaster.isMaster() ) {
-            checkSubscriptions( Collections.<Long,UDDIRegistryRuntime>emptyMap(), registryRuntimes.get() );    
+            checkSubscriptions( Collections.<Long,UDDIRegistryRuntime>emptyMap(), registryRuntimes.get(), true );
         }
     }
 
-    private void notifyPublishEvent(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) {
-        final UDDIProxiedServiceInfo.PublishType publishType = uddiProxiedServiceInfo.getPublishType();
-        final UDDIEvent uddiEvent = new PublishUDDIEvent(publishType, uddiProxiedServiceInfo);
-
-        notifyEvent(uddiEvent);
-        logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
+    @Override
+    public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
+        eventPublisher = applicationContext;
+        auditor = new Auditor( this, applicationContext, logger );
     }
 
     //- PRIVATE
@@ -185,6 +196,8 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
     private final UDDITaskFactory.UDDITaskContext taskContext;
     private final AtomicReference<Map<Long,UDDIRegistryRuntime>> registryRuntimes = // includes disabled registries
             new AtomicReference<Map<Long,UDDIRegistryRuntime>>( Collections.<Long,UDDIRegistryRuntime>emptyMap() );
+    private ApplicationEventPublisher eventPublisher;
+    private Audit auditor;
 
     private PublishedService getServiceForHandlingUDDINotifications( final long registryOid ) {
         PublishedService notificationService = null;
@@ -286,7 +299,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
         }
 
         if ( updateSubscriptions && clusterMaster.isMaster() ) {
-            checkSubscriptions( oldRegistries, registries );
+            checkSubscriptions( oldRegistries, registries, false );
         }
 
         registryRuntimes.set( Collections.unmodifiableMap( registries ) );
@@ -296,14 +309,15 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
     }
 
     private void checkSubscriptions( final Map<Long,UDDIRegistryRuntime> oldRegistries,
-                                     final Map<Long,UDDIRegistryRuntime> newRegistries ) {
+                                     final Map<Long,UDDIRegistryRuntime> newRegistries,
+                                     final boolean checkExpired ) {
         for ( long registryOid : newRegistries.keySet() ) {
             final UDDIRegistryRuntime oldurr = oldRegistries.get( registryOid );
             final UDDIRegistryRuntime newurr = newRegistries.get( registryOid );
 
             if ( newurr.registry.isMonitoringEnabled() && (oldurr==null || !oldurr.registry.isMonitoringEnabled() ||
                  newurr.registry.getMonitoringFrequency() != oldurr.registry.getMonitoringFrequency())) {
-                notifyEvent( new SubscribeUDDIEvent( registryOid, SubscribeUDDIEvent.Type.SUBSCRIBE ) );
+                notifyEvent( new SubscribeUDDIEvent( registryOid, SubscribeUDDIEvent.Type.SUBSCRIBE, checkExpired ) );
             } else if ( !newurr.registry.isMonitoringEnabled() && (oldurr!=null && oldurr.registry.isMonitoringEnabled())) {
                 notifyEvent( new SubscribeUDDIEvent( registryOid, SubscribeUDDIEvent.Type.UNSUBSCRIBE ) );
             }
@@ -456,6 +470,14 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
         return serviceStatus;
     }
 
+    private void notifyPublishEvent(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) {
+        final UDDIProxiedServiceInfo.PublishType publishType = uddiProxiedServiceInfo.getPublishType();
+        final UDDIEvent uddiEvent = new PublishUDDIEvent(publishType, uddiProxiedServiceInfo);
+
+        notifyEvent(uddiEvent);
+        logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
+    }
+
     private static final class UDDIRegistryRuntime {
         private final UDDIHelper uddiHelper;
         private final UDDIRegistry registry;
@@ -558,14 +580,28 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
         @Override
         public void doRun() {
             if ( coordinator.clusterMaster.isMaster() ) {
-                new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                AuditContextUtils.doAsSystem( new Runnable(){
                     @Override
-                    protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
+                    public void run() {
                         try {
-                            coordinator.handleEvent( event );
-                        } catch (UDDIException e) {
-                            logger.log( Level.WARNING, "Error processing UDDI event", e );
-                            transactionStatus.setRollbackOnly();
+                            new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                                @Override
+                                protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
+                                    try {
+                                        coordinator.handleEvent( event );
+                                    } catch (UDDIException e) {
+                                        logger.log( Level.WARNING, "Error processing UDDI event", e );
+                                        transactionStatus.setRollbackOnly();
+                                    }
+                                }
+                            } );
+                        } catch ( TransactionException te ) {
+                            logger.log( Level.WARNING, "Error processing transaction for UDDI event.", te );                              
+                        }
+
+                        ApplicationEventPublisher publisher = coordinator.eventPublisher;
+                        if ( publisher != null ) {
+                            publisher.publishEvent( new UDDISystemEvent( coordinator, Component.GW_UDDI_SERVICE ) );
                         }
                     }
                 } );
@@ -601,7 +637,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
     private static final class UDDICoordinatorTaskContext implements UDDITaskFactory.UDDITaskContext {
         private final UDDICoordinator coordinator;
 
-        UDDICoordinatorTaskContext( final UDDICoordinator coordinator ) {
+        UDDICoordinatorTaskContext( final UDDICoordinator coordinator  ) {
             this.coordinator = coordinator;   
         }
 
@@ -618,6 +654,39 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
         @Override
         public void notifyEvent( final UDDIEvent event ) {
             this.coordinator.notifyEvent( event );
+        }
+
+        @Override
+        public void logAndAudit( final AuditDetailMessage msg, final Throwable e, final String... params ) {
+            final Audit auditor = coordinator.auditor;
+            if ( auditor != null ) {
+
+                // Only audit a UDDIException if it has a cause
+                Throwable auditThrowable = e;
+                if ( auditThrowable instanceof UDDIException ) {
+                    if ( auditThrowable.getCause()==null ) {
+                        auditThrowable = null;
+                    }
+                }
+
+                auditor.logAndAudit( msg, params, auditThrowable );
+            }
+        }
+
+        @Override
+        public void logAndAudit( final AuditDetailMessage msg, final String... params ) {
+            final Audit auditor = coordinator.auditor;
+            if ( auditor != null ) {
+                auditor.logAndAudit( msg, params );
+            }
+        }
+
+        @Override
+        public void logAndAudit( final AuditDetailMessage msg ) {
+            final Audit auditor = coordinator.auditor;
+            if ( auditor != null ) {
+                auditor.logAndAudit( msg );
+            }
         }
     }
 }

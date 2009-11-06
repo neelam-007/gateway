@@ -1,12 +1,13 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIClient;
 import com.l7tech.uddi.UDDISubscriptionResults;
@@ -55,7 +56,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                             uddiRegistryManager,
                             uddiHelper,
                             uddiRegistrySubscriptionManager,
-                            subscribeEvent.getRegistryOid());
+                            subscribeEvent.getRegistryOid(),
+                            subscribeEvent.isExpiredOnly() );
                     break;
                 case UNSUBSCRIBE:
                     task = new UnsubscribeUDDITask(
@@ -86,26 +88,30 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
     private final UDDIServiceControlManager uddiServiceControlManager;
 
-    private static final class SubscribeUDDITask extends UDDITask {
+    private static final class SubscribeUDDITask extends SubscriptionProcessingUDDITask {
         private static final Logger logger = Logger.getLogger( SubscribeUDDITask.class.getName() );
 
         private final UDDIRegistryManager uddiRegistryManager;
         private final UDDIHelper uddiHelper;
         private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
         private final long registryOid;
+        private final boolean expiredOnly;
 
         public SubscribeUDDITask( final UDDIRegistryManager uddiRegistryManager,
                                   final UDDIHelper uddiHelper,
                                   final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager,
-                                  final long registryOid ) {
+                                  final long registryOid,
+                                  final boolean expiredOnly ) {
+            super( logger, null );
             this.uddiRegistryManager = uddiRegistryManager;
             this.uddiHelper = uddiHelper;
             this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
             this.registryOid = registryOid;
+            this.expiredOnly = expiredOnly;
         }
 
         @Override
-        public void apply( final UDDITaskContext context ) throws UDDIException {
+        public void apply( final UDDITaskContext context ) {
             // TODO Renew subscription rather than delete and replace?
             logger.info( "Subscribing to UDDI for registry "+registryOid+"." );
             try {
@@ -115,6 +121,10 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
                     UDDIRegistrySubscription uddiRegistrySubscription = uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
                     if ( uddiRegistrySubscription != null && uddiRegistrySubscription.getSubscriptionKey()!=null ) {
+                        if ( expiredOnly && !isExpiring(uddiRegistrySubscription) ) {
+                            return;    
+                        }
+
                         try {
                             uddiClient.deleteSubscription( uddiRegistrySubscription.getSubscriptionKey() );
                             uddiRegistrySubscription.setSubscriptionKey( null );
@@ -168,10 +178,12 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 } else if ( uddiRegistry == null ) {
                     logger.log( Level.WARNING, "UDDIRegistry (#"+registryOid+") not found for subscription." );
                 } else {
-                    throw new UDDIException("UDDI Registry '"+uddiRegistry.getName()+"' is disabled.");
+                    throw new UDDIException("UDDI registry "+uddiRegistry.getName()+"(#"+registryOid+") is disabled.");
                 }
-            } catch (FindException e) {
-                logger.log( Level.WARNING, "Error accessing UDDIRegistry", e );
+            } catch (ObjectModelException e) {
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_SUBSCRIBE_FAILED, e, "Database error when polling subscription for registry #"+registryOid+".");
+            } catch (UDDIException ue) {
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_SUBSCRIBE_FAILED, ue, ExceptionUtils.getMessage(ue));
             }
         }
     }
@@ -195,7 +207,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         }
 
         @Override
-        public void apply( final UDDITaskContext context ) throws UDDIException {
+        public void apply( final UDDITaskContext context ) {
             logger.info( "Unsubscribing from UDDI for registry "+registryOid+"." );
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
@@ -211,21 +223,19 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                             logger.log( Level.WARNING, "Missing subscription key for registry "+registryOid+", unsubscription not performed." );
                         }
 
-                        try {
-                            uddiRegistrySubscriptionManager.delete( uddiRegistrySubscription );
-                        } catch (DeleteException e) {
-                            logger.log( Level.WARNING, "Error deleting UDDI registry subscription.", e );
-                        }
+                        uddiRegistrySubscriptionManager.delete( uddiRegistrySubscription );
                     } else {
                         logger.log( Level.WARNING, "Cannot find subscription information for registry "+registryOid+", unsubscription not performed." );
                     }
                 } else if ( uddiRegistry == null ) {
                     logger.log( Level.WARNING, "UDDIRegistry (#"+registryOid+") not found for unsubscription." );
                 } else {
-                    throw new UDDIException("UDDI Registry '"+uddiRegistry.getName()+"' is disabled.");
+                    throw new UDDIException("UDDI registry "+uddiRegistry.getName()+"(#"+registryOid+") is disabled.");
                 }
-            } catch (FindException e) {
-                logger.log( Level.WARNING, "Error accessing UDDIRegistry", e );
+            } catch (ObjectModelException e) {
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_UNSUBSCRIBE_FAILED, e, "Database error when polling subscription for registry #"+registryOid+".");
+            } catch (UDDIException ue) {
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_UNSUBSCRIBE_FAILED, ue, ExceptionUtils.getMessage(ue));
             }
         }
     }
@@ -242,7 +252,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
         void processSubscriptionResults( final UDDITaskContext context,
                                          final UDDIRegistrySubscription uddiRegistrySubscription,
-                                         final UDDISubscriptionResults results ) throws FindException, UDDIException {
+                                         final UDDISubscriptionResults results ) throws FindException {
             final long registryOid = uddiRegistrySubscription.getUddiRegistryOid();
             for ( UDDISubscriptionResults.Result result : results.getResults() ) {
                 Collection<UDDIServiceControl> controls = uddiServiceControlManager.findByUDDIRegistryAndServiceKey(
@@ -259,11 +269,15 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 }
             }
 
-            if ( (uddiRegistrySubscription.getSubscriptionExpiryTime() - System.currentTimeMillis()) <
-                 SUBSCRIPTION_RENEW_THRESHOLD ) {
+            if ( isExpiring( uddiRegistrySubscription ) ) {
                 logger.info( "Notifying subscribe event for UDDI registry (#"+registryOid+")." );
                 context.notifyEvent( new SubscribeUDDIEvent( registryOid, SubscribeUDDIEvent.Type.SUBSCRIBE ) );
             }
+        }
+
+        protected boolean isExpiring( final UDDIRegistrySubscription uddiRegistrySubscription ) {
+            return (uddiRegistrySubscription.getSubscriptionExpiryTime() - System.currentTimeMillis()) <
+                 SUBSCRIPTION_RENEW_THRESHOLD;
         }
     }
 
@@ -288,7 +302,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         }
 
         @Override
-        public void apply( final UDDITaskContext context ) throws UDDIException {
+        public void apply( final UDDITaskContext context ) {
             logger.fine( "Polling UDDI registry subscriptions." );
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
@@ -307,15 +321,15 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         uddiRegistrySubscription.setSubscriptionCheckTime( newCheckTime );
                         uddiRegistrySubscriptionManager.update( uddiRegistrySubscription );
                     } else {
-                        logger.log( Level.WARNING, "Cannot find subscription information for registry "+uddiRegistry.getName()+", subscription poll not performed." );                        
+                        context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, "Missing subscription for registry "+uddiRegistry.getName()+"(#"+registryOid+").");
                     }
                 } else if (uddiRegistry == null) {
                     logger.log( Level.WARNING, "UDDIRegistry (#"+registryOid+") not found for subscription poll." );
                 }
-            } catch (FindException e) {
-                logger.log( Level.WARNING, "Error accessing UDDIRegistry", e );
-            } catch (UpdateException e) {
-                logger.log( Level.WARNING, "Error updating subscription for registry "+registryOid+".", e );
+            } catch (ObjectModelException e) {
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, e, "Database error when polling subscription for registry #"+registryOid+".");
+            } catch (UDDIException ue) {
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, ue, ExceptionUtils.getMessage(ue));
             }
         }
     }
@@ -337,13 +351,14 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         }
 
         @Override
-        public void apply( final UDDITaskContext context ) throws UDDIException {
+        public void apply( final UDDITaskContext context ) {
             logger.fine( "Processing UDDI subscription notification." );
 
-            final UDDISubscriptionResults results = UDDISubscriptionResultFactory.buildResults( message );
-            final String subscriptionKey = results.getSubscriptionKey();
+            String subscriptionKey = null;
             try {
-                Collection<UDDIRegistrySubscription> subscriptions = uddiRegistrySubscriptionManager.findBySubscriptionKey( subscriptionKey );
+                final UDDISubscriptionResults results = UDDISubscriptionResultFactory.buildResults( message );
+                subscriptionKey = results.getSubscriptionKey();
+                final Collection<UDDIRegistrySubscription> subscriptions = uddiRegistrySubscriptionManager.findBySubscriptionKey( subscriptionKey );
 
                 UDDIRegistrySubscription subscription = null;
                 if ( subscriptions.size() > 1 ) {
@@ -362,8 +377,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                     }
                 } else if ( subscriptions.size()==1 ) {
                     subscription = subscriptions.iterator().next();
-                } else {
-                    logger.warning( "Ignoring unrecognised subscription key '"+subscriptionKey+"'." );
+                } else {                    
+                    context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_NOTIFICATION_BADKEY, subscriptionKey );
                 }
 
                 if ( subscription != null ) {
@@ -371,10 +386,10 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                     subscription.setSubscriptionNotifiedTime( results.getEndTime() );
                     uddiRegistrySubscriptionManager.update( subscription );
                 }
-            } catch (FindException e) {
-                logger.log( Level.WARNING, "Error finding subscription for "+subscriptionKey+", subscription notification ignored.", e );                        
-            } catch (UpdateException e) {
-                logger.log( Level.WARNING, "Error updating subscription for "+subscriptionKey+".", e );
+            } catch (ObjectModelException e) {
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_NOTIFICATION_FAILED, e, "Database error when processing subscription for "+subscriptionKey+".");
+            } catch (UDDIException ue) {
+                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_NOTIFICATION_FAILED, ue, ExceptionUtils.getMessage(ue));
             }
         }
     }
