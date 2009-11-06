@@ -4,10 +4,12 @@ import com.l7tech.server.service.ServiceCache;
 import com.l7tech.uddi.*;
 import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.wsdl.WSDLException;
 import java.util.logging.Logger;
@@ -18,7 +20,6 @@ import java.util.List;
  *
  */
 public class PublishingUDDITaskFactory extends UDDITaskFactory {
-    private static final Logger logger = Logger.getLogger(PublishingUDDITaskFactory.class.getName());
 
     //- PUBLIC
 
@@ -61,7 +62,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         task = new DeleteUDDIEndpointTask(
                                 publishUDDIEvent.getUddiProxiedServiceInfo(),
                                 uddiProxiedServiceInfoManager,
-                                uddiServiceControlManager, uddiRegistryManager, serviceCache, uddiHelper);
+                                uddiRegistryManager, uddiHelper);
                     }
                     //it's ok when nothing is found. The status is PUBLISHED and the entity has been updated
                     break;
@@ -79,38 +80,32 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
     private final UDDIHelper uddiHelper;
     private final UDDIServiceControlManager uddiServiceControlManager;
 
-    private static final class DeleteUDDIEndpointTask extends UDDITask{
+    private static final class DeleteUDDIEndpointTask extends UDDITask {
         private static final Logger logger = Logger.getLogger(DeleteUDDIEndpointTask.class.getName());
 
         private final UDDIProxiedServiceInfo uddiproxiedServiceInfo;
         private final UDDIProxiedServiceInfoManager proxiedServiceInfoManager;
-        private final UDDIServiceControlManager uddiServiceControlManager;
         private final UDDIRegistryManager uddiRegistryManager;
-        private final ServiceCache serviceCache;
         private final UDDIHelper uddiHelper;
 
         public DeleteUDDIEndpointTask(final UDDIProxiedServiceInfo uddiproxiedServiceInfo,
                                       final UDDIProxiedServiceInfoManager proxiedServiceInfoManager,
-                                      final UDDIServiceControlManager uddiServiceControlManager,
                                       final UDDIRegistryManager uddiRegistryManager,
-                                      final ServiceCache serviceCache,
                                       final UDDIHelper uddiHelper) {
             this.uddiproxiedServiceInfo = uddiproxiedServiceInfo;
             this.proxiedServiceInfoManager = proxiedServiceInfoManager;
-            this.uddiServiceControlManager = uddiServiceControlManager;
             this.uddiRegistryManager = uddiRegistryManager;
-            this.serviceCache = serviceCache;
             this.uddiHelper = uddiHelper;
         }
 
         @Override
-        public void apply(UDDITaskContext context) throws UDDIException {
+        public void apply( final UDDITaskContext context ) throws UDDIException {
             try {
                 if(uddiproxiedServiceInfo.getUddiPublishStatus().getPublishStatus() != UDDIPublishStatus.PublishStatus.DELETING){
-                    throw new IllegalStateException("UDDIProxiedServiceInfo is in an incorrect state. Must be in publishing state");
+                    throw new UDDIException("UDDIProxiedServiceInfo is in an incorrect state. Must be in deleting state");
                 }
                 if(uddiproxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.ENDPOINT){
-                    throw new IllegalStateException("UDDIProxiedServiceInfo is the wrong type. Must be of type ENDPOINT");
+                    throw new UDDIException("UDDIProxiedServiceInfo is the wrong type. Must be of type ENDPOINT");
                 }
 
                 //publishing an endpoint requires that the service is under UDDI Control. However not enforcing here
@@ -118,15 +113,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 //this must be found due to db constraints
                 final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiproxiedServiceInfo.getUddiRegistryOid());
+                if(uddiRegistry==null) throw new UDDIException("UDDI Registry #"+uddiproxiedServiceInfo.getUddiRegistryOid()+"' not found.");
                 if(!uddiRegistry.isEnabled()) throw new UDDIException("UDDI Registry '"+uddiRegistry.getName()+"' is disabled.");
 
                 final UDDIClient uddiClient = uddiHelper.newUDDIClient(uddiRegistry);
                 try {
                     uddiClient.deleteBindingTemplate(uddiproxiedServiceInfo.getProxyBindingKey());
                 } catch (UDDIException e) {
-                    //TODO audit event
-                    logger.log(Level.WARNING, "Could not delete bindingKey " + uddiproxiedServiceInfo.getProxyBindingKey()+" from UDDI Registry");
-                    //fall through to delete entity, delete is only best effort
+                    context.logAndAudit( SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
+                            ExceptionUtils.getDebugException( e ),
+                            uddiproxiedServiceInfo.getProxyBindingKey() );
                 }
 
                 try {
@@ -136,13 +132,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     //not stop the entity from being deleted
                     logger.log( Level.WARNING, "Could not delete UDDIProxiedServiceInfo", e);
                 }
-            } catch (FindException e) {
-                logger.log( Level.WARNING, "Error accessing UDDIRegistry", e );
+            } catch (ObjectModelException e) {
+                context.logAndAudit( SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_FAILED, e, "Database error when deleting proxy endpoint.");
+            } catch (UDDIException ue) {
+                context.logAndAudit( SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_FAILED, ue, ExceptionUtils.getMessage(ue));
+                throw ue;
             }
         }
     }
 
-    private static final class PublishUDDIEndpointTask extends UDDITask{
+    private static final class PublishUDDIEndpointTask extends UDDITask {
         private static final Logger logger = Logger.getLogger(PublishUDDIEndpointTask.class.getName());
 
         private final UDDIProxiedServiceInfo uddiproxiedServiceInfo;
@@ -167,13 +166,13 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
         }
 
         @Override
-        public void apply(UDDITaskContext context) throws UDDIException {
+        public void apply( final UDDITaskContext context ) throws UDDIException {
             try {
                 if(uddiproxiedServiceInfo.getUddiPublishStatus().getPublishStatus() != UDDIPublishStatus.PublishStatus.PUBLISHING){
-                    throw new IllegalStateException("UDDIProxiedServiceInfo is in an incorrect state. Must be in publishing state");
+                    throw new UDDIException("UDDIProxiedServiceInfo is in an incorrect state. Must be in publishing state");
                 }
                 if(uddiproxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.ENDPOINT){
-                    throw new IllegalStateException("UDDIProxiedServiceInfo is the wrong type. Must be of type ENDPOINT");                    
+                    throw new UDDIException("UDDIProxiedServiceInfo is the wrong type. Must be of type ENDPOINT");
                 }
 
                 final PublishedService publishedService = serviceCache.getCachedService(uddiproxiedServiceInfo.getPublishedServiceOid());
@@ -191,13 +190,14 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 //this must be found due to db constraints
                 final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiproxiedServiceInfo.getUddiRegistryOid());
+                if(uddiRegistry==null) throw new UDDIException("UDDI Registry #"+uddiproxiedServiceInfo.getUddiRegistryOid()+"' not found.");
                 if(!uddiRegistry.isEnabled()) throw new UDDIException("UDDI Registry '"+uddiRegistry.getName()+"' is disabled.");
 
                 final Wsdl wsdl;
                 try {
                     wsdl = publishedService.parsedWsdl();
                 } catch (WSDLException e) {
-                    throw new UDDIException("Unable to parse WSDL from service (#" + publishedService.getOid()+")", e);
+                    throw new UDDIException("Unable to parse WSDL for service "+publishedService.getName()+"(#" + publishedService.getOid()+")", e);
                 }
 
                 final UDDIClient uddiClient = uddiHelper.newUDDIClient(uddiRegistry);
@@ -213,11 +213,15 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 } catch (UpdateException e) {
                     logger.log( Level.WARNING, "Could not update UDDIProxiedServiceInfo", e);
                     try {
-                        logger.log(Level.WARNING, "Attempting to rollback UDDI updates");
+                        logger.log(Level.INFO, "Attempting to rollback UDDI updates");
                         uddiClient.deleteBindingTemplate(bindingKey);
-                        logger.log(Level.WARNING, "UDDI updates rolled back successfully");
+                        logger.log(Level.INFO, "UDDI updates rolled back successfully");
                     } catch (UDDIException e1) {
-                        logger.log(Level.WARNING, "Could not rollback UDDI updates", e1);
+                        context.logAndAudit(
+                                SystemMessages.UDDI_PUBLISH_ENDPOINT_ROLLBACK_FAILED,
+                                ExceptionUtils.getDebugException( e ),
+                                bindingKey,
+                                ExceptionUtils.getMessage(e1) );
                     }
 
                     //delete the entity
@@ -227,14 +231,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         logger.log(Level.WARNING, "Could not delete UDDIProxiedServiceInfo (#"+uddiproxiedServiceInfo.getOid()+")", e1);
                     }
                 }
-            } catch (FindException e) {
-                logger.log( Level.WARNING, "Error accessing UDDIRegistry", e );
+            } catch (ObjectModelException e) {
+                context.logAndAudit( SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e, "Database error when publishing proxy endpoint.");
+            } catch (UDDIException ue) {
+                context.logAndAudit( SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, ue, ExceptionUtils.getMessage(ue));
+                throw ue;
             }
-
         }
     }
     
-    private static final class PublishUDDITask extends UDDITask{
+    private static final class PublishUDDITask extends UDDITask {
         private static final Logger logger = Logger.getLogger(PublishUDDITask.class.getName());
 
         private final UDDIProxiedServiceInfo uddiproxiedServiceInfo;
@@ -255,14 +261,14 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             this.uddiRegistryManager = uddiRegistryManager;
         }
 
-        @Override     //todo auditing
-        public void apply(final UDDITaskContext context) throws UDDIException {
+        @Override
+        public void apply( final UDDITaskContext context ) throws UDDIException {
             try {
                 if(uddiproxiedServiceInfo.getUddiPublishStatus().getPublishStatus() != UDDIPublishStatus.PublishStatus.PUBLISHING){
-                    throw new IllegalStateException("UDDIProxiedServiceInfo is in an incorrect state. Must be in publishing state");
+                    throw new UDDIException("UDDIProxiedServiceInfo is in an incorrect state. Must be in publishing state");
                 }
                 if(uddiproxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY){
-                    throw new IllegalStateException("UDDIProxiedServiceInfo is the wrong type. Must be of type PROXY");                    
+                    throw new UDDIException("UDDIProxiedServiceInfo is the wrong type. Must be of type PROXY");
                 }
 
                 final PublishedService publishedService = serviceCache.getCachedService(uddiproxiedServiceInfo.getPublishedServiceOid());
@@ -273,13 +279,14 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 //this must be found due to db constraints
                 final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiproxiedServiceInfo.getUddiRegistryOid());
+                if(uddiRegistry==null) throw new UDDIException("UDDI Registry #"+uddiproxiedServiceInfo.getUddiRegistryOid()+"' not found.");
                 if(!uddiRegistry.isEnabled()) throw new UDDIException("UDDI Registry '"+uddiRegistry.getName()+"' is disabled.");
 
                 final Wsdl wsdl;
                 try {
                     wsdl = publishedService.parsedWsdl();
                 } catch (WSDLException e) {
-                    throw new UDDIException("Unable to parse WSDL from service (#" + publishedService.getOid()+")", e);
+                    throw new UDDIException("Unable to parse WSDL for service "+publishedService.getName()+"(#" + publishedService.getOid()+")", e);
                 }
 
                 BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(wsdl, publishedService.getOid(), uddiHelper.newUDDIClientConfig( uddiRegistry ));
@@ -301,13 +308,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 } catch (UpdateException e) {
                     logger.log( Level.WARNING, "Could not update UDDIProxiedServiceInfo", e);
                     try {
-                        logger.log(Level.WARNING, "Attempting to rollback UDDI updates");
+                        logger.log(Level.INFO, "Attempting to rollback UDDI updates");
                         //Attempt to roll back UDDI updates
                         UDDIClient uddiClient = uddiHelper.newUDDIClient( uddiRegistry );
                         uddiClient.deleteUDDIBusinessServices(uddiBusinessServices);
-                        logger.log(Level.WARNING, "UDDI updates rolled back successfully");
+                        logger.log(Level.INFO, "UDDI updates rolled back successfully");
                     } catch (UDDIException e1) {
-                        logger.log(Level.WARNING, "Could not rollback UDDI updates", e1);
+                        context.logAndAudit(
+                                SystemMessages.UDDI_PUBLISH_SERVICE_ROLLBACK_FAILED,
+                                ExceptionUtils.getDebugException( e ),
+                                ExceptionUtils.getMessage(e1) );
                     }
                     //delete the entity //todo note - for udpate task, will need to use the api delete gateway wsdl method, so change state first to deleting
                     try {
@@ -316,8 +326,11 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         logger.log(Level.WARNING, "Could not delete UDDIProxiedServiceInfo (#"+ uddiproxiedServiceInfo.getOid()+")", e1);
                     }
                 }
-            } catch (FindException e) {
-                logger.log( Level.WARNING, "Error accessing UDDIRegistry", e );
+            } catch (ObjectModelException e) {
+                context.logAndAudit( SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, "Database error when publishing proxy services.");
+            } catch (UDDIException ue) {
+                context.logAndAudit( SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, ue, ExceptionUtils.getMessage(ue));
+                throw ue;
             }
         }
     }
