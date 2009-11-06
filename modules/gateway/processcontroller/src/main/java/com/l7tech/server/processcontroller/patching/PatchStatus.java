@@ -7,7 +7,10 @@ import com.l7tech.objectmodel.JaxbMapType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.util.Properties;
+import java.util.Date;
 import java.io.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
 
 /**
  * Properties that define a patch'es status.
@@ -20,12 +23,48 @@ public class PatchStatus {
     public static final String PATCH_STATUS_SUFFIX = ".status";
 
     public enum Field {
-        ID(true),
-        STATE(true),
-        ERROR_MSG(false),
-        LAST_MOD(false),
-        ROLLBACK_FOR_ID(false);
+        ID(true) {
+            @Override
+            public String displayValue(String value) {
+                return "Patch ID " + value;
+            }},
 
+        DESCRIPTION(true) {
+            @Override
+            public String displayValue(String value) {
+                return " (" + value + ")";
+            }},
+
+        STATE(true)  {
+            @Override
+            public String displayValue(String value) {
+                return " is " + value;
+            }},
+
+        ERROR_MSG(false) {
+            @Override
+            public String displayValue(String value) {
+                return value == null || value.isEmpty() ? "" : "\"" + value + "\""; 
+            }},
+
+        ROLLBACK_FOR_ID(false) {
+            @Override
+            public String displayValue(String value) {
+                return " (rollback for patch ID " + value + ")";
+            }},
+
+        LAST_MOD(false) {
+            @Override
+            public String displayValue(String value) {
+                try {
+                    return ", last modified on " + (new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")).format(new Date(Long.parseLong(value)));
+                } catch (NumberFormatException e) {
+                    return ", last modified on " + value;
+                }
+            }};
+
+
+        public abstract String displayValue(String value);
         Field(boolean required) {
             this.required = required;
         }
@@ -58,7 +97,7 @@ public class PatchStatus {
     public static PatchStatus getPackageStatus(File repository, String patchId) throws PatchException {
         File statusFile = getStatusFile(repository, patchId);
         if (!statusFile.exists()) {
-            return newPatchStatus(patchId, State.NONE);
+            return newPatchStatus(patchId, "", State.NONE);
         } else {
             PatchStatus status = loadPatchStatus(statusFile);
             if(!patchId.equals(status.getField(Field.ID)))
@@ -67,8 +106,8 @@ public class PatchStatus {
         }
     }
 
-    public static PatchStatus newPatchStatus(String patchId, State state) throws PatchException {
-        PatchStatus status = new PatchStatus(patchId, state);
+    public static PatchStatus newPatchStatus(String patchId, String description, State state) throws PatchException {
+        PatchStatus status = new PatchStatus(patchId, description, state);
         status.checkRequiredFields();
         return status;
     }
@@ -120,7 +159,7 @@ public class PatchStatus {
         for(Field field : Field.values()) {
             String value = getField(field);
             if (value != null) {
-                result.append(field.name()).append("=").append(value).append("\n");
+                result.append(field.displayValue(value));
             }
         }
         return result.toString();
@@ -148,8 +187,9 @@ public class PatchStatus {
     private PatchStatus() {
     }
 
-    private PatchStatus(String patchId, State state) throws PatchException {
+    private PatchStatus(String patchId, String description, State state) throws PatchException {
         properties.setProperty(Field.ID.name(), patchId);
+        properties.setProperty(Field.DESCRIPTION.name(), description);
         properties.setProperty(Field.STATE.name(), state.name());
     }
 

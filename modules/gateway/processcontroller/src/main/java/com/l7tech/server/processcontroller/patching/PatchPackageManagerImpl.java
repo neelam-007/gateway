@@ -44,12 +44,16 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
     }
 
     @Override
-    public PatchStatus setPackageStatus(String patchId, PatchStatus.State state, String errorMsg, String rollbackForId) throws PatchException {
-        PatchStatus status = PatchStatus.newPatchStatus(patchId, state);
-        if (rollbackForId != null) status.setField(PatchStatus.Field.ROLLBACK_FOR_ID, rollbackForId);
-        if (errorMsg != null) status.setField(PatchStatus.Field.ERROR_MSG, errorMsg);
+    public PatchStatus setPackageStatus(PatchStatus status) throws PatchException {
         status.save(repositoryDir);
         return status;
+    }
+
+    @Override
+    public PatchStatus updatePackageStatus(String patchId, PatchStatus.Field field, String value) throws PatchException {
+        PatchStatus status = getPackageStatus(patchId);
+        status.setField(field, value);
+        return setPackageStatus(status);
     }
 
     @Override
@@ -88,9 +92,10 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
             ResourceUtils.closeQuietly(fis);
         }
 
-        status = setPackageStatus(patchId, PatchStatus.State.UPLOADED, null, patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
-
-        return status;
+        PatchStatus newStatus = PatchStatus.newPatchStatus(patchId, patch.getProperty(PatchPackage.Property.DESCRIPTION), PatchStatus.State.UPLOADED);
+        String rollbackId = patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID);
+        if (rollbackId != null) newStatus.setField(PatchStatus.Field.ROLLBACK_FOR_ID, rollbackId);
+        return setPackageStatus(newStatus);
     }
 
     @Override
@@ -105,7 +110,7 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
         }
 
         if (! PatchStatus.State.ROLLED_BACK.name().equals(status.getField(PatchStatus.Field.STATE)))
-            status = setPackageStatus(patchId, PatchStatus.State.NONE, null, null); // forget rollback_for_id, useless without the package
+            status = updatePackageStatus(patchId, PatchStatus.Field.STATE, PatchStatus.State.NONE.name());
 
         return status;
     }

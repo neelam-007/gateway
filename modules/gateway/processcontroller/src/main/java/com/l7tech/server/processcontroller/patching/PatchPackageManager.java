@@ -11,7 +11,9 @@ public interface PatchPackageManager {
 
     public PatchStatus getPackageStatus(String patchId) throws PatchException;
 
-    public PatchStatus setPackageStatus(String patchId, PatchStatus.State state, String errorMsg, String rollbackForId) throws PatchException;
+    public PatchStatus setPackageStatus(PatchStatus status) throws PatchException;
+
+    public PatchStatus updatePackageStatus(String patchId, PatchStatus.Field field, String value) throws PatchException;
 
     public PatchStatus savePackage(PatchPackage patch) throws PatchException;
 

@@ -91,12 +91,15 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         // check exec result and update status
         PatchStatus status2;
         if (result.getExitStatus() == 0) {
-            status2 = packageManager.setPackageStatus(patchId, PatchStatus.State.INSTALLED, null, patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
+            status1.setField(PatchStatus.Field.STATE, PatchStatus.State.INSTALLED.name());
+            status2 = packageManager.setPackageStatus(status1);
             if (rollback != null)
-                packageManager.setPackageStatus(rollback, PatchStatus.State.ROLLED_BACK, null,packageManager.getPackageStatus(rollback).getField(PatchStatus.Field.ROLLBACK_FOR_ID) );
+                packageManager.updatePackageStatus(rollback, PatchStatus.Field.STATE, PatchStatus.State.ROLLED_BACK.name());
         } else {
             byte[] errOut = result.getOutput();
-            status2 = packageManager.setPackageStatus(patchId, PatchStatus.State.ERROR, errOut != null ? new String(errOut) : "", patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
+            status1.setField(PatchStatus.Field.STATE, PatchStatus.State.ERROR.name());
+            status1.setField(PatchStatus.Field.ERROR_MSG, errOut != null ? new String(errOut) : "");
+            status2 = packageManager.setPackageStatus(status1);
         }
 
         return status2;
