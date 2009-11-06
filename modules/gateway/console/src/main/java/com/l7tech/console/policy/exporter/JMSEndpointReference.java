@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Collection;
 import java.util.ArrayList;
@@ -174,6 +173,7 @@ public class JMSEndpointReference extends ExternalReference {
         if (initialContextFactoryClassname != null ? !initialContextFactoryClassname.equals(jmsEndpointReference.initialContextFactoryClassname) : jmsEndpointReference.initialContextFactoryClassname != null) return false;
         if (jndiUrl != null ? !jndiUrl.equals(jmsEndpointReference.jndiUrl) : jmsEndpointReference.jndiUrl != null) return false;
         if (queueFactoryUrl != null ? !queueFactoryUrl.equals(jmsEndpointReference.queueFactoryUrl) : jmsEndpointReference.queueFactoryUrl != null) return false;
+        //noinspection RedundantIfStatement
         if (topicFactoryUrl != null ? !topicFactoryUrl.equals(jmsEndpointReference.topicFactoryUrl) : jmsEndpointReference.topicFactoryUrl != null) return false;
 
         return true;
@@ -194,10 +194,9 @@ public class JMSEndpointReference extends ExternalReference {
      * system without administrator interaction.
      */
     boolean verifyReference() {
-        Collection tempMatches = new ArrayList(); // contains JmsAdmin.JmsTuple objects that have partial match
-        List jmsQueues = JmsUtilities.loadJmsQueues(false);
-        for (Iterator iterator = jmsQueues.iterator(); iterator.hasNext();) {
-            JmsAdmin.JmsTuple jmsTuple = (JmsAdmin.JmsTuple) iterator.next();
+        Collection<JmsAdmin.JmsTuple> tempMatches = new ArrayList<JmsAdmin.JmsTuple>(); // contains JmsAdmin.JmsTuple objects that have partial match
+        List<JmsAdmin.JmsTuple> jmsQueues = JmsUtilities.loadJmsQueues(false);
+        for (JmsAdmin.JmsTuple jmsTuple : jmsQueues) {
             // what makes a jms queue the same?
             // let's say a combination of JndiUrl, CONTEXT_EL_NAME, QUEUE_EL_NAME and TOPIC_EL_NAME
             if (jmsTuple.getEndpoint().isMessageSource()) {
@@ -218,8 +217,7 @@ public class JMSEndpointReference extends ExternalReference {
             return false;
         } else {
             // Try to discriminate using name property
-            for (Iterator i = tempMatches.iterator(); i.hasNext();) {
-                JmsAdmin.JmsTuple jmsTuple = (JmsAdmin.JmsTuple)i.next();
+            for (JmsAdmin.JmsTuple jmsTuple : tempMatches) {
                 if (jmsTuple.getEndpoint().getName().equals(endpointName)) {
                     // WE HAVE A PERFECT MATCH!
                     logger.fine("The local JMS endpoint was resolved from oid " + oid + " to " + localEndpointId);
@@ -229,7 +227,7 @@ public class JMSEndpointReference extends ExternalReference {
                 }
             }
             // Otherwise, use first partial match
-            JmsAdmin.JmsTuple jmsTuple = (JmsAdmin.JmsTuple)tempMatches.iterator().next();
+            JmsAdmin.JmsTuple jmsTuple = tempMatches.iterator().next();
             logger.fine("The local JMS endpoint was resolved from oid " + oid + " to " + localEndpointId);
             localEndpointId = jmsTuple.getEndpoint().getOid();
             localizeType = LocaliseAction.REPLACE;
@@ -242,10 +240,10 @@ public class JMSEndpointReference extends ExternalReference {
             if (assertionToLocalize instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsRoutingAssertion = (JmsRoutingAssertion) assertionToLocalize;
                 if (jmsRoutingAssertion.getEndpointOid() != null &&
-                    jmsRoutingAssertion.getEndpointOid().longValue() == oid) {
+                    jmsRoutingAssertion.getEndpointOid() == oid) {
                     if (localizeType == LocaliseAction.REPLACE) {
                         // replace endpoint id
-                        jmsRoutingAssertion.setEndpointOid(new Long(localEndpointId));
+                        jmsRoutingAssertion.setEndpointOid(localEndpointId);
                         // replace endpoint name
                         jmsRoutingAssertion.setEndpointName(endpointNameFromOid(localEndpointId));
                         logger.info("The endpoint id of the imported jms routing assertion has been changed " +
@@ -294,9 +292,7 @@ public class JMSEndpointReference extends ExternalReference {
 
             final LocaliseAction localiseAction = (LocaliseAction) o;
 
-            if (val != localiseAction.val) return false;
-
-            return true;
+            return val == localiseAction.val;
         }
 
         public int hashCode() {

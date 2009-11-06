@@ -35,7 +35,7 @@ public class JmsQueuesWindowTest {
         Registry.setDefault(new RegistryStub());
         final JFrame owner = new JFrame("main");
         owner.setVisible(true);
-        JmsQueuesWindow w = JmsQueuesWindow.createInstance(owner);
+        JmsQueuesWindow w = new JmsQueuesWindow(owner);
         w.setVisible(true);
     }
 }

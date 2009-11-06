@@ -25,7 +25,7 @@ public class JmsUtilities {
      *         returned JmsConnection instances might be shared across multiple JmsEndpoint instances, even though
      *         the current GUI provides no way to configure Queues this way.
      */
-    public static List loadJmsQueues(boolean outboundOnly) {
+    public static List<JmsAdmin.JmsTuple> loadJmsQueues(boolean outboundOnly) {
         try {
             ArrayList<JmsAdmin.JmsTuple> jmsQueues = new ArrayList<JmsAdmin.JmsTuple>();
 
@@ -61,10 +61,10 @@ public class JmsUtilities {
      * This can be easily and immediately be turned into a list or combo box model.
      */
     public static QueueItem[] loadQueueItems() {
-        java.util.List queues = JmsUtilities.loadJmsQueues(true);
+        java.util.List<JmsAdmin.JmsTuple> queues = JmsUtilities.loadJmsQueues(true);
         QueueItem[] items = new QueueItem[queues.size()];
         for (int i = 0; i < queues.size(); ++i)
-            items[i] = new QueueItem((JmsAdmin.JmsTuple) queues.get(i));
+            items[i] = new QueueItem(queues.get(i));
         return items;
     }
 
@@ -78,14 +78,14 @@ public class JmsUtilities {
      */
     public static void selectEndpoint(JComboBox cb, Long endpointOid) {
         if (endpointOid == null ||
-            endpointOid.longValue() == JmsEndpoint.DEFAULT_OID) {
+            endpointOid == JmsEndpoint.DEFAULT_OID) {
             cb.setSelectedIndex(-1);
             return;
         }
 
         for (int i = 0, size = cb.getModel().getSize(); i < size; i++) {
             QueueItem item = (QueueItem) cb.getModel().getElementAt(i);
-            if (item.getQueue().getEndpoint().getOid() == endpointOid.longValue()) {
+            if (item.getQueue().getEndpoint().getOid() == endpointOid) {
                 cb.setSelectedItem(item);
                 return;
             }
@@ -103,6 +103,6 @@ public class JmsUtilities {
      * @param endpoint the endpoint to select, or null to clear the selection.
      */
     public static void selectEndpoint(JComboBox cb, JmsEndpoint endpoint) {
-        selectEndpoint(cb, endpoint == null ? null : new Long(endpoint.getOid()));
+        selectEndpoint(cb, endpoint == null ? null : endpoint.getOid());
     }
 }

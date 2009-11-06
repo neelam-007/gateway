@@ -99,8 +99,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     /**
-     * @return true if the endpoint is outbound (that is the gateway routes messages to the
-     * queue). false means inbound (that is the ssg gets messages from the queue)
+     * @return true if the endpoint is inbound (that is the ssg gets messages from the queue);
+     *         false if the endpoint is outbound (that is the gateway routes messages to the queue).
      */
     @Column(name="is_message_source")
     public boolean isMessageSource() {
@@ -108,8 +108,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     /**
-     * @param messageSource true if the endpoint is outbound (that is the gateway routes messages to the
-     * queue). false means inbound (that is the ssg gets messages from the queue)
+     * @return true if the endpoint is inbound (that is the ssg gets messages from the queue);
+     *         false if the endpoint is outbound (that is the gateway routes messages to the queue).
      */
     public void setMessageSource( boolean messageSource ) {
         _messageSource = messageSource;

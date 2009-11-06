@@ -1334,12 +1334,13 @@ public class Utilities {
      *
      * @param table The table to be sorted.
      * @param model The model for the table.
+     * @return a table row sorter object
      * @throws IllegalArgumentException if the length of the comparators array, if specified, and the order array
      * does not match the length of the cols array
      * @throws NullPointerException if one of the cols or order arrays are null
      */
-    public static void setRowSorter( JTable table, TableModel model ) throws IllegalArgumentException, NullPointerException{
-        setRowSorter( table, model, null, null, null);
+    public static TableRowSorter setRowSorter( JTable table, TableModel model ) throws IllegalArgumentException, NullPointerException{
+        return setRowSorter( table, model, null, null, null);
     }
 
     /**
@@ -1353,11 +1354,12 @@ public class Utilities {
      * @param comparators The comparator to use for sorting the cols in the param cols. The comparator in comparators
      * at index i matches the column at index i in cols. Null values are allowed if a column does not need a comparator.
      * Must supply an array the length of cols
+     * @return a table row sorter object
      * @throws IllegalArgumentException if the length of the comparators array, if specified, and the order array
      * does not match the length of the cols array
      * @throws NullPointerException if one of the cols or order arrays are null 
      */
-    public static void setRowSorter( JTable table, TableModel model, int[] cols, boolean[] order,
+    public static TableRowSorter setRowSorter( JTable table, TableModel model, int[] cols, boolean[] order,
                                      Comparator [] comparators ) throws IllegalArgumentException, NullPointerException{
         TableRowSorter sorter = new TableRowSorter(model);
         if ( cols != null && order != null ) {
@@ -1387,7 +1389,10 @@ public class Utilities {
         }
 
         table.setRowSorter(sorter);
-        sorter.sort();    }
+        sorter.sort();
+
+        return sorter;
+    }
 
     /**
      * Table string converter interface for use when sorting.

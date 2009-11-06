@@ -15,13 +15,16 @@ import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.event.*;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
+import java.util.Comparator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Simple modal dialog that allows management of the known JMS queues, and designation of which
@@ -40,28 +43,59 @@ public class JmsQueuesWindow extends JDialog {
     private JButton addButton;
     private JButton removeButton;
     private JButton cloneButton;
-    private final PermissionFlags flags;
 
-    private JmsQueuesWindow(Frame owner) {
-        super(owner, "Manage JMS Queues", true);
-        flags = PermissionFlags.get(JMS_ENDPOINT);
+    private PermissionFlags flags;
+    private FilterTarget filterTarget;
+    private String filterString;
+    private FilterDirection filterDirection;
+
+    private enum FilterTarget {
+        NAME("Name Contains"),
+        URL("URL Contains");
+
+        private String name;
+
+        private FilterTarget(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
-    private JmsQueuesWindow(Dialog owner) {
-        super(owner, "Manage JMS Queues", true);
-        flags = PermissionFlags.get(JMS_ENDPOINT);
+    private static enum FilterDirection {
+        BOTH("Both"),
+        IN("In"),
+        OUT("Out");
+
+        private String name;
+
+        private FilterDirection(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
-    public static JmsQueuesWindow createInstance(Window owner) {
-        JmsQueuesWindow that;
-        if (owner instanceof Dialog)
-            that = new JmsQueuesWindow((Dialog)owner);
-        else if (owner instanceof Frame)
-            that = new JmsQueuesWindow((Frame)owner);
-        else
-            throw new IllegalArgumentException("Owner must be derived from either Frame or Window");
+    public JmsQueuesWindow(Frame owner) {
+        super(owner, "Manage JMS Queues", true);
+        initialize();
+    }
 
-        Container p = that.getContentPane();
+    public JmsQueuesWindow(Dialog owner) {
+        super(owner, "Manage JMS Queues", true);
+        initialize();
+    }
+
+    private void initialize() {
+        flags = PermissionFlags.get(JMS_ENDPOINT);
+
+        Container p = getContentPane();
         p.setLayout(new GridBagLayout());
 
         p.add(new JLabel("Known JMS Queues:"),
@@ -70,31 +104,70 @@ public class JmsQueuesWindow extends JDialog {
             GridBagConstraints.NONE,
             new Insets(5, 5, 5, 5), 0, 0));
 
-        JScrollPane sp = new JScrollPane(that.getJmsQueueTable(),
+        p.add(getFilterPanel(),
+          new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(5, 5, 5, 5), 0, 0));
+
+        JScrollPane sp = new JScrollPane(getJmsQueueTable(),
           JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
           JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         sp.setPreferredSize(new Dimension(400, 200));
         p.add(sp,
-          new GridBagConstraints(0, 1, 1, 1, 10.0, 10.0,
+          new GridBagConstraints(0, 2, 1, 1, 10.0, 10.0,
             GridBagConstraints.CENTER,
             GridBagConstraints.BOTH,
             new Insets(5, 5, 5, 5), 0, 0));
 
-        p.add(that.getSideButtonPanel(),
-          new GridBagConstraints(1, 1, 1, GridBagConstraints.REMAINDER, 0.0, 1.0,
+        p.add(getSideButtonPanel(),
+          new GridBagConstraints(1, 2, 1, GridBagConstraints.REMAINDER, 0.0, 1.0,
             GridBagConstraints.NORTH,
             GridBagConstraints.VERTICAL,
             new Insets(5, 5, 5, 5), 0, 0));
 
+        //setSorterAndFilter();
+        pack();
+        enableOrDisableButtons();
+        Utilities.setEscKeyStrokeDisposes(this);
+    }
 
-        that.pack();
-        that.enableOrDisableButtons();
-        Utilities.setEscKeyStrokeDisposes(that);
-        return that;
+    /**
+     * Create a panel to set filter criteria.
+     *
+     * @return a JPanel object.
+     */
+    private JPanel getFilterPanel() {
+        JPanel filterPanel = new JPanel();
+        filterPanel.setLayout(new BoxLayout(filterPanel, BoxLayout.X_AXIS));
+
+        final JComboBox filterTargetComboBox = new JComboBox(FilterTarget.values());
+        filterPanel.add(filterTargetComboBox);
+
+        final JTextField filterStringTextField = new JTextField();
+        filterPanel.add(filterStringTextField);
+
+        final JComboBox filterTypeComboBox = new JComboBox(FilterDirection.values());
+        filterPanel.add(filterTypeComboBox);
+
+        JButton filterButton = new JButton("Filter");
+        filterButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                filterTarget = (FilterTarget)filterTargetComboBox.getSelectedItem();
+                filterString = filterStringTextField.getText();
+                filterDirection = (FilterDirection)filterTypeComboBox.getSelectedItem();
+
+                // After getting new filter criteria, update the sorter and the filter
+                setSorterAndFilter();
+            }
+        });
+        filterPanel.add(filterButton);
+
+        return filterPanel;
     }
 
     private class JmsQueueTableModel extends AbstractTableModel {
-        private java.util.List jmsQueues = JmsUtilities.loadJmsQueues(false);
+        private List<JmsAdmin.JmsTuple> jmsQueues = JmsUtilities.loadJmsQueues(false);
 
         public int getColumnCount() {
             return 3;
@@ -117,7 +190,7 @@ public class JmsQueuesWindow extends JDialog {
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueues().get(rowIndex);
+            JmsAdmin.JmsTuple i = getJmsQueues().get(rowIndex);
             JmsConnection conn = i.getConnection();
             JmsEndpoint end = i.getEndpoint();
             switch (columnIndex) {
@@ -138,10 +211,13 @@ public class JmsQueuesWindow extends JDialog {
             return "?";
         }
 
-        public List getJmsQueues() {
+        public List<JmsAdmin.JmsTuple> getJmsQueues() {
             return jmsQueues;
         }
 
+        public void refreshJmsQueueList() {
+            jmsQueues = JmsUtilities.loadJmsQueues(false);
+        }
     }
 
     private JPanel getSideButtonPanel() {
@@ -192,9 +268,10 @@ public class JmsQueuesWindow extends JDialog {
             removeButton = new JButton("Remove");
             removeButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    int row = getJmsQueueTable().getSelectedRow();
-                    if (row >= 0) {
-                        JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
+                    int viewRow = getJmsQueueTable().getSelectedRow();
+                    if (viewRow >= 0) {
+                        int modelRow = getJmsQueueTable().convertRowIndexToModel(viewRow);
+                        JmsAdmin.JmsTuple i = getJmsQueueTableModel().getJmsQueues().get(modelRow);
                         if (i != null) {
                             JmsEndpoint end = i.getEndpoint();
                             JmsConnection conn = i.getConnection();
@@ -248,7 +325,6 @@ public class JmsQueuesWindow extends JDialog {
                             }
                         }
                     });
-
                 }
             });
         }
@@ -261,9 +337,10 @@ public class JmsQueuesWindow extends JDialog {
             cloneButton = new JButton("Copy");
             cloneButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-                    int row = getJmsQueueTable().getSelectedRow();
-                    if (row >= 0) {
-                        JmsAdmin.JmsTuple currJmsTuple = (JmsAdmin.JmsTuple) getJmsQueueTableModel().getJmsQueues().get(row);
+                    int viewRow = getJmsQueueTable().getSelectedRow();
+                    if (viewRow >= 0) {
+                        int modelRow = getJmsQueueTable().convertRowIndexToModel(viewRow);
+                        JmsAdmin.JmsTuple currJmsTuple = getJmsQueueTableModel().getJmsQueues().get(modelRow);
                         if (currJmsTuple != null) {
                             JmsConnection newConnection = new JmsConnection();
                             newConnection.copyFrom(currJmsTuple.getConnection());
@@ -317,9 +394,10 @@ public class JmsQueuesWindow extends JDialog {
     }
 
     private void showPropertiesDialog() {
-        int row = getJmsQueueTable().getSelectedRow();
-        if (row >= 0) {
-            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
+        int viewRow = getJmsQueueTable().getSelectedRow();
+        if (viewRow >= 0) {
+            int modelRow = getJmsQueueTable().convertRowIndexToModel(viewRow);
+            JmsAdmin.JmsTuple i = getJmsQueueTableModel().getJmsQueues().get(modelRow);
             if (i != null) {
                 //grab the latest version from the list
                 long connectionOid = i.getConnection().getOid();
@@ -329,28 +407,31 @@ public class JmsQueuesWindow extends JDialog {
                     JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointOid);
                     if (connection == null || endpoint == null) {
                         //the connection or endpoint has been removed some how
-                        DialogDisplayer.showMessageDialog(this, "JMS connection not found.", refreshEndpointList());
+                        DialogDisplayer.showMessageDialog(this, "JMS connection not found.", refreshEndpointList(null));
                     } else {
                         final JmsQueuePropertiesDialog pd =
                                 JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, connection, endpoint, false);
                         pd.pack();
                         Utilities.centerOnScreen(pd);
-                        DialogDisplayer.display(pd, refreshEndpointList()); //refresh after any changes
+                        DialogDisplayer.display(pd, refreshEndpointList(endpoint)); //refresh after any changes
                     }
                 } catch (FindException fe) {
-                    DialogDisplayer.showMessageDialog(this, "JMS connection not found.", refreshEndpointList());
+                    DialogDisplayer.showMessageDialog(this, "JMS connection not found.", refreshEndpointList(null));
                 }
             }
         }
     }
 
     /**
+     * Generate a runnable object to refresh endpoints in the table.
+     *
+     * @param selectedEndpoint: the endpoint saved or updated will be highlighted in the table.
      * @return  A runnable that will refresh the endpoint list
      */
-    private Runnable refreshEndpointList() {
+    private Runnable refreshEndpointList(final JmsEndpoint selectedEndpoint) {
         return new Runnable() {
             public void run() {
-                updateEndpointList(null);
+                updateEndpointList(selectedEndpoint);
             }
         };
     }
@@ -365,17 +446,74 @@ public class JmsQueuesWindow extends JDialog {
                 }
             });
             Utilities.setDoubleClickAction(jmsQueueTable, getPropertiesButton());
+            // Add a sorter with a filter
+            setSorterAndFilter();
         }
         return jmsQueueTable;
+    }
+
+    /**
+     * Set a sorter and a filter in the table.
+     */
+    private void setSorterAndFilter() {
+        // Clean the GUI of the table.
+        getContentPane().repaint();
+
+        // Reset the sorter
+        @SuppressWarnings({"unchecked"})
+        TableRowSorter<JmsQueueTableModel> sorter = Utilities.setRowSorter(getJmsQueueTable(), getJmsQueueTableModel(),
+            new int[] {2, 1, 0}, new boolean[] {true, true, true}, new Comparator[] {null, null, null});
+
+        // Reset the filter
+        sorter.setRowFilter(getFilter());
+    }
+
+    /**
+     * Generate a filter that will be used to show rows satisfying the setting of FilterDirection, FilterTarget, and Filter String.
+     * Regular Expression Pattern Matching will be used to filter rows against FilterTarget and Filter String.
+     *
+     * @return a RowFilter object.
+     */
+    private RowFilter<JmsQueueTableModel, Integer> getFilter() {
+        return new RowFilter<JmsQueueTableModel, Integer>() {
+            @Override
+            public boolean include(Entry<? extends JmsQueueTableModel, ? extends Integer> entry) {
+                 boolean canBeShown = true;
+
+                // Check the setting of FilterDirection (BOTH, IN, or OUT)
+                // If it is set as BOTH, then ignore the following checking and go to the next checking
+                if (filterDirection != null && !FilterDirection.BOTH.name.equals(filterDirection.name)) {
+                    JmsQueueTableModel model = entry.getModel();
+                    int modelRow = entry.getIdentifier(); // Not view-based row.
+                    JmsAdmin.JmsTuple tuple = model.getJmsQueues().get(modelRow);
+                    JmsEndpoint end = tuple.getEndpoint();
+
+                    canBeShown = (FilterDirection.IN.name.equals(filterDirection.name) && end.isMessageSource()) ||
+                                 (FilterDirection.OUT.name.equals(filterDirection.name) && !end.isMessageSource());
+                }
+
+                // Check the setting of FilterTarget (NAME or URL) by using regular expression pattern matching.
+                // If the filter string is not specified, then ignore the following chekcing.
+                if (filterString != null && !filterString.trim().isEmpty() && filterTarget != null) {
+                    int colIdx = 1 - filterTarget.ordinal(); // Since the index of FilterTarget.NAME is 0, but the index of Name column is 1.
+                    Matcher matcher = Pattern.compile(filterString).matcher(entry.getStringValue(colIdx));
+                    canBeShown = canBeShown && matcher.find();
+                }
+
+                return canBeShown;
+            }
+        };
+
     }
 
     private void enableOrDisableButtons() {
         boolean propsEnabled = false;
         boolean removeEnabled = false;
         boolean clonable = false;
-        int row = getJmsQueueTable().getSelectedRow();
-        if (row >= 0) {
-            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
+        int viewRow = getJmsQueueTable().getSelectedRow();
+        if (viewRow >= 0) {
+            int modelRow = getJmsQueueTable().convertRowIndexToModel(viewRow);
+            JmsAdmin.JmsTuple i = getJmsQueueTableModel().getJmsQueues().get(modelRow);
             if (i != null) {
                 removeEnabled = true;
                 propsEnabled = true;
@@ -391,13 +529,8 @@ public class JmsQueuesWindow extends JDialog {
 
     private JmsQueueTableModel getJmsQueueTableModel() {
         if (jmsQueueTableModel == null) {
-            jmsQueueTableModel = createJmsQueueTableModel();
+            jmsQueueTableModel = new JmsQueueTableModel();
         }
-        return jmsQueueTableModel;
-    }
-
-    private JmsQueueTableModel createJmsQueueTableModel() {
-        jmsQueueTableModel = new JmsQueueTableModel();
         return jmsQueueTableModel;
     }
 
@@ -405,17 +538,27 @@ public class JmsQueuesWindow extends JDialog {
      * Rebuild the endpoints table model, reloading the list from the server.  If an endpoint argument is
      * given, the row containing the specified endpoint will be selected in the new table.
      *
-     * @param selectedEndpoint endpoint to select after the update, or null
+     * @param selectedEndpoint endpoint used to set selection highlight after the update.
+     *        If it is null, then no rows will be selected.
      */
     private void updateEndpointList(JmsEndpoint selectedEndpoint) {
-        getJmsQueueTable().setModel(createJmsQueueTableModel());
+        // Update the JMS queue list in the table model.
+        getJmsQueueTableModel().refreshJmsQueueList();
+
+        // Update the GUI of the table.
+        getJmsQueueTableModel().fireTableDataChanged();
+
+        // Set the selection highlight for the saved/updated endpoint.
         if (selectedEndpoint != null) {
-            List rows = getJmsQueueTableModel().getJmsQueues();
+            List<JmsAdmin.JmsTuple> rows = getJmsQueueTableModel().getJmsQueues();
             for (int i = 0; i < rows.size(); ++i) {
-                JmsAdmin.JmsTuple item = (JmsAdmin.JmsTuple)rows.get(i);
+                JmsAdmin.JmsTuple item = rows.get(i);
                 JmsEndpoint end = item.getEndpoint();
                 if (end != null && end.getOid() == selectedEndpoint.getOid()) {
-                    getJmsQueueTable().getSelectionModel().setSelectionInterval(i, i);
+                    int viewRow = getJmsQueueTable().convertRowIndexToView(i);
+                    if (viewRow >= 0) {
+                        getJmsQueueTable().getSelectionModel().setSelectionInterval(viewRow, viewRow);
+                    }
                     break;
                 }
             }
