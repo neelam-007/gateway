@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.text.MessageFormat;
+import java.text.NumberFormat;
+import java.text.DecimalFormat;
 
 /**
  *
@@ -78,7 +80,8 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             FAILURE_REQUEST_COUNT,
             AVERAGE_RESPONSE_TIME,
             MINIMUM_RESPONSE_TIME,
-            MAXIMUM_RESPONSE_TIME }
+            MAXIMUM_RESPONSE_TIME,
+            AVAILABILITY }
 
     //- PRIVATE
 
@@ -102,6 +105,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
         private final Aggregator aggregator;
         private final long registryOid;
+        private final NumberFormat percentFormat = new DecimalFormat("0.0");
 
         MetricsPublishUDDITask( final UDDIRegistryManager uddiRegistryManager,
                                 final UDDIHelper uddiHelper,
@@ -228,7 +232,6 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             return null;
         }
 
-        //TODO Do we have an availability metric?
         private String getValue( final String valueProperty,
                                  final String serviceKey,
                                  final String startDate,
@@ -239,6 +242,9 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             try {
                 Metric metric = Metric.valueOf( valueProperty );
                 switch ( metric ) {
+                    case AVAILABILITY:
+                        value = percentFormat.format(metricsRequestContext.getAvailability());
+                        break;
                     case AVERAGE_RESPONSE_TIME:
                         value = Long.toString(metricsRequestContext.getAvgResponseTime());
                         break;

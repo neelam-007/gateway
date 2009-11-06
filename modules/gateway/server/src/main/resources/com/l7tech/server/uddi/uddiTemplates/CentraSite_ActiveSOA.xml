@@ -66,5 +66,10 @@
             <name>Maximum response time</name>
             <valueProperty>MAXIMUM_RESPONSE_TIME</valueProperty>
         </metricsKeyedReference>
+        <metricsKeyedReference>
+            <key>uddi:centrasite.com:management:metrics:availability</key>
+            <name>Availability</name>
+            <valueProperty>AVAILABILITY</valueProperty>
+        </metricsKeyedReference>
     </metricsKeyedReferences>
 </uddiTemplate>

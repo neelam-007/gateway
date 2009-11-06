@@ -27,7 +27,7 @@ public class UDDITemplateTest {
         assertEquals( "Service metrics keyed reference name", "Metrics", template.getServiceMetricsKeyedReference().getName() );
         
         assertNotNull( "Metrics keyed references", template.getMetricsKeyedReferences() );
-        assertEquals( "Metrics keyed references size", 11, template.getMetricsKeyedReferences().size() );
+        assertEquals( "Metrics keyed references size", 12, template.getMetricsKeyedReferences().size() );
     }
 
     @Test
