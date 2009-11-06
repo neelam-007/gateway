@@ -71,6 +71,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
         PatchPackage patch = packageManager.getPackage(patchId);
         ProcResult result;
+        String rollback;
         try {
             // todo: exec with timeout?
             List<String> commandLine = new ArrayList<String>();
@@ -80,7 +81,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             commandLine.remove(0);
             result = ProcUtils.exec(command, commandLine.toArray(new String[commandLine.size()]));
             recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.INSTALL, nodes));
-            String rollback = patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID);
+            rollback = patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID);
             if (rollback != null)
                 recordManager.save(new PatchRecord(System.currentTimeMillis(), rollback, Action.ROLLBACK, nodes));
         } catch (IOException e) {
@@ -91,6 +92,8 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         PatchStatus status2;
         if (result.getExitStatus() == 0) {
             status2 = packageManager.setPackageStatus(patchId, PatchStatus.State.INSTALLED, null, patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
+            if (rollback != null)
+                packageManager.setPackageStatus(rollback, PatchStatus.State.ROLLED_BACK, null,packageManager.getPackageStatus(rollback).getField(PatchStatus.Field.ROLLBACK_FOR_ID) );
         } else {
             byte[] errOut = result.getOutput();
             status2 = packageManager.setPackageStatus(patchId, PatchStatus.State.ERROR, errOut != null ? new String(errOut) : "", patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID));
