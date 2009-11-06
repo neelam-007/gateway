@@ -29,10 +29,12 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
     //- PUBLIC
 
     public MetricsUDDITaskFactory( final UDDIRegistryManager uddiRegistryManager,
+                                   final UDDIHelper uddiHelper,
                                    final UDDITemplateManager uddiTemplateManager,
                                    final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
                                    final Aggregator aggregator ) {
         this.uddiRegistryManager = uddiRegistryManager;
+        this.uddiHelper = uddiHelper;
         this.uddiTemplateManager = uddiTemplateManager;
         this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
         this.aggregator = aggregator;
@@ -47,6 +49,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             if ( timerEvent.getType()==TimerUDDIEvent.Type.METRICS_PUBLISH ) {
                 task = new MetricsPublishUDDITask(
                         uddiRegistryManager,
+                        uddiHelper,
                         uddiTemplateManager,
                         uddiBusinessServiceStatusManager,
                         aggregator,
@@ -54,6 +57,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             } else if ( timerEvent.getType()==TimerUDDIEvent.Type.METRICS_CLEANUP ) {
                 task = new MetricsCleanupUDDITask(
                         uddiRegistryManager,
+                        uddiHelper,
                         uddiTemplateManager,
                         uddiBusinessServiceStatusManager,
                         timerEvent.getRegistryOid() );
@@ -79,6 +83,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
     //- PRIVATE
 
     private final UDDIRegistryManager uddiRegistryManager;
+    private final UDDIHelper uddiHelper;
     private final UDDITemplateManager uddiTemplateManager;
     private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
     private final Aggregator aggregator;
@@ -92,17 +97,20 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
         private final UDDIRegistryManager uddiRegistryManager;
+        private final UDDIHelper uddiHelper;
         private final UDDITemplateManager uddiTemplateManager;
         private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
         private final Aggregator aggregator;
         private final long registryOid;
 
         MetricsPublishUDDITask( final UDDIRegistryManager uddiRegistryManager,
+                                final UDDIHelper uddiHelper,
                                 final UDDITemplateManager uddiTemplateManager,
                                 final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
                                 final Aggregator aggregator,
                                 final long registryOid ) {
             this.uddiRegistryManager = uddiRegistryManager;
+            this.uddiHelper = uddiHelper;
             this.uddiTemplateManager = uddiTemplateManager;
             this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
             this.aggregator = aggregator;
@@ -114,7 +122,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             logger.fine( "Publishing metrics to UDDI for registry (#"+registryOid+")" );
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
-                if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
+                if ( uddiRegistry != null && uddiRegistry.isEnabled() && uddiRegistry.isMetricsEnabled() ) {
                     final UDDITemplate template = uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
                     if ( template == null ) {
                         throw new UDDIException("Template not found for UDDI registry type '"+uddiRegistry.getUddiRegistryType()+"'.");
@@ -130,7 +138,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
 
                     final Map<Long,MetricsRequestContext> metricsMap = new HashMap<Long,MetricsRequestContext>();
 
-                    final UDDIClient client = UDDIHelper.newUDDIClient( uddiRegistry );
+                    final UDDIClient client = uddiHelper.newUDDIClient( uddiRegistry );
 
                     for ( UDDIBusinessServiceStatus businessService : toPublish ) {
                         String metricsTModelKey = publishMetrics(
@@ -313,15 +321,18 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         private static final Logger logger = Logger.getLogger( MetricsCleanupUDDITask.class.getName() );
 
         private final UDDIRegistryManager uddiRegistryManager;
+        private final UDDIHelper uddiHelper;
         private final UDDITemplateManager uddiTemplateManager;
         private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
         private final long registryOid;
 
         MetricsCleanupUDDITask( final UDDIRegistryManager uddiRegistryManager,
+                                final UDDIHelper uddiHelper,
                                 final UDDITemplateManager uddiTemplateManager,
                                 final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
                                 final long registryOid ) {
             this.uddiRegistryManager = uddiRegistryManager;
+            this.uddiHelper = uddiHelper;
             this.uddiTemplateManager = uddiTemplateManager;
             this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
             this.registryOid = registryOid;
@@ -332,7 +343,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             logger.fine( "Cleanup metrics in UDDI for registry (#"+registryOid+")" );
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
-                if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
+                if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {  // cleanup even if metrics is not enabled
                     final UDDITemplate template = uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
                     if ( template == null ) {
                         throw new UDDIException("Template not found for UDDI registry type '"+uddiRegistry.getUddiRegistryType()+"'.");
@@ -345,7 +356,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                         final Collection<UDDIBusinessServiceStatus> toDelete =
                                 uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
 
-                        final UDDIClient client = UDDIHelper.newUDDIClient( uddiRegistry );
+                        final UDDIClient client = uddiHelper.newUDDIClient( uddiRegistry );
 
                         for ( UDDIBusinessServiceStatus businessService : toDelete ) {
                             final String serviceKey = businessService.getUddiServiceKey();

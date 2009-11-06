@@ -24,9 +24,11 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     //- PUBLIC
 
     public SubscriptionUDDITaskFactory( final UDDIRegistryManager uddiRegistryManager,
+                                        final UDDIHelper uddiHelper,
                                         final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager,
                                         final UDDIServiceControlManager uddiServiceControlManager ) {
         this.uddiRegistryManager = uddiRegistryManager;
+        this.uddiHelper = uddiHelper;
         this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
         this.uddiServiceControlManager = uddiServiceControlManager;
     }
@@ -40,6 +42,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             if ( timerEvent.getType() == TimerUDDIEvent.Type.SUBSCRIPTION_POLL ) {
                 task = new SubscriptionPollUDDITask(
                         uddiRegistryManager,
+                        uddiHelper,
                         uddiRegistrySubscriptionManager,
                         uddiServiceControlManager,
                         timerEvent.getRegistryOid() );
@@ -50,12 +53,14 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 case SUBSCRIBE:
                     task = new SubscribeUDDITask(
                             uddiRegistryManager,
+                            uddiHelper,
                             uddiRegistrySubscriptionManager,
                             subscribeEvent.getRegistryOid());
                     break;
                 case UNSUBSCRIBE:
                     task = new UnsubscribeUDDITask(
                             uddiRegistryManager,
+                            uddiHelper,
                             uddiRegistrySubscriptionManager,
                             subscribeEvent.getRegistryOid() );
                     break;
@@ -77,6 +82,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private static final long SUBSCRIPTION_RENEW_THRESHOLD = SyspropUtil.getLong( "com.l7tech.server.uddi.subscriptionRenewThreshold", TimeUnit.HOURS.toMillis( 12 ) );
 
     private final UDDIRegistryManager uddiRegistryManager;
+    private final UDDIHelper uddiHelper;
     private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
     private final UDDIServiceControlManager uddiServiceControlManager;
 
@@ -84,13 +90,16 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private static final Logger logger = Logger.getLogger( SubscribeUDDITask.class.getName() );
 
         private final UDDIRegistryManager uddiRegistryManager;
+        private final UDDIHelper uddiHelper;
         private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
         private final long registryOid;
 
         public SubscribeUDDITask( final UDDIRegistryManager uddiRegistryManager,
+                                  final UDDIHelper uddiHelper,
                                   final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager,
                                   final long registryOid ) {
             this.uddiRegistryManager = uddiRegistryManager;
+            this.uddiHelper = uddiHelper;
             this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
             this.registryOid = registryOid;
         }
@@ -102,7 +111,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                    UDDIClient uddiClient = UDDIHelper.newUDDIClient( uddiRegistry );
+                    UDDIClient uddiClient = uddiHelper.newUDDIClient( uddiRegistry );
 
                     UDDIRegistrySubscription uddiRegistrySubscription = uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
                     if ( uddiRegistrySubscription != null && uddiRegistrySubscription.getSubscriptionKey()!=null ) {
@@ -171,13 +180,16 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private static final Logger logger = Logger.getLogger( UnsubscribeUDDITask.class.getName() );
 
         private final UDDIRegistryManager uddiRegistryManager;
+        private final UDDIHelper uddiHelper;
         private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
         private final long registryOid;
 
         public UnsubscribeUDDITask( final UDDIRegistryManager uddiRegistryManager,
+                                    final UDDIHelper uddiHelper,
                                     final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager,
                                     final long registryOid ) {
             this.uddiRegistryManager = uddiRegistryManager;
+            this.uddiHelper = uddiHelper;
             this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
             this.registryOid = registryOid;
         }
@@ -188,7 +200,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                    UDDIClient uddiClient = UDDIHelper.newUDDIClient( uddiRegistry );
+                    UDDIClient uddiClient = uddiHelper.newUDDIClient( uddiRegistry );
 
                     UDDIRegistrySubscription uddiRegistrySubscription = uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
                     if ( uddiRegistrySubscription != null ) {
@@ -259,15 +271,18 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private static final Logger logger = Logger.getLogger( SubscriptionPollUDDITask.class.getName() );
 
         private final UDDIRegistryManager uddiRegistryManager;
+        private final UDDIHelper uddiHelper;
         private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
         private final long registryOid;
 
         SubscriptionPollUDDITask( final UDDIRegistryManager uddiRegistryManager,
+                                  final UDDIHelper uddiHelper,
                                   final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager,
                                   final UDDIServiceControlManager uddiServiceControlManager,
                                   final long registryOid ) {
             super(logger,uddiServiceControlManager);
             this.uddiRegistryManager = uddiRegistryManager;
+            this.uddiHelper = uddiHelper;
             this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
             this.registryOid = registryOid;
         }
@@ -278,7 +293,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             try {
                 UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                    UDDIClient uddiClient = UDDIHelper.newUDDIClient( uddiRegistry );
+                    UDDIClient uddiClient = uddiHelper.newUDDIClient( uddiRegistry );
 
                     UDDIRegistrySubscription uddiRegistrySubscription = uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
                     if ( uddiRegistrySubscription != null ) {

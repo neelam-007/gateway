@@ -180,7 +180,7 @@ public class UDDITargetWizardStep extends WizardStepPanel {
         }
         UDDIClientFactory factory = UDDIClientFactory.getInstance();
 
-        return factory.newUDDIClient(url, registryInfo, accountName, accountpasswd, null);
+        return factory.newUDDIClient(url, registryInfo, accountName, accountpasswd, null, null);
     }
 
     private boolean canProceed(String type, String url, String accountName, String accountpasswd) {

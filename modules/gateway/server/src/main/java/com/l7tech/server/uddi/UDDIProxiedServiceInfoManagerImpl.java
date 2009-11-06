@@ -56,13 +56,12 @@ implements UDDIProxiedServiceInfoManager{
 
     @Override
     public void updateUDDIProxiedService(final UDDIProxiedServiceInfo uddiProxiedServiceInfo,
-                                         final UDDIClient uddiClient,
                                          final Wsdl wsdl,
                                          final UDDIClientConfig uddiClientConfig)
             throws UpdateException, VersionException, UDDIException, FindException, WsdlToUDDIModelConverter.MissingWsdlReferenceException {
 
         if(uddiProxiedServiceInfo == null) throw new NullPointerException("uddiProxiedServiceInfo cannot be null");
-        if(uddiClient == null) throw new NullPointerException("uddiClient cannot be null");
+        if(uddiClientConfig == null) throw new NullPointerException("uddiClientConfig cannot be null");
         if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
 
         final String protectedServiceExternalURL = uddiHelper.getExternalUrlForService(uddiProxiedServiceInfo.getPublishedServiceOid());
@@ -76,7 +75,7 @@ implements UDDIProxiedServiceInfoManager{
             serviceKeys.add(ps.getUddiServiceKey());
         }
 
-        BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(wsdl, uddiClient, uddiProxiedServiceInfo.getPublishedServiceOid(), uddiClientConfig);
+        BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(wsdl, uddiProxiedServiceInfo.getPublishedServiceOid(), uddiClientConfig);
 
         final Pair<Set<String>, Set<UDDIBusinessService>> deletedAndNewServices = businessServicePublisher.updateServicesToUDDIRegistry(
                 protectedServiceExternalURL, protectedServiceWsdlURL, uddiProxiedServiceInfo.getUddiBusinessKey(), serviceKeys);

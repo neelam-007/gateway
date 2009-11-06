@@ -566,7 +566,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
-        return UDDIHelper.newUDDIClient( uddiRegistry );
+        return uddiHelper.newUDDIClient( uddiRegistry );
     }
 
     @Override

@@ -21,13 +21,16 @@ public class UDDIProxiedServiceDownloader {
     private final UDDIClient uddiClient;
     private final JaxWsUDDIClient jaxWsUDDIClient;
 
-    public UDDIProxiedServiceDownloader(final UDDIClient uddiClient, final UDDIClientConfig uddiCfg) {
+    public UDDIProxiedServiceDownloader( final UDDIClientConfig uddiCfg ) {
+        this( buildUDDIClient(uddiCfg) );
+    }
+
+    protected UDDIProxiedServiceDownloader(final UDDIClient uddiClient ) {
         this.uddiClient = uddiClient;
         if(uddiClient instanceof JaxWsUDDIClient){
             jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
         }else{
-            jaxWsUDDIClient = new GenericUDDIClient(uddiCfg.getInquiryUrl(), uddiCfg.getPublishUrl(), uddiCfg.getSubscriptionUrl(),
-            uddiCfg.getSecurityUrl(), uddiCfg.getLogin(), uddiCfg.getPassword(), UDDIClientFactory.getDefaultPolicyAttachmentVersion());
+            throw new IllegalStateException( "JaxWsUDDIClient is required." );
         }
     }
 
@@ -69,5 +72,18 @@ public class UDDIProxiedServiceDownloader {
         }
 
         return new Pair<List<BusinessService>, Map<String, TModel>>(businessServices, tModelKeyToModel);
+    }
+
+    private static UDDIClient buildUDDIClient( final UDDIClientConfig uddiCfg ) {
+        if(uddiCfg == null) throw new NullPointerException("uddiCfg cannot be null");
+
+        UDDIClient uddiClient = UDDIClientFactory.getInstance().newUDDIClient( uddiCfg );
+        if(!(uddiClient instanceof JaxWsUDDIClient)){
+            uddiClient = new GenericUDDIClient(uddiCfg.getInquiryUrl(), uddiCfg.getPublishUrl(), uddiCfg.getSubscriptionUrl(),
+                    uddiCfg.getSecurityUrl(), uddiCfg.getLogin(), uddiCfg.getPassword(),
+                    UDDIClientFactory.getDefaultPolicyAttachmentVersion(), uddiCfg.getTlsConfig());
+        }
+
+        return uddiClient;
     }
 }

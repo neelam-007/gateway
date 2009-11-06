@@ -1,7 +1,6 @@
 package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.BusinessService;
-import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.util.Triple;
 
 import java.io.Closeable;

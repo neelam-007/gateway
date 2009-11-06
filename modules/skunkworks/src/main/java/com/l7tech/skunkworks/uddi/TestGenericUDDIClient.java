@@ -78,7 +78,7 @@ public class TestGenericUDDIClient {
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, uddiClient, serviceOid, new UDDIClientConfig());
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient){};
 //        servicePublisher.publishServicesToUDDIRegistry(uddiClient, wsdlToUDDIModelConverter.getBusinessServices(),
 //                wsdlToUDDIModelConverter.getKeysToPublishedTModels());
 
@@ -271,7 +271,7 @@ public class TestGenericUDDIClient {
                         "http://rsbcentos.l7tech.com:8080/juddiv3/services/security",
                         "root",
                         "root",
-                        PolicyAttachmentVersion.v1_2/*not important here*/);
+                        PolicyAttachmentVersion.v1_2/*not important here*/, null){};
 
 
         uddiClient.authenticate();
@@ -302,7 +302,7 @@ public class TestGenericUDDIClient {
                         "http://DONALWINXP:53307/UddiRegistry/security",
                         "administrator",
                         "7layer",
-                        PolicyAttachmentVersion.v1_2/*not important here*/);
+                        PolicyAttachmentVersion.v1_2/*not important here*/, null){};
     }
 
     public Reader getWsdlReader(String resourcetoread) {

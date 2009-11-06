@@ -233,7 +233,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
 
         try {
             for ( UDDIRegistry registry : uddiRegistryManager.findAll() ) {
-                registries.put( registry.getOid(), new UDDIRegistryRuntime( this, registry, timer ) );
+                registries.put( registry.getOid(), new UDDIRegistryRuntime( this, uddiHelper, registry, timer ) );
             }
         } catch (FindException e) {
             logger.log( Level.WARNING, "Error loading UDDI registries.", e );
@@ -416,20 +416,23 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
     }
 
     private static final class UDDIRegistryRuntime {
+        private final UDDIHelper uddiHelper;
         private final UDDIRegistry registry;
         private final Collection<Pair<Long,TimerTask>> timerTasks;
         private final Timer timer;
 
         UDDIRegistryRuntime( final UDDICoordinator coordinator,
+                             final UDDIHelper uddiHelper,
                              final UDDIRegistry registry,
                              final Timer timer ) {
             this.registry = registry;
+            this.uddiHelper = uddiHelper;
             this.timer = timer;
             this.timerTasks = buildTasks( coordinator, registry );
         }
 
         UDDIClient getUDDIClient() {
-            return UDDIHelper.newUDDIClient( registry );
+            return uddiHelper.newUDDIClient( registry );
         }
 
         void init() {

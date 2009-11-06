@@ -8,22 +8,22 @@ package com.l7tech.uddi;
  */
 public class UDDIClientConfig {
 
-    //for testing
-    public UDDIClientConfig() {
-    }
+    //- PUBLIC
 
-    public UDDIClientConfig(String inquiryUrl,
-                            String publishUrl,
-                            String subscriptionUrl,
-                            String securityUrl,
-                            String login,
-                            String password) {
+    public UDDIClientConfig( final String inquiryUrl,
+                             final String publishUrl,
+                             final String subscriptionUrl,
+                             final String securityUrl,
+                             final String login,
+                             final String password,
+                             final UDDIClientTLSConfig tlsConfig ) {
         this.inquiryUrl = inquiryUrl;
         this.publishUrl = publishUrl;
         this.subscriptionUrl = subscriptionUrl;
         this.securityUrl = securityUrl;
         this.login = login;
         this.password = password;
+        this.tlsConfig = tlsConfig;
     }
 
     public String getInquiryUrl() {
@@ -50,10 +50,17 @@ public class UDDIClientConfig {
         return password;
     }
 
-    private String inquiryUrl;
-    private String publishUrl;
-    private String subscriptionUrl;
-    private String securityUrl;
-    private String login;
-    private String password;
+    public UDDIClientTLSConfig getTlsConfig() {
+        return tlsConfig;
+    }
+
+    //- PRIVATE
+
+    private final String inquiryUrl;
+    private final String publishUrl;
+    private final String subscriptionUrl;
+    private final String securityUrl;
+    private final String login;
+    private final String password;
+    private final UDDIClientTLSConfig tlsConfig;
 }

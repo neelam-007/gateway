@@ -43,11 +43,4 @@ public interface UDDIRegistryInfo {
      * @return The url suffix or null if not supported.
      */
     String getSubscription();
-
-    /**
-     * Get the metrics map for this registry.
-     *
-     * @return The map of metrics names to tModel name?
-     */
-    Map<String,String> getMetricsMap();
 }

@@ -18,7 +18,7 @@ public class UDDIHelperTest {
 
     @Before
     public void setUp(){
-        uddiHelper = new UDDIHelper(ServerConfig.getInstance(), new Properties());
+        uddiHelper = new UDDIHelper(ServerConfig.getInstance(), null, null, null, new Properties());
     }
 
     @Test

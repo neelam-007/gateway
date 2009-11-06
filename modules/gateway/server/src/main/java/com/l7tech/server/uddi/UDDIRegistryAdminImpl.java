@@ -26,6 +26,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     protected static final Logger logger = Logger.getLogger(UDDIRegistryAdminImpl.class.getName());
 
     final private UDDIRegistryManager uddiRegistryManager;
+    final private UDDIHelper uddiHelper;
     final private UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager;
     final private UDDIServiceControlManager uddiServiceControlManager;
     final private UDDICoordinator uddiCoordinator;
@@ -33,12 +34,14 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     final private ServiceManager serviceManager;
 
     public UDDIRegistryAdminImpl(final UDDIRegistryManager uddiRegistryManager,
+                                 final UDDIHelper uddiHelper,
                                  final UDDIServiceControlManager uddiServiceControlManager,
                                  final UDDICoordinator uddiCoordinator,
                                  final ServiceCache serviceCache,
                                  final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
                                  final ServiceManager serviceManager) {
         this.uddiRegistryManager = uddiRegistryManager;
+        this.uddiHelper = uddiHelper;
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.uddiCoordinator = uddiCoordinator;
         this.serviceCache = serviceCache;
@@ -119,7 +122,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
-        return UDDIHelper.newUDDIClient( uddiRegistry );
+        return uddiHelper.newUDDIClient( uddiRegistry );
+    }
+
+    private UDDIClientConfig getUDDIClientConfig(final UDDIRegistry uddiRegistry) {
+        return uddiHelper.newUDDIClientConfig( uddiRegistry );
     }
 
     @Override
@@ -296,14 +303,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
         final Wsdl wsdl = getWsdl(service);
 
-        final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
         try {
-            final UDDIClientConfig uddiClientConfig = new UDDIClientConfig(uddiRegistry.getInquiryUrl(),
-                    uddiRegistry.getPublishUrl(), uddiRegistry.getSubscriptionUrl(), uddiRegistry.getSecurityUrl(),
-                    uddiRegistry.getRegistryAccountUserName(), uddiRegistry.getRegistryAccountPassword());
+            final UDDIClientConfig uddiClientConfig = getUDDIClientConfig(uddiRegistry);
             //the management of whether any existing tModels need to be deleted is left to the uddi proxied service manager
             //as it can only tell what needs to be deleted after it has published the representation of the gateway wsdl to UDDI
-            uddiProxiedServiceInfoManager.updateUDDIProxiedService(serviceInfo, uddiClient, wsdl, uddiClientConfig);
+            uddiProxiedServiceInfoManager.updateUDDIProxiedService(serviceInfo, wsdl, uddiClientConfig);
         } catch (UDDIException e) {
             final String msg = "Could not publish Gateway WSDL to UDDI: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));

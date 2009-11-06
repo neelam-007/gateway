@@ -1,11 +1,16 @@
 package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.*;
+import com.l7tech.util.SyspropUtil;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyManagementException;
+import java.security.SecureRandom;
+import java.lang.reflect.Proxy;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Binding;
 import javax.xml.ws.Holder;
@@ -14,6 +19,7 @@ import javax.xml.namespace.QName;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.datatype.DatatypeConfigurationException;
+import javax.net.ssl.SSLContext;
 
 /**
  * UDDIv3 client implementation using generated JAX-WS UDDI API
@@ -21,43 +27,6 @@ import javax.xml.datatype.DatatypeConfigurationException;
 public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     //- PUBLIC
-
-    /**
-     * Create a new UDDI client instance.
-     *
-     * @param inquiryUrl the inquiry API url
-     * @param publishUrl the publish API url (may be null, then inquiry is used)
-     * @param securityUrl the security API url (may be null, then publish is used)
-     * @param login the username (may be null)
-     * @param password the password (may be null if login is null)
-     * @param policyAttachmentVersion The version of policy attachment to use.
-     */
-    public GenericUDDIClient(final String inquiryUrl,
-                             final String publishUrl,
-                             final String subscriptionUrl,
-                             final String securityUrl,
-                             final String login,
-                             final String password,
-                             final PolicyAttachmentVersion policyAttachmentVersion) {
-        if ( inquiryUrl == null ) throw new IllegalArgumentException("inquiryUrl must not be null");
-        if ( login != null && password == null ) throw new IllegalArgumentException("password must not be null");
-        if ( policyAttachmentVersion == null ) throw new IllegalArgumentException("policyAttachmentVersion must not be null");
-
-        // service urls
-        this.inquiryUrl = inquiryUrl;
-        this.publishUrl = coalesce(publishUrl, inquiryUrl);
-        this.subscriptionUrl = coalesce(subscriptionUrl, inquiryUrl);
-        this.securityUrl = coalesce(securityUrl, publishUrl, inquiryUrl);
-
-        // creds
-        this.login = login;
-        this.password = password;
-
-        // keys for ws-policy versions
-        this.tModelKeyPolicyType = policyAttachmentVersion.getTModelKeyPolicyTypes();
-        this.tModelKeyLocalPolicyReference = policyAttachmentVersion.getTModelKeyLocalPolicyReference();
-        this.tModelKeyRemotePolicyReference = policyAttachmentVersion.getTModelKeyRemotePolicyReference();
-    }
 
     /**
      *
@@ -86,21 +55,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             logger.log(Level.WARNING, msg);
             throw new UDDIException(msg, drfm);
         }
-    }
-
-    private String getExceptionMessage(String prefix, DispositionReportFaultMessage drfm){
-        final String errorInfo = getFirstFaultMessage(drfm);
-        return prefix + ((errorInfo != null)? errorInfo: drfm.getMessage());
-    }
-    /**
-     * Get the first Fault info's Result's ErrInfo from the disposition report
-     * @param disp DispositionReportFaultMessage to get the error info from
-     * @return String error message, null if none found
-     */
-    private String getFirstFaultMessage(DispositionReportFaultMessage disp){
-        Result result = disp.getFaultInfo().getResult().iterator().next();
-        if(result != null) return result.getErrInfo().getValue();
-        return null;
     }
 
     @Override
@@ -268,95 +222,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
     }
 
-    /**
-     * Find a matching tModel based on all searchable attributes of tModelToFind
-     * The search is case insensitive, but exact
-     *
-     * @param tModelToFind TModel to find in the UDDI Registry
-     * @param approxomiateMatch
-     * @return TModelList containing results, if any. Never null.
-     * @throws UDDIException any problems searching the registry
-     */
-    private TModelList findMatchingTModels(final TModel tModelToFind, boolean approxomiateMatch) throws UDDIException{
-        FindTModel findTModel = getFindTModel(tModelToFind, approxomiateMatch);
-
-        UDDIInquiryPortType inquiryPortType = getInquirePort();
-        try {
-            return inquiryPortType.findTModel(findTModel);
-
-        } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception finding matching tModels: ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
-        }
-
-    }
-
-    private FindTModel getFindTModel(TModel tModelToFind, boolean approxomiateMatch) throws UDDIException {
-        FindTModel findTModel = new FindTModel();
-        findTModel.setAuthInfo(getAuthToken());
-
-        FindQualifiers findQualifiers = new FindQualifiers();
-        List<String> qualifiers = findQualifiers.getFindQualifier();
-        qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
-        if(approxomiateMatch) qualifiers.add(FINDQUALIFIER_APPROXIMATE);
-
-        Name name= new Name();
-        name.setValue(tModelToFind.getName().getValue());
-
-        findTModel.setName(name);
-        findTModel.setFindQualifiers(findQualifiers);
-        if(tModelToFind.getCategoryBag() != null){
-            CategoryBag searchCategoryBag = new CategoryBag();
-            searchCategoryBag.getKeyedReference().addAll(tModelToFind.getCategoryBag().getKeyedReference());
-            findTModel.setCategoryBag(searchCategoryBag);
-        }
-
-        if(tModelToFind.getIdentifierBag() != null){
-            IdentifierBag searchIdentifierBag = new IdentifierBag();
-            searchIdentifierBag.getKeyedReference().addAll(tModelToFind.getIdentifierBag().getKeyedReference());
-            findTModel.setIdentifierBag(searchIdentifierBag);
-        }
-        return findTModel;
-    }
-
-    private void deleteTModel(TModel tModel) throws UDDIException{
-        //See if any services reference this tModelKey, is so then don't delete
-        final FindService findService = new FindService();
-        findService.setAuthInfo(getAuthToken());
-
-        final FindTModel findTModel = getFindTModel(tModel, false);
-        findService.setFindTModel(findTModel);
-
-        try {
-            final ServiceList serviceList = getInquirePort().findService(findService);
-            if(serviceList.getServiceInfos() != null && !serviceList.getServiceInfos().getServiceInfo().isEmpty()){
-                logger.log(Level.INFO, "Not deleting tModel as BusinessService found which references tModel with key: " + tModel.getTModelKey());
-                return;
-            }
-        } catch (DispositionReportFaultMessage drfm) {
-            final String msg =
-                    getExceptionMessage("Exception searching for BusinessServices which reference tModel with key: "
-                            + tModel.getTModelKey(), drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
-        }
-
-        final String tModelKey = tModel.getTModelKey();
-        //if not found delete
-        DeleteTModel deleteTModel = new DeleteTModel();
-        deleteTModel.setAuthInfo(getAuthToken());
-        deleteTModel.getTModelKey().add(tModelKey);
-        try {
-            getPublishPort().deleteTModel(deleteTModel);
-            logger.log(Level.INFO, "Delete tModel with key: " + tModelKey);
-        } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception deleting tModel with key: " + tModelKey+ ": ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
-        }
-    }
-
     @Override
     public void deleteTModel(String tModelKey) throws UDDIException {
         final TModel tModel = getTModel(tModelKey);
@@ -492,13 +357,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
     }
 
-    private void setMoreAvailable(final ListDescription listDescription) {
-        if(listDescription == null) return;
-
-        moreAvailable = (listDescription.getActualCount() > listDescription.getListHead() + (listDescription.getIncludeCount()-1))
-                && listDescription.getActualCount() > 0;
-    }
-
     @Override
     public Collection<UDDINamedEntity> listBusinessEntities(String businessName, boolean caseSensitive, int offset, int maxRows) throws UDDIException {
         validateName(businessName);
@@ -541,32 +399,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
     }
 
-    private FindService getConfiguredFindService(final String servicePattern,
-                                                 final boolean caseSensitive,
-                                                 final int offset,
-                                                 final int maxRows) throws UDDIException {
-        String authToken = getAuthToken();
-        Name[] names = buildNames(servicePattern);
-        FindService findService = new FindService();
-        findService.setAuthInfo(authToken);
-        if (maxRows > 0)
-            findService.setMaxRows(maxRows);
-        if (offset > 0)
-            findService.setListHead(offset);
-        findService.setFindQualifiers(buildFindQualifiers(servicePattern, caseSensitive));
-        if (names != null)
-            findService.getName().addAll(Arrays.asList(names));
-
-        KeyedReference keyedReference = new KeyedReference();
-        keyedReference.setKeyValue(WSDL_TYPES_SERVICE);
-        keyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
-        CategoryBag categoryBag = new CategoryBag();
-        categoryBag.getKeyedReference().add(keyedReference);
-        findService.setCategoryBag(categoryBag);
-
-        return findService;
-    }
-
     /**
      * //TODO this entire method needs to be converted into only requiring 2 single searches of UDDI, which is possible
      */
@@ -583,7 +415,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         try {
             String authToken = getAuthToken();
 
-            FindService findService = getConfiguredFindService(servicePattern, caseSensitive, offset, maxRows);
+            FindService findService = buildFindService(servicePattern, caseSensitive, offset, maxRows);
             UDDIInquiryPortType inquiryPort = getInquirePort();
             ServiceList serviceList = inquiryPort.findService(findService);
 
@@ -614,7 +446,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
                 for (ServiceInfo serviceInfo : serviceList.getServiceInfos().getServiceInfo()) {
 
-                    FindBinding findBinding = getConfiguredFindBinding(serviceInfo);
+                    FindBinding findBinding = buildFindBinding(serviceInfo);
 
                     // Find tModel keys for the WSDL portType/binding
                     BindingDetail bd = inquiryPort.findBinding(findBinding);
@@ -776,24 +608,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         } catch (RuntimeException e) {
             throw new UDDIException("Error listing services.", e);
         }
-    }
-
-    private FindBinding getConfiguredFindBinding(ServiceInfo serviceInfo) throws UDDIException {
-        FindBinding findBinding = new FindBinding();
-        findBinding.setAuthInfo(getAuthToken());
-        findBinding.setServiceKey(serviceInfo.getServiceKey());
-
-        // We want them all, but setting limit at 50 //todo accecpt this value as a param from cluster variable
-        findBinding.setMaxRows(50);
-
-        // TODO This does not work with CentraSite
-        //CategoryBag bindingCategoryBag = new CategoryBag();
-        //KeyedReference bindingKeyedReference = new KeyedReference();
-        //bindingKeyedReference.setKeyValue(WSDL_TYPES_PORT);
-        //bindingKeyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
-        //bindingCategoryBag.getKeyedReference().add(bindingKeyedReference);
-        //findBinding.setCategoryBag(bindingCategoryBag);
-        return findBinding;
     }
 
     /**
@@ -1638,6 +1452,47 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     //- PROTECTED
 
+    /**
+     * Create a new UDDI client instance.
+     *
+     * @param inquiryUrl the inquiry API url
+     * @param publishUrl the publish API url (may be null, then inquiry is used)
+     * @param securityUrl the security API url (may be null, then publish is used)
+     * @param login the username (may be null)
+     * @param password the password (may be null if login is null)
+     * @param policyAttachmentVersion The version of policy attachment to use.
+     */
+    protected GenericUDDIClient(final String inquiryUrl,
+                                final String publishUrl,
+                                final String subscriptionUrl,
+                                final String securityUrl,
+                                final String login,
+                                final String password,
+                                final PolicyAttachmentVersion policyAttachmentVersion,
+                                final UDDIClientTLSConfig tlsConfig ) {
+        if ( inquiryUrl == null ) throw new IllegalArgumentException("inquiryUrl must not be null");
+        if ( login != null && password == null ) throw new IllegalArgumentException("password must not be null");
+        if ( policyAttachmentVersion == null ) throw new IllegalArgumentException("policyAttachmentVersion must not be null");
+
+        // service urls
+        this.inquiryUrl = inquiryUrl;
+        this.publishUrl = coalesce(publishUrl, inquiryUrl);
+        this.subscriptionUrl = coalesce(subscriptionUrl, inquiryUrl);
+        this.securityUrl = coalesce(securityUrl, publishUrl, inquiryUrl);
+
+        // creds
+        this.login = login;
+        this.password = password;
+
+        // TLS
+        this.tlsConfig = tlsConfig;
+
+        // keys for ws-policy versions
+        this.tModelKeyPolicyType = policyAttachmentVersion.getTModelKeyPolicyTypes();
+        this.tModelKeyLocalPolicyReference = policyAttachmentVersion.getTModelKeyLocalPolicyReference();
+        this.tModelKeyRemotePolicyReference = policyAttachmentVersion.getTModelKeyRemotePolicyReference();
+    }
+
     protected UDDISecurityPortType getSecurityPort() {
         UDDISecurity security = new UDDISecurity(buildUrl("resources/uddi_v3_service_s.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDISecurity"));
         UDDISecurityPortType securityPort = security.getUDDISecurityPort();
@@ -1781,12 +1636,17 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     private static final int MAX_LENGTH_KEYVALUE = 255;
     private static final int MAX_LENGTH_URL = 4096;
 
+    static {
+        UDDIClientTLSConfig.addDefaultAdapter( new SunJaxWsTLSConfigAdapter() );
+    }
+
     private final String inquiryUrl;
     private final String publishUrl;
     private final String subscriptionUrl;
     private final String securityUrl;
     private final String login;
     private final String password;
+    private final UDDIClientTLSConfig tlsConfig;
     private final String tModelKeyPolicyType;
     private final String tModelKeyLocalPolicyReference;
     private final String tModelKeyRemotePolicyReference;
@@ -1824,6 +1684,14 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
         // Set endpoint
         context.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
+
+        if ( tlsConfig != null && url.toLowerCase().startsWith("https" )) {
+            for ( UDDIClientTLSConfig.TLSConfigAdapter adapter : UDDIClientTLSConfig.getDefaultAdapters() ) {
+                if ( adapter.configure( proxy, tlsConfig )) {
+                    break;
+                }
+            }
+        }
     }
 
     private String getAuthToken() throws UDDIException {
@@ -1875,8 +1743,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
     }
 
-
-
     /**
      * Extract fault information to a string.
      *
@@ -1918,6 +1784,22 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
 
         return buffer.toString();
+    }
+
+    private String getExceptionMessage(String prefix, DispositionReportFaultMessage drfm){
+        final String errorInfo = getFirstFaultMessage(drfm);
+        return prefix + ((errorInfo != null)? errorInfo: drfm.getMessage());
+    }
+
+    /**
+     * Get the first Fault info's Result's ErrInfo from the disposition report
+     * @param disp DispositionReportFaultMessage to get the error info from
+     * @return String error message, null if none found
+     */
+    private String getFirstFaultMessage(DispositionReportFaultMessage disp){
+        Result result = disp.getFaultInfo().getResult().iterator().next();
+        if(result != null) return result.getErrInfo().getValue();
+        return null;
     }
 
     private void mergePolicyUrlToInfo(final String policyKey,
@@ -1965,6 +1847,50 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 throw new UDDIDataException("Value for " + description + " exceeds maximum length of " + maxLength + " characters.");
             }
         }
+    }
+
+    private FindBinding buildFindBinding( final ServiceInfo serviceInfo ) throws UDDIException {
+        FindBinding findBinding = new FindBinding();
+        findBinding.setAuthInfo(getAuthToken());
+        findBinding.setServiceKey(serviceInfo.getServiceKey());
+
+        // We want them all, but setting limit at 50 //todo accecpt this value as a param from cluster variable
+        findBinding.setMaxRows(50);
+
+        // TODO This does not work with CentraSite
+        //CategoryBag bindingCategoryBag = new CategoryBag();
+        //KeyedReference bindingKeyedReference = new KeyedReference();
+        //bindingKeyedReference.setKeyValue(WSDL_TYPES_PORT);
+        //bindingKeyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
+        //bindingCategoryBag.getKeyedReference().add(bindingKeyedReference);
+        //findBinding.setCategoryBag(bindingCategoryBag);
+        return findBinding;
+    }
+
+    private FindService buildFindService( final String servicePattern,
+                                          final boolean caseSensitive,
+                                          final int offset,
+                                          final int maxRows) throws UDDIException {
+        String authToken = getAuthToken();
+        Name[] names = buildNames(servicePattern);
+        FindService findService = new FindService();
+        findService.setAuthInfo(authToken);
+        if (maxRows > 0)
+            findService.setMaxRows(maxRows);
+        if (offset > 0)
+            findService.setListHead(offset);
+        findService.setFindQualifiers(buildFindQualifiers(servicePattern, caseSensitive));
+        if (names != null)
+            findService.getName().addAll(Arrays.asList(names));
+
+        KeyedReference keyedReference = new KeyedReference();
+        keyedReference.setKeyValue(WSDL_TYPES_SERVICE);
+        keyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
+        CategoryBag categoryBag = new CategoryBag();
+        categoryBag.getKeyedReference().add(keyedReference);
+        findService.setCategoryBag(categoryBag);
+
+        return findService;
     }
 
     private ServiceDetail getServiceDetail( final String serviceKey, final String authToken ) throws UDDIException {
@@ -2100,6 +2026,13 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         return result;
     }
 
+    private void setMoreAvailable(final ListDescription listDescription) {
+        if(listDescription == null) return;
+
+        moreAvailable = (listDescription.getActualCount() > listDescription.getListHead() + (listDescription.getIncludeCount()-1))
+                && listDescription.getActualCount() > 0;
+    }
+
     /**
      * @param searchPattern Search pattern string
      * @return  TRUE if search pattern contains wild cards, otherwise FALSE.
@@ -2114,6 +2047,95 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         logger.log(Level.FINE, "String after : " + temp);
         if (temp.contains("%") || temp.contains("_")) result = true;
         return result;
+    }
+
+    /**
+     * Find a matching tModel based on all searchable attributes of tModelToFind
+     * The search is case insensitive, but exact
+     *
+     * @param tModelToFind TModel to find in the UDDI Registry
+     * @param approxomiateMatch
+     * @return TModelList containing results, if any. Never null.
+     * @throws UDDIException any problems searching the registry
+     */
+    private TModelList findMatchingTModels(final TModel tModelToFind, boolean approxomiateMatch) throws UDDIException{
+        FindTModel findTModel = getFindTModel(tModelToFind, approxomiateMatch);
+
+        UDDIInquiryPortType inquiryPortType = getInquirePort();
+        try {
+            return inquiryPortType.findTModel(findTModel);
+
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception finding matching tModels: ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
+
+    }
+
+    private FindTModel getFindTModel(TModel tModelToFind, boolean approxomiateMatch) throws UDDIException {
+        FindTModel findTModel = new FindTModel();
+        findTModel.setAuthInfo(getAuthToken());
+
+        FindQualifiers findQualifiers = new FindQualifiers();
+        List<String> qualifiers = findQualifiers.getFindQualifier();
+        qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
+        if(approxomiateMatch) qualifiers.add(FINDQUALIFIER_APPROXIMATE);
+
+        Name name= new Name();
+        name.setValue(tModelToFind.getName().getValue());
+
+        findTModel.setName(name);
+        findTModel.setFindQualifiers(findQualifiers);
+        if(tModelToFind.getCategoryBag() != null){
+            CategoryBag searchCategoryBag = new CategoryBag();
+            searchCategoryBag.getKeyedReference().addAll(tModelToFind.getCategoryBag().getKeyedReference());
+            findTModel.setCategoryBag(searchCategoryBag);
+        }
+
+        if(tModelToFind.getIdentifierBag() != null){
+            IdentifierBag searchIdentifierBag = new IdentifierBag();
+            searchIdentifierBag.getKeyedReference().addAll(tModelToFind.getIdentifierBag().getKeyedReference());
+            findTModel.setIdentifierBag(searchIdentifierBag);
+        }
+        return findTModel;
+    }
+
+    private void deleteTModel(TModel tModel) throws UDDIException{
+        //See if any services reference this tModelKey, is so then don't delete
+        final FindService findService = new FindService();
+        findService.setAuthInfo(getAuthToken());
+
+        final FindTModel findTModel = getFindTModel(tModel, false);
+        findService.setFindTModel(findTModel);
+
+        try {
+            final ServiceList serviceList = getInquirePort().findService(findService);
+            if(serviceList.getServiceInfos() != null && !serviceList.getServiceInfos().getServiceInfo().isEmpty()){
+                logger.log(Level.INFO, "Not deleting tModel as BusinessService found which references tModel with key: " + tModel.getTModelKey());
+                return;
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg =
+                    getExceptionMessage("Exception searching for BusinessServices which reference tModel with key: "
+                            + tModel.getTModelKey(), drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
+
+        final String tModelKey = tModel.getTModelKey();
+        //if not found delete
+        DeleteTModel deleteTModel = new DeleteTModel();
+        deleteTModel.setAuthInfo(getAuthToken());
+        deleteTModel.getTModelKey().add(tModelKey);
+        try {
+            getPublishPort().deleteTModel(deleteTModel);
+            logger.log(Level.INFO, "Delete tModel with key: " + tModelKey);
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception deleting tModel with key: " + tModelKey+ ": ", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
+        }
     }
 
     private static class UDDIOperationalInfoImpl implements UDDIOperationalInfo {
@@ -2171,6 +2193,43 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             }
 
             return calendar;
+        }
+    }
+
+    private static final class SunJaxWsTLSConfigAdapter implements UDDIClientTLSConfig.TLSConfigAdapter {
+        private static final SecureRandom random = new SecureRandom();
+        private static final String PROP_SSL_SESSION_TIMEOUT = "com.l7tech.server.uddi.sslSessionTimeoutSeconds";
+        private static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
+
+        @Override
+        public boolean configure( final Object target, final UDDIClientTLSConfig config ) {
+            boolean processed = false;
+
+            if ( target instanceof BindingProvider &&
+                 Proxy.isProxyClass( target.getClass() ) &&
+                 Proxy.getInvocationHandler( target ).getClass().getName().equals("com.sun.xml.ws.client.sei.SEIStub") )  {
+                processed = true;
+                BindingProvider bindingProvider = (BindingProvider) target;
+                Map<String,Object> context = bindingProvider.getRequestContext();
+
+                // Hostname verifier
+                context.put("com.sun.xml.ws.transport.https.client.hostname.verifier", config.getHostnameVerifier());
+
+                // SSL socket factory
+                int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
+                try {
+                    final SSLContext ctx = SSLContext.getInstance("SSL");
+                    ctx.init( config.getKeyManagers(),  config.getTrustManagers(), random );
+                    ctx.getClientSessionContext().setSessionTimeout(timeout);
+                    context.put("com.sun.xml.ws.transport.https.client.SSLSocketFactory", ctx.getSocketFactory());
+                } catch (NoSuchAlgorithmException e) {
+                    logger.log( Level.WARNING, "Error configuring TLS for UDDI client.", e );
+                } catch (KeyManagementException e) {
+                    logger.log( Level.WARNING, "Error configuring TLS for UDDI client.", e );
+                }
+            }
+
+            return processed;
         }
     }
 }

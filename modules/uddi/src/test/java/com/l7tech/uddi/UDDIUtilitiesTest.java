@@ -69,7 +69,7 @@ public class UDDIUtilitiesTest {
     @Test
     public void testUpdateBindingTModelReferences() throws UDDIException {
         //first update all wsdl:portType tModels
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, getUDDIClient(), 23424323L, new UDDIClientConfig());
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, 23424323L, getUDDIClient());
         servicePublisher.publishDependentTModels(servicesAndTModels.right, WSDL_PORT_TYPE);
 
         final ArrayList<TModel> models = new ArrayList<TModel>();
@@ -116,7 +116,7 @@ public class UDDIUtilitiesTest {
     @Test
     public void testUpdateBusinessServiceReferences() throws UDDIException {
         //setup
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, getUDDIClient(), 23424323L, new UDDIClientConfig());
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, 23424323L, getUDDIClient());
         servicePublisher.publishDependentTModels(servicesAndTModels.right, WSDL_PORT_TYPE);
 
         final ArrayList<TModel> models = new ArrayList<TModel>();

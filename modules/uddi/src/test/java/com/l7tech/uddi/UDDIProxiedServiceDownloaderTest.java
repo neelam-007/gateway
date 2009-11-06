@@ -42,7 +42,7 @@ public class UDDIProxiedServiceDownloaderTest {
 
         UDDIClient uddiClient = new TestUddiClient(wsdlToUDDIModelConverter.getBusinessServices());
 
-        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient, null);
+        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
         Set<String> serviceKeys = new HashSet<String>();
         for(BusinessService bs: wsdlToUDDIModelConverter.getBusinessServices()){
             serviceKeys.add(bs.getServiceKey());

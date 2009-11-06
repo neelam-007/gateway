@@ -48,7 +48,8 @@ public class UDDIClientFactory {
                                     final UDDIRegistryInfo uddiRegistryInfo,
                                     final String login,
                                     final String password,
-                                    final PolicyAttachmentVersion attachmentVersion) {
+                                    final PolicyAttachmentVersion attachmentVersion,
+                                    final UDDIClientTLSConfig tlsConfig ) {
         String inquiryUrl = url;
         String publishUrl = url;
         String subscriptionUrl = null;
@@ -70,7 +71,26 @@ public class UDDIClientFactory {
                 securityUrl,
                 login,
                 password,
-                attachmentVersion);
+                attachmentVersion,
+                tlsConfig );
+    }
+
+    /**
+     * Create a new UDDIClient.
+     *
+     * @param config The configuration for the client.
+     * @return The UDDIClient
+     */
+    public UDDIClient newUDDIClient( final UDDIClientConfig config ) {
+        return newUDDIClient(
+                config.getInquiryUrl(),
+                config.getPublishUrl(),
+                config.getSubscriptionUrl(),
+                config.getSecurityUrl(),
+                config.getLogin(),
+                config.getPassword(),
+                null,
+                config.getTlsConfig());
     }
 
     /**
@@ -90,7 +110,8 @@ public class UDDIClientFactory {
                                     final String securityUrl,
                                     final String login,
                                     final String password,
-                                    final PolicyAttachmentVersion attachmentVersion) {
+                                    final PolicyAttachmentVersion attachmentVersion,
+                                    final UDDIClientTLSConfig tlsConfig ) {
         UDDIClient client;
 
         PolicyAttachmentVersion policyAttachmentVersion = attachmentVersion == null ?
@@ -99,13 +120,33 @@ public class UDDIClientFactory {
 
         try {
             Class genericUddiClass = Class.forName(clientClass);
-            Constructor constructor = genericUddiClass.getConstructor(String.class, String.class, String.class, String.class, String.class, String.class, PolicyAttachmentVersion.class);
-            client = (UDDIClient) constructor.newInstance(inquiryUrl, publishUrl, subscriptionUrl, securityUrl, login, password, policyAttachmentVersion);
+            Constructor constructor = genericUddiClass.getDeclaredConstructor(
+                    String.class, String.class, String.class, String.class, String.class, String.class,
+                    PolicyAttachmentVersion.class, UDDIClientTLSConfig.class);
+            client = (UDDIClient) constructor.newInstance(
+                    inquiryUrl,
+                    publishUrl,
+                    subscriptionUrl,
+                    securityUrl,
+                    login,
+                    password,
+                    policyAttachmentVersion,
+                    tlsConfig);
         } catch (Exception e) {
             throw new RuntimeException("Generic UDDI client error.", e);
         }
 
         return client;
+    }
+
+    //- PACKAGE
+
+
+    static PolicyAttachmentVersion getDefaultPolicyAttachmentVersion() {
+        String id = SyspropUtil.getString(
+                SYSPROP_DEFAULT_VERSION,
+                PolicyAttachmentVersion.v1_2.toString());
+        return PolicyAttachmentVersion.valueOf(id);
     }
 
     //- PRIVATE
@@ -140,12 +181,5 @@ public class UDDIClientFactory {
 
     private String buildUrl(String url, String suffix) {
         return URI.create(url).resolve(suffix).toString();
-    }
-
-    static PolicyAttachmentVersion getDefaultPolicyAttachmentVersion() {
-        String id = SyspropUtil.getString(
-                SYSPROP_DEFAULT_VERSION,
-                PolicyAttachmentVersion.v1_2.toString());
-        return PolicyAttachmentVersion.valueOf(id);
     }
 }

@@ -104,8 +104,6 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
                 if(!uddiRegistry.isEnabled()) throw new UDDIException("UDDI Registry '"+uddiRegistry.getName()+"' is disabled.");
 
-                final UDDIClient uddiClient = UDDIHelper.newUDDIClient(uddiRegistry);
-
                 final Wsdl wsdl;
                 try {
                     wsdl = publishedService.parsedWsdl();
@@ -113,11 +111,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     throw new UDDIException("Unable to parse WSDL from service (#" + publishedService.getOid()+")", e);
                 }
 
-                final UDDIClientConfig uddiClientConfig = new UDDIClientConfig(uddiRegistry.getInquiryUrl(),
-                        uddiRegistry.getPublishUrl(), uddiRegistry.getSubscriptionUrl(), uddiRegistry.getSecurityUrl(),
-                        uddiRegistry.getRegistryAccountUserName(), uddiRegistry.getRegistryAccountPassword());
-
-                BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(wsdl, uddiClient, publishedService.getOid(), uddiClientConfig);
+                BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(wsdl, publishedService.getOid(), uddiHelper.newUDDIClientConfig( uddiRegistry ));
                 //this is best effort commit / rollback
                 List<UDDIBusinessService> uddiBusinessServices = businessServicePublisher.publishServicesToUDDIRegistry(
                         protectedServiceExternalURL, protectedServiceWsdlURL, proxiedServiceInfo.getUddiBusinessKey());
@@ -138,6 +132,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     try {
                         logger.log(Level.WARNING, "Attempting to rollback UDDI updates");
                         //Attempt to roll back UDDI updates
+                        UDDIClient uddiClient = uddiHelper.newUDDIClient( uddiRegistry );
                         uddiClient.deleteUDDIBusinessServices(uddiBusinessServices);
                         logger.log(Level.WARNING, "UDDI updates rolled back successfully");
                     } catch (UDDIException e1) {

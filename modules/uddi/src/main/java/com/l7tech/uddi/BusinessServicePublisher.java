@@ -30,31 +30,42 @@ public class BusinessServicePublisher {
     private final UDDIClient uddiClient;
     private final JaxWsUDDIClient jaxWsUDDIClient;
     private long serviceOid;
-    private final UDDIClientConfig uddiClientConfig;
 
     /**
+     * Create a new BusinessServicePublisher.
+     *
      * @param wsdl WSDL to publish to UDDI
-     * @param uddiClient UDDIClient configured for the UDDI Registry to publish to
      * @param serviceOid services OID, which originates from the WSDL
+     * @param uddiCfg UDDIClientConfig for the UDDI Registry to publish to
      */
     public BusinessServicePublisher(final Wsdl wsdl,
-                                    final UDDIClient uddiClient,
                                     final long serviceOid,
                                     final UDDIClientConfig uddiCfg) {
+
+        this( wsdl, serviceOid, buildUDDIClient(uddiCfg));
+    }
+
+    /**
+     * Create a new BusinessServicePublisher.
+     *
+     * @param wsdl WSDL to publish to UDDI
+     * @param serviceOid services OID, which originates from the WSDL
+     * @param uddiClient UDDIClient for the UDDI Registry to publish to
+     */
+    protected BusinessServicePublisher(final Wsdl wsdl,
+                                       final long serviceOid,
+                                       final UDDIClient uddiClient) {
         if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
         if(uddiClient == null) throw new NullPointerException("uddiClient cannot be null");
-        if(uddiCfg == null) throw new NullPointerException("uddiCfg cannot be null");
 
         this.wsdl = wsdl;
         this.uddiClient = uddiClient;
         this.serviceOid = serviceOid;
-        if(uddiClient instanceof JaxWsUDDIClient){
+        if( uddiClient instanceof JaxWsUDDIClient ){
             jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
         }else{
-            jaxWsUDDIClient = new GenericUDDIClient(uddiCfg.getInquiryUrl(), uddiCfg.getPublishUrl(), uddiCfg.getSubscriptionUrl(),
-            uddiCfg.getSecurityUrl(), uddiCfg.getLogin(), uddiCfg.getPassword(), UDDIClientFactory.getDefaultPolicyAttachmentVersion());
+            throw new IllegalStateException( "JaxWsUDDIClient is required." );
         }
-        uddiClientConfig = uddiCfg;
     }
 
 
@@ -124,7 +135,7 @@ public class BusinessServicePublisher {
         final Map<String, String> serviceToWsdlServiceName = modelConverter.getServiceNameToWsdlServiceNameMap();
 
         //Get the info on all published business services from UDDI
-        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient, uddiClientConfig);
+        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
         Pair<List<BusinessService>, Map<String, TModel>> modelFromUddi = serviceDownloader.getBusinessServiceModels(publishedServiceKeys);
         //TODO [Donal] some keys we requested may not have been returned. When this happens delete from our database
         final List<BusinessService> publishedServices = modelFromUddi.left;
@@ -341,4 +352,16 @@ public class BusinessServicePublisher {
         }
     }
 
+    private static UDDIClient buildUDDIClient( final UDDIClientConfig uddiCfg ) {
+        if(uddiCfg == null) throw new NullPointerException("uddiCfg cannot be null");
+
+        UDDIClient uddiClient = UDDIClientFactory.getInstance().newUDDIClient( uddiCfg );
+        if(!(uddiClient instanceof JaxWsUDDIClient)){
+            uddiClient = new GenericUDDIClient(uddiCfg.getInquiryUrl(), uddiCfg.getPublishUrl(), uddiCfg.getSubscriptionUrl(),
+                    uddiCfg.getSecurityUrl(), uddiCfg.getLogin(), uddiCfg.getPassword(),
+                    UDDIClientFactory.getDefaultPolicyAttachmentVersion(), uddiCfg.getTlsConfig());
+        }
+
+        return uddiClient;
+    }    
 }

@@ -43,7 +43,7 @@ public class BusinessServicePublisherTest {
             JAXB.marshal(tModel, System.out);
         }
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, uddiClient, serviceOid, new UDDIClientConfig());
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
         servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey);
 
         //after
@@ -59,8 +59,7 @@ public class BusinessServicePublisherTest {
     }
 
     public UDDIClient getUDDIClient() throws UDDIException {
-        TestUddiClient uddiClient = new TestUddiClient();
-        return uddiClient;
+        return new TestUddiClient();
     }
 
 }
