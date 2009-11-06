@@ -2,10 +2,6 @@ package com.l7tech.wsdl;
 
 import com.l7tech.common.TestDocuments;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
 import javax.wsdl.Binding;
@@ -14,53 +10,31 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Class WsdlTest tests the {@link Wsdl}
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class WsdlTest extends TestCase {
+public class WsdlTest {
     private static final Logger log = Logger.getLogger(WsdlTest.class.getName());
     public static final String WSDL = TestDocuments.WSDL;
     public static final String WSDL2PORTS = TestDocuments.WSDL2PORTS;
     public static final String WSDL2SERVICES = TestDocuments.WSDL2SERVICES;
     public static final String WSDL_DOC_STYLE = TestDocuments.WSDL_DOC_LITERAL;
 
-    /**
-     * test <code>AbstractLocatorTest</code> constructor
-     */
-    public WsdlTest(String name) {
-        super(name);
-    }
-
-    /**
-     * create the <code>TestSuite</code> for the
-     * AbstractLocatorTest <code>TestCase</code>
-     */
-    public static Test suite() {
-        TestSuite suite = new TestSuite(WsdlTest.class);
-        return suite;
-    }
-
-    public void setUp() throws Exception {
-        // put set up code here
-    }
-
-    public void tearDown() throws Exception {
-        // put tear down code here
-    }
-
     public Reader getWsdlReader(String resourcetoread) {
         if (resourcetoread == null) {
             resourcetoread = WSDL;
         }
         InputStream i = WsdlTest.class.getClassLoader().getResourceAsStream(resourcetoread);
-        InputStreamReader r = new InputStreamReader(i);
-        return r;
+        return new InputStreamReader(i);
     }
 
     /**
@@ -68,33 +42,33 @@ public class WsdlTest extends TestCase {
      *
      * @throws Exception on tesat errors
      */
+    @Test
     public void testReadWsdlFromString() throws Exception {
         Reader fr = getWsdlReader(WSDL);
         StringWriter sw = new StringWriter();
         char[] buf = new char[500];
-        int len = 0;
+        int len;
         while ((len = fr.read(buf)) != -1) {
             sw.write(buf, 0, len);
         }
 
-        Wsdl wsdl =
-          Wsdl.newInstance(null, new StringReader(sw.toString()));
+        Wsdl wsdl = Wsdl.newInstance(null, new StringReader(sw.toString()));
         wsdl.getTypes();
         wsdl.getBindings();
         wsdl.getMessages();
         wsdl.getPortTypes();
         wsdl.getServices();
+        assertEquals( "Hash", "idiLlFDBpP2sEljl54VX1A==", wsdl.getHash() );
     }
-
 
     /**
      * Read the well fromed WSDL using FileReader.
      *
      * @throws Exception on tesat errors
      */
+    @Test
     public void testReadWsdlFromFile() throws Exception {
-        Wsdl wsdl =
-          Wsdl.newInstance(null, getWsdlReader(WSDL));
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(WSDL));
         wsdl.getTypes();
         wsdl.getBindings();
         wsdl.getMessages();
@@ -102,6 +76,7 @@ public class WsdlTest extends TestCase {
         wsdl.getServices();
     }
 
+    @Test
     public void testReadWsdl2PortsFromFile() throws Exception {
         log.info("Enter testReadWsdl2PortsFromFile");
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(WSDL2PORTS));
@@ -111,8 +86,10 @@ public class WsdlTest extends TestCase {
         wsdl.getPortTypes();
         wsdl.getServices();
         wsdl.getSoapPort();
+        assertEquals( "Hash", "FOs/wNJqudFH9j/UwKunyA==", wsdl.getHash() );
     }
 
+    @Test
     public void testReadWsdl2ServicesFromFile() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(WSDL2SERVICES));
         wsdl.getTypes();
@@ -121,8 +98,10 @@ public class WsdlTest extends TestCase {
         wsdl.getPortTypes();
         wsdl.getServices();
         wsdl.getSoapPort();
+        assertEquals( "Hash", "5Jrp/fpHC51BLRdNwWoGlw==", wsdl.getHash() );
     }
 
+    @Test
     public void testGetAndSetPortUrl() throws FileNotFoundException, WSDLException, MalformedURLException {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(WSDL));
         Port port = wsdl.getSoapPort();
@@ -140,13 +119,14 @@ public class WsdlTest extends TestCase {
      *
      * @throws Exception on tesat errors
      */
+    @Test
     public void testDetermineSoapEncodedBinding() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(WSDL));
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
         Collection bindings = wsdl.getBindings();
-        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
-            Binding binding = (Binding)iterator.next();
-            assertEquals(Wsdl.USE_ENCODED, wsdl.getSoapUse(binding));
+        for ( final Object binding1 : bindings ) {
+            Binding binding = (Binding) binding1;
+            assertEquals( Wsdl.USE_ENCODED, wsdl.getSoapUse( binding ) );
         }
     }
 
@@ -155,13 +135,14 @@ public class WsdlTest extends TestCase {
      *
      * @throws Exception on tesat errors
      */
+    @Test
     public void testDetermineSoapDocLiteralBinding() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(TestDocuments.WSDL_DOC_LITERAL));
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
         Collection bindings = wsdl.getBindings();
-        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
-            Binding binding = (Binding)iterator.next();
-            assertEquals(Wsdl.USE_LITERAL, wsdl.getSoapUse(binding));
+        for ( final Object binding1 : bindings ) {
+            Binding binding = (Binding) binding1;
+            assertEquals( Wsdl.USE_LITERAL, wsdl.getSoapUse( binding ) );
         }
     }
 
@@ -170,13 +151,14 @@ public class WsdlTest extends TestCase {
      *
      * @throws Exception on tesat errors
      */
+    @Test
     public void testDetermineSoapRpcLiteralBinding() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(TestDocuments.WSDL_RPC_LITERAL));
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
         Collection bindings = wsdl.getBindings();
-        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
-            Binding binding = (Binding)iterator.next();
-            assertEquals(Wsdl.USE_LITERAL, wsdl.getSoapUse(binding));
+        for ( final Object binding1 : bindings ) {
+            Binding binding = (Binding) binding1;
+            assertEquals( Wsdl.USE_LITERAL, wsdl.getSoapUse( binding ) );
         }
     }
 
@@ -187,19 +169,21 @@ public class WsdlTest extends TestCase {
      *
      * @throws Exception on tesat errors
      */
+    @Test
     public void testNonSoapBindingThrows() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(TestDocuments.WSDL_DOC_LITERAL));
         wsdl.setShowBindings(Wsdl.HTTP_BINDINGS);
         Collection bindings = wsdl.getBindings();
-        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
-            Binding binding = (Binding)iterator.next();
+        for ( final Object binding1 : bindings ) {
+            Binding binding = (Binding) binding1;
             try {
-                wsdl.getSoapUse(binding);
-                fail("IllegalArgumentException should have been thrown");
+                wsdl.getSoapUse( binding );
+                fail( "IllegalArgumentException should have been thrown" );
             } catch (IllegalArgumentException e) {
                 //
             }
         }
+        assertEquals( "Hash", "NmjaO9VQRVqjSMCuO/oI6Q==", wsdl.getHash() );
     }
 
     /**
@@ -207,19 +191,21 @@ public class WsdlTest extends TestCase {
      *
      * @throws Exception on tesat errors
      */
+    @Test
     public void testInvalidWsdlMixedSoapBindingUse() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(TestDocuments.WSDL_STOCK_QUOTE_INVALID_USE));
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
         Collection bindings = wsdl.getBindings();
-        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
-            Binding binding = (Binding)iterator.next();
+        for ( final Object binding1 : bindings ) {
+            Binding binding = (Binding) binding1;
             try {
-                wsdl.getSoapUse(binding);
-                fail("WSDLException should have been thrown");
+                wsdl.getSoapUse( binding );
+                fail( "WSDLException should have been thrown" );
             } catch (WSDLException e) {
                 //
             }
         }
+        assertEquals( "Hash", "YV+dlG3GNfaptkLbMiur1Q==", wsdl.getHash() );
     }
 
     /**
@@ -227,6 +213,7 @@ public class WsdlTest extends TestCase {
      * 
      * @throws Exception on test at errors
      */
+    @Test
     public void testWsdlsWithCircularImports() throws Exception {
         // Step 1: load the resources from the classpath and put them in a CachedDocumentResolver with appropriate urls
         Map<String, String> urisToResources = new HashMap<String, String>();
@@ -270,6 +257,8 @@ public class WsdlTest extends TestCase {
         } catch (StackOverflowError err) {
             fail("WSDLs with circular imports has been handled, so Stack Overflow Error should not happen here.");
         }
+
+        assertEquals( "Hash", "ylC488wFxrJz8/LTtJxHwg==", wsdlA.getHash() );
     }
 
     private String readContentFromInputStream(InputStream is) {
@@ -279,7 +268,8 @@ public class WsdlTest extends TestCase {
         String line;
         try {
             while ((line = reader.readLine()) != null) {
-                sb.append(line + "\n");
+                sb.append(line);
+                sb.append('\n');
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -292,13 +282,5 @@ public class WsdlTest extends TestCase {
         }
 
         return sb.toString();
-    }
-
-    /**
-     * Test <code>AbstractLocatorTest</code> main.
-     */
-    public static void main(String[] args) throws
-      Throwable {
-        junit.textui.TestRunner.run(suite());
     }
 }

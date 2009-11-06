@@ -288,11 +288,13 @@ public class Wsdl implements Serializable {
         return new WSDLLocator() {
             private String lastResolvedUri = null;
 
+            @Override
             public InputSource getBaseInputSource() {
                 lastResolvedUri = getBaseURI();
                 return baseInputSource;
             }
 
+            @Override
             public String getBaseURI() {
                 return baseInputSource.getSystemId();
             }
@@ -307,6 +309,7 @@ public class Wsdl implements Serializable {
              *                       be relative to the parent document's location.
              * @return the InputSource object or null if the import cannot be found.
              */
+            @Override
             public InputSource getImportInputSource(String parentLocation, String importLocation) {
                 InputSource is = null;
                 URI resolvedUri;
@@ -343,16 +346,52 @@ public class Wsdl implements Serializable {
                 return is;
             }
 
+            @Override
             public String getLatestImportURI() {
                 return lastResolvedUri;
             }
 
+            @Override
             public void close() {
                 //?
             }
         };
     }
 
+    /**
+     * Get the hash for the WSDL and it's dependencies.
+     *
+     * <p>This is cached and will not reflect any modifications made
+     * via setX methods.</p>
+     *
+     * @return The BASE64'd MD5 digest
+     * @throws IOException If an error occurs
+     */
+    public String getHash() throws IOException {
+        String hash = this.hash;
+
+        if ( hash == null ) {
+            Map<String,String> content = new HashMap<String,String>();
+            try {
+                writeWsdl( definition, content );
+            } catch (WSDLException we) {
+                throw new CausedIOException("Error serializing WSDL.", we);
+            }
+
+            List<String> resourceKeys = new ArrayList<String>(content.keySet());
+            Collections.sort( resourceKeys );
+            byte[][] toHash = new byte[content.size()][];
+            int i = 0;
+            for ( String resourceKey : resourceKeys ) {
+                toHash[i++] = HexUtils.encodeUtf8(content.get( resourceKey ));
+            }
+
+            hash = this.hash = HexUtils.encodeBase64(HexUtils.getMd5Digest( toHash ));
+        }
+
+        return hash;
+    }
+    
     /**
      * Returns the service URI (url) from first WSDL <code>Port</code>
      * instance described in this definition. If there
@@ -413,6 +452,7 @@ public class Wsdl implements Serializable {
     public Collection<Binding> getBindings() {
         final Collection<Binding> allBindings = new ArrayList<Binding>();
         collectElements(new ElementCollector() {
+            @Override
             public void collect(Definition def) {
                 if (def == null) return;
 
@@ -648,6 +688,7 @@ public class Wsdl implements Serializable {
         final Collection<Message> allMessages = new ArrayList<Message>();
 
         collectElements(new ElementCollector() {
+            @Override
             public void collect(Definition def) {
                 if (def == null) return;
 
@@ -670,6 +711,7 @@ public class Wsdl implements Serializable {
         final Collection<PortType> allPortTypes = new ArrayList<PortType>();
 
         collectElements(new ElementCollector() {
+            @Override
             public void collect(Definition def) {
                 if (def == null) return;
 
@@ -693,6 +735,7 @@ public class Wsdl implements Serializable {
         final Collection<Service> allServices = new ArrayList<Service>();
 
         collectElements(new ElementCollector() {
+            @Override
             public void collect(Definition def) {
                 if (def == null) return;
 
@@ -715,6 +758,7 @@ public class Wsdl implements Serializable {
         final Collection<Types> allTypes = new ArrayList<Types>();
 
         collectElements(new ElementCollector() {
+            @Override
             public void collect(final Definition def) {
                 if (def == null) return;
 
@@ -1452,6 +1496,7 @@ public class Wsdl implements Serializable {
     private static final String NS = "ns";
 
     private static WSDLFactoryBuilder wsdlFactoryBuilder = new WSDLFactoryBuilder() {
+        @Override
         public WSDLFactory getWSDLFactory(final boolean writeEnabled) throws WSDLException {
             return WSDLFactory.newInstance();
         }
@@ -1468,6 +1513,11 @@ public class Wsdl implements Serializable {
      * The wrapped WSDL definition
      */
     private transient Definition definition;
+
+    /**
+     * Cached hash for the WSDL
+     */
+    private String hash;
 
     /**
      * wsp:Policy and PolicyReference parser.
@@ -1641,7 +1691,7 @@ public class Wsdl implements Serializable {
                 }
             }
         }
-    }    
+    }
 
     /**
      * The wrapped WSDL may not be Serializable, so we'll convert to a String.
@@ -1694,6 +1744,7 @@ public class Wsdl implements Serializable {
         /**
          * WSDLLocator
          */
+        @Override
         public InputSource getBaseInputSource() {
             InputSource inputSource = new InputSource();
             inputSource.setSystemId(uri);
@@ -1704,6 +1755,7 @@ public class Wsdl implements Serializable {
         /**
          * WSDLLocator
          */
+        @Override
         public String getBaseURI() {
             lastUri = uri;
             return uri;
@@ -1712,6 +1764,7 @@ public class Wsdl implements Serializable {
         /**
          * WSDLLocator
          */
+        @Override
         public InputSource getImportInputSource(final String parentLocation, final String importLocation) {
             InputSource is = null;
             try {
@@ -1747,6 +1800,7 @@ public class Wsdl implements Serializable {
         /**
          * WSDLLocator
          */
+        @Override
         public String getLatestImportURI() {
             return lastUri;
         }
@@ -1754,6 +1808,7 @@ public class Wsdl implements Serializable {
         /**
          * WSDLLocator
          */
+        @Override
         public void close() {
         }
 
