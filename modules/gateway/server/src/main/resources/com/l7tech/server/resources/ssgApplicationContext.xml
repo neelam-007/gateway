@@ -1108,6 +1108,7 @@
                 <ref bean="messageContextMappingKeyManager"/>
                 <ref bean="uddiRegistryManager"/>
                 <ref bean="uddiProxiedServiceInfoManager"/>
+                <ref bean="uddiPublishStatusManager" />
                 <ref bean="uddiServiceControlManager"/>
             </list>
         </property>
@@ -1598,16 +1599,17 @@
         <constructor-arg index="1" ref="uddiHelper"/>
         <constructor-arg index="2" ref="uddiRegistryManager"/>
         <constructor-arg index="3" ref="uddiProxiedServiceInfoManager"/>
-        <constructor-arg index="4" ref="uddiServiceControlManager"/>
-        <constructor-arg index="5" ref="uddiBusinessServiceStatusManager"/>
-        <constructor-arg index="6" ref="serviceCache"/>
-        <constructor-arg index="7" ref="clusterMaster"/>
-        <constructor-arg index="8">
+        <constructor-arg index="4" ref="uddiPublishStatusManager"/>
+        <constructor-arg index="5" ref="uddiServiceControlManager"/>
+        <constructor-arg index="6" ref="uddiBusinessServiceStatusManager"/>
+        <constructor-arg index="7" ref="serviceCache"/>
+        <constructor-arg index="8" ref="clusterMaster"/>
+        <constructor-arg index="9">
             <bean class="com.l7tech.server.util.ManagedTimer">
                 <constructor-arg value="UDDI Coordinator"/>
             </bean>
         </constructor-arg>
-        <constructor-arg index="9">
+        <constructor-arg index="10">
             <list>
                 <bean class="com.l7tech.server.uddi.PublishingUDDITaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>
@@ -1640,6 +1642,8 @@
     <bean id="uddiProxiedServiceInfoManager" class="com.l7tech.server.uddi.UDDIProxiedServiceInfoManagerImpl" parent="hibernateBean" >
         <constructor-arg index="0" ref="uddiHelper"/>
     </bean>
+
+    <bean id="uddiPublishStatusManager" class="com.l7tech.server.uddi.UDDIPublishStatusManagerImpl" parent="hibernateBean" />
 
     <bean id="uddiServiceControlManager" class="com.l7tech.server.uddi.UDDIServiceControlManagerImpl" parent="hibernateBean" />
 

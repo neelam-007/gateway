@@ -7,31 +7,34 @@
  */
 package com.l7tech.server.uddi;
 
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+
 
 class PublishUDDIEvent extends UDDIEvent{
     //- PACKAGE
 
-    enum Type { CREATE_PROXY /*Publish a service's WSDL to UDDI for the time*/,
-        UPDATE_PROXY /*Update a previously published service WSDL in UDDI*/,
-        ADD_BINDING /*Add a bindingTemplate to an existing BusinessService in UDDI*/,
-        OVERWRITE/*Overwrite an entire BusinessService in UDDI with Gateway info*/}
+//    enum Type { CREATE_PROXY /*Publish a service's WSDL to UDDI for the time*/,
+//        UPDATE_PROXY /*Update a previously published service WSDL in UDDI*/,
+//        ADD_BINDING /*Add a bindingTemplate to an existing BusinessService in UDDI*/,
+//        DELETE_BINDING/*Delete a bindingTemplate from a BusinessService*/,
+//        OVERWRITE/*Overwrite an entire BusinessService in UDDI with Gateway info*/}
 
-    PublishUDDIEvent(final Type type,
-                     final long uddiProxiedServiceInfo) {
-        this.type = type;
+    PublishUDDIEvent(UDDIProxiedServiceInfo.PublishType publishType,
+                     final UDDIProxiedServiceInfo uddiProxiedServiceInfo) {
+        this.publishType = publishType;
         this.uddiProxiedServiceInfo = uddiProxiedServiceInfo;
     }
 
-    Type getType() {
-        return type;
+    UDDIProxiedServiceInfo.PublishType getPublishType() {
+        return publishType;
     }
 
-    long getUddiProxiedServiceInfo() {
+    UDDIProxiedServiceInfo getUddiProxiedServiceInfo() {
         return uddiProxiedServiceInfo;
     }
 
     //- PRIVATE
 
-    private final Type type;
-    private final long uddiProxiedServiceInfo;
+    private final UDDIProxiedServiceInfo.PublishType publishType;
+    private final UDDIProxiedServiceInfo uddiProxiedServiceInfo;
 }

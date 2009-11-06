@@ -28,6 +28,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     final private UDDIRegistryManager uddiRegistryManager;
     final private UDDIHelper uddiHelper;
     final private UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager;
+    final private UDDIPublishStatusManager uddiPublishStatusManager;
     final private UDDIServiceControlManager uddiServiceControlManager;
     final private UDDICoordinator uddiCoordinator;
     final private ServiceCache serviceCache;
@@ -39,7 +40,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                  final UDDICoordinator uddiCoordinator,
                                  final ServiceCache serviceCache,
                                  final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
-                                 final ServiceManager serviceManager) {
+                                 final ServiceManager serviceManager,
+                                 final UDDIPublishStatusManager uddiPublishStatusManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiHelper = uddiHelper;
         this.uddiServiceControlManager = uddiServiceControlManager;
@@ -47,6 +49,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         this.serviceCache = serviceCache;
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.serviceManager = serviceManager;
+        this.uddiPublishStatusManager = uddiPublishStatusManager;
     }
 
     @Override
@@ -135,16 +138,33 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public String deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo proxiedServiceInfo) throws FindException, UDDIRegistryNotEnabledException {
+    public void deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo proxiedServiceInfo)
+            throws FindException, UDDIRegistryNotEnabledException, UpdateException {
+        if(proxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.ENDPOINT)
+            throw new IllegalStateException("Cannot delete UDDIProxiedServiecInfo as gateway URL was not published as a bindingTemplate.");
+
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
 
-        return null;
+        final UDDIPublishStatus status = proxiedServiceInfo.getUddiPublishStatus();
+        status.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETING);
+        //record the change - this is likely not required
+        status.setLastStatusChange(System.currentTimeMillis());
+        proxiedServiceInfo.setUddiPublishStatus(status);
+//        status.setUddiProxiedServiceInfo(proxiedServiceInfo);
+
+        /**
+         * This triggers an entity invalidatoin event which the UDDICoordinator picks up
+         */
+        uddiProxiedServiceInfoManager.update(proxiedServiceInfo);
     }
 
     @Override
     public String deleteGatewayWsdlFromUDDI(final UDDIProxiedServiceInfo proxiedServiceInfo)
             throws FindException, DeleteException, UDDIRegistryNotEnabledException {
+
+        if(proxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY)
+            throw new IllegalStateException("Cannot delete UDDIProxiedServiecInfo as gateway WSDL was not published.");
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");

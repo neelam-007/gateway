@@ -12,10 +12,7 @@ import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.cluster.ClusterMaster;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
-import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
-import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -46,6 +43,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
                             final UDDIHelper uddiHelper,
                             final UDDIRegistryManager uddiRegistryManager,
                             final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
+                            final UDDIPublishStatusManager uddiPublishStatusManager,
                             final UDDIServiceControlManager uddiServiceControlManager,
                             final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
                             final ServiceCache serviceCache,
@@ -62,6 +60,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
+        this.uddiPublishStatusManager = uddiPublishStatusManager;
         this.taskContext = new UDDICoordinatorTaskContext( this );
     }
 
@@ -104,38 +103,43 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
             EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) applicationEvent;
             if ( UDDIRegistry.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 loadUDDIRegistries(true);
-            } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) && clusterMaster.isMaster() ) {
+            } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ||
+                    UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass())) {
+                final boolean uddiProxyInfoUpdate = UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass());
+                final boolean statusUpdate = UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass());
+                
                 long[] entityIds = entityInvalidationEvent.getEntityIds();
                 char[] entityOps = entityInvalidationEvent.getEntityOperations();
 
                 for ( int i=0; i<entityIds.length; i++ ) {
                     long id = entityIds[i];
                     char op = entityOps[i];
-                    if ( EntityInvalidationEvent.CREATE == op ) {
+                    if ( uddiProxyInfoUpdate && EntityInvalidationEvent.CREATE == op ) {
                         try {
                             final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPrimaryKey(id);
                             if(uddiProxiedServiceInfo == null){
                                 logger.log(Level.WARNING, "No UDDIProxiedServiceInfo found with id #(" + id + ")");
                                 return;
                             }
-                            final UDDIProxiedServiceInfo.PublishType type = uddiProxiedServiceInfo.getType();
-                            final UDDIEvent uddiEvent;
-                            switch (type){
-                                case PROXY:
-                                    uddiEvent = new PublishUDDIEvent(PublishUDDIEvent.Type.CREATE_PROXY, id);
-                                    break;
-                                case ENDPOINT:
-                                    uddiEvent = new PublishUDDIEvent(PublishUDDIEvent.Type.ADD_BINDING, id);
-                                    break;
-                                default:
-                                    //todo [Donal] complete when overwrite is done and status refactor is complete
-                                    logger.log(Level.INFO, "Unsupported publish type: " + type.toString());
-                                    return;
-                            }
-                            notifyEvent(uddiEvent);
-                            logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
+                            notifyPublishEvent(uddiProxiedServiceInfo);
                         } catch (FindException e) {
                             logger.log(Level.WARNING, "Could not find created UDDIProxiedServiceInfo with id #(" + id + ")");
+                            return;
+                        }
+                    }
+                    if( statusUpdate && EntityInvalidationEvent.UPDATE == op){
+                        try {
+                            final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByPrimaryKey(id);
+                            if(uddiPublishStatus == null){
+                                logger.log(Level.WARNING, "No UDDIPublishStatus found with id #(" + id + ")");
+                                return;
+                            }
+
+                            final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiPublishStatus.getUddiProxiedServiceInfo();
+                            notifyPublishEvent(uddiProxiedServiceInfo);
+
+                        } catch (FindException e) {
+                            logger.log(Level.WARNING, "Could not find created UDDIPublishStatus with id #(" + id + ")");
                             return;
                         }
                     }
@@ -152,6 +156,14 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
         }
     }
 
+    private void notifyPublishEvent(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) {
+        final UDDIProxiedServiceInfo.PublishType publishType = uddiProxiedServiceInfo.getPublishType();
+        final UDDIEvent uddiEvent = new PublishUDDIEvent(publishType, uddiProxiedServiceInfo);
+
+        notifyEvent(uddiEvent);
+        logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( UDDICoordinator.class.getName() );
@@ -163,6 +175,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
     private final UDDIHelper uddiHelper;
     private final UDDIRegistryManager uddiRegistryManager;
     private final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager;
+    private final UDDIPublishStatusManager uddiPublishStatusManager;
     private final UDDIServiceControlManager uddiServiceControlManager;
     private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
     private final ServiceCache serviceCache;

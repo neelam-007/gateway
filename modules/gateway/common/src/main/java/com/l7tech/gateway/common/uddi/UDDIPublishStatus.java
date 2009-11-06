@@ -17,33 +17,20 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 @Table(name="uddi_publish_status")
 public class UDDIPublishStatus extends PersistentEntityImp {
 
-    //todo find out if there is a way to just get hibernate to save enum types
     public enum PublishStatus{
-        PUBLISHING(0),
-        PUBLISHED(1),
-        DELETING(2);
-
-        private int status;
-
-        private PublishStatus(int status) {
-            this.status = status;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
         /**
-         * Convert the int into a PublishStatus.
-         * @param status int represening the enum value
-         * @return the PublishStatus which matches the type, or an IllegalStateException
+         * The UDDI information is being published. This means it is either waiting or in the middle of it
          */
-        public static PublishStatus findStatus(final int status){
-            for(PublishStatus regType: values()){
-                if(regType.getStatus() == status) return regType;
-            }
-            throw new IllegalStateException("Unknown publish status requested: " + status);
-        }
+        PUBLISHING,
+        /**
+         * The UDDI information has been published.
+         */
+        PUBLISHED,
+        /**
+         * The UDDI information is being deleted. The only state afer this is nothing. If the UDDI data is not in
+         * one of these states, it does not exist. i.e. there is no 'NONE' state
+         */
+        DELETING
     }
 
     public UDDIPublishStatus() {
@@ -73,12 +60,13 @@ public class UDDIPublishStatus extends PersistentEntityImp {
     }
 
     @Column(name = "publish_status")
-    public int getPublishStatus() {
-        return publishStatus.getStatus();
+    @Enumerated(EnumType.STRING)
+    public PublishStatus getPublishStatus() {
+        return publishStatus;
     }
 
-    public void setPublishStatus(int publishStatus) {
-        this.publishStatus = PublishStatus.findStatus(publishStatus);
+    public void setPublishStatus(PublishStatus publishStatus) {
+        this.publishStatus = publishStatus;
     }
 
     @Column(name = "last_status_change")

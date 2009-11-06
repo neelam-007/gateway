@@ -62,7 +62,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.uddiBusinessKey = uddiBusinessKey;
         this.uddiBusinessName = uddiBusinessName;
         this.updateProxyOnLocalChange = updateProxyOnLocalChange;
-        this.type = publishType;
+        this.publishType = publishType;
         this.uddiPublishStatus = new UDDIPublishStatus(this);
     }
 
@@ -182,12 +182,12 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
 
     @Column(name = "publish_type")
     @Enumerated(EnumType.STRING)
-    public PublishType getType() {
-        return type;
+    public PublishType getPublishType() {
+        return publishType;
     }
 
-    public void setType(PublishType type) {
-        this.type = type;
+    public void setPublishType(PublishType publishType) {
+        this.publishType = publishType;
     }
 
     @OneToOne(cascade= CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="uddiProxiedServiceInfo")
@@ -257,7 +257,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
 
     private Set<UDDIProxiedService> proxiedServices = new HashSet<UDDIProxiedService>();
 
-    private PublishType type;
+    private PublishType publishType;
 
     private UDDIPublishStatus uddiPublishStatus;
 

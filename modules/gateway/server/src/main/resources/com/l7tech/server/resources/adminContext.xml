@@ -352,6 +352,7 @@
         <constructor-arg ref="uddiCoordinator"/>
         <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="uddiPublishStatusManager" />
     </bean>
 
 </beans>

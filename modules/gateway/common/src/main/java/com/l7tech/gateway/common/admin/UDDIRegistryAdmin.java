@@ -103,6 +103,7 @@ public interface UDDIRegistryAdmin {
      * @param publishedServiceOid long oid of the published service
      * @param removeOthers boolean if true, then all other bindingTemplates will be removed from the BusinessService
      */
+    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
     void publishGatewayEndpoint(long publishedServiceOid, boolean removeOthers) throws FindException, SaveException, UDDIRegistryNotEnabledException;
 
     /**
@@ -116,6 +117,7 @@ public interface UDDIRegistryAdmin {
      * @throws UpdateException
      * @throws VersionException
      */
+    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
     void updatePublishedGatewayWsdl(long uddiProxiedServiceInfoOid)
             throws FindException, UDDIRegistryNotEnabledException, PublishProxiedServiceException, UpdateException, VersionException;
 
@@ -140,9 +142,9 @@ public interface UDDIRegistryAdmin {
      * Delete the bindingTemplate which was previously published to an existing BusinessService in UDDI
      *
      * @param uddiProxiedServiceInfo UDDIProxiedServiceInfo which contains the information on the bindingTemplate
-     * @return String error message if there were any problems deleting from UDDI. null if no errors
      */
-    String deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) throws FindException, UDDIRegistryNotEnabledException;
+    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.DELETE_ENTITY)
+    void deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) throws FindException, UDDIRegistryNotEnabledException, UpdateException;
 
     /**
      * Allows for non final properties which do not rely on UDDI data like the UDDIProxiedServiceInfo's

@@ -228,19 +228,19 @@ public class ServiceUDDISettingsDialog extends JDialog {
             }
             if(!found) throw new IllegalStateException("UDDI Registry not found for pulished Gateway WSDL");
 
-            final UDDIProxiedServiceInfo.PublishType publishType = uddiProxyServiceInfo.getType();
+            final UDDIProxiedServiceInfo.PublishType publishType = uddiProxyServiceInfo.getPublishType();
             clearStatusLabels(publishType);
             switch(publishType){
                 case PROXY:
                     businessEntityNameLabel.setText(uddiProxyServiceInfo.getUddiBusinessName());
                     updateWhenGatewayWSDLCheckBox.setSelected(uddiProxyServiceInfo.isUpdateProxyOnLocalChange());
                     publishProxiedWsdlRadioButton.setSelected(true);
-                    publishStatus = UDDIPublishStatus.PublishStatus.findStatus(uddiProxyServiceInfo.getUddiPublishStatus().getPublishStatus());
+                    publishStatus = uddiProxyServiceInfo.getUddiPublishStatus().getPublishStatus();
                     setLabelStatus(publishProxystatusLabel, publishStatus);
                     break;
                 case ENDPOINT:
                     publishGatewayEndpointAsRadioButton.setSelected(true);
-                    publishStatus = UDDIPublishStatus.PublishStatus.findStatus(uddiProxyServiceInfo.getUddiPublishStatus().getPublishStatus());
+                    publishStatus = uddiProxyServiceInfo.getUddiPublishStatus().getPublishStatus();
                     setLabelStatus(bindingTemplateStatusLabel, publishStatus);
                     break;
                 case OVERWRITE:
@@ -319,21 +319,21 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
         if(publishProxiedWsdlRadioButton.isSelected()){
             final boolean proxyPublished = uddiProxyServiceInfo != null &&
-                    uddiProxyServiceInfo.getType() == UDDIProxiedServiceInfo.PublishType.PROXY;
+                    uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY;
             enableDisablePublishGatewayWsdlControls(!proxyPublished);
             updateWhenGatewayWSDLCheckBox.setEnabled(true);
         }else if(publishGatewayEndpointAsRadioButton.isSelected()){
             final boolean endPointPublished = uddiProxyServiceInfo != null &&
-                    uddiProxyServiceInfo.getType() == UDDIProxiedServiceInfo.PublishType.ENDPOINT;
+                    uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.ENDPOINT;
             enableDisablePublishEndpointControls(!endPointPublished);
         }else if(overwriteExistingBusinessServiceWithRadioButton.isSelected()){
             final boolean overwritePublished = uddiProxyServiceInfo != null &&
-                    uddiProxyServiceInfo.getType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE;
+                    uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE;
             enableDisablePublishOverwriteControls(!overwritePublished);
         } else if(dontPublishRadioButton.isSelected()){
             //enable all applicable radio buttons
             if(uddiProxyServiceInfo != null){
-                final UDDIProxiedServiceInfo.PublishType type = uddiProxyServiceInfo.getType();
+                final UDDIProxiedServiceInfo.PublishType type = uddiProxyServiceInfo.getPublishType();
                 switch(type){
                     case PROXY:
                         publishProxiedWsdlRadioButton.setEnabled(true);
@@ -407,8 +407,8 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     private void enableDisablePublishOverwriteControls(boolean enable){
         //overwrite
-        overwriteExistingBusinessServiceWithRadioButton.setEnabled(enable);
-        updateWhenGatewayWSDLCheckBoxOverwrite.setEnabled(enable);
+        overwriteExistingBusinessServiceWithRadioButton.setEnabled(false);//todo change when implemented
+        updateWhenGatewayWSDLCheckBoxOverwrite.setEnabled(false); //todo change when implemented
     }
 
     /**
@@ -445,22 +445,36 @@ public class ServiceUDDISettingsDialog extends JDialog {
             if(uddiProxyServiceInfo == null){
                 //publish for first time
                 publishEndpointToBusinessService();
-
             }
         }else if(overwriteExistingBusinessServiceWithRadioButton.isSelected()){
 
         } else if(dontPublishRadioButton.isSelected()){
             if(uddiProxyServiceInfo != null){
+                publishStatus = uddiProxyServiceInfo.getUddiPublishStatus().getPublishStatus();//this is resetting, but no harm
+
                 UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
                 if(!uddiRegistry.isEnabled()){
                     showErrorMessage("Cannot Update UDDI", "UDDI Registry is not currently enabled", null, false);
                     return false;
                 }
-                if(publishStatus != null && publishStatus != UDDIPublishStatus.PublishStatus.PUBLISHED){
-                    showErrorMessage("Cannot Update UDDI", "UDDI is being updated. Try again in a few minutes", null, false);
+                if(publishStatus != UDDIPublishStatus.PublishStatus.PUBLISHED){
+                    showErrorMessage("Cannot Update UDDI", "UDDI is being updated. Please close dialog and try again in a few minutes", null, false);
                     return false;
                 }
-                removeUDDIProxiedService();
+
+                UDDIProxiedServiceInfo.PublishType publishType = uddiProxyServiceInfo.getPublishType();
+                switch (publishType){
+                    case PROXY:
+                        removeUDDIProxiedService();
+                        break;
+                    case ENDPOINT:
+                        removeUDDIProxiedEndpoint();
+                        break;
+                    case OVERWRITE:
+                        //todo let user know we cannot undo, we will just delete from UDDI
+                        break;
+                }
+
             }
         }
 
@@ -483,6 +497,31 @@ public class ServiceUDDISettingsDialog extends JDialog {
         }
 
         return true;
+    }
+
+    private void removeUDDIProxiedEndpoint(){
+        DialogDisplayer.showConfirmDialog(this,
+                                                   "Remove published Gateway endpoint from UDDI Registry?",
+                                                   "Confirm Removal from UDDI",
+                                                   JOptionPane.YES_NO_OPTION,
+                                                   JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.YES_OPTION){
+                            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+                            try {
+                                uddiRegistryAdmin.deleteGatewayEndpointFromUDDI(uddiProxyServiceInfo);
+                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
+                                        "Task to remove Gateway endpoint from UDDI successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+                            } catch (Exception ex) {
+                                final String msg = "Problem deleting pubished Gateway endpoint from UDDI: " + ExceptionUtils.getMessage(ex);
+                                logger.log(Level.WARNING, msg);
+                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, msg
+                                        , "Error deleting from UDDI", JOptionPane.ERROR_MESSAGE, null);
+                            }
+                        }
+                    }
+                });
     }
 
     private void removeUDDIProxiedService(){

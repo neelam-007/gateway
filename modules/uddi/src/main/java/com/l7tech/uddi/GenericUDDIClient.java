@@ -302,7 +302,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 logger.log(Level.INFO, "No matching BusinessServices were found");
             }
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception finding services", drfm);
+            final String msg = getExceptionMessage("Exception finding services", drfm);//this will be thrown if no service for the key is found
             logger.log(Level.WARNING, msg);
             throw new UDDIException(msg, drfm);
         }
@@ -2168,6 +2168,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             final ServiceList serviceList = getInquirePort().findService(findService);
             if(serviceList.getServiceInfos() != null && !serviceList.getServiceInfos().getServiceInfo().isEmpty()){
                 logger.log(Level.INFO, "Not deleting tModel as BusinessService found which references tModel with key: " + tModel.getTModelKey());
+                //TODO [Donal] - need to check the details of the reference, as it may look like the same tModel, but differ by overviewURLs
                 return;
             }
         } catch (DispositionReportFaultMessage drfm) {

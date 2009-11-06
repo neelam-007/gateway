@@ -146,7 +146,7 @@ CREATE TABLE uddi_publish_status (
   objectid bigint(20) NOT NULL,
   version integer NOT NULL,
   uddi_proxied_service_info_oid bigint(20) NOT NULL,
-  publish_status tinyint(1) NOT NULL,
+  publish_status varchar(32) NOT NULL,
   last_status_change BIGINT(20) NOT NULL,
   PRIMARY KEY (objectid),
   UNIQUE (uddi_proxied_service_info_oid),
