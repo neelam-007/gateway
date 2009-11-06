@@ -526,7 +526,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     private void removeUDDIProxiedService(){
         DialogDisplayer.showConfirmDialog(this,
-                                                   "Removal published Gateway WSDL from UDDI Registry?",
+                                                   "Remove published Gateway WSDL from UDDI Registry?",
                                                    "Confirm Removal from UDDI",
                                                    JOptionPane.YES_NO_OPTION,
                                                    JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
