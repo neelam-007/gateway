@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Collects runtime metrics for each service to be queried by the QoSMetricsService
+ * Collects runtime metrics for each service.
  * <p/>
  * <p/>
  * <br/><br/>
@@ -30,24 +30,6 @@ import java.util.logging.Logger;
 public class Aggregator implements ServiceStateMonitor {
     private final Logger logger = Logger.getLogger(Aggregator.class.getName());
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-
-    public class RecordedMetrics {
-        RecordedMetrics() {
-            creationTime = System.currentTimeMillis();
-        }
-        public long totalProcessingTime;
-        public long nrFailures;
-        public long nrSuccesses;
-        public long firstHitTimestamp;
-        public long lastHitTimestamp;
-        public long lastProcessingTime;
-        public long maxProcessingTime;
-        public long totalDownTime;
-        public long downtimeStart;
-        public boolean isDown = false;
-        public long creationTime;
-    }
-
     private final HashMap<Long, MetricsSummaryBin> metrics = new HashMap<Long, MetricsSummaryBin>();
     private long lastMetricsTimestamp = 0L;
 
@@ -109,14 +91,17 @@ public class Aggregator implements ServiceStateMonitor {
         }
     }
 
+    @Override
     public void onServiceDisabled(long serviceoid) {
         ensureMetricsTracked( serviceoid );
     }
 
+    @Override
     public void onServiceEnabled(long serviceoid) {
         ensureMetricsTracked( serviceoid );
     }
 
+    @Override
     public void onServiceCreated(long serviceoid) {
         lock.writeLock().lock();
         try {
@@ -132,6 +117,7 @@ public class Aggregator implements ServiceStateMonitor {
         }
     }
 
+    @Override
     public void onServiceDeleted(long serviceoid) {
         lock.writeLock().lock();
         try {
