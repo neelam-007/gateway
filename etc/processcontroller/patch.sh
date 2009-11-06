@@ -16,6 +16,7 @@ if [ -z "${JAVA_HOME}" -a -s "${DEFAULT_NODE_CONFIG}" ] ; then
 fi
 
 PC_JAR="/opt/SecureSpan/Controller/Controller.jar"
+JAVA_OPTS="-Djava.util.logging.config.file= -Dcom.l7tech.server.log.console=false"
 
 function fail() {
   echo "$2"
@@ -25,4 +26,4 @@ function fail() {
 [ -r "${PC_JAR}" ] || fail 2 "Missing or unreadable file: ${PC_JAR}"
 [ -x "${JAVA_HOME}/bin/java" ] || fail 2 "Invalid JAVA_HOME: ${JAVA_HOME}"
 
-"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" -Dcom.l7tech.server.log.console=false com.l7tech.server.processcontroller.patching.client.PatchCli "${@}"
+"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" "${JAVA_OPTS}" com.l7tech.server.processcontroller.patching.client.PatchCli "${@}"
