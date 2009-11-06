@@ -1066,6 +1066,18 @@
         <property name="targetMethod" value="thisNodeId"/>
     </bean>
 
+    <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMaster">
+        <constructor-arg index="0" ref="transactionManager"/>
+        <constructor-arg index="1" ref="switchedDataSource"/>
+        <constructor-arg index="2" ref="serverConfig"/>
+        <constructor-arg index="3" >
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="ClusterMasterChecker"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="4" ref="clusterNodeId"/>
+    </bean>
+
     <!-- Dependency ensures system.properties file is processed first -->
    <bean id="serviceMetricsManager" class="com.l7tech.server.service.ServiceMetricsManagerImpl" depends-on="ssgBoot">
         <constructor-arg ref="clusterNodeId"/>
@@ -1589,12 +1601,13 @@
         <constructor-arg index="4" ref="uddiServiceControlManager"/>
         <constructor-arg index="5" ref="uddiBusinessServiceStatusManager"/>
         <constructor-arg index="6" ref="serviceCache"/>
-        <constructor-arg index="7">
+        <constructor-arg index="7" ref="clusterMaster"/>
+        <constructor-arg index="8">
             <bean class="com.l7tech.server.util.ManagedTimer">
                 <constructor-arg value="UDDI Coordinator"/>
             </bean>
         </constructor-arg>
-        <constructor-arg index="8">
+        <constructor-arg index="9">
             <list>
                 <bean class="com.l7tech.server.uddi.PublishingUDDITaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>

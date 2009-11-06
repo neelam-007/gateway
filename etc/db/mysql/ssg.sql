@@ -314,6 +314,20 @@ CREATE TABLE cluster_info (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Table structure for table 'cluster_master'
+--
+
+DROP TABLE IF EXISTS cluster_master;
+
+CREATE TABLE cluster_master (
+  nodeid varchar(32),
+  touched_time BIGINT(20) NOT NULL,
+  version integer NOT NULL
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+INSERT INTO cluster_master (nodeid, touched_time, version) VALUES (NULL, 0, 0);
+
+--
 -- Table structure for table 'service_usage'
 --
 

@@ -229,6 +229,20 @@ INSERT INTO rbac_permission VALUES (-437,0,-400,'CREATE',NULL,'UDDI_SERVICE_CONT
 INSERT INTO rbac_permission VALUES (-356,0,-350,'READ',NULL,'UDDI_REGISTRY');
 
 --
+-- Table structure for table 'cluster_master'
+--
+
+DROP TABLE IF EXISTS cluster_master;
+
+CREATE TABLE cluster_master (
+  nodeid varchar(32),
+  touched_time BIGINT(20) NOT NULL,
+  version integer NOT NULL
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+INSERT INTO cluster_master (nodeid, touched_time, version) VALUES (NULL, 0, 0);
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

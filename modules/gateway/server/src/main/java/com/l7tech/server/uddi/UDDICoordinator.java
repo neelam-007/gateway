@@ -11,6 +11,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
@@ -48,12 +49,14 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
                             final UDDIServiceControlManager uddiServiceControlManager,
                             final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
                             final ServiceCache serviceCache,
+                            final ClusterMaster clusterMaster,
                             final Timer timer,
                             final Collection<UDDITaskFactory> taskFactories ) {
         this.transactionManager = transactionManager;
         this.uddiHelper = uddiHelper;
         this.uddiRegistryManager = uddiRegistryManager;
         this.serviceCache = serviceCache;
+        this.clusterMaster = clusterMaster;
         this.timer = timer;
         this.taskFactories = taskFactories;
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
@@ -101,7 +104,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
             EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) applicationEvent;
             if ( UDDIRegistry.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 loadUDDIRegistries(true);
-            } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ) {
+            } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) && clusterMaster.isMaster() ) {
                 long[] entityIds = entityInvalidationEvent.getEntityIds();
                 char[] entityOps = entityInvalidationEvent.getEntityOperations();
 
@@ -144,7 +147,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
                 timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
             }
 
-        } else if ( applicationEvent instanceof ReadyForMessages ) {
+        } else if ( applicationEvent instanceof ReadyForMessages && clusterMaster.isMaster() ) {
             checkSubscriptions( Collections.<Long,UDDIRegistryRuntime>emptyMap(), registryRuntimes.get() );    
         }
     }
@@ -163,6 +166,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
     private final UDDIServiceControlManager uddiServiceControlManager;
     private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
     private final ServiceCache serviceCache;
+    private final ClusterMaster clusterMaster;
     private final Collection<UDDITaskFactory> taskFactories;
     private final Timer timer;
     private final UDDITaskFactory.UDDITaskContext taskContext;
@@ -268,7 +272,7 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
             runtime.dispose();
         }
 
-        if ( updateSubscriptions ) {
+        if ( updateSubscriptions && clusterMaster.isMaster() ) {
             checkSubscriptions( oldRegistries, registries );
         }
 
@@ -540,17 +544,19 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
 
         @Override
         public void doRun() {
-            new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
-                @Override
-                protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
-                    try {
-                        coordinator.handleEvent( event ); //TODO [steve] ignore events on all but primary node?
-                    } catch (UDDIException e) {
-                        logger.log( Level.WARNING, "Error processing UDDI event", e );
-                        transactionStatus.setRollbackOnly();
+            if ( coordinator.clusterMaster.isMaster() ) {
+                new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                    @Override
+                    protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
+                        try {
+                            coordinator.handleEvent( event );
+                        } catch (UDDIException e) {
+                            logger.log( Level.WARNING, "Error processing UDDI event", e );
+                            transactionStatus.setRollbackOnly();
+                        }
                     }
-                }
-            } );
+                } );
+            }
         }
     }
 
@@ -563,17 +569,19 @@ public class UDDICoordinator implements ApplicationListener, InitializingBean {
 
         @Override
         public void doRun() {
-            new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
-                @Override
-                protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
-                    try {
-                        coordinator.checkBusinessServiceStatus();
-                    } catch (ObjectModelException ome) {
-                        logger.log( Level.WARNING, "Error updating business services status.", ome );
-                        transactionStatus.setRollbackOnly();
+            if ( coordinator.clusterMaster.isMaster() ) {
+                new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                    @Override
+                    protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
+                        try {
+                            coordinator.checkBusinessServiceStatus();
+                        } catch (ObjectModelException ome) {
+                            logger.log( Level.WARNING, "Error updating business services status.", ome );
+                            transactionStatus.setRollbackOnly();
+                        }
                     }
-                }
-            } );
+                } );
+            }
         }
     }
 
