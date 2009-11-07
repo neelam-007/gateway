@@ -58,10 +58,14 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
 
     @Override
     public PatchPackage getPackage(String patchId) throws PatchException {
+        File patchFile = getPackageFile(patchId);
+        if (! patchFile.exists())
+            throw new PatchException("The patch package for patch id: " + patchId + " was not found in the repository.");
+        
         try {
-            return new PatchPackageImpl(getPackageFile(patchId));
+            return new PatchPackageImpl(patchFile);
         } catch (IOException e) {
-            throw new PatchException("Error retireving patch package: " + patchId + " : " + ExceptionUtils.getMessage(e), e);
+            throw new PatchException("Error retrieving patch package for patch identifier: " + patchId + " : " + ExceptionUtils.getMessage(e), e);
         }
     }
 
