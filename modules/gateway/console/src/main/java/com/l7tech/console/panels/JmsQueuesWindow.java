@@ -460,9 +460,9 @@ public class JmsQueuesWindow extends JDialog {
         getContentPane().repaint();
 
         // Reset the sorter
-        @SuppressWarnings({"unchecked"})
-        TableRowSorter<JmsQueueTableModel> sorter = Utilities.setRowSorter(getJmsQueueTable(), getJmsQueueTableModel(),
+        Utilities.setRowSorter(getJmsQueueTable(), getJmsQueueTableModel(),
             new int[] {2, 1, 0}, new boolean[] {true, true, true}, new Comparator[] {null, null, null});
+        TableRowSorter<JmsQueueTableModel> sorter = (TableRowSorter<JmsQueueTableModel>) getJmsQueueTable().getRowSorter();
 
         // Reset the filter
         sorter.setRowFilter(getFilter());
