@@ -36,4 +36,9 @@ public enum ValidatorFlag {
      */
     PERFORMS_VALIDATION,
 
+    /**
+     * Flagged by an assertion if, as currently configured, it will gather X.509 credentials.
+     */
+    GATHERS_X509_CREDENTIALS,
+
 }

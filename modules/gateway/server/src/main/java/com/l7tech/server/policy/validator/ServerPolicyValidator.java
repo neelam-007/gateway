@@ -24,6 +24,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -32,6 +33,7 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
@@ -39,11 +41,11 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.nio.charset.Charset;
+import java.security.KeyStoreException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.KeyStoreException;
 
 /**
  * Performs server side policy validation.
@@ -178,10 +180,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                         if(!foundUsableCredSource) {
                             r.addError(new PolicyValidatorResult.Error(a,
                               ap,
-                              "This identity can only authenticate with " +
-                              "a SAML token or SSL Client Certificate " +
-                              "but another type of credential " +
-                              "source is specified.",
+                              "This identity can only authenticate with a SAML token or SSL Client Certificate but another type of credential source is specified.",
                               null));
                         }
                     }
@@ -193,9 +192,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     { // scope
                         boolean foundUsableCredSource = false;
                         for (Assertion credSrc : pathContext.getCredentialSourceAssertions(targetName)) {
-                            if (credSrc instanceof RequireWssX509Cert ||
-                                    credSrc instanceof SecureConversation ||
-                                    credSrc instanceof SslAssertion) {
+                            if (isX509CredentialSource(credSrc)) {
                                 foundUsableCredSource = true;
                                 break;
                             }
@@ -349,6 +346,30 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         if (a instanceof PrivateKeyable) {
             checkPrivateKey((PrivateKeyable)a, ap, r);
         }
+    }
+
+    /**
+     * Check if the specified assertion is a credential source assertion configured to gather X.509 credentials.
+     *
+     * @param credSrc the assertion to examine.  Required.
+     * @return  true if the specfied assertion appears to be a credential source assertion configured to gather X.509 credentials.
+     */
+    private boolean isX509CredentialSource(Assertion credSrc) {
+        if (!credSrc.isCredentialSource())
+            return false;
+
+        if (credSrc instanceof RequireWssX509Cert ||
+                credSrc instanceof SecureConversation ||
+                credSrc instanceof SslAssertion) {
+            return true;
+        }
+
+        Functions.Unary<Set<ValidatorFlag>, Assertion> flagfac = credSrc.meta().get(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY);
+        if (flagfac == null)
+            return false;
+
+        Set<ValidatorFlag> flags = flagfac.call(credSrc);
+        return flags != null && flags.contains(ValidatorFlag.GATHERS_X509_CREDENTIALS);
     }
 
     private boolean checkGlobalSchemaExists(GlobalResourceInfo globalResourceInfo) {

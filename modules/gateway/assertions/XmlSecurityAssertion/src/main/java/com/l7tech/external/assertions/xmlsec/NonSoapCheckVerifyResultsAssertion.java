@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.xmlsec;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.util.Functions;
 
@@ -181,6 +182,13 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, NonSoapCheckVerifyResultsValidator.class.getName());
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, NonSoapCheckVerifyResultsAssertion>() {
+            @Override
+            public Set<ValidatorFlag> call(NonSoapCheckVerifyResultsAssertion assertion) {
+                return assertion == null || !assertion.isCredentialSource() ? EnumSet.noneOf(ValidatorFlag.class) : EnumSet.of(ValidatorFlag.GATHERS_X509_CREDENTIALS);
+            }
+        });
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
