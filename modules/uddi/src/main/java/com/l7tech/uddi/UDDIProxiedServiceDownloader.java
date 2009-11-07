@@ -3,10 +3,7 @@ package com.l7tech.uddi;
 import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.util.Pair;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
@@ -42,15 +39,18 @@ public class UDDIProxiedServiceDownloader {
      * dependant apon. Neverl null. Neither left or right are ever null either.
      * @throws UDDIException any problems searching the UDDI Registry
      */
-    public Pair<List<BusinessService>, Map<String, TModel>> getBusinessServiceModels(Set<String> serviceKeys) throws UDDIException {
+    public List<Pair<BusinessService, Map<String, TModel>>> getBusinessServiceModelsNew(Set<String> serviceKeys) throws UDDIException {
+
+        final List<Pair<BusinessService, Map<String, TModel>>> servicesToDependentTModels =
+                new ArrayList<Pair<BusinessService, Map<String, TModel>>>();
 
         List<BusinessService> businessServices = uddiClient.getBusinessServices(serviceKeys);
 
-        Map<String, TModel> tModelKeyToModel = new HashMap<String, TModel>();
-        //process all bus services and collect references
-
         for(final BusinessService businessService: businessServices){
-             //each bindingTemplate contains all the information we need, we don't need to dig deeper
+            final Map<String, TModel> tModelKeyToModel = new HashMap<String, TModel>();
+            //process all bus services and collect references
+
+            //each bindingTemplate contains all the information we need, we don't need to dig deeper
             //e.g. don't need to obtain the wsdl:binding tModel as it references the wsdl:port tModel, as the
             //bindingTemplate references both of them
             BindingTemplates bindingTemplates = businessService.getBindingTemplates();
@@ -63,15 +63,17 @@ public class UDDIProxiedServiceDownloader {
 
                     //spec does not allow null keys, they will exist
                     final String tModelKey = tModelInstanceInfo.getTModelKey();
-                    if(!tModelKeyToModel.containsKey(tModelKey)){
-                        final TModel tModel = jaxWsUDDIClient.getTModel(tModelKey);
-                        tModelKeyToModel.put(tModelKey, tModel);
-                    }
+                    final TModel tModel = jaxWsUDDIClient.getTModel(tModelKey);
+                    //todo turn this into one query for both keyes
+                    tModelKeyToModel.put(tModelKey, tModel);
                 }
             }
+            final Pair<BusinessService, Map<String, TModel>> aServiceToItsModels =
+                    new Pair<BusinessService, Map<String, TModel>>(businessService, tModelKeyToModel);
+            servicesToDependentTModels.add(aServiceToItsModels);
         }
 
-        return new Pair<List<BusinessService>, Map<String, TModel>>(businessServices, tModelKeyToModel);
+        return servicesToDependentTModels;
     }
 
     private static UDDIClient buildUDDIClient( final UDDIClientConfig uddiCfg ) {

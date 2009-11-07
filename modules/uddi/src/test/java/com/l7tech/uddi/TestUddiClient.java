@@ -46,11 +46,6 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
-    public boolean publishTModel(TModel tModelToPublish, boolean searchFirst) throws UDDIException {
-        return publishTModel(tModelToPublish);
-    }
-
-    @Override
     public void authenticate() throws UDDIException {
 
     }
@@ -83,6 +78,11 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
             bindingTemplate.setBindingKey(templateKey);
         }
         return true;
+    }
+
+    @Override
+    public void deleteTModel(Set<String> tModelKeys) throws UDDIException {
+
     }
 
     @Override

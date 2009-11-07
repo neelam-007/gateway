@@ -8,10 +8,7 @@ import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.util.Pair;
 
 import javax.wsdl.WSDLException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.io.Reader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -40,25 +37,35 @@ public class UDDIProxiedServiceDownloaderTest {
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
-        UDDIClient uddiClient = new TestUddiClient(wsdlToUDDIModelConverter.getBusinessServices());
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
+        List<BusinessService> allServices = new ArrayList<BusinessService>();
+        List<String> allTModelKeys = new ArrayList<String>();
+        for(Pair<BusinessService, Map<String, TModel>> serviceToModels: serviceToDependentModels){
+            allServices.add(serviceToModels.left);
+            for(String s: serviceToModels.right.keySet()){
+                allTModelKeys.add(s);
+            }
+        }
+        UDDIClient uddiClient = new TestUddiClient(allServices);
 
         UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
         Set<String> serviceKeys = new HashSet<String>();
-        for(BusinessService bs: wsdlToUDDIModelConverter.getBusinessServices()){
+        for(BusinessService bs: allServices){
             serviceKeys.add(bs.getServiceKey());
         }
 
-        Pair<List<BusinessService>, Map<String, TModel>>
-                downloadedServicesAndTModels = serviceDownloader.getBusinessServiceModels(serviceKeys);
+        final List<Pair<BusinessService, Map<String, TModel>>>
+                downloadedServicesAndTModels = serviceDownloader.getBusinessServiceModelsNew(serviceKeys);
 
         Assert.assertNotNull("Pair should never be null", downloadedServicesAndTModels);
-        Assert.assertNotNull("List<BusinessService> should never be null", downloadedServicesAndTModels.left);
-        Assert.assertNotNull("Map<String, TModel> should never be null", downloadedServicesAndTModels.right);
+        Assert.assertNotNull("List<BusinessService> should never be null", downloadedServicesAndTModels.get(0).left);
+        Assert.assertNotNull("Map<String, TModel> should never be null", downloadedServicesAndTModels.get(0).right);
 
-        Assert.assertEquals("Incorrect number of BusinessServices found", 1, downloadedServicesAndTModels.left.size());
+        Assert.assertEquals("Incorrect number of BusinessServices found", 1, downloadedServicesAndTModels.size());
+
         //confirm all tModels were extracted
-        for(String s: wsdlToUDDIModelConverter.getKeysToPublishedTModels().keySet()){
-            Assert.assertTrue("tModel should have been found: " + s, downloadedServicesAndTModels.right.containsKey(s));
+        for(String s: allTModelKeys){
+            Assert.assertTrue("tModel should have been found: " + s, downloadedServicesAndTModels.get(0).right.containsKey(s));
         }
     }
 

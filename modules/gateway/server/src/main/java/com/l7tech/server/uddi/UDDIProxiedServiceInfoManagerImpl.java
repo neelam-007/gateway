@@ -34,9 +34,7 @@ implements UDDIProxiedServiceInfoManager{
     @Override
     public void saveUDDIProxiedServiceInfo(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
             throws SaveException{
-
-        //first thing to do - persit the entity
-        //todo set the status to publishing
+        //todo delete this method, not needed
         save(uddiProxiedServiceInfo);
     }
 

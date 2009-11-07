@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.util.Pair;
 
 import java.util.*;
 import java.io.Reader;
@@ -78,12 +79,15 @@ public class TestGenericUDDIClient {
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient){};
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
+
+//        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient){};
 //        servicePublisher.publishServicesToUDDIRegistry(uddiClient, wsdlToUDDIModelConverter.getBusinessServices(),
 //                wsdlToUDDIModelConverter.getKeysToPublishedTModels());
 
         //Place a break point here, and examine the UDDI Registry. The code below will delete everything published
-        for(BusinessService businessService: wsdlToUDDIModelConverter.getBusinessServices()){
+        for(Pair<BusinessService, Map<String, TModel>> sericeToModel: serviceToDependentModels){
+            BusinessService businessService = sericeToModel.left;
             serviceKeys.add(businessService.getServiceKey());
         }
     }
@@ -247,7 +251,9 @@ public class TestGenericUDDIClient {
      */
     @Test
     public void testTModelReferencedDelete() throws UDDIException{
-        uddiClient.deleteTModel("uddi:b219fd60-c319-11de-a82a-a6a2e065da04");
+uddiClient.deleteTModel("uddi:ee613b50-cb2d-11de-8486-c4344922f660");
+uddiClient.deleteTModel("uddi:edfab150-cb2d-11de-8486-fdc8e7430f2c");
+    
     }
 
     @Test

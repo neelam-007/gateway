@@ -36,34 +36,13 @@ interface JaxWsUDDIClient {
     public void publishBindingTemplate(final BindingTemplate bindingTemplate) throws UDDIException;
 
     /**
-     * Publish a tModel to UDDI. May already exist.
-     * <p/>
-     * If the tModel does not already exist, it will be created and the tModelKey assigned to it by the UDDI
-     * registry will be set on the tModel following this operation.
+     * Publish a tModel
      *
-     * If the tModel does exist the overviewDoc URL with use type = "wsdlInterface" will be compared. If they are the
-     * same then the tModels match, otherwise they do not match and the tModel will be published
-     *
-     * When searching for the TModel in the UDDI Registry, all keyedReferences from the tModel's identifierBag
-     * and categoryBag must be included in the search. The search should be exact, but case insensitive
-     * @param tModelToPublish the tModel to publish.
-     * @return true if the TModel was published, false otherwise i.e. it was found already in the UDDI Registry
-     * @throws UDDIException any problems searching / publishing UDDI
-     */
-    boolean publishTModel(final TModel tModelToPublish) throws UDDIException;
-
-    /**
-     * Same as publishTModel(final TModel tModelToPublish) except that no search is done first.
-     * When searching it's very important to consier the overviewURL values from the overviewDoc, as it is the only
-     * way we can differeniate between the same tModel published from different PublishedServices, when they
-     * are created from the same WSDL
-     *  
      * @param tModelToPublish TModel to publish
-     * @param searchFirst boolean if true, then the UDDI is first searched for a matching tModel
      * @return true if the TModel was published, false otherwise. Always true when searchFirst is false.
      * @throws UDDIException
      */
-    boolean publishTModel(final TModel tModelToPublish, final boolean searchFirst) throws UDDIException;
+    boolean publishTModel(final TModel tModelToPublish) throws UDDIException;
 
     /**
      * Retrieve the tModel with the supplied key

@@ -166,14 +166,18 @@ public interface UDDIClient extends Closeable {
     /**
      * Delete a TModel from the UDDI Registry.
      *
-     * The delete should only be attempted when a search reveiles that no other Business Service references
-     * this tModel.
-     *
      * //todo this is inefficient - should allow a collection of tModels which only requires a single Business Service search
      * @param tModelKey String tModelKey of the TModel to delete
      * @throws UDDIException if any problem during the find or the attempt to delete
      */
     void deleteTModel(final String tModelKey) throws UDDIException;
+
+    /**
+     * Delete all reference tModels. Delete should be done in one UDDI update
+     * @param tModelKeys Set String of tModelKeys to delete
+     * @throws UDDIException any problems deleting.
+     */
+    void deleteTModel(final Set<String> tModelKeys) throws UDDIException;
 
     /**
      * Delete a bindingTemplate. This should also attempt to delete its referenced tModels
@@ -185,10 +189,9 @@ public interface UDDIClient extends Closeable {
 
     /**
      * Delete a BusinessService from the UDDI Registry.
-     *
+     * TODO [Donal] update callers to not have to delete tModels, do it here
      * Any dependent tModels representing wsdl:portType and wsdl:binding are not deleted. This should be done after
-     * the call to deletedBusinessService, as it's possible that more than one Business Service, which originates
-     * from the same WSDL, will reference the same tModel. Some UDDI Registries will throw an exception when
+     * the call to deletedBusinessService. Some UDDI Registries will throw an exception when
      * an attempt is made to delete a tModel which has been previously deleted (CentraSite Gov v7)
      *
      * @param serviceKey String serviceKey of the service to delete

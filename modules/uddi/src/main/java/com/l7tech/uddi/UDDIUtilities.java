@@ -31,28 +31,26 @@ public class UDDIUtilities {
         WSDL_PORT_TYPE, WSDL_BINDING
     }
 
-    /**
-     * Update all placeholder tModelKey's instead of keyedReferences in the list of BusinessServices. This applies
-     * to the bindingTemplates they contain, and not any category bag of the Business Services themselves
-     *
-     * @param businessServices the list of BusinessService s to update
-     * @param dependentTModels the list of dependent TModel s which the BusinessServices depend on. All have valid
-     *                         tModelKeys from the correct UDDIRegistry
-     */
-    static void updateBusinessServiceReferences(final List<BusinessService> businessServices,
-                                                       final Map<String, TModel> dependentTModels) {
 
-        for (BusinessService businessService : businessServices) {
-            //the business service itself has no references to update
-            BindingTemplates bindingTemplates = businessService.getBindingTemplates();
-            List<BindingTemplate> allTemplates = bindingTemplates.getBindingTemplate();
-            for (BindingTemplate bindingTemplate : allTemplates) {
-                TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
-                List<TModelInstanceInfo> tModelInstanceInfos = tModelInstanceDetails.getTModelInstanceInfo();
-                for (TModelInstanceInfo tModelInstanceInfo : tModelInstanceInfos) {
-                    final TModel tModel = dependentTModels.get(tModelInstanceInfo.getTModelKey());
-                    tModelInstanceInfo.setTModelKey(tModel.getTModelKey());
-                }
+    /**
+     * Update fake tModelKey references with real key references
+     * 
+     * @param businessService BusinessService which contains fake tModelKey references from it's TModelInstanceInfo s
+     * @param dependentTModels all TModels contained in this Map should contain real tModelKeys assiged from the UDDI
+     * to which the BusnessService will ultimetely be published to
+     */
+    static void updateBusinessServiceReferences(final BusinessService businessService,
+                                                   final Map<String, TModel> dependentTModels) {
+
+        //the business service itself has no references to update
+        BindingTemplates bindingTemplates = businessService.getBindingTemplates();
+        List<BindingTemplate> allTemplates = bindingTemplates.getBindingTemplate();
+        for (BindingTemplate bindingTemplate : allTemplates) {
+            TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
+            List<TModelInstanceInfo> tModelInstanceInfos = tModelInstanceDetails.getTModelInstanceInfo();
+            for (TModelInstanceInfo tModelInstanceInfo : tModelInstanceInfos) {
+                final TModel tModel = dependentTModels.get(tModelInstanceInfo.getTModelKey());
+                tModelInstanceInfo.setTModelKey(tModel.getTModelKey());
             }
         }
     }

@@ -66,7 +66,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             ServiceDetail serviceDetail = getPublishPort().saveService(saveService);
             businessService.setServiceKey(serviceDetail.getBusinessService().get(0).getServiceKey());
             logger.log(Level.INFO, "Saved BusinessService with key: " + businessService.getServiceKey());
-
+            //Caller has to make this happen by reusing serviceKeys when logically correct
             return preSaveKey == null;
         } catch (DispositionReportFaultMessage drfm) {
             final String msg = getExceptionMessage("Exception saving BusinessService: ", drfm);
@@ -76,48 +76,48 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
-    public boolean publishTModel(TModel tModelToPublish, boolean searchFirst) throws UDDIException {
-        if(searchFirst){
-            TModelList tModelList = findMatchingTModels(tModelToPublish, false);
-            TModelInfos tModelInfos = tModelList.getTModelInfos();
-            if(tModelInfos != null && !tModelInfos.getTModelInfo().isEmpty()){
-                List<TModelInfo> allTModelInfos = tModelInfos.getTModelInfo();
-
-                //tModels published by the gateway will only have a single OverviewDoc with use type wsdlInterface
-                String tModelToPublishWsdlUrl = null;
-                for(OverviewDoc overviewDoc: tModelToPublish.getOverviewDoc()){
-                    OverviewURL overviewURL = overviewDoc.getOverviewURL();
-                    if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
-                    tModelToPublishWsdlUrl = overviewURL.getValue();
-                }
-                if(tModelToPublishWsdlUrl == null) throw new IllegalStateException("tModel to publish does not have an OverviewURL of type 'wsdlInterface'");
-
-                List<TModel> matchingTModels = new ArrayList<TModel>();
-                for(TModelInfo tModelInfo: allTModelInfos){
-                    TModel foundModel = getTModel(tModelInfo.getTModelKey());
-                    if(foundModel == null) continue;
-                    //compare overviewDocs and overviewUrls
-                    boolean foundMatchingOverviewUrl = false;
-                    for(OverviewDoc overviewDoc: foundModel.getOverviewDoc()){
-                        OverviewURL overviewURL = overviewDoc.getOverviewURL();
-                        if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
-                        if(!overviewURL.getValue().equalsIgnoreCase(tModelToPublishWsdlUrl)) continue;
-                        foundMatchingOverviewUrl = true;
-                    }
-                    if(foundMatchingOverviewUrl) matchingTModels.add(foundModel);
-                }
-
-                if(!matchingTModels.isEmpty()){
-                    if(matchingTModels.size() != 1)
-                        logger.log(Level.INFO, "Found " + matchingTModels.size()+" matching TModels. The first will be used");
-
-                    tModelToPublish.setTModelKey(allTModelInfos.get(0).getTModelKey());
-                    logger.log(Level.INFO, "Found matching tModel in UDDI Registry. Not publishing supplied tModel");
-                    return false;
-                }
-                //fall through to publish below
-            }
-        }
+    public boolean publishTModel(TModel tModelToPublish) throws UDDIException {
+//        if(searchFirst){
+//            TModelList tModelList = findMatchingTModels(tModelToPublish, false);
+//            TModelInfos tModelInfos = tModelList.getTModelInfos();
+//            if(tModelInfos != null && !tModelInfos.getTModelInfo().isEmpty()){
+//                List<TModelInfo> allTModelInfos = tModelInfos.getTModelInfo();
+//
+//                //tModels published by the gateway will only have a single OverviewDoc with use type wsdlInterface
+//                String tModelToPublishWsdlUrl = null;
+//                for(OverviewDoc overviewDoc: tModelToPublish.getOverviewDoc()){
+//                    OverviewURL overviewURL = overviewDoc.getOverviewURL();
+//                    if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
+//                    tModelToPublishWsdlUrl = overviewURL.getValue();
+//                }
+//                if(tModelToPublishWsdlUrl == null) throw new IllegalStateException("tModel to publish does not have an OverviewURL of type 'wsdlInterface'");
+//
+//                List<TModel> matchingTModels = new ArrayList<TModel>();
+//                for(TModelInfo tModelInfo: allTModelInfos){
+//                    TModel foundModel = getTModel(tModelInfo.getTModelKey());
+//                    if(foundModel == null) continue;
+//                    //compare overviewDocs and overviewUrls
+//                    boolean foundMatchingOverviewUrl = false;
+//                    for(OverviewDoc overviewDoc: foundModel.getOverviewDoc()){
+//                        OverviewURL overviewURL = overviewDoc.getOverviewURL();
+//                        if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
+//                        if(!overviewURL.getValue().equalsIgnoreCase(tModelToPublishWsdlUrl)) continue;
+//                        foundMatchingOverviewUrl = true;
+//                    }
+//                    if(foundMatchingOverviewUrl) matchingTModels.add(foundModel);
+//                }
+//
+//                if(!matchingTModels.isEmpty()){
+//                    if(matchingTModels.size() != 1)
+//                        logger.log(Level.INFO, "Found " + matchingTModels.size()+" matching TModels. The first will be used");
+//
+//                    tModelToPublish.setTModelKey(allTModelInfos.get(0).getTModelKey());
+//                    logger.log(Level.INFO, "Found matching tModel in UDDI Registry. Not publishing supplied tModel");
+//                    return false;
+//                }
+//                //fall through to publish below
+//            }
+//        }
         //TModel does not exist yet in registry. Publish it
 
         UDDIPublicationPortType uddiPublicationPortType = getPublishPort();
@@ -137,11 +137,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         } catch(RuntimeException e){
             throw new UDDIException(e.getMessage());
         }
-    }
-
-    @Override
-    public boolean publishTModel(TModel tModelToPublish) throws UDDIException {
-        return publishTModel(tModelToPublish, true);
     }
 
     @Override
@@ -248,11 +243,28 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
-    public void deleteTModel(String tModelKey) throws UDDIException {
-        final TModel tModel = getTModel(tModelKey);
-        if ( tModel != null ) {
-            deleteTModel(tModel);
+    public void deleteTModel(Set<String> tModelKeys) throws UDDIException {
+        DeleteTModel deleteTModel = new DeleteTModel();
+        deleteTModel.setAuthInfo(getAuthToken());
+        deleteTModel.getTModelKey().addAll(tModelKeys);
+        try {
+            getPublishPort().deleteTModel(deleteTModel);
+            logger.log(Level.INFO, "Delete tModels with keys: ");
+            for(String s: tModelKeys){
+                logger.log(Level.INFO, "tModelKey deleted: " + s);
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception deleting tModels", drfm);
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg, drfm);
         }
+    }
+
+    @Override
+    public void deleteTModel(String tModelKey) throws UDDIException {
+        Set<String> aSet = new HashSet<String>();
+        aSet.add(tModelKey);
+        deleteTModel(aSet);
     }
 
     @Override
@@ -2104,95 +2116,33 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         return result;
     }
 
-    /**
-     * Find a matching tModel based on all searchable attributes of tModelToFind
-     * The search is case insensitive, but exact
-     *
-     * @param tModelToFind TModel to find in the UDDI Registry
-     * @param approxomiateMatch
-     * @return TModelList containing results, if any. Never null.
-     * @throws UDDIException any problems searching the registry
-     */
-    private TModelList findMatchingTModels(final TModel tModelToFind, boolean approxomiateMatch) throws UDDIException{
-        FindTModel findTModel = getFindTModel(tModelToFind, approxomiateMatch);
-
-        UDDIInquiryPortType inquiryPortType = getInquirePort();
-        try {
-            return inquiryPortType.findTModel(findTModel);
-
-        } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception finding matching tModels: ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
-        }
-
-    }
-
-    private FindTModel getFindTModel(TModel tModelToFind, boolean approxomiateMatch) throws UDDIException {
-        FindTModel findTModel = new FindTModel();
-        findTModel.setAuthInfo(getAuthToken());
-
-        FindQualifiers findQualifiers = new FindQualifiers();
-        List<String> qualifiers = findQualifiers.getFindQualifier();
-        qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
-        if(approxomiateMatch) qualifiers.add(FINDQUALIFIER_APPROXIMATE);
-
-        Name name= new Name();
-        name.setValue(tModelToFind.getName().getValue());
-
-        findTModel.setName(name);
-        findTModel.setFindQualifiers(findQualifiers);
-        if(tModelToFind.getCategoryBag() != null){
-            CategoryBag searchCategoryBag = new CategoryBag();
-            searchCategoryBag.getKeyedReference().addAll(tModelToFind.getCategoryBag().getKeyedReference());
-            findTModel.setCategoryBag(searchCategoryBag);
-        }
-
-        if(tModelToFind.getIdentifierBag() != null){
-            IdentifierBag searchIdentifierBag = new IdentifierBag();
-            searchIdentifierBag.getKeyedReference().addAll(tModelToFind.getIdentifierBag().getKeyedReference());
-            findTModel.setIdentifierBag(searchIdentifierBag);
-        }
-        return findTModel;
-    }
-
-    private void deleteTModel(TModel tModel) throws UDDIException{
-        //See if any services reference this tModelKey, is so then don't delete
-        final FindService findService = new FindService();
-        findService.setAuthInfo(getAuthToken());
-
-        final FindTModel findTModel = getFindTModel(tModel, false);
-        findService.setFindTModel(findTModel);
-
-        try {
-            final ServiceList serviceList = getInquirePort().findService(findService);
-            if(serviceList.getServiceInfos() != null && !serviceList.getServiceInfos().getServiceInfo().isEmpty()){
-                logger.log(Level.INFO, "Not deleting tModel as BusinessService found which references tModel with key: " + tModel.getTModelKey());
-                //TODO [Donal] - need to check the details of the reference, as it may look like the same tModel, but differ by overviewURLs
-                return;
-            }
-        } catch (DispositionReportFaultMessage drfm) {
-            final String msg =
-                    getExceptionMessage("Exception searching for BusinessServices which reference tModel with key: "
-                            + tModel.getTModelKey(), drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
-        }
-
-        final String tModelKey = tModel.getTModelKey();
-        //if not found delete
-        DeleteTModel deleteTModel = new DeleteTModel();
-        deleteTModel.setAuthInfo(getAuthToken());
-        deleteTModel.getTModelKey().add(tModelKey);
-        try {
-            getPublishPort().deleteTModel(deleteTModel);
-            logger.log(Level.INFO, "Delete tModel with key: " + tModelKey);
-        } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception deleting tModel with key: " + tModelKey+ ": ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
-        }
-    }
+//    private FindTModel getFindTModel(TModel tModelToFind, boolean approxomiateMatch) throws UDDIException {
+//        FindTModel findTModel = new FindTModel();
+//        findTModel.setAuthInfo(getAuthToken());
+//
+//        FindQualifiers findQualifiers = new FindQualifiers();
+//        List<String> qualifiers = findQualifiers.getFindQualifier();
+//        qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
+//        if(approxomiateMatch) qualifiers.add(FINDQUALIFIER_APPROXIMATE);
+//
+//        Name name= new Name();
+//        name.setValue(tModelToFind.getName().getValue());
+//
+//        findTModel.setName(name);
+//        findTModel.setFindQualifiers(findQualifiers);
+//        if(tModelToFind.getCategoryBag() != null){
+//            CategoryBag searchCategoryBag = new CategoryBag();
+//            searchCategoryBag.getKeyedReference().addAll(tModelToFind.getCategoryBag().getKeyedReference());
+//            findTModel.setCategoryBag(searchCategoryBag);
+//        }
+//
+//        if(tModelToFind.getIdentifierBag() != null){
+//            IdentifierBag searchIdentifierBag = new IdentifierBag();
+//            searchIdentifierBag.getKeyedReference().addAll(tModelToFind.getIdentifierBag().getKeyedReference());
+//            findTModel.setIdentifierBag(searchIdentifierBag);
+//        }
+//        return findTModel;
+//    }
 
     private static class UDDIOperationalInfoImpl implements UDDIOperationalInfo {
         private final OperationalInfo info;

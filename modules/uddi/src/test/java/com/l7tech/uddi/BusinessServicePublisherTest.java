@@ -38,26 +38,25 @@ public class BusinessServicePublisherTest {
 
         UDDIClient uddiClient = getUDDIClient();
 
-        //before
-        for(BusinessService businessService: wsdlToUDDIModelConverter.getBusinessServices()){
-            JAXB.marshal(businessService, System.out);
-        }
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
 
-        for(TModel tModel: wsdlToUDDIModelConverter.getKeysToPublishedTModels().values()){
-            JAXB.marshal(tModel, System.out);
+        //before
+        for(Pair<BusinessService, Map<String, TModel>> serviceToModels: serviceToDependentModels){
+            BusinessService businessService = serviceToModels.left;
+            JAXB.marshal(businessService, System.out);
+            Collection<TModel> allTModels = serviceToModels.right.values();
+            for(TModel tModel: allTModels){
+                JAXB.marshal(tModel, System.out);
+            }
         }
 
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
-        servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey);
+        List<UDDIBusinessService> services = servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey);
 
         //after
-        for(BusinessService businessService: wsdlToUDDIModelConverter.getBusinessServices()){
-            JAXB.marshal(businessService, System.out);
-        }
-
-        for(TModel tModel: wsdlToUDDIModelConverter.getKeysToPublishedTModels().values()){
-            JAXB.marshal(tModel, System.out);
-        }
+//        for(UDDIBusinessService bs: services){
+//            JAXB.marshal(bs, System.out);
+//        }
     }
 
     //code to download and marshall UDDI objects
@@ -94,9 +93,6 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://localhost:8080/3828382";
 
         final int serviceOid = 3828382;
-        final String businessKey = "uddi:uddi_business_key";
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
         final Map<String, TModel> tModels = new HashMap<String, TModel>();
         InputStream inputStream =
@@ -136,9 +132,6 @@ public class BusinessServicePublisherTest {
         final String gatewayURL = "http://localhost:8080/3828382";
 
         final int serviceOid = 3828382;
-        final String businessKey = "uddi:uddi_business_key";
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
         final Map<String, TModel> tModels = new HashMap<String, TModel>();
         InputStream inputStream =

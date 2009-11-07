@@ -7,8 +7,7 @@ import com.l7tech.util.Pair;
 import com.l7tech.test.BugNumber;
 
 import java.io.*;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import junit.framework.Assert;
 
@@ -21,6 +20,35 @@ import javax.xml.bind.JAXB;
  * @author darmstrong
  */
 public class WsdlTUDDIModelConverterTest {
+
+    /**
+     * Tests that each wsdl:service converted to a UDDI BusinessService only references tModels unique to it
+     *
+     */
+    @Test
+    @BugNumber(7970)
+    public void testUniqueTModelPerService() throws Exception{
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("WarehouseTwoServices.wsdl"));
+
+        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+        final String gatewayURL = "http://localhost:8080/3828382";
+
+        final int serviceOid = 3828382;
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
+
+        Assert.assertEquals("Incorrect number of services found", 2, serviceToDependentModels.size());
+        List<String> allTModelKeys = new ArrayList<String>();
+        for(Pair<BusinessService, Map<String, TModel>> serviceToModels: serviceToDependentModels){
+            for(TModel m: serviceToModels.right.values()){
+                allTModelKeys.add(m.getTModelKey());
+            }
+        }
+        Assert.assertEquals("Incorrect number of unique tModels found", 6, allTModelKeys.size());
+
+    }
 
     /**
      * This entire test case depends on the structure of the Warehoumse.wsdl resource
@@ -39,12 +67,11 @@ public class WsdlTUDDIModelConverterTest {
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
-        List<BusinessService> services = wsdlToUDDIModelConverter.getBusinessServices();
-        Assert.assertEquals("Incorrect number of Business Services found", 1, services.size());
-        //print for debugging
-        printBusinessService(services);
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
 
-        Map<String, TModel> keysToTModels = wsdlToUDDIModelConverter.getKeysToPublishedTModels();
+        Assert.assertEquals("Incorrect number of Business Services found", 1, serviceToDependentModels.size());
+
+        Map<String, TModel> keysToTModels = serviceToDependentModels.get(0).right;
         Assert.assertEquals("Incorrect number of tModels published", 3, keysToTModels.keySet().size());
 
         for(Map.Entry<String, TModel> entry: keysToTModels.entrySet()) {
@@ -52,7 +79,7 @@ public class WsdlTUDDIModelConverterTest {
             JAXB.marshal(entry.getValue(), System.out);
         }
 
-        BusinessService businessService = services.get(0);
+        BusinessService businessService = serviceToDependentModels.get(0).left;
         Assert.assertEquals("Incorrect Business Service name", "Layer7 Warehouse " + serviceOid, businessService.getName().get(0).getValue());
 
         List<BindingTemplate> bindingTemplates = businessService.getBindingTemplates().getBindingTemplate();
@@ -117,10 +144,8 @@ public class WsdlTUDDIModelConverterTest {
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
 
-        List<BusinessService> services = wsdlToUDDIModelConverter.getBusinessServices();
-        Assert.assertEquals("Incorrect number of Business Services found", 1, services.size());
-        //print for debugging
-        printBusinessService(services);
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
+        Assert.assertEquals("Incorrect number of Business Services found", 1, serviceToDependentModels.size());
         //bug is fixed, can successfully convert into UDDI data model
     }
 
@@ -135,6 +160,7 @@ public class WsdlTUDDIModelConverterTest {
         final int serviceOid = 3828382;
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        final List<Pair<BusinessService, Map<String, TModel>>> models = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
     }
 
     /**
@@ -153,7 +179,8 @@ public class WsdlTUDDIModelConverterTest {
         final int serviceOid = 3828382;
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
-        Assert.assertEquals("Incorrect number of BusinessServices found", 1, wsdlToUDDIModelConverter.getBusinessServices().size());
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
+        Assert.assertEquals("Incorrect number of BusinessServices found", 1, serviceToDependentModels.size());
     }
 
     /**

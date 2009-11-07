@@ -328,18 +328,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         //the save event is picked up by the UDDICoordinator, which does the UDDI work
     }
 
-    private Wsdl getWsdl(PublishedService service) throws PublishProxiedServiceException {
-        final Wsdl wsdl;
-        try {
-            wsdl = service.parsedWsdl();
-        } catch (WSDLException e) {
-            final String msg = "Could not obtain Published Service's WSDL: " + ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            throw new PublishProxiedServiceException(msg);
-        }
-        return wsdl;
-    }
-
     @Override
     public void updatePublishedGatewayWsdl(long uddiProxiedServiceInfoOid)
             throws FindException, UDDIRegistryNotEnabledException, PublishProxiedServiceException, UpdateException,
@@ -372,4 +360,17 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             e.printStackTrace();
         }
     }
+
+    private Wsdl getWsdl(PublishedService service) throws PublishProxiedServiceException {
+        final Wsdl wsdl;
+        try {
+            wsdl = service.parsedWsdl();
+        } catch (WSDLException e) {
+            final String msg = "Could not obtain Published Service's WSDL: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+            throw new PublishProxiedServiceException(msg);
+        }
+        return wsdl;
+    }
+    
 }

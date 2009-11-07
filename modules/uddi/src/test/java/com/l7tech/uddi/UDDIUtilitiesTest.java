@@ -21,7 +21,9 @@ import java.util.ArrayList;
 public class UDDIUtilitiesTest {
     private Wsdl wsdl;
     private WsdlToUDDIModelConverter wsdlToUDDIModelConverter;
-    private Pair<List<BusinessService>, Map<String, TModel>> servicesAndTModels;
+    private List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels;
+    private Map<String, TModel> referencedModels;
+    private BusinessService singleService;
 
     @Before
     public void setUp() throws Exception {
@@ -34,7 +36,9 @@ public class UDDIUtilitiesTest {
         final int serviceOid = 3828382;
         wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
-        servicesAndTModels = new Pair<List<BusinessService>, Map<String, TModel>>(wsdlToUDDIModelConverter.getBusinessServices(), wsdlToUDDIModelConverter.getKeysToPublishedTModels());
+        serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
+        referencedModels = serviceToDependentModels.get(0).right;
+        singleService = serviceToDependentModels.get(0).left;
     }
 
     /**
@@ -43,7 +47,7 @@ public class UDDIUtilitiesTest {
      */
     @Test
     public void testUDDIReferenceUpdater() throws Exception {
-        final Map<String, TModel> tModels = servicesAndTModels.right;
+        final Map<String, TModel> tModels = serviceToDependentModels.get(0).right;
         for(TModel tModel: tModels.values()){
             UDDIUtilities.TMODEL_TYPE type = UDDIUtilities.getTModelType(tModel, true);
             final CategoryBag categoryBag = tModel.getCategoryBag();
@@ -70,15 +74,15 @@ public class UDDIUtilitiesTest {
     public void testUpdateBindingTModelReferences() throws UDDIException {
         //first update all wsdl:portType tModels
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, 23424323L, getUDDIClient());
-        servicePublisher.publishDependentTModels(servicesAndTModels.right, WSDL_PORT_TYPE);
+        servicePublisher.publishDependentTModels(referencedModels, WSDL_PORT_TYPE);
 
         final ArrayList<TModel> models = new ArrayList<TModel>();
-        models.addAll(servicesAndTModels.right.values());
-        UDDIUtilities.updateBindingTModelReferences(models, servicesAndTModels.right);
+        models.addAll(referencedModels.values());
+        UDDIUtilities.updateBindingTModelReferences(models, referencedModels);
 
         int numBindingTModelsFound = 0;
         //Now each binding tModel should have a real tModelKey in it's keyedReference to the wsdl:portType tModel
-        for(TModel tModel: servicesAndTModels.right.values()){
+        for(TModel tModel: referencedModels.values()){
             if(UDDIUtilities.getTModelType(tModel, true) != WSDL_BINDING) continue;
             numBindingTModelsFound++;
             //get it's portType keyedReference
@@ -94,7 +98,7 @@ public class UDDIUtilitiesTest {
 
                 //now find a portType tModel with this tModelKey
                 boolean refFound = false;
-                for(TModel aTModel: servicesAndTModels.right.values()){
+                for(TModel aTModel: referencedModels.values()){
                     if(UDDIUtilities.getTModelType(aTModel, true) != WSDL_PORT_TYPE) continue;
                     if(!aTModel.getTModelKey().equals(keyValue)) continue;
                     refFound = true;
@@ -117,47 +121,45 @@ public class UDDIUtilitiesTest {
     public void testUpdateBusinessServiceReferences() throws UDDIException {
         //setup
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, 23424323L, getUDDIClient());
-        servicePublisher.publishDependentTModels(servicesAndTModels.right, WSDL_PORT_TYPE);
+        servicePublisher.publishDependentTModels(referencedModels, WSDL_PORT_TYPE);
 
         final ArrayList<TModel> models = new ArrayList<TModel>();
-        models.addAll(servicesAndTModels.right.values());
-        UDDIUtilities.updateBindingTModelReferences(models, servicesAndTModels.right);
+        models.addAll(referencedModels.values());
+        UDDIUtilities.updateBindingTModelReferences(models, referencedModels);
 
-        servicePublisher.publishDependentTModels(servicesAndTModels.right, WSDL_BINDING);        
+        servicePublisher.publishDependentTModels(referencedModels, WSDL_BINDING);
         //finish setup
 
-        UDDIUtilities.updateBusinessServiceReferences(servicesAndTModels.left, servicesAndTModels.right);
+        UDDIUtilities.updateBusinessServiceReferences(singleService, referencedModels);
         
-        for(BusinessService businessService: servicesAndTModels.left){
-            JAXB.marshal(businessService, System.out);
-            BindingTemplates bindingTemplates = businessService.getBindingTemplates();
-            List<BindingTemplate> allTemplates = bindingTemplates.getBindingTemplate();
-            for (BindingTemplate bindingTemplate : allTemplates) {
-                int numUpdatedReferences = 0;
-                TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
-                List<TModelInstanceInfo> tModelInstanceInfos = tModelInstanceDetails.getTModelInstanceInfo();
-                for (TModelInstanceInfo tModelInstanceInfo : tModelInstanceInfos) {
-                    final String modelKey = tModelInstanceInfo.getTModelKey();
-                    Assert.assertFalse("Map should not contain the keyedReference: " + modelKey,
-                            servicesAndTModels.right.containsKey(modelKey));
-                    numUpdatedReferences++;
-                    //confirm the tModelKey found is valid and exists in the correct type of tModel
-                    final UDDIUtilities.TMODEL_TYPE currentTModelInstanceInfoType =
-                            (tModelInstanceInfo.getInstanceDetails() != null)? WSDL_BINDING: WSDL_PORT_TYPE;
-                    //iterate through all bindings, find the tModel, confirm it's key and value
-                    boolean tModelReferencedFound = false;
+        JAXB.marshal(singleService, System.out);
+        BindingTemplates bindingTemplates = singleService.getBindingTemplates();
+        List<BindingTemplate> allTemplates = bindingTemplates.getBindingTemplate();
+        for (BindingTemplate bindingTemplate : allTemplates) {
+            int numUpdatedReferences = 0;
+            TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
+            List<TModelInstanceInfo> tModelInstanceInfos = tModelInstanceDetails.getTModelInstanceInfo();
+            for (TModelInstanceInfo tModelInstanceInfo : tModelInstanceInfos) {
+                final String modelKey = tModelInstanceInfo.getTModelKey();
+                Assert.assertFalse("Map should not contain the keyedReference: " + modelKey,
+                        referencedModels.containsKey(modelKey));
+                numUpdatedReferences++;
+                //confirm the tModelKey found is valid and exists in the correct type of tModel
+                final UDDIUtilities.TMODEL_TYPE currentTModelInstanceInfoType =
+                        (tModelInstanceInfo.getInstanceDetails() != null)? WSDL_BINDING: WSDL_PORT_TYPE;
+                //iterate through all bindings, find the tModel, confirm it's key and value
+                boolean tModelReferencedFound = false;
 
-                    for(TModel aRefTModel: servicesAndTModels.right.values()){
-                        if(!aRefTModel.getTModelKey().equals(modelKey)) continue;
-                        UDDIUtilities.TMODEL_TYPE modelType = UDDIUtilities.getTModelType(aRefTModel, true);
-                        if(modelType != currentTModelInstanceInfoType) continue;
-                        tModelReferencedFound = true;
-                    }
-
-                    Assert.assertTrue("Referenced tModel not found", tModelReferencedFound);
+                for(TModel aRefTModel: referencedModels.values()){
+                    if(!aRefTModel.getTModelKey().equals(modelKey)) continue;
+                    UDDIUtilities.TMODEL_TYPE modelType = UDDIUtilities.getTModelType(aRefTModel, true);
+                    if(modelType != currentTModelInstanceInfoType) continue;
+                    tModelReferencedFound = true;
                 }
-                Assert.assertEquals("Incorrect number of references updated for bindingTemplate", 2, numUpdatedReferences);
+
+                Assert.assertTrue("Referenced tModel not found", tModelReferencedFound);
             }
+            Assert.assertEquals("Incorrect number of references updated for bindingTemplate", 2, numUpdatedReferences);
         }
 
     }
