@@ -9,6 +9,7 @@ import com.l7tech.server.processcontroller.CxfUtils;
 import com.l7tech.server.processcontroller.ConfigService;
 import com.l7tech.server.processcontroller.ConfigServiceStub;
 import com.l7tech.server.processcontroller.PCUtils;
+import com.l7tech.server.processcontroller.patching.builder.PatchSpec;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.Functions;
