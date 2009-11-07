@@ -47,8 +47,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private JLabel uddiRegistryLabel;
     private JLabel businessEntityLabel;
     private JLabel businessEntityNameLabel;
-    private JCheckBox monitoringEnabledCheckBox;
-    private JCheckBox monitoringDisableServicecheckBox;
     private JLabel publishProxystatusLabel;
     private JRadioButton publishGatewayEndpointAsRadioButton;
     private JLabel bindingTemplateStatusLabel;
@@ -161,7 +159,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
         publishGatewayEndpointAsRadioButton.addActionListener(enableDisableChangeListener);
         overwriteExistingBusinessServiceWithRadioButton.addActionListener(enableDisableChangeListener);
         dontPublishRadioButton.addActionListener(enableDisableChangeListener);
-        monitoringEnabledCheckBox.addActionListener( enableDisableChangeListener );
         metricsEnabledCheckBox.addActionListener( enableDisableChangeListener );
 
         //Populate registry drop down
@@ -253,15 +250,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
             uddiRegistriesComboBox.setSelectedIndex(-1);
             businessEntityNameLabel.setText(businessEntityDefault);
             clearStatusLabels(null);
-        }
-        
-        // Monitoring settings
-        if ( uddiServiceControl != null ) {
-            monitoringEnabledCheckBox.setSelected( uddiServiceControl.isMonitoringEnabled() );
-            monitoringDisableServicecheckBox.setSelected( uddiServiceControl.isDisableServiceOnChange() );
-        } else {
-            monitoringEnabledCheckBox.setSelected( false );
-            monitoringDisableServicecheckBox.setSelected( false );
         }
         
         // Metrics settings
@@ -359,11 +347,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
             //configure enable / disable for publish tab
             enableDisablePublishTabComponents();
 
-            // monitoring
-            boolean enableMonitoring = uddiServiceControl != null && uddiServiceControl.isUnderUddiControl();
-            monitoringEnabledCheckBox.setEnabled( enableMonitoring );
-            monitoringDisableServicecheckBox.setEnabled( enableMonitoring && monitoringEnabledCheckBox.isSelected() );
-
             //metrics tab
             boolean enableMetrics = metricsServiceComboBox.getModel().getSize() > 0;
             metricsEnabledCheckBox.setEnabled( enableMetrics );
@@ -375,10 +358,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
             enableDisablePublishEndpointControls(false);
             enableDisablePublishOverwriteControls(false);
             dontPublishRadioButton.setEnabled(false);
-
-            //monitor tab
-            monitoringEnabledCheckBox.setEnabled( false );
-            monitoringDisableServicecheckBox.setEnabled( false );
 
             //metrics tab
             metricsEnabledCheckBox.setEnabled( false );
@@ -479,13 +458,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
         }
 
         if ( uddiServiceControl != null ) {
-            if ( monitoringEnabledCheckBox.isSelected() ) {
-                uddiServiceControl.setMonitoringEnabled( true );
-                uddiServiceControl.setDisableServiceOnChange( monitoringDisableServicecheckBox.isSelected() );
-            } else {
-                uddiServiceControl.setMonitoringEnabled( false );
-                uddiServiceControl.setDisableServiceOnChange( false );
-            }
             uddiServiceControl.setMetricsEnabled( isMetricsEnabled() );
             try {
                 uddiRegistryAdmin.saveUDDIServiceControlOnly( uddiServiceControl );

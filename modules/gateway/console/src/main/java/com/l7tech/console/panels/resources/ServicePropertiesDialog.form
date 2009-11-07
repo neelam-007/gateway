@@ -448,7 +448,7 @@
                       </component>
                     </children>
                   </grid>
-                  <grid id="8cd26" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="8cd26" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -456,6 +456,15 @@
                     <properties/>
                     <border type="none" title="UDDI Settings"/>
                     <children>
+                      <component id="6231f" class="javax.swing.JCheckBox" binding="monitoringEnabledCheckBox">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <horizontalTextPosition value="2"/>
+                          <text value="Monitoring Enabled"/>
+                        </properties>
+                      </component>
                       <component id="5f552" class="javax.swing.JCheckBox" binding="wsdlUnderUDDIControlCheckBox">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
@@ -465,24 +474,37 @@
                           <text value="WSDL under UDDI control"/>
                         </properties>
                       </component>
-                      <hspacer id="40a9e">
-                        <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                      </hspacer>
                       <component id="500c3" class="javax.swing.JButton" binding="serviceUDDISettingsButton" default-binding="true">
                         <constraints>
-                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="Service UDDI Settings"/>
+                          <text value="Publish to UDDI"/>
                         </properties>
                       </component>
-                      <vspacer id="8c8f1">
+                      <vspacer id="bdeef">
                         <constraints>
-                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                         </constraints>
                       </vspacer>
+                      <component id="1af00" class="javax.swing.JCheckBox" binding="monitoringDisableServicecheckBox">
+                        <constraints>
+                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <horizontalTextPosition value="2"/>
+                          <text value="Disable service if WSDL has changed"/>
+                        </properties>
+                      </component>
+                      <component id="de470" class="javax.swing.JCheckBox" binding="monitoringUpdateWsdlCheckBox">
+                        <constraints>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <horizontalTextPosition value="2"/>
+                          <text value="Update WSDL"/>
+                        </properties>
+                      </component>
                     </children>
                   </grid>
                 </children>

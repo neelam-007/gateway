@@ -22,6 +22,7 @@ import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ExceptionUtils;
@@ -96,6 +97,9 @@ public class ServicePropertiesDialog extends JDialog {
     private JLabel businessServiceKeyLabel;
     private JLabel wsdlPortLabel;
     private JLabel uddiRegistryLabel;
+    private JCheckBox monitoringEnabledCheckBox;
+    private JCheckBox monitoringDisableServicecheckBox;
+    private JCheckBox monitoringUpdateWsdlCheckBox;
     private String ssgURL;
     private final boolean canUpdate;
     private UDDIServiceControl uddiServiceControl;
@@ -412,6 +416,16 @@ public class ServicePropertiesDialog extends JDialog {
             }
         });
 
+        RunOnChangeListener enableDisableChangeListener = new RunOnChangeListener( new Runnable(){
+            @Override
+            public void run() {
+                enableDisableControls();
+            }
+        } );
+
+        wsdlUnderUDDIControlCheckBox.addActionListener( enableDisableChangeListener );
+        monitoringEnabledCheckBox.addActionListener( enableDisableChangeListener );
+
         Utilities.setEscAction(this, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -434,11 +448,12 @@ public class ServicePropertiesDialog extends JDialog {
 
         updateURL();
 
+        modelToView();
+
         enableDisableControls();
+
         //apply permissions last
         applyPermissions();
-
-        modelToView();
     }
 
     private void enableDisableControls(){
@@ -450,11 +465,19 @@ public class ServicePropertiesDialog extends JDialog {
         selectButton.setEnabled(canUpdate);
 
         if(uddiServiceControl == null){
-            clearButton.setEnabled(false);
-            wsdlUnderUDDIControlCheckBox.setEnabled(false);
+            clearButton.setEnabled( false );
+            wsdlUnderUDDIControlCheckBox.setEnabled( false );
+            monitoringEnabledCheckBox.setEnabled( false );
+            monitoringUpdateWsdlCheckBox.setEnabled( false );
+            monitoringDisableServicecheckBox.setEnabled( false );
         }else{
             clearButton.setEnabled(canUpdate);
             wsdlUnderUDDIControlCheckBox.setEnabled(canUpdate);
+
+            boolean enableMonitoring = canUpdate && uddiServiceControl != null && wsdlUnderUDDIControlCheckBox.isSelected();
+            monitoringEnabledCheckBox.setEnabled( enableMonitoring );
+            monitoringUpdateWsdlCheckBox.setEnabled( enableMonitoring && monitoringEnabledCheckBox.isSelected() );
+            monitoringDisableServicecheckBox.setEnabled( enableMonitoring && monitoringEnabledCheckBox.isSelected() );
         }
     }
 
@@ -482,13 +505,23 @@ public class ServicePropertiesDialog extends JDialog {
             bsKeyTextField.setText(uddiServiceControl.getUddiBusinessKey());
             wsdlPortTextField.setText(uddiServiceControl.getWsdlPortName());
             wsdlUnderUDDIControlCheckBox.setSelected(uddiServiceControl.isUnderUddiControl());
+            monitoringEnabledCheckBox.setSelected( uddiServiceControl.isMonitoringEnabled() );
+            monitoringUpdateWsdlCheckBox.setSelected( uddiServiceControl.isUpdateWsdlOnChange() );
+            monitoringDisableServicecheckBox.setSelected( uddiServiceControl.isDisableServiceOnChange() );
+
+            bsNameTextField.setCaretPosition( 0 );
+            bsKeyTextField.setCaretPosition( 0 );
+            wsdlPortTextField.setCaretPosition( 0 );
         }else{
             //make sure all text fields are cleared
             uddiRegistryTextField.setText("");
             bsNameTextField.setText("");
             bsKeyTextField.setText("");
             wsdlPortTextField.setText("");
-            wsdlUnderUDDIControlCheckBox.setSelected(false);
+            wsdlUnderUDDIControlCheckBox.setSelected( false );
+            monitoringEnabledCheckBox.setSelected( false );
+            monitoringUpdateWsdlCheckBox.setSelected( false );
+            monitoringDisableServicecheckBox.setSelected( false );
         }
     }
 
@@ -692,8 +725,24 @@ public class ServicePropertiesDialog extends JDialog {
 
             //uddi settings
             if(uddiServiceControl != null){
-                if(wsdlUnderUDDIControlCheckBox.isSelected() != uddiServiceControl.isUnderUddiControl()){
-                    uddiServiceControl.setUnderUddiControl(wsdlUnderUDDIControlCheckBox.isSelected());
+                boolean enableMonitoring = false;
+                boolean updateWsdlOnChange = false;
+                boolean disableServiceOnChange = false;
+                if ( wsdlUnderUDDIControlCheckBox.isSelected() &&
+                     monitoringEnabledCheckBox.isSelected() ) {
+                    enableMonitoring = true;
+                    updateWsdlOnChange = monitoringUpdateWsdlCheckBox.isSelected();
+                    disableServiceOnChange = monitoringDisableServicecheckBox.isSelected();
+                }
+
+                if( wsdlUnderUDDIControlCheckBox.isSelected() != uddiServiceControl.isUnderUddiControl() ||
+                    enableMonitoring != uddiServiceControl.isMonitoringEnabled() ||
+                    disableServiceOnChange != uddiServiceControl.isDisableServiceOnChange() ){
+                    uddiServiceControl.setUnderUddiControl( wsdlUnderUDDIControlCheckBox.isSelected() );
+                    uddiServiceControl.setMonitoringEnabled( enableMonitoring );
+                    uddiServiceControl.setUpdateWsdlOnChange( updateWsdlOnChange );
+                    uddiServiceControl.setDisableServiceOnChange( disableServiceOnChange );
+
                     Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
                 }
             }

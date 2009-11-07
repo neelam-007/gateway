@@ -27,7 +27,7 @@ public class EditServiceUDDISettingsAction extends NodeAction{
 
     @Override
     public String getName() {
-        return "Service UDDI Settings";
+        return "Publish to UDDI";
     }
 
     @Override

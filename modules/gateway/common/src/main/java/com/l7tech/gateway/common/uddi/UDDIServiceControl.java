@@ -201,6 +201,15 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.monitoringEnabled = monitoringEnabled;
     }
 
+    @Column(name = "update_wsdl_on_change")
+    public boolean isUpdateWsdlOnChange() {
+        return updateWsdlOnChange;
+    }
+
+    public void setUpdateWsdlOnChange( final boolean updateWsdlOnChange ) {
+        this.updateWsdlOnChange = updateWsdlOnChange;
+    }
+
     @Column(name = "disable_service_on_change")
     public boolean isDisableServiceOnChange() {
         return disableServiceOnChange;
@@ -258,6 +267,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
     private String accessPointUrl;
     private boolean underUddiControl;
     private boolean monitoringEnabled;
+    private boolean updateWsdlOnChange;
     private boolean disableServiceOnChange;
     private boolean metricsEnabled;
     private String wsPolicyTModelKey;

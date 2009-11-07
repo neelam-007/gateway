@@ -360,6 +360,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
      */
     private void modelToView(){
         registryNameTextField.setText(uddiRegistry.getName());
+        registryNameTextField.setCaretPosition( 0 );
         enabledCheckBox.setSelected(uddiRegistry.isEnabled());
         String regType = uddiRegistry.getUddiRegistryType();
         if(regType != null){
@@ -373,10 +374,15 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         }
 
         baseUrlTextField.setText(uddiRegistry.getBaseUrl());
+        baseUrlTextField.setCaretPosition( 0 );
         securityUrlTextField.setText(uddiRegistry.getSecurityUrl());
+        securityUrlTextField.setCaretPosition( 0 );
         inquiryUrlTextField.setText(uddiRegistry.getInquiryUrl());
+        inquiryUrlTextField.setCaretPosition( 0 );
         publishUrlTextField.setText(uddiRegistry.getPublishUrl());
+        publishUrlTextField.setCaretPosition( 0 );
         subscriptionUrlTextField.setText(uddiRegistry.getSubscriptionUrl()==null ? "" : uddiRegistry.getSubscriptionUrl());
+        subscriptionUrlTextField.setCaretPosition( 0 );
         clientAuthenticationCheckBox.setSelected(uddiRegistry.isClientAuth());
         PrivateKeysComboBox privateKeyDropDown = (PrivateKeysComboBox) privateKeyComboBox;
         final Long keyStoreOid = (uddiRegistry.getKeystoreOid() != null)? uddiRegistry.getKeystoreOid(): 0;
@@ -384,7 +390,9 @@ public class UddiRegistryPropertiesDialog extends JDialog {
 
         privateKeyDropDown.select(keyStoreOid, alias);
         userNameTextField.setText(uddiRegistry.getRegistryAccountUserName()==null ? "" : uddiRegistry.getRegistryAccountUserName());
+        userNameTextField.setCaretPosition( 0 );
         passwordTextField.setText(uddiRegistry.getRegistryAccountPassword()==null ? "" : uddiRegistry.getRegistryAccountPassword());
+        passwordTextField.setCaretPosition( 0 );
         metricsEnabledCheckBox.setSelected(uddiRegistry.isMetricsEnabled());
         if ( uddiRegistry.isMetricsEnabled() ) {
             metricsPublishFrequencyTextField.setText(Long.toString(uddiRegistry.getMetricPublishFrequency()/TimeUnit.MINUTES.getMultiplier()));
