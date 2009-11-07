@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class HttpRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<HttpRoutingAssertion> {
 
@@ -26,18 +27,34 @@ public class HttpRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<Htt
      */
     @Override
     public Action[] getActions() {
-        EditKeyAliasForAssertion privateKeyAction = new EditKeyAliasForAssertion(this);
-        if (!isUsingPrivateKey()) {
-            privateKeyAction.setEnabled(false);
-            privateKeyAction.putValue(Action.SHORT_DESCRIPTION, "Disabled because the URL is not HTTPS");
+        List<Action> list = new ArrayList<Action>(Arrays.asList(super.getActions()));
+
+        // Check if the super action list has already contained an EditXmlSecurityRecipientContextAction or an EditKeyAliasForAssertion.
+        // If the list contains an EditKeyAliasForAssertion, then update its status such as enabled/disabled and value.
+        boolean foundEditXmlSecurityRecipientContextAction = false;
+        boolean foundEditKeyAliasForAssertion = false;
+        for (Action action: list) {
+            if (action instanceof EditXmlSecurityRecipientContextAction) {
+                foundEditXmlSecurityRecipientContextAction = true;
+            } else if (action instanceof EditKeyAliasForAssertion) {
+                foundEditKeyAliasForAssertion = true;
+                if (!isUsingPrivateKey()) {
+                    action.setEnabled(false);
+                    action.putValue(Action.SHORT_DESCRIPTION, "Disabled because the URL is not HTTPS");
+                }
+            }
+        }
+        // If not found EditXmlSecurityRecipientContextAction, create a new one and add into the list at the first position.
+        if (! foundEditXmlSecurityRecipientContextAction) {
+            if (getUserObject() instanceof SecurityHeaderAddressable) {
+                list.add(0, new EditXmlSecurityRecipientContextAction(this));
+            }
+        }
+        // If not found EditKeyAliasForAssertion, create a new one and add into the list at the second position.
+        if (! foundEditKeyAliasForAssertion) {
+            list.add(1, new EditKeyAliasForAssertion(this));
         }
 
-        java.util.List<Action> list = new ArrayList<Action>();
-        list.add(privateKeyAction);
-        if (getUserObject() instanceof SecurityHeaderAddressable) {
-            list.add(new EditXmlSecurityRecipientContextAction(this));
-        }
-        list.addAll(Arrays.asList(super.getActions()));
         return list.toArray(new Action[list.size()]);
     }
 

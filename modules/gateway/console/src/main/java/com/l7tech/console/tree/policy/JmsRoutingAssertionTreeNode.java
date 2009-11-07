@@ -62,11 +62,22 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        java.util.List list = new ArrayList();
-        if (getUserObject() instanceof SecurityHeaderAddressable) {
-            list.add(new EditXmlSecurityRecipientContextAction(this));
+        java.util.List<Action> list = new ArrayList<Action>(Arrays.asList(super.getActions()));
+
+        boolean found = false;
+        for (Action action: list) {
+            if (action instanceof EditXmlSecurityRecipientContextAction) {
+                found = true;
+                break;
+            }
         }
-        list.addAll(Arrays.asList(super.getActions()));
-        return (Action[])list.toArray(new Action[]{});
+        // If not found EditXmlSecurityRecipientContextAction, create a new one and add into the list at the first position.
+        if (! found) {
+            if (getUserObject() instanceof SecurityHeaderAddressable) {
+                list.add(0, new EditXmlSecurityRecipientContextAction(this));
+            }
+        }
+        
+        return list.toArray(new Action[]{});
     }
 }
