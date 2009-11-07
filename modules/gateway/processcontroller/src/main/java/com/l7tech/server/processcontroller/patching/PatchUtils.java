@@ -3,6 +3,7 @@ package com.l7tech.server.processcontroller.patching;
 import com.l7tech.util.*;
 import com.l7tech.common.io.JarSignerParams;
 import com.l7tech.common.io.JarUtils;
+import com.l7tech.server.processcontroller.patching.builder.PatchSpec;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +40,8 @@ public class PatchUtils {
         manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
 
         // jar
-        File patchFile = File.createTempFile("patch", PatchPackageManager.PATCH_EXTENSION);
+        String patchFileName = patchSpec.getOutputFilename();
+        File patchFile = patchFileName != null ? new File(patchFileName) : File.createTempFile("patch", PatchPackageManager.PATCH_EXTENSION);
         JarOutputStream jos = new JarOutputStream(new FileOutputStream(patchFile), manifest);
         String comment = patchSpec.getProperties().getProperty(PatchPackage.Property.ID.name() ) + " : " +
                          patchSpec.getProperties().getProperty(PatchPackage.Property.DESCRIPTION.name() );

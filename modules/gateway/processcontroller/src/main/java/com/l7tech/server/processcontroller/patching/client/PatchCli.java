@@ -56,7 +56,7 @@ public class PatchCli {
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
-            System.out.println(ExceptionUtils.getMessage(e));
+            System.out.println("Error: " + ExceptionUtils.getMessage(e) + "\n");
             System.exit(PATCH_API_ERROR);
         }
 
