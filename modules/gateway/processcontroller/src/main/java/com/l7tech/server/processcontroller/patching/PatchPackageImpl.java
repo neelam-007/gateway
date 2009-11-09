@@ -108,7 +108,7 @@ public class PatchPackageImpl implements PatchPackage {
             zis = jar.getInputStream(entry);
             IOUtils.copyStream(zis, new NullOutputStream());
         } catch (SecurityException e) {
-            throw new PatchException("Inalid patch: signature error while processing entry: " + entry.getName() + " : " + ExceptionUtils.getMessage(e), e);
+            throw new PatchException("Invalid patch: signature error while processing entry: " + entry.getName() + " : " + ExceptionUtils.getMessage(e), e);
         } finally {
             ResourceUtils.closeQuietly(zis);
         }
