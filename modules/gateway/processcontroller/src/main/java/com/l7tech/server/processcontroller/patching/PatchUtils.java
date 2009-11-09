@@ -35,7 +35,7 @@ public class PatchUtils {
         String mainClass = patchSpec.getMainClass();
         String mainClassFile = mainClass.replace('.', File.separatorChar) + ".class";
         if (! patchSpec.getEntries().containsKey(mainClassFile))
-            throw new IllegalArgumentException("Main-Class file not provieded in the patch specification.");
+            throw new IllegalArgumentException("Main-Class file not provided in the patch specification.");
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, PATCH_MANIFEST_VERSION);
         manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
 
