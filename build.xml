@@ -1401,7 +1401,7 @@
     <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="package.gateway.ifrequired, deployconfig">
         <!-- Remove any pack200 files if present, otherwise these can be out of date and cause problems running the SSM applet -->
         <delete>
-            <fileset dir="${build.dir}/managerapplet/lib" includes="*.pack.gz"/>
+            <fileset dir="${build.dir}/managerapplet/" includes="**/*.pack.gz"/>
         </delete>
 
         <!-- Deploy application -->
@@ -3420,6 +3420,41 @@
         <wsimport wsdl="uddi_v3_service_p.wsdl"/>
         <wsimport wsdl="uddi_v3_service_s.wsdl"/>
         <wsimport wsdl="uddi_v3_service_sub.wsdl"/>
+
+		<!-- 
+			WARNING: In the JAX-WS RI 2.1.6 in JDK 6 generated source classes
+            there is an invalid static initializer such as:
+
+			static {
+				URL url = null;
+				try {
+				    URL baseUrl;
+				    baseUrl = com.l7tech.common.uddi.guddiv3.UDDIInquiry.class.getResource(".");
+				    url = new URL(baseUrl, "resources/uddi_v3_service_i.wsdl");
+				} catch (MalformedURLException e) {
+				    logger.warning("Failed to create URL for the wsdl Location: 'resources/uddi_v3_service_i.wsdl', retrying as a local file");
+				    logger.warning(e.getMessage());
+				}
+				UDDIINQUIRY_WSDL_LOCATION = url;
+			}
+
+            this must be manually edited to be:
+
+			static {
+				UDDIINQUIRY_WSDL_LOCATION = com.l7tech.common.uddi.guddiv3.UDDIInquiry.class.getResource("resources/uddi_v3_service_i.wsdl");
+			}
+
+            to avoid logging of WARNINGS such as:
+
+              WARNING com.l7tech.common.uddi.guddiv3.UDDISecurity: Failed to create URL for the wsdl Location: 'resources/uddi_v3_service_s.wsdl', retrying as a local file
+              WARNING com.l7tech.common.uddi.guddiv3.UDDISecurity: no protocol: resources/uddi_v3_service_s.wsdl
+
+			Files are:
+            - UDDIInquiry.java 
+            - UDDIPublication.java
+            - UDDISecurity.java 
+            - UDDISubscription.java            
+        -->
 
         <echo level="info">Compiling for 1.6</echo>
         <delete dir="build/uddiclasses"/>
