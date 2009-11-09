@@ -185,7 +185,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             }
         });
 
-        // Name field must not be empty and must not be longer than 128 characters
+        // Name field must not be empty and must not be longer than 32 characters
         ((AbstractDocument)nameField.getDocument()).setDocumentFilter(new DocumentSizeFilter(32));
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, new InputValidator.ComponentValidationRule(nameField) {
             public String getValidationError() {
