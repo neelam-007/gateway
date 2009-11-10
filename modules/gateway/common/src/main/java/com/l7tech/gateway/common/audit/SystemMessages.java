@@ -123,6 +123,7 @@ public class SystemMessages extends Messages {
     public static final M UDDI_PUBLISH_REMOVE_ENDPOINT_FAILED   = m(2281, Level.WARNING, "Error removing endpoint ''{0}''.");
     public static final M UDDI_PUBLISH_SERVICE_FAILED           = m(2282, Level.WARNING, "Error publishing service ''{0}''.");
     public static final M UDDI_PUBLISH_SERVICE_ROLLBACK_FAILED  = m(2283, Level.WARNING, "Error rolling back publishing service ''{0}''.");
+    public static final M UDDI_REMOVE_SERVICE_FAILED            = m(2284, Level.WARNING, "Could not delete proxied BusinessService ''{0}''.");
 
     // MAX -                                      m(2999
 }

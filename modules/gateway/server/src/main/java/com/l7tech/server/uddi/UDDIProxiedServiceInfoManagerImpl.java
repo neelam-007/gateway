@@ -52,69 +52,6 @@ implements UDDIProxiedServiceInfoManager{
         return findMatching( Collections.singletonList( matchMap ) );
     }
 
-    @Override
-    public void updateUDDIProxiedService(final UDDIProxiedServiceInfo uddiProxiedServiceInfo,
-                                         final Wsdl wsdl,
-                                         final UDDIClientConfig uddiClientConfig)
-            throws UpdateException, VersionException, UDDIException, FindException, WsdlToUDDIModelConverter.MissingWsdlReferenceException {
-
-        if(uddiProxiedServiceInfo == null) throw new NullPointerException("uddiProxiedServiceInfo cannot be null");
-        if(uddiClientConfig == null) throw new NullPointerException("uddiClientConfig cannot be null");
-        if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
-
-        final String protectedServiceExternalURL = uddiHelper.getExternalUrlForService(uddiProxiedServiceInfo.getPublishedServiceOid());
-        //protected service gateway external wsdl url
-        final String protectedServiceWsdlURL = uddiHelper.getExternalWsdlUrlForService(uddiProxiedServiceInfo.getPublishedServiceOid());
-
-        //Get existing services
-        Set<UDDIProxiedService> allProxiedServices = uddiProxiedServiceInfo.getProxiedServices();
-        Set<String> serviceKeys = new HashSet<String>();
-        for(UDDIProxiedService ps: allProxiedServices){
-            serviceKeys.add(ps.getUddiServiceKey());
-        }
-
-        BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(wsdl, uddiProxiedServiceInfo.getPublishedServiceOid(), uddiClientConfig);
-
-        final Pair<Set<String>, Set<UDDIBusinessService>> deletedAndNewServices = businessServicePublisher.updateServicesToUDDIRegistry(
-                protectedServiceExternalURL, protectedServiceWsdlURL, uddiProxiedServiceInfo.getUddiBusinessKey(), serviceKeys);
-
-        //now manage db entities
-        Set<String> deleteSet = deletedAndNewServices.left;
-        //update all child entities
-        Set<UDDIProxiedService> removeSet = new HashSet<UDDIProxiedService>();
-        for(String deleteServiceKey: deleteSet){
-            for(UDDIProxiedService proxiedService: allProxiedServices){
-                if(proxiedService.getUddiServiceKey().equals(deleteServiceKey)){
-                    removeSet.add(proxiedService);
-                    logger.log(Level.INFO, "Deleting UDDIProxiedService for serviceKey: " + deleteServiceKey);
-                }
-            }
-        }
-
-        uddiProxiedServiceInfo.getProxiedServices().removeAll(removeSet);
-
-        //create required new UDDIProxiedServices
-        Set<UDDIBusinessService> newlyCreatedServices = deletedAndNewServices.right;
-        for(UDDIBusinessService bs: newlyCreatedServices){
-            final UDDIProxiedService proxiedService =
-                    new UDDIProxiedService(bs.getServiceKey(), bs.getServiceName(), bs.getWsdlServiceName());
-            proxiedService.setUddiProxiedServiceInfo(uddiProxiedServiceInfo);
-            uddiProxiedServiceInfo.getProxiedServices().add(proxiedService);
-        }
-
-        try {
-            update(uddiProxiedServiceInfo);
-        } catch (UpdateException e) {
-            //rollback UDDI updates
-            //this is difficult as we may have just made any number of changes. The initial save case is easy
-            //as we delete everything.
-            //todo audit
-            logger.log(Level.WARNING, "Could not update UDDiProxiedServiceInfo. Gateway may be out of sync with UDDI: "
-                    + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            throw e;
-        }
-    }
-
     //- PROTECTED
 
     @Override

@@ -55,7 +55,8 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
                                   final String uddiBusinessKey,
                                   final String uddiBusinessName,
                                   final boolean updateProxyOnLocalChange,
-                                  final PublishType publishType) {
+                                  final PublishType publishType,
+                                  final String wsdlHash) {
         super();
         this.publishedServiceOid = publishedServiceOid;
         this.uddiRegistryOid = uddiRegistryOid;
@@ -64,6 +65,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.updateProxyOnLocalChange = updateProxyOnLocalChange;
         this.publishType = publishType;
         this.uddiPublishStatus = new UDDIPublishStatus(this);
+        this.wsdlHash = wsdlHash;
     }
 
     /**
@@ -210,6 +212,15 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.proxyBindingKey = proxyBindingKey;
     }
 
+    @Column(name = "wsdl_hash")
+    public String getWsdlHash() {
+        return wsdlHash;
+    }
+
+    public void setWsdlHash(String wsdlHash) {
+        this.wsdlHash = wsdlHash;
+    }
+
     // PRIVATE
 
     /**
@@ -266,5 +277,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
      * then this is the bindingKey of the added bindingTemplate
      */
     private String proxyBindingKey;
+
+    private String wsdlHash;
 }
 

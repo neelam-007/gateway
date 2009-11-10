@@ -1109,6 +1109,7 @@
                 <ref bean="uddiProxiedServiceInfoManager"/>
                 <ref bean="uddiPublishStatusManager" />
                 <ref bean="uddiServiceControlManager"/>
+                <ref bean="serviceManager" />
             </list>
         </property>
         <property name="timer">

@@ -114,7 +114,8 @@ CREATE TABLE uddi_proxied_service_info (
   created_from_existing tinyint(1) NOT NULL DEFAULT 0,
   metrics_enabled tinyint(1) NOT NULL DEFAULT 0,
   wspolicy_tmodel_key varchar(255),
-  publish_type varchar(32) NOT NULL,        
+  publish_type varchar(32) NOT NULL,
+  wsdl_hash varchar(32) NOT NULL,        
   PRIMARY KEY (objectid),
   UNIQUE KEY  (published_service_oid),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
@@ -148,6 +149,7 @@ CREATE TABLE uddi_publish_status (
   uddi_proxied_service_info_oid bigint(20) NOT NULL,
   publish_status varchar(32) NOT NULL,
   last_status_change BIGINT(20) NOT NULL,
+  fail_count integer NOT NULL DEFAULT 0,
   PRIMARY KEY (objectid),
   UNIQUE (uddi_proxied_service_info_oid),
   FOREIGN KEY (uddi_proxied_service_info_oid) REFERENCES uddi_proxied_service_info (objectid) ON DELETE CASCADE

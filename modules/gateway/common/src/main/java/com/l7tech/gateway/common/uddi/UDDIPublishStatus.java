@@ -17,20 +17,46 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 @Table(name="uddi_publish_status")
 public class UDDIPublishStatus extends PersistentEntityImp {
 
-    public enum PublishStatus{
+    public enum PublishStatus {
         /**
-         * The UDDI information is being published. This means it is either waiting or in the middle of it
+         * Not published.
          */
-        PUBLISHING,
+        NONE,
+
         /**
-         * The UDDI information has been published.
+         * Publishing (or update) is required.
+         */
+        PUBLISH,
+
+        /**
+         * The last attempt to publish failed.
+         */
+        PUBLISH_FAILED,
+
+        /**
+         * Status when we cannot publish to UDDI
+         */
+        CANNOT_PUBLISH,
+
+        /**
+         * Published
          */
         PUBLISHED,
+
         /**
-         * The UDDI information is being deleted. The only state afer this is nothing. If the UDDI data is not in
-         * one of these states, it does not exist. i.e. there is no 'NONE' state
+         * Deletion is required
          */
-        DELETING
+        DELETE,
+
+        /**
+         * Delete from UDDI failed. Like PUBLISH_FAILED, the delete can be reattempted
+         */
+        DELETE_FAILED,
+
+        /**
+         * Like CANNOT_PUBLISH, all delete attemps have been tried. This is a final state.
+         */
+        CANNOT_DELETE
     }
 
     public UDDIPublishStatus() {
@@ -38,8 +64,7 @@ public class UDDIPublishStatus extends PersistentEntityImp {
 
     public UDDIPublishStatus(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) {
         this.uddiProxiedServiceInfo = uddiProxiedServiceInfo;
-        this.publishStatus = PublishStatus.PUBLISHING;
-        this.lastStatusChange = System.currentTimeMillis();
+        this.publishStatus = PublishStatus.NONE;
     }
 
     @Override
@@ -78,7 +103,23 @@ public class UDDIPublishStatus extends PersistentEntityImp {
         this.lastStatusChange = lastStatusChange;
     }
 
+    /**
+     * When the status is PUBLISH_FAILED we will track how many attempts have been made
+     * When we reach the maximum amount of attempts, we will stop trying and change the status to CANNOT_PUBLISH
+     *
+     * @return int the number of times the publish attempt has failed since the attempt to publish started
+     */
+    @Column(name = "fail_count")
+    public int getFailCount() {
+        return failCount;
+    }
+
+    public void setFailCount(int failCount) {
+        this.failCount = failCount;
+    }
+
     private UDDIProxiedServiceInfo uddiProxiedServiceInfo;
     private PublishStatus publishStatus;
     private long lastStatusChange;
+    private int failCount;
 }

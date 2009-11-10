@@ -23,6 +23,7 @@ public abstract class UDDITaskFactory {
         void logAndAudit( AuditDetailMessage msg, Throwable e, String... params );
         void logAndAudit( AuditDetailMessage msg, String... params );
         void logAndAudit( AuditDetailMessage msg );
+        int getMaxRetryAttempts();
     }
 
     public static abstract class UDDITask {
@@ -31,8 +32,17 @@ public abstract class UDDITaskFactory {
          * Run the task.
          *
          * @param context The context for the task
-         * @throws UDDIException If an error occurs.
          */
-        public abstract void apply( UDDITaskContext context ) throws UDDIException;
+        public abstract void apply( UDDITaskContext context ) throws UDDITaskException;
+    }
+
+    public static class UDDITaskException extends Exception{
+        public UDDITaskException(String message) {
+            super(message);
+        }
+
+        public UDDITaskException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

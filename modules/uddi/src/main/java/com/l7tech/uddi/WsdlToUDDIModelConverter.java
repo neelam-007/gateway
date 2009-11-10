@@ -265,7 +265,7 @@ public class WsdlToUDDIModelConverter {
         final String key = bindingName + BINDING_TMODEL_IDENTIFIER;
         //no need to create the tModel if it already exists
 
-        for(String modelKey: serviceToTModels.keySet()){
+        for(String modelKey: serviceToTModels.keySet()){//TODO [Donal] this is not required - ActiveSOA always creats a tModel when it needs one, it does not reuse them
             if(modelKey.equals(key)) continue;
         }
 
@@ -357,7 +357,7 @@ public class WsdlToUDDIModelConverter {
 //        if(keysToPublishedTModels.containsKey(key)) return key;
         
         for(String modelKey: serviceToTModels.keySet()){
-            if(modelKey.equals(key)) continue;
+            if(modelKey.equals(key)) continue;//TODO [Donal] this is not required - ActiveSOA always creats a tModel when it needs one, it does not reuse them
         }
 
         TModel tModel = new TModel();

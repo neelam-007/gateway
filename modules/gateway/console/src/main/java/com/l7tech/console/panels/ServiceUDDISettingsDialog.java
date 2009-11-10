@@ -232,13 +232,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     businessEntityNameLabel.setText(uddiProxyServiceInfo.getUddiBusinessName());
                     updateWhenGatewayWSDLCheckBox.setSelected(uddiProxyServiceInfo.isUpdateProxyOnLocalChange());
                     publishProxiedWsdlRadioButton.setSelected(true);
-                    publishStatus = uddiProxyServiceInfo.getUddiPublishStatus().getPublishStatus();
-                    setLabelStatus(publishProxystatusLabel, publishStatus);
+                    setLabelStatus(publishProxystatusLabel, uddiProxyServiceInfo.getUddiPublishStatus());
                     break;
                 case ENDPOINT:
                     publishGatewayEndpointAsRadioButton.setSelected(true);
-                    publishStatus = uddiProxyServiceInfo.getUddiPublishStatus().getPublishStatus();
-                    setLabelStatus(bindingTemplateStatusLabel, publishStatus);
+                    setLabelStatus(bindingTemplateStatusLabel, uddiProxyServiceInfo.getUddiPublishStatus());
                     break;
                 case OVERWRITE:
                     break;
@@ -270,14 +268,29 @@ public class ServiceUDDISettingsDialog extends JDialog {
         }
     }
 
-    private void setLabelStatus(JLabel label, UDDIPublishStatus.PublishStatus publishStatus) {
+    private void setLabelStatus(JLabel label, UDDIPublishStatus publishStatus) {
         final String status;
-        switch (publishStatus) {
-            case PUBLISHING:
+        switch (publishStatus.getPublishStatus()) {
+            case PUBLISHED:
+                status = "Status: Published";
+                break;
+            case PUBLISH:
                 status = "Status: Publishing";
                 break;
-            case DELETING:
+            case PUBLISH_FAILED:
+                status = "Status: Publish failed "+ publishStatus.getFailCount() +" times. Set to retry";
+                break;
+            case CANNOT_PUBLISH:
+                status = "Status: Cannot publish. Tried "+ publishStatus.getFailCount() +" times. Please select 'Dont Publish' to retry";
+                break;
+            case DELETE:
                 status = "Status: Deleting";
+                break;
+            case DELETE_FAILED:
+                status = "Status: Delete failed "+ publishStatus.getFailCount() +" times. Set to retry";
+                break;
+            case CANNOT_DELETE:
+                status = "Status: Cannot delete. Tried "+ publishStatus.getFailCount() +" times. Please select 'Dont Publish' to retry";
                 break;
             default:
                 status = "";
@@ -436,7 +449,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     showErrorMessage("Cannot Update UDDI", "UDDI Registry is not currently enabled", null, false);
                     return false;
                 }
-                if(publishStatus != UDDIPublishStatus.PublishStatus.PUBLISHED){
+                if(publishStatus == UDDIPublishStatus.PublishStatus.PUBLISH){
                     showErrorMessage("Cannot Update UDDI", "UDDI is being updated. Please close dialog and try again in a few minutes", null, false);
                     return false;
                 }
@@ -507,15 +520,10 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         if (option == JOptionPane.YES_OPTION){
                             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             try {
-                                final String errorMsg = uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
-                                if(errorMsg == null){
-                                    DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                            "Removal of Gateway WSDL from UDDI successful", "Successful Deletion", JOptionPane.INFORMATION_MESSAGE, null);
-                                }else{
-                                    DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                            "Problem removing Gateway WSDL from UDDI: " + errorMsg+"\nManual updates to UDDI may be required",
-                                            "Problem updating UDDI", JOptionPane.WARNING_MESSAGE , null);
-                                }
+                                uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
+                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
+                                        "Task to removal Gateway WSDL from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+
                             } catch (Exception ex) {
                                 logger.log(Level.WARNING, "Problem deleting pubished Gateway WSDL from UDDI: " + ex.getMessage());
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, "Problem deleting Gateway WSDL from UDDI Registry: " + ex.getMessage()

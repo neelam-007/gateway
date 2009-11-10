@@ -109,6 +109,9 @@ public interface UDDIRegistryAdmin {
     /**
      * Updated the UDDI with changes to a Published Service's WSDL
      *
+     * This only exists so that the UI can trigger an update to UDDI when the 'Update when gateway wsdl changes'
+     * check box is checked
+     * 
      * @param uddiProxiedServiceInfoOid long oid of the UDDIProxiedServiceInfo
      *
      * @throws FindException
@@ -131,12 +134,12 @@ public interface UDDIRegistryAdmin {
      * @param uddiProxiedServiceInfo UDDIProxiedServiceInfo and associated data in UDDI to delete
      * @return String error message if there were any problems deleting from UDDI. null if no errors
      * @throws FindException if there is a problem reading from the database or if the UDDIProxiedService is not found
-     * @throws DeleteException any problems deleting from the database
+     * @throws UpdateException any problems updating the database
      * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.UDDIRegistryNotEnabledException if the registry is not enabled
      */
     @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.DELETE_ENTITY)
-    String deleteGatewayWsdlFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
-            throws FindException, DeleteException, UDDIRegistryNotEnabledException;
+    void deleteGatewayWsdlFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
+            throws FindException, UDDIRegistryNotEnabledException, UpdateException, DeleteException;
 
     /**
      * Delete the bindingTemplate which was previously published to an existing BusinessService in UDDI

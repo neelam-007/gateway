@@ -24,6 +24,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.wsdl.Wsdl;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -96,7 +97,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
      * @param event The event
      * @throws UDDIException if an error occurs handling the event
      */
-    public void handleEvent( final UDDIEvent event ) throws UDDIException {
+    public void handleEvent( final UDDIEvent event ) throws UDDITaskFactory.UDDITaskException {
         for ( UDDITaskFactory taskFactory : taskFactories ) {
             UDDITaskFactory.UDDITask task = taskFactory.buildUDDITask( event );
             if ( task != null ) {
@@ -117,9 +118,11 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             if ( UDDIRegistry.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 loadUDDIRegistries(true);
             } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ||
-                    UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass())) {
+                    UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass()) ||
+                    PublishedService.class.equals(entityInvalidationEvent.getEntityClass())) {
                 final boolean uddiProxyInfoUpdate = UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass());
                 final boolean statusUpdate = UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass());
+                final boolean publishedServiceUpdate = PublishedService.class.equals(entityInvalidationEvent.getEntityClass());
                 
                 long[] entityIds = entityInvalidationEvent.getEntityIds();
                 char[] entityOps = entityInvalidationEvent.getEntityOperations();
@@ -127,11 +130,12 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                 for ( int i=0; i<entityIds.length; i++ ) {
                     long id = entityIds[i];
                     char op = entityOps[i];
-                    if ( uddiProxyInfoUpdate && EntityInvalidationEvent.CREATE == op ) {
+                    if ( uddiProxyInfoUpdate &&
+                            (EntityInvalidationEvent.CREATE == op || EntityInvalidationEvent.UPDATE == op)) {
                         try {
                             final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPrimaryKey(id);
                             if(uddiProxiedServiceInfo == null){
-                                logger.log(Level.WARNING, "No UDDIProxiedServiceInfo found with id #(" + id + ")");
+                                //this is an expected condition, we get more events than we need
                                 return;
                             }
                             notifyPublishEvent(uddiProxiedServiceInfo);
@@ -139,12 +143,11 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                             logger.log(Level.WARNING, "Could not find created UDDIProxiedServiceInfo with id #(" + id + ")");
                             return;
                         }
-                    }
-                    if( statusUpdate && EntityInvalidationEvent.UPDATE == op){
+                    }else if( statusUpdate && EntityInvalidationEvent.UPDATE == op){
                         try {
                             final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByPrimaryKey(id);
                             if(uddiPublishStatus == null){
-                                logger.log(Level.WARNING, "No UDDIPublishStatus found with id #(" + id + ")");
+                                //this is an expected condition, we get more events than we need
                                 return;
                             }
 
@@ -155,9 +158,31 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                             logger.log(Level.WARNING, "Could not find created UDDIPublishStatus with id #(" + id + ")");
                             return;
                         }
+                    }else if(publishedServiceUpdate && EntityInvalidationEvent.UPDATE == op){
+                        final PublishedService service = serviceCache.getCachedService(id);
+                        if(service == null) return;
+                        final UDDIProxiedServiceInfo uddiProxiedServiceInfo;
+                        try {
+                            uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(service.getOid());
+                            if(uddiProxiedServiceInfo == null) return;
+                        } catch (FindException e) {
+                            logger.log(Level.WARNING, "Problem looking up UDDIProxiedServiceInfo with service id #(" + service.getOid()+") ");
+                            return;
+                        }
+
+                        if(!uddiProxiedServiceInfo.isUpdateProxyOnLocalChange()) return;
+
+                        if(uddiProxiedServiceInfo.getUddiPublishStatus().getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH ||
+                                uddiProxiedServiceInfo.getUddiPublishStatus().getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED){
+                            return;
+                        }
+                        timer.schedule( new PublishedServiceWsdlUpdatedTimerTask(this, service.getOid()), 0 );
+                        return;
+                    }else if(publishedServiceUpdate && EntityInvalidationEvent.DELETE == op){
+                        //TODO [Donal] need to be able to clean up UDDI with entity missing - with just it's id
+                        //perhaps turn off cascade delete
                     }
                 }
-
                 //todo [Donal] revist once refactoring for publish status is done
 //                timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
             } else if ( UDDIServiceControl.class.equals(entityInvalidationEvent.getEntityClass())) {
@@ -325,6 +350,42 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     }
 
     /**
+     * Consumer of the Queue proxiedPublishedServices which queues all service oids which are potential candidates
+     * requiring update of UDDI. This method will check their hash of their WSDL to see if an update is actually necessary 
+     *
+     * @throws ObjectModelException
+     */
+    private void checkPublishedServiceWithUpdatedWsdls(final long serviceOid) throws ObjectModelException{
+        final PublishedService service = serviceCache.getCachedService(serviceOid);
+        if(service == null) return;
+
+        final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(service.getOid());
+        if(uddiProxiedServiceInfo == null) return;
+
+        final String updatedWsdlHash;
+        try {
+            final Wsdl wsdl = service.parsedWsdl();
+            updatedWsdlHash = wsdl.getHash();
+        } catch (Exception e) {//WsdlException or IOException
+            logger.log(Level.WARNING, "Could not parse the WSDL for published service with id#(" + service.getOid()+")", ExceptionUtils.getDebugException(e));
+            uddiProxiedServiceInfo.getUddiPublishStatus().setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
+            uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
+            return;
+        }
+
+        final String oldHash = uddiProxiedServiceInfo.getWsdlHash();
+        if( oldHash == null || oldHash.trim().isEmpty() || !oldHash.equals(updatedWsdlHash)){
+            uddiProxiedServiceInfo.setWsdlHash(updatedWsdlHash);
+            uddiProxiedServiceInfo.getUddiPublishStatus().setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
+            try {
+                uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
+            } catch (UpdateException e) {
+                logger.log(Level.WARNING, "Could not update UDDIProxiedServiceInfo. Cannot trigger UDDI required WSDL update", ExceptionUtils.getDebugException(e));
+            }
+        }
+    }
+
+    /**
      * Ensures that the buiness service status reflects the current configuration.
      */
     private void checkBusinessServiceStatus() throws ObjectModelException {
@@ -471,11 +532,10 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     }
 
     private void notifyPublishEvent(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) {
+        //do not log event creation, as more than one event may be created per user interaction, duplicates are ignored later
         final UDDIProxiedServiceInfo.PublishType publishType = uddiProxiedServiceInfo.getPublishType();
         final UDDIEvent uddiEvent = new PublishUDDIEvent(publishType, uddiProxiedServiceInfo);
-
         notifyEvent(uddiEvent);
-        logger.log(Level.INFO, "Created event to publish service WSDL to UDDI");
     }
 
     private static final class UDDIRegistryRuntime {
@@ -589,7 +649,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                                 protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
                                     try {
                                         coordinator.handleEvent( event );
-                                    } catch (UDDIException e) {
+                                    } catch (UDDITaskFactory.UDDITaskException e) {
                                         logger.log( Level.WARNING, "Error processing UDDI event", e );
                                         transactionStatus.setRollbackOnly();
                                     }
@@ -633,6 +693,34 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             }
         }
     }
+
+    private static final class PublishedServiceWsdlUpdatedTimerTask extends ManagedTimerTask {
+        private final UDDICoordinator coordinator;
+        private final long serviceOid;
+
+        PublishedServiceWsdlUpdatedTimerTask( final UDDICoordinator coordinator, final long serviceOid) {
+            this.coordinator = coordinator;
+            this.serviceOid = serviceOid;
+        }
+
+        @Override
+        public void doRun() {
+            if ( coordinator.clusterMaster.isMaster() ) {
+                new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                    @Override
+                    protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
+                        try {
+                            coordinator.checkPublishedServiceWithUpdatedWsdls(serviceOid);
+                        } catch (ObjectModelException ome) {
+                            logger.log( Level.WARNING, "Error updating proxied business service status.", ome );
+                            transactionStatus.setRollbackOnly();
+                        }
+                    }
+                } );
+            }
+        }
+    }
+
 
     private static final class UDDICoordinatorTaskContext implements UDDITaskFactory.UDDITaskContext {
         private final UDDICoordinator coordinator;
@@ -687,6 +775,11 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             if ( auditor != null ) {
                 auditor.logAndAudit( msg );
             }
+        }
+
+        @Override
+        public int getMaxRetryAttempts() {
+            return 3;//TODO [Donal] replace with cluster property
         }
     }
 }
