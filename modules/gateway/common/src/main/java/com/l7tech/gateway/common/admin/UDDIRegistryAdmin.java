@@ -16,6 +16,7 @@ import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
 import com.l7tech.objectmodel.*;
 import com.l7tech.uddi.UDDIException;
 
@@ -171,6 +172,20 @@ public interface UDDIRegistryAdmin {
     @Transactional(readOnly=true)
     @Secured(types={EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype= MethodStereotype.FIND_ENTITY)
     UDDIProxiedServiceInfo getUDDIProxiedServiceInfo(long serviceOid) throws FindException;
+
+    /**
+     * Get the UDDIPublishStatus for the UDDIProxiedServiceInfo. Allows the UI to display
+     * the most current state of the UDDI publish / delete interaction to the user.
+     *
+     * This entity cannot be saved back by the user. There are no admin methods to do this and should not be
+     *
+     * @param uddiProxiedServiceInfo long oid of the UDDIProxiedServiceInfo to get publish status information for
+     * @return UDDIPublishStatus representing the publish status
+     * @throws FindException any problems searching the database
+     */
+    @Transactional(readOnly=true)
+    @Secured(types={EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype= MethodStereotype.FIND_ENTITY)
+    UDDIPublishStatus getPublishStatusForProxy(long uddiProxiedServiceInfo) throws FindException;
 
     /**
      * Find all UDDIProxiedServices which have been published to a UDDIRegistry

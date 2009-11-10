@@ -138,12 +138,18 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                                 //this is an expected condition, we get more events than we need
                                 return;
                             }
-                            notifyPublishEvent(uddiProxiedServiceInfo);
+                            final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
+                            if(uddiPublishStatus == null){
+                                return;
+                            }
+
+                            notifyPublishEvent(uddiProxiedServiceInfo, uddiPublishStatus);
                         } catch (FindException e) {
                             logger.log(Level.WARNING, "Could not find created UDDIProxiedServiceInfo with id #(" + id + ")");
                             return;
                         }
-                    }else if( statusUpdate && EntityInvalidationEvent.UPDATE == op){
+                    }else if( statusUpdate &&
+                            (EntityInvalidationEvent.CREATE == op || EntityInvalidationEvent.UPDATE == op)){
                         try {
                             final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByPrimaryKey(id);
                             if(uddiPublishStatus == null){
@@ -151,8 +157,8 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                                 return;
                             }
 
-                            final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiPublishStatus.getUddiProxiedServiceInfo();
-                            notifyPublishEvent(uddiProxiedServiceInfo);
+                            final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPrimaryKey(uddiPublishStatus.getUddiProxiedServiceInfoOid());
+                            notifyPublishEvent(uddiProxiedServiceInfo, uddiPublishStatus);
 
                         } catch (FindException e) {
                             logger.log(Level.WARNING, "Could not find created UDDIPublishStatus with id #(" + id + ")");
@@ -162,9 +168,13 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                         final PublishedService service = serviceCache.getCachedService(id);
                         if(service == null) return;
                         final UDDIProxiedServiceInfo uddiProxiedServiceInfo;
+                        final UDDIPublishStatus uddiPublishStatus;
                         try {
                             uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(service.getOid());
                             if(uddiProxiedServiceInfo == null) return;
+
+                            uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
+                            if(uddiPublishStatus == null) return;
                         } catch (FindException e) {
                             logger.log(Level.WARNING, "Problem looking up UDDIProxiedServiceInfo with service id #(" + service.getOid()+") ");
                             return;
@@ -172,8 +182,8 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
                         if(!uddiProxiedServiceInfo.isUpdateProxyOnLocalChange()) return;
 
-                        if(uddiProxiedServiceInfo.getUddiPublishStatus().getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH ||
-                                uddiProxiedServiceInfo.getUddiPublishStatus().getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED){
+                        if(uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH ||
+                                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED){
                             return;
                         }
                         timer.schedule( new PublishedServiceWsdlUpdatedTimerTask(this, service.getOid()), 0 );
@@ -363,25 +373,30 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(service.getOid());
         if(uddiProxiedServiceInfo == null) return;
 
+        final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
+        if(uddiPublishStatus == null) return;
+        
         final String updatedWsdlHash;
         try {
             final Wsdl wsdl = service.parsedWsdl();
             updatedWsdlHash = wsdl.getHash();
         } catch (Exception e) {//WsdlException or IOException
             logger.log(Level.WARNING, "Could not parse the WSDL for published service with id#(" + service.getOid()+")", ExceptionUtils.getDebugException(e));
-            uddiProxiedServiceInfo.getUddiPublishStatus().setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
-            uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
+            uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
+            uddiPublishStatusManager.update(uddiPublishStatus);
             return;
         }
 
         final String oldHash = uddiProxiedServiceInfo.getWsdlHash();
         if( oldHash == null || oldHash.trim().isEmpty() || !oldHash.equals(updatedWsdlHash)){
             uddiProxiedServiceInfo.setWsdlHash(updatedWsdlHash);
-            uddiProxiedServiceInfo.getUddiPublishStatus().setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
+            uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
             try {
+                uddiPublishStatusManager.update(uddiPublishStatus);
                 uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
             } catch (UpdateException e) {
                 logger.log(Level.WARNING, "Could not update UDDIProxiedServiceInfo. Cannot trigger UDDI required WSDL update", ExceptionUtils.getDebugException(e));
+                throw e;//cause db to rollback
             }
         }
     }
@@ -589,10 +604,10 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         return serviceStatus;
     }
 
-    private void notifyPublishEvent(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) {
+    private void notifyPublishEvent(final UDDIProxiedServiceInfo uddiProxiedServiceInfo,
+                                    final UDDIPublishStatus uddiPublishStatus) {
         //do not log event creation, as more than one event may be created per user interaction, duplicates are ignored later
-        final UDDIProxiedServiceInfo.PublishType publishType = uddiProxiedServiceInfo.getPublishType();
-        final UDDIEvent uddiEvent = new PublishUDDIEvent(publishType, uddiProxiedServiceInfo);
+        final UDDIEvent uddiEvent = new PublishUDDIEvent(uddiProxiedServiceInfo, uddiPublishStatus);
         notifyEvent(uddiEvent);
     }
 

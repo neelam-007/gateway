@@ -1617,6 +1617,7 @@
                     <constructor-arg index="2" ref="serviceCache" />
                     <constructor-arg index="3" ref="uddiHelper" />
                     <constructor-arg index="4" ref="uddiServiceControlManager"/>
+                    <constructor-arg index="5" ref="uddiPublishStatusManager"/>
                 </bean>
                 <bean class="com.l7tech.server.uddi.WsPolicyAttachmentTaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>
@@ -1645,9 +1646,7 @@
         <constructor-arg ref="uddiProxiedServiceInfoManager"/>
     </bean>
 
-    <bean id="uddiProxiedServiceInfoManager" class="com.l7tech.server.uddi.UDDIProxiedServiceInfoManagerImpl" parent="hibernateBean" >
-        <constructor-arg index="0" ref="uddiHelper"/>
-    </bean>
+    <bean id="uddiProxiedServiceInfoManager" class="com.l7tech.server.uddi.UDDIProxiedServiceInfoManagerImpl" parent="hibernateBean" />
 
     <bean id="uddiPublishStatusManager" class="com.l7tech.server.uddi.UDDIPublishStatusManagerImpl" parent="hibernateBean" />
 

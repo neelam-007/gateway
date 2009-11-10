@@ -64,7 +64,6 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.uddiBusinessName = uddiBusinessName;
         this.updateProxyOnLocalChange = updateProxyOnLocalChange;
         this.publishType = publishType;
-        this.uddiPublishStatus = new UDDIPublishStatus(this);
         this.wsdlHash = wsdlHash;
     }
 
@@ -183,17 +182,6 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.publishType = publishType;
     }
 
-    @OneToOne(cascade= CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="uddiProxiedServiceInfo")
-    @Cascade({org.hibernate.annotations.CascadeType.DELETE_ORPHAN, org.hibernate.annotations.CascadeType.ALL})
-    @OnDelete(action= OnDeleteAction.CASCADE)
-    public UDDIPublishStatus getUddiPublishStatus() {
-        return uddiPublishStatus;
-    }
-
-    public void setUddiPublishStatus(UDDIPublishStatus uddiPublishStatus) {
-        this.uddiPublishStatus = uddiPublishStatus;
-    }
-
     @Column(name = "proxy_binding_template_key")
     public String getProxyBindingKey() {
         return proxyBindingKey;
@@ -282,8 +270,6 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     private Set<UDDIProxiedService> proxiedServices = new HashSet<UDDIProxiedService>();
 
     private PublishType publishType;
-
-    private UDDIPublishStatus uddiPublishStatus;
 
     /**
      * If this entity represents the fact that an endpoint was added to a service,

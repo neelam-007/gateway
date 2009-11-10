@@ -11,18 +11,6 @@ import java.util.Collection;
 public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxiedServiceInfo, EntityHeader> {
 
     /**
-     * Save a UDDIProxiedService. This manages the publish of information to a UDDI Registry
-     * <p/>
-     * See http://sarek.l7tech.com/mediawiki/index.php?title=CentraSite_ActiveSOA_Design#Strategy_for_publishing_and_updating_BusinessServices_to_UDDI
-     * for implementation strategy
-     *
-     * @param uddiProxiedServiceInfo      the UDDIProxiedService to save
-     * @throws com.l7tech.objectmodel.SaveException
-     */
-    void saveUDDIProxiedServiceInfo( UDDIProxiedServiceInfo uddiProxiedServiceInfo )
-            throws SaveException;
-
-    /**
      * Find a UDDIProxiedService by published service identifier (OID)
      *
      * @param publishedServiceOid The identifier for the service

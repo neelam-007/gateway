@@ -10,6 +10,9 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  *
  * Runtime information for a UDDIProxiedServiceInfo regarding its status
+ *
+ * This entiy can be made available via the admin api's but cannot be allowed to be saved by a user action. It is
+ * read only outside of the gateway.
  * @author darmstrong
  */
 @Entity
@@ -60,11 +63,12 @@ public class UDDIPublishStatus extends PersistentEntityImp {
     }
 
     public UDDIPublishStatus() {
+        this.publishStatus = PublishStatus.NONE;        
     }
 
-    public UDDIPublishStatus(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) {
-        this.uddiProxiedServiceInfo = uddiProxiedServiceInfo;
-        this.publishStatus = PublishStatus.NONE;
+    public UDDIPublishStatus(long uddiProxiedServiceInfoOid, PublishStatus publishStatus) {
+        this.publishStatus = publishStatus;
+        this.uddiProxiedServiceInfoOid = uddiProxiedServiceInfoOid;
     }
 
     @Override
@@ -74,14 +78,13 @@ public class UDDIPublishStatus extends PersistentEntityImp {
         return super.getVersion();
     }
 
-    @ManyToOne(optional=false)
-    @JoinColumn(name="uddi_proxied_service_info_oid", nullable=false)
-    public UDDIProxiedServiceInfo getUddiProxiedServiceInfo() {
-        return uddiProxiedServiceInfo;
+    @Column(name="uddi_proxied_service_info_oid", nullable=false)
+    public long getUddiProxiedServiceInfoOid() {
+        return uddiProxiedServiceInfoOid;
     }
 
-    public void setUddiProxiedServiceInfo(UDDIProxiedServiceInfo uddiProxiedServiceInfo) {
-        this.uddiProxiedServiceInfo = uddiProxiedServiceInfo;
+    public void setUddiProxiedServiceInfoOid(long uddiProxiedServiceInfoOid) {
+        this.uddiProxiedServiceInfoOid = uddiProxiedServiceInfoOid;
     }
 
     @Column(name = "publish_status")
@@ -118,7 +121,7 @@ public class UDDIPublishStatus extends PersistentEntityImp {
         this.failCount = failCount;
     }
 
-    private UDDIProxiedServiceInfo uddiProxiedServiceInfo;
+    private long uddiProxiedServiceInfoOid;
     private PublishStatus publishStatus;
     private long lastStatusChange;
     private int failCount;

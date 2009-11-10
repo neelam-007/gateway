@@ -6,6 +6,7 @@ package com.l7tech.server.uddi;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
 import com.l7tech.server.HibernateEntityManager;
 
@@ -29,8 +30,12 @@ public class UDDIPublishStatusManagerImpl extends HibernateEntityManager<UDDIPub
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints(UDDIPublishStatus entity) {
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
-        serviceOidMap.put("uddiProxiedServiceInfo", entity.getUddiProxiedServiceInfo());
+        serviceOidMap.put("uddiProxiedServiceInfoOid", entity.getUddiProxiedServiceInfoOid());
         return Arrays.asList(serviceOidMap);
     }
 
+    @Override
+    public UDDIPublishStatus findByProxiedSerivceInfoOid(long proxiedServiceOid) throws FindException {
+        return findByUniqueKey( "uddiProxiedServiceInfoOid", proxiedServiceOid );
+    }
 }

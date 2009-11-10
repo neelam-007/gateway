@@ -5,37 +5,22 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
-import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.uddi.*;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
 
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class UDDIProxiedServiceInfoManagerImpl extends HibernateEntityManager<UDDIProxiedServiceInfo, EntityHeader>
 implements UDDIProxiedServiceInfoManager{
 
     //- PUBLIC
 
-    public UDDIProxiedServiceInfoManagerImpl( final UDDIHelper uddiHelper ) {
-        this.uddiHelper = uddiHelper;
+    public UDDIProxiedServiceInfoManagerImpl() {
     }
 
     @Override
     public Class<? extends Entity> getImpClass() {
         return UDDIProxiedServiceInfo.class;
-    }
-
-    @Override
-    public void saveUDDIProxiedServiceInfo(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
-            throws SaveException{
-        //todo delete this method, not needed
-        save(uddiProxiedServiceInfo);
     }
 
     @Override
@@ -67,9 +52,4 @@ implements UDDIProxiedServiceInfoManager{
     }
 
     //- PRIVATE
-
-    private  static final Logger logger = Logger.getLogger(UDDIProxiedServiceInfoManagerImpl.class.getName());
-
-    private final UDDIHelper uddiHelper;
-
 }

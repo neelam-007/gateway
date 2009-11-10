@@ -272,6 +272,10 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         getBindingDetail.getBindingKey().add(bindingKey);
         try {
             BindingDetail bindingDetail = getInquirePort().getBindingDetail(getBindingDetail);
+            if(bindingDetail.getBindingTemplate().isEmpty()){
+                logger.log(Level.INFO, "No bindingTemplates found for key: " + bindingKey);
+                return;
+            }
             BindingTemplate bindingTemplate = bindingDetail.getBindingTemplate().get(0);
             for(TModelInstanceInfo info: bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo()){
                 deleteTModel(info.getTModelKey());

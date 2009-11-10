@@ -75,7 +75,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private final static String businessEntityDefault = "<<None Selected>>";
     private String selectedBusinessName;
     private String selectedBusinessKey;
-    private UDDIPublishStatus.PublishStatus publishStatus;
+    private UDDIPublishStatus publishStatus;
 
     public ServiceUDDISettingsDialog() {
         initialize();
@@ -173,9 +173,19 @@ public class ServiceUDDISettingsDialog extends JDialog {
         //determine if there is a UDDIProxiedService for this service
         try {
             uddiProxyServiceInfo = getUDDIRegistryAdmin().getUDDIProxiedServiceInfo(service.getOid());
+            if(uddiProxyServiceInfo != null){
+                try {
+                    publishStatus =
+                            Registry.getDefault().getUDDIRegistryAdmin().getPublishStatusForProxy(uddiProxyServiceInfo.getOid());
+                } catch (FindException e) {
+                    showErrorMessage("Cannot get publish status", "Cannot find the publish status for information in UDDI", ExceptionUtils.getDebugException(e), true);
+                    dispose();
+                }
+            }
         } catch (FindException e) {
             uddiProxyServiceInfo = null;
         }
+
         try {
             uddiServiceControl = getUDDIRegistryAdmin().getUDDIServiceControl(service.getOid());
         } catch (FindException e) {
@@ -238,11 +248,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     businessEntityNameLabel.setText(uddiProxyServiceInfo.getUddiBusinessName());
                     updateWhenGatewayWSDLCheckBox.setSelected(uddiProxyServiceInfo.isUpdateProxyOnLocalChange());
                     publishProxiedWsdlRadioButton.setSelected(true);
-                    setLabelStatus(publishProxystatusLabel, uddiProxyServiceInfo.getUddiPublishStatus());
+                    setLabelStatus(publishProxystatusLabel);
                     break;
                 case ENDPOINT:
                     publishGatewayEndpointAsRadioButton.setSelected(true);
-                    setLabelStatus(bindingTemplateStatusLabel, uddiProxyServiceInfo.getUddiPublishStatus());
+                    setLabelStatus(bindingTemplateStatusLabel);
                     break;
                 case OVERWRITE:
                     break;
@@ -293,7 +303,13 @@ public class ServiceUDDISettingsDialog extends JDialog {
         }
     }
 
-    private void setLabelStatus(JLabel label, UDDIPublishStatus publishStatus) {
+    /**
+     * Method should only be called when we know publishStatus is not null
+     * @param label
+     */
+    private void setLabelStatus(JLabel label) {
+        if(publishStatus == null) throw new NullPointerException("publishStatus must not be null");
+        
         final String status;
         switch (publishStatus.getPublishStatus()) {
             case PUBLISHED:
@@ -493,14 +509,12 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
         } else if(dontPublishRadioButton.isSelected()){
             if(uddiProxyServiceInfo != null){
-                publishStatus = uddiProxyServiceInfo.getUddiPublishStatus().getPublishStatus();//this is resetting, but no harm
-
                 UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
                 if(!uddiRegistry.isEnabled()){
                     showErrorMessage("Cannot Update UDDI", "UDDI Registry is not currently enabled", null, false);
                     return false;
                 }
-                if(publishStatus == UDDIPublishStatus.PublishStatus.PUBLISH){
+                if(publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH){
                     showErrorMessage("Cannot Update UDDI", "UDDI is being updated. Please close dialog and try again in a few minutes", null, false);
                     return false;
                 }

@@ -32,7 +32,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     final private UDDIServiceControlManager uddiServiceControlManager;
     final private UDDICoordinator uddiCoordinator;
     final private ServiceCache serviceCache;
-    final private ServiceManager serviceManager;
 
     public UDDIRegistryAdminImpl(final UDDIRegistryManager uddiRegistryManager,
                                  final UDDIHelper uddiHelper,
@@ -48,7 +47,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         this.uddiCoordinator = uddiCoordinator;
         this.serviceCache = serviceCache;
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
-        this.serviceManager = serviceManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
     }
 
@@ -140,6 +138,15 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
+    public UDDIPublishStatus getPublishStatusForProxy(final long uddiProxiedServiceInfoOid) throws FindException {
+        final UDDIPublishStatus publishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfoOid);
+        if(publishStatus == null)
+            throw new FindException("Cannot find the UDDIPublishStatus for UDDIProxiedServiceInfo with id#(" + uddiProxiedServiceInfoOid+")");
+
+        return publishStatus;
+    }
+
+    @Override
     public void deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo proxiedServiceInfo)
             throws FindException, UDDIRegistryNotEnabledException, UpdateException {
         if(proxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.ENDPOINT)
@@ -148,17 +155,15 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
 
-        final UDDIPublishStatus status = proxiedServiceInfo.getUddiPublishStatus();
-        status.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
-        //record the change - this is likely not required
-        status.setLastStatusChange(System.currentTimeMillis());
-        proxiedServiceInfo.setUddiPublishStatus(status);
-//        status.setUddiProxiedServiceInfo(proxiedServiceInfo);
+        final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(proxiedServiceInfo.getOid());
+        if(uddiPublishStatus == null)
+            throw new FindException("Cannot find UDDIPublishStatus for UDDIProxiedServiceInfo with id#(" + proxiedServiceInfo.getOid() + ")");
 
+        uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
         /**
-         * This triggers an entity invalidatoin event which the UDDICoordinator picks up
+         * This triggers an entity invalidation event which the UDDICoordinator picks up
          */
-        uddiProxiedServiceInfoManager.update(proxiedServiceInfo);
+        uddiPublishStatusManager.update(uddiPublishStatus);
     }
 
     @Override
@@ -171,21 +176,28 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
 
-        final UDDIPublishStatus.PublishStatus status = proxiedServiceInfo.getUddiPublishStatus().getPublishStatus();
+        final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(proxiedServiceInfo.getOid());
+        if(uddiPublishStatus == null)
+            throw new FindException("Cannot find UDDIPublishStatus for UDDIProxiedServiceInfo with id#(" + proxiedServiceInfo.getOid() + ")");
 
-        if (status == UDDIPublishStatus.PublishStatus.CANNOT_DELETE || status == UDDIPublishStatus.PublishStatus.CANNOT_PUBLISH
-                || status == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED || status == UDDIPublishStatus.PublishStatus.DELETE_FAILED
-                ||  status == UDDIPublishStatus.PublishStatus.NONE){
+        if (uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.CANNOT_DELETE ||
+                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.CANNOT_PUBLISH ||
+                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED ||
+                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED  ||
+                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.NONE) {
+
             //if we cannot delete or we have already tried, allow the user to stop any more attempts
             //this may cause queued tasks problems, but they will just fail
-            if(status == UDDIPublishStatus.PublishStatus.DELETE_FAILED){
+            if (uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED) {
                 logger.log(Level.WARNING, "Stopping attept to delete from UDDI. Data may be orphaned in UDDI");
             }
             uddiProxiedServiceInfoManager.delete(proxiedServiceInfo);
-        }else if (status == UDDIPublishStatus.PublishStatus.PUBLISHED){
-            proxiedServiceInfo.getUddiPublishStatus().setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
-            uddiProxiedServiceInfoManager.update(proxiedServiceInfo);
+        } else if (uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED) {
+            uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
+            uddiPublishStatusManager.update(uddiPublishStatus);
             logger.log(Level.INFO, "Set status to delete for published UDDI data");
+        }else if(uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH){
+            logger.log(Level.WARNING, "Cannot delete Gateway WSDL from UDDI while it is being published");
         }
     }
 
@@ -306,7 +318,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIProxiedServiceInfo serviceInfo = new UDDIProxiedServiceInfo(service.getOid(), uddiRegistry.getOid(),
                 serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(), false,
                 UDDIProxiedServiceInfo.PublishType.ENDPOINT, wsdlHash);
-        uddiProxiedServiceInfoManager.saveUDDIProxiedServiceInfo(serviceInfo);
+        final long oid = uddiProxiedServiceInfoManager.save(serviceInfo);
+        final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
+        uddiPublishStatusManager.save(newStatus);
+        //the save event is picked up by the UDDICoordinator, which does the UDDI work
     }
 
     @Override
@@ -338,11 +353,12 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             throw new RuntimeException(msg, ExceptionUtils.getDebugException(e));
         }
 
-        final UDDIProxiedServiceInfo serviceInfo = new UDDIProxiedServiceInfo(service.getOid(), uddiRegistry.getOid(),
+        final UDDIProxiedServiceInfo uddiProxiedServiceInfo = new UDDIProxiedServiceInfo(service.getOid(), uddiRegistry.getOid(),
                 uddiBusinessKey, uddiBusinessName, updateWhenGatewayWsdlChanges,
                 UDDIProxiedServiceInfo.PublishType.PROXY, wsdlHash);
-        uddiProxiedServiceInfoManager.saveUDDIProxiedServiceInfo(serviceInfo);
-
+        final long oid = uddiProxiedServiceInfoManager.save(uddiProxiedServiceInfo);
+        final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
+        uddiPublishStatusManager.save(newStatus);
         //the save event is picked up by the UDDICoordinator, which does the UDDI work
     }
 
@@ -350,16 +366,18 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     public void updatePublishedGatewayWsdl(long uddiProxiedServiceInfoOid)
             throws FindException, UDDIRegistryNotEnabledException, PublishProxiedServiceException, UpdateException,
             VersionException {
-        final UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPrimaryKey(uddiProxiedServiceInfoOid);
-        if(serviceInfo == null) throw new UpdateException("Cannot find UDDIProxiedServiceInfo with id: " + uddiProxiedServiceInfoOid);
+        final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPrimaryKey(uddiProxiedServiceInfoOid);
+        if(uddiProxiedServiceInfo == null) throw new FindException("Cannot find UDDIProxiedServiceInfo with id: " + uddiProxiedServiceInfoOid);
 
-        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(serviceInfo.getUddiRegistryOid());
+        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiProxiedServiceInfo.getUddiRegistryOid());
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
 
-        serviceInfo.getUddiPublishStatus().setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
-        uddiProxiedServiceInfoManager.update(serviceInfo);
+        final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
+        if(uddiPublishStatus == null)
+            throw new FindException("Cannot find UDDIPublishStatus for UDDIProxiedServiceInfo with id#(" + uddiProxiedServiceInfo.getOid() + ")");
 
-        //the save event is picked up by the UDDICoordinator, which does the UDDI work
-        
+        uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
+        //the update event is picked up by the UDDICoordinator, which does the UDDI work
+        uddiPublishStatusManager.update(uddiPublishStatus);
     }
 }
