@@ -2,12 +2,14 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.PrivateKeyable;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -88,6 +90,27 @@ public class AssertionKeyAliasEditor extends JDialog {
 
         populateCombobox();
 
+        aliasCombo.setRenderer(new TextListCellRenderer<ComboEntry>(
+            // For the cell renderer
+            new Functions.Unary<String, ComboEntry>(){
+                @Override
+                public String call( final ComboEntry comboEntry) {
+                    // If alias and keystorename are too long (exceeding 64 chars), trim them.
+                    String trimedAlias = (comboEntry.alias != null && comboEntry.alias.length() > 64)? comboEntry.alias.substring(0, 64) + "..." : comboEntry.alias;
+                    String trimedKeystoreName = (comboEntry.keystorename != null && comboEntry.keystorename.length() > 64)? comboEntry.keystorename.substring(0, 64) + "..." : comboEntry.keystorename;
+                    return "'" + trimedAlias + "'" + " in " + trimedKeystoreName;
+                }
+            },
+            // For the tooltips
+            new Functions.Unary<String, ComboEntry>(){
+                @Override
+                public String call(final ComboEntry comboEntry) {
+                    return comboEntry.toString();
+                }
+            },
+            false
+        ));
+
         if (assertion.isUsesDefaultKeyStore()) {
             useDefaultKeypairRadioButton.setSelected(true);
         } else {
@@ -116,9 +139,13 @@ public class AssertionKeyAliasEditor extends JDialog {
         DialogDisplayer.display(pkmw, new Runnable() {
             public void run() {
                 populateCombobox();
+
+                // Resize the dialog size if needed.
+                if (getSize().width < mainPanel.getMinimumSize().width) {
+                    setSize(mainPanel.getMinimumSize().width, getSize().height);
+                }
             }
         });
-
     }
 
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
