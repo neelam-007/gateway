@@ -10,7 +10,6 @@ import java.util.Properties;
 import java.util.Date;
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.text.ParseException;
 
 /**
  * Properties that define a patch'es status.
@@ -41,12 +40,6 @@ public class PatchStatus {
                 return " is " + value;
             }},
 
-        ERROR_MSG(false) {
-            @Override
-            public String displayValue(String value) {
-                return value == null || value.isEmpty() ? "" : "\"" + value + "\""; 
-            }},
-
         ROLLBACK_FOR_ID(false) {
             @Override
             public String displayValue(String value) {
@@ -61,6 +54,12 @@ public class PatchStatus {
                 } catch (NumberFormatException e) {
                     return ", last modified on " + value;
                 }
+            }},
+
+        ERROR_MSG(false) {
+            @Override
+            public String displayValue(String value) {
+                return value == null || value.isEmpty() ? "" : ", Error message is: \n" + value + "\n"; 
             }};
 
 
