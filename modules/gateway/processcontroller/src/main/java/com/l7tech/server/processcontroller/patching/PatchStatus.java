@@ -8,6 +8,8 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.util.Properties;
 import java.util.Date;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.io.*;
 import java.text.SimpleDateFormat;
 
@@ -108,6 +110,7 @@ public class PatchStatus {
     public static PatchStatus newPatchStatus(String patchId, String description, State state) throws PatchException {
         PatchStatus status = new PatchStatus(patchId, description, state);
         status.checkRequiredFields();
+        logger.log(Level.FINE, "New status created for patch ID: " + patchId + ", state: " + state);
         return status;
     }
 
@@ -118,9 +121,10 @@ public class PatchStatus {
             is = new FileInputStream(statusFile);
             status.properties.load(is);
             status.checkRequiredFields();
+            logger.log(Level.FINE, "Loaded package status for patch ID: " + status.getField(Field.ID));
             return status;
         } catch (IOException e) {
-            throw new PatchException("Error reading patch status from: " + statusFile.getName(), e);
+            throw new PatchException("Error reading patch status from: " + (statusFile == null ? null : statusFile.getName()), e);
         } finally {
             ResourceUtils.closeQuietly(is);
         }
@@ -141,6 +145,7 @@ public class PatchStatus {
         try {
             os = new FileOutputStream(getStatusFile(repository, patchId));
             properties.store(os, null);
+            logger.log(Level.FINE, "Patch status updated for patch ID: " + patchId);
         } catch (IOException e) {
             throw new PatchException("Error saving package status for patch: " + patchId + " : " + ExceptionUtils.getMessage(e), e);
         } finally {
@@ -180,6 +185,8 @@ public class PatchStatus {
     }
 
     // - PRIVATE
+
+    private static final Logger logger = Logger.getLogger(PatchStatus.class.getName());
 
     private Properties properties = new Properties();
 

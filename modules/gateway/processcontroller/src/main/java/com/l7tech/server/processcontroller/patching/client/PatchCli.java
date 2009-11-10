@@ -46,6 +46,7 @@ public class PatchCli {
 
         try {
             PatchServiceApi api = getApi(patchAction);
+            logger.log(Level.INFO, "Running patch action: " + patchAction.name());
             Collection<PatchStatus> result = patchAction.call(api);
             if (result != null && ! result.isEmpty()) {
                 for(PatchStatus status : result) {
@@ -54,6 +55,7 @@ public class PatchCli {
             } else {
                 System.out.println("No patches have been uploaded.");
             }
+            logger.log(Level.INFO, patchAction.name() + " returned " + (result == null ? 0 : result.size()) + " results.");
         } catch (Exception e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
             System.out.println("Error: " + ExceptionUtils.getMessage(e) + "\n");
@@ -84,7 +86,7 @@ public class PatchCli {
     private static PatchServiceApi getApi(PatchAction patchAction) {
         String target = patchAction.getTarget();
         if (target.toLowerCase().startsWith("http://") || target.toLowerCase().startsWith("https://")) {
-            logger.log(Level.INFO, "Using Patch Service API");
+            logger.log(Level.INFO, "Using Patch Service API endpoint: " + target);
             System.out.println("Using Patch Service API endpoint: " + target + "\n");
             return new CxfUtils.ApiBuilder(patchAction.getTarget())
                 //.inInterceptor(new LoggingInInterceptor())

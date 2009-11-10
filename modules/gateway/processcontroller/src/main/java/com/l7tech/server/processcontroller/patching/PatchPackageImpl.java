@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 import java.util.jar.Attributes;
@@ -24,6 +26,7 @@ public class PatchPackageImpl implements PatchPackage {
     public PatchPackageImpl(File patchFile) throws IOException, PatchException {
         this.patchFile = patchFile;
         this.jar = new JarFile(patchFile, true);
+        logger.log(Level.INFO, "Loaded patch package from file: " + patchFile);
 
         // cache entries
         // read all entry input streams to verify signature
@@ -72,11 +75,7 @@ public class PatchPackageImpl implements PatchPackage {
             checkEntryExists(manifestEntry);
             
         extractPatchProperties();
-    }
-
-    private void checkEntryExists(String entryName) throws PatchException {
-        if (jar.getJarEntry(entryName) == null)
-            throw new PatchException("Invalid patch: entry not present in patch jar: " + entryName);
+        logger.log(Level.FINE, "Package read from file " + patchFile + "(ID: " + getProperty(Property.ID) + ") is a valid patch.");
     }
 
     @Override
@@ -95,6 +94,8 @@ public class PatchPackageImpl implements PatchPackage {
     }
 
     // - PRIVATE
+
+    private static final Logger logger = Logger.getLogger(PatchPackageImpl.class.getName());
 
     private final File patchFile;
     private final JarFile jar;
@@ -129,4 +130,10 @@ public class PatchPackageImpl implements PatchPackage {
             ResourceUtils.closeQuietly(zis);
         }
     }
+
+    private void checkEntryExists(String entryName) throws PatchException {
+        if (jar.getJarEntry(entryName) == null)
+            throw new PatchException("Invalid patch: entry not present in patch jar: " + entryName);
+    }
+
 }

@@ -8,6 +8,8 @@ import javax.annotation.Resource;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.io.*;
 import java.security.cert.X509Certificate;
 
@@ -49,6 +51,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             IOUtils.copyStream(new ByteArrayInputStream(patchData), new FileOutputStream(tempPatchFile));
             PatchPackage patch = new PatchPackageImpl(tempPatchFile);
             checkTrustedCertificates(patch);
+            logger.info("Uploading patch: " + patch.getProperty(PatchPackage.Property.ID));
             PatchStatus status = packageManager.savePackage(patch);
             recordManager.save(new PatchRecord(System.currentTimeMillis(), patch.getProperty(PatchPackage.Property.ID), Action.UPLOAD));
             return status;
@@ -77,6 +80,9 @@ public class PatchServiceApiImpl implements PatchServiceApi {
                 throw new PatchException("Package ID " + rollback + " is not INSTALLED, it cannot be rolled back.");
             if (! Boolean.toString(true).equals(packageManager.getPackage(rollback).getProperty(PatchPackage.Property.ROLLBACK_ALLOWED)))
                 throw new PatchException("Package ID " + rollback + " does not allow rollback.");
+            logger.log(Level.INFO, "Installing patch " + patchId + ", rollback for " + rollback);
+        } else {
+            logger.log(Level.INFO, "Installing patch " + patchId);
         }
 
         try {
@@ -84,6 +90,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             List<String> commandLine = new ArrayList<String>();
             getPatchLauncher(commandLine, patch);
             getInstallParams(commandLine, patch, nodes);
+            logger.log(Level.INFO, "Executing " + commandLine);
             File command = new File(commandLine.get(0));
             commandLine.remove(0);
             result = ProcUtils.exec(command, commandLine.toArray(new String[commandLine.size()]));
@@ -101,11 +108,13 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             status2 = packageManager.setPackageStatus(status1);
             if (rollback != null)
                 packageManager.updatePackageStatus(rollback, PatchStatus.Field.STATE, PatchStatus.State.ROLLED_BACK.name());
+            logger.log(Level.INFO, "Patch " + patchId + " is installed.");
         } else {
             byte[] errOut = result.getOutput();
             status1.setField(PatchStatus.Field.STATE, PatchStatus.State.ERROR.name());
             status1.setField(PatchStatus.Field.ERROR_MSG, errOut != null ? new String(errOut) : "");
             status2 = packageManager.setPackageStatus(status1);
+            logger.log(Level.WARNING, "Error installing " + patchId + " : " + new String(errOut));
         }
 
         return status2;
@@ -113,6 +122,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     @Override
     public PatchStatus deletePackageArchive(String patchId) throws PatchException {
+        logger.log(Level.INFO, "Deleting patch ID: " + patchId);
         PatchStatus status = packageManager.deletePackage(patchId);
         recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.PACKAGE_DELETE));
         return status;
@@ -120,6 +130,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     @Override
     public Collection<PatchStatus> listPatches() {
+        logger.log(Level.INFO, "Listing patches...");
         Collection<PatchStatus> statuses = packageManager.listPatches();
         recordManager.save(new PatchRecord(System.currentTimeMillis(), "", Action.LIST));
         return statuses;
@@ -127,6 +138,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     @Override
     public PatchStatus getStatus(String patchId) throws PatchException {
+        logger.log(Level.INFO, "Getting status for patch ID: " + patchId);
         PatchStatus patchStatus = packageManager.getPackageStatus(patchId);
         recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.STATUS));
         return patchStatus;
@@ -143,7 +155,9 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     @Resource
     private ConfigService config;
 
-    private static final String APPLIANCE_PATCH_LAUNCHER = "/opt/SecureSpan/Appliance/libexec/patch_launcher"; 
+    private static final Logger logger = Logger.getLogger(PatchServiceApiImpl.class.getName());
+
+    private static final String APPLIANCE_PATCH_LAUNCHER = "/opt/SecureSpan/Appliance/libexec/patch_launcher";
 
     private void checkTrustedCertificates(PatchPackage patch) throws PatchException {
         for(List<X509Certificate> certPath : patch.getCertificatePaths()) {
@@ -158,11 +172,11 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             if (! isTrusted)
                 throw new PatchException("Certificate is not trusted for signing patches: " + signer);
         }
+        logger.log(Level.FINE, "Patch signature is trusted for " + patch.getProperty(PatchPackage.Property.ID));
     }
 
     /** Builds the parameter list to be passed to the patch installer */
     private void getInstallParams(List<String> commandLine, PatchPackage patch, Collection<String> nodes) {
-        commandLine.add("-jar"); commandLine.add(patch.getFile().getAbsolutePath());
         commandLine.add("-D" + ApiWebEndpoint.NODE_MANAGEMENT.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.NODE_MANAGEMENT));
         commandLine.add("-D" + ApiWebEndpoint.OS.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.OS));
         if(nodes != null && ! nodes.isEmpty()) {
@@ -173,6 +187,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             nodeList.deleteCharAt(nodeList.length() -1);
             commandLine.add("-D" + TARGET_NODE_IDS + "=" + nodeList.toString());
         }
+        commandLine.add("-jar"); commandLine.add(patch.getFile().getAbsolutePath());
     }
 
     private void getPatchLauncher(List<String> commandLine, PatchPackage patch) {
