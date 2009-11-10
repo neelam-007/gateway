@@ -71,7 +71,14 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
         PatchPackage patch = packageManager.getPackage(patchId);
         ProcResult result;
-        String rollback;
+        String rollback = patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID);
+        if (rollback != null) {
+            if (! PatchStatus.State.INSTALLED.name().equals(packageManager.getPackageStatus(rollback).getField(PatchStatus.Field.STATE)))
+                throw new PatchException("Package ID " + rollback + " is not INSTALLED, it cannot be rolled back.");
+            if (! Boolean.toString(true).equals(packageManager.getPackage(rollback).getProperty(PatchPackage.Property.ROLLBACK_ALLOWED)))
+                throw new PatchException("Package ID " + rollback + " does not allow rollback.");
+        }
+
         try {
             // todo: exec with timeout?
             List<String> commandLine = new ArrayList<String>();
@@ -81,7 +88,6 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             commandLine.remove(0);
             result = ProcUtils.exec(command, commandLine.toArray(new String[commandLine.size()]));
             recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.INSTALL, nodes));
-            rollback = patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID);
             if (rollback != null)
                 recordManager.save(new PatchRecord(System.currentTimeMillis(), rollback, Action.ROLLBACK, nodes));
         } catch (IOException e) {
