@@ -254,9 +254,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 logger.log(Level.INFO, "tModelKey deleted: " + s);
             }
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception deleting tModels", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+            throw buildFaultException("Error deleting TModels: ", drfm);
         }
     }
 
@@ -390,9 +388,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
      *
      */
     @Override
-    public String publishPolicy(final String name,
+    public String publishPolicy(final String tModelKey,
+                                final String name,
                                 final String description,
                                 final String url) throws UDDIException {
+        validateKey(tModelKey);
         validateName(name);
         validateDescription(description);
         validateKeyValue(url);
@@ -403,6 +403,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         cbag.getKeyedReference().add(buildKeyedReference(tModelKeyPolicyType, POLICY_TYPE_KEY_NAME, POLICY_TYPE_KEY_VALUE));
         cbag.getKeyedReference().add(buildKeyedReference(tModelKeyRemotePolicyReference, description, url));
 
+        tmodel.setTModelKey(tModelKey);
         tmodel.setName(buildName(name));
         tmodel.setCategoryBag(cbag);
         tmodel.getOverviewDoc().add(buildOverviewDoc(url));
@@ -1205,6 +1206,53 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
+    public boolean removePolicyReference( final String serviceKey, final String policyKey, final String policyUrl ) throws UDDIException {
+        boolean policyReferenceRemoved = false;
+
+        validateKey(serviceKey);
+        validateKey(policyKey);
+
+        // first, get service from the service key
+        String authToken = getAuthToken();
+        ServiceDetail serviceDetail = getServiceDetail( serviceKey, authToken );
+
+        //get the bag for the service
+        BusinessService toUpdate = get(serviceDetail.getBusinessService(), "service", true);
+        CategoryBag cbag = toUpdate.getCategoryBag();
+        if (cbag != null) {
+            for ( Iterator<KeyedReference> keyedReferenceIter = cbag.getKeyedReference().iterator(); keyedReferenceIter.hasNext(); ) {
+                KeyedReference keyedReference = keyedReferenceIter.next();
+
+                if ( policyKey != null &&
+                     PolicyAttachmentVersion.isAnyLocalReference(keyedReference.getTModelKey()) &&
+                     policyKey.equals( keyedReference.getKeyValue() ) ) {
+                    keyedReferenceIter.remove();
+                    policyReferenceRemoved = true;
+                } else if ( policyUrl != null &&
+                     PolicyAttachmentVersion.isAnyRemoteReference(keyedReference.getTModelKey()) &&
+                     policyUrl.equals( keyedReference.getKeyValue() )) {
+                    keyedReferenceIter.remove();
+                    policyReferenceRemoved = true;
+                }
+            }
+
+            if ( policyReferenceRemoved ) {
+                // update service in uddi
+                UDDIPublicationPortType publicationPort = getPublishPort();
+                try {
+                    publicationPort.saveService(buildSaveService( authToken, toUpdate ));
+                } catch (DispositionReportFaultMessage drfm) {
+                    throw buildFaultException("Error updating service details: ", drfm);
+                } catch (RuntimeException e) {
+                    throw new UDDIException("Error updating service details.", e);
+                }
+            }
+        }
+
+        return policyReferenceRemoved;
+    }
+
+    @Override
     public void addKeyedReference( final String serviceKey,
                                    final String keyedReferenceKey,
                                    final String keyedReferenceName,
@@ -1646,6 +1694,8 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 exception = new UDDIException("UDDI registry version mismatch.");
         } else if ( hasResult(faultMessage, 10050)) {
                 exception = new UDDIException("UDDI registry does not support a required feature.");
+        } else if ( hasResult(faultMessage, 10210)) {
+                exception = new UDDIInvalidKeyException(contextMessage + toString(faultMessage));            
         } else {
             // handle general exception
             exception = new UDDIException(contextMessage + toString(faultMessage));

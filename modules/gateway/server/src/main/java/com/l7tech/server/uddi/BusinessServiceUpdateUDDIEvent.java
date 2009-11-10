@@ -10,6 +10,7 @@ class BusinessServiceUpdateUDDIEvent extends UDDIEvent {
     BusinessServiceUpdateUDDIEvent( final long registryOid,
                                     final String serviceKey,
                                     final boolean deleted ) {
+        super(false);
         this.registryOid = registryOid;
         this.serviceKey = serviceKey;
         this.deleted = deleted;

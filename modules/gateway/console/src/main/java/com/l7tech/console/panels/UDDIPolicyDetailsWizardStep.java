@@ -128,7 +128,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
 
             String policyUrl = policyURLField.getText();
 
-            String tModelKey = uddi.publishPolicy(policyNameField.getText(), policyDescField.getText(), policyUrl);
+            String tModelKey = uddi.publishPolicy(null, policyNameField.getText(), policyDescField.getText(), policyUrl);
             data.setPolicytModelKey(tModelKey);
 
             String msg = "Publication successful, policy tModel key: " + data.getPolicytModelKey() +

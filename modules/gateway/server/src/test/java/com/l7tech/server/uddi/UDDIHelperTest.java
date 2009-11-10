@@ -46,12 +46,12 @@ public class UDDIHelperTest {
         final String expectedWsdlUrl = "http://" + hostName + ":8080/ssg/wsdl?serviceoid=87293952";
         Assert.assertEquals("Incorrect WSDL URL found", expectedWsdlUrl, wsdlUrl);
 
-        final String wsPolicyOnlyUrl = uddiHelper.getExternalPolicyUrlForService(serviceOid, false);
+        final String wsPolicyOnlyUrl = uddiHelper.getExternalPolicyUrlForService(serviceOid, false, false);
         System.out.println(wsPolicyOnlyUrl);
         final String expectedWsPolicy = "http://" + hostName + ":8080/ssg/policy/disco?serviceoid=87293952&fulldoc=no&inline=no";
-        Assert.assertEquals("Incorrect External URL found", expectedWsPolicy, uddiHelper.getExternalPolicyUrlForService(serviceOid, false));
+        Assert.assertEquals("Incorrect External URL found", expectedWsPolicy, uddiHelper.getExternalPolicyUrlForService(serviceOid, false, false));
 
-        final String layer7PolicyFull = uddiHelper.getExternalPolicyUrlForService(serviceOid, true);
+        final String layer7PolicyFull = uddiHelper.getExternalPolicyUrlForService(serviceOid, true, false);
         System.out.println(layer7PolicyFull);
         final String expectedLayer7Policy = "http://" + hostName + ":8080/ssg/policy/disco?serviceoid=87293952&fulldoc=yes&inline=no";
         Assert.assertEquals("Incorrect External URL found", expectedLayer7Policy, layer7PolicyFull);

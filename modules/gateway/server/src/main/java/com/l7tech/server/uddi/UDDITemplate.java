@@ -98,6 +98,24 @@ public class UDDITemplate {
         this.metricsKeyedReferences = metricsKeyedReferences;
     }
 
+    @XmlElement
+    public String getPolicyTModelName() {
+        return policyTModelName;
+    }
+
+    public void setPolicyTModelName( final String policyTModelName ) {
+        this.policyTModelName = policyTModelName;
+    }
+
+    @XmlElement
+    public String getPolicyTModelDescription() {
+        return policyTModelDescription;
+    }
+
+    public void setPolicyTModelDescription( final String policyTModelDescription ) {
+        this.policyTModelDescription = policyTModelDescription;
+    }
+
     /**
      * Template for a keyed reference.
      *
@@ -176,5 +194,7 @@ public class UDDITemplate {
     private String metricsTModelName;
     private String metricsTModelDescription;
     private Collection<KeyedReferenceTemplate> metricsKeyedReferences;
+    private String policyTModelName;
+    private String policyTModelDescription;
 
 }

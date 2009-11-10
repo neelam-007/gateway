@@ -10,6 +10,7 @@ public class NotificationUDDIEvent extends UDDIEvent {
     public NotificationUDDIEvent( final long serviceOid,
                                   final String message,
                                   final String remoteAddress ) {
+        super(false);
         this.serviceOid = serviceOid;
         this.message = message;
         this.remoteAddress = remoteAddress;

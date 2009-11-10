@@ -143,6 +143,11 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
+    public boolean removePolicyReference( final String serviceKey, final String policyKey, final String policyUrl ) {
+        return false;
+    }
+
+    @Override
     public void addKeyedReference( final String serviceKey, final String keyedReferenceKey, final String keyedReferenceName, final String keyedReferenceValue ) {
     }
 
@@ -192,7 +197,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
-    public String publishPolicy(String name, String description, String url) throws UDDIException {
+    public String publishPolicy(String tModelKey, String name, String description, String url) throws UDDIException {
         return null;
     }
 

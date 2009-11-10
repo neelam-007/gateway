@@ -161,15 +161,6 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.metricsEnabled = metricsEnabled;
     }
 
-    @Column(name = "wspolicy_tmodel_key")
-    public String getWsPolicyTModelKey() {
-        return wsPolicyTModelKey;
-    }
-
-    public void setWsPolicyTModelKey(String wsPolicyTModelKey) {
-        this.wsPolicyTModelKey = wsPolicyTModelKey;
-    }
-
     @OneToMany(cascade= CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="uddiProxiedServiceInfo")
     @Fetch(FetchMode.SUBSELECT)
     @Cascade({org.hibernate.annotations.CascadeType.DELETE_ORPHAN, org.hibernate.annotations.CascadeType.ALL})
@@ -212,6 +203,33 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.proxyBindingKey = proxyBindingKey;
     }
 
+    @Column(name = "publish_wspolicy_enabled")
+    public boolean isPublishWsPolicyEnabled() {
+        return publishWsPolicyEnabled;
+    }
+
+    public void setPublishWsPolicyEnabled( final boolean publishWsPolicyEnabled ) {
+        this.publishWsPolicyEnabled = publishWsPolicyEnabled;
+    }
+
+    @Column(name = "publish_wspolicy_full")
+    public boolean isPublishWsPolicyFull() {
+        return publishWsPolicyFull;
+    }
+
+    public void setPublishWsPolicyFull( final boolean publishWsPolicyFull ) {
+        this.publishWsPolicyFull = publishWsPolicyFull;
+    }
+
+    @Column(name = "publish_wspolicy_inlined")
+    public boolean isPublishWsPolicyInlined() {
+        return publishWsPolicyInlined;
+    }
+
+    public void setPublishWsPolicyInlined( final boolean publishWsPolicyInlined ) {
+        this.publishWsPolicyInlined = publishWsPolicyInlined;
+    }
+
     @Column(name = "wsdl_hash")
     public String getWsdlHash() {
         return wsdlHash;
@@ -220,7 +238,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     public void setWsdlHash(String wsdlHash) {
         this.wsdlHash = wsdlHash;
     }
-
+    
     // PRIVATE
 
     /**
@@ -261,11 +279,6 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
      */
     private boolean metricsEnabled;
 
-    /**
-     * If a WS Policy was published at any point, this is the tModelKey for it
-     */
-    private String wsPolicyTModelKey;
-
     private Set<UDDIProxiedService> proxiedServices = new HashSet<UDDIProxiedService>();
 
     private PublishType publishType;
@@ -278,6 +291,12 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
      */
     private String proxyBindingKey;
 
-    private String wsdlHash;
+    private boolean publishWsPolicyEnabled;
+
+    private boolean publishWsPolicyFull;
+    
+    private boolean publishWsPolicyInlined;
+    
+    private String wsdlHash;    
 }
 

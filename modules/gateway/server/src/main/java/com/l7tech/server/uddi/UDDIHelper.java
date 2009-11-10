@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 import java.lang.reflect.Proxy;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
+import java.text.MessageFormat;
 
 import org.apache.cxf.jaxws.JaxWsClientProxy;
 import org.apache.cxf.transport.http.HTTPConduit;
@@ -103,13 +104,20 @@ public class UDDIHelper {
         return SecureSpanConstants.WSDL_PROXY_FILE + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID;
     }
 
-    public String getExternalPolicyUrlForService( final long serviceOid, final boolean fullPolicyURL ){
-        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID +
-                "=" + serviceOid +
-                "&fulldoc=" + ((fullPolicyURL) ? "yes" : "no")+ "&" +
-                SecureSpanConstants.HttpQueryParameters.PARAM_INLINE + "=no";
+    public String getExternalPolicyUrlForService( final long serviceOid,
+                                                  final boolean fullPolicy,
+                                                  final boolean inlinePolicy ){
+        final String policyUrlTemplate = serverConfig.getProperty( 
+                "uddi.policyUrlTemplate",
+                "http://{0}:{1}/ssg/policy/disco?serviceoid={3}&fulldoc={4}&inline={5}" );
 
-        return buildCompleteGatewayUrl(SecureSpanConstants.POLICY_SERVICE_FILE) + "?" + query;
+        return MessageFormat.format(policyUrlTemplate,
+                getExternalHostName(),
+                getExternalPort(),
+                getExternalHttpsPort(),
+                Long.toString(serviceOid),
+                fullPolicy ? "yes" : "no",
+                inlinePolicy ? "yes" : "no");
     }
 
     public String getExternalUrlForService( final long serviceOid ) {
@@ -282,6 +290,14 @@ public class UDDIHelper {
             hostName = clusterHost;
         }
         return hostName;
+    }
+
+    private String getExternalPort() {
+        return serverConfig.getProperty("clusterhttpport", "8080");
+    }
+
+    private String getExternalHttpsPort() {
+        return serverConfig.getProperty("clusterhttpsport", "8443");
     }
 
     private String getPrefixedExternalPort() {

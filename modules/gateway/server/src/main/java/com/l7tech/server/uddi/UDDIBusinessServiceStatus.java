@@ -59,6 +59,24 @@ public class UDDIBusinessServiceStatus extends PersistentEntityImp {
         this.uddiServiceName = uddiServiceName;
     }
 
+    @Column(name = "uddi_policy_publish_url")
+    public String getUddiPolicyPublishUrl() {
+        return uddiPolicyPublishUrl;
+    }
+
+    public void setUddiPolicyPublishUrl( final String uddiPolicyPublishUrl ) {
+        this.uddiPolicyPublishUrl = uddiPolicyPublishUrl;
+    }
+
+    @Column(name = "uddi_policy_url")
+    public String getUddiPolicyUrl() {
+        return uddiPolicyUrl;
+    }
+
+    public void setUddiPolicyUrl( final String uddiPolicyUrl ) {
+        this.uddiPolicyUrl = uddiPolicyUrl;
+    }
+
     @Column(name = "uddi_policy_tmodel_key")
     public String getUddiPolicyTModelKey() {
         return uddiPolicyTModelKey;
@@ -132,6 +150,8 @@ public class UDDIBusinessServiceStatus extends PersistentEntityImp {
     private long uddiRegistryOid;
     private String uddiServiceKey;
     private String uddiServiceName;
+    private String uddiPolicyPublishUrl;
+    private String uddiPolicyUrl;
     private String uddiPolicyTModelKey;
     private Status uddiPolicyStatus;
     private String uddiMetricsTModelKey;

@@ -41,6 +41,44 @@ public enum PolicyAttachmentVersion {
         return tModelKeyRemotePolicyReference;
     }
 
+    /**
+     * Is the given TModel key a local reference in any known WS-Policy Attachment version.
+     *
+     * @param tModelKey The key to check.
+     * @return true if the given key is a local policy reference
+     */
+    public static boolean isAnyLocalReference( final String tModelKey ) {
+        boolean isLocalReference = false;
+
+        for ( PolicyAttachmentVersion policyAttachmentVersion : values() ) {
+            if ( policyAttachmentVersion.getTModelKeyLocalPolicyReference().equals( tModelKey )) {
+                isLocalReference = true;
+                break;
+            }
+        }
+
+        return isLocalReference;
+    }
+
+    /**
+     * Is the given TModel key a remote reference in any known WS-Policy Attachment version.
+     *
+     * @param tModelKey The key to check.
+     * @return true if the given key is a remote policy reference
+     */
+    public static boolean isAnyRemoteReference( final String tModelKey ) {
+        boolean isRemoteReference = false;
+
+        for ( PolicyAttachmentVersion policyAttachmentVersion : values() ) {
+            if ( policyAttachmentVersion.getTModelKeyRemotePolicyReference().equals( tModelKey )) {
+                isRemoteReference = true;
+                break;
+            }
+        }
+
+        return isRemoteReference;
+    }
+
     //- PRIVATE
 
     private final String name;

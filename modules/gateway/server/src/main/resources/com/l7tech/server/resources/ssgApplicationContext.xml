@@ -1618,6 +1618,12 @@
                     <constructor-arg index="3" ref="uddiHelper" />
                     <constructor-arg index="4" ref="uddiServiceControlManager"/>
                 </bean>
+                <bean class="com.l7tech.server.uddi.WsPolicyAttachmentTaskFactory">
+                    <constructor-arg index="0" ref="uddiRegistryManager"/>
+                    <constructor-arg index="1" ref="uddiHelper" />
+                    <constructor-arg index="2" ref="uddiTemplateManager"/>
+                    <constructor-arg index="3" ref="uddiBusinessServiceStatusManager" />
+                </bean>
                 <bean class="com.l7tech.server.uddi.SubscriptionUDDITaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>
                     <constructor-arg index="1" ref="uddiHelper" />

@@ -57,6 +57,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private JCheckBox metricsEnabledCheckBox;
     private JComboBox metricsServiceComboBox;
     private JLabel metricsServiceLabel;
+    private JCheckBox publishPolicyCheckBox;
+    private JLabel policyServiceLabel;
+    private JComboBox policyServiceComboBox;
+    private JCheckBox publishFullPolicyCheckBox;
+    private JCheckBox inlinePolicyIncludesCheckBox;
 
     private PublishedService service;
     private boolean canUpdate;
@@ -160,6 +165,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         overwriteExistingBusinessServiceWithRadioButton.addActionListener(enableDisableChangeListener);
         dontPublishRadioButton.addActionListener(enableDisableChangeListener);
         metricsEnabledCheckBox.addActionListener( enableDisableChangeListener );
+        publishPolicyCheckBox.addActionListener( enableDisableChangeListener );
 
         //Populate registry drop down
         loadUddiRegistries();
@@ -250,6 +256,25 @@ public class ServiceUDDISettingsDialog extends JDialog {
             clearStatusLabels(null);
         }
         
+        // WS-Policy settings
+        boolean originalWsPolicyAvailable = uddiServiceControl != null;
+        boolean proxyWsPolicyAvailable = uddiProxyServiceInfo != null;
+        boolean originalWsPolicyEnabled = uddiServiceControl != null && uddiServiceControl.isPublishWsPolicyEnabled();
+        boolean proxyWsPolicyEnabled = uddiProxyServiceInfo != null && uddiProxyServiceInfo.isPublishWsPolicyEnabled(); 
+        if ( originalWsPolicyAvailable || proxyWsPolicyAvailable ) {
+            java.util.List<String> options = new ArrayList<String>();
+            if ( originalWsPolicyAvailable ) options.add( OPTION_ORIGINAL_BUSINESS_SERVICE );
+            if ( proxyWsPolicyAvailable ) options.add( OPTION_PROXIED_BUSINESS_SERVICE );
+            if ( originalWsPolicyAvailable && proxyWsPolicyAvailable ) options.add( OPTION_BOTH_BUSINESS_SERVICES );
+            policyServiceComboBox.setModel( new DefaultComboBoxModel( options.toArray(new String[options.size()] ) ));
+            publishPolicyCheckBox.setSelected( originalWsPolicyEnabled || proxyWsPolicyEnabled );
+            if ( originalWsPolicyEnabled && proxyWsPolicyEnabled ) policyServiceComboBox.setSelectedItem( OPTION_BOTH_BUSINESS_SERVICES );
+            else if ( originalWsPolicyEnabled ) policyServiceComboBox.setSelectedItem( OPTION_ORIGINAL_BUSINESS_SERVICE );
+            else if ( proxyWsPolicyEnabled ) policyServiceComboBox.setSelectedItem( OPTION_PROXIED_BUSINESS_SERVICE );
+        }
+        publishFullPolicyCheckBox.setSelected( getPublishFullPolicy(uddiServiceControl, uddiProxyServiceInfo) );
+        inlinePolicyIncludesCheckBox.setSelected( getPublishInlinedPolicy(publishFullPolicyCheckBox.isSelected(), uddiServiceControl, uddiProxyServiceInfo) );
+
         // Metrics settings
         boolean originalMetricsAvailable = uddiServiceControl != null && isMetricsEnabled(uddiServiceControl.getUddiRegistryOid());
         boolean proxyMetricsAvailable = uddiProxyServiceInfo != null  && isMetricsEnabled(uddiProxyServiceInfo.getUddiRegistryOid());
@@ -262,9 +287,9 @@ public class ServiceUDDISettingsDialog extends JDialog {
             if ( originalMetricsAvailable && proxyMetricsAvailable ) options.add( OPTION_BOTH_BUSINESS_SERVICES );
             metricsServiceComboBox.setModel( new DefaultComboBoxModel( options.toArray(new String[options.size()] ) ));
             metricsEnabledCheckBox.setSelected( originalMetricsEnabled || proxyMetricsEnabled );
-            if ( originalMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_ORIGINAL_BUSINESS_SERVICE );
-            if ( proxyMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_PROXIED_BUSINESS_SERVICE );
             if ( originalMetricsEnabled && proxyMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_BOTH_BUSINESS_SERVICES );
+            else if ( originalMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_ORIGINAL_BUSINESS_SERVICE );
+            else if ( proxyMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_PROXIED_BUSINESS_SERVICE );
         }
     }
 
@@ -360,6 +385,15 @@ public class ServiceUDDISettingsDialog extends JDialog {
             //configure enable / disable for publish tab
             enableDisablePublishTabComponents();
 
+            // ws-policy tab
+            boolean enablePolicy = policyServiceComboBox.getModel().getSize() > 0;
+            boolean enablePolicyOptions = enablePolicy && publishPolicyCheckBox.isSelected();
+            publishPolicyCheckBox.setEnabled( enablePolicy );
+            policyServiceLabel.setEnabled( enablePolicyOptions );
+            policyServiceComboBox.setEnabled( enablePolicyOptions );
+            publishFullPolicyCheckBox.setEnabled( enablePolicyOptions );
+            inlinePolicyIncludesCheckBox.setEnabled( enablePolicyOptions );
+
             //metrics tab
             boolean enableMetrics = metricsServiceComboBox.getModel().getSize() > 0;
             metricsEnabledCheckBox.setEnabled( enableMetrics );
@@ -371,6 +405,13 @@ public class ServiceUDDISettingsDialog extends JDialog {
             enableDisablePublishEndpointControls(false);
             enableDisablePublishOverwriteControls(false);
             dontPublishRadioButton.setEnabled(false);
+
+            // ws-policy tab
+            publishPolicyCheckBox.setEnabled( false );
+            policyServiceLabel.setEnabled( false );
+            policyServiceComboBox.setEnabled( false );
+            publishFullPolicyCheckBox.setEnabled( false );
+            inlinePolicyIncludesCheckBox.setEnabled( false );
 
             //metrics tab
             metricsEnabledCheckBox.setEnabled( false );
@@ -388,7 +429,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
         businessEntityNameLabel.setEnabled(enable);
         selectBusinessEntityButton.setEnabled(enable);
         updateWhenGatewayWSDLCheckBox.setEnabled(enable);
-
     }
 
     private void enableDisablePublishEndpointControls(boolean enable){
@@ -417,9 +457,20 @@ public class ServiceUDDISettingsDialog extends JDialog {
             }else {
                 //update if the check box's value has changed
                 if(uddiProxyServiceInfo.isUpdateProxyOnLocalChange() != updateWhenGatewayWSDLCheckBox.isSelected() ||
-                   uddiProxyServiceInfo.isMetricsEnabled() != isProxyMetricsEnabled() ){
+                   uddiProxyServiceInfo.isMetricsEnabled() != isProxyMetricsEnabled() ||
+                   publishWsPolicySettingsChanged() ){
                     uddiProxyServiceInfo.setUpdateProxyOnLocalChange(updateWhenGatewayWSDLCheckBox.isSelected());
                     uddiProxyServiceInfo.setMetricsEnabled(isProxyMetricsEnabled());
+                    if ( isProxyPublishWsPolicyEnabled() ) {
+                        uddiProxyServiceInfo.setPublishWsPolicyEnabled( true );
+                        uddiProxyServiceInfo.setPublishWsPolicyFull( publishFullPolicyCheckBox.isSelected() );
+                        uddiProxyServiceInfo.setPublishWsPolicyInlined( publishFullPolicyCheckBox.isSelected() && inlinePolicyIncludesCheckBox.isSelected() );
+                    } else {
+                        uddiProxyServiceInfo.setPublishWsPolicyEnabled( false );
+                        uddiProxyServiceInfo.setPublishWsPolicyFull( false );
+                        uddiProxyServiceInfo.setPublishWsPolicyInlined( false );
+                    }
+
                     try {
                         uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyServiceInfo);
                     } catch (UpdateException e) {
@@ -466,12 +517,20 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         //todo let user know we cannot undo, we will just delete from UDDI
                         break;
                 }
-
             }
         }
 
         if ( uddiServiceControl != null ) {
             uddiServiceControl.setMetricsEnabled( isMetricsEnabled() );
+            if ( isPublishWsPolicyEnabled() ) {
+                uddiServiceControl.setPublishWsPolicyEnabled( true );
+                uddiServiceControl.setPublishWsPolicyFull( publishFullPolicyCheckBox.isSelected() );
+                uddiServiceControl.setPublishWsPolicyInlined( publishFullPolicyCheckBox.isSelected() && inlinePolicyIncludesCheckBox.isSelected() );
+            } else {
+                uddiServiceControl.setPublishWsPolicyEnabled( false );
+                uddiServiceControl.setPublishWsPolicyFull( false );
+                uddiServiceControl.setPublishWsPolicyInlined( false );
+            }
             try {
                 uddiRegistryAdmin.saveUDDIServiceControlOnly( uddiServiceControl );
             } catch (Exception e) {
@@ -627,15 +686,71 @@ public class ServiceUDDISettingsDialog extends JDialog {
     }
 
     public boolean isProxyMetricsEnabled() {
-        return metricsEnabledCheckBox.isSelected() &&
+        return metricsEnabledCheckBox.isEnabled() && metricsEnabledCheckBox.isSelected() &&
                 ( OPTION_PROXIED_BUSINESS_SERVICE.equals( metricsServiceComboBox.getSelectedItem() ) ||
                   OPTION_BOTH_BUSINESS_SERVICES.equals( metricsServiceComboBox.getSelectedItem() ) );
     }
 
     public boolean isMetricsEnabled() {
-        return metricsEnabledCheckBox.isSelected() &&
+        return metricsEnabledCheckBox.isEnabled() && metricsEnabledCheckBox.isSelected() &&
                 ( OPTION_ORIGINAL_BUSINESS_SERVICE.equals( metricsServiceComboBox.getSelectedItem() ) ||
                   OPTION_BOTH_BUSINESS_SERVICES.equals( metricsServiceComboBox.getSelectedItem() ) );
+    }
+
+    public boolean isProxyPublishWsPolicyEnabled() {
+        return publishPolicyCheckBox.isEnabled() &&publishPolicyCheckBox.isSelected() &&
+                ( OPTION_PROXIED_BUSINESS_SERVICE.equals( policyServiceComboBox.getSelectedItem() ) ||
+                  OPTION_BOTH_BUSINESS_SERVICES.equals( policyServiceComboBox.getSelectedItem() ) );
+    }
+
+    public boolean isPublishWsPolicyEnabled() {
+        return publishPolicyCheckBox.isEnabled() &&publishPolicyCheckBox.isSelected() &&
+                ( OPTION_ORIGINAL_BUSINESS_SERVICE.equals( policyServiceComboBox.getSelectedItem() ) ||
+                  OPTION_BOTH_BUSINESS_SERVICES.equals( policyServiceComboBox.getSelectedItem() ) );
+    }
+
+    /**
+     * Settings from each entity related to a single UI control so it is assumed that
+     * when both entities exist they have the same configuration options for policy
+     * publishing.
+     */
+    private boolean getPublishFullPolicy( final UDDIServiceControl uddiServiceControl,
+                                          final UDDIProxiedServiceInfo uddiProxyServiceInfo ) {
+        boolean publishFull = true;
+
+        if ( uddiServiceControl != null && uddiServiceControl.isPublishWsPolicyEnabled() ) {
+            publishFull = uddiServiceControl.isPublishWsPolicyFull();
+        } else if ( uddiProxyServiceInfo != null && uddiProxyServiceInfo.isPublishWsPolicyEnabled() ) {
+            publishFull = uddiProxyServiceInfo.isPublishWsPolicyFull();
+        }
+
+        return publishFull;
+    }
+
+    private boolean getPublishInlinedPolicy( final boolean optionEnabled,
+                                             final UDDIServiceControl uddiServiceControl,
+                                             final UDDIProxiedServiceInfo uddiProxyServiceInfo ) {
+        boolean publishInlined = false;
+
+        if ( optionEnabled ) {
+            if ( uddiServiceControl != null && uddiServiceControl.isPublishWsPolicyEnabled() ) {
+                publishInlined = uddiServiceControl.isPublishWsPolicyInlined();
+            } else if ( uddiProxyServiceInfo != null && uddiProxyServiceInfo.isPublishWsPolicyEnabled()  ) {
+                publishInlined = uddiProxyServiceInfo.isPublishWsPolicyInlined();
+            }
+        }
+
+        return publishInlined;
+    }
+
+    private boolean publishWsPolicySettingsChanged() {
+        boolean publishFull = publishFullPolicyCheckBox.isEnabled() && publishFullPolicyCheckBox.isSelected();
+        boolean publishInline = inlinePolicyIncludesCheckBox.isEnabled() && inlinePolicyIncludesCheckBox.isSelected();
+
+        return
+                uddiProxyServiceInfo.isPublishWsPolicyEnabled() != publishPolicyCheckBox.isSelected() ||
+                uddiProxyServiceInfo.isPublishWsPolicyFull() != publishFull ||
+                uddiProxyServiceInfo.isPublishWsPolicyInlined() != publishInline;
     }
 
 

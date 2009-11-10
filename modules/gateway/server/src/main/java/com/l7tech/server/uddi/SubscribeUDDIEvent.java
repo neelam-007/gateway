@@ -17,6 +17,7 @@ class SubscribeUDDIEvent extends UDDIEvent {
     SubscribeUDDIEvent( final long registryOid,
                         final Type type,
                         final boolean expiredOnly ) {
+        super(false);
         this.registryOid = registryOid;
         this.type = type;
         this.expiredOnly = expiredOnly;

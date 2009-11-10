@@ -131,13 +131,14 @@ public interface UDDIClient extends Closeable {
     /**
      * Publish policy to UDDI.
      *
+     * @param tModelKey The tModel key (optional, null for initial publish)
      * @param name The name of the policy
      * @param description The description for the policy
      * @param url The url for the policy
      * @return The key for the newly published model
      * @throws UDDIException if an error occurs
      */
-    String publishPolicy(String name, String description, String url) throws UDDIException;
+    String publishPolicy(String tModelKey, String name, String description, String url) throws UDDIException;
 
     /**
      * Get the name of a BusinessEntity from UDDI
@@ -281,6 +282,17 @@ public interface UDDIClient extends Closeable {
      * @throws UDDIExistingReferenceException if force is not set and there is an existing (local or remote) reference
      */
     void referencePolicy(String serviceKey, String serviceUrl, String policyKey, String policyUrl, String description, Boolean force) throws UDDIException;
+
+    /**
+     * Remove the association of a policy and a service.
+     *
+     * @param serviceKey The service to update.
+     * @param policyKey The key for the local policy to reference (may be null)
+     * @param policyUrl The URL for the remote policy to reference (may be null)
+     * @returns true if a matching policy reference was found and removed
+     * @throws UDDIException if an error occurs
+     */
+    boolean removePolicyReference(String serviceKey, String policyKey, String policyUrl) throws UDDIException;
 
     /**
      * Add a keyed reference to a business service.

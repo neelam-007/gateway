@@ -124,6 +124,7 @@ public class SystemMessages extends Messages {
     public static final M UDDI_PUBLISH_SERVICE_FAILED           = m(2282, Level.WARNING, "Error publishing service ''{0}''.");
     public static final M UDDI_PUBLISH_SERVICE_ROLLBACK_FAILED  = m(2283, Level.WARNING, "Error rolling back publishing service ''{0}''.");
     public static final M UDDI_REMOVE_SERVICE_FAILED            = m(2284, Level.WARNING, "Could not delete proxied BusinessService ''{0}''.");
+    public static final M UDDI_WSPOLICY_PUBLISH_FAILED          = m(2285, Level.WARNING, "Error publishing ws-policy attachment ''{0}''.");    
 
     // MAX -                                      m(2999
 }

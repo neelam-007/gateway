@@ -29,6 +29,17 @@ public class UDDIBusinessServiceStatusManagerImpl extends HibernateEntityManager
     }
 
     @Override
+    public Collection<UDDIBusinessServiceStatus> findByRegistryAndWsPolicyPublishStatus( final long registryOid,
+                                                                                         final UDDIBusinessServiceStatus.Status status ) throws FindException {
+        final Map<String,Object> matchMap = new HashMap<String,Object>();
+        matchMap.put( "uddiRegistryOid", registryOid );
+        if ( status != null ) {
+            matchMap.put( "uddiPolicyStatus", status );
+        }
+        return findMatching( Collections.singletonList( matchMap ) );
+    }
+
+    @Override
     public Class<? extends Entity> getImpClass() {
         return UDDIBusinessServiceStatus.class;
     }

@@ -228,15 +228,6 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.metricsEnabled = metricsEnabled;
     }
 
-    @Column(name = "wspolicy_tmodel_key")
-    public String getWsPolicyTModelKey() {
-        return wsPolicyTModelKey;
-    }
-
-    public void setWsPolicyTModelKey( final String wsPolicyTModelKey ) {
-        this.wsPolicyTModelKey = wsPolicyTModelKey;
-    }
-
     @Column(name = "access_point_url")
     public String getAccessPointUrl() {
         return accessPointUrl;
@@ -244,6 +235,33 @@ public class UDDIServiceControl extends PersistentEntityImp {
 
     public void setAccessPointUrl(String accessPointUrl) {
         this.accessPointUrl = accessPointUrl;
+    }
+
+    @Column(name = "publish_wspolicy_enabled")
+    public boolean isPublishWsPolicyEnabled() {
+        return publishWsPolicyEnabled;
+    }
+
+    public void setPublishWsPolicyEnabled( final boolean publishWsPolicyEnabled ) {
+        this.publishWsPolicyEnabled = publishWsPolicyEnabled;
+    }
+
+    @Column(name = "publish_wspolicy_full")
+    public boolean isPublishWsPolicyFull() {
+        return publishWsPolicyFull;
+    }
+
+    public void setPublishWsPolicyFull( final boolean publishWsPolicyFull ) {
+        this.publishWsPolicyFull = publishWsPolicyFull;
+    }
+
+    @Column(name = "publish_wspolicy_inlined")
+    public boolean isPublishWsPolicyInlined() {
+        return publishWsPolicyInlined;
+    }
+
+    public void setPublishWsPolicyInlined( final boolean publishWsPolicyInlined ) {
+        this.publishWsPolicyInlined = publishWsPolicyInlined;
     }
 
     @Override
@@ -270,5 +288,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
     private boolean updateWsdlOnChange;
     private boolean disableServiceOnChange;
     private boolean metricsEnabled;
-    private String wsPolicyTModelKey;
+    private boolean publishWsPolicyEnabled;
+    private boolean publishWsPolicyFull;
+    private boolean publishWsPolicyInlined;
 }

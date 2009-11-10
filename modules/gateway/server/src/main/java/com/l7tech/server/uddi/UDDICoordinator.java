@@ -183,8 +183,9 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                         //perhaps turn off cascade delete
                     }
                 }
-                //todo [Donal] revist once refactoring for publish status is done
-//                timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
+                if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ) {
+                    timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
+                }
             } else if ( UDDIServiceControl.class.equals(entityInvalidationEvent.getEntityClass())) {
                 timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
             }
@@ -421,11 +422,17 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         }
 
         // Update / create service status
+        Map<Long,WsPolicyUDDIEvent> wsPolicyEventMap = new HashMap<Long,WsPolicyUDDIEvent>(); // one event per registry
         for ( UDDIProxiedServiceInfo proxiedServiceInfo : proxiedServices ) {
             if ( proxiedServiceInfo.getProxiedServices() != null ) {
                 final long publishedServiceOid = proxiedServiceInfo.getPublishedServiceOid();
                 final long uddiRegistryOid = proxiedServiceInfo.getUddiRegistryOid();
                 final boolean isMetricsEnabled = proxiedServiceInfo.isMetricsEnabled();
+                final boolean isPublishWsPolicyEnabled = proxiedServiceInfo.isPublishWsPolicyEnabled();
+                final String wsPolicyUrl = uddiHelper.getExternalPolicyUrlForService(
+                        proxiedServiceInfo.getPublishedServiceOid(),
+                        proxiedServiceInfo.isPublishWsPolicyFull(),
+                        proxiedServiceInfo.isPublishWsPolicyInlined() );
 
                 for ( UDDIProxiedService proxiedService : proxiedServiceInfo.getProxiedServices() ) {
                     if ( proxiedService.getUddiServiceKey() != null ) {
@@ -434,11 +441,14 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
                         updateUDDIBusinessServiceStatus(
                                 registryServiceMap,
+                                wsPolicyEventMap,
                                 publishedServiceOid,
                                 uddiRegistryOid,
                                 serviceKey,
                                 serviceName,
-                                isMetricsEnabled );
+                                isMetricsEnabled,
+                                isPublishWsPolicyEnabled,
+                                wsPolicyUrl );
                     }
                 }
             }
@@ -449,23 +459,38 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             final String serviceKey = origService.getUddiServiceKey();
             final String serviceName = origService.getUddiServiceName();
             final boolean isMetricsEnabled = origService.isMetricsEnabled();
+            final boolean isPublishWsPolicyEnabled = origService.isPublishWsPolicyEnabled();
+            final String wsPolicyUrl = uddiHelper.getExternalPolicyUrlForService(
+                    origService.getPublishedServiceOid(),
+                    origService.isPublishWsPolicyFull(),
+                    origService.isPublishWsPolicyInlined() );
 
             updateUDDIBusinessServiceStatus(
                     registryServiceMap,
+                    wsPolicyEventMap,
                     publishedServiceOid,
                     uddiRegistryOid,
                     serviceKey,
                     serviceName,
-                    isMetricsEnabled );
+                    isMetricsEnabled,
+                    isPublishWsPolicyEnabled,
+                    wsPolicyUrl );
+        }
+
+        for ( UDDIEvent event : wsPolicyEventMap.values() ) {
+            notifyEvent( event );
         }
     }
 
     private void updateUDDIBusinessServiceStatus( final Map<Pair<Long,String>,UDDIBusinessServiceStatus> registryServiceMap,
+                                                  final Map<Long,WsPolicyUDDIEvent> wsPolicyEventMap,
                                                   final long publishedServiceOid,
                                                   final long uddiRegistryOid,
                                                   final String serviceKey,
                                                   final String serviceName,
-                                                  final boolean metricsEnabled ) throws SaveException, UpdateException {
+                                                  final boolean metricsEnabled,
+                                                  final boolean publishWsPolicyEnabled,
+                                                  final String publishWsPolicyUrl ) throws SaveException, UpdateException {
         final Pair<Long,String> key = new Pair<Long,String>( uddiRegistryOid, serviceKey );
 
         boolean updated = false;
@@ -482,6 +507,11 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
         if ( updateMetricsStatus( serviceStatus, metricsEnabled ) ) {
             updated = true;
+        }
+
+        if ( updateWsPolicyStatus( serviceStatus, publishWsPolicyEnabled, publishWsPolicyUrl ) ) {
+            updated = true;
+            wsPolicyEventMap.put( uddiRegistryOid, new WsPolicyUDDIEvent(uddiRegistryOid) );
         }
 
         if ( updated ) {
@@ -514,6 +544,34 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             }
         }
         
+        return updated;
+    }
+
+    private boolean updateWsPolicyStatus( final UDDIBusinessServiceStatus serviceStatus,
+                                          final boolean publishWsPolicyEnabled,
+                                          final String wsPolicyUrl ) {
+        boolean updated = false;
+
+        if ( publishWsPolicyEnabled && wsPolicyUrl != null && !wsPolicyUrl.isEmpty() ) {
+            if ( (!(serviceStatus.getUddiPolicyStatus() == UDDIBusinessServiceStatus.Status.PUBLISHED && 
+                    wsPolicyUrl.equals(serviceStatus.getUddiPolicyUrl())) ||
+                  !(serviceStatus.getUddiPolicyStatus() != UDDIBusinessServiceStatus.Status.PUBLISH &&
+                    wsPolicyUrl.equals(serviceStatus.getUddiPolicyPublishUrl() ) ) ) ) {
+                updated = true;
+                serviceStatus.setUddiPolicyStatus( UDDIBusinessServiceStatus.Status.PUBLISH );
+                serviceStatus.setUddiPolicyPublishUrl( wsPolicyUrl );
+            }
+        } else {
+            if ( serviceStatus.getUddiPolicyStatus() == UDDIBusinessServiceStatus.Status.PUBLISHED ) {
+                updated = true;
+                serviceStatus.setUddiPolicyStatus( UDDIBusinessServiceStatus.Status.DELETE );
+            } else if ( serviceStatus.getUddiPolicyStatus() == UDDIBusinessServiceStatus.Status.PUBLISH ) {
+                updated = true;
+                serviceStatus.setUddiPolicyStatus( UDDIBusinessServiceStatus.Status.NONE );
+                serviceStatus.setUddiPolicyPublishUrl( null );
+            }
+        }
+
         return updated;
     }
 
@@ -639,7 +697,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
         @Override
         public void doRun() {
-            if ( coordinator.clusterMaster.isMaster() ) {
+            if ( coordinator.clusterMaster.isMaster() || !event.isMasterOnly() ) {
                 AuditContextUtils.doAsSystem( new Runnable(){
                     @Override
                     public void run() {

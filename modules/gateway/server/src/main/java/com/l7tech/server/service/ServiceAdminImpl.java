@@ -5,7 +5,6 @@ import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.EntityType.SERVICE;
@@ -665,7 +664,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     @Override
     public String getPolicyURL(final String serviceoid, final boolean fullPolicyUrl) throws FindException {
-        return uddiHelper.getExternalPolicyUrlForService( parseServiceOid(serviceoid), fullPolicyUrl);
+        return uddiHelper.getExternalPolicyUrlForService( parseServiceOid(serviceoid), fullPolicyUrl, false);
     }
 
     @Override
