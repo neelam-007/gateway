@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.util.SwingWorker;
-import com.l7tech.uddi.WsdlPortInfoImpl;
 import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
@@ -312,7 +311,7 @@ public class SearchUddiDialog extends JDialog {
                             preferences.putProperty(UDDI_REGISTRY, registryName);
 
                             boolean searchTruncated = false;
-                            Vector urlList = new Vector();
+                            Vector<WsdlPortInfo> urlList = new Vector<WsdlPortInfo>();
                             for (int i = 0; i < ((WsdlPortInfo[])result).length; i++) {
                                 final WsdlPortInfo wi = ((WsdlPortInfo[])result)[i];
                                 if (WsdlPortInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(wi.getWsdlUrl())) {
@@ -388,7 +387,7 @@ public class SearchUddiDialog extends JDialog {
                         allRegistries.put(uddiRegistry.getName(), uddiRegistry);
                         break;
                     }
-                }else{
+                }else if (uddiRegistry.isEnabled()) {
                     allRegistries.put(uddiRegistry.getName(), uddiRegistry);
                 }
             }
