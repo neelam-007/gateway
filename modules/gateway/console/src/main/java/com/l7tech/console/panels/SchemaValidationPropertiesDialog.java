@@ -940,7 +940,9 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         if (docIsSchema(doc)) {
             // set the new schema
             String printedSchema = node2String(doc);
-            uiAccessibility.getEditor().setText(printedSchema);
+            if (printedSchema != null) {
+                uiAccessibility.getEditor().setText(printedSchema);
+            }
         } else {
             displayError(resources.getString("error.urlnoschema") + " " + filename, null);
         }
@@ -950,7 +952,9 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         // get the schema
         String schema = fetchSchemaFromUrl(urlstr, true);
         // set the schema
-        uiAccessibility.getEditor().setText(schema);
+        if (schema != null) {
+            uiAccessibility.getEditor().setText(schema);
+        }
     }
 
     /**
