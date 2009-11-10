@@ -236,9 +236,7 @@ fi
 [ ! -d /opt/SecureSpan/Appliance/config ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/config
 
 %post
-if [ -d "/ssg/appliance" ] ; then
-    sh %{prefix}/bin/upgrade-appliance.sh >> %{prefix}/config/appliance-upgrade.log 2>&1
-fi
+sh %{prefix}/bin/upgrade-appliance.sh >> %{prefix}/config/appliance-upgrade.log 2>&1
 
 # After above item has executed, on first install only
 # we need to set password for ssgconfig and pre-expire it
