@@ -114,7 +114,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
             policyList.setListData(policies.toArray());
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error getting find result", e);
-            showError("Error getting find result . " + UDDIPolicyDetailsWizardStep.getRootCauseMsg(e));
+            showError("Error getting find result . " + ExceptionUtils.unnestToRoot(e));
         }
     }
 

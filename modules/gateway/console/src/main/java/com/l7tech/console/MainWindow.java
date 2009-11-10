@@ -124,7 +124,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem editPolicyMenuItem = null;
     private JMenuItem servicePropertiesMenuItem = null;
     private JMenuItem serviceUDDISettingsMenuItem = null;
-    private JMenuItem publishToUDDIMenuItem = null;
     private JMenuItem deleteServiceMenuItem = null;
 
     // actions
@@ -235,6 +234,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         initialize();
     }
 
+    @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
         if(visible) {
@@ -454,7 +454,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.addSeparator();
             menu.add(getEditPolicyMenuItem());
             menu.add(getServicePropertiesMenuItem());
-            menu.add(getPublishToUDDIMenuItem());
+            menu.add(getServiceUDDISettingsMenuItem());
             menu.add(getDeleteServiceMenuItem());
 
             menu.addSeparator();
@@ -508,26 +508,12 @@ public class MainWindow extends JFrame implements SheetHolder {
             serviceUDDISettingsMenuItem.setEnabled(false);
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Edit16.gif"));
             serviceUDDISettingsMenuItem.setIcon(icon);
-            serviceUDDISettingsMenuItem.setText("Service UDDI Settings");
+            serviceUDDISettingsMenuItem.setText("Publish to UDDI");
             //int mnemonic = servicePropertiesMenuItem.getText().toCharArray()[0];
             //servicePropertiesMenuItem.setMnemonic(mnemonic);
             //servicePropertiesMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
         return serviceUDDISettingsMenuItem;
-    }
-
-    private JMenuItem getPublishToUDDIMenuItem() {
-        if (publishToUDDIMenuItem == null) {
-            publishToUDDIMenuItem = new JMenuItem();
-            publishToUDDIMenuItem.setEnabled(false);
-            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/xmlObject16.gif"));
-            publishToUDDIMenuItem.setIcon(icon);
-            publishToUDDIMenuItem.setText("Publish Policy to UDDI");
-            //int mnemonic = publishToUDDIMenuItem.getText().toCharArray()[0];
-            //publishToUDDIMenuItem.setMnemonic(mnemonic);
-            //publishToUDDIMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
-        }
-        return publishToUDDIMenuItem;
     }
 
     private JMenuItem getDeleteServiceMenuItem() {
@@ -796,12 +782,15 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         viewMenu = menu;
         viewMenu.addMenuListener(new MenuListener() {
+            @Override
             public void menuCanceled(MenuEvent e) {
             }
 
+            @Override
             public void menuDeselected(MenuEvent e) {
             }
 
+            @Override
             public void menuSelected(MenuEvent e) {
                 //when the user clicks sorting options through the root node, it will may change the state and because
                 //the view menu will not get refreshed, we need to get the new state of the sorting
@@ -867,8 +856,11 @@ public class MainWindow extends JFrame implements SheetHolder {
                *
                * @param event the event that occured
                */
+                @Override
                 public void actionPerformed(ActionEvent event) {
-                    SwingUtilities.invokeLater(new Runnable() { public void run() {
+                    SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
                         if ( isApplet() ) {
                             AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
                             String sessionId = applet.getSessionID();
@@ -939,6 +931,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                *
                * @param event the event that occured
                */
+              @Override
               public void actionPerformed(ActionEvent event) {
                   try {
                       getWorkSpacePanel().clearWorkspace(); // vetoable
@@ -1009,6 +1002,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private NewInternalUserAction getNewInternalUserAction() {
         if (newInernalUserAction != null) return newInernalUserAction;
         newInernalUserAction = new NewInternalUserAction(null) {
+            @Override
             public String getName() {
                 return "Create Internal User";
             }
@@ -1022,6 +1016,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private NewGroupAction getNewInternalGroupAction() {
         if (newInernalGroupAction != null) return newInernalGroupAction;
         newInernalGroupAction = new NewGroupAction(null) {
+            @Override
             public String getName() {
                 return "Create Internal Group";
             }
@@ -1035,6 +1030,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private NewFederatedIdentityProviderAction getNewFederatedIdentityProviderAction() {
         if (newPKIProviderAction != null) return newPKIProviderAction;
         newPKIProviderAction = new NewFederatedIdentityProviderAction(null) {
+            @Override
             public void onLogon(LogonEvent e) {
                 super.onLogon(e);
                 final DefaultMutableTreeNode root =
@@ -1053,6 +1049,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private NewLdapProviderAction getNewProviderAction() {
         if (newLDAPProviderAction != null) return newLDAPProviderAction;
         newLDAPProviderAction = new NewLdapProviderAction() {
+            @Override
             public void onLogon(LogonEvent e) {
                 super.onLogon(e);
                 final DefaultMutableTreeNode root =
@@ -1080,9 +1077,11 @@ public class MainWindow extends JFrame implements SheetHolder {
           new AbstractAction(atext, icon) {
               // need to hold a reference to the listener here to prevent GC
               private LogonListener ll = new LogonListener() {
+                  @Override
                   public void onLogon(LogonEvent e) {
                       refreshAction.setEnabled(true);
                   }
+                  @Override
                   public void onLogoff(LogonEvent e) {
                       refreshAction.setEnabled(false);
                   }
@@ -1091,6 +1090,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 addLogonListener(ll);
               }
 
+              @Override
               public void actionPerformed(ActionEvent event) {
                   Collection<Refreshable> alreadyRefreshed = new ArrayList<Refreshable>();
                   // no matter what, if id provider tree exists, always refresh it
@@ -1131,6 +1131,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                           }
                       } finally {
                           SwingUtilities.invokeLater(new Runnable() {
+                              @Override
                               public void run() {
                                   if (kbm.getFocusOwner() != c) {
                                       c.requestFocusInWindow();
@@ -1173,6 +1174,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                * @param event the event that occured
                * @see Action#removePropertyChangeListener
                */
+              @Override
               public void actionPerformed(ActionEvent event) {
                   JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
                   final boolean selected = item.isSelected();
@@ -1209,6 +1211,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                * @param event the event that occured
                * @see Action#removePropertyChangeListener
                */
+              @Override
               public void actionPerformed(ActionEvent event) {
                   JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
                   final boolean selected = item.isSelected();
@@ -1266,8 +1269,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         String aDesc = resapplication.getString("PreferencesMenuItem.desc");
         prefsAction =
           new AbstractAction(atext, icon) {
+              @Override
               public void actionPerformed(ActionEvent event) {
-                  SwingUtilities.invokeLater(new Runnable() { public void run() {
+                  SwingUtilities.invokeLater(new Runnable() {
+                  @Override
+                  public void run() {
                       PreferencesDialog dialog = new PreferencesDialog(MainWindow.this, true, isConnected());
                       dialog.pack();
                       Utilities.centerOnScreen(dialog);
@@ -1295,6 +1301,7 @@ public class MainWindow extends JFrame implements SheetHolder {
               /**
                * Invoked when an action occurs.
                */
+              @Override
               public void actionPerformed(ActionEvent event) {
               }
           };
@@ -1318,7 +1325,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (!connected) {
             getEditPolicyMenuItem().setEnabled(connected);
             getServicePropertiesMenuItem().setEnabled(connected);
-            getPublishToUDDIMenuItem().setEnabled(connected);
+            getServiceUDDISettingsMenuItem().setEnabled(connected);
             getDeleteServiceMenuItem().setEnabled(connected);
         }
         homeAction.setEnabled(connected);
@@ -1370,6 +1377,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         panel.setBackground(Color.gray);
 
         panel.setTransferHandler(new FileDropTransferHandler(new FileDropTransferHandler.FileDropListener(){
+            @Override
             public boolean acceptFiles(File[] files) {
                 boolean accepted = false;
                 for (File file : files) {
@@ -1379,10 +1387,12 @@ public class MainWindow extends JFrame implements SheetHolder {
                 return accepted;
             }
 
+            @Override
             public boolean isDropEnabled() {
                 return true;
             }
         }, new FilenameFilter(){
+            @Override
             public boolean accept(File dir, String name) {
                 boolean accept = false;
                 if(name != null && (name.endsWith(".ssga") || name.endsWith(".ssgl"))) {
@@ -1409,6 +1419,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         tree.setBorder(null);
         final JTree finalTree = tree;
         tree.addTreeSelectionListener(new TreeSelectionListener() {
+            @Override
             public void valueChanged(TreeSelectionEvent e) {
                 DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) finalTree.getLastSelectedPathComponent();
 
@@ -1465,24 +1476,28 @@ public class MainWindow extends JFrame implements SheetHolder {
         servicesAndPoliciesTree.setRootVisible(true);
         TopComponents.getInstance().registerComponent(ServicesAndPoliciesTree.NAME, servicesAndPoliciesTree);
 		servicesAndPoliciesTree.addTreeSelectionListener(new TreeSelectionListener() {
+            @Override
             public void valueChanged(TreeSelectionEvent treeSelectionEvent) {
                 boolean enable = servicesAndPoliciesTree.getSmartSelectedNodes().size() == 1;
+                boolean soap = false;
                 if (enable) {
-                    if (!(servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent() instanceof ServiceNode)) {
+                    Object pathItem = servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent();
+                    if (!(pathItem instanceof ServiceNode)) {
                         enable = false;
+                    } else {
+                        soap = ((ServiceNode)pathItem).getEntityHeader().isSoap();
                     }
                 }
                 getEditPolicyMenuItem().setEnabled(enable);
                 getServicePropertiesMenuItem().setEnabled(enable);
-                getPublishToUDDIMenuItem().setEnabled(enable);
+                getServiceUDDISettingsMenuItem().setEnabled(enable && soap);
                 getDeleteServiceMenuItem().setEnabled(enable);
                 if (enable) {
                     // go get the actions from the node
                     ServiceNode node = (ServiceNode)(servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent());
                     getEditPolicyMenuItem().setAction(new EditPolicyAction(node));
                     getServicePropertiesMenuItem().setAction(new EditServiceProperties(node));
-                    getServiceUDDISettingsMenuItem().setAction(new EditServiceUDDISettingsAction(node));
-                    getPublishToUDDIMenuItem().setAction(new PublishPolicyToUDDIRegistry(node));
+                    if (soap) getServiceUDDISettingsMenuItem().setAction(new EditServiceUDDISettingsAction(node));
                     getDeleteServiceMenuItem().setAction((node instanceof ServiceNodeAlias)? new DeleteServiceAliasAction((ServiceNodeAlias)node) : new DeleteServiceAction(node));
                 }
             }
@@ -1498,7 +1513,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      * @return  The gateway's name that the manager is connecting to.
      */
     private String getServiceUrl() {
-        String url = "";
+        String url;
         if (serviceUrl != null) {
             url = serviceUrl;
         } else {
@@ -1542,7 +1557,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         // disable items that depend on serivces and policies tree selection
         getEditPolicyMenuItem().setEnabled(false);
         getServicePropertiesMenuItem().setEnabled(false);
-        getPublishToUDDIMenuItem().setEnabled(false);
+        getServiceUDDISettingsMenuItem().setEnabled(false);
         getDeleteServiceMenuItem().setEnabled(false);        
 
         TreeSelectionListener treeSelectionListener =
@@ -1551,6 +1566,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 assertionPaletteTree;
               private final JTree services = getServicesAndPoliciesTree();
 
+              @Override
               public void valueChanged(TreeSelectionEvent e) {
                   Object o = e.getSource();
                   if (o == assertionPalette) {
@@ -1756,6 +1772,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private Action getGatewayAuditWindowAction() {
         if (viewGatewayAuditsWindowAction != null) return viewGatewayAuditsWindowAction;
         viewGatewayAuditsWindowAction = new ViewGatewayAuditsAction(){
+            @Override
             protected void performAction() {
                 AuditAlertsNotificationPanel auditAlert = getAuditAlertBar();
                 if( auditAlert != null )
@@ -1792,11 +1809,13 @@ public class MainWindow extends JFrame implements SheetHolder {
         mainSplitPane.setDividerSize(4);
         mainSplitPane.setBorder(null);
         getMainLeftPanel().addComponentListener(new ComponentAdapter(){
+            @Override
             public void componentResized(ComponentEvent e) {
                 preferredHorizontalSplitLocation = mainSplitPane.getDividerLocation() / (double)(mainSplitPane.getWidth() - mainSplitPane.getDividerSize());
             }
         });
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowOpened(WindowEvent e) {
                 preferredHorizontalSplitLocation =
                         setSplitLocation("main.split.divider.location",
@@ -1918,6 +1937,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private void tbadd(JToolBar tb, final JPopupMenu menu, String iconResource) {
         final JButton[] but = new JButton[] { null };
         final Action showAction = new AbstractAction(menu.getLabel()) {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 menu.show(but[0], 0, but[0].getHeight());
             }
@@ -2144,11 +2164,13 @@ public class MainWindow extends JFrame implements SheetHolder {
         verticalSplitPane.setResizeWeight(0.6);
 
         paletteSections.addComponentListener(new ComponentAdapter(){
+            @Override
             public void componentResized(ComponentEvent e) {
                 preferredVerticalSplitLocation = verticalSplitPane.getDividerLocation() / (double)(verticalSplitPane.getHeight() - verticalSplitPane.getDividerSize());
             }
         });
         addWindowListener(new WindowAdapter(){
+            @Override
             public void windowOpened(WindowEvent e) {
                 preferredVerticalSplitLocation =
                         setSplitLocation("tree.split.divider.location",
@@ -2196,6 +2218,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             //create list renderer
             searchComboBox.setRenderer(new BasicComboBoxRenderer() {
+                @Override
                 public Component getListCellRendererComponent(JList list, Object value,  int index, boolean isSelected, boolean cellHasFocus) {
                     AbstractTreeNode node = (AbstractTreeNode) value;
                     if (isSelected) {
@@ -2215,6 +2238,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             //set filter style
             searchComboBox.setFilter(new EditableSearchComboBox.Filter() {
+                @Override
                 public boolean accept(Object obj) {
                     //match display names
                     boolean matches = !(obj == null) && obj.toString().toLowerCase().startsWith(this.prefix.toLowerCase());
@@ -2234,6 +2258,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             //create comparator to sort the filtered items
             searchComboBox.setComparator(new Comparator<Object>() {
+                @Override
                 public int compare(Object o1, Object o2) {
                     return (o1.toString().compareToIgnoreCase(o2.toString()));
                 }
@@ -2241,10 +2266,12 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             //update the searchable nodes when the search box area is focused
             searchComboBox.getEditor().getEditorComponent().addFocusListener(new FocusListener() {
+                @Override
                 public void focusGained(FocusEvent e) {
                     searchComboBox.updateSearchableItems(getAllSearchableServiceAndPolicyNodes());
                 }
 
+                @Override
                 public void focusLost(FocusEvent e) {}
             });
 
@@ -2252,10 +2279,12 @@ public class MainWindow extends JFrame implements SheetHolder {
             for (Component component : searchComboBox.getComponents()) {
                 if (component instanceof JButton) {
                     component.addFocusListener(new FocusListener() {
+                        @Override
                         public void focusGained(FocusEvent e) {
                             searchComboBox.updateSearchableItems(getAllSearchableServiceAndPolicyNodes());
                         }
 
+                        @Override
                         public void focusLost(FocusEvent e) {}
                     });
                 }
@@ -2263,6 +2292,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             //monitor the action if selection was made by mouse or keyboard.  We need to filter scrolling actions
             searchComboBox.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     //System.out.println(e.getActionCommand() + " " + e.getModifiers() + " selected Item:" + ((searchComboBox.getSelectedItem() !=null) ? searchComboBox.getSelectedItem().getClass(): " null"));
 
@@ -2291,6 +2321,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     tree.makeVisible(new TreePath(node.getPath()));
 
                     SwingUtilities.invokeLater(new Runnable() {
+                        @Override
                         public void run() {
                             //invoke the edit policy action
                             for (Action action : node.getActions()) {
@@ -2440,6 +2471,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         // exitMenuItem listener
         getExitMenuItem().
           addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   exitMenuEventHandler();
               }
@@ -2448,6 +2480,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         // HelpTopics listener
         getHelpTopicsMenuItem().
           addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   showHelpTopicsRoot();
               }
@@ -2459,9 +2492,11 @@ public class MainWindow extends JFrame implements SheetHolder {
               /**
                * This method gets called when a property is changed.
                */
+              @Override
               public void propertyChange(final PropertyChangeEvent evt) {
                   if ("lookAndFeel".equals(evt.getPropertyName())) {
                       SwingUtilities.invokeLater(new Runnable() {
+                          @Override
                           public void run() {
                               SwingUtilities.updateComponentTreeUI(TopComponents.getInstance().getTopParent());
                           }
@@ -2482,6 +2517,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 // exit routine, do not remove
                 MainWindow.this.exitMenuEventHandler();
@@ -2494,6 +2530,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         // have to test for window state below.
         // @see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6256547
         addComponentListener(new ComponentAdapter() {
+            @Override
             public void componentResized(ComponentEvent e) {
                 super.componentResized(e);
                 if (getExtendedState() == Frame.NORMAL) {
@@ -2501,6 +2538,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 }
             }
 
+            @Override
             public void componentMoved(ComponentEvent e) {
                 super.componentMoved(e);
                 final Point p = getLocation();
@@ -2634,6 +2672,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         final
         AWTEventListener listener =
           new AWTEventListener() {
+              @Override
               public void eventDispatched(AWTEvent e) {
                   lastActivityTime = System.currentTimeMillis();
               }
@@ -2666,6 +2705,7 @@ public class MainWindow extends JFrame implements SheetHolder {
               setText("inactivity timeout expired; disconnecting...");
             // make sure it is invoked on event dispatching thread
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     try {
                         getWorkSpacePanel().clearWorkspace();  // vetoable
@@ -2687,6 +2727,7 @@ public class MainWindow extends JFrame implements SheetHolder {
       inactivityTimer =
       new Timer(60 * 1000 * 20,
         new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onInactivityTimerTick();
             }
@@ -2748,8 +2789,10 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     private void installClosingWindowHandler () {
         closeWindowListener = new LogonListener(){
+            @Override
             public void onLogon(LogonEvent e) {}
 
+            @Override
             public void onLogoff(LogonEvent e) {
                 closeAllWindows();
             }
@@ -2764,10 +2807,12 @@ public class MainWindow extends JFrame implements SheetHolder {
     private void installTopMenuRefresh() {
         updateTopMenu();
         topMenuListener = new LogonListener() {
+            @Override
             public void onLogoff(LogonEvent e) {
                 updateTopMenu();
             }
 
+            @Override
             public void onLogon(LogonEvent e) {
                 updateTopMenu();
             }
@@ -2940,6 +2985,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     private final LicenseListener paletteTreeLicenseListener = new LicenseListener() {
+        @Override
         public void licenseChanged(ConsoleLicenseManager licenseManager) {
             JTree tree = getAssertionPaletteTree();
             if (tree == null || tree.getModel() == null) return; // not constructed yet
@@ -2954,6 +3000,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     };
 
     private final LicenseListener paletteTabbedPaneLicenseListener = new LicenseListener() {
+        @Override
         public void licenseChanged(ConsoleLicenseManager licenseManager) {
             showOrHideIdentityProvidersTab();
         }
@@ -2963,6 +3010,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     LogonDialog.LogonListener logonListenr =
       new LogonDialog.LogonListener() {
           /* invoked on authentication success */
+          @Override
           public void onAuthSuccess( final String id, final boolean usedCertificate ) {
               connectionID = id;
               String statusMessage = connectionID;
@@ -3033,6 +3081,7 @@ public class MainWindow extends JFrame implements SheetHolder {
               final String message = statusMessage;
               final int timeout = preferences.getInactivityTimeout();
               SwingUtilities.invokeLater(new Runnable() {
+                  @Override
                   public void run() {
                       getStatusMsgLeft().setText(message);
                       initalizeWorkspace();
@@ -3073,6 +3122,7 @@ public class MainWindow extends JFrame implements SheetHolder {
           }
 
           /* invoked on authentication failure */
+          @Override
           public void onAuthFailure() { }
       };
 
@@ -3089,6 +3139,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 Utilities.centerOnScreen(warningBanner);
                 DialogDisplayer.suppressSheetDisplay(warningBanner);
                 DialogDisplayer.display(warningBanner, parent, new Runnable() {
+                    @Override
                     public void run() {
                         if (!warningBanner.isOkClicked() && !warningBanner.isCancelClicked()) {
                             TopComponents.getInstance().disconnectFromGateway();
@@ -3139,8 +3190,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         message.append("\n Would you like to view the license manager now?");
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 DialogDisplayer.OptionListener callback = new DialogDisplayer.OptionListener() {
+                    @Override
                     public void reportResult(int retval) {
                         if (retval == JOptionPane.YES_OPTION) {
                             LicenseDialog dlg = new LicenseDialog(TopComponents.getInstance().getTopParent(),
@@ -3177,6 +3230,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         message.append(".");
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                                                   message.toString(),
@@ -3213,6 +3267,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                                       JOptionPane.WARNING_MESSAGE, null);
     }
 
+    @Override
     public void showSheet(JInternalFrame sheet) {
         if (isApplet()) {
             AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);

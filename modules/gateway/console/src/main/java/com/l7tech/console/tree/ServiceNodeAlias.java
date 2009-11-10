@@ -26,7 +26,7 @@ public class ServiceNodeAlias extends ServiceNode{
         final Collection<Action> actions = new ArrayList<Action>();
 
         actions.add(new EditPolicyAction(this));
-        if (getEntityHeader().isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
+        if (getEntityHeader().isSoap()) actions.add(new EditServiceUDDISettingsAction(this));
         actions.add(new DeleteServiceAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));

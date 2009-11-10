@@ -108,7 +108,6 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         actions.add(new EditPolicyAction(this));
         actions.add(new EditServiceProperties(this));
         if (getEntityHeader().isSoap()) actions.add(new EditServiceUDDISettingsAction(this));
-        if (getEntityHeader().isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
         actions.add(new MarkEntityToAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
