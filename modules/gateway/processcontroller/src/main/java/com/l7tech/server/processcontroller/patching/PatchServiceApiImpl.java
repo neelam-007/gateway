@@ -120,12 +120,16 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     @Override
     public Collection<PatchStatus> listPatches() {
-        return packageManager.listPatches();
+        Collection<PatchStatus> statuses = packageManager.listPatches();
+        recordManager.save(new PatchRecord(System.currentTimeMillis(), "", Action.LIST));
+        return statuses;
     }
 
     @Override
     public PatchStatus getStatus(String patchId) throws PatchException {
-        return packageManager.getPackageStatus(patchId);
+        PatchStatus patchStatus = packageManager.getPackageStatus(patchId);
+        recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.STATUS));
+        return patchStatus;
     }
 
     // - PRIVATE

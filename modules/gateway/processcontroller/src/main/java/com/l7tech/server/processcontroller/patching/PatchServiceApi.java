@@ -20,7 +20,7 @@ public interface PatchServiceApi {
 
     public PatchStatus getStatus(String patchId) throws PatchException;
 
-    enum Action { UPLOAD, INSTALL, ROLLBACK, PACKAGE_DELETE }
+    enum Action { UPLOAD, INSTALL, ROLLBACK, PACKAGE_DELETE, LIST, STATUS }
 
     /**
      * System property for specifying the node IDs that a patch needs to be applied to.
