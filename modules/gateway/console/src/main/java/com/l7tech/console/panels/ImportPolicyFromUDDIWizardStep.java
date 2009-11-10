@@ -2,13 +2,20 @@ package com.l7tech.console.panels;
 
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.uddi.UDDINamedEntity;
-import com.l7tech.uddi.UDDIException;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ResolvingComparator;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.objectmodel.FindException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -20,9 +27,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Collection;
+import java.net.URLConnection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * Second step in the ImportPolicyFromUDDIWizard.
@@ -38,6 +49,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
     private JTextField nameField;
     private JButton searchButton;
     private JList policyList;
+    private JComboBox uddiRegistriesComboBox;
     private ImportPolicyFromUDDIWizard.Data data;
     private static final Logger logger = Logger.getLogger(ImportPolicyFromUDDIWizardStep.class.getName());
     private boolean readyToAdvance = false;
@@ -47,28 +59,33 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
         initialize();
     }
 
+    @Override
     public String getDescription() {
         return "Search UDDI Directory for Policy and Import it";
     }
 
+    @Override
     public String getStepLabel() {
         return "Select Policy From UDDI";
     }
 
+    @Override
     public boolean canAdvance() {
         return readyToAdvance;
     }
 
+    @Override
     public boolean canFinish() {
         return false;
     }
 
+    @Override
     public boolean onNextButton() {
         boolean res = false;
         ImportPolicyFromUDDIWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         try {
-            String tModelKey = ((UDDINamedEntity)policyList.getSelectedValue()).getKey();
-            res = importPolicy(tModelKey);
+            UDDINamedEntity entity = (UDDINamedEntity) policyList.getSelectedValue();
+            res = importPolicy(entity.getPolicyUrl());
         } finally {
             ImportPolicyFromUDDIWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
@@ -80,9 +97,18 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
         setLayout(new BorderLayout());
         add(mainPanel);
 
-        policyList.setCellRenderer(new TextListCellRenderer(new TextListCellProvider(true), new TextListCellProvider(false), false));
+        uddiRegistriesComboBox.setRenderer(  new TextListCellRenderer<UDDIRegistry>( new Functions.Unary<String, UDDIRegistry>(){
+            @Override
+            public String call( final UDDIRegistry uddiRegistry ) {
+                return uddiRegistry.getName();
+            }
+        }, null, false));
+        uddiRegistriesComboBox.setModel( new DefaultComboBoxModel( loadUDDIRegistries() ) );
+
+        policyList.setCellRenderer(new TextListCellRenderer<UDDINamedEntity>(new TextListCellProvider(true), new TextListCellProvider(false), false));
 
         searchButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ImportPolicyFromUDDIWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 try {
@@ -93,6 +119,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
             }
         });
         policyList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (policyList.getSelectedIndex() < 0) {
                     readyToAdvance = false;
@@ -105,19 +132,58 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
                 }
             }
         });
+
+        if ( uddiRegistriesComboBox.getModel().getSize()==0 ) {
+            searchButton.setEnabled( false );           
+        } else {
+            uddiRegistriesComboBox.setSelectedIndex( 0 );   
+        }
+    }
+
+    private UDDIRegistry[] loadUDDIRegistries() {
+        final UDDIRegistryAdmin uddiRegistryAdmin = getUDDIRegistryAdmin();
+
+        Collection<UDDIRegistry> registries = Collections.emptyList();
+        try {
+            registries = uddiRegistryAdmin.findAllUDDIRegistries();
+            for ( Iterator<UDDIRegistry> regIter = registries.iterator(); regIter.hasNext(); ) {
+                UDDIRegistry registry = regIter.next();
+                if ( !registry.isEnabled() ) {
+                    regIter.remove();    
+                }
+            }
+        } catch (FindException e) {
+            logger.log( Level.WARNING, "Error loading UDDI registries", e );
+        }
+
+        UDDIRegistry[] result = registries.toArray(new UDDIRegistry[registries.size()]);
+        Arrays.sort(result, new ResolvingComparator<UDDIRegistry,String>(new Resolver<UDDIRegistry, String>() {
+            @Override
+            public String resolve(UDDIRegistry key) {
+                return key.getName().toLowerCase();
+            }
+        }, false));
+
+        return result;
     }
 
     private void find() {
         String filter = nameField.getText();
         try {
-            Collection<UDDINamedEntity> policies = data.getUddi().listPolicies(filter, null);
-            policyList.setListData(policies.toArray());
+            UDDINamedEntity[] policies = getServiceAdmin().findPoliciesFromUDDIRegistry(getSelectedRegistryOid(), filter);
+            policyList.setListData(policies);
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error getting find result", e);
             showError("Error getting find result . " + ExceptionUtils.unnestToRoot(e));
         }
     }
 
+    private long getSelectedRegistryOid() {
+        UDDIRegistry registry = (UDDIRegistry) uddiRegistriesComboBox.getSelectedItem();
+        return registry.getOid();
+    }
+
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         data = (ImportPolicyFromUDDIWizard.Data)settings;
     }
@@ -127,22 +193,18 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
                                       "Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    private boolean importPolicy(String tModelKey) {
+    private boolean importPolicy(String policyURL) {
         boolean imported = false;
-        String policyURL = null;
-
-        try {
-            policyURL = data.getUddi().getPolicyUrl(tModelKey);
-        }
-        catch(UDDIException iuie)  {
-            logger.log(Level.WARNING, "Error list policy urls", iuie);
-            showError(ExceptionUtils.getMessage(iuie));
-        }
 
         if ( policyURL != null ) {
             // try to get a policy document
             try {
-                Document doc = XmlUtil.parse(new URL(policyURL).openStream());
+                URL url = new URL(policyURL);
+                URLConnection urlConn = url.openConnection();
+                urlConn.setConnectTimeout( SyspropUtil.getInteger("com.l7tech.console.policyImportConnectTimeout", 30000) );
+                urlConn.setReadTimeout( SyspropUtil.getInteger("com.l7tech.console.policyImportReadTimeout", 60000) );
+                urlConn.setUseCaches( false );
+                Document doc = XmlUtil.parse(urlConn.getInputStream());
 
                 if (XmlUtil.findFirstChildElementByName(doc,
                                                         new String[] {WspConstants.L7_POLICY_NS,
@@ -176,18 +238,26 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
         return imported;
     }
 
+    private UDDIRegistryAdmin getUDDIRegistryAdmin() {
+        return Registry.getDefault().getUDDIRegistryAdmin();
+    }
+
+    private ServiceAdmin getServiceAdmin() {
+        return Registry.getDefault().getServiceManager();
+    }
+
     /**
      * Function for accessing either the display or tooltip text.
      */
-    private static final class TextListCellProvider implements Functions.Unary<String, Object> {
+    private static final class TextListCellProvider implements Functions.Unary<String, UDDINamedEntity> {
         private final boolean showName;
 
         private TextListCellProvider(final boolean showName) {
             this.showName = showName;    
         }
 
-        public String call(final Object entityObject) {
-            UDDINamedEntity uddiNamedEntity = (UDDINamedEntity) entityObject;
+        @Override
+        public String call(final UDDINamedEntity uddiNamedEntity) {
             String text;
 
             if ( showName ) {

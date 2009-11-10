@@ -473,15 +473,10 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     public UDDINamedEntity[] findBusinessesFromUDDIRegistry(final long registryOid, String namePattern, boolean caseSensitive) throws FindException {
         try {
             final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
-            UDDINamedEntity [] uddiNamedEntities = uddiHelper.getMatchingBusinesses(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
-            //noinspection unchecked
-            Arrays.sort(uddiNamedEntities, new ResolvingComparator(new Resolver<UDDINamedEntity, String>() {
+            if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
 
-                @Override
-                public String resolve(UDDINamedEntity key) {
-                    return key.getName();
-                }
-            }, false));
+            UDDINamedEntity [] uddiNamedEntities = uddiHelper.getMatchingBusinesses(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
+            sort( uddiNamedEntities );
             return uddiNamedEntities;
         } catch (UDDIException e) {
             String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
@@ -499,9 +494,44 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
+    public UDDINamedEntity[] findPoliciesFromUDDIRegistry( final long registryOid, final String namePattern ) throws FindException {
+        try {
+            final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
+            if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
+
+            Collection<UDDINamedEntity> policies = getUDDIClient(uddiRegistry).listPolicies( namePattern, null );
+            UDDINamedEntity[] uddiNamedEntities = policies.toArray( new UDDINamedEntity[policies.size()] );
+            sort( uddiNamedEntities );
+            return uddiNamedEntities;
+        } catch (UDDIException e) {
+            String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
+            if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
+                 ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
+                 ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
+                 ExceptionUtils.causedBy( e, ConnectException.class ) ||
+                 ExceptionUtils.causedBy( e, NoRouteToHostException.class )) {
+                logger.log(Level.WARNING, msg + " : '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e ))+ "'", ExceptionUtils.getDebugException( e ));
+            } else {
+                logger.log(Level.WARNING, msg, e);
+            }
+            throw new FindException(msg);
+        }
+    }
+
+    private void sort( final UDDINamedEntity[] uddiNamedEntities ) {
+        Arrays.sort(uddiNamedEntities, new ResolvingComparator<UDDINamedEntity,String>(new Resolver<UDDINamedEntity, String>() {
+            @Override
+            public String resolve(UDDINamedEntity key) {
+                return key.getName();
+            }
+        }, false));
+    }
+
+    @Override
     public WsdlPortInfo[] findWsdlUrlsFromUDDIRegistry(final long registryOid, String namePattern, boolean caseSensitive) throws FindException {
         try {
             final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
+            if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
             WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
             for(WsdlPortInfo wsdlPortInfo: wsdlPortInfoInfo){
                 wsdlPortInfo.setUddiRegistryOid(registryOid);

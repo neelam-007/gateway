@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.uddi.UDDIClient;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -20,15 +19,14 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
     public static ImportPolicyFromUDDIWizard getInstance(Frame parent) {
         ImportPolicyFromUDDIFinalStep fstep = new ImportPolicyFromUDDIFinalStep(null);
         ImportPolicyFromUDDIWizardStep istep = new ImportPolicyFromUDDIWizardStep(fstep);
-        UDDITargetWizardStep tstep = new UDDITargetWizardStep(istep, false);
-        tstep.setPanelDescription("Provide the UDDI registry URL and account information to retrieve the policy");
-        return new ImportPolicyFromUDDIWizard(parent, tstep);
+        return new ImportPolicyFromUDDIWizard(parent, istep);
     }
 
     protected ImportPolicyFromUDDIWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
         setTitle("Import WS-Policy from URL in UDDI Registry Wizard");
         getButtonHelp().addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(ImportPolicyFromUDDIWizard.this);
             }
@@ -46,20 +44,17 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
         return null;
     }
 
-    public class Data implements UDDITargetWizardStep.Data {
-        private UDDIClient uddi;
+    public class Data {
+        private long registryOid;
         private String policyXML;
-        private boolean confirmed = false;
-        private String capturedPolicyURL;
-        private String policytModelKey;
-        private String policyName;
+        private boolean confirmed;
 
-        public UDDIClient getUddi() {
-            return uddi;
+        public long getRegistryOid() {
+            return registryOid;
         }
 
-        public void setUddi(UDDIClient uddi) {
-            this.uddi = uddi;
+        public void setRegistryOid( final long registryOid ) {
+            this.registryOid = registryOid;
         }
 
         public String getPolicyXML() {
@@ -74,32 +69,8 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
             return confirmed;
         }
 
-        public String getCapturedPolicyURL() {
-            return capturedPolicyURL;
-        }
-
-        public void setCapturedPolicyURL(String capturedPolicyURL) {
-            this.capturedPolicyURL = capturedPolicyURL;
-        }
-
         public void setConfirmed(boolean confirmed) {
             this.confirmed = confirmed;
-        }
-
-        public String getPolicytModelKey() {
-            return policytModelKey;
-        }
-
-        public void setPolicytModelKey(String policytModelKey) {
-            this.policytModelKey = policytModelKey;
-        }
-
-        public String getPolicyName() {
-            return policyName;
-        }
-
-        public void setPolicyName(String policytModelName) {
-            this.policyName = policytModelName;
         }
     }
 }

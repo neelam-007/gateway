@@ -152,7 +152,8 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      *
      * @param registryOid   long oid of the UDDIRegistry to search
      * @param namePattern   The string of the service name (wildcard % is supported)
-     * @param caseSensitive True if case sensitive, false otherwise.   @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
+     * @param caseSensitive True if case sensitive, false otherwise.
+     * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
@@ -164,12 +165,25 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      *
      * @param registryOid   long oid of the UDDIRegistry to search
      * @param namePattern   The string of the business name (wildcard % is supported)
-     * @param caseSensitive True if case sensitive, false otherwise.   @return A list of UDDINamedEntities of businesses whose name matches the namePattern.
+     * @param caseSensitive True if case sensitive, false otherwise.
+     * @return A list of UDDINamedEntities of businesses whose name matches the namePattern.
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
     UDDINamedEntity[] findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException;
+
+    /**
+     * Find all WS-Policy attachments from the UDDI registry that match the given name pattern.
+     *
+     * @param registryOid Identifier of the UDDIRegistry to search
+     * @param namePattern The string of the policy tModel name
+     * @return A list of UDDINamedEntities of policies whose name matches the namePattern.
+     * @throws FindException if there was a problem accessing the requested information.
+     */
+    @Transactional(readOnly = true)
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
+    UDDINamedEntity[] findPoliciesFromUDDIRegistry(long registryOid, String namePattern) throws FindException;
 
     /**
      * Gets the ThroughputQuota counter names already defined on this gateway. This is used by the ThroughputQuota assertion

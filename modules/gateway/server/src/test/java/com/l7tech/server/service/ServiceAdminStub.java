@@ -257,6 +257,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
+    public UDDINamedEntity[] findPoliciesFromUDDIRegistry( final long registryOid, final String namePattern ) throws FindException {
+        return new UDDINamedEntity[0];
+    }
+
+    @Override
     public String[] listExistingCounterNames() throws FindException {
         return new String[0];
     }

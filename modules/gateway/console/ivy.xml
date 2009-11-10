@@ -25,7 +25,6 @@
         <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-common" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-gui" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-uddi" rev="latest.integration" force="true" conf="core->default,optional"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-test" rev="latest.integration" force="true" conf="test"/>
