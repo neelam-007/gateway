@@ -80,7 +80,6 @@ public class PatchServiceTest {
     }
 
     @Test
-    @Ignore
     public void isTyan64Appliance() throws Exception {
         Assert.assertFalse("Tyan64 seems to be a ssg appliance; this will break other tests.", PCUtils.isAppliance());
     }
@@ -89,7 +88,7 @@ public class PatchServiceTest {
     @Ignore("Until the full PC / patch service API are deployed for testing")
     public void testDeployedPatchUpload() throws Exception {
         PatchServiceApi api = new CxfUtils.ApiBuilder("https://localhost:8765/services/patchServiceApi").build(PatchServiceApi.class);
-        File patch = PatchUtils.buildPatch(getTestPatchSpec(null), getTestPatchSigningParams());
+        File patch = PatchUtils.buildPatch(getTestPatchSpec("success_touch_tmp_helloworld_txt"), getTestPatchSigningParams());
         PatchStatus status = api.uploadPatch(IOUtils.slurpFile(patch));
         Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
     }
@@ -104,7 +103,7 @@ public class PatchServiceTest {
         File patch = null;
         boolean tempDeleteOk;
         try {
-            patch = PatchUtils.buildPatch(getTestPatchSpec(null), getTestPatchSigningParams());
+            patch = PatchUtils.buildPatch(getTestPatchSpec("success_touch_tmp_helloworld_txt"), getTestPatchSigningParams());
             PatchStatus status = patchService.uploadPatch(IOUtils.slurpFile(patch));
             Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
         } finally {
@@ -116,7 +115,6 @@ public class PatchServiceTest {
     }
 
     @Test
-    @Ignore
     public void testOverwriteInstalledPatch() throws Exception {
         String patchId = "upload_overwrite_id";
         File patch = null;
@@ -145,7 +143,6 @@ public class PatchServiceTest {
             throw new IOException("Error deleting patch file.");
     }
     @Test
-    @Ignore
     public void testInstallTwice() throws Exception {
         String patchId = "install_twice";
         File patch = null;
@@ -174,6 +171,66 @@ public class PatchServiceTest {
             throw new IOException("Error deleting patch file.");
     }
 
+    @Test
+    public void testPatchRollback() throws Exception {
+        testPatchRollback(true, true); // rollback allowed
+    }
+
+    @Test
+    public void testPatchRollbackNotAllowed() throws Exception {
+        try {
+            testPatchRollback(true, false); // rollback not allowed
+            Assert.fail("Patch configured to not allow rollback; rollback attempt should have failed.");
+        } catch (PatchException expected) {
+            // do nothing
+        }
+    }
+
+    @Test
+    public void testPatchRollbackNotInstalled() throws Exception {
+        try {
+            testPatchRollback(false, true); // rollback not allowed
+            Assert.fail("Rollback attempt should have failed for a package that is not installed.");
+        } catch (PatchException expected) {
+            // do nothing
+        }
+    }
+
+    private void testPatchRollback(boolean install, boolean allowRollback) throws Exception {
+        File patch = null;
+        File rollback = null;
+        boolean temp1DeleteOk, temp2DeleteOk;
+        try {
+            String patchId = "success_touch_tmp_helloworld_txt_allow_rollback";
+            patch = PatchUtils.buildPatch(getTestPatchSpec(patchId).property(PatchPackage.Property.ROLLBACK_ALLOWED, Boolean.toString(allowRollback)), getTestPatchSigningParams());
+            // upload
+            PatchStatus status = patchService.uploadPatch(IOUtils.slurpFile(patch));
+            Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
+            Assert.assertEquals("Uploaded patch id is not the expected one.", patchId, status.getField(PatchStatus.Field.ID));
+            // install
+            if (install) {
+                status = patchService.installPatch(patchId, new ArrayList<String>());
+                Assert.assertEquals(status.getField(PatchStatus.Field.ERROR_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
+            }
+            // upload rollback
+            String rollbackId = "rollback_touch_tmp_helloworld_txt_allow_rollback";
+            rollback = PatchUtils.buildPatch(getTestPatchSpec(rollbackId).property(PatchPackage.Property.ROLLBACK_FOR_ID, patchId), getTestPatchSigningParams());
+            status = patchService.uploadPatch(IOUtils.slurpFile(rollback));
+            Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
+            Assert.assertEquals("Uploaded patch id is not the expected one.", rollbackId, status.getField(PatchStatus.Field.ID));
+            // rollback
+            status = patchService.installPatch(rollbackId, new ArrayList<String>());
+            Assert.assertEquals(status.getField(PatchStatus.Field.ERROR_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
+            status = patchService.getStatus(patchId);
+            Assert.assertEquals(status.getField(PatchStatus.Field.ERROR_MSG), PatchStatus.State.ROLLED_BACK.name(), status.getField(PatchStatus.Field.STATE));
+        } finally {
+            temp1DeleteOk = patch == null || ! patch.exists() || patch.delete();
+            temp2DeleteOk = rollback == null || ! rollback.exists() || rollback.delete();
+        }
+
+        if (! temp1DeleteOk || ! temp2DeleteOk)
+            throw new IOException("Error deleting patch file.");
+    }
     @Test
     public void testNoManifestEntry() throws Exception {
         File patch = null;

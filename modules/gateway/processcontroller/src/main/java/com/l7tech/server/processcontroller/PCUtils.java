@@ -16,16 +16,12 @@ public class PCUtils {
     // - PUBLIC
 
     public static boolean isAppliance() {
-        // rpm -q ssg-appliance
+
         try {
-            File rpm = new File("/bin/rpm");
-            if (! rpm.exists())
-                rpm = new File("/usr/bin/rpm");
-            ProcResult result = ProcUtils.exec(rpm, new String[] {"-q", "ssg-appliance"});
-            logger.log(Level.FINE, "Appliance check (rpm -q ssg-appliance) returned: " + result.getExitStatus());
-            return result.getExitStatus() == 0;
+            File applianceDir = new File(APPLIANCE_DIR);
+            return applianceDir.exists() && applianceDir.isDirectory();
         } catch (Exception e) {
-            logger.log(Level.INFO, "Error encountered while trying to determine if the host is an appliance: " + ExceptionUtils.getMessage(e));
+            logger.log(Level.INFO, "Error encountered while trying to determine if the host is an appliance; assuming it's a software install. " + ExceptionUtils.getMessage(e));
             return false;
         }
     }
@@ -33,6 +29,8 @@ public class PCUtils {
     // - PRIVATE 
 
     private static final Logger logger = Logger.getLogger(PCUtils.class.getName());
+
+    private static final String APPLIANCE_DIR = "/opt/SecureSpan/Appliance";
 
     private PCUtils() { }
 }
