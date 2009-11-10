@@ -31,8 +31,8 @@ public interface ConfigService {
     String HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE = "host.controller.patch.truststore.file";
     String HOSTPROPERTIES_PATCH_TRUSTSTORE_TYPE = "host.controller.patch.truststore.type";
     String HOSTPROPERTIES_PATCH_TRUSTSTORE_PASSWORD = "host.controller.patch.truststore.password";
-    String HOSTPROPERTIES_PATCHES_DIR = "host.paches.dir";
-    String HOSTPROPERTIES_PATCHES_LOG = "host.paches.logfile";
+    String HOSTPROPERTIES_PATCHES_DIR = "host.patches.dir";
+    String HOSTPROPERTIES_PATCHES_LOG = "host.patches.logfile";
     String HOSTPROPERTIES_TYPE = "host.type";
     String HOSTPROPERTIES_ID = "host.id";
     String HOSTPROPERTIES_SAMPLER_TIMEOUT_SLOW_CONNECT= "host.sampler.timeout.slow.connect";
