@@ -1106,7 +1106,6 @@
                 <ref bean="keystoreFileManager"/>
                 <ref bean="messageContextMappingKeyManager"/>
                 <ref bean="uddiRegistryManager"/>
-                <ref bean="uddiProxiedServiceInfoManager"/>
                 <ref bean="uddiPublishStatusManager" />
                 <ref bean="uddiServiceControlManager"/>
                 <ref bean="serviceManager" />

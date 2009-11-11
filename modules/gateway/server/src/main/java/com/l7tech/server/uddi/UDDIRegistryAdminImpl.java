@@ -357,7 +357,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                 uddiBusinessKey, uddiBusinessName, updateWhenGatewayWsdlChanges,
                 UDDIProxiedServiceInfo.PublishType.PROXY, wsdlHash);
         final long oid = uddiProxiedServiceInfoManager.save(uddiProxiedServiceInfo);
-        final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
+        final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.NONE);
         uddiPublishStatusManager.save(newStatus);
         //the save event is picked up by the UDDICoordinator, which does the UDDI work
     }

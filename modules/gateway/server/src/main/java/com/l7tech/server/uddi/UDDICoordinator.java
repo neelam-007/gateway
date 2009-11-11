@@ -117,10 +117,9 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) applicationEvent;
             if ( UDDIRegistry.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 loadUDDIRegistries(true);
-            } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ||
+            } else if (
                     UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass()) ||
                     PublishedService.class.equals(entityInvalidationEvent.getEntityClass())) {
-                final boolean uddiProxyInfoUpdate = UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass());
                 final boolean statusUpdate = UDDIPublishStatus.class.equals(entityInvalidationEvent.getEntityClass());
                 final boolean publishedServiceUpdate = PublishedService.class.equals(entityInvalidationEvent.getEntityClass());
                 
@@ -130,25 +129,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                 for ( int i=0; i<entityIds.length; i++ ) {
                     long id = entityIds[i];
                     char op = entityOps[i];
-                    if ( uddiProxyInfoUpdate &&
-                            (EntityInvalidationEvent.CREATE == op || EntityInvalidationEvent.UPDATE == op)) {
-                        try {
-                            final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPrimaryKey(id);
-                            if(uddiProxiedServiceInfo == null){
-                                //this is an expected condition, we get more events than we need
-                                return;
-                            }
-                            final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
-                            if(uddiPublishStatus == null){
-                                return;
-                            }
-
-                            notifyPublishEvent(uddiProxiedServiceInfo, uddiPublishStatus);
-                        } catch (FindException e) {
-                            logger.log(Level.WARNING, "Could not find created UDDIProxiedServiceInfo with id #(" + id + ")");
-                            return;
-                        }
-                    }else if( statusUpdate &&
+                    if( statusUpdate &&
                             (EntityInvalidationEvent.CREATE == op || EntityInvalidationEvent.UPDATE == op)){
                         try {
                             final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByPrimaryKey(id);
