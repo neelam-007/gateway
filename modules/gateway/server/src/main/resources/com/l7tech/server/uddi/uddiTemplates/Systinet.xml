@@ -3,4 +3,5 @@
     <inquiryUrl>inquiry</inquiryUrl>
     <publicationUrl>publishing</publicationUrl>
     <securityPolicyUrl>security</securityPolicyUrl>
+    <subscriptionUrl>subscription</subscriptionUrl>    
 </uddiTemplate>        

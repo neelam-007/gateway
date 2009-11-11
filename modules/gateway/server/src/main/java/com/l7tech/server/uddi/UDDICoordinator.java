@@ -332,8 +332,11 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             final UDDIRegistryRuntime oldurr = oldRegistries.get( registryOid );
             final UDDIRegistryRuntime newurr = newRegistries.get( registryOid );
 
-            if ( newurr.registry.isMonitoringEnabled() && (oldurr==null || !oldurr.registry.isMonitoringEnabled() ||
-                 newurr.registry.getMonitoringFrequency() != oldurr.registry.getMonitoringFrequency())) {
+            if ( newurr.registry.isMonitoringEnabled() &&
+                 ( oldurr==null ||
+                   !oldurr.registry.isMonitoringEnabled() ||
+                   newurr.registry.getMonitoringFrequency() != oldurr.registry.getMonitoringFrequency() ||
+                   newurr.registry.isSubscribeForNotifications() != oldurr.registry.isSubscribeForNotifications())) {
                 notifyEvent( new SubscribeUDDIEvent( registryOid, SubscribeUDDIEvent.Type.SUBSCRIBE, checkExpired ) );
             } else if ( !newurr.registry.isMonitoringEnabled() && (oldurr!=null && oldurr.registry.isMonitoringEnabled())) {
                 notifyEvent( new SubscribeUDDIEvent( registryOid, SubscribeUDDIEvent.Type.UNSUBSCRIBE ) );
