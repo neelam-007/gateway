@@ -6,6 +6,12 @@ import static org.junit.Assert.*;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
+import com.l7tech.util.MockConfig;
+import com.l7tech.uddi.UDDIRegistryInfo;
+
+import java.util.Properties;
+import java.util.Collection;
+
 /**
  *
  */
@@ -31,6 +37,23 @@ public class UDDITemplateTest {
     }
 
     @Test
+    public void testTemplates() throws Exception {
+        UDDITemplateManager manager = new UDDITemplateManager( new MockConfig( new Properties() ) );
+        Collection<UDDIRegistryInfo> registryTypes = manager.getTemplatesAsUDDIRegistryInfo();
+
+        assertNotNull( "Found registry config", registryTypes );
+        assertTrue( "Found registry config", !registryTypes.isEmpty() );
+
+        for ( UDDIRegistryInfo info : registryTypes ) {
+            System.out.println("Checking UDDI : " + info.getName());
+            assertNotNull( "Name", info.getName() );
+            assertNotNull( "Inquiry URL", info.getInquiry() );
+            assertNotNull( "Publication URL", info.getPublication() );
+            assertNotNull( "Security URL", info.getSecurityPolicy() );
+        }
+    }
+
+    @Test
     public void testTemplateKeyedReferencePropertyValues() throws Exception {
         JAXBContext context = JAXBContext.newInstance("com.l7tech.server.uddi");
         Unmarshaller unmarshaller = context.createUnmarshaller();
@@ -39,7 +62,12 @@ public class UDDITemplateTest {
         assertNotNull( "Metrics keyed references", template.getMetricsKeyedReferences() );
         for ( UDDITemplate.KeyedReferenceTemplate krt : template.getMetricsKeyedReferences() ) {
             if ( krt.getValueProperty() != null ) {
-                MetricsUDDITaskFactory.Metric.valueOf( krt.getValueProperty() );
+                String key = krt.getValueProperty();
+                int index = key.indexOf(':');
+                if ( index > 0 ) {
+                    key = key.substring( 0, index );
+                }
+                MetricsUDDITaskFactory.Metric.valueOf( key );
             }
         }
     }

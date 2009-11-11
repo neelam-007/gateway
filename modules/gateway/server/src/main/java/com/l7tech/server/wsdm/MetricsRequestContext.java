@@ -50,7 +50,9 @@ public class MetricsRequestContext {
         nrRequests = bin.getNumAttemptedRequest();
         nrSuccessRequests = bin.getNumCompletedRequest();
         periodStart = bin.getPeriodStart();
-        availability = (1f - (((float)bin.getNumRoutingFailure())/((float)bin.getNumAttemptedRequest()))) *100f;
+        availability = bin.getNumAttemptedRequest()==0 ?
+                100f :
+                (1f - (((float)bin.getNumRoutingFailure())/((float)bin.getNumAttemptedRequest()))) *100f;
 
         // From MOWS 1.1 Specification , Section 5.2.3.2:
         // "ServiceTime is a counter of the total elapsed time that the Web service

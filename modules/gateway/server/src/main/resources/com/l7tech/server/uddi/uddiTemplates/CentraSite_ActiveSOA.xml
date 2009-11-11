@@ -24,7 +24,7 @@
         <metricsKeyedReference>
             <key>uddi:centrasite.com:management:target</key>
             <name>Target</name>
-            <value>Target</value> <!-- TODO Set correct target value (or valueProperty) -->
+            <valueProperty>CLUSTER:uddi.centrasite.target</valueProperty>
         </metricsKeyedReference>
         <metricsKeyedReference>
             <key>uddi:centrasite.com:management:start.datetime</key>

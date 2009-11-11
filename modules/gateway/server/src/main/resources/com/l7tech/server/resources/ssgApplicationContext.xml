@@ -1636,6 +1636,7 @@
                     <constructor-arg index="2" ref="uddiTemplateManager"/>
                     <constructor-arg index="3" ref="uddiBusinessServiceStatusManager" />
                     <constructor-arg index="4" ref="aggregator" />
+                    <constructor-arg index="5" ref="clusterPropertyCache" />
                 </bean>
             </list>
         </constructor-arg>

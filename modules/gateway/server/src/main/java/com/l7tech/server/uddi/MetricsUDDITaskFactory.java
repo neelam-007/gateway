@@ -5,10 +5,12 @@ import com.l7tech.uddi.UDDIClient;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.wsdm.Aggregator;
 import com.l7tech.server.wsdm.MetricsRequestContext;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.logging.Level;
@@ -34,12 +36,14 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                    final UDDIHelper uddiHelper,
                                    final UDDITemplateManager uddiTemplateManager,
                                    final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
-                                   final Aggregator aggregator ) {
+                                   final Aggregator aggregator,
+                                   final ClusterPropertyCache clusterPropertyCache ) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiHelper = uddiHelper;
         this.uddiTemplateManager = uddiTemplateManager;
         this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
         this.aggregator = aggregator;
+        this.clusterPropertyCache = clusterPropertyCache;
     }
 
     @Override
@@ -55,6 +59,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                         uddiTemplateManager,
                         uddiBusinessServiceStatusManager,
                         aggregator,
+                        clusterPropertyCache,
                         timerEvent.getRegistryOid() );
             } else if ( timerEvent.getType()==TimerUDDIEvent.Type.METRICS_CLEANUP ) {
                 task = new MetricsCleanupUDDITask(
@@ -71,7 +76,8 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
 
     //- PACKAGE
 
-    enum Metric { 
+    enum Metric {
+            CLUSTER,
             SERVICE_KEY,
             START_TIME,
             END_TIME,
@@ -90,6 +96,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
     private final UDDITemplateManager uddiTemplateManager;
     private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
     private final Aggregator aggregator;
+    private final ClusterPropertyCache clusterPropertyCache;
 
     /**
      * Task to publish metrics to UDDI.
@@ -104,6 +111,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         private final UDDITemplateManager uddiTemplateManager;
         private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
         private final Aggregator aggregator;
+        private final ClusterPropertyCache clusterPropertyCache;
         private final long registryOid;
         private final NumberFormat percentFormat = new DecimalFormat("0.0");
 
@@ -112,12 +120,14 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                 final UDDITemplateManager uddiTemplateManager,
                                 final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
                                 final Aggregator aggregator,
+                                final ClusterPropertyCache clusterPropertyCache,
                                 final long registryOid ) {
             this.uddiRegistryManager = uddiRegistryManager;
             this.uddiHelper = uddiHelper;
             this.uddiTemplateManager = uddiTemplateManager;
             this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
             this.aggregator = aggregator;
+            this.clusterPropertyCache = clusterPropertyCache;
             this.registryOid = registryOid;
         }
 
@@ -249,14 +259,36 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                  final MetricsRequestContext metricsRequestContext ) {
             String value = null;
 
+            String metricsKey = valueProperty;
+            String metricsSub = null;
+            int sepIndex = valueProperty.indexOf( ':' );
+            if ( sepIndex > -1 ) {
+                metricsKey = valueProperty.substring( 0, sepIndex );
+                metricsSub = valueProperty.substring( sepIndex+1 );
+            }
+
             try {
-                Metric metric = Metric.valueOf( valueProperty );
+                Metric metric = Metric.valueOf( metricsKey );
                 switch ( metric ) {
                     case AVAILABILITY:
                         value = percentFormat.format(metricsRequestContext.getAvailability());
                         break;
                     case AVERAGE_RESPONSE_TIME:
                         value = Long.toString(metricsRequestContext.getAvgResponseTime());
+                        break;
+                    case CLUSTER:
+                        if ( metricsSub != null && !metricsSub.isEmpty() ) {
+                            ClusterProperty property = clusterPropertyCache.getCachedEntityByName( metricsSub, 30000 );
+                            if ( property != null && !property.isHiddenProperty() ) {
+                                value = property.getValue();
+                                if ( value == null ) {
+                                    value = clusterPropertyCache.getPropertyValueWithDefaultFallback( metricsSub );  
+                                }
+                            }
+                        }
+                        if ( value == null ) {
+                            value = "";
+                        }
                         break;
                     case END_TIME:
                         value = endDate;
