@@ -44,6 +44,8 @@ public class PatchCli {
             System.exit(SYNTAX_ERROR);
         }
 
+        Throwable thrown = null;
+        String errPrefix = null;
         try {
             PatchServiceApi api = getApi(patchAction);
             logger.log(Level.INFO, "Running patch action: " + patchAction.name());
@@ -56,9 +58,20 @@ public class PatchCli {
                 System.out.println("No patches have been uploaded.");
             }
             logger.log(Level.INFO, patchAction.name() + " returned " + (result == null ? 0 : result.size()) + " results.");
-        } catch (Exception e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
-            System.out.println("Error: " + ExceptionUtils.getMessage(e) + "\n");
+        } catch (IOException e1) {
+            thrown = e1;
+            errPrefix = "I/O Error: ";
+        } catch (PatchException e2) {
+            thrown = e2;
+            errPrefix = "Patch API Error: ";
+        } catch (RuntimeException re) {
+            thrown = re;
+            errPrefix = "Runtime error (check configuration): ";
+        }
+
+        if (thrown != null) {
+            logger.log(Level.WARNING, errPrefix + ExceptionUtils.getMessage(thrown), thrown);
+            System.out.println(errPrefix + ExceptionUtils.getMessage(thrown) + "\n");
             System.exit(PATCH_API_ERROR);
         }
 
@@ -129,7 +142,7 @@ public class PatchCli {
                 this.argument = extractOneStringActionArgument(args);
             }
             @Override
-            public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException, IOException {
+            public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
                 final PatchStatus status = api.installPatch(getArgument(), null);
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
@@ -139,7 +152,7 @@ public class PatchCli {
                 this.argument = extractOneStringActionArgument(args);
             }
             @Override
-            public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException, IOException {
+            public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
                 final PatchStatus status = api.deletePackageArchive(getArgument());
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
@@ -149,7 +162,7 @@ public class PatchCli {
                 this.argument = extractOneStringActionArgument(args);
             }
             @Override
-            public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException, IOException {
+            public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
                 final PatchStatus status = api.getStatus(getArgument());
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
@@ -159,7 +172,7 @@ public class PatchCli {
                 /*no extra arguments for list*/
             }
             @Override
-            public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException, IOException {
+            public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
                 return api.listPatches();
             }};
 

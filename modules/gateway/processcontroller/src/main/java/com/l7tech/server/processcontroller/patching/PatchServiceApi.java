@@ -2,7 +2,6 @@ package com.l7tech.server.processcontroller.patching;
 
 import javax.jws.WebService;
 import java.util.Collection;
-import java.io.IOException;
 
 /**
  * PatchService API.
@@ -12,7 +11,7 @@ public interface PatchServiceApi {
 
     public PatchStatus uploadPatch(byte[] patchData) throws PatchException;
 
-    public PatchStatus installPatch(String patchId, Collection<String> nodes) throws IOException, PatchException;
+    public PatchStatus installPatch(String patchId, Collection<String> nodes) throws PatchException;
 
     public PatchStatus deletePackageArchive(String patchId) throws PatchException;
 
