@@ -94,77 +94,19 @@ public class BusinessServicePublisherTest {
 
         final int serviceOid = 3828382;
 
-        final Map<String, TModel> tModels = new HashMap<String, TModel>();
-        InputStream inputStream =
-                BusinessServicePublisherTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_portType.xml");
-        TModel portTypeTModel = JAXB.unmarshal(inputStream, TModel.class);
-        tModels.put(portTypeTModel.getTModelKey(), portTypeTModel);
-
-        inputStream =
-                BusinessServicePublisherTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_binding.xml");
-        TModel bindingTModel = JAXB.unmarshal(inputStream, TModel.class);
-        tModels.put(bindingTModel.getTModelKey(), bindingTModel);
-
-        inputStream =
-                BusinessServicePublisherTest.class.getClassLoader().getResourceAsStream("UDDIObjects/BusinessService.xml");
-
-        BusinessService service = JAXB.unmarshal(inputStream, BusinessService.class);
-        BindingTemplate template = service.getBindingTemplates().getBindingTemplate().get(0);
-
-        Assert.assertNotNull("BusinessService not loaded correctly", service);
         //Test is now setup
 
         UDDIClient uddiClient = new TestUddiClient();
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
         Pair<BindingTemplate, List<TModel>> bindingAndModels =
-                servicePublisher.publishEndPointToExistingService(service, tModels, "WarehouseSoap", gatewayURL, gatewayWsdlUrl);
+                servicePublisher.publishEndPointToExistingService("serviceKey", "WarehouseSoap", "WarehouseSoap", gatewayURL, gatewayWsdlUrl, false);
 
 
-        testBindingTemplate(gatewayWsdlUrl, gatewayURL, service, template, bindingAndModels);
+        testBindingTemplate(gatewayWsdlUrl, gatewayURL, "serviceKey", bindingAndModels);
     }
 
-    @Test
-    public void testCorrectBindingFound() throws Exception{
-        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("Warehouse.wsdl"));
-
-        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
-        final String gatewayURL = "http://localhost:8080/3828382";
-
-        final int serviceOid = 3828382;
-
-        final Map<String, TModel> tModels = new HashMap<String, TModel>();
-        InputStream inputStream =
-                BusinessServicePublisherTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_portType.xml");
-        TModel portTypeTModel = JAXB.unmarshal(inputStream, TModel.class);
-        tModels.put(portTypeTModel.getTModelKey(), portTypeTModel);
-
-        inputStream =
-                BusinessServicePublisherTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_binding.xml");
-        TModel bindingTModel = JAXB.unmarshal(inputStream, TModel.class);
-        tModels.put(bindingTModel.getTModelKey(), bindingTModel);
-
-        inputStream =
-                BusinessServicePublisherTest.class.getClassLoader().getResourceAsStream("UDDIObjects/BusinessServiceThreeBindings.xml");
-
-        BusinessService service = JAXB.unmarshal(inputStream, BusinessService.class);
-        BindingTemplate template = service.getBindingTemplates().getBindingTemplate().get(0);
-
-        Assert.assertNotNull("BusinessService not loaded correctly", service);
-        //Test is now setup
-
-        UDDIClient uddiClient = new TestUddiClient();
-        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
-
-        Pair<BindingTemplate, List<TModel>> bindingAndModels =
-                servicePublisher.publishEndPointToExistingService(service, tModels, "WarehouseSoap", gatewayURL, gatewayWsdlUrl);
-
-
-        testBindingTemplate(gatewayWsdlUrl, gatewayURL, service, template, bindingAndModels);
-
-    }
-
-    private void testBindingTemplate(String gatewayWsdlUrl, String gatewayURL, BusinessService service, BindingTemplate template, Pair<BindingTemplate, List<TModel>> bindingAndModels) {
+    private void testBindingTemplate(String gatewayWsdlUrl, String gatewayURL, String serviceKey, Pair<BindingTemplate, List<TModel>> bindingAndModels) {
         Map<String, TModel> keyToModel = new HashMap<String, TModel>();
         for(TModel model: bindingAndModels.right){
             keyToModel.put(model.getTModelKey(), model);
@@ -174,10 +116,9 @@ public class BusinessServicePublisherTest {
         //referencing models from the binding that was copied
 
         Assert.assertNotNull("Binding key should not be null", newTemplate.getBindingKey());
-        Assert.assertFalse("Binding key should not match original binding", newTemplate.getBindingKey().equals(template.getBindingKey()));
 
         //serviceKey
-        Assert.assertEquals("Incorrect serviceKey found", service.getServiceKey(), newTemplate.getServiceKey());
+        Assert.assertEquals("Incorrect serviceKey found", serviceKey, newTemplate.getServiceKey());
 
         //AccessPoint
         Assert.assertEquals("Invalid useType found", "endPoint", newTemplate.getAccessPoint().getUseType());
@@ -241,7 +182,7 @@ public class BusinessServicePublisherTest {
                 Assert.assertEquals("Invalid namespace name found", "binding namespace", tModelKeyToRef.get(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE).getKeyName());
 
                 //Overview doc
-                Assert.assertEquals("Incorrect number of overview docs found", 1, newbindingTModel.getOverviewDoc().size());
+                Assert.assertEquals("Incorrect number of overview docs found", 2, newbindingTModel.getOverviewDoc().size());
                 OverviewDoc overviewDoc = newbindingTModel.getOverviewDoc().get(0);
                 Assert.assertEquals("Invalid gateway WSDL URL found", gatewayWsdlUrl, overviewDoc.getOverviewURL().getValue());
             }else{
@@ -268,7 +209,7 @@ public class BusinessServicePublisherTest {
                 Assert.assertEquals("Invalid namespace value found", "http://warehouse.acme.com/ws", tModelKeyToRef.get(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE).getKeyValue());
                 Assert.assertEquals("Invalid namespace name found", "portType namespace", tModelKeyToRef.get(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE).getKeyName());
                 //Overview doc
-                Assert.assertEquals("Incorrect number of overview docs found", 1, newPortTypeTModel.getOverviewDoc().size());
+                Assert.assertEquals("Incorrect number of overview docs found", 2, newPortTypeTModel.getOverviewDoc().size());
                 OverviewDoc overviewDoc = newPortTypeTModel.getOverviewDoc().get(0);
                 Assert.assertEquals("Invalid gateway WSDL URL found", gatewayWsdlUrl, overviewDoc.getOverviewURL().getValue());
 

@@ -1,9 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Oct 14, 2009
- * Time: 12:42:53 PM
- */
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
@@ -13,15 +7,15 @@ import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.wsdl.Wsdl;
-
-import javax.wsdl.WSDLException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+/**
+ * Copyright (C) 2008, Layer 7 Technologies Inc.
+ * @author darmstrong
+ */
 public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     protected static final Logger logger = Logger.getLogger(UDDIRegistryAdminImpl.class.getName());
 
@@ -39,7 +33,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                  final UDDICoordinator uddiCoordinator,
                                  final ServiceCache serviceCache,
                                  final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
-                                 final ServiceManager serviceManager,
                                  final UDDIPublishStatusManager uddiPublishStatusManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiHelper = uddiHelper;
@@ -126,10 +119,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
     private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
         return uddiHelper.newUDDIClient( uddiRegistry );
-    }
-
-    private UDDIClientConfig getUDDIClientConfig(final UDDIRegistry uddiRegistry) {
-        return uddiHelper.newUDDIClientConfig( uddiRegistry );
     }
 
     @Override
@@ -224,18 +213,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             throws UpdateException, SaveException, FindException {
         if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ){
             final PublishedService service = serviceCache.getCachedService(uddiServiceControl.getPublishedServiceOid());
-            final Wsdl wsdl;
-            try {
-                wsdl = service.parsedWsdl();
-            } catch (WSDLException e) {
-                final String msg = "Could not obtain WSDL for associated published service: " + ExceptionUtils.getMessage(e);
-                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-                throw new SaveException(msg);
-            }
 
             //validate that an end point can be found
             final String endPoint = uddiServiceControl.getAccessPointUrl();
-            //todo take appropriate action as WSDL definition may have just changed - UDDICoordinator
+            //TODO [Donal] clean up this
 //            try {
 //                endPoint = UDDIUtilities.extractEndPointFromWsdl(wsdl, uddiServiceControl.getWsdlServiceName(),
 //                        uddiServiceControl.getWsdlPortName(), uddiServiceControl.getWsdlPortBinding());
@@ -270,6 +251,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());
             if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
             uddiServiceControl.throwIfFinalPropertyModified(original);
+            //make sure the wsdl under uddi control is not being set when it is not allowed
+            if(uddiServiceControl.isHasHadEndpointRemoved() && uddiServiceControl.isUnderUddiControl()){
+                throw new UpdateException("Cannot save UDDIServiceControl. Incorrect state. " +
+                        "WSDL cannot be under UDDI control when the owning business service in UDDI has had its bindingTemplates removed");
+            }
             uddiServiceControlManager.update( uddiServiceControl );
             return uddiServiceControl.getOid();
         }
@@ -299,13 +285,14 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(service == null) throw new SaveException("PublishedService with id #(" + publishedServiceOid + ") was not found");
 
         final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(publishedServiceOid);
-        if(serviceControl == null) throw new SaveException("PublishedService with id #("+publishedServiceOid+") is not under UDDI control");
+        if(serviceControl == null) throw new SaveException("PublishedService with id #("+publishedServiceOid+") was not created from UDDI (record may have been deleted)");
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(serviceControl.getUddiRegistryOid());
         if(uddiRegistry == null) throw new SaveException("UDDIRegistry with id #("+serviceControl.getUddiRegistryOid()+") was not found");
         if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry with id #("+serviceControl.getUddiRegistryOid()+") is not enabled");
 
-        if(!serviceControl.isUnderUddiControl()) throw new SaveException("Published service with id #("+publishedServiceOid+") is not under UDDI control");
+        if(serviceControl.isUnderUddiControl() && removeOthers)
+            throw new SaveException("Published service with id #("+publishedServiceOid+") is not under UDDI control so cannot remove existing bindingTemplates");
 
         final String wsdlHash;
         try {
@@ -315,9 +302,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             throw new RuntimeException(msg, ExceptionUtils.getDebugException(e));
         }
-        final UDDIProxiedServiceInfo serviceInfo = new UDDIProxiedServiceInfo(service.getOid(), uddiRegistry.getOid(),
-                serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(), false,
-                UDDIProxiedServiceInfo.PublishType.ENDPOINT, wsdlHash);
+
+        final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getEndPointPublishInfo(service.getOid(),
+                uddiRegistry.getOid(), serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(),
+                wsdlHash, removeOthers);
+
         final long oid = uddiProxiedServiceInfoManager.save(serviceInfo);
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
         uddiPublishStatusManager.save(newStatus);
@@ -353,9 +342,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             throw new RuntimeException(msg, ExceptionUtils.getDebugException(e));
         }
 
-        final UDDIProxiedServiceInfo uddiProxiedServiceInfo = new UDDIProxiedServiceInfo(service.getOid(), uddiRegistry.getOid(),
-                uddiBusinessKey, uddiBusinessName, updateWhenGatewayWsdlChanges,
-                UDDIProxiedServiceInfo.PublishType.PROXY, wsdlHash);
+        final UDDIProxiedServiceInfo uddiProxiedServiceInfo = UDDIProxiedServiceInfo.getProxyServicePublishInfo(service.getOid(),
+                uddiRegistry.getOid(), uddiBusinessKey, uddiBusinessName,
+                wsdlHash, updateWhenGatewayWsdlChanges);
+
         final long oid = uddiProxiedServiceInfoManager.save(uddiProxiedServiceInfo);
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.NONE);
         uddiPublishStatusManager.save(newStatus);

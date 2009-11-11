@@ -55,7 +55,7 @@ public class UDDIProxiedServiceDownloaderTest {
         }
 
         final List<Pair<BusinessService, Map<String, TModel>>>
-                downloadedServicesAndTModels = serviceDownloader.getBusinessServiceModelsNew(serviceKeys);
+                downloadedServicesAndTModels = serviceDownloader.getBusinessServiceModels(serviceKeys);
 
         Assert.assertNotNull("Pair should never be null", downloadedServicesAndTModels);
         Assert.assertNotNull("List<BusinessService> should never be null", downloadedServicesAndTModels.get(0).left);

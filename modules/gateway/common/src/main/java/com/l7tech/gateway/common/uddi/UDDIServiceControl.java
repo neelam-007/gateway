@@ -264,6 +264,22 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.publishWsPolicyInlined = publishWsPolicyInlined;
     }
 
+    /**
+     * If the BusinessService that a PublishedService was created for is known to ever had it's end points removed
+     * via the publish end point feature in the 'Publish' tab, then the service can never be under uddi control
+     * again, as we know that the read endpoints have been deleted, so there is nothing to monitor. We could
+     * publish metrics still to it, but that is not currently supported
+     * @return
+     */
+    @Column(name = "has_had_endpoints_removed")
+    public boolean isHasHadEndpointRemoved() {
+        return hasHadEndpointRemoved;
+    }
+
+    public void setHasHadEndpointRemoved(boolean hasHadEndpointRemoved) {
+        this.hasHadEndpointRemoved = hasHadEndpointRemoved;
+    }
+
     @Override
     @Version
     @Column(name = "version")
@@ -291,4 +307,5 @@ public class UDDIServiceControl extends PersistentEntityImp {
     private boolean publishWsPolicyEnabled;
     private boolean publishWsPolicyFull;
     private boolean publishWsPolicyInlined;
+    private boolean hasHadEndpointRemoved;
 }

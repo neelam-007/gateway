@@ -347,11 +347,10 @@
     <bean id="uddiRegistryAdmin" class="com.l7tech.server.uddi.UDDIRegistryAdminImpl">
         <constructor-arg ref="uddiRegistryManager"/>
         <constructor-arg ref="uddiHelper"/>
-        <constructor-arg ref="uddiProxiedServiceInfoManager"/>
         <constructor-arg ref="uddiServiceControlManager"/>
         <constructor-arg ref="uddiCoordinator"/>
         <constructor-arg ref="serviceCache"/>
-        <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="uddiProxiedServiceInfoManager"/>
         <constructor-arg ref="uddiPublishStatusManager" />
     </bean>
 

@@ -38,6 +38,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     @Override
     public void publishBindingTemplate(final BindingTemplate bindingTemplate) throws UDDIException {
+        if(bindingTemplate == null) throw new NullPointerException("bindingTemplate cannot be null");
 
         SaveBinding saveBinding = new SaveBinding();
         saveBinding.setAuthInfo(getAuthToken());
@@ -59,6 +60,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
      */
     @Override
     public boolean publishBusinessService(final BusinessService businessService) throws UDDIException {
+        if(businessService == null) throw new NullPointerException("businessService cannot be null");
         final String preSaveKey = businessService.getServiceKey();
 
         SaveService saveService = buildSaveService( getAuthToken(), businessService );
@@ -77,6 +79,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     @Override
     public boolean publishTModel(TModel tModelToPublish) throws UDDIException {
+        if(tModelToPublish == null) throw new NullPointerException("tModelToPublish cannot be null");
 //        if(searchFirst){
 //            TModelList tModelList = findMatchingTModels(tModelToPublish, false);
 //            TModelInfos tModelInfos = tModelList.getTModelInfos();
@@ -144,6 +147,8 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                                  final String name,
                                  final String description,
                                  final Collection<UDDIKeyedReference> keyedReferences ) throws UDDIException {
+        if(tModelKey == null || tModelKey.trim().isEmpty()) throw new IllegalArgumentException("tModelKey cannot be null or empty");
+
         String publishedTModelKey;
 
         final TModel tModel = new TModel();
@@ -181,6 +186,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     @Override
     public TModel getTModel(String tModelKey) throws UDDIException {
+        if(tModelKey == null || tModelKey.trim().isEmpty()) throw new IllegalArgumentException("tModelKey cannot be null or empty");
         //Turn the tModelInfo into a TModel
         GetTModelDetail getTModelDetail = new GetTModelDetail();
         getTModelDetail.setAuthInfo(getAuthToken());
@@ -200,7 +206,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     @Override
     public String getBusinessEntityName(String businessKey) throws UDDIException {
-
+        if(businessKey == null || businessKey.trim().isEmpty()) throw new IllegalArgumentException("businessKey cannot be null or empty");
         GetBusinessDetail getBusinessDetail = new GetBusinessDetail();
         getBusinessDetail.setAuthInfo(getAuthToken());
         getBusinessDetail.getBusinessKey().add(businessKey);
@@ -226,7 +232,8 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
      * @throws UDDIException if any problem retireving the BusinessService from the UDDI registry
      */
     public BusinessService getBusinessService(String serviceKey) throws UDDIException {
-
+        if(serviceKey == null || serviceKey.trim().isEmpty()) throw new IllegalArgumentException("serviceKey cannot be null or empty");
+        
         GetServiceDetail getServiceDetail = new GetServiceDetail();
         getServiceDetail.setAuthInfo(getAuthToken());
         getServiceDetail.getServiceKey().add(serviceKey);
@@ -244,6 +251,12 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     @Override
     public void deleteTModel(Set<String> tModelKeys) throws UDDIException {
+        if(tModelKeys == null) throw new IllegalArgumentException("tModelKeys cannot be null or empty");
+        if(tModelKeys.isEmpty()){
+            logger.log(Level.INFO, "tModelKeys is empty. Nothing at do");
+            return;
+        }
+
         DeleteTModel deleteTModel = new DeleteTModel();
         deleteTModel.setAuthInfo(getAuthToken());
         deleteTModel.getTModelKey().addAll(tModelKeys);
@@ -260,47 +273,120 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     @Override
     public void deleteTModel(String tModelKey) throws UDDIException {
+        if(tModelKey == null || tModelKey.trim().isEmpty()) throw new IllegalArgumentException("tModelKey cannot be null or empty");
+
         Set<String> aSet = new HashSet<String>();
         aSet.add(tModelKey);
         deleteTModel(aSet);
     }
 
     @Override
-    public void deleteBindingTemplate(String bindingKey) throws UDDIException {
-        GetBindingDetail getBindingDetail = new GetBindingDetail();
+    public void deleteBindingTemplateFromSingleService(final Set<String> bindingKeys) throws UDDIException {
+        if(bindingKeys == null) throw new IllegalArgumentException("bindingKeys cannot be null or empty");
+        if(bindingKeys.isEmpty()){
+            logger.log(Level.INFO, "bindingKeys is empty. Nothing at do");
+            return;
+        }
+        
+        final GetBindingDetail getBindingDetail = new GetBindingDetail();
         getBindingDetail.setAuthInfo(getAuthToken());
-        getBindingDetail.getBindingKey().add(bindingKey);
+        getBindingDetail.getBindingKey().addAll(bindingKeys);
+        final BindingDetail bindingDetail;
+        final Set<String> tModelKeysToDelete = new HashSet<String>();
+        String owningServiceKey = null;
         try {
-            BindingDetail bindingDetail = getInquirePort().getBindingDetail(getBindingDetail);
+            bindingDetail = getInquirePort().getBindingDetail(getBindingDetail);
             if(bindingDetail.getBindingTemplate().isEmpty()){
-                logger.log(Level.INFO, "No bindingTemplates found for key: " + bindingKey);
+                logger.log(Level.INFO, "No bindingTemplates found for binding keys");
                 return;
             }
-            BindingTemplate bindingTemplate = bindingDetail.getBindingTemplate().get(0);
-            for(TModelInstanceInfo info: bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo()){
-                deleteTModel(info.getTModelKey());
+            for (BindingTemplate bt : bindingDetail.getBindingTemplate()) {
+                if(owningServiceKey == null) owningServiceKey = bt.getServiceKey();
+                for(TModelInstanceInfo to: bt.getTModelInstanceDetails().getTModelInstanceInfo()){
+                    tModelKeysToDelete.add(to.getTModelKey());
+                }
             }
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception getting bindingTemplate with bindingKey: " + bindingKey+ ": ", drfm);
+            final String msg = getExceptionMessage("Exception getting bindingTemplates", drfm);
             logger.log(Level.WARNING, msg);
             throw new UDDIException(msg, drfm);
         }
 
-        DeleteBinding deleteBinding = new DeleteBinding();
-        deleteBinding.setAuthInfo(getAuthToken());
-        deleteBinding.getBindingKey().add(bindingKey);
-        try {
-            getPublishPort().deleteBinding(deleteBinding);
-            logger.log(Level.INFO, "Deleting bindingTemplate with key: " + bindingKey);
-        } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception deleting bindingTemplate with bindingKey: " + bindingKey+ ": ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+        //Get the service, we will delete actual bindings through the service only
+        //this allows us to manage the case when no bindings are left, as ActiveSOA will not allow the final delete
+        //of a binding, when no more remain using the DeleteBinding api
+
+        if(owningServiceKey == null) {
+            logger.log(Level.WARNING, "Cannot delete binding as cannot find it's owning service with serviceKey: " + owningServiceKey);
+            return;
         }
+
+        final GetServiceDetail getServiceDetail = new GetServiceDetail();
+        getServiceDetail.setAuthInfo(getAuthToken());
+        getServiceDetail.getServiceKey().add(owningServiceKey);
+        final ServiceDetail serviceDetail;
+        try {
+            serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);
+            if(serviceDetail.getBusinessService().isEmpty()){
+                logger.log(Level.WARNING, "No owning service for bindingTemplate found with serviceKey: " + owningServiceKey);
+                return;
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            final String msg = getExceptionMessage("Exception getting BusinessService with key: " + owningServiceKey+" " +
+                    "to check if any bindingTemplate elements remain", drfm);
+            logger.log(Level.WARNING, msg);
+            return;
+        }
+
+        final BusinessService owningService = serviceDetail.getBusinessService().get(0);
+        final List<BindingTemplate> bindingTemplatesToKeep = new ArrayList<BindingTemplate>();
+        final BindingTemplates owningSvcTemplates = owningService.getBindingTemplates();
+
+        if(owningSvcTemplates != null){
+            for(final BindingTemplate bt: owningSvcTemplates.getBindingTemplate()){
+                if(!bindingKeys.contains(bt.getBindingKey())){
+                    bindingTemplatesToKeep.add(bt);
+                }
+            }
+        }
+
+        if(bindingTemplatesToKeep.isEmpty()){
+            owningService.setBindingTemplates(null);//none left
+        }else if(owningSvcTemplates != null){
+            owningSvcTemplates.getBindingTemplate().clear();
+            owningSvcTemplates.getBindingTemplate().addAll(bindingTemplatesToKeep);
+        }
+
+        final SaveService saveService = new SaveService();
+        saveService.setAuthInfo(getAuthToken());
+        saveService.getBusinessService().add(owningService);
+        try {
+            final ServiceDetail serviceDetail1 = getPublishPort().saveService(saveService);
+            BusinessService bs = serviceDetail1.getBusinessService().get(0);
+        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
+            logger.log(Level.WARNING, "Found no BusinessService for serviceKey: " + owningServiceKey);
+        }
+
+        if (!tModelKeysToDelete.isEmpty()) deleteTModel(tModelKeysToDelete);
+    }
+
+    @Override
+    public void deleteBindingTemplate(String bindingKey) throws UDDIException {
+        if(bindingKey == null || bindingKey.trim().isEmpty()) throw new IllegalArgumentException("bindingKey cannot be null or empty");
+        Set<String> deleteSet = new HashSet<String>();
+        deleteSet.add(bindingKey);
+        deleteBindingTemplateFromSingleService(deleteSet);
     }
 
     @Override
     public List<BusinessService> getBusinessServices(final Set<String> serviceKeys) throws UDDIException {
+        if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
+        if(serviceKeys.isEmpty()){
+            logger.log(Level.INFO, "serviceKeys is empty. Nothing at do");
+            return Collections.emptyList();
+        }
+
+        if(serviceKeys.isEmpty()) throw new IllegalArgumentException("serviceKeys cannot be null");
         final GetServiceDetail getServiceDetail = new GetServiceDetail();
         getServiceDetail.setAuthInfo(getAuthToken());
         getServiceDetail.getServiceKey().addAll(serviceKeys);
@@ -326,6 +412,12 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     @Override
     public void deleteUDDIBusinessServices(Collection<UDDIBusinessService> businessServices) throws UDDIException {
+        if(businessServices == null) throw new NullPointerException("businessServices cannot be null or empty");
+        if(businessServices.isEmpty()){
+            logger.log(Level.INFO, "businessServices is empty. Nothing at do");
+            return;
+        }
+
         Set<String> serviceKeys = new HashSet<String>();
         for(UDDIBusinessService businessService: businessServices){
             serviceKeys.add(businessService.getServiceKey());
@@ -335,6 +427,12 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     @Override
     public void deleteBusinessServicesByKey(Collection<String> serviceKeys) throws UDDIException {
+        if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
+        if(serviceKeys.isEmpty()){
+            logger.log(Level.INFO, "serviceKeys is empty. Nothing at do");
+            return;
+        }
+
         Set<String> tModelsToDelete = new HashSet<String>();
         for(String serviceKey: serviceKeys){
             tModelsToDelete.addAll(deleteBusinessService(serviceKey));
@@ -347,7 +445,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     @Override
     public Set<String> deleteBusinessService(String serviceKey) throws UDDIException {
-
+        if(serviceKey == null || serviceKey.trim().isEmpty()) throw new IllegalArgumentException("serviceKey cannot be null or empty");
         //We need to delete any tModels it references
         //find the service
         final BusinessService businessService = getBusinessService(serviceKey);

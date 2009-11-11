@@ -92,6 +92,11 @@ public class TestGenericUDDIClient {
         }
     }
 
+    @Test
+    public void testDeleteBindingTemplates() throws UDDIException {
+        final String bindingKey = "uddi:38ed2f50-ce74-11de-8486-86e998070d36";
+        uddiClient.deleteBindingTemplate(bindingKey);
+    }
     /**
      * Test the ServiceAdmin api for creating a UDDIProxiedService and corresponding BusinessService in UDDI Registry
      *

@@ -39,7 +39,7 @@ public class UDDIProxiedServiceDownloader {
      * dependant apon. Neverl null. Neither left or right are ever null either.
      * @throws UDDIException any problems searching the UDDI Registry
      */
-    public List<Pair<BusinessService, Map<String, TModel>>> getBusinessServiceModelsNew(Set<String> serviceKeys) throws UDDIException {
+    public List<Pair<BusinessService, Map<String, TModel>>> getBusinessServiceModels(Set<String> serviceKeys) throws UDDIException {
 
         final List<Pair<BusinessService, Map<String, TModel>>> servicesToDependentTModels =
                 new ArrayList<Pair<BusinessService, Map<String, TModel>>>();
@@ -54,18 +54,19 @@ public class UDDIProxiedServiceDownloader {
             //e.g. don't need to obtain the wsdl:binding tModel as it references the wsdl:port tModel, as the
             //bindingTemplate references both of them
             BindingTemplates bindingTemplates = businessService.getBindingTemplates();
-            for(final BindingTemplate bindingTemplate: bindingTemplates.getBindingTemplate()){
-                final TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
-                //our process of this is based on the technical note using wsdls in uddi, we don't worry about
-                //any other info which may be there
-                //http://www.oasis-open.org/committees/uddi-spec/doc/tn/uddi-spec-tc-tn-wsdl-v202-20040631.htm
-                for(final TModelInstanceInfo tModelInstanceInfo: tModelInstanceDetails.getTModelInstanceInfo()){
-
-                    //spec does not allow null keys, they will exist
-                    final String tModelKey = tModelInstanceInfo.getTModelKey();
-                    final TModel tModel = jaxWsUDDIClient.getTModel(tModelKey);
-                    //todo turn this into one query for both keyes
-                    tModelKeyToModel.put(tModelKey, tModel);
+            if(bindingTemplates != null){
+                for(final BindingTemplate bindingTemplate: bindingTemplates.getBindingTemplate()){
+                    final TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
+                    //our process of this is based on the technical note using wsdls in uddi, we don't worry about
+                    //any other info which may be there
+                    //http://www.oasis-open.org/committees/uddi-spec/doc/tn/uddi-spec-tc-tn-wsdl-v202-20040631.htm
+                    for(final TModelInstanceInfo tModelInstanceInfo: tModelInstanceDetails.getTModelInstanceInfo()){
+                        //spec does not allow null keys, they will exist
+                        final String tModelKey = tModelInstanceInfo.getTModelKey();
+                        final TModel tModel = jaxWsUDDIClient.getTModel(tModelKey);
+                        //todo turn this into one query for both keyes
+                        tModelKeyToModel.put(tModelKey, tModel);
+                    }
                 }
             }
             final Pair<BusinessService, Map<String, TModel>> aServiceToItsModels =

@@ -252,6 +252,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     break;
                 case ENDPOINT:
                     publishGatewayEndpointAsRadioButton.setSelected(true);
+                    removeExistingBindingsCheckBox.setSelected(uddiProxyServiceInfo.isRemoveOtherBindings());
                     setLabelStatus(bindingTemplateStatusLabel);
                     break;
                 case OVERWRITE:
@@ -389,7 +390,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 }
             }else{
                 publishProxiedWsdlRadioButton.setEnabled(true);
-                final boolean uddiControl = uddiServiceControl != null && uddiServiceControl.isUnderUddiControl();
+                final boolean uddiControl = uddiServiceControl != null;
                 publishGatewayEndpointAsRadioButton.setEnabled(uddiControl);
                 overwriteExistingBusinessServiceWithRadioButton.setEnabled(uddiControl);
             }
@@ -450,7 +451,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private void enableDisablePublishEndpointControls(boolean enable){
         //binding endpoint
         publishGatewayEndpointAsRadioButton.setEnabled(enable);
-        removeExistingBindingsCheckBox.setEnabled(enable);
+        if(uddiServiceControl != null && uddiServiceControl.isUnderUddiControl()){
+            removeExistingBindingsCheckBox.setEnabled(false);
+        }else{
+            removeExistingBindingsCheckBox.setEnabled(enable);
+        }
     }
 
     private void enableDisablePublishOverwriteControls(boolean enable){
@@ -503,7 +508,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         }else if(publishGatewayEndpointAsRadioButton.isSelected()){
             if(uddiProxyServiceInfo == null){
                 //publish for first time
-                publishEndpointToBusinessService();
+                return publishEndpointToBusinessService();
             }
         }else if(overwriteExistingBusinessServiceWithRadioButton.isSelected()){
 
@@ -634,15 +639,28 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 });
     }
 
-    private void publishEndpointToBusinessService(){
+    private boolean publishEndpointToBusinessService() {
+        final String msg;
+        final int messageType;
+
+        if (removeExistingBindingsCheckBox.isSelected()) {
+            msg = "Publish Gateway endpoint to owning BusinessService in UDDI? Remove existing bindings?";
+            messageType = JOptionPane.WARNING_MESSAGE;
+        } else {
+            msg = "Publish Gateway endpoint to owning BusinessService in UDDI?";
+            messageType = JOptionPane.QUESTION_MESSAGE;
+        }
+
+        final boolean [] choice = new boolean[1];
         DialogDisplayer.showConfirmDialog(this,
-                                                   "Publish Gateway endpoint to owning BusinessService in UDDI?",
-                                                   "Confirm Publish to UDDI Task",
-                                                   JOptionPane.YES_NO_OPTION,
-                                                   JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
+                msg,
+                "Confirm Publish Endpoint to UDDI Task",
+                JOptionPane.YES_NO_OPTION,
+                messageType, new DialogDisplayer.OptionListener() {
                     @Override
                     public void reportResult(int option) {
-                        if (option == JOptionPane.YES_OPTION){
+                        if (option == JOptionPane.YES_OPTION) {
+                            choice[0] = true;
                             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             try {
                                 uddiRegistryAdmin.publishGatewayEndpoint(service.getOid(), removeExistingBindingsCheckBox.isSelected());
@@ -658,6 +676,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         }
                     }
                 });
+        return choice[0];
     }
 
     private void onOK() {

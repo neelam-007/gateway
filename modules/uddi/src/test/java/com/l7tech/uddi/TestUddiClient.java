@@ -46,6 +46,11 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
+    public void deleteBindingTemplateFromSingleService(Set<String> bindingKeys) throws UDDIException {
+
+    }
+
+    @Override
     public void authenticate() throws UDDIException {
 
     }
@@ -112,7 +117,12 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
 
     @Override
     public List<BusinessService> getBusinessServices(Set<String> serviceKeys) throws UDDIException {
-        return (dataStructureForDownloaderTest != null)? dataStructureForDownloaderTest: Collections.<BusinessService>emptyList();
+        if (dataStructureForDownloaderTest != null) return dataStructureForDownloaderTest;
+
+        BusinessService service = new BusinessService();
+        service.setServiceKey("serviceKey");
+        return Arrays.asList(service);
+
     }
 
     // Not really interested in these for Bondo testing

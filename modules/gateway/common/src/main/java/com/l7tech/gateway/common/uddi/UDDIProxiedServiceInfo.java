@@ -50,21 +50,40 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     public UDDIProxiedServiceInfo() {
     }
 
-    public UDDIProxiedServiceInfo(long publishedServiceOid,
-                                  long uddiRegistryOid,
-                                  final String uddiBusinessKey,
-                                  final String uddiBusinessName,
-                                  final boolean updateProxyOnLocalChange,
-                                  final PublishType publishType,
-                                  final String wsdlHash) {
-        super();
-        this.publishedServiceOid = publishedServiceOid;
-        this.uddiRegistryOid = uddiRegistryOid;
-        this.uddiBusinessKey = uddiBusinessKey;
-        this.uddiBusinessName = uddiBusinessName;
-        this.updateProxyOnLocalChange = updateProxyOnLocalChange;
-        this.publishType = publishType;
-        this.wsdlHash = wsdlHash;
+    public static UDDIProxiedServiceInfo getEndPointPublishInfo(final long publishedServiceOid,
+                                                                final long uddiRegistryOid,
+                                                                final String uddiBusinessKey,
+                                                                final String uddiBusinessName,
+                                                                final String wsdlHash,
+                                                                final boolean removeOtherBindings) {
+
+        final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
+        info.setPublishedServiceOid(publishedServiceOid);
+        info.setUddiRegistryOid(uddiRegistryOid);
+        info.setUddiBusinessKey(uddiBusinessKey);
+        info.setUddiBusinessName(uddiBusinessName);
+        info.setPublishType(PublishType.ENDPOINT);
+        info.setWsdlHash(wsdlHash);
+        info.setRemoveOtherBindings(removeOtherBindings);
+        return info;
+    }
+
+    public static UDDIProxiedServiceInfo getProxyServicePublishInfo(final long publishedServiceOid,
+                                                                    final long uddiRegistryOid,
+                                                                    final String uddiBusinessKey,
+                                                                    final String uddiBusinessName,
+                                                                    final String wsdlHash,
+                                                                    final boolean updateProxyOnLocalChange) {
+
+        final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
+        info.setPublishedServiceOid(publishedServiceOid);
+        info.setUddiRegistryOid(uddiRegistryOid);
+        info.setUddiBusinessKey(uddiBusinessKey);
+        info.setUddiBusinessName(uddiBusinessName);
+        info.setPublishType(PublishType.PROXY);
+        info.setWsdlHash(wsdlHash);
+        info.setRemoveOtherBindings(updateProxyOnLocalChange);
+        return info;
     }
 
     /**
@@ -226,7 +245,16 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     public void setWsdlHash(String wsdlHash) {
         this.wsdlHash = wsdlHash;
     }
-    
+
+    @Column(name = "remove_other_bindings", updatable = false)
+    public boolean isRemoveOtherBindings() {
+        return removeOtherBindings;
+    }
+
+    public void setRemoveOtherBindings(boolean removeOtherBindings) {
+        this.removeOtherBindings = removeOtherBindings;
+    }
+
     // PRIVATE
 
     /**
@@ -283,6 +311,8 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     
     private boolean publishWsPolicyInlined;
     
-    private String wsdlHash;    
+    private String wsdlHash;
+
+    private boolean removeOtherBindings;
 }
 

@@ -472,7 +472,12 @@ public class ServicePropertiesDialog extends JDialog {
             monitoringDisableServicecheckBox.setEnabled( false );
         }else{
             clearButton.setEnabled(canUpdate);
-            wsdlUnderUDDIControlCheckBox.setEnabled(canUpdate);
+
+            if(uddiServiceControl.isHasHadEndpointRemoved()){
+                wsdlUnderUDDIControlCheckBox.setEnabled(false);
+            }else{
+                wsdlUnderUDDIControlCheckBox.setEnabled(canUpdate);
+            }
 
             boolean enableMonitoring = canUpdate && uddiServiceControl != null && wsdlUnderUDDIControlCheckBox.isSelected();
             monitoringEnabledCheckBox.setEnabled( enableMonitoring );

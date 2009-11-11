@@ -189,6 +189,18 @@ public interface UDDIClient extends Closeable {
     void deleteBindingTemplate(final String bindingKey) throws UDDIException;
 
     /**
+     * Delete all bindingTemplates with a key in bindingKeys.
+     *
+     * The delete should be done in one call to UDDI
+     *
+     * All keys MUST have the same serviceKey
+     *
+     * @param bindingKeys String bindingTemplate keys to delete
+     * @throws UDDIException if a bindingTemplate cannot be deleted
+     */
+    void deleteBindingTemplateFromSingleService(final Set<String> bindingKeys) throws UDDIException;
+
+    /**
      * Delete a BusinessService from the UDDI Registry.
      * TODO [Donal] update callers to not have to delete tModels, do it here
      * Any dependent tModels representing wsdl:portType and wsdl:binding are not deleted. This should be done after

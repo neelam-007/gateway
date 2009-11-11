@@ -208,7 +208,40 @@ public class WsdlToUDDIModelConverter {
         servicesAndDependentTModels.add(serviceToTModels);
     }
 
-    private BindingTemplate createUddiBindingTemplate(final Map<String, TModel> serviceToTModels, final Port wsdlPort) throws MissingWsdlReferenceException {
+    // - PACKAGE
+    /**
+     * @param wsdl
+     * @param wsdlURL
+     * @param gatewayURL
+     */
+    WsdlToUDDIModelConverter(final Wsdl wsdl,
+                             final String wsdlURL,
+                             final String gatewayURL) {
+        if (wsdl == null) throw new NullPointerException("wsdl cannot be null");
+        if (wsdlURL == null || wsdlURL.trim().isEmpty())
+            throw new IllegalArgumentException("wsdlURL cannot be null or emtpy");
+        try {
+            new URL(wsdlURL);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Invalid wsdlURL: " + e.getMessage());
+        }
+
+        if (gatewayURL == null || gatewayURL.trim().isEmpty())
+            throw new IllegalArgumentException("gatewayURL cannot be null or emtpy");
+        try {
+            new URL(gatewayURL);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Invalid gatewayURL: " + e.getMessage());
+        }
+
+        this.wsdl = wsdl;
+        this.wsdlURL = wsdlURL;
+        this.gatewayURL = gatewayURL;
+        this.businessKey = null;
+        this.serviceOid = -1;
+    }
+
+    BindingTemplate createUddiBindingTemplate(final Map<String, TModel> serviceToTModels, final Port wsdlPort) throws MissingWsdlReferenceException {
         BindingTemplate bindingTemplate = new BindingTemplate();
 
         //For v3, we don't care about what type of element represents the endPoint e.g. whether it's soap:address
@@ -249,6 +282,8 @@ public class WsdlToUDDIModelConverter {
         return bindingTemplate;
     }
 
+    // - PRIVATE
+
     /**
      * Create a wsdl:binding tModel according to the spec and return the tModel key of the created tModel
      * @param binding Binding wsdl:binding to model as a tModel in UDDI
@@ -263,13 +298,7 @@ public class WsdlToUDDIModelConverter {
         //See http://www.w3.org/TR/wsdl#_bindings
         //appending BINDING_TMODEL_IDENTIFIER as a wsdl:portType could have the same name
         final String key = bindingName + BINDING_TMODEL_IDENTIFIER;
-        //no need to create the tModel if it already exists
 
-        for(String modelKey: serviceToTModels.keySet()){//TODO [Donal] this is not required - ActiveSOA always creats a tModel when it needs one, it does not reuse them
-            if(modelKey.equals(key)) continue;
-        }
-
-//        if(keysToPublishedTModels.containsKey(key)) return key;
         TModel tModel = new TModel();
 
         tModel.setName(getName(bindingName));
@@ -352,13 +381,6 @@ public class WsdlToUDDIModelConverter {
         //See http://www.w3.org/TR/wsdl#_porttypes
         //appending PORT_TMODEL_IDENTIFIER as a wsdl:binding could have the same name
         final String key = portTypeName + PORT_TMODEL_IDENTIFIER;
-
-        //no need to create the tModel if it already exists
-//        if(keysToPublishedTModels.containsKey(key)) return key;
-        
-        for(String modelKey: serviceToTModels.keySet()){
-            if(modelKey.equals(key)) continue;//TODO [Donal] this is not required - ActiveSOA always creats a tModel when it needs one, it does not reuse them
-        }
 
         TModel tModel = new TModel();
         tModel.setName(getName(portTypeName));

@@ -68,198 +68,100 @@ public class BusinessServicePublisher {
         }
     }
 
-    /**
-     * Publish a BindingTemplate to an existing BusinessService in UDDI
-     *
-     * @param serviceKey                  String serviceKey of the BusinessService to publish the end point to
-     * @param wsdlPortName                String wsdl:port name of the bindingTemplate to copy
-     * @param protectedServiceExternalURL String Gateway URL for the protected service
-     * @param protectedServiceWsdlURL     String Gateway WSDL for the protected service
-     * @return String bindingKey of the newly created bindingTemplate
-     * @throws UDDIException Any problems updating UDDI
-     */
-    public String publishEndPointToExistingService(final String serviceKey,
-                                                   final String wsdlPortName,
-                                                   final String protectedServiceExternalURL,
-                                                   final String protectedServiceWsdlURL)
+    public String publishBindingTemplate(final String serviceKey,
+                                         final String wsdlPortName,
+                                         final String wsdlPortBinding,
+                                         final String protectedServiceExternalURL,
+                                         final String protectedServiceWsdlURL,
+                                         final boolean removeOthers) throws UDDIException {
+
+        Pair<BindingTemplate, List<TModel>> templateToModels = publishEndPointToExistingService(serviceKey,
+                wsdlPortName, wsdlPortBinding, protectedServiceExternalURL, protectedServiceWsdlURL, removeOthers);
+
+        return templateToModels.left.getBindingKey();
+    }
+
+    Pair<BindingTemplate, List<TModel>> publishEndPointToExistingService(final String serviceKey,
+                                                                         final String wsdlPortName,
+                                                                         final String wsdlPortBinding,
+                                                                         final String protectedServiceExternalURL,
+                                                                         final String protectedServiceWsdlURL,
+                                                                         final boolean removeOthers)
             throws UDDIException {
 
-        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
-        final Set<String> serviceKeys = new HashSet<String>();
-        serviceKeys.add(serviceKey);
-        final List<Pair<BusinessService, Map<String, TModel>>>
-                uddiServicesToDependentModels = serviceDownloader.getBusinessServiceModelsNew(serviceKeys);
-
-        if (uddiServicesToDependentModels.isEmpty())
-            throw new UDDIException("No BusinessService with serviceKey " + serviceKey + " found in UDDIRegistry");
-
-        final Pair<BusinessService, Map<String, TModel>> modelFromUDDI = uddiServicesToDependentModels.get(0);
-        final BusinessService foundService = modelFromUDDI.left;
-        final Map<String, TModel> tModelKeyToTModel = modelFromUDDI.right;
-        return publishEndPointToExistingService(foundService, tModelKeyToTModel, wsdlPortName,
-                protectedServiceExternalURL, protectedServiceWsdlURL).left.getBindingKey();
-
-    }
-    
-    Pair<BindingTemplate, List<TModel>> publishEndPointToExistingService(final BusinessService foundService,
-                                            final Map<String, TModel> tModelKeyToTModel,
-                                            final String wsdlPortName,
-                                            final String protectedServiceExternalURL,
-                                            final String protectedServiceWsdlURL) throws UDDIException {
-        //first find the bindingTemplate we are going to copy
-        List<BindingTemplate> bindingTemplates = foundService.getBindingTemplates().getBindingTemplate();
-        if(bindingTemplates.isEmpty()) throw new UDDIException("BusinessService with serviceKey " + foundService.getServiceKey() + " contains no bindingTemplate elements");
-
-        BindingTemplate foundTemplate = null;
-        for(BindingTemplate template: bindingTemplates){
-            if (template.getTModelInstanceDetails() == null){
-                logger.log(Level.INFO, "Ignoring bindingTemplate with key: " + template.getBindingKey()+" as it does not contain a tModelInstanceDetails element");
-                continue;
-            }
-
-            for (TModelInstanceInfo tmii : template.getTModelInstanceDetails().getTModelInstanceInfo()) {
-                InstanceDetails instanceDetails = tmii.getInstanceDetails();
-                if (instanceDetails == null) continue;
-
-                String instanceParamForWsdlBinding = instanceDetails.getInstanceParms();
-                if(wsdlPortName.equals(instanceParamForWsdlBinding)) foundTemplate = template;
-            }
+        final Pair<BindingTemplate, Map<String, TModel>> bindingToModels;
+        try {
+            bindingToModels = UDDIUtilities.createBindingTemplateFromWsdl(wsdl, wsdlPortName, wsdlPortBinding, protectedServiceExternalURL, protectedServiceWsdlURL);
+        } catch (UDDIUtilities.PortNotFoundException e) {
+            throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
+        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
+            throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
         }
 
-        if(foundTemplate == null)
-            throw new UDDIException("No bindingTemplate found containing a tModelInstanceInfo with an instanceParams matching wsdl:port local name '" + wsdlPortName+"'");
+        //Get the service
+        Set<String> serviceKeys = new HashSet<String>();
+        serviceKeys.add(serviceKey);
+        final List<BusinessService> foundServices = uddiClient.getBusinessServices(serviceKeys);
+        if (foundServices.isEmpty())
+            throw new UDDIException("Could not find BusinessService with serviceKey: " + serviceKey);
+        final BusinessService businessService = foundServices.get(0);
 
-        //the TModelInstanceDetails element is 0..1 in the UDDI spec
+        final Set<String> allOtherBindingKeys;
+        if (businessService.getBindingTemplates() != null) {
+            List<BindingTemplate> bindingTemplates = businessService.getBindingTemplates().getBindingTemplate();
+            allOtherBindingKeys = new HashSet<String>();
+            for (BindingTemplate template : bindingTemplates) {
+                allOtherBindingKeys.add(template.getBindingKey());
+            }
+        } else {
+            allOtherBindingKeys = Collections.emptySet();
+        }
 
-        final List<TModelInstanceInfo> originalInfos = foundTemplate.getTModelInstanceDetails().getTModelInstanceInfo();
-        //The amount of TModelInstanceInfo's is unlimited according to the spec its 0..*
-        //Get every single one and later find the wsdl:binding and wsdl:port references
-        //we will only add the binding and portType referencs and relevant information. Other tModelinstanceInfo
-        //information will not be copied, as we do not know what it means.
-
-        final Pair<TModel, TModel> requiredTModels = getPortTypeAndBindingTModels(originalInfos, tModelKeyToTModel);
-
-        final TModel portTypeTModel = requiredTModels.left;
-        final TModel bindingTModel = requiredTModels.right;
-
-        //to publish a bindingTemplate, we also need to create the two relevant tModels, and configure them
-        //to point back to the gateway for their WSDL addresses
-        final TModel newPortTypeTModel = getNewPortTypeTModel(portTypeTModel, protectedServiceWsdlURL);
-        TModel newBindingTModel = null;
+//        Publish the tModels first
+        final Map<String, TModel> tModelsToPublish = bindingToModels.right;
         try {
-            jaxWsUDDIClient.publishTModel(newPortTypeTModel);
-            newBindingTModel = getNewBindingTModel(bindingTModel, newPortTypeTModel.getTModelKey(), protectedServiceWsdlURL);
-            jaxWsUDDIClient.publishTModel(newBindingTModel);
+            for (Map.Entry<String, TModel> entry : tModelsToPublish.entrySet()) {
+                jaxWsUDDIClient.publishTModel(entry.getValue());
+            }
 
-            final TModelInstanceDetails copyTModelInstanceDetails = new TModelInstanceDetails();
-            //create the binding TModelInstanceInfo
-            final TModelInstanceInfo bindingTModelInstanceInfo = new TModelInstanceInfo();
-            bindingTModelInstanceInfo.setTModelKey(newBindingTModel.getTModelKey());
-            final InstanceDetails bindingInstanceDetails = new InstanceDetails();
-            bindingInstanceDetails.setInstanceParms(newBindingTModel.getName().getValue());//guaranteed to match according to spec
-            final Description bindingDescription = new Description();
-            bindingDescription.setLang("en-US");
-            bindingDescription.setValue(WsdlToUDDIModelConverter.WSDL_BINDING_INSTANCE_DESCRIPTION);
-            bindingInstanceDetails.getDescription().add(bindingDescription);
-            bindingTModelInstanceInfo.setInstanceDetails(bindingInstanceDetails);
-            copyTModelInstanceDetails.getTModelInstanceInfo().add(bindingTModelInstanceInfo);
+//            publishDependentTModels(bindingToModels.right, WSDL_PORT_TYPE);
+            final List<TModel> allBindingTModels = new ArrayList<TModel>();
+            for (final TModel tModel : bindingToModels.right.values()) {
+                if (UDDIUtilities.getTModelType(tModel, true) != UDDIUtilities.TMODEL_TYPE.WSDL_BINDING) continue;
+                allBindingTModels.add(tModel);
+            }
+            if (allBindingTModels.isEmpty()) throw new IllegalStateException("No binding tModels were found");
+            UDDIUtilities.updateBindingTModelReferences(allBindingTModels, bindingToModels.right);
 
-            //create the portType TModelInstanceInfo
-            final TModelInstanceInfo portTModelInstanceInfo = new TModelInstanceInfo();
-            portTModelInstanceInfo.setTModelKey(newPortTypeTModel.getTModelKey());
-            copyTModelInstanceDetails.getTModelInstanceInfo().add(portTModelInstanceInfo);
+            bindingToModels.left.setServiceKey(businessService.getServiceKey());
 
-            final BindingTemplate newBindingTemplate = new BindingTemplate();
-            newBindingTemplate.setServiceKey(foundService.getServiceKey());
-            final AccessPoint accessPoint = new AccessPoint();
-            accessPoint.setUseType("endPoint");
-            accessPoint.setValue(protectedServiceExternalURL);
-            newBindingTemplate.setAccessPoint(accessPoint);
-            newBindingTemplate.setTModelInstanceDetails(copyTModelInstanceDetails);
+            UDDIUtilities.updateBindingTemplateTModelReferences(bindingToModels.left, bindingToModels.right);
+            jaxWsUDDIClient.publishBindingTemplate(bindingToModels.left);
 
-            jaxWsUDDIClient.publishBindingTemplate(newBindingTemplate);
-            return new Pair<BindingTemplate, List<TModel>>(newBindingTemplate, Arrays.asList(newBindingTModel, newPortTypeTModel));
+            //remove other bindings?
+            if (removeOthers) {
+                logger.log(Level.INFO, "Deleting other bindingTemplates");
+                uddiClient.deleteBindingTemplateFromSingleService(allOtherBindingKeys);
+            }
+
+            List<TModel> models = new ArrayList<TModel>();
+            models.addAll(bindingToModels.right.values());
+            return new Pair<BindingTemplate, List<TModel>>(bindingToModels.left, models);
+
         } catch (UDDIException e) {
             logger.log(Level.WARNING, "Problem publishing to UDDI: " + ExceptionUtils.getMessage(e));
-            //rollback any actions taken
-            if(newPortTypeTModel.getTModelKey() != null && !newPortTypeTModel.getTModelKey().trim().isEmpty()){
-                handleTModelRollback(newPortTypeTModel.getTModelKey());
+            for (Map.Entry<String, TModel> entry : tModelsToPublish.entrySet()) {
+                final String tModelKey = entry.getValue().getTModelKey();
+                if (tModelKey != null && !tModelKey.trim().isEmpty()) {
+                    handleTModelRollback(tModelKey);
+                }
             }
-            if(newBindingTModel != null && newBindingTModel.getTModelKey() != null && !newBindingTModel.getTModelKey().trim().isEmpty()){
-                handleTModelRollback(newBindingTModel.getTModelKey());
+            final String bindingKey = bindingToModels.left.getBindingKey();
+            if (bindingKey != null && !bindingKey.trim().isEmpty()) {
+                handleBindingTemplateRollback(bindingKey);
             }
-            //if the binding published successfully then it is not responsible for this exception, so nothing needed for bindingTemplate here
             throw e;
         }
-    }
-
-    private Pair<TModel, TModel> getPortTypeAndBindingTModels(final List<TModelInstanceInfo> originalInfos,
-                                                              final Map<String, TModel> tModelKeyToTModel) throws UDDIException {
-        //Go through each TModelInstanceInfo and copy any which look like they may represent
-        // wsdl:binding and wsdl:portType elements
-        final List<TModelInstanceInfo> copyAllTModelInstanceInfo = new ArrayList<TModelInstanceInfo>();
-        for(TModelInstanceInfo origTModelInstanceInfo: originalInfos){
-            //Each TModelInstanceInfo can have 0..1 InstanceDetails an 0..* descriptions
-            final TModelInstanceInfo copyTModelInstanceInfo = new TModelInstanceInfo();
-            copyTModelInstanceInfo.setTModelKey(origTModelInstanceInfo.getTModelKey());//this is required
-
-            if(origTModelInstanceInfo.getInstanceDetails() != null){//this may represent a wsdl:binding
-                //InstanceDetails can have:
-                // 0..* descriptions - will copy
-                // choice of InstanceParams OR 0..* OverviewDocs and 0..1 InstanceParams - only care about first option -
-                // as the WSDL to UDDI technical note requires a mandatory instanceParam - which is the wsdl:binding localName
-                final InstanceDetails origInstanceDetails = origTModelInstanceInfo.getInstanceDetails();
-                if(origInstanceDetails.getInstanceParms() == null || origInstanceDetails.getInstanceParms().trim().isEmpty()) {
-                    logger.log(Level.INFO, "Ignoring TModelInstanceInfo '" + origTModelInstanceInfo.getTModelKey() +
-                            "' as it contains an instanceDetails which a null or empty instanceParams element");
-                    continue;
-                }
-
-                final InstanceDetails copyInstanceDetails = new InstanceDetails();
-                copyInstanceDetails.setInstanceParms(origInstanceDetails.getInstanceParms());//string value
-                for(Description origDesc: origInstanceDetails.getDescription()){
-                    final Description copyDesc = new Description();
-                    copyDesc.setLang(origDesc.getLang());
-                    copyDesc.setValue(origDesc.getValue());
-                    copyInstanceDetails.getDescription().add(copyDesc);
-                }
-                copyTModelInstanceInfo.setInstanceDetails(copyInstanceDetails);
-            }
-
-            copyAllTModelInstanceInfo.add(copyTModelInstanceInfo);
-        }
-
-        //now we have every candidate TModelInstanceInfo from the found bindingTemplate
-        //need to ensure it contains a wsdl:binding and wsdl:portType tModelKey references
-        //once we have found this, we know which tModels we need to copy
-        TModel bindingTModel = null;
-        TModel portTypeTModel = null;
-        for(TModelInstanceInfo tModelInstanceInfo: copyAllTModelInstanceInfo){
-            final TModel tModel = tModelKeyToTModel.get(tModelInstanceInfo.getTModelKey());
-            if(tModel == null)
-                throw new UDDIException("tModel with tModelKey " + tModelInstanceInfo.getTModelKey()
-                        + " referenced from the tModelInstanceInfo was not referenced from BusinessService");
-
-            //what type of tModel is it?
-            final UDDIUtilities.TMODEL_TYPE type = UDDIUtilities.getTModelType(tModel, false);
-            if(type == null) continue;
-            switch (type){
-                case WSDL_BINDING:
-                    bindingTModel = tModel;
-                    break;
-                case WSDL_PORT_TYPE:
-                    portTypeTModel = tModel;
-                    break;
-            }
-        }
-
-        if(bindingTModel == null || portTypeTModel == null){
-            final String msg = "Could not find a valid wsdl:binding and wsdl:portype tModel references from the bindingTemplate's tModelInstanceDetails element";
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg);
-        }
-
-        return new Pair<TModel, TModel>(portTypeTModel, bindingTModel);
     }
 
     /**
@@ -276,180 +178,14 @@ public class BusinessServicePublisher {
         }
     }
 
-    private TModel getNewPortTypeTModel(final TModel portTypeTModel,
-                                        final String protectedServiceWsdlURL) throws UDDIException {
-        final TModel newPortTypeTModel = new TModel();
-        final Name name = new Name();
-        name.setLang(portTypeTModel.getName().getLang());
-        name.setValue(portTypeTModel.getName().getValue());
-        newPortTypeTModel.setName(name);
-
-        newPortTypeTModel.getOverviewDoc().add(getOverviewDoc(protectedServiceWsdlURL));
-
-        //Need to satisfy all technical note requirements - namespace is optional
-        boolean foundPortTypeType = false; //uddi:uddi.org:wsdl:types
-
-        final List<KeyedReference> newRefs = new ArrayList<KeyedReference>();
-
-        for(final KeyedReference keyedReference: portTypeTModel.getCategoryBag().getKeyedReference()){
-            //opting to always use the values found in UDDI, not going to supply the value from our knowledge,
-            // as there could be subtle case sensitivity differences
-            if(keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)){
-                final KeyedReference portTypeRef = new KeyedReference();
-                portTypeRef.setKeyValue(keyedReference.getKeyValue());
-                portTypeRef.setTModelKey(keyedReference.getTModelKey());
-                newRefs.add(portTypeRef);
-                foundPortTypeType = true;
-                continue;
-            }
-
-            if(keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE)){
-                final KeyedReference nameSpaceRef = new KeyedReference();
-                nameSpaceRef.setKeyName(keyedReference.getKeyName());
-                nameSpaceRef.setKeyValue(keyedReference.getKeyValue());
-                nameSpaceRef.setTModelKey(keyedReference.getTModelKey());
-                newRefs.add(nameSpaceRef);
-                continue;
-            }
+    private void handleBindingTemplateRollback(final String bindingKey){
+        try {
+            logger.log(Level.INFO, "Attemping to delete bindingTemplate published to UDDI with bindingKey: " + bindingKey);
+            uddiClient.deleteBindingTemplate(bindingKey);
+            logger.log(Level.INFO, "Succesfully deleted tModel with bindingKey: " + bindingKey);
+        } catch (UDDIException e1) {
+            logger.log(Level.WARNING, "Could not rollback published bindingTemplate with key " + bindingKey + "to UDDI: " + ExceptionUtils.getMessage(e1));
         }
-
-        if(!foundPortTypeType){
-            throw new UDDIException("wsdl:portType tModel found does not contain a portType type keyedReference");
-        }
-
-        final CategoryBag categoryBag = new CategoryBag();
-        categoryBag.getKeyedReference().addAll(newRefs);
-        newPortTypeTModel.setCategoryBag(categoryBag);
-        return newPortTypeTModel;
-    }
-
-    /**
-     * Create a new wsdl:binding tModel, based on the original.
-     *
-     * @param bindingTModel TMOdel original wsdl:binding tModel
-     * @param portTypeTModelKey String tModelKey of the newly created wsdl:portType tModel
-     * @param protectedServiceWsdlURL String SSG WSDL URL
-     * @return TModel newly created tModel. Has not been published to UDDI
-     */
-    private TModel getNewBindingTModel(final TModel bindingTModel,
-                                       final String portTypeTModelKey,
-                                       final String protectedServiceWsdlURL) throws UDDIException {
-        final TModel newBindingTModel = new TModel();
-        final Name name = new Name();
-        name.setLang(bindingTModel.getName().getLang());
-        name.setValue(bindingTModel.getName().getValue());
-        newBindingTModel.setName(name);
-
-        //Overview doc
-        newBindingTModel.getOverviewDoc().add(getOverviewDoc(protectedServiceWsdlURL));
-
-        //keyed references - only process those which are a requirement of the technical note for WSDL in UDDI
-        //do not copy UDDI specific ones, as we do not know what meaning they have
-        //Need to satisfy all technical note requirements - namespace is optional
-        boolean foundBindingTypeRef = false; //uddi:uddi.org:wsdl:types
-        boolean foundPortTypeRef = false;
-        boolean foundWsdlSpecRef = false;
-        //protocol is required, transport is optional
-        boolean foundProtocolRef = false;
-
-        final List<KeyedReference> newRefs = new ArrayList<KeyedReference>();
-        
-        for(KeyedReference keyedReference: bindingTModel.getCategoryBag().getKeyedReference()){
-            //opting to always use the values found in UDDI, not going to supply the value from our knowledge,
-            // as there could be subtle case sensitivity differences
-            if(keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)){
-                final KeyedReference bindingTypeRef = new KeyedReference();
-                bindingTypeRef.setKeyValue(keyedReference.getKeyValue());
-                bindingTypeRef.setTModelKey(keyedReference.getTModelKey());
-                newRefs.add(bindingTypeRef);
-                foundBindingTypeRef = true;
-                continue;
-            }
-            
-            if(keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_PORTTYPEREFERENCE)){
-                final KeyedReference portTypeRef = new KeyedReference();
-                portTypeRef.setKeyName(keyedReference.getKeyName());
-                portTypeRef.setKeyValue(portTypeTModelKey);//this is our newly published tModel!!
-                portTypeRef.setTModelKey(keyedReference.getTModelKey());
-                newRefs.add(portTypeRef);
-                foundPortTypeRef = true;
-                continue;
-            }
-
-            if(keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_CATEGORIZATION_TYPES)
-                    && keyedReference.getKeyValue() != null && keyedReference.getKeyValue().equalsIgnoreCase("wsdlSpec")){
-                final KeyedReference wsdlSpecRef = new KeyedReference();
-                wsdlSpecRef.setKeyValue(keyedReference.getKeyValue());
-                wsdlSpecRef.setTModelKey(keyedReference.getTModelKey());
-                newRefs.add(wsdlSpecRef);
-                foundWsdlSpecRef = true;
-                continue;
-            }
-
-            if(keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE)){
-                final KeyedReference nameSpaceRef = new KeyedReference();
-                nameSpaceRef.setKeyName(keyedReference.getKeyName());
-                nameSpaceRef.setKeyValue(keyedReference.getKeyValue());
-                nameSpaceRef.setTModelKey(keyedReference.getTModelKey());
-                newRefs.add(nameSpaceRef);
-                continue;
-            }
-
-            if(keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_CATEGORIZATION_PROTOCOL)){
-                final KeyedReference protocolRef = new KeyedReference();
-                protocolRef.setKeyName(keyedReference.getKeyName());
-                protocolRef.setKeyValue(keyedReference.getKeyValue());
-                protocolRef.setTModelKey(keyedReference.getTModelKey());
-                newRefs.add(protocolRef);
-                foundProtocolRef = true;
-                continue;
-            }
-
-            if(keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_CATEGORIZATION_TRANSPORT)){
-                final KeyedReference transportRef = new KeyedReference();
-                transportRef.setKeyName(keyedReference.getKeyName());
-                transportRef.setKeyValue(keyedReference.getKeyValue());
-                transportRef.setTModelKey(keyedReference.getTModelKey());
-                newRefs.add(transportRef);
-                continue;
-            }
-
-        }
-
-        if(!foundBindingTypeRef){
-            throw new UDDIException("wsdl:binding tModel found does not contain a binding type keyedReference");
-        }
-        if(!foundPortTypeRef){
-            throw new UDDIException("wsdl:binding tModel found does not contain a binding portType keyedReference");
-        }
-        if(!foundWsdlSpecRef){
-            throw new UDDIException("wsdl:binding tModel found does not contain a wsdlSpec uddi category keyedReference");
-        }
-        if(!foundProtocolRef){
-            throw new UDDIException("wsdl:binding tModel found does not contain a protocol category keyedReference");
-        }
-
-        final CategoryBag categoryBag = new CategoryBag();
-        categoryBag.getKeyedReference().addAll(newRefs);
-        newBindingTModel.setCategoryBag(categoryBag);
-        return newBindingTModel;
-    }
-
-    private OverviewDoc getOverviewDoc(final String protectedServiceWsdlURL){
-        //Overview doc
-        final OverviewDoc overviewDoc = new OverviewDoc();
-        //description
-        final Description description = new Description();
-        description.setLang("en-US");
-        description.setValue("the original WSDL document");
-        overviewDoc.getDescription().add(description);
-        //wsdl url
-        final OverviewURL overviewUrl = new OverviewURL();
-        overviewUrl.setUseType("wsdlInterface");
-        overviewUrl.setValue(protectedServiceWsdlURL);
-        overviewDoc.setOverviewURL(overviewUrl);
-
-        return overviewDoc;
     }
 
     /**
@@ -521,7 +257,7 @@ public class BusinessServicePublisher {
         //TODO [Donal] some keys we requested may not have been returned. When this happens delete from our database
         //Now we know every single tModel reference each existing Business Service contains
         final List<Pair<BusinessService, Map<String, TModel>>>
-                uddiServicesToDependentModels = serviceDownloader.getBusinessServiceModelsNew(publishedServiceKeys);
+                uddiServicesToDependentModels = serviceDownloader.getBusinessServiceModels(publishedServiceKeys);
 
         final List<BusinessService> uddiPreviouslyPublishedServices = new ArrayList<BusinessService>();
         for(Pair<BusinessService, Map<String, TModel>> aServiceToItsModels: uddiServicesToDependentModels){
