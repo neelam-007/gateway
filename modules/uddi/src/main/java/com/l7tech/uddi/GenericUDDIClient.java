@@ -2,6 +2,7 @@ package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -45,14 +46,12 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         saveBinding.getBindingTemplate().add(bindingTemplate);
         try {
             BindingDetail bindingDetail = getPublishPort().saveBinding(saveBinding);
-            logger.log(Level.INFO, "Saved bindingTemplate with key: " + bindingDetail.getBindingTemplate().get(0).getBindingKey() +
+            logger.log(Level.FINE, "Saved bindingTemplate with key: " + bindingDetail.getBindingTemplate().get(0).getBindingKey() +
                     " with serviceKey: " + bindingTemplate.getServiceKey());
             final String bindingKey =  bindingDetail.getBindingTemplate().get(0).getBindingKey();
             bindingTemplate.setBindingKey(bindingKey);
-        } catch (DispositionReportFaultMessage drfm) {                      
-            final String msg = getExceptionMessage("Exception saving bindingTemplate: ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error publishing binding template: ", drfm);
         }
     }
     /**
@@ -67,13 +66,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         try {
             ServiceDetail serviceDetail = getPublishPort().saveService(saveService);
             businessService.setServiceKey(serviceDetail.getBusinessService().get(0).getServiceKey());
-            logger.log(Level.INFO, "Saved BusinessService with key: " + businessService.getServiceKey());
+            logger.log(Level.FINE, "Saved BusinessService with key: " + businessService.getServiceKey());
             //Caller has to make this happen by reusing serviceKeys when logically correct
             return preSaveKey == null;
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception saving BusinessService: ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+            throw buildFaultException("Error publishing business service: ", drfm);
         }
     }
 
@@ -112,10 +109,10 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 //
 //                if(!matchingTModels.isEmpty()){
 //                    if(matchingTModels.size() != 1)
-//                        logger.log(Level.INFO, "Found " + matchingTModels.size()+" matching TModels. The first will be used");
+//                        logger.log(Level.FINE, "Found " + matchingTModels.size()+" matching TModels. The first will be used");
 //
 //                    tModelToPublish.setTModelKey(allTModelInfos.get(0).getTModelKey());
-//                    logger.log(Level.INFO, "Found matching tModel in UDDI Registry. Not publishing supplied tModel");
+//                    logger.log(Level.FINE, "Found matching tModel in UDDI Registry. Not publishing supplied tModel");
 //                    return false;
 //                }
 //                //fall through to publish below
@@ -131,14 +128,12 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             TModelDetail tModelDetail = uddiPublicationPortType.saveTModel(saveTModel);
             TModel saved = tModelDetail.getTModel().get(0);
             tModelToPublish.setTModelKey(saved.getTModelKey());
-            logger.log(Level.INFO, "Published tModel to UDDI with key: " + tModelToPublish.getTModelKey());
+            logger.log(Level.FINE, "Published tModel to UDDI with key: " + tModelToPublish.getTModelKey());
             return true;
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception publishing tModel: ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+            throw buildFaultException("Error publishing TModel: ", drfm);
         } catch(RuntimeException e){
-            throw new UDDIException(e.getMessage());
+            throw new UDDIException("Error publishing TModel '"+ExceptionUtils.getMessage(e)+"'", e);
         }
     }
 
@@ -147,8 +142,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                                  final String name,
                                  final String description,
                                  final Collection<UDDIKeyedReference> keyedReferences ) throws UDDIException {
-        if(tModelKey == null || tModelKey.trim().isEmpty()) throw new IllegalArgumentException("tModelKey cannot be null or empty");
-
         String publishedTModelKey;
 
         final TModel tModel = new TModel();
@@ -198,9 +191,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             if(tModels.isEmpty()) return null;
             return tModels.get(0);
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception geting tModel: ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+            throw buildFaultException("Error getting TModel: ", drfm);
         }
     }
 
@@ -216,9 +207,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             if(services.isEmpty()) return null;
             return services.get(0).getName().get(0).getValue();
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception geting BusinessService: ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+            throw buildFaultException("Error getting business entity name: ", drfm);
         }
     }
 
@@ -243,9 +232,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             if(services.isEmpty()) return null;
             return services.get(0);
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception geting BusinessService: ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+            throw buildFaultException("Error getting business service: ", drfm);
         }
     }
 
@@ -253,7 +240,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public void deleteTModel(Set<String> tModelKeys) throws UDDIException {
         if(tModelKeys == null) throw new IllegalArgumentException("tModelKeys cannot be null or empty");
         if(tModelKeys.isEmpty()){
-            logger.log(Level.INFO, "tModelKeys is empty. Nothing at do");
+            logger.log(Level.FINE, "tModelKeys is empty. Nothing at do");
             return;
         }
 
@@ -262,9 +249,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         deleteTModel.getTModelKey().addAll(tModelKeys);
         try {
             getPublishPort().deleteTModel(deleteTModel);
-            logger.log(Level.INFO, "Delete tModels with keys: ");
+            logger.log(Level.FINE, "Deleted tModels with keys: ");
             for(String s: tModelKeys){
-                logger.log(Level.INFO, "tModelKey deleted: " + s);
+                logger.log(Level.FINE, "tModelKey deleted: " + s);
             }
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error deleting TModels: ", drfm);
@@ -284,7 +271,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public void deleteBindingTemplateFromSingleService(final Set<String> bindingKeys) throws UDDIException {
         if(bindingKeys == null) throw new IllegalArgumentException("bindingKeys cannot be null or empty");
         if(bindingKeys.isEmpty()){
-            logger.log(Level.INFO, "bindingKeys is empty. Nothing at do");
+            logger.log(Level.FINE, "bindingKeys is empty. Nothing at do");
             return;
         }
         
@@ -297,7 +284,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         try {
             bindingDetail = getInquirePort().getBindingDetail(getBindingDetail);
             if(bindingDetail.getBindingTemplate().isEmpty()){
-                logger.log(Level.INFO, "No bindingTemplates found for binding keys");
+                logger.log(Level.FINE, "No bindingTemplates found for binding keys");
                 return;
             }
             for (BindingTemplate bt : bindingDetail.getBindingTemplate()) {
@@ -307,9 +294,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 }
             }
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception getting bindingTemplates", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+            throw buildFaultException("Error getting binding details: ", drfm);
         }
 
         //Get the service, we will delete actual bindings through the service only
@@ -362,7 +347,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         saveService.getBusinessService().add(owningService);
         try {
             final ServiceDetail serviceDetail1 = getPublishPort().saveService(saveService);
-            BusinessService bs = serviceDetail1.getBusinessService().get(0);
+            serviceDetail1.getBusinessService().get(0);
         } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
             logger.log(Level.WARNING, "Found no BusinessService for serviceKey: " + owningServiceKey);
         }
@@ -382,7 +367,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public List<BusinessService> getBusinessServices(final Set<String> serviceKeys) throws UDDIException {
         if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
         if(serviceKeys.isEmpty()){
-            logger.log(Level.INFO, "serviceKeys is empty. Nothing at do");
+            logger.log(Level.FINE, "serviceKeys is empty. Nothing at do");
             return Collections.emptyList();
         }
 
@@ -399,12 +384,10 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     businessServices.add(businessService);
                 }
             }else{
-                logger.log(Level.INFO, "No matching BusinessServices were found");
+                logger.log(Level.FINE, "No matching BusinessServices were found");
             }
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception finding services", drfm);//this will be thrown if no service for the key is found
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+            throw buildFaultException("Error getting business services: ", drfm);
         }
 
         return businessServices;
@@ -414,7 +397,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public void deleteUDDIBusinessServices(Collection<UDDIBusinessService> businessServices) throws UDDIException {
         if(businessServices == null) throw new NullPointerException("businessServices cannot be null or empty");
         if(businessServices.isEmpty()){
-            logger.log(Level.INFO, "businessServices is empty. Nothing at do");
+            logger.log(Level.FINE, "businessServices is empty. Nothing at do");
             return;
         }
 
@@ -429,7 +412,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public void deleteBusinessServicesByKey(Collection<String> serviceKeys) throws UDDIException {
         if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
         if(serviceKeys.isEmpty()){
-            logger.log(Level.INFO, "serviceKeys is empty. Nothing at do");
+            logger.log(Level.FINE, "serviceKeys is empty. Nothing at do");
             return;
         }
 
@@ -472,17 +455,16 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             
             final UDDIPublicationPortType publicationPortType = getPublishPort();
             publicationPortType.deleteService(deleteService);
-            logger.log(Level.INFO, "Deleted service with key: " + businessService.getServiceKey());
+            logger.log(Level.FINE, "Deleted service with key: " + businessService.getServiceKey());
 
 //            for(String tModelKey: tModelsToDelete){
 //                deleteTModel(tModelKey);
 //            }
 
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception deleting service with key: " + serviceKey+ ": ", drfm);
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg, drfm);
+            throw buildFaultException("Error deleting business service '"+serviceKey+"': ", drfm);
         }
+
         return tModelsToDelete;
     }
 
@@ -1068,14 +1050,25 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                                     break;
                                 }
                             }
+
+                            if ( bindingKey == null ) {
+                                // fall back to "http" useType.
+                                for ( BindingTemplate bindingTemplate : bindingTemplateList ) {
+                                    if ( bindingTemplate.getAccessPoint() != null &&
+                                         "http".equals(bindingTemplate.getAccessPoint().getUseType()) ) {
+                                        bindingKey = bindingTemplate.getBindingKey();
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting policy URL: ", drfm);
+            throw buildFaultException("Error getting binding key for service: ", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error getting policy URL.", e);
+            throw new UDDIException("Error getting binding key for service.", e);
         }
 
         return bindingKey;
@@ -1181,9 +1174,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             extractPolicyUrls(get(detail.getBusinessEntity(), "business", true).getCategoryBag(), policyUrls);
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting policy URL: ", drfm);
+            throw buildFaultException("Error listing policy URLs for organization '"+key+"': ", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error getting policy URL.", e);
+            throw new UDDIException("Error listing policy URLs for organization '"+key+"'.", e);
         }
 
         return policyUrls;
@@ -1210,9 +1203,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             extractPolicyUrls(get(detail.getBusinessService(), "service", true).getCategoryBag(), policyUrls);
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting policy URL: ", drfm);
+            throw buildFaultException("Error listing policy URLs for service '"+key+"': ", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error getting policy URL.", e);
+            throw new UDDIException("Error listing policy URLs for service '"+key+"'.", e);
         }
 
         return policyUrls;
@@ -1451,7 +1444,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
         if ( info == null ) {
             // This should not occur, the getOperationalInfo call should fault for invalid keys
-            throw new UDDIException("Entity key not found '"+entityKey+"'.");
+            throw new UDDIInvalidKeyException("Entity key not found '"+entityKey+"'.");
         }
 
         return info;
@@ -2257,13 +2250,13 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
      * @return  TRUE if search pattern contains wild cards, otherwise FALSE.
      */
     private boolean containWildCards(String searchPattern) {
-        logger.log(Level.FINE, "String before :" + searchPattern);
+        logger.log(Level.FINEST, "String before :" + searchPattern);
         boolean result = false;
 
         //remove any known escape characters
         String temp = searchPattern.replace("\\%", "").replace("\\_", "");
 
-        logger.log(Level.FINE, "String after : " + temp);
+        logger.log(Level.FINEST, "String after : " + temp);
         if (temp.contains("%") || temp.contains("_")) result = true;
         return result;
     }
