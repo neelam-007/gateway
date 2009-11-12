@@ -322,7 +322,7 @@ public class ServicePropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 final ServiceUDDISettingsDialog dlg =
-                        new ServiceUDDISettingsDialog(ServicePropertiesDialog.this, subject, canUpdate);
+                        new ServiceUDDISettingsDialog(ServicePropertiesDialog.this, subject, false);
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
                 DialogDisplayer.display(dlg);
