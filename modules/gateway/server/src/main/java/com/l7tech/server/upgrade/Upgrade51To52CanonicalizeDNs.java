@@ -31,8 +31,10 @@ public class Upgrade51To52CanonicalizeDNs implements UpgradeTask {
                     if ( certEntryRowObj instanceof CertEntryRow ) {
                         CertEntryRow certEntryRow = (CertEntryRow) certEntryRowObj;
                         X509Certificate cert = certEntryRow.getCertificate();
-                        certEntryRow.setSubjectDn( CertUtils.getSubjectDN(cert) );
-                        certEntryRow.setIssuerDn( CertUtils.getIssuerDN(cert) );
+                        if ( cert != null ) {
+                            certEntryRow.setSubjectDn( CertUtils.getSubjectDN(cert) );
+                            certEntryRow.setIssuerDn( CertUtils.getIssuerDN(cert) );
+                        }
                     }
                 }
 
@@ -42,8 +44,10 @@ public class Upgrade51To52CanonicalizeDNs implements UpgradeTask {
                     if ( trustedCertObj instanceof TrustedCert ) {
                         TrustedCert trustedCert = (TrustedCert) trustedCertObj;
                         X509Certificate cert = trustedCert.getCertificate();
-                        trustedCert.setSubjectDn( CertUtils.getSubjectDN(cert) );
-                        trustedCert.setIssuerDn( CertUtils.getIssuerDN(cert) );
+                        if ( cert != null ) {
+                            trustedCert.setSubjectDn( CertUtils.getSubjectDN(cert) );
+                            trustedCert.setIssuerDn( CertUtils.getIssuerDN(cert) );
+                        }
                     }
                 }
 

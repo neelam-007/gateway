@@ -218,7 +218,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     }
 
     private AdminEvent updatedEvent(Object obj, EntityChangeSet changes) {
-        if (obj instanceof CertEntryRow) {
+        if (obj instanceof CertEntryRow && !AuditContextUtils.isSystem()) {
             return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "updated", changes, getApplicationContext()));
         } else if (obj instanceof GroupMembership) {
             return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "updated", getApplicationContext()));
