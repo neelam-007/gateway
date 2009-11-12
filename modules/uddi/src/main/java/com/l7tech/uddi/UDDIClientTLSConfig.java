@@ -16,10 +16,14 @@ public class UDDIClientTLSConfig {
 
     public UDDIClientTLSConfig( final KeyManager keyManager,
                                 final TrustManager trustManager,
-                                final HostnameVerifier hostnameVerifier ) {
+                                final HostnameVerifier hostnameVerifier,
+                                final long connectionTimeout,
+                                final long readTimeout ) {
         this.keyManager = keyManager;
         this.trustManager = trustManager;
         this.hostnameVerifier = hostnameVerifier;
+        this.connectionTimeout = connectionTimeout;
+        this.readTimeout = readTimeout;
     }
 
     public KeyManager[] getKeyManagers() {
@@ -58,15 +62,24 @@ public class UDDIClientTLSConfig {
         return hostnameVerifier;
     }
 
+    public long getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public long getReadTimeout() {
+        return readTimeout;
+    }
+
     public static interface TLSConfigAdapter {
         /**
          * Configuration adapter for client/framework SSL settings.
          *
          * @param target The target to configure.
          * @param config The configuration to use.
+         * @param configureTLS True if TLS should be configured
          * @return True if the target type was supported.
          */
-        public boolean configure( Object target, UDDIClientTLSConfig config );
+        public boolean configure( Object target, UDDIClientTLSConfig config, boolean configureTLS );
     }
 
     //- PRIVATE
@@ -76,4 +89,7 @@ public class UDDIClientTLSConfig {
     private final KeyManager keyManager;
     private final TrustManager trustManager;
     private final HostnameVerifier hostnameVerifier;
+    private final long connectionTimeout;
+    private final long readTimeout;
+
 }

@@ -8,6 +8,10 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.URL;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.UnknownHostException;
+import java.net.SocketTimeoutException;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
 import java.security.SecureRandom;
@@ -51,7 +55,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             final String bindingKey =  bindingDetail.getBindingTemplate().get(0).getBindingKey();
             bindingTemplate.setBindingKey(bindingKey);
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error publishing binding template: ", drfm);
+            throw buildFaultException("Error publishing binding template", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error publishing binding template", e);
         }
     }
     /**
@@ -70,7 +76,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             //Caller has to make this happen by reusing serviceKeys when logically correct
             return preSaveKey == null;
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error publishing business service: ", drfm);
+            throw buildFaultException("Error publishing business service", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error publishing business service", e);
         }
     }
 
@@ -131,9 +139,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             logger.log(Level.FINE, "Published tModel to UDDI with key: " + tModelToPublish.getTModelKey());
             return true;
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error publishing TModel: ", drfm);
-        } catch(RuntimeException e){
-            throw new UDDIException("Error publishing TModel '"+ExceptionUtils.getMessage(e)+"'", e);
+            throw buildFaultException("Error publishing TModel", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error publishing TModel", e);
         }
     }
 
@@ -169,9 +177,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             TModel saved = get(tModelDetail.getTModel(), "TModel", true);
             publishedTModelKey = saved.getTModelKey();
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error publishing TModel: ", drfm);
-        } catch(RuntimeException e){
-            throw new UDDIException("Error publishing TModel.", e);
+            throw buildFaultException("Error publishing TModel", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error publishing TModel", e);
         }
 
         return publishedTModelKey;
@@ -194,7 +202,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             TModelDetail tModelDetail = getInquirePort().getTModelDetail(getTModelDetail);
             return tModelDetail.getTModel();
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting TModel: ", drfm);
+            throw buildFaultException("Error getting TModel", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error getting TModel", e);
         }
     }
 
@@ -221,7 +231,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             if(services.isEmpty()) return null;
             return services.get(0).getName().get(0).getValue();
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting business entity name: ", drfm);
+            throw buildFaultException("Error getting business entity name", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error getting business entity name", e);
         }
     }
 
@@ -245,7 +257,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             if(services.isEmpty()) return null;
             return services.get(0);
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting business service: ", drfm);
+            throw buildFaultException("Error getting business service", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error getting business service", e);
         }
     }
 
@@ -267,7 +281,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 logger.log(Level.FINE, "tModelKey deleted: " + s);
             }
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error deleting TModels: ", drfm);
+            throw buildFaultException("Error deleting TModels", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error deleting TModels", e);
         }
     }
 
@@ -307,7 +323,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 }
             }
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting binding details: ", drfm);
+            throw buildFaultException("Error getting binding details", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error getting binding details", e);
         }
 
         //Get the service, we will delete actual bindings through the service only
@@ -400,7 +418,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 logger.log(Level.FINE, "No matching BusinessServices were found");
             }
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting business services: ", drfm);
+            throw buildFaultException("Error getting business services", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error getting business services", e);
         }
 
         return businessServices;
@@ -475,7 +495,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 //            }
 
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error deleting business service '"+serviceKey+"': ", drfm);
+            throw buildFaultException("Error deleting business service '"+serviceKey+"'", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error deleting business service '"+serviceKey+"'", e);
         }
 
         return tModelsToDelete;
@@ -516,9 +538,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             return saved.getTModelKey();
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error publishing model: ", drfm);
+            throw buildFaultException("Error publishing model", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error publishing model.", e);
+            throw buildErrorException("Error publishing model", e);
         }
     }
 
@@ -558,9 +580,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             }
             return businesses;
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error listing businesses: ", drfm);
+            throw buildFaultException("Error listing businesses", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error listing businesses.", e);
+            throw buildErrorException("Error listing businesses", e);
         }
     }
 
@@ -769,9 +791,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             return allWsdlPorts;
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error listing services: ", drfm);
+            throw buildFaultException("Error listing services", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error listing services.", e);
+            throw buildErrorException("Error listing services", e);
         }
     }
 
@@ -830,9 +852,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             
             return services;
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error listing services: ", drfm);
+            throw buildFaultException("Error listing services", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error listing services.", e);
+            throw buildErrorException("Error listing services", e);
         }
     }
 
@@ -874,9 +896,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             return endpoints;
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error listing endpoints: ", drfm);
+            throw buildFaultException("Error listing endpoints", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error listing endpoints.", e);
+            throw buildErrorException("Error listing endpoints", e);
         }
     }
 
@@ -927,9 +949,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             return services;
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error listing businesses: ", drfm);
+            throw buildFaultException("Error listing businesses", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error listing businesses.", e);
+            throw buildErrorException("Error listing businesses", e);
         }
     }
 
@@ -1020,9 +1042,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             return policies;
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error listing policies: ", drfm);
+            throw buildFaultException("Error listing policies", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error listing policies.", e);
+            throw buildErrorException("Error listing policies", e);
         }
     }
 
@@ -1079,9 +1101,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 }
             }
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting binding key for service: ", drfm);
+            throw buildFaultException("Error getting binding key for service", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error getting binding key for service.", e);
+            throw buildErrorException("Error getting binding key for service", e);
         }
 
         return bindingKey;
@@ -1129,9 +1151,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 throw new UDDIException("ERROR get_tModelDetail returned zero or multiple tModels");
             }
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting policy URL: ", drfm);
+            throw buildFaultException("Error getting policy URL", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error getting policy URL.", e);
+            throw buildErrorException("Error getting policy URL", e);
         }
 
         return policyURL;
@@ -1158,9 +1180,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             extractPolicyUrls(get(detail.getBindingTemplate(), "service endpoint", true).getCategoryBag(), policyUrls);
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting policy URL: ", drfm);
+            throw buildFaultException("Error getting policy URL", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error getting policy URL.", e);
+            throw buildErrorException("Error getting policy URL", e);
         }
 
         return policyUrls;
@@ -1187,9 +1209,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             extractPolicyUrls(get(detail.getBusinessEntity(), "business", true).getCategoryBag(), policyUrls);
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error listing policy URLs for organization '"+key+"': ", drfm);
+            throw buildFaultException("Error listing policy URLs for organization '"+key+"'", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error listing policy URLs for organization '"+key+"'.", e);
+            throw buildErrorException("Error listing policy URLs for organization '"+key+"'", e);
         }
 
         return policyUrls;
@@ -1216,9 +1238,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             extractPolicyUrls(get(detail.getBusinessService(), "service", true).getCategoryBag(), policyUrls);
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error listing policy URLs for service '"+key+"': ", drfm);
+            throw buildFaultException("Error listing policy URLs for service '"+key+"'", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error listing policy URLs for service '"+key+"'.", e);
+            throw buildErrorException("Error listing policy URLs for service '"+key+"'", e);
         }
 
         return policyUrls;
@@ -1307,9 +1329,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             UDDIPublicationPortType publicationPort = getPublishPort();
             publicationPort.saveService(buildSaveService( authToken, toUpdate ));
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error updating service details: ", drfm);
+            throw buildFaultException("Error updating service details", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error updating service details.", e);
+            throw buildErrorException("Error updating service details", e);
         }
     }
 
@@ -1350,9 +1372,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 try {
                     publicationPort.saveService(buildSaveService( authToken, toUpdate ));
                 } catch (DispositionReportFaultMessage drfm) {
-                    throw buildFaultException("Error updating service details: ", drfm);
+                    throw buildFaultException("Error updating service details", drfm);
                 } catch (RuntimeException e) {
-                    throw new UDDIException("Error updating service details.", e);
+                    throw buildErrorException("Error updating service details", e);
                 }
             }
         }
@@ -1390,9 +1412,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         try {
             publicationPort.saveService(buildSaveService( authToken, toUpdate ));
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error updating service details: ", drfm);
+            throw buildFaultException("Error updating service details", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error updating service details.", e);
+            throw buildErrorException("Error updating service details", e);
         }
     }
 
@@ -1431,9 +1453,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 try {
                     publicationPort.saveService(buildSaveService( authToken, toUpdate ));
                 } catch (DispositionReportFaultMessage drfm) {
-                    throw buildFaultException("Error updating service details: ", drfm);
+                    throw buildFaultException("Error updating service details", drfm);
                 } catch (RuntimeException e) {
-                    throw new UDDIException("Error updating service details.", e);
+                    throw buildErrorException("Error updating service details", e);
                 }
             }
         }
@@ -1486,7 +1508,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     }
                 }
             } catch (DispositionReportFaultMessage drfm) {
-                throw buildFaultException("Error accessing entity operational information: ", drfm);
+                throw buildFaultException("Error accessing entity operational information", drfm);
+            } catch (RuntimeException e) {
+                throw buildErrorException("Error accessing entity operational information", e);
             }
         }
 
@@ -1539,9 +1563,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 subscriptionKey = holder.value.get( 0 ).getSubscriptionKey();
             }
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error subscribing: ", drfm);
+            throw buildFaultException("Error subscribing", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error subscribing.", e);
+            throw buildErrorException("Error subscribing", e);
         } catch (DatatypeConfigurationException e) {
             throw new UDDIException("Error subscribing.", e);
         }
@@ -1564,9 +1588,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             subscriptionPort.deleteSubscription( deleteSubscription );
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error deleting subscription '"+subscriptionKey+"': ", drfm);
+            throw buildFaultException("Error deleting subscription '"+subscriptionKey+"'", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error deleting subscription '"+subscriptionKey+"'", e);
+            throw buildErrorException("Error deleting subscription '"+subscriptionKey+"'", e);
         }
     }
 
@@ -1643,7 +1667,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 }
             }
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting subscription results: ", drfm);
+            throw buildFaultException("Error getting subscription results", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error getting subscription results", e);
         } catch (DatatypeConfigurationException e) {
             throw new UDDIException("Error getting subscription results.", e);
         }
@@ -1664,7 +1690,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 securityPort.discardAuthToken(discardAuthToken);
                 authToken = null;
             } catch (DispositionReportFaultMessage drfm) {
-                logger.log(Level.INFO, "Error logging out.", buildFaultException("Error logging out: ", drfm));
+                logger.log(Level.INFO, "Error logging out.", buildFaultException("Error logging out", drfm));
             } catch (RuntimeException e) {
                 logger.log(Level.INFO, "Error logging out.", e);
             } catch (UDDIException e) {
@@ -1755,9 +1781,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             getAuthToken.setCred(password);
             authToken = securityPort.getAuthToken(getAuthToken).getAuthInfo();
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting authentication token: ", drfm);
+            throw buildFaultException("Error getting authentication token", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error getting authentication token.", e);
+            throw buildErrorException("Error getting authentication token", e);
         }
 
         return authToken;
@@ -1781,13 +1807,17 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
      * Note that Systinet can also throw <code>E_invalidKeyPassed</code> on an
      * authorization error.
      *
-     * @param contextMessage Contextual message for exception
+     * @param context Contextual message for exception
      * @param faultMessage The fault to handle
      * @throws UDDIException always
      */
-    protected UDDIException buildFaultException(final String contextMessage,
+    protected UDDIException buildFaultException(final String context,
                                                 final DispositionReportFaultMessage faultMessage) {
         UDDIException exception;
+        String contextMessage = context;
+        if ( !contextMessage.endsWith( ": " )) {
+            contextMessage += ": ";
+        }
 
         if ( hasResult(faultMessage, 10150) ) {
             exception = new UDDIAccessControlException("Authentication failed for '" + login + "'.");
@@ -1810,6 +1840,15 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
 
         return exception;
+    }
+
+    protected UDDIException buildErrorException( final String context,
+                                                 final RuntimeException exception ) {
+        if ( isNetworkException(exception) ) {
+            return new UDDINetworkException( context + ", due to " + describeNetworkException(exception) + ".", exception );
+        } else {
+            return new UDDIException( context + ".", exception );
+        }
     }
 
     protected boolean hasResult(DispositionReportFaultMessage faultMessage, int errorCode) {
@@ -1910,9 +1949,10 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         // Set endpoint
         context.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
 
-        if ( tlsConfig != null && url.toLowerCase().startsWith("https" )) {
+        if ( tlsConfig != null ) {
+            boolean isTLS = url.toLowerCase().startsWith("https" );
             for ( UDDIClientTLSConfig.TLSConfigAdapter adapter : UDDIClientTLSConfig.getDefaultAdapters() ) {
-                if ( adapter.configure( proxy, tlsConfig )) {
+                if ( adapter.configure( proxy, tlsConfig, isTLS )) {
                     break;
                 }
             }
@@ -2027,6 +2067,25 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         return null;
     }
 
+    private boolean isNetworkException( final Exception exception ) {
+        return ExceptionUtils.causedBy( exception, ConnectException.class ) ||
+               ExceptionUtils.causedBy( exception, NoRouteToHostException.class ) ||
+               ExceptionUtils.causedBy( exception, UnknownHostException.class ) ||
+               ExceptionUtils.causedBy( exception, SocketTimeoutException.class );
+    }
+
+    private String describeNetworkException( final Exception exception ) {
+        String description = "connection error";
+
+        if ( ExceptionUtils.causedBy( exception, UnknownHostException.class ) ) {
+            description = "unknown host '"+ExceptionUtils.getCauseIfCausedBy( exception, UnknownHostException.class ).getMessage()+"'";
+        } else if ( ExceptionUtils.causedBy( exception, SocketTimeoutException.class ) ) {
+            description = "network read timed out";
+        }
+
+        return description;
+    }
+
     private void mergePolicyUrlToInfo(final String policyKey,
                                       final String policyUrl,
                                       final List<UDDINamedEntity> uddiNamedEntity) {
@@ -2135,9 +2194,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             }
 
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting service details: ", drfm);
+            throw buildFaultException("Error getting service details", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error getting service details.", e);
+            throw buildErrorException("Error getting service details", e);
         }
         return serviceDetail;
     }
@@ -2366,7 +2425,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         private static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
 
         @Override
-        public boolean configure( final Object target, final UDDIClientTLSConfig config ) {
+        public boolean configure( final Object target, final UDDIClientTLSConfig config, final boolean configureTLS ) {
             boolean processed = false;
 
             if ( target instanceof BindingProvider &&
@@ -2376,20 +2435,25 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 BindingProvider bindingProvider = (BindingProvider) target;
                 Map<String,Object> context = bindingProvider.getRequestContext();
 
-                // Hostname verifier
-                context.put("com.sun.xml.ws.transport.https.client.hostname.verifier", config.getHostnameVerifier());
+                context.put("com.sun.xml.ws.connect.timeout", (int)config.getConnectionTimeout());
+                context.put("com.sun.xml.ws.request.timeout", (int)config.getReadTimeout());
 
-                // SSL socket factory
-                int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
-                try {
-                    final SSLContext ctx = SSLContext.getInstance("SSL");
-                    ctx.init( config.getKeyManagers(),  config.getTrustManagers(), random );
-                    ctx.getClientSessionContext().setSessionTimeout(timeout);
-                    context.put("com.sun.xml.ws.transport.https.client.SSLSocketFactory", ctx.getSocketFactory());
-                } catch (NoSuchAlgorithmException e) {
-                    logger.log( Level.WARNING, "Error configuring TLS for UDDI client.", e );
-                } catch (KeyManagementException e) {
-                    logger.log( Level.WARNING, "Error configuring TLS for UDDI client.", e );
+                if ( configureTLS ) {
+                    // Hostname verifier
+                    context.put("com.sun.xml.ws.transport.https.client.hostname.verifier", config.getHostnameVerifier());
+
+                    // SSL socket factory
+                    int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
+                    try {
+                        final SSLContext ctx = SSLContext.getInstance("SSL");
+                        ctx.init( config.getKeyManagers(),  config.getTrustManagers(), random );
+                        ctx.getClientSessionContext().setSessionTimeout(timeout);
+                        context.put("com.sun.xml.ws.transport.https.client.SSLSocketFactory", ctx.getSocketFactory());
+                    } catch (NoSuchAlgorithmException e) {
+                        logger.log( Level.WARNING, "Error configuring TLS for UDDI client.", e );
+                    } catch (KeyManagementException e) {
+                        logger.log( Level.WARNING, "Error configuring TLS for UDDI client.", e );
+                    }
                 }
             }
 

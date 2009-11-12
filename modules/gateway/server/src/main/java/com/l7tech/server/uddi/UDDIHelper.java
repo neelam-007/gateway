@@ -250,6 +250,9 @@ public class UDDIHelper {
 
     private static final Logger logger = Logger.getLogger( UDDIHelper.class.getName() );
 
+    private static final String PROP_UDDI_CONNECT_TIMEOUT = "uddi.connectTimeout";
+    private static final String PROP_UDDI_READ_TIMEOUT = "uddi.timeout";
+
     static {
         UDDIClientTLSConfig.addDefaultAdapter( new CxfTLSConfigAdapter() );
     }
@@ -328,14 +331,19 @@ public class UDDIHelper {
             }
         }
 
-        return new UDDIClientTLSConfig( keyManager, trustManager, hostnameVerifier );
+        long connectTimeout = serverConfig.getLongProperty( PROP_UDDI_CONNECT_TIMEOUT, 30000);
+        long readTimeout = serverConfig.getLongProperty( PROP_UDDI_READ_TIMEOUT, 60000);
+
+        return new UDDIClientTLSConfig( keyManager, trustManager, hostnameVerifier, connectTimeout, readTimeout );
     }
 
     private static final class CxfTLSConfigAdapter implements UDDIClientTLSConfig.TLSConfigAdapter {
         private static final boolean VERIFY_HOSTNAME = SyspropUtil.getBoolean( "com.l7tech.server.uddi.verifyHostname", true );
 
         @Override
-        public boolean configure( final Object target, final UDDIClientTLSConfig config ) {
+        public boolean configure( final Object target,
+                                  final UDDIClientTLSConfig config,
+                                  final boolean configureTLS ) {
             boolean processed = false;
 
             if ( Proxy.isProxyClass( target.getClass() ) ) {
@@ -345,24 +353,30 @@ public class UDDIHelper {
 
                     final JaxWsClientProxy jaxWsClientProxy = (JaxWsClientProxy) proxyHander;
                     final HTTPConduit httpConduit = (HTTPConduit)jaxWsClientProxy.getClient().getConduit();
-                    httpConduit.setTlsClientParameters( new TLSClientParameters(){
-                        //TODO When CXF is upgraded change this to override getSSLSocketFactory() and return a hostname verifying socket factory
+                    if ( configureTLS ) {
+                        httpConduit.setTlsClientParameters( new TLSClientParameters(){
+                            //TODO When CXF is upgraded change this to override getSSLSocketFactory() and return a hostname verifying socket factory
 
-                        @Override
-                        public boolean isDisableCNCheck() {
-                            return !VERIFY_HOSTNAME;
-                        }
+                            @Override
+                            public boolean isDisableCNCheck() {
+                                return !VERIFY_HOSTNAME;
+                            }
 
-                        @Override
-                        public KeyManager[] getKeyManagers() {
-                            return config.getKeyManagers();
-                        }
+                            @Override
+                            public KeyManager[] getKeyManagers() {
+                                return config.getKeyManagers();
+                            }
 
-                        @Override
-                        public TrustManager[] getTrustManagers() {
-                            return config.getTrustManagers(); 
-                        }
-                    } );
+                            @Override
+                            public TrustManager[] getTrustManagers() {
+                                return config.getTrustManagers();
+                            }
+                        } );
+                    }
+                    if ( httpConduit.getClient() != null ) {
+                        httpConduit.getClient().setConnectionTimeout( config.getConnectionTimeout() );
+                        httpConduit.getClient().setReceiveTimeout( config.getReadTimeout() );
+                    }
                 }
             }
 

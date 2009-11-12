@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.l7tech.lib"
+		module="layer7-sun-jaxws"
+		revision="1.0"
+		status="release"
+		publication="20091112095409"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="layer7-sun-jaxws" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>
