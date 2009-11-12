@@ -150,18 +150,6 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         _soapVersion = null;
     }
 
-    /**
-     * When the WSDL xml of this Published Service has been reset, then this method will return true
-     * This is used to know when the WSDL xml has been reset. Used when saving the Published Service
-     *
-     * This method will only return true after setWsdlXml has been called and before parsedWsdl() is called
-     *
-     * @return true if the wsdl xml has been reset, false otherwise
-     */            //TODO DELETE WHEN UDDICoordinator is completed
-    public boolean isParsedWsdlNull(){
-        return _parsedWsdl == null;
-    }
-
     private static SoapVersion guessSoapVersionFromWsdl(Wsdl wsdl) {
  	    SoapVersion ret = SoapVersion.UNKNOWN;
         if (wsdl == null)
