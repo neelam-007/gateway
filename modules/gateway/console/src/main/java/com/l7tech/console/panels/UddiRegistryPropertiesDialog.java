@@ -4,6 +4,7 @@ import com.l7tech.uddi.*;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.util.Registry;
 import static com.l7tech.console.panels.UddiRegistryPropertiesDialog.UDDI_URL_TYPE.*;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
@@ -126,6 +127,13 @@ public class UddiRegistryPropertiesDialog extends JDialog {
                 enableOrDisableUrls();
             }
         });
+
+        subscriptionUrlTextField.getDocument().addDocumentListener( new RunOnChangeListener( new Runnable(){
+            @Override
+            public void run() {
+                enableOrDisableMonitoringOptions();
+            }
+        } ) );
 
         resetUrlButton.addActionListener(new ActionListener() {
             @Override
@@ -439,8 +447,11 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableMonitoringOptions() {
+        final String subcriptionUrl = subscriptionUrlTextField.getText();
+        final boolean enableMonitoringSelection = subcriptionUrl != null && !subcriptionUrl.trim().isEmpty();
         final boolean enableMonitoringOptions = monitoringEnabledCheckBox.isSelected() && monitoringEnabledCheckBox.isEnabled();
 
+        monitoringEnabledCheckBox.setEnabled( enableMonitoringSelection );
         subscribeForNotificationRadioButton.setEnabled(enableMonitoringOptions);
         pollForNotificationsRadioButton.setEnabled(enableMonitoringOptions);
         notificationFrequencyLabel.setEnabled(enableMonitoringOptions);
