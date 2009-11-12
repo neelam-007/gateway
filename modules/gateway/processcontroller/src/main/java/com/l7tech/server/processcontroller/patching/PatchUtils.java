@@ -4,17 +4,16 @@ import com.l7tech.util.*;
 import com.l7tech.common.io.JarSignerParams;
 import com.l7tech.common.io.JarUtils;
 import com.l7tech.server.processcontroller.patching.builder.PatchSpec;
+import com.l7tech.server.processcontroller.patching.builder.PatchSpecEntry;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.FileOutputStream;
-import java.io.FileInputStream;
 import java.security.SecureRandom;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes;
 import java.util.zip.ZipEntry;
-import java.util.Map;
 import java.util.Random;
 
 /**
@@ -32,12 +31,10 @@ public class PatchUtils {
     public static File buildUnsignedPatch(PatchSpec patchSpec) throws IOException {
         // main class
         Manifest manifest = new Manifest();
-        String mainClass = patchSpec.getMainClass();
-        String mainClassFile = mainClass.replace('.', File.separatorChar) + ".class";
-        if (! patchSpec.getEntries().containsKey(mainClassFile))
-            throw new IllegalArgumentException("Main-Class file not provided in the patch specification.");
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, PATCH_MANIFEST_VERSION);
-        manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
+        manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, patchSpec.getMainClass());
+        if (! patchSpec.getEntries().containsKey(patchSpec.getMainClassEntryName()))
+            throw new IllegalArgumentException("Main-Class file not provided in the patch specification.");
 
         // jar
         String patchFileName = patchSpec.getOutputFilename();
@@ -53,11 +50,8 @@ public class PatchUtils {
         jos.closeEntry();
 
         // file entries
-        Map<String,String> entries = patchSpec.getEntries();
-        for(String zipEntryPath : entries.keySet()) {
-            jos.putNextEntry(new ZipEntry(zipEntryPath));
-            IOUtils.copyStream(new FileInputStream(entries.get(zipEntryPath)), jos);
-            jos.closeEntry();
+        for (PatchSpecEntry entry : patchSpec.getEntries().values()) {
+            entry.toJar(jos);
         }
 
         jos.close();
@@ -68,6 +62,10 @@ public class PatchUtils {
         byte[] bytes = new byte[PATCH_ID_LENGTH];
         random.nextBytes(bytes);
         return HexUtils.hexDump(bytes);
+    }
+
+    public static String classToEntryName(String className) {
+        return className.replace('.', File.separatorChar) + ".class";
     }
 
     // - PRIVATE

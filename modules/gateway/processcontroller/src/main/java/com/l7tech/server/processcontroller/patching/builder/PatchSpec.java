@@ -1,14 +1,13 @@
 package com.l7tech.server.processcontroller.patching.builder;
 
 import com.l7tech.server.processcontroller.patching.PatchPackage;
+import com.l7tech.server.processcontroller.patching.PatchUtils;
 
-import java.util.Properties;
-import java.util.Map;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 /**
- * Patch builder configuration holder: specifies the patch properties, the files to be added,
- * and the Main-Class execution entry point.
+ * Patch builder configuration holder: specifies the patch properties, the jar entries to be added,
+ * the Main-Class execution entry point and optionally the filename where the generated patch should be written.
  *
  * @author jbufu
  */
@@ -30,8 +29,9 @@ public class PatchSpec {
         return this;
     }
 
-    public PatchSpec file(String zipEntryPath, String fileName) {
-        entries.put(zipEntryPath, fileName);
+    public PatchSpec entry(PatchSpecEntry entry) {
+        if (entries.put(entry.getEntryName(), entry) != null)
+            throw new IllegalStateException("Entry already exists in the patch spec: " + entry.getEntryName());
         return this;
     }
 
@@ -53,7 +53,11 @@ public class PatchSpec {
         return mainClass;
     }
 
-    public Map<String, String> getEntries() {
+    public String getMainClassEntryName() {
+        return PatchUtils.classToEntryName(mainClass);
+    }
+
+    public Map<String,PatchSpecEntry> getEntries() {
         return entries;
     }
 
@@ -63,7 +67,7 @@ public class PatchSpec {
 
     // - PACKAGE
 
-    public PatchSpec() { }
+    PatchSpec() { }
 
     void validate() {
         for(PatchPackage.Property p : PatchPackage.Property.values()) {
@@ -79,6 +83,6 @@ public class PatchSpec {
 
     private Properties properties = new Properties();
     private String mainClass;
-    private Map<String, String> entries = new LinkedHashMap<String, String>();
+    private Map<String,PatchSpecEntry> entries = new LinkedHashMap<String,PatchSpecEntry>();
     private String outputFilename;
 }

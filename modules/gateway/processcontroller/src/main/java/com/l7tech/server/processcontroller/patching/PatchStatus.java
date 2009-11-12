@@ -58,10 +58,10 @@ public class PatchStatus {
                 }
             }},
 
-        ERROR_MSG(false) {
+        STATUS_MSG(false) {
             @Override
             public String displayValue(String value) {
-                return value == null || value.isEmpty() ? "" : ", Error message is: \n" + value + "\n"; 
+                return value == null || value.isEmpty() ? "" : ", Status message is: \n" + value + "\n"; 
             }};
 
 

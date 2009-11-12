@@ -68,7 +68,7 @@ public class PatchPackageImpl implements PatchPackage {
         Object mainClass = jar.getManifest().getMainAttributes().get(Attributes.Name.MAIN_CLASS);
         if (mainClass == null || ! (mainClass instanceof String) || ((String)mainClass).isEmpty())
             throw new PatchException("Invalid patch: main class not specified.");
-        checkEntryExists(((String) mainClass).replace('.', File.separatorChar) + ".class");
+        checkEntryExists(PatchUtils.classToEntryName((String) mainClass));
 
 
         for(String manifestEntry : jar.getManifest().getEntries().keySet())

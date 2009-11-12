@@ -10,6 +10,7 @@ import com.l7tech.server.processcontroller.ConfigService;
 import com.l7tech.server.processcontroller.ConfigServiceStub;
 import com.l7tech.server.processcontroller.PCUtils;
 import com.l7tech.server.processcontroller.patching.builder.PatchSpec;
+import com.l7tech.server.processcontroller.patching.builder.PatchSpecClassEntry;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.Functions;
@@ -127,7 +128,7 @@ public class PatchServiceTest {
             Assert.assertEquals("Uploaded patch id is not the expected one.", patchId, status.getField(PatchStatus.Field.ID));
             // install
             status = patchService.installPatch(patchId, new ArrayList<String>());
-            Assert.assertEquals(status.getField(PatchStatus.Field.ERROR_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
+            Assert.assertEquals(status.getField(PatchStatus.Field.STATUS_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
             // second upload
             try {
                 patchService.uploadPatch(IOUtils.slurpFile(patch));
@@ -155,7 +156,7 @@ public class PatchServiceTest {
             Assert.assertEquals("Uploaded patch id is not the expected one.", patchId, status.getField(PatchStatus.Field.ID));
             // install
             status = patchService.installPatch(patchId, new ArrayList<String>());
-            Assert.assertEquals(status.getField(PatchStatus.Field.ERROR_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
+            Assert.assertEquals(status.getField(PatchStatus.Field.STATUS_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
             // second install
             try {
                 patchService.installPatch(patchId, new ArrayList<String>());
@@ -210,7 +211,7 @@ public class PatchServiceTest {
             // install
             if (install) {
                 status = patchService.installPatch(patchId, new ArrayList<String>());
-                Assert.assertEquals(status.getField(PatchStatus.Field.ERROR_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
+                Assert.assertEquals(status.getField(PatchStatus.Field.STATUS_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
             }
             // upload rollback
             String rollbackId = "rollback_touch_tmp_helloworld_txt_allow_rollback";
@@ -220,9 +221,9 @@ public class PatchServiceTest {
             Assert.assertEquals("Uploaded patch id is not the expected one.", rollbackId, status.getField(PatchStatus.Field.ID));
             // rollback
             status = patchService.installPatch(rollbackId, new ArrayList<String>());
-            Assert.assertEquals(status.getField(PatchStatus.Field.ERROR_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
+            Assert.assertEquals(status.getField(PatchStatus.Field.STATUS_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
             status = patchService.getStatus(patchId);
-            Assert.assertEquals(status.getField(PatchStatus.Field.ERROR_MSG), PatchStatus.State.ROLLED_BACK.name(), status.getField(PatchStatus.Field.STATE));
+            Assert.assertEquals(status.getField(PatchStatus.Field.STATUS_MSG), PatchStatus.State.ROLLED_BACK.name(), status.getField(PatchStatus.Field.STATE));
         } finally {
             temp1DeleteOk = patch == null || ! patch.exists() || patch.delete();
             temp2DeleteOk = rollback == null || ! rollback.exists() || rollback.delete();
@@ -955,7 +956,7 @@ public class PatchServiceTest {
             final Exception[] thrown = new Exception[]{null};
             final boolean[] modified = new boolean[]{false};
             File modifiedPatch = modifyPatch(patch, new HashMap<String, Functions.TernaryVoid<JarEntry, InputStream, JarOutputStream>>() {{
-                put("com.l7tech.server.processcontroller.patching.HelloFileWorldPatch".replace('.', File.separatorChar) + ".class",
+                put(PatchUtils.classToEntryName("com.l7tech.server.processcontroller.patching.HelloFileWorldPatch"),
                     new Functions.TernaryVoid<JarEntry, InputStream, JarOutputStream>() {
                     @Override
                     public void call(JarEntry jarEntry, InputStream inputStream, JarOutputStream jos) {
@@ -1082,10 +1083,9 @@ public class PatchServiceTest {
     private String untrustedKeystorePath;
 
     private PatchSpec getTestPatchSpec(String patchId) {
-        String mainClass = "com.l7tech.server.processcontroller.patching.HelloFileWorldPatch";
-        PatchSpec spec = new PatchSpec(patchId == null || patchId.isEmpty() ? PatchUtils.generatePatchId() : patchId, "test patch", false, mainClass);
-        String mainClassFile = mainClass.replace('.', File.separatorChar) + ".class";
-        return spec.file(mainClassFile, PatchServiceTest.class.getResource("HelloFileWorldPatch.class").getPath());
+        Class mainClass = HelloFileWorldPatch.class; 
+        PatchSpec spec = new PatchSpec(patchId == null || patchId.isEmpty() ? PatchUtils.generatePatchId() : patchId, "test patch", false, mainClass.getName());
+        return spec.entry(new PatchSpecClassEntry(mainClass));
     }
 
     private JarSignerParams getTestPatchSigningParams() {

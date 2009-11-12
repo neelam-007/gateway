@@ -105,6 +105,8 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         PatchStatus status2;
         if (result.getExitStatus() == 0) {
             status1.setField(PatchStatus.Field.STATE, PatchStatus.State.INSTALLED.name());
+            byte[] output = result.getOutput();
+            status1.setField(PatchStatus.Field.STATUS_MSG, output != null ? new String(output) : "");
             status2 = packageManager.setPackageStatus(status1);
             if (rollback != null)
                 packageManager.updatePackageStatus(rollback, PatchStatus.Field.STATE, PatchStatus.State.ROLLED_BACK.name());
@@ -112,7 +114,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         } else {
             byte[] errOut = result.getOutput();
             status1.setField(PatchStatus.Field.STATE, PatchStatus.State.ERROR.name());
-            status1.setField(PatchStatus.Field.ERROR_MSG, errOut != null ? new String(errOut) : "");
+            status1.setField(PatchStatus.Field.STATUS_MSG, errOut != null ? new String(errOut) : "");
             status2 = packageManager.setPackageStatus(status1);
             logger.log(Level.WARNING, "Error installing " + patchId + " : " + new String(errOut));
         }
@@ -179,6 +181,8 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     private void getInstallParams(List<String> commandLine, PatchPackage patch, Collection<String> nodes) {
         commandLine.add("-D" + ApiWebEndpoint.NODE_MANAGEMENT.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.NODE_MANAGEMENT));
         commandLine.add("-D" + ApiWebEndpoint.OS.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.OS));
+        //commandLine.add("-Xdebug");
+        //commandLine.add("-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8998");
         if(nodes != null && ! nodes.isEmpty()) {
             StringBuilder nodeList = new StringBuilder();
             for(String node : nodes) {

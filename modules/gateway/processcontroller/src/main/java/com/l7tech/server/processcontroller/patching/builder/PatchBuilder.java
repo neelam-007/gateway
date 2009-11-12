@@ -38,6 +38,7 @@ public class PatchBuilder {
             System.out.println("Error: " + ExceptionUtils.getMessage(e) + "\n");
             System.exit(PATCH_BUILDER_ERROR);
         }
+        System.exit(0);
     }
 
     // - PRIVATE
@@ -45,7 +46,7 @@ public class PatchBuilder {
     private static void printUsage() {
         System.out.println("Usage: " + PatchBuilder.class.getSimpleName() + " <options>");
         for (Option o : Option.values()) {
-            System.out.println("\t" + o.getCommandLineArg() + " " + o.getSyntax() + "\n\t\t" + (o.isRequired() ? "Required." : "Optional.") + o.getDescription());
+            System.out.println("\t" + o.getCommandLineArg() + " " + o.getSyntax() + "\n\t\t" + (o.isRequired() ? "Required." : "Optional.") + o.getDescription() + "\n");
         }
     }
 
@@ -53,6 +54,7 @@ public class PatchBuilder {
 
         // - PUBLIC
 
+        /** Generates a patch from the collected options */
         public File buildPatch() throws IOException, PatchException {
             for (Option o : Option.values()) {
                 if (o.isRequired() && ! options.containsKey(o))
@@ -161,6 +163,93 @@ public class PatchBuilder {
                 if (config.hasOption(this))
                     spec.property(PatchPackage.Property.JAVA_BINARY, config.getSingleValue(this));
             }},
+
+        MAIN_CLASS("-main-class", "<class_name> <file_name>", false,
+            "Specifies the patch JAR's Main-Class executable entry point. Use this if you have written your own patch executor. " +
+            "If not specified, a default implementation is used that can handle the other options provided by this tool.") {
+            @Override
+            public BuilderConfig parseArgs(final List<String> args, BuilderConfig config) {
+                extractArg(args, getCommandLineArg(), getCommandLineArg()); // -main-class
+                config.options.put(this, new ArrayList<String>() {{
+                    add(extractArg(args, getCommandLineArg(), null)); // class name
+                    add(extractArg(args, getCommandLineArg(), null)); // file name
+                }});
+                return Option.parseNextArg(args,config);
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+                if (config.hasOption(this)) {
+                    spec.mainClass(config.options.get(this).get(0));
+                    spec.entry(new PatchSpecFileEntry(spec.getMainClassEntryName(), config.options.get(this).get(1)));
+                } else {
+                    spec.mainClass(PatchMain.class.getName());
+                    spec.entry(new PatchSpecStreamEntry(spec.getMainClassEntryName(), PatchMain.class.getResourceAsStream(PatchMain.class.getSimpleName() + ".class")));
+                }
+            }},
+
+        RESTART_AFTER("-restart-after", "<service_name>", false, "Restarts the specified at the end of patch application.") {
+            @Override
+            public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
+                return null;
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+
+            }},
+
+        STOP_SERVICE("-stop-service", "<service_name>", false, "Stops the specified service during the patch application and starts it at the end.") {
+            @Override
+            public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
+                return null;
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+            }},
+
+        REBOOT_NEEDED("-reboot-needed", "[reboot_message]", false, "Informs the user that a reboot is needed after the patch was applied; the reboot is not performed automatically.") {
+            @Override
+            public BuilderConfig parseArgs(final List<String> args, BuilderConfig config) {
+                extractArg(args, getCommandLineArg(), getCommandLineArg()); // -reboot-needed
+                config.options.put(this, new ArrayList<String>() {{
+                    if (! args.isEmpty() && ! args.get(0).startsWith("-"))
+                        add(extractArg(args, getCommandLineArg(), null));
+                }});
+                return Option.parseNextArg(args, config);
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+                if(config.options.containsKey(this)) {
+                    new RebootNeededPatchTaskBuilder(spec, config.options.get(this));
+                }
+            }},
+
+        EXPECTED_RPMS("-expected-rpms", "<expected_rpm|file_with_expected_rpms>", false, "RPM name or file containing RPM names, one per line, in the default format used by 'rpm -q'") {
+            @Override
+            public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
+                return null;
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+            }},
+
+        RPM_UPDATE("-rpm-update", "<rpm_file|file_with_rpm_file_names>", false, "Updates the specified RPM package, or the packages listed, one per line, in the specified file.") {
+            @Override
+            public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
+                return null;
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+            }},
+
+/*
+        FILE_UPDATE("-file-update", "<existing_file_absolute_path> <replacement_file>", false, "Updates the specified file with the provided replacement.") {
+
+        },
+
+        EXPECTED_FILE("-expected-file", "<existing_file_absolute_path> <expected_md5>", false, "Verifies that ...") {
+
+        },
+*/
 
         PATCH_FILENAME("-patchfile", "<patch_file_name>", false, "The filename for the generated patch. Defaults to <patch_identifier>.L7P") {
             @Override
@@ -282,7 +371,7 @@ public class PatchBuilder {
             String jarOption = extractArg(args, option.getCommandLineArg(), null);
             String jarOptionValue = extractArg(args, jarOption, null);
             config.jarOptions.put(JarSignerParams.Option.fromCommandLineArg(jarOption), jarOptionValue);
-            return config;
+            return Option.parseNextArg(args, config);
         }
     }
 }
