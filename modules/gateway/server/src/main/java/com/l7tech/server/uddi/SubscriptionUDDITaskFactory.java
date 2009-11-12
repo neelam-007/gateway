@@ -12,6 +12,7 @@ import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIClient;
 import com.l7tech.uddi.UDDISubscriptionResults;
 import com.l7tech.uddi.UDDISubscriptionResultFactory;
+import com.l7tech.uddi.UDDIInvalidKeyException;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -128,6 +129,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         try {
                             uddiClient.deleteSubscription( uddiRegistrySubscription.getSubscriptionKey() );
                             uddiRegistrySubscription.setSubscriptionKey( null );
+                        } catch ( UDDIInvalidKeyException ue ) {
+                            logger.log( Level.WARNING, "Unable to delete subscription '"+uddiRegistrySubscription.getSubscriptionKey()+"', key is invalid (could be expired)." );
                         } catch ( UDDIException ue ) {
                             logger.log( Level.WARNING, "Unable to delete subscription '"+uddiRegistrySubscription.getSubscriptionKey()+"'.", ue );
                         }
