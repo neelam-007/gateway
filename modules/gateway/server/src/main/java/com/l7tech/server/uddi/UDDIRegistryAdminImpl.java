@@ -175,8 +175,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if (uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.CANNOT_DELETE ||
                 uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.CANNOT_PUBLISH ||
                 uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED ||
-                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED  ||
-                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.NONE) {
+                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED ) {
 
             //if we cannot delete or we have already tried, allow the user to stop any more attempts
             //this may cause queued tasks problems, but they will just fail
@@ -358,7 +357,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                 wsdlHash, updateWhenGatewayWsdlChanges);
 
         final long oid = uddiProxiedServiceInfoManager.save(uddiProxiedServiceInfo);
-        final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.NONE);
+        final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
         uddiPublishStatusManager.save(newStatus);
         //the save event is picked up by the UDDICoordinator, which does the UDDI work
     }

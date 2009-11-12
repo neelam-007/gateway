@@ -140,7 +140,7 @@ public class BusinessServicePublisher {
 
             //remove other bindings?
             if (removeOthers) {
-                logger.log(Level.INFO, "Deleting other bindingTemplates");
+                logger.log(Level.FINE, "Deleting other bindingTemplates");
                 uddiClient.deleteBindingTemplateFromSingleService(allOtherBindingKeys);
             }
 
@@ -170,9 +170,9 @@ public class BusinessServicePublisher {
      */
     private void handleTModelRollback(final String tModelKey){
         try {
-            logger.log(Level.INFO, "Attemping to delete tModel published to UDDI with tModelKey: " + tModelKey);
+            logger.log(Level.FINE, "Attemping to delete tModel published to UDDI with tModelKey: " + tModelKey);
             uddiClient.deleteTModel(tModelKey);
-            logger.log(Level.INFO, "Succesfully deleted tModel with tModelKey: " + tModelKey);
+            logger.log(Level.FINE, "Succesfully deleted tModel with tModelKey: " + tModelKey);
         } catch (UDDIException e1) {
             logger.log(Level.WARNING, "Could not rollback published tModel with key " + tModelKey + "to UDDI: " + ExceptionUtils.getMessage(e1));
         }
@@ -180,9 +180,9 @@ public class BusinessServicePublisher {
 
     private void handleBindingTemplateRollback(final String bindingKey){
         try {
-            logger.log(Level.INFO, "Attemping to delete bindingTemplate published to UDDI with bindingKey: " + bindingKey);
+            logger.log(Level.FINE, "Attemping to delete bindingTemplate published to UDDI with bindingKey: " + bindingKey);
             uddiClient.deleteBindingTemplate(bindingKey);
-            logger.log(Level.INFO, "Succesfully deleted tModel with bindingKey: " + bindingKey);
+            logger.log(Level.FINE, "Succesfully deleted tModel with bindingKey: " + bindingKey);
         } catch (UDDIException e1) {
             logger.log(Level.WARNING, "Could not rollback published bindingTemplate with key " + bindingKey + "to UDDI: " + ExceptionUtils.getMessage(e1));
         }
@@ -264,12 +264,6 @@ public class BusinessServicePublisher {
             uddiPreviouslyPublishedServices.add(aServiceToItsModels.left);
         }
 
-        //check if this service has already been published
-        if (uddiPreviouslyPublishedServices.isEmpty()) {
-            //it's ok if it hasn't, just log the fact, may have been deleted via UDDI interface
-            logger.log(Level.WARNING, "No exising published BusinessService found.");
-        }
-
         //map to look up existing services
         final Map<String, BusinessService> previouslyPublishedServiceMap = new HashMap<String, BusinessService>();
         for (BusinessService bs : uddiPreviouslyPublishedServices) {
@@ -308,10 +302,10 @@ public class BusinessServicePublisher {
         }
 
         if (!deleteSet.isEmpty()) {
-            logger.log(Level.INFO, "Attemping to delete BusinessServices no longer referenced by Gateway's WSDL");
+            logger.log(Level.FINE, "Attemping to delete BusinessServices no longer referenced by Gateway's WSDL");
             try {
                 uddiClient.deleteBusinessServicesByKey(deleteSet);
-                logger.log(Level.INFO, "Successfully deleted all BusinessServices no longer referenced by Gateway's WSDL");
+                logger.log(Level.FINE, "Successfully deleted all BusinessServices no longer referenced by Gateway's WSDL");
             } catch (UDDIException e) {
                 logger.log(Level.WARNING, "Problem deleting BusinessServices: " + e.getMessage());
             }

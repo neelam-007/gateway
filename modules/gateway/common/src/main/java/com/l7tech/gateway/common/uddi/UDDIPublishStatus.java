@@ -20,12 +20,10 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 @Table(name="uddi_publish_status")
 public class UDDIPublishStatus extends PersistentEntityImp {
 
+    /**
+     * This enum is the life cycle of published proxied information in UDDI
+     */
     public enum PublishStatus {
-        /**
-         * Not published.
-         */
-        NONE,
-
         /**
          * Publishing (or update) is required.
          */
@@ -37,7 +35,7 @@ public class UDDIPublishStatus extends PersistentEntityImp {
         PUBLISH_FAILED,
 
         /**
-         * Status when we cannot publish to UDDI
+         * Status when we cannot publish to UDDI. Final state
          */
         CANNOT_PUBLISH,
 
@@ -63,7 +61,7 @@ public class UDDIPublishStatus extends PersistentEntityImp {
     }
 
     public UDDIPublishStatus() {
-        this.publishStatus = PublishStatus.NONE;        
+        this.publishStatus = PublishStatus.PUBLISH;
     }
 
     public UDDIPublishStatus(long uddiProxiedServiceInfoOid, PublishStatus publishStatus) {

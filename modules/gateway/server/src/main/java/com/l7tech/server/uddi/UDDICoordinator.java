@@ -74,6 +74,9 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
         this.taskContext = new UDDICoordinatorTaskContext( this );
+
+        final long maintenanceFrequency = SyspropUtil.getLong(PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000);//start it in 15 minutes, run it every 15 minutes
+        timer.schedule(new PublishedProxyMaintenanceTimerTask(this), maintenanceFrequency, maintenanceFrequency);
     }
 
     public boolean isNotificationServiceAvailable( final long registryOid ) {
@@ -138,7 +141,17 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                                 return;
                             }
 
-                            final UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiProxiedServiceInfoManager.findByPrimaryKey(uddiPublishStatus.getUddiProxiedServiceInfoOid());
+                            final UDDIProxiedServiceInfo uddiProxiedServiceInfo =
+                                    uddiProxiedServiceInfoManager.findByPrimaryKey(uddiPublishStatus.getUddiProxiedServiceInfoOid());
+
+                            final UDDIPublishStatus.PublishStatus status = uddiPublishStatus.getPublishStatus();
+
+                            if (status != UDDIPublishStatus.PublishStatus.PUBLISH &&
+                                    status != UDDIPublishStatus.PublishStatus.DELETE) {
+                                //this events are managed by the maintenance task
+                                return;
+                            }
+
                             notifyPublishEvent(uddiProxiedServiceInfo, uddiPublishStatus);
 
                         } catch (FindException e) {
@@ -198,6 +211,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
     private static final String SUBSCRIPTION_SERVICE_WSDL = "file://__ssginternal/uddi_subr_v3_service.wsdl";
     private static final long METRICS_CLEANUP_INTERVAL = SyspropUtil.getLong( "com.l7tech.server.uddi.metricsCleanupInterval", TimeUnit.MINUTES.toMillis(1) );
+    private static final String PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY = UDDICoordinator.class.getName() + ".publishedProxyMaintenanceFrequency";
 
     private final PlatformTransactionManager transactionManager;
     private final UDDIHelper uddiHelper;
@@ -381,6 +395,36 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             } catch (UpdateException e) {
                 logger.log(Level.WARNING, "Could not update UDDIProxiedServiceInfo. Cannot trigger UDDI required WSDL update", ExceptionUtils.getDebugException(e));
                 throw e;//cause db to rollback
+            }
+        }
+    }
+
+    /**
+     * Goes thorugh all UDDIProxiedServiceInfo entities, and creates events to publish for events which are
+     * waiting to publish, or those which have either failed to publish or to delete
+     */
+    private void fireMaintenancePublishEvents() throws ObjectModelException {
+        final Collection<UDDIProxiedServiceInfo> proxiedServices = uddiProxiedServiceInfoManager.findAll();
+        final Map<Long, UDDIProxiedServiceInfo> oidToProxyServiceMap = new HashMap<Long, UDDIProxiedServiceInfo>();
+        for(UDDIProxiedServiceInfo serviceInfo: proxiedServices){
+            oidToProxyServiceMap.put(serviceInfo.getOidAsLong(), serviceInfo);
+        }
+
+        final Collection<UDDIPublishStatus> allPublishStatus = uddiPublishStatusManager.findAll();
+
+        //move published info through its lifecycle
+        for(UDDIPublishStatus publishStatus: allPublishStatus){
+            final UDDIPublishStatus.PublishStatus status = publishStatus.getPublishStatus();
+
+            //for every status other than cannot publish and delete, fire the event to ensure the publish status
+            //works its way through its life cycle
+            if(status != UDDIPublishStatus.PublishStatus.CANNOT_PUBLISH &&
+                    status != UDDIPublishStatus.PublishStatus.CANNOT_DELETE &&
+                    status != UDDIPublishStatus.PublishStatus.PUBLISHED){
+                final UDDIProxiedServiceInfo info = oidToProxyServiceMap.get(publishStatus.getUddiProxiedServiceInfoOid());
+                logger.log(Level.FINER, "Creating event to update published proxy service info in UDDDI. Service #("
+                        + info.getPublishedServiceOid()+") in status " + status.toString());
+                notifyPublishEvent( info, publishStatus);
             }
         }
     }
@@ -751,6 +795,35 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         }
     }
 
+    private static final class PublishedProxyMaintenanceTimerTask extends ManagedTimerTask {
+        private final UDDICoordinator coordinator;
+
+        PublishedProxyMaintenanceTimerTask( final UDDICoordinator coordinator  ) {
+            this.coordinator = coordinator;
+        }
+
+        @Override
+        public void doRun() {
+            if ( coordinator.clusterMaster.isMaster() ) {
+                AuditContextUtils.doAsSystem( new Runnable(){
+                    @Override
+                    public void run() {
+                        new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                            @Override
+                            protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
+                                try {
+                                    coordinator.fireMaintenancePublishEvents();
+                                } catch (ObjectModelException ome) {
+                                    logger.log( Level.WARNING, "Error updating proxied business services status.", ome );
+                                    transactionStatus.setRollbackOnly();
+                                }
+                            }
+                        } );
+                    }});
+            }
+        }
+    }
+
     private static final class PublishedServiceWsdlUpdatedTimerTask extends ManagedTimerTask {
         private final UDDICoordinator coordinator;
         private final long serviceOid;
@@ -763,17 +836,22 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         @Override
         public void doRun() {
             if ( coordinator.clusterMaster.isMaster() ) {
-                new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                AuditContextUtils.doAsSystem( new Runnable(){
                     @Override
-                    protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
-                        try {
-                            coordinator.checkPublishedServiceWithUpdatedWsdls(serviceOid);
-                        } catch (ObjectModelException ome) {
-                            logger.log( Level.WARNING, "Error updating proxied business service status.", ome );
-                            transactionStatus.setRollbackOnly();
-                        }
+                    public void run() {
+                        new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                            @Override
+                            protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
+                                try {
+                                    coordinator.checkPublishedServiceWithUpdatedWsdls(serviceOid);
+                                } catch (ObjectModelException ome) {
+                                    logger.log( Level.WARNING, "Error updating proxied business service status.", ome );
+                                    transactionStatus.setRollbackOnly();
+                                }
+                            }
+                        } );
                     }
-                } );
+                });
             }
         }
     }
