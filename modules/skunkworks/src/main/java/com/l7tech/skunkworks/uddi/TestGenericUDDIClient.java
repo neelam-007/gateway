@@ -34,9 +34,7 @@ import javax.security.auth.login.LoginException;
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  *
- * Test the GenericUDDIClient implementation of UDDIClient with respect to publishing information to a UDDI Registry
- *
- * These tests requies a working UDDI Registry
+ * Any offline tests for testing with a real UDDI Registry
  *
  * @author darmstrong
  */
@@ -96,6 +94,27 @@ public class TestGenericUDDIClient {
     public void testDeleteBindingTemplates() throws UDDIException {
         final String bindingKey = "uddi:38ed2f50-ce74-11de-8486-86e998070d36";
         uddiClient.deleteBindingTemplate(bindingKey);
+    }
+
+    @Test
+    public void updateBindingTemplateToCauseNotification() throws UDDIException{
+        String bindingKey = "uddi:6810113d-cf34-11de-8be7-cb83aaebcf31";
+        GenericUDDIClient genericUDDIClient = (GenericUDDIClient) uddiClient;
+
+        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:666a296d-cf34-11de-8be7-b162d313c13b");
+        BindingTemplate foundTemplate = null;
+        for(BindingTemplate bt: businessService.getBindingTemplates().getBindingTemplate()){
+            if(bt.getBindingKey().equals(bindingKey)){
+                foundTemplate = bt;
+                break;
+            }
+        }
+
+        Assert.assertNotNull(foundTemplate);
+
+        foundTemplate.getAccessPoint().setValue("http://www.test.com/testing_3_service");
+        genericUDDIClient.publishBusinessService(businessService);
+        //genericUDDIClient.publishBindingTemplate(foundTemplate);
     }
     /**
      * Test the ServiceAdmin api for creating a UDDIProxiedService and corresponding BusinessService in UDDI Registry

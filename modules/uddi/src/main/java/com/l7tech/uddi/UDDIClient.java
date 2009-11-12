@@ -234,12 +234,12 @@ public interface UDDIClient extends Closeable {
     void deleteBusinessServicesByKey(final Collection<String> serviceKeys) throws UDDIException;
 
     /**
-     * Find all BusinessServices which contain the generalKeyword supplied.
+     * Find all BusinessServices with the supplied keys
      *
-     * @param serviceKeys
-     * @return
-     * @throws UDDIException
-     */
+     * @param serviceKeys Set String of serviceKeys to find. Cannot be null.
+     * @return List of BusinessServices which were found. Not guaranteed to be the same size as the serviceKeys set
+     * @throws UDDIException if problem searching UDDI
+     */                      //TODO [Donal] - change return type to UDDIBusinessService
     List<BusinessService> getBusinessServices(final Set<String> serviceKeys) throws UDDIException;
 
     /**

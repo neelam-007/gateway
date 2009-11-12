@@ -17,6 +17,8 @@ import javax.xml.bind.JAXB;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.io.InputStream;
 
 public class UDDIUtilitiesTest {
     private Wsdl wsdl;
@@ -187,6 +189,58 @@ public class UDDIUtilitiesTest {
         System.out.println(endPoint);
     }
 
+
+    /**
+     * Test that the correct information is extracted from the UDDI data model objects when we recieve a notification
+     * @throws UDDIException
+     */
+    @Test
+    public void testGetUDDIBindingImplInfo() throws UDDIException {
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/BusinessService.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_portType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));        
+
+        UDDIUtilities.UDDIBindingImplementionInfo bindingInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
+                "uddi:8617fae0-c987-11de-8486-efda8c54fa31", "WarehouseSoap", "WarehouseSoap");
+
+        Assert.assertNotNull(bindingInfo);
+
+        Assert.assertEquals("Invalid access point found", "http://irishman.l7tech.com:8080/service/91783168", bindingInfo.getEndPoint());
+        Assert.assertEquals("Invalid WSDL URL found", "http://irishman.l7tech.com:8080/ssg/wsdl?serviceoid=91783168", bindingInfo.getImplementingWsdlUrl());
+        Assert.assertEquals("Invalid wsdl:port information found", "WarehouseSoap", bindingInfo.getImplementingWsdlPort());
+    }
+
+    /**
+     * Tests that when the wsdl:port we want is not found, that we will find another bindingTemplate which implements
+     * the correct binding
+     * @throws UDDIException
+     */
+    @Test
+    public void testGetUDDIBindingImplInfoFindOtherBinding() throws UDDIException {
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/BusinessServiceDiffBindings.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_portType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
+
+        UDDIUtilities.UDDIBindingImplementionInfo bindingInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
+                "uddi:8617fae0-c987-11de-8486-efda8c54fa31", "WarehouseSoap", "WarehouseSoap");
+
+        Assert.assertNotNull(bindingInfo);
+
+        Assert.assertEquals("Invalid access point found", "http://irishman.l7tech.com:8080/service/91783168", bindingInfo.getEndPoint());
+        Assert.assertEquals("Invalid WSDL URL found", "http://irishman.l7tech.com:8080/ssg/wsdl?serviceoid=91783168", bindingInfo.getImplementingWsdlUrl());
+        Assert.assertFalse("Invalid wsdl:port information found", "WarehouseSoap".equals(bindingInfo.getImplementingWsdlPort()));
+        Assert.assertEquals("Invalid wsdl:port information found", "WarehouseSoap1" , bindingInfo.getImplementingWsdlPort());
+    }
 
     /**
      * Test the getTModelType method

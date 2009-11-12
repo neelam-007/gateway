@@ -124,7 +124,10 @@ public class SystemMessages extends Messages {
     public static final M UDDI_PUBLISH_SERVICE_FAILED           = m(2282, Level.WARNING, "Error publishing service ''{0}''.");
     public static final M UDDI_PUBLISH_SERVICE_ROLLBACK_FAILED  = m(2283, Level.WARNING, "Error rolling back publishing service ''{0}''.");
     public static final M UDDI_REMOVE_SERVICE_FAILED            = m(2284, Level.WARNING, "Could not delete proxied BusinessService ''{0}''.");
-    public static final M UDDI_WSPOLICY_PUBLISH_FAILED          = m(2285, Level.WARNING, "Error publishing ws-policy attachment ''{0}''.");    
+    public static final M UDDI_WSPOLICY_PUBLISH_FAILED          = m(2285, Level.WARNING, "Error publishing ws-policy attachment ''{0}''.");
+    public static final M UDDI_NOTIFICATION_PROCESSING_FAILED   = m(2286, Level.WARNING, "Error processing UDDI notification for serviceKey ''{0}''.");
+    public static final M UDDI_NOTIFICATION_SERVICE_DISABLED    = m(2287, Level.WARNING, "UDDI Notification has caused Published Service to be disabled. Published Service ID ''{0}''.");
+    public static final M UDDI_NOTIFICATION_SERVICE_DELETED     = m(2288, Level.WARNING, "UDDI Notification that monitored BusinessService has been deleted. Deleting SSG records for serviceKey ''{0}''.");    
 
     // MAX -                                      m(2999
 }

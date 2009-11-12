@@ -334,6 +334,8 @@ public class ServicePropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
 
                 if(uddiServiceControl == null) return;
+
+                //TODO [Donal] bug 7959
                 try {
                     Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
                     uddiServiceControl = null;

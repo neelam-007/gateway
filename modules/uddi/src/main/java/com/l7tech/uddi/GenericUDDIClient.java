@@ -178,21 +178,35 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
-    public TModel getTModel(String tModelKey) throws UDDIException {
-        if(tModelKey == null || tModelKey.trim().isEmpty()) throw new IllegalArgumentException("tModelKey cannot be null or empty");
+    public Collection<TModel> getTModels(Set<String> tModelKeys) throws UDDIException {
+        if(tModelKeys == null) throw new NullPointerException("tModelKeys cannot be null");
+        if(tModelKeys.isEmpty()){
+            logger.log(Level.INFO, "tModelKeys is empty. Nothing at do");
+            return Collections.emptyList();
+        }
+
         //Turn the tModelInfo into a TModel
         GetTModelDetail getTModelDetail = new GetTModelDetail();
         getTModelDetail.setAuthInfo(getAuthToken());
-        getTModelDetail.getTModelKey().add(tModelKey);
+        getTModelDetail.getTModelKey().addAll(tModelKeys);
 
         try {
             TModelDetail tModelDetail = getInquirePort().getTModelDetail(getTModelDetail);
-            List<TModel> tModels = tModelDetail.getTModel();
-            if(tModels.isEmpty()) return null;
-            return tModels.get(0);
+            return tModelDetail.getTModel();
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error getting TModel: ", drfm);
         }
+    }
+
+    @Override
+    public TModel getTModel(String tModelKey) throws UDDIException {
+        if(tModelKey == null || tModelKey.trim().isEmpty()) throw new IllegalArgumentException("tModelKey cannot be null or empty");
+
+        Set<String> tModelKeys = new HashSet<String>();
+        tModelKeys.add(tModelKey);
+        Collection<TModel> foundModels = getTModels(tModelKeys);
+        if(foundModels.isEmpty()) return null;
+        return foundModels.iterator().next();
     }
 
     @Override
@@ -214,13 +228,12 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     /**
      * Retrieve the BusinessService with the supplied key
      *
-     * Note: Non interface method as it returns a BusinessService
-     *
      * @param serviceKey String serviceKey of the BusinessService to get
      * @return BusinessService of the supplied key. Null if not found
      * @throws UDDIException if any problem retireving the BusinessService from the UDDI registry
      */
-    public BusinessService getBusinessService(String serviceKey) throws UDDIException {
+    @Override
+    public BusinessService getBusinessService(final String serviceKey) throws UDDIException {
         if(serviceKey == null || serviceKey.trim().isEmpty()) throw new IllegalArgumentException("serviceKey cannot be null or empty");
         
         GetServiceDetail getServiceDetail = new GetServiceDetail();

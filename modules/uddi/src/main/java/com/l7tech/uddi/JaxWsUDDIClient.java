@@ -4,6 +4,10 @@ import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.common.uddi.guddiv3.TModel;
 import com.l7tech.common.uddi.guddiv3.BindingTemplate;
 
+import java.util.Set;
+import java.util.List;
+import java.util.Collection;
+
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  *
@@ -30,7 +34,7 @@ interface JaxWsUDDIClient {
     /**
      * Save the bindingTemplate.
      *
-     * @param bindingTemplate BindingTemplate to save. It's bindingKey will be set after the save
+     * @param bindingTemplate BindingTemplate to save. It's bindingKey will be set after the save. Required
      * @throws UDDIException any UDDI problems
      */
     public void publishBindingTemplate(final BindingTemplate bindingTemplate) throws UDDIException;
@@ -46,11 +50,26 @@ interface JaxWsUDDIClient {
 
     /**
      * Retrieve the tModel with the supplied key
-     * @param tModelKey String tModelKey of the tModel to get
+     * @param tModelKey String tModelKey of the tModel to get. Required.
      * @return TModel of the supplied key. Null if not found
      * @throws UDDIException if any problem retireving the TModel from the UDDI registry
      */
     TModel getTModel(final String tModelKey) throws UDDIException;
 
+    /**
+     * Retrieve all the tModels represented by the supplied keys
+     * @param tModelKeys Set string of tModels to retrieve
+     * @return Collection of found tModels
+     * @throws UDDIException if problem searching
+     */
+    Collection<TModel> getTModels(final Set<String> tModelKeys) throws UDDIException;
+
+    /**
+     * Get the BusinessService for the supplied key
+     * @param serviceKey String serviceKey of BusinessService to get. Required
+     * @return BusinessService, can be null if not found
+     * @throws UDDIException if problem searching UDDI
+     */
+    BusinessService getBusinessService(final String serviceKey) throws UDDIException;
 
 }

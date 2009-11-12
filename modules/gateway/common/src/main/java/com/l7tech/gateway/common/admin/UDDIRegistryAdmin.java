@@ -209,7 +209,7 @@ public interface UDDIRegistryAdmin {
      */
     @Secured(types = {EntityType.UDDI_SERVICE_CONTROL}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
     long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl)
-            throws UpdateException, SaveException, FindException;
+            throws UpdateException, SaveException, FindException, UDDIRegistryNotEnabledException;
 
     /**
      * Delete the UDDIServiceControl with id uddiServiceControlOid

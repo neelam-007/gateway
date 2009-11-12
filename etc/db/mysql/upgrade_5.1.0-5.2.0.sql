@@ -211,6 +211,21 @@ CREATE TABLE uddi_service_control (
   FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+--
+-- UDDIServiceControl runtime information. Stores the last modified timestamp for a service we are monitoring in UDDI
+-- Useful as it stops us processing duplicate notifications from UDDI
+--
+DROP TABLE IF EXISTS uddi_service_control_monitor_runtime;
+CREATE TABLE uddi_service_control_monitor_runtime (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  uddi_service_control_oid bigint(20) NOT NULL,
+  last_uddi_modified_timestamp bigint(20) NOT NULL,
+  PRIMARY KEY (objectid),
+  UNIQUE KEY  (uddi_service_control_oid),
+  FOREIGN KEY (uddi_service_control_oid) REFERENCES uddi_service_control (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 INSERT INTO rbac_role VALUES (-950,0,'Manage JDBC Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections.');
 INSERT INTO rbac_permission VALUES (-951,0,-950,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-952,0,-950,'CREATE',NULL,'JDBC_CONNECTION');

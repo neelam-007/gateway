@@ -170,6 +170,7 @@
                 <value>com.l7tech.gateway.common.uddi.UDDIServiceControl</value>
                 <value>com.l7tech.server.uddi.UDDIRegistrySubscription</value>
                 <value>com.l7tech.server.uddi.UDDIBusinessServiceStatus</value>
+                <value>com.l7tech.server.uddi.UDDIServiceControlMonitorRuntime</value>
 
                 <!-- Policy Assertion Related Entities -->
                 <value>com.l7tech.server.sla.CounterIDRecord</value>

@@ -1629,6 +1629,8 @@
                     <constructor-arg index="1" ref="uddiHelper" />
                     <constructor-arg index="2" ref="uddiRegistrySubscriptionManager"/>
                     <constructor-arg index="3" ref="uddiServiceControlManager"/>
+                    <constructor-arg index="4" ref="uddiServiceControlMonitorRuntimeManager"/>
+                    <constructor-arg index="5" ref="serviceManager"/>
                 </bean>
                 <bean class="com.l7tech.server.uddi.MetricsUDDITaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>
@@ -1655,5 +1657,7 @@
     <bean id="uddiRegistrySubscriptionManager" class="com.l7tech.server.uddi.UDDIRegistrySubscriptionManagerImpl" parent="hibernateBean" />
 
     <bean id="uddiBusinessServiceStatusManager" class="com.l7tech.server.uddi.UDDIBusinessServiceStatusManagerImpl" parent="hibernateBean" />
+
+    <bean id="uddiServiceControlMonitorRuntimeManager" class="com.l7tech.server.uddi.UDDIServiceControlMonitorRuntimeManagerImpl" parent="hibernateBean" />
 
 </beans>

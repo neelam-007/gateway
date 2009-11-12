@@ -1040,6 +1040,21 @@ CREATE TABLE uddi_service_control (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- UDDIServiceControl runtime information. Stores the last modified timestamp for a service we are monitoring in UDDI
+-- Useful as it stops us processing duplicate notifications from UDDI
+--
+DROP TABLE IF EXISTS uddi_service_control_monitor_runtime;
+CREATE TABLE uddi_service_control_monitor_runtime (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  uddi_service_control_oid bigint(20) NOT NULL,
+  last_uddi_modified_timestamp bigint(20) NOT NULL,
+  PRIMARY KEY (objectid),
+  UNIQUE KEY  (uddi_service_control_oid),
+  FOREIGN KEY (uddi_service_control_oid) REFERENCES uddi_service_control (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 -- Table structure for table rbac_role
 --
 

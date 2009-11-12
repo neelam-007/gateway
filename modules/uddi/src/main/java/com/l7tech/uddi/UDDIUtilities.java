@@ -10,10 +10,7 @@ import javax.wsdl.Port;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap12.SOAP12Address;
 import javax.wsdl.extensions.soap.SOAPAddress;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,7 +27,7 @@ import java.util.logging.Logger;
  */
 public class UDDIUtilities {
     private static Logger logger = Logger.getLogger(UDDIUtilities.class.getName());
-    
+
     public enum TMODEL_TYPE {
         WSDL_PORT_TYPE, WSDL_BINDING
     }
@@ -38,13 +35,13 @@ public class UDDIUtilities {
 
     /**
      * Update fake tModelKey references with real key references
-     * 
-     * @param businessService BusinessService which contains fake tModelKey references from it's TModelInstanceInfo s
+     *
+     * @param businessService  BusinessService which contains fake tModelKey references from it's TModelInstanceInfo s
      * @param dependentTModels all TModels contained in this Map should contain real tModelKeys assiged from the UDDI
-     * to which the BusnessService will ultimetely be published to
+     *                         to which the BusnessService will ultimetely be published to
      */
     static void updateBusinessServiceReferences(final BusinessService businessService,
-                                                   final Map<String, TModel> dependentTModels) {
+                                                final Map<String, TModel> dependentTModels) {
 
         //the business service itself has no references to update
         BindingTemplates bindingTemplates = businessService.getBindingTemplates();
@@ -240,7 +237,6 @@ public class UDDIUtilities {
             }
         }
 
-
         final Port wsdlPort = (foundPort != null)? foundPort: candidatePort;
         if (wsdlPort == null) throw new PortNotFoundException("Cannot find any wsdl:port by the name of '" + wsdlPortName+
                 " or any port which implements the binding '" + wsdlPortBinding);
@@ -260,6 +256,215 @@ public class UDDIUtilities {
     }
 
     /**
+     * Get a UDDIBindingImplementionInfo which contains information from UDDI on the UDDI information found
+     * from a bindingTemplate which implements the wsdlBinding we are interested in.
+     *
+     * We request the specific wsdl:port implementation, but if it is not found, then the first bindingTemplate
+     * found which implements the wsdl:binding value of wsdlBinding is returned.
+     *
+     * When a bindingTemplate is found, the tModel it references which represents the wsdl:binding is found, and from
+     * it the WSDL URL is extracted.
+     *
+     * Contents of the returned UDDIBindingImplementionInfo should be validated by caller
+     *
+     * @param uddiClient   UDDIClient configured for the correct uddi registry
+     * @param serviceKey   String serviceKey belonging to the above uddi registry
+     * @param wsdlPortName name of the wsdl:port, whose corresponding bindingTemplate's accessPoint's endPoint URL
+     *                     location should be obtained
+     * @return String URL of the protected service's end point from UDDI. Null if not found
+     * @throws UDDIException any problems searching UDDI
+     */
+    public static UDDIBindingImplementionInfo getUDDIBindingImplInfo(final UDDIClient uddiClient,  //TODO [Donal] change to a UDDIClientConfig - just create an instance of JaxWsUDDIClient
+                                                  final String serviceKey,                   //TODO [Donal] online test case
+                                                  final String wsdlPortName,
+                                                  final String wsdlBinding) throws UDDIException {
+
+        final JaxWsUDDIClient jaxWsUDDIClient;
+        if (uddiClient instanceof JaxWsUDDIClient) {
+            jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
+        } else {
+            throw new IllegalStateException("JaxWsUDDIClient is required.");
+        }
+
+        final BusinessService businessService = jaxWsUDDIClient.getBusinessService(serviceKey);
+        if (businessService == null) {
+            logger.log(Level.INFO, "No BusinessService found for serviceKey: " + serviceKey);
+            return null;
+        }
+
+        final BindingTemplates bindingTemplates = businessService.getBindingTemplates();
+        if (bindingTemplates == null) {
+            logger.log(Level.INFO, "Service contains no bindingTemplate elements. Serivce key: " + serviceKey);
+            return null;
+        }
+
+        //this is searching for any bindingTemplate which implements the binding
+        BindingTemplate foundTemplate = null;
+        //record each tModelKey incase we need to search through them
+        final Set<String> tModelKeys = new HashSet<String>();
+        final Map<String, Set<String>> bindingKeyToReferencedTModels = new HashMap<String, Set<String>>();
+        final Map<String, BindingTemplate> bindingKeyToTemplate = new HashMap<String, BindingTemplate>();
+        String wsdlBindingTModelKey = null;//record which binding tmodel should provide the wsdl url
+        outer: for (BindingTemplate bt : bindingTemplates.getBindingTemplate()) {
+            //find the BindingTemplate which represents the wsdl:port
+            //this information is stored as an instance param in a tModelInstanceInf-> instanceDetails element
+            final TModelInstanceDetails tModelInstanceDetails = bt.getTModelInstanceDetails();
+            if (tModelInstanceDetails == null) continue;
+
+            bindingKeyToTemplate.put(bt.getBindingKey(), bt);
+            final Set<String> allTModelsForBinding = new HashSet<String>();
+            bindingKeyToReferencedTModels.put(bt.getBindingKey(), allTModelsForBinding);
+
+            for (TModelInstanceInfo tModelInstanceInfo : tModelInstanceDetails.getTModelInstanceInfo()) {
+                final InstanceDetails instanceDetails = tModelInstanceInfo.getInstanceDetails();
+                tModelKeys.add(tModelInstanceInfo.getTModelKey());
+                allTModelsForBinding.add(tModelInstanceInfo.getTModelKey());
+
+                if (instanceDetails == null) continue;//not the binding instance info
+                final String instanceParam = instanceDetails.getInstanceParms();
+                if (instanceParam == null || instanceParam.trim().isEmpty()) continue;
+
+                if (instanceParam.equals(wsdlPortName)) {
+                    foundTemplate = bt;
+                    wsdlBindingTModelKey = tModelInstanceInfo.getTModelKey();
+                    break outer;
+                }
+            }
+        }
+
+        final UDDIBindingImplementionInfo returnInfo = new UDDIBindingImplementionInfo();
+        final Collection<TModel> allFoundModels = jaxWsUDDIClient.getTModels(tModelKeys);
+        if (foundTemplate == null) {
+            logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " does not contain a bindingTemplate which maps to the wsdl:port with name: " + wsdlPortName);
+            logger.log(Level.INFO, "Searching for a bindingTemplate which implements the wsdl:binding with name: " + wsdlBinding);
+
+            //find the first tModel which implements the wsdl:binding, then find the bindingTemplate which references it
+            TModel applicableTModel = null;
+            for(TModel tModel: allFoundModels){
+                final TMODEL_TYPE tModelType = getTModelType(tModel, false);
+                if(tModelType != TMODEL_TYPE.WSDL_BINDING) continue;
+
+                if(tModel.getName().getValue().equals(wsdlBinding)){
+                    applicableTModel = tModel;
+                    break;
+                }
+            }
+
+            if(applicableTModel == null){
+                logger.log(Level.INFO, "No bindingTemplate found which implements the wsdl:binding with name: " + wsdlBinding);
+                return null;
+            }
+
+            //Get it's bindingTemplate
+            String foundBindingKey = null;
+            for(Map.Entry<String, Set<String>> entry: bindingKeyToReferencedTModels.entrySet()){
+                if(entry.getValue().contains(applicableTModel.getTModelKey())){
+                    foundBindingKey = entry.getKey();
+                    break;
+                }
+            }
+
+            if(foundBindingKey == null)//this is a coding error/ uddi got updated during action
+                throw new IllegalStateException("Could not find bindingTemplate referenced from BusinessService");
+
+            if(!bindingKeyToTemplate.containsKey(foundBindingKey)) //this is a coding error/ uddi got updated during action 
+                throw new IllegalStateException("Could not find bindingTemplate referenced from BusinessService");
+
+            wsdlBindingTModelKey = applicableTModel.getTModelKey();
+            
+            foundTemplate = bindingKeyToTemplate.get(foundBindingKey);
+            //find out which wsdl:port this bindingTemplate represents
+            //we know that the getTModelInstanceDetails cannot be null due to above loop logic
+            for(TModelInstanceInfo tModelInstanceInfo: foundTemplate.getTModelInstanceDetails().getTModelInstanceInfo()){
+                if(!tModelInstanceInfo.getTModelKey().equals(applicableTModel.getTModelKey())) continue;
+                final InstanceDetails instanceDetails = tModelInstanceInfo.getInstanceDetails();
+                final String implementingWsdlPortName = instanceDetails.getInstanceParms();
+                returnInfo.setImplementingWsdlPort(implementingWsdlPortName);
+            }
+        }else{
+            returnInfo.setImplementingWsdlPort(wsdlPortName);//unchanged
+        }
+
+        //Get the binding TModel which will tell us the wsdl url
+        if( wsdlBindingTModelKey == null) throw new IllegalStateException("wsdl:binding tModelKey not found");
+        TModel wsdlBindingTModel = null;
+        for(TModel tModel: allFoundModels){
+            if(!tModel.getTModelKey().equals(wsdlBindingTModelKey)) continue;
+            wsdlBindingTModel = tModel;
+        }
+
+        if(wsdlBindingTModel == null) throw new IllegalStateException("wsdl:binding tModel not found");
+        final String wsdlUrl = extractWsdlUrl(wsdlBindingTModel);
+        if(wsdlUrl == null || wsdlUrl.trim().isEmpty())
+            throw new UDDIException("Invalid / Unsupported wsdl:binding tModel. No wsdlInterface overviewDoc found. tModelKey: " + wsdlBindingTModel.getTModelKey());
+
+        final AccessPoint accessPoint = foundTemplate.getAccessPoint();
+        if (accessPoint == null) {
+            logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " contians a bindingTemplate which maps to the wsdl:port with name: " + wsdlPortName +
+                    " but it does not contain an accessPoint element");
+            return null;
+        }
+
+        if (!accessPoint.getUseType().equalsIgnoreCase("endPoint") && !accessPoint.getUseType().equalsIgnoreCase("http")) {
+            logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " contians a bindingTemplate which maps to the wsdl:port with name: " + wsdlPortName +
+                    " but it does not contain an accessPoint element with a useType of 'endPoint' or 'http'");
+            return null;
+        }
+
+        returnInfo.setEndPoint(accessPoint.getValue());
+        returnInfo.setImplementingWsdlUrl(wsdlUrl);
+        return returnInfo;
+    }
+
+    public static String extractWsdlUrl(final TModel bindingTModel){
+        if(bindingTModel == null) throw new NullPointerException("bindingTModel cannot be null");
+
+        for(OverviewDoc overviewDoc: bindingTModel.getOverviewDoc()){
+            if(overviewDoc.getOverviewURL().getUseType().equalsIgnoreCase(WsdlToUDDIModelConverter.WSDL_INTERFACE)){
+                return overviewDoc.getOverviewURL().getValue();
+            }
+        }
+
+        return null;
+    }
+
+    public static class UDDIBindingImplementionInfo{
+
+        public String getEndPoint() {
+            return endPoint;
+        }
+
+        public void setEndPoint(String endPoint) {
+            this.endPoint = endPoint;
+        }
+
+        public String getImplementingWsdlPort() {
+            return implementingWsdlPort;
+        }
+
+        public void setImplementingWsdlPort(String implementingWsdlPort) {
+            if(implementingWsdlPort == null || implementingWsdlPort.trim().isEmpty())
+                throw new IllegalArgumentException("implementingWsdlPort cannot be null or empty");
+            
+            this.implementingWsdlPort = implementingWsdlPort;
+        }
+
+        public String getImplementingWsdlUrl() {
+            return implementingWsdlUrl;
+        }
+
+        public void setImplementingWsdlUrl(String implementingWsdlUrl) {
+            if(implementingWsdlUrl == null || implementingWsdlUrl.trim().isEmpty())
+                throw new IllegalArgumentException("implementingWsdlUrl cannot be null or empty");
+
+            this.implementingWsdlUrl = implementingWsdlUrl;
+        }
+
+        private String endPoint;
+        private String implementingWsdlPort;
+        private String implementingWsdlUrl;
+    }
+    /**
      * Given the WSDL and the other supplied information, determine the URL which should be considered the end point
      * for the supplied info
      * <p/>
@@ -268,7 +473,7 @@ public class UDDIUtilities {
      * 1) Check the bindingTemplate of the wsdl:port of the supplied wsdl:service
      * 2) find any bindingTemplate which implements the correct wsdl:binding, return it's accessPoint value
      * <p/>
-     * //todo work in progress - not needed anywhere yet - not deleting yet
+     * //todo work in progress - not needed anywhere yet - not deleting yet - may be required for a uddi notification when uddi no longer represents the contents of the wsdl
      *
      * @param wsdl WSDL to extract end point information from
      * @param wsdlServiceName
@@ -339,7 +544,7 @@ public class UDDIUtilities {
                 + wsdlPortBinding + "' binding");
     }
 
-    public static boolean isGatewayUrl(final String endPoint, final String ssgLocalHostName){
+    public static boolean isGatewayUrl(final String endPoint, final String ssgLocalHostName){     //TODO [Donal] add test case
 
         final String hName;
         if(ssgLocalHostName.indexOf("[") != -1){

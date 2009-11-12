@@ -24,6 +24,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     final private UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager;
     final private UDDIPublishStatusManager uddiPublishStatusManager;
     final private UDDIServiceControlManager uddiServiceControlManager;
+    final private UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager;
     final private UDDICoordinator uddiCoordinator;
     final private ServiceCache serviceCache;
 
@@ -33,7 +34,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                  final UDDICoordinator uddiCoordinator,
                                  final ServiceCache serviceCache,
                                  final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
-                                 final UDDIPublishStatusManager uddiPublishStatusManager) {
+                                 final UDDIPublishStatusManager uddiPublishStatusManager,
+                                 final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiHelper = uddiHelper;
         this.uddiServiceControlManager = uddiServiceControlManager;
@@ -41,6 +43,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         this.serviceCache = serviceCache;
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
+        this.uddiServiceControlMonitorRuntimeManager = uddiServiceControlMonitorRuntimeManager;
     }
 
     @Override
@@ -142,7 +145,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             throw new IllegalStateException("Cannot delete UDDIProxiedServiecInfo as gateway URL was not published as a bindingTemplate.");
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
-        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
+        throwIfGatewayNotEnabled(uddiRegistry);
 
         final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(proxiedServiceInfo.getOid());
         if(uddiPublishStatus == null)
@@ -163,7 +166,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             throw new IllegalStateException("Cannot delete UDDIProxiedServiecInfo as gateway WSDL was not published.");
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
-        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
+        throwIfGatewayNotEnabled(uddiRegistry);
 
         final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(proxiedServiceInfo.getOid());
         if(uddiPublishStatus == null)
@@ -210,13 +213,13 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
     @Override
     public long saveUDDIServiceControlOnly( final UDDIServiceControl uddiServiceControl )
-            throws UpdateException, SaveException, FindException {
+            throws UpdateException, SaveException, FindException, UDDIRegistryNotEnabledException {
         if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ){
             final PublishedService service = serviceCache.getCachedService(uddiServiceControl.getPublishedServiceOid());
 
             //validate that an end point can be found
             final String endPoint = uddiServiceControl.getAccessPointUrl();
-            //TODO [Donal] clean up this
+            //TODO [Donal] We need to ensure it's logical that we allow this related business service to be persisted.
 //            try {
 //                endPoint = UDDIUtilities.extractEndPointFromWsdl(wsdl, uddiServiceControl.getWsdlServiceName(),
 //                        uddiServiceControl.getWsdlPortName(), uddiServiceControl.getWsdlPortBinding());
@@ -236,17 +239,25 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
             final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiServiceControl.getUddiRegistryOid());
             if(uddiRegistry == null) throw new FindException("Cannot find UDDIRegistry");
+            throwIfGatewayNotEnabled(uddiRegistry);
 
             final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
+            final long lastUddiMonitoredTimeStamp;
             try {
                 final String businessName = uddiClient.getBusinessEntityName(uddiServiceControl.getUddiBusinessKey());
                 uddiServiceControl.setUddiBusinessName(businessName);
+                final UDDIOperationalInfo operationalInfo = uddiClient.getOperationalInfo(uddiServiceControl.getUddiServiceKey());
+                lastUddiMonitoredTimeStamp = operationalInfo.getModifiedIncludingChildrenTime();//safe to use, will be created time initially
             } catch (UDDIException e) {
                 final String msg = "Cannot find BusinessEntity with businessKey: " + uddiServiceControl.getUddiBusinessKey();
                 logger.log(Level.WARNING, msg, e);
                 throw new SaveException(msg);
             }
-            return uddiServiceControlManager.save(uddiServiceControl);
+            long oid =  uddiServiceControlManager.save(uddiServiceControl);
+            //Create the monitor runtime record for this service control as it has just been created
+            final UDDIServiceControlMonitorRuntime monitorRuntime = new UDDIServiceControlMonitorRuntime(oid, lastUddiMonitoredTimeStamp);
+            uddiServiceControlMonitorRuntimeManager.save(monitorRuntime);
+            return oid;
         }else{
             UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());
             if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
@@ -289,7 +300,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(serviceControl.getUddiRegistryOid());
         if(uddiRegistry == null) throw new SaveException("UDDIRegistry with id #("+serviceControl.getUddiRegistryOid()+") was not found");
-        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry with id #("+serviceControl.getUddiRegistryOid()+") is not enabled");
+        throwIfGatewayNotEnabled(uddiRegistry);
 
         if(serviceControl.isUnderUddiControl() && removeOthers)
             throw new SaveException("Published service with id #("+publishedServiceOid+") is not under UDDI control so cannot remove existing bindingTemplates");
@@ -328,7 +339,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiRegistryOid);
         if(uddiRegistry == null) throw new IllegalArgumentException("Cannot find UDDIRegistry with oid: " + uddiRegistryOid);
-        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry with id #("+uddiRegistry.getOid()+") is not enabled");
+        throwIfGatewayNotEnabled(uddiRegistry);
 
         final PublishedService service = serviceCache.getCachedService(publishedServiceOid);
         if(service == null) throw new SaveException("PublishedService with id #(" + publishedServiceOid + ") was not found");
@@ -360,7 +371,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(uddiProxiedServiceInfo == null) throw new FindException("Cannot find UDDIProxiedServiceInfo with id: " + uddiProxiedServiceInfoOid);
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(uddiProxiedServiceInfo.getUddiRegistryOid());
-        if(!uddiRegistry.isEnabled()) throw new UDDIRegistryNotEnabledException("UDDIRegistry is not enabled. Cannot use");
+        throwIfGatewayNotEnabled(uddiRegistry);
 
         final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
         if(uddiPublishStatus == null)
@@ -369,5 +380,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
         //the update event is picked up by the UDDICoordinator, which does the UDDI work
         uddiPublishStatusManager.update(uddiPublishStatus);
+    }
+
+    private void throwIfGatewayNotEnabled(UDDIRegistry uddiRegistry) throws UDDIRegistryNotEnabledException {
+        if(!uddiRegistry.isEnabled())
+            throw new UDDIRegistryNotEnabledException("UDDIRegistry with id #(" + uddiRegistry.getOid() + ") is not enabled");
     }
 }

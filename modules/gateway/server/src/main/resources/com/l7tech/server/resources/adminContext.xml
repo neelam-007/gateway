@@ -352,6 +352,7 @@
         <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="uddiProxiedServiceInfoManager"/>
         <constructor-arg ref="uddiPublishStatusManager" />
+        <constructor-arg ref="uddiServiceControlMonitorRuntimeManager" />
     </bean>
 
 </beans>

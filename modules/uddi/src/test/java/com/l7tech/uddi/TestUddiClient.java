@@ -17,12 +17,25 @@ import java.io.IOException;
 public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
 
     private List<BusinessService> dataStructureForDownloaderTest;
+    private BusinessService businessServiceForTest;
+    private List<TModel> tModelsForTest;
 
     public TestUddiClient(List<BusinessService> dataStructureForDownloaderTest) {
         this.dataStructureForDownloaderTest = dataStructureForDownloaderTest;
     }
 
+
+    public TestUddiClient(BusinessService businessServiceForTest, List<TModel> tModelsForTest) {
+        this.businessServiceForTest = businessServiceForTest;
+        this.tModelsForTest = tModelsForTest;
+    }
+
     public TestUddiClient() {
+    }
+
+    @Override
+    public Collection<TModel> getTModels(Set<String> tModelKeys) throws UDDIException {
+        return tModelsForTest;
     }
 
     @Override
@@ -37,6 +50,11 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
         TModel testModel = new TModel();
         testModel.setTModelKey(tModelKey);
         return testModel;
+    }
+
+    @Override
+    public BusinessService getBusinessService(String serviceKey) throws UDDIException {
+        return businessServiceForTest;
     }
 
     @Override

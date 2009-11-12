@@ -13,7 +13,7 @@ import java.util.*;
  *
  * @author darmstrong
  */
-public class UDDIProxiedServiceDownloader {
+public class UDDIProxiedServiceDownloader {//TODO [Donal] rename to be UDDIBusinessService downloaded, as that's what it does
 
     private final UDDIClient uddiClient;
     private final JaxWsUDDIClient jaxWsUDDIClient;
