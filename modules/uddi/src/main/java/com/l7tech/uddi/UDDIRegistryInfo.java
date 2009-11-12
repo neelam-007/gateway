@@ -1,7 +1,5 @@
 package com.l7tech.uddi;
 
-import java.util.Map;
-
 /**
  * Information on a (type of) UDDI registry.
  *
@@ -43,4 +41,11 @@ public interface UDDIRegistryInfo {
      * @return The url suffix or null if not supported.
      */
     String getSubscription();
+
+    /**
+     * Does this registry type support metrics publishing.
+     *
+     * @return True if metrics are supported. 
+     */
+    boolean isSupportsMetrics();
 }

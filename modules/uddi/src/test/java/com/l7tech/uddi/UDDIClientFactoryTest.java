@@ -64,6 +64,11 @@ public class UDDIClientFactoryTest {
             public String getSubscription() {
                 return "subscription";
             }
+
+            @Override
+            public boolean isSupportsMetrics() {
+                return false;
+            }
         };
 
         UDDIClient client = UDDIClientFactory.getInstance().newUDDIClient(

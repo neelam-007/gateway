@@ -50,6 +50,7 @@ public class UDDITemplateTest {
             assertNotNull( "Inquiry URL", info.getInquiry() );
             assertNotNull( "Publication URL", info.getPublication() );
             assertNotNull( "Security URL", info.getSecurityPolicy() );
+            assertNotNull( "Security URL", info.isSupportsMetrics() );
         }
     }
 

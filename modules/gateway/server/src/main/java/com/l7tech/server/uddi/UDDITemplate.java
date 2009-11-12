@@ -180,6 +180,7 @@ public class UDDITemplate {
         map.put( "publication", publicationUrl );
         map.put( "securityPolicy", securityPolicyUrl );
         map.put( "subscription", subscriptionUrl );
+        map.put( "supportsMetrics", metricsTModelName!=null );
         return map;
     }
 

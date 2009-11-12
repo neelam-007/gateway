@@ -33,14 +33,21 @@ public class MappedMethodInvocationHandler implements InvocationHandler, Seriali
     /**
      * 
      */
+    @Override
     public Object invoke(final Object proxy,
                          final Method method,
                          final Object[] args) throws Throwable {
-        Object result = null;
+        Object result;
 
         if ( method.getDeclaringClass().equals(mappedClass) ) {
             String methodName = method.getName();
-            result = values.get(methodName.substring(3,4).toLowerCase() + methodName.substring(4));
+            if ( methodName.startsWith( "get" )) {
+                result = values.get(methodName.substring(3,4).toLowerCase() + methodName.substring(4));
+            } else if ( methodName.startsWith("is") ) {
+                result = values.get(methodName.substring(2,3).toLowerCase() + methodName.substring(3));
+            } else {
+                result = values.get(methodName);
+            }
         } else {
             try {
                 result = method.invoke(this, args);

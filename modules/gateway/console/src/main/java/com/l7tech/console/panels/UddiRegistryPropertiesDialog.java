@@ -581,8 +581,21 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         passwordTextField.setEnabled(enable);
         keyStoreLabel.setEnabled(enable);
         privateKeyComboBox.setEnabled(enable);
-        metricsEnabledCheckBox.setEnabled(enable);
         monitoringEnabledCheckBox.setEnabled(enable);
+
+        boolean metricsEnable = enable && getSelectedRegistryInfo()!=null && getSelectedRegistryInfo().isSupportsMetrics();
+        metricsEnabledCheckBox.setEnabled(metricsEnable);
+    }
+
+    private UDDIRegistryInfo getSelectedRegistryInfo() {
+        UDDIRegistryInfo info = null;
+
+        Object item = uddiRegistryTypeComboBox.getSelectedItem();
+        if ( item != null ) {
+            info = registryToInfoMap.get( item.toString() );
+        }
+
+        return info;
     }
 
     private boolean isSubscriptionServiceAvailable( final UDDIRegistry registry ) {
