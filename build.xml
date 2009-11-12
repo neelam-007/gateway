@@ -2184,7 +2184,11 @@
 
         <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-gateway-config" revision="latest.integration" property="module.gateway.config.version"/>
-        
+
+        <!--Jar file SSGBackupOnlyUtility.jar is used to backup a pre 5.1 SSG. Pre 5.1 the backup utilitiy did not backup
+        enough information to do a complete restore. It is used by the upgrader to completely backup a
+        pre 5.1 installation before installing RHEL5 and 5.1 or greater. Following the upgrade all SSG data can be
+        restored using the image created.-->
         <jar jarfile="${build.dir}/gatewayconfig/SSGBackupOnlyUtility.jar">
             <manifest>
                 <attribute name="Class-Path" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
