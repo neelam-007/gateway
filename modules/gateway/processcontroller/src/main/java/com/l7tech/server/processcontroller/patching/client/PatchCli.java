@@ -70,7 +70,7 @@ public class PatchCli {
         }
 
         if (thrown != null) {
-            logger.log(Level.WARNING, errPrefix + ExceptionUtils.getMessage(thrown), thrown);
+            logger.log(Level.WARNING, errPrefix + ExceptionUtils.getMessage(thrown), thrown instanceof PatchException ? null : thrown);
             System.out.println(errPrefix + ExceptionUtils.getMessage(thrown) + "\n");
             System.exit(PATCH_API_ERROR);
         }
