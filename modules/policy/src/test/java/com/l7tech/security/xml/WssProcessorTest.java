@@ -969,6 +969,7 @@ public class WssProcessorTest {
         doTest( td );
     }
 
+    @Ignore("Test certificate has expired")
     @Test
     public void testEcdsaSignedFromMiltonAtGd() throws Exception {
         doTest(makeEttkTestDocument("ECDSA signed by Milton", XmlUtil.stringAsDocument(ECDSA_EXAMPLE_FROM_MILTON_GD)));
