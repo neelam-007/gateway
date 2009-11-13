@@ -243,6 +243,17 @@ public interface UDDIClient extends Closeable {
     List<BusinessService> getBusinessServices(final Set<String> serviceKeys) throws UDDIException;
 
     /**
+     * Get the UDDIBusinessServices for the serviceKey
+     *
+     * Will not throw a UDDIException if the key is invalid
+     * 
+     * @param serviceKey String service key to search for
+     * @return UDDIBusinessService if found. Null if not found
+     * @throws UDDIException any problems search from UDDI
+     */
+    UDDIBusinessService getUDDIBusinessServiceInvalidKeyOk(final String serviceKey) throws UDDIException;
+
+    /**
      * Get the URL for the referenced policy.
      *
      * @param policyKey the key for the policy model

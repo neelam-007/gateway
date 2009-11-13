@@ -7,6 +7,8 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -14,9 +16,9 @@ import com.l7tech.util.Pair;
 import javax.wsdl.WSDLException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collection;
 
 /**
  * No tasks are thread safe. All access to each task defined in this factory must be serialized. All tasks should
@@ -31,13 +33,15 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                                      final ServiceCache serviceCache,
                                      final UDDIHelper uddiHelper,
                                      final UDDIServiceControlManager uddiServiceControlManager,
-                                     final UDDIPublishStatusManager uddiPublishStatusManager) {
+                                     final UDDIPublishStatusManager uddiPublishStatusManager,
+                                     final UDDIProxiedServiceManager uddiProxiedServiceManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.serviceCache = serviceCache;
         this.uddiHelper = uddiHelper;
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
+        this.uddiProxiedServiceManager = uddiProxiedServiceManager;
     }
 
     @Override
@@ -86,9 +90,67 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                     break;
             }
+        }else if(event instanceof UDDIMaintenanceEvent){
+            task = new UDDIMaintanceTask(uddiProxiedServiceManager, uddiRegistryManager, uddiHelper, uddiProxiedServiceInfoManager);
         }
 
         return task;
+    }
+
+    //-PACKAGE
+
+    static class UDDIMaintenanceEvent extends UDDIEvent{}
+
+    static class UDDIMaintanceTask extends UDDITask{
+        private static final Logger logger = Logger.getLogger(UDDIMaintanceTask.class.getName());
+
+        private final UDDIProxiedServiceManager uddiProxiedServiceManager;
+        private final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager;
+        private final UDDIRegistryManager uddiRegistryManager;
+        private final UDDIHelper uddiHelper;
+
+        public UDDIMaintanceTask(final UDDIProxiedServiceManager uddiProxiedServiceManager,
+                                 final UDDIRegistryManager uddiRegistryManager,
+                                 final UDDIHelper uddiHelper,
+                                 final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager) {
+            this.uddiProxiedServiceManager = uddiProxiedServiceManager;
+            this.uddiRegistryManager = uddiRegistryManager;
+            this.uddiHelper = uddiHelper;
+            this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
+        }
+
+        @Override
+        public void apply(UDDITaskContext context) throws UDDITaskException {
+            try {
+                final Collection<UDDIRegistry> allRegistries = uddiRegistryManager.findAll();
+                for (UDDIRegistry registry : allRegistries) {
+                    if (!registry.isEnabled()) continue;
+
+                    final UDDIClient uddiClient = uddiHelper.newUDDIClient(registry);
+                    final Collection<UDDIProxiedServiceInfo> infoCollection =
+                            uddiProxiedServiceInfoManager.findByUDDIRegistryOid(registry.getOid());
+                    for (UDDIProxiedServiceInfo info : infoCollection) {
+                        for (UDDIProxiedService ps : info.getProxiedServices()) {
+                            final UDDIBusinessService foundService = uddiClient.getUDDIBusinessServiceInvalidKeyOk(ps.getUddiServiceKey());
+                            if (foundService == null) {
+                                //delete it
+                                logger.log(Level.FINE, "Proxied Service has been removed from UDDI. serviceKey: " + ps.getUddiServiceKey());
+                                try {
+                                    uddiProxiedServiceManager.delete(ps);
+                                } catch (DeleteException e) {
+                                    context.logAndAudit(SystemMessages.UDDI_MAINTENANCE_SERVICE_DELETED, e, registry.getOidAsLong().toString(), ps.getUddiServiceKey());
+                                    throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (FindException e) {
+                throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
+            } catch (UDDIException e) {
+                throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
+            }
+        }
     }
 
     //- PRIVATE
@@ -99,7 +161,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
     private final ServiceCache serviceCache;
     private final UDDIHelper uddiHelper;
     private final UDDIServiceControlManager uddiServiceControlManager;
-
+    private final UDDIProxiedServiceManager uddiProxiedServiceManager;
+    
     private static final class PublishUDDIEndpointTask extends UDDITask {
         private static final Logger logger = Logger.getLogger(PublishUDDIEndpointTask.class.getName());
 
@@ -275,6 +338,9 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
         statusManager.update(uddiPublishStatus);
     }
 
+    /**
+     * Publish to UDDI for the first time or update information already published
+     */
     private static final class UpdatePublishUDDITask extends UDDITask {
         private static final Logger logger = Logger.getLogger(UpdatePublishUDDITask.class.getName());
 

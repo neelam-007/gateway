@@ -395,6 +395,42 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
+    public UDDIBusinessService getUDDIBusinessServiceInvalidKeyOk(String serviceKey) throws UDDIException {
+        GetServiceDetail serviceDetail = new GetServiceDetail();
+        serviceDetail.setAuthInfo(getAuthToken());
+        serviceDetail.getServiceKey().add(serviceKey);
+        try {
+            final ServiceDetail results = getInquirePort().getServiceDetail(serviceDetail);
+            if(results.getBusinessService().isEmpty()) return null;
+            
+            final BusinessService bs = results.getBusinessService().iterator().next();
+            final UDDIBusinessService uddiBs;
+            if(bs.getCategoryBag() != null){
+                String wsdlNameToUse = null;
+                for(KeyedReference kr: bs.getCategoryBag().getKeyedReference()){
+                    if(kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME)){
+                        wsdlNameToUse = kr.getKeyValue();
+                    }
+                }
+                if(wsdlNameToUse == null) return null;
+                uddiBs = new UDDIBusinessService(bs.getName().get(0).getValue(), bs.getServiceKey(), wsdlNameToUse);
+            }else{
+                uddiBs = null;
+            }
+
+            return uddiBs;
+        } catch (DispositionReportFaultMessage drfm) {
+            UDDIException ex =  buildFaultException("Error getting business services", drfm);
+            if(ex instanceof UDDIInvalidKeyException){
+                logger.log(Level.INFO, "No BusinessService found for serviceKey: " + serviceKey );
+                return null;
+            }else{
+                throw ex;
+            }
+        }
+    }
+
+    @Override
     public List<BusinessService> getBusinessServices(final Set<String> serviceKeys) throws UDDIException {
         if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
         if(serviceKeys.isEmpty()){
@@ -408,8 +444,8 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         getServiceDetail.getServiceKey().addAll(serviceKeys);
 
         final List<BusinessService> businessServices = new ArrayList<BusinessService>();
-        try {
-            final ServiceDetail serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);
+        try {         //todo [Donal] this may result in a key not found error - this the task will be retired, and the maintenance task should fix it
+            final ServiceDetail serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);//todo [Donal] are we concerned if the results are truncated?
             if(serviceDetail.getBusinessService() != null){
                 for(BusinessService businessService: serviceDetail.getBusinessService()){
                     businessServices.add(businessService);
@@ -667,7 +703,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                                 accessPoint == null ||
                                 (accessPoint.getUseType() != null &&
                                         !accessPoint.getUseType().trim().equals("") &&
-                                        (!accessPoint.getUseType().equals( USE_TYPE_END_POINT ) && !accessPoint.getUseType().trim().equals("http")))) {
+                                        (!accessPoint.getUseType().equalsIgnoreCase( USE_TYPE_END_POINT ) && !accessPoint.getUseType().trim().equalsIgnoreCase("http")))) {
                             logger.log(Level.INFO, "Invalid / unsupported accessPoint useType found: " + accessPoint.getUseType());
                             continue;
                         }

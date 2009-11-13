@@ -51,17 +51,18 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
     //- PUBLIC
 
-    public UDDICoordinator( final PlatformTransactionManager transactionManager,
-                            final UDDIHelper uddiHelper,
-                            final UDDIRegistryManager uddiRegistryManager,
-                            final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
-                            final UDDIPublishStatusManager uddiPublishStatusManager,
-                            final UDDIServiceControlManager uddiServiceControlManager,
-                            final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
-                            final ServiceCache serviceCache,
-                            final ClusterMaster clusterMaster,
-                            final Timer timer,
-                            final Collection<UDDITaskFactory> taskFactories ) {
+    public UDDICoordinator(final PlatformTransactionManager transactionManager,
+                           final UDDIHelper uddiHelper,
+                           final UDDIRegistryManager uddiRegistryManager,
+                           final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
+                           final UDDIPublishStatusManager uddiPublishStatusManager,
+                           final UDDIServiceControlManager uddiServiceControlManager,
+                           final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
+                           final ServiceCache serviceCache,
+                           final ClusterMaster clusterMaster,
+                           final Timer timer,
+                           final Collection<UDDITaskFactory> taskFactories,
+                           final UDDIProxiedServiceManager uddiProxiedServiceManager) {
         this.transactionManager = transactionManager;
         this.uddiHelper = uddiHelper;
         this.uddiRegistryManager = uddiRegistryManager;
@@ -73,10 +74,8 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
+        this.uddiProxiedServiceManager = uddiProxiedServiceManager;
         this.taskContext = new UDDICoordinatorTaskContext( this );
-
-        final long maintenanceFrequency = SyspropUtil.getLong(PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000);//start it in 15 minutes, run it every 15 minutes
-        timer.schedule(new PublishedProxyMaintenanceTimerTask(this), maintenanceFrequency, maintenanceFrequency);
     }
 
     public boolean isNotificationServiceAvailable( final long registryOid ) {
@@ -112,6 +111,8 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     @Override
     public void afterPropertiesSet() throws Exception {
         loadUDDIRegistries(false);
+        final long maintenanceFrequency = SyspropUtil.getLong(PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000);//start it in 15 minutes, run it every 15 minutes
+        timer.schedule(new PublishedProxyMaintenanceTimerTask(this), maintenanceFrequency, maintenanceFrequency);
     }
 
     @Override
@@ -217,6 +218,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     private final UDDIHelper uddiHelper;
     private final UDDIRegistryManager uddiRegistryManager;
     private final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager;
+    private final UDDIProxiedServiceManager uddiProxiedServiceManager;
     private final UDDIPublishStatusManager uddiPublishStatusManager;
     private final UDDIServiceControlManager uddiServiceControlManager;
     private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
@@ -427,6 +429,10 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                 notifyPublishEvent( info, publishStatus);
             }
         }
+
+        //validate all serviceKeys
+        final UDDIEvent uddiEvent = new PublishingUDDITaskFactory.UDDIMaintenanceEvent();
+        notifyEvent(uddiEvent);
     }
 
     /**

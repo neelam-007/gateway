@@ -29,4 +29,12 @@ public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxied
      */
     Collection<UDDIProxiedServiceInfo> findByUDDIRegistryAndMetricsState( long registryOid,
                                                                           boolean metricsEnabled ) throws FindException;
+
+    /**
+     * Get all UDDIProxiedServicInfo entities for a given UDDI Registry
+     * @param registryOid long oid of the UDDI Registry
+     * @return Collection UDDIProxiedServiceInfo of all information published as proxy info to the registry
+     * @throws FindException if problem searching the db
+     */
+    Collection<UDDIProxiedServiceInfo> findByUDDIRegistryOid( long registryOid) throws FindException;
 }

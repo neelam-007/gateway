@@ -37,6 +37,11 @@ implements UDDIProxiedServiceInfoManager{
         return findMatching( Collections.singletonList( matchMap ) );
     }
 
+    @Override
+    public Collection<UDDIProxiedServiceInfo> findByUDDIRegistryOid(long registryOid) throws FindException {
+        return findByPropertyMaybeNull("uddiRegistryOid", registryOid);
+    }
+
     //- PROTECTED
 
     @Override

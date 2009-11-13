@@ -97,6 +97,12 @@ public class TestGenericUDDIClient {
     }
 
     @Test
+    public void tetsDeleteProxiedBusinessService() throws UDDIException {
+        final String serviceKey = "uddi:9259c9d0-cfe2-11de-a2bb-8068e9b1817d";
+        uddiClient.deleteBusinessService(serviceKey);
+    }
+
+    @Test
     public void updateBindingTemplateToCauseNotification() throws UDDIException{
         String bindingKey = "uddi:6810113d-cf34-11de-8be7-cb83aaebcf31";
         GenericUDDIClient genericUDDIClient = (GenericUDDIClient) uddiClient;
