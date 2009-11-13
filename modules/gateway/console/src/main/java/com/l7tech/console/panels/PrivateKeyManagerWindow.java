@@ -420,7 +420,9 @@ public class PrivateKeyManagerWindow extends JDialog {
             byte[] pkcs12bytes = IOUtils.slurpFile(file);
 
             char[] pkcs12pass = PasswordEntryDialog.promptForPassword(this, "Enter pass phrase for PKCS#12 file");
-
+            if (pkcs12pass == null)
+                return null;
+            
             try {
                 return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, null);
             } catch (MultipleAliasesException e) {
