@@ -122,7 +122,8 @@ public class ReplayProtectionPropertiesDialog extends AssertionPropertiesOkCance
                 throw new ValidationException( resources.getString( "error.missingVariableName" ));
             }
 
-            if ( !ValidationUtils.isValidInteger( expiryTextField.getText().trim(), false, 1, Integer.MAX_VALUE / TimeUnit.DAYS.getMultiplier() )) {
+            int multiplier = ((TimeUnit)expiryUnitComboBox.getSelectedItem()).getMultiplier();
+            if ( !ValidationUtils.isValidInteger( expiryTextField.getText().trim(), false, 1, Integer.MAX_VALUE / multiplier )) {
                 throw new ValidationException( resources.getString( "error.invalidExpiry" ));
             }
         }
