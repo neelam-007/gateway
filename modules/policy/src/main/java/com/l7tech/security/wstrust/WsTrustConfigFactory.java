@@ -32,10 +32,11 @@ public class WsTrustConfigFactory {
     public static final String PROP_WST_NS = "com.l7tech.common.security.wstrust.ns.wst";
     public static final String PROP_WST_REQUESTTYPEINDEX = "com.l7tech.common.security.wstrust.requestTypeIndex";
     private static final String tscWstNs = SyspropUtil.getString(PROP_WST_NS, WST_NAMESPACE2);
-    private static int tscWstRequestTypeIndex = SyspropUtil.getInteger(PROP_WST_REQUESTTYPEINDEX, 1).intValue();
+    private static final int DEFAULT_WST_REQUESTTYPEINDEX = 0;
+    private static int tscWstRequestTypeIndex = SyspropUtil.getInteger(PROP_WST_REQUESTTYPEINDEX, DEFAULT_WST_REQUESTTYPEINDEX);
 
 
-    private static final Map configs = new HashMap();
+    private static final Map<String,WsTrustConfig> configs = new HashMap<String,WsTrustConfig>();
     static {
         configs.put(WST_NAMESPACE, new OldWsTrustConfig(WST_NAMESPACE, WSP_NAMESPACE, WSA_NAMESPACE));
         configs.put(WST_NAMESPACE2, new OldWsTrustConfig(WST_NAMESPACE2, WSP_NAMESPACE2, WSA_NAMESPACE2));
@@ -51,7 +52,7 @@ public class WsTrustConfigFactory {
      * @throws WsTrustConfigException if this URI is not recognized.
      */
     public static WsTrustConfig getWsTrustConfigForNamespaceUri(String wstNamespaceUri) throws WsTrustConfigException {
-        WsTrustConfig got = (WsTrustConfig)configs.get(wstNamespaceUri);
+        WsTrustConfig got = configs.get(wstNamespaceUri);
         if (got == null)
             throw new WsTrustConfigException("Unrecognized WS-Trust namespace URI: " + wstNamespaceUri);
         return got;
@@ -72,41 +73,42 @@ public class WsTrustConfigFactory {
     }
 
     private static class OldWsTrustConfig extends WsTrustConfig {
-        private final Map requestTypeMap;
+        private final Map<String,String> requestTypeMap;
 
         public OldWsTrustConfig(String wstNs, String wspNs, String wsaNs) {
             super(wstNs, wspNs, wsaNs);
-            requestTypeMap = new HashMap();
+            requestTypeMap = new HashMap<String,String>();
             int idx = tscWstRequestTypeIndex;
-            if (idx < 0 || idx >= WsTrustRequestType.ISSUE.getUris().size()) idx = 1;
+            if (idx < 0 || idx >= WsTrustRequestType.ISSUE.getUris().size()) idx = DEFAULT_WST_REQUESTTYPEINDEX;
             requestTypeMap.put(WsTrustRequestType.NAME_ISSUE, WsTrustRequestType.ISSUE.getUris().get(idx));
             requestTypeMap.put(WsTrustRequestType.NAME_RENEW, WsTrustRequestType.RENEW.getUris().get(idx));
             requestTypeMap.put(WsTrustRequestType.NAME_VALIDATE, WsTrustRequestType.VALIDATE.getUris().get(idx));
             requestTypeMap.put(WsTrustRequestType.NAME_CANCEL, WsTrustRequestType.CANCEL.getUris().get(idx));
         }
 
+        @Override
         protected String getRequestTypeUri(WsTrustRequestType requestType) {
-            String ret = (String)requestTypeMap.get(requestType.getName());
+            String ret = requestTypeMap.get(requestType.getName());
             if (ret == null) throw new IllegalArgumentException("Unknown WsTrustRequestType: " + requestType.getName());
             return ret;
         }
     }
 
     private static class WsSxWsTrustConfig extends WsTrustConfig {
-        private final Map requestTypeMap;
+        private final Map<String,String> requestTypeMap;
 
         public WsSxWsTrustConfig(String wstNs, String wspNs, String wsaNs) {
             super(wstNs, wspNs, wsaNs);
-            requestTypeMap = new HashMap();
-            int idx = 2;
+            requestTypeMap = new HashMap<String,String>();
             requestTypeMap.put(WsTrustRequestType.NAME_ISSUE, "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue");
             requestTypeMap.put(WsTrustRequestType.NAME_RENEW, "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Renew");
             requestTypeMap.put(WsTrustRequestType.NAME_VALIDATE, "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Validate");
             requestTypeMap.put(WsTrustRequestType.NAME_CANCEL, "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Cancel");
         }
 
+        @Override
         protected String getRequestTypeUri(WsTrustRequestType requestType) {
-            String ret = (String)requestTypeMap.get(requestType.getName());
+            String ret = requestTypeMap.get(requestType.getName());
             if (ret == null) throw new IllegalArgumentException("Unknown WsTrustRequestType: " + requestType.getName());
             return ret;
         }
