@@ -18,7 +18,7 @@ UPDATE ssg_version SET current_version = '5.2.0';
 -- Convert DN columns to allow larger values
 --
 ALTER TABLE client_cert MODIFY COLUMN subject_dn VARCHAR(500), MODIFY COLUMN issuer_dn VARCHAR(500);
-ALTER TABLE trusted_cert MODIFY COLUMN subject_dn VARCHAR(500) NOT NULL, MODIFY COLUMN issuer_dn VARCHAR(500) NOT NULL;
+ALTER TABLE trusted_cert MODIFY COLUMN subject_dn VARCHAR(500), MODIFY COLUMN issuer_dn VARCHAR(500);
 
 --
 -- Upgrade task for DN canonicalization
