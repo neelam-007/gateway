@@ -25,6 +25,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.net.ssl.SSLContext;
+import javax.net.SocketFactory;
 
 /**
  * UDDIv3 client implementation using generated JAX-WS UDDI API
@@ -2466,7 +2467,8 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             if ( target instanceof BindingProvider &&
                  Proxy.isProxyClass( target.getClass() ) &&
-                 Proxy.getInvocationHandler( target ).getClass().getName().equals("com.sun.xml.ws.client.sei.SEIStub") )  {
+                 Proxy.getInvocationHandler( target ).getClass().getName().equals("com.sun.xml.ws.client.sei.SEIStub") ||
+                 Proxy.getInvocationHandler( target ).getClass().getName().equals("com.sun.xml.internal.ws.client.sei.SEIStub") )  {
                 processed = true;
                 BindingProvider bindingProvider = (BindingProvider) target;
                 Map<String,Object> context = bindingProvider.getRequestContext();
@@ -2474,9 +2476,13 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 context.put("com.sun.xml.ws.connect.timeout", (int)config.getConnectionTimeout());
                 context.put("com.sun.xml.ws.request.timeout", (int)config.getReadTimeout());
 
+                context.put("com.sun.xml.internal.ws.connect.timeout", (int)config.getConnectionTimeout());
+                context.put("com.sun.xml.internal.ws.request.timeout", (int)config.getReadTimeout());
+
                 if ( configureTLS ) {
                     // Hostname verifier
                     context.put("com.sun.xml.ws.transport.https.client.hostname.verifier", config.getHostnameVerifier());
+                    context.put("com.sun.xml.internal.ws.transport.https.client.hostname.verifier", config.getHostnameVerifier());
 
                     // SSL socket factory
                     int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
@@ -2484,7 +2490,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                         final SSLContext ctx = SSLContext.getInstance("SSL");
                         ctx.init( config.getKeyManagers(),  config.getTrustManagers(), random );
                         ctx.getClientSessionContext().setSessionTimeout(timeout);
-                        context.put("com.sun.xml.ws.transport.https.client.SSLSocketFactory", ctx.getSocketFactory());
+                        SocketFactory factory = ctx.getSocketFactory();
+                        context.put("com.sun.xml.ws.transport.https.client.SSLSocketFactory", factory);
+                        context.put("com.sun.xml.internal.ws.transport.https.client.SSLSocketFactory", factory);
                     } catch (NoSuchAlgorithmException e) {
                         logger.log( Level.WARNING, "Error configuring TLS for UDDI client.", e );
                     } catch (KeyManagementException e) {
