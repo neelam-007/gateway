@@ -9,6 +9,7 @@ import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.wsdm.subscription.ServiceStateMonitor;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -30,7 +31,9 @@ import java.util.logging.Logger;
 public class Aggregator implements ServiceStateMonitor {
     private final Logger logger = Logger.getLogger(Aggregator.class.getName());
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final HashMap<Long, MetricsSummaryBin> metrics = new HashMap<Long, MetricsSummaryBin>();
+    private final Map<Long, MetricsSummaryBin> metrics = new HashMap<Long, MetricsSummaryBin>();
+    private Map<Long,MetricsSummaryBin> dailyBins;
+    private long dailyBinEndTime;
     private long lastMetricsTimestamp = 0L;
 
     @Resource
@@ -44,51 +47,7 @@ public class Aggregator implements ServiceStateMonitor {
 
     @PostConstruct
     public void start() {
-        // Calculate ESM metrics by summing all available service metrics bins.
-        // See http://sarek/mediawiki/index.php?title=ESM#Calculating_ESM_Metrics for explanation.
-        try {
-            Map<Long,MetricsSummaryBin> dailyBins = metricsManager.summarizeByService(null, MetricsBin.RES_DAILY, null, null, null, false);
-            Collection<PublishedService> services = serviceManager.findAll();
-            for (PublishedService ps : services) {
-                MetricsSummaryBin dailySummary = dailyBins.get(ps.getOid());
-                MetricsSummaryBin hourlySummary;
-                MetricsSummaryBin fineSummary;
-
-                if(dailySummary == null) {
-                    hourlySummary = metricsManager.summarizeByService(null, MetricsBin.RES_HOURLY, null, null, new long[] {ps.getOid()}, false).get(ps.getOid());
-                } else {
-                    hourlySummary = metricsManager.summarizeByService(null, MetricsBin.RES_HOURLY, dailySummary.getPeriodEnd(), null, new long[] {ps.getOid()}, false).get(ps.getOid());
-                }
-
-                if(hourlySummary == null) {
-                    fineSummary = metricsManager.summarizeByService(null, MetricsBin.RES_FINE, dailySummary == null ? null : dailySummary.getPeriodEnd(), null, new long[] {ps.getOid()}, false).get(ps.getOid());
-                } else {
-                    fineSummary = metricsManager.summarizeByService(null, MetricsBin.RES_FINE, hourlySummary.getPeriodEnd(), null, new long[] {ps.getOid()}, false).get(ps.getOid());
-                }
-
-                List<MetricsBin> summaries = new ArrayList<MetricsBin>(3);
-                if(dailySummary != null) summaries.add(dailySummary);
-                if(hourlySummary != null) summaries.add(hourlySummary);
-                if(fineSummary != null) summaries.add(fineSummary);
-
-                MetricsSummaryBin serviceMetricsSummary;
-                if(summaries.size() > 0) {
-                    serviceMetricsSummary = new MetricsSummaryBin(summaries);
-                } else {
-                    MetricsBin emptyBin = new MetricsBin();
-                    emptyBin.setServiceOid(ps.getOid());
-                    List<MetricsBin> binList = new ArrayList<MetricsBin>(1);
-                    binList.add(emptyBin);
-                    serviceMetricsSummary = new MetricsSummaryBin(binList);
-                }
-
-                metrics.put(ps.getOid(), serviceMetricsSummary);
-            }
-
-            lastMetricsTimestamp = System.currentTimeMillis();
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Error reading services", e);
-        }
+        rebuildMetricsSummaries();
     }
 
     @Override
@@ -138,34 +97,45 @@ public class Aggregator implements ServiceStateMonitor {
 
     private Map<Long, MetricsSummaryBin> getMetricsForServicesNoLock(boolean includeEmpty) {
         try {
-            long periodStart = MetricsBin.periodStartFor(MetricsBin.RES_FINE, metricsServices.getFineInterval(), lastMetricsTimestamp);
-            long[] serviceOids;
+            final HashMap<Long, MetricsSummaryBin> retVal = new HashMap<Long, MetricsSummaryBin>();
+            final long periodStart = MetricsBin.periodStartFor(MetricsBin.RES_FINE, metricsServices.getFineInterval(), lastMetricsTimestamp);
+            final long[] serviceOids;
             if(metrics.size() == 0) {
                 serviceOids = new long[0];
             } else {
                 serviceOids = ArrayUtils.unbox(metrics.keySet().toArray(new Long[metrics.size()]));
             }
-            Map<Long, MetricsSummaryBin> newSummaries = metricsManager.summarizeByService(null, MetricsBin.RES_FINE, periodStart, null, serviceOids, includeEmpty);
 
-            HashMap<Long, MetricsSummaryBin> retVal = new HashMap<Long, MetricsSummaryBin>();
-            for(Map.Entry<Long, MetricsSummaryBin> entry : newSummaries.entrySet()) {
-                MetricsSummaryBin oldSummary = metrics.get(entry.getKey());
-                if(oldSummary == null) {
+            if ( (System.currentTimeMillis() - periodStart) > TimeUnit.HOURS.toMillis(1) ) {
+                rebuildMetricsSummaries();
+                for(Map.Entry<Long, MetricsSummaryBin> entry : metrics.entrySet()) {
                     if(!entry.getKey().equals(-1L)) {
-                        metrics.put(entry.getKey(), entry.getValue());
-                        lastMetricsTimestamp = (lastMetricsTimestamp >= entry.getValue().getPeriodEnd()) ? lastMetricsTimestamp : entry.getValue().getPeriodEnd();
+                        lastMetricsTimestamp = Math.max(lastMetricsTimestamp, entry.getValue().getPeriodEnd());
                     }
                     retVal.put(entry.getKey(), entry.getValue());
-                } else {
-                    List<MetricsBin> summaryList = new ArrayList<MetricsBin>(2);
-                    summaryList.add(oldSummary);
-                    summaryList.add(entry.getValue());
-                    MetricsSummaryBin updatedMetrics = new MetricsSummaryBin(summaryList);
-                    if(!entry.getKey().equals(-1L)) {
-                        metrics.put(entry.getKey(), updatedMetrics);
-                        lastMetricsTimestamp = (lastMetricsTimestamp >= entry.getValue().getPeriodEnd()) ? lastMetricsTimestamp : entry.getValue().getPeriodEnd();
+                }
+            } else {
+                Map<Long, MetricsSummaryBin> newSummaries = metricsManager.summarizeByService(null, MetricsBin.RES_FINE, periodStart, null, serviceOids, includeEmpty);
+
+                for(Map.Entry<Long, MetricsSummaryBin> entry : newSummaries.entrySet()) {
+                    MetricsSummaryBin oldSummary = metrics.get(entry.getKey());
+                    if(oldSummary == null) {
+                        if(!entry.getKey().equals(-1L)) {
+                            metrics.put(entry.getKey(), entry.getValue());
+                            lastMetricsTimestamp = Math.max(lastMetricsTimestamp,entry.getValue().getPeriodEnd());
+                        }
+                        retVal.put(entry.getKey(), entry.getValue());
+                    } else {
+                        List<MetricsBin> summaryList = new ArrayList<MetricsBin>(2);
+                        summaryList.add(oldSummary);
+                        summaryList.add(entry.getValue());
+                        MetricsSummaryBin updatedMetrics = new MetricsSummaryBin(summaryList);
+                        if(!entry.getKey().equals(-1L)) {
+                            metrics.put(entry.getKey(), updatedMetrics);
+                            lastMetricsTimestamp = Math.max(lastMetricsTimestamp, entry.getValue().getPeriodEnd());
+                        }
+                        retVal.put(entry.getKey(), updatedMetrics);
                     }
-                    retVal.put(entry.getKey(), updatedMetrics);
                 }
             }
 
@@ -208,6 +178,57 @@ public class Aggregator implements ServiceStateMonitor {
             return null;
         } finally {
             lock.writeLock().unlock();
+        }
+    }
+
+    private void rebuildMetricsSummaries() {
+        // Calculate ESM metrics by summing all available service metrics bins.
+        // See http://sarek/mediawiki/index.php?title=ESM#Calculating_ESM_Metrics for explanation.
+        try {
+            if ( dailyBins == null || (System.currentTimeMillis() - dailyBinEndTime) >= TimeUnit.DAYS.toMillis(1) ) {
+                dailyBins = metricsManager.summarizeByService(null, MetricsBin.RES_DAILY, null, null, null, false);
+            }
+            Collection<PublishedService> services = serviceManager.findAll();
+            for (PublishedService ps : services) {
+                MetricsSummaryBin dailySummary = dailyBins.get(ps.getOid());
+                MetricsSummaryBin hourlySummary;
+                MetricsSummaryBin fineSummary;
+
+                if(dailySummary == null) {
+                    hourlySummary = metricsManager.summarizeByService(null, MetricsBin.RES_HOURLY, null, null, new long[] {ps.getOid()}, false).get(ps.getOid());
+                } else {
+                    hourlySummary = metricsManager.summarizeByService(null, MetricsBin.RES_HOURLY, dailySummary.getPeriodEnd(), null, new long[] {ps.getOid()}, false).get(ps.getOid());
+                    dailyBinEndTime = (dailyBinEndTime >= dailySummary.getPeriodEnd()) ? dailyBinEndTime : dailySummary.getPeriodEnd();
+                }
+
+                if(hourlySummary == null) {
+                    fineSummary = metricsManager.summarizeByService(null, MetricsBin.RES_FINE, dailySummary == null ? null : dailySummary.getPeriodEnd(), null, new long[] {ps.getOid()}, false).get(ps.getOid());
+                } else {
+                    fineSummary = metricsManager.summarizeByService(null, MetricsBin.RES_FINE, hourlySummary.getPeriodEnd(), null, new long[] {ps.getOid()}, false).get(ps.getOid());
+                }
+
+                List<MetricsBin> summaries = new ArrayList<MetricsBin>(3);
+                if(dailySummary != null) summaries.add(dailySummary);
+                if(hourlySummary != null) summaries.add(hourlySummary);
+                if(fineSummary != null) summaries.add(fineSummary);
+
+                MetricsSummaryBin serviceMetricsSummary;
+                if(summaries.size() > 0) {
+                    serviceMetricsSummary = new MetricsSummaryBin(summaries);
+                } else {
+                    MetricsBin emptyBin = new MetricsBin();
+                    emptyBin.setServiceOid(ps.getOid());
+                    List<MetricsBin> binList = new ArrayList<MetricsBin>(1);
+                    binList.add(emptyBin);
+                    serviceMetricsSummary = new MetricsSummaryBin(binList);
+                }
+
+                metrics.put(ps.getOid(), serviceMetricsSummary);
+            }
+
+            lastMetricsTimestamp = System.currentTimeMillis();
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Error reading services", e);
         }
     }
 }
