@@ -100,21 +100,19 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Gateway/config/backup/*.sh
 
 # Gateway process controller
-%defattr(0640,layer7,layer7,0750)
+%defattr(0640,layer7,layer7,0755)
 %dir /opt/SecureSpan/Controller
-%config /opt/SecureSpan/Controller/etc/conf
-/opt/SecureSpan/Controller/var
+%dir /opt/SecureSpan/Controller/var
 
 %defattr(0444,layer7,layer7,0755)
 /opt/SecureSpan/Controller/Controller.jar
 %dir /opt/SecureSpan/Controller/bin
 %dir /opt/SecureSpan/Controller/etc
-/opt/SecureSpan/Controller/etc/patchesCert.pem
 /opt/SecureSpan/Controller/lib
-%attr(0755,layer7,layer7) /opt/SecureSpan/Controller
 %attr(0555,layer7,layer7) /opt/SecureSpan/Controller/bin/*
-%attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc
-%attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc/conf
+%dir %attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc
+%config %attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc/conf
+%attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc/patchesCert.pem
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/logs
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/patches
 
