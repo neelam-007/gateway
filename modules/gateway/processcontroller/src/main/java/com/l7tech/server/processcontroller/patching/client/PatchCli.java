@@ -100,7 +100,6 @@ public class PatchCli {
         String target = patchAction.getTarget();
         if (target.toLowerCase().startsWith("http://") || target.toLowerCase().startsWith("https://")) {
             logger.log(Level.INFO, "Using Patch Service API endpoint: " + target);
-            System.out.println("Using Patch Service API endpoint: " + target + "\n");
             return new CxfUtils.ApiBuilder(patchAction.getTarget())
                 //.inInterceptor(new LoggingInInterceptor())
                 //.outInterceptor(new LoggingOutInterceptor())
@@ -110,7 +109,6 @@ public class PatchCli {
         } else {
             try {
                 logger.log(Level.INFO, "Using patch configuration from Process Controller.");
-                System.out.println("Using patch configuration from the Process Controller at: " + target + "\n");
                 System.setProperty(ConfigService.PC_HOMEDIR_PROPERTY, target);
                 ConfigService config = new ConfigServiceImpl();
                 PatchPackageManager packageManager = new PatchPackageManagerImpl(config.getPatchesDirectory());
