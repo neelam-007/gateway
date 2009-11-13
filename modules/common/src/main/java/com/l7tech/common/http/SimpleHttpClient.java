@@ -5,12 +5,16 @@ package com.l7tech.common.http;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.ByteOrderMarkInputStream;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 
 /**
@@ -30,6 +34,13 @@ public class SimpleHttpClient implements GenericHttpClient {
          * @return the response body bytes.  May be empty but never null.
          */
         byte[] getBytes();
+
+        /**
+         * Get the response body as a string.
+         *
+         * @return The response as a string.
+         */
+        String getString() throws IOException;
     }
 
     /**
@@ -48,13 +59,22 @@ public class SimpleHttpClient implements GenericHttpClient {
      *
      */
     public SimpleHttpClient(GenericHttpClient delegate) {
-        if (delegate == null) throw new NullPointerException();
-        this.client = delegate;
+        this( delegate, 0 );
     }
 
     /**
      *
      */
+    public SimpleHttpClient(GenericHttpClient delegate, int maxContentLength ) {
+        if (delegate == null) throw new NullPointerException();
+        this.client = delegate;
+        this.maxContentLength = maxContentLength;
+    }
+
+    /**
+     *
+     */
+    @Override
     public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
         return client.createRequest(method, params);
     }
@@ -72,13 +92,31 @@ public class SimpleHttpClient implements GenericHttpClient {
         try {
             request = createRequest(HttpMethod.GET, params);
             response = request.getResponse();
-            byte[] bodyBytes = IOUtils.slurpStream(response.getInputStream());
+            byte[] bodyBytes = maxContentLength <= 0 ?
+                    IOUtils.slurpStream(response.getInputStream()) :
+                    IOUtils.slurpStream(response.getInputStream(), maxContentLength);
             return new SimpleHttpResponseImpl(response, bodyBytes);
         } catch (IOException e) {
             throw new GenericHttpException(e);
         } finally {
             if (response != null) response.close();
             if (request != null) request.close();
+        }
+    }
+
+    /**
+     * Even simpler one-step GET request.
+     *
+     * @param url The url to get.  Must not be null.
+     * @return the response.  Never null.
+     * @throws GenericHttpException if there is a configuration, network or HTTP problem
+     */
+    public SimpleHttpResponse get( final String url ) throws GenericHttpException {
+        if ( url == null ) throw new GenericHttpException("Missing URL");
+        try {
+            return get( new GenericHttpRequestParams( new URL(url) ) );
+        } catch (MalformedURLException e) {
+            throw new GenericHttpException("Invalid URL '"+url+"'.");
         }
     }
 
@@ -105,8 +143,40 @@ public class SimpleHttpClient implements GenericHttpClient {
             super(responseParams);
             this.bodyBytes = bodyBytes != null ? bodyBytes : new byte[0];
         }
+        @Override
         public byte[] getBytes() {
             return bodyBytes;
+        }
+
+        @Override
+        public String getString() throws IOException {
+            final StringBuilder encodingBuilder = new StringBuilder();
+            final ContentTypeHeader contentType = getContentType();
+            if ( contentType != null ) {
+                encodingBuilder.append(contentType.getEncoding());
+            } else {
+                encodingBuilder.append(ContentTypeHeader.DEFAULT_HTTP_ENCODING);
+            }
+
+            return new String(stripBom(getBytes(), encodingBuilder), encodingBuilder.toString());
+        }
+
+        private byte[] stripBom( final byte[] data, final StringBuilder encodingBuilder ) throws IOException {
+            byte[] cleanData;
+
+            ByteOrderMarkInputStream bomStream = null;
+            try {
+                bomStream = new ByteOrderMarkInputStream( new ByteArrayInputStream(data) );
+                cleanData = IOUtils.slurpStream( bomStream );
+                if ( bomStream.getEncoding() != null ) {
+                    encodingBuilder.setLength( 0 );
+                    encodingBuilder.append( bomStream.getEncoding() );
+                }
+            } finally {
+                ResourceUtils.closeQuietly( bomStream );
+            }
+
+            return cleanData;
         }
     }
 
@@ -173,6 +243,7 @@ public class SimpleHttpClient implements GenericHttpClient {
     //- PRIVATE
 
     private final GenericHttpClient client;
+    private final int maxContentLength;
 
     /**
      *
@@ -185,6 +256,7 @@ public class SimpleHttpClient implements GenericHttpClient {
             this.bodyDoc = bodyDoc;
         }
 
+        @Override
         public Document getDocument() {
             return bodyDoc;
         }

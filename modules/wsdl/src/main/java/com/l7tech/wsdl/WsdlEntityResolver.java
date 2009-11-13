@@ -31,7 +31,9 @@ public class WsdlEntityResolver extends ResourceMapEntityResolver {
 
     static {
         Map<String,String> pres = new HashMap<String,String>();
+        pres.put( "-//W3C//DTD XMLSchema 200102//EN", "com/l7tech/wsdl/resources/XMLSchema.dtd" ); // technically these are case sensitive and this is invalid
         pres.put( "-//W3C//DTD XMLSCHEMA 200102//EN", "com/l7tech/wsdl/resources/XMLSchema.dtd" );
+        pres.put( "datatypes", "com/l7tech/wsdl/resources/datatypes.dtd" );
         publicIdsToResources = Collections.unmodifiableMap( pres );
 
         Map<String,String> sres = new HashMap<String,String>();

@@ -6,6 +6,7 @@ import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceType;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
@@ -16,7 +17,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.external.assertions.uddinotification.UDDINotificationAssertion;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
-import com.l7tech.common.io.ResourceMapEntityResolver;
+import com.l7tech.wsdl.WsdlEntityResolver;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -24,8 +25,6 @@ import java.util.Map;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -145,13 +144,9 @@ public class UDDINotificationModuleLifecycle implements ApplicationListener {
         try {
             String url = FAKE_URL_PREFIX + "uddi_subr_v3_service.wsdl";
 
-            Map<String, String> idsToResources = new HashMap<String, String>();
-            String packagePrefix = getClass().getPackage().getName().replace( '.', '/' ) + "/serviceTemplate/";
-            idsToResources.put("-//W3C//DTD XMLSchema 200102//EN", packagePrefix+"XMLSchema.dtd");
-            idsToResources.put("datatypes", packagePrefix+"datatypes.dtd");
-            final EntityResolver doctypeResolver = new ResourceMapEntityResolver( idsToResources, null, getClass().getClassLoader());
-            DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
-            Map<String,String> contents = processor.processDocument( url, new DocumentReferenceProcessor.ResourceResolver(){
+            final EntityResolver doctypeResolver = new WsdlEntityResolver();
+            final DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
+            final Map<String,String> contents = processor.processDocument( url, new DocumentReferenceProcessor.ResourceResolver(){
                 @Override
                 public String resolve(final String resourceUrl) throws IOException {
                     String resource = resourceUrl;
@@ -163,19 +158,10 @@ public class UDDINotificationModuleLifecycle implements ApplicationListener {
                 }
             } );
 
-            Collection<ResourceTrackingWSDLLocator.WSDLResource> sourceDocs =
+            final Collection<ResourceTrackingWSDLLocator.WSDLResource> sourceDocs =
                     ResourceTrackingWSDLLocator.toWSDLResources(url, contents, false, false, false);
 
-            List<ServiceDocument> svcDocs = new ArrayList<ServiceDocument>();
-
-            for (ResourceTrackingWSDLLocator.WSDLResource sourceDoc : sourceDocs) {
-                ServiceDocument doc = new ServiceDocument();
-                doc.setUri(sourceDoc.getUri());
-                doc.setType("WSDL-IMPORT");
-                doc.setContents(sourceDoc.getWsdl());
-                doc.setContentType("text/xml");
-                svcDocs.add(doc);
-            }
+            final List<ServiceDocument> svcDocs = ServiceDocumentWsdlStrategy.fromWsdlResources( sourceDocs );
 
             String policyContents = getDefaultPolicyXml();
             template = new ServiceTemplate("UDDI Notification Service", "/uddi/notification", contents.get(url), url, policyContents, svcDocs, ServiceType.OTHER_INTERNAL_SERVICE, null);

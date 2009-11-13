@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 
 import javax.wsdl.WSDLException;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -25,9 +27,34 @@ public class ServiceDocumentWsdlStrategy implements PublishedService.WsdlStrateg
 
     @Override
     public final Wsdl parseWsdl( final PublishedService service,
-                           final String uri,
-                           final String wsdl ) throws WSDLException {
+                                 final String uri,
+                                 final String wsdl ) throws WSDLException {
         return Wsdl.newInstance(Wsdl.getWSDLLocator(uri, buildContent(uri, wsdl, service), getLogger()));
+    }
+
+    public static Wsdl parseWsdl( final PublishedService service,
+                                  final Collection<ServiceDocument> serviceDocuments ) throws WSDLException {
+        return parseWsdl( service.getWsdlUrl(), service.getWsdlXml(), serviceDocuments );            
+    }
+
+    public static Wsdl parseWsdl( final String uri,
+                                  final String wsdl,
+                                  final Collection<ServiceDocument> serviceDocuments ) throws WSDLException {
+        return new ServiceDocumentWsdlStrategy( serviceDocuments ).parseWsdl( null, uri, wsdl );
+    }
+
+    public static List<ServiceDocument> fromWsdlResources( final Collection<ResourceTrackingWSDLLocator.WSDLResource> sourceDocs ) {
+        List<ServiceDocument> svcDocs = new ArrayList<ServiceDocument>();
+
+        for (ResourceTrackingWSDLLocator.WSDLResource sourceDoc : sourceDocs) {
+            ServiceDocument doc = new ServiceDocument();
+            doc.setUri(sourceDoc.getUri());
+            doc.setType("WSDL-IMPORT");
+            doc.setContents(sourceDoc.getWsdl());
+            doc.setContentType("text/xml");
+            svcDocs.add(doc);
+        }
+        return svcDocs;
     }
 
     //- PROTECTED

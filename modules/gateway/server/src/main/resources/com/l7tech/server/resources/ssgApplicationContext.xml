@@ -1632,6 +1632,8 @@
                     <constructor-arg index="3" ref="uddiServiceControlManager"/>
                     <constructor-arg index="4" ref="uddiServiceControlMonitorRuntimeManager"/>
                     <constructor-arg index="5" ref="serviceManager"/>
+                    <constructor-arg index="6" ref="serviceDocumentManager"/>
+                    <constructor-arg index="7" ref="httpClientFactory"/>
                 </bean>
                 <bean class="com.l7tech.server.uddi.MetricsUDDITaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>

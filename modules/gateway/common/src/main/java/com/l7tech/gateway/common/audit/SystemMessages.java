@@ -129,6 +129,10 @@ public class SystemMessages extends Messages {
     public static final M UDDI_NOTIFICATION_SERVICE_DISABLED    = m(2287, Level.WARNING, "UDDI Notification has caused Published Service to be disabled. Published Service ID ''{0}''.");
     public static final M UDDI_NOTIFICATION_SERVICE_DELETED     = m(2288, Level.WARNING, "UDDI Notification that monitored BusinessService has been deleted. Deleting SSG records for serviceKey ''{0}''.");
     public static final M UDDI_MAINTENANCE_SERVICE_DELETED      = m(2289, Level.WARNING, "Error deleting record of proxied business service which has been deleted from UDDI Registry #({0}) with serviceKey ''{1}''");
+    public static final M UDDI_NOTIFICATION_SERVICE_WSDL_UPDATE = m(2290, Level.WARNING, "Service WSDL updated from UDDI ''{0}''.");
+    public static final M UDDI_NOTIFICATION_SERVICE_WSDL_ERROR  = m(2291, Level.WARNING, "Error updating service WSDL from UDDI ''{0}''.");
+    public static final M UDDI_NOTIFICATION_ENDPOINT_NOT_FOUND  = m(2292, Level.WARNING, "Error finding endpoint for business service ''{0}'', wsdl:port ''{1}'' for UDDI registry ''{2}''.");
+    public static final M UDDI_NOTIFICATION_ENDPOINT_UPDATED    = m(2293, Level.WARNING, "Updated endpoint ''{0}'' for business service ''{1}'', wsdl:port ''{2}'' for UDDI registry ''{3}''.");
 
     // MAX -                                      m(2999
 }
