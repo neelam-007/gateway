@@ -167,6 +167,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                             }
                         });
                         keystoreVersion = updated.getVersion();
+                        cachedKeystore = bytesToKeyStore(updated.getDatabytes());
                     }
                 } catch (UpdateException e) {
                     throw new KeyStoreException(e);
