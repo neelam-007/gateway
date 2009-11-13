@@ -54,19 +54,11 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             TimerUDDIEvent timerEvent = (TimerUDDIEvent) event;
             if ( timerEvent.getType()==TimerUDDIEvent.Type.METRICS_PUBLISH ) {
                 task = new MetricsPublishUDDITask(
-                        uddiRegistryManager,
-                        uddiHelper,
-                        uddiTemplateManager,
-                        uddiBusinessServiceStatusManager,
-                        aggregator,
-                        clusterPropertyCache,
+                        this,
                         timerEvent.getRegistryOid() );
             } else if ( timerEvent.getType()==TimerUDDIEvent.Type.METRICS_CLEANUP ) {
                 task = new MetricsCleanupUDDITask(
-                        uddiRegistryManager,
-                        uddiHelper,
-                        uddiTemplateManager,
-                        uddiBusinessServiceStatusManager,
+                        this,
                         timerEvent.getRegistryOid() );
             }
         }
@@ -106,28 +98,13 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
 
         private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
-        private final UDDIRegistryManager uddiRegistryManager;
-        private final UDDIHelper uddiHelper;
-        private final UDDITemplateManager uddiTemplateManager;
-        private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
-        private final Aggregator aggregator;
-        private final ClusterPropertyCache clusterPropertyCache;
+        private final MetricsUDDITaskFactory factory;
         private final long registryOid;
         private final NumberFormat percentFormat = new DecimalFormat("0.0");
 
-        MetricsPublishUDDITask( final UDDIRegistryManager uddiRegistryManager,
-                                final UDDIHelper uddiHelper,
-                                final UDDITemplateManager uddiTemplateManager,
-                                final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
-                                final Aggregator aggregator,
-                                final ClusterPropertyCache clusterPropertyCache,
+        MetricsPublishUDDITask( final MetricsUDDITaskFactory factory,
                                 final long registryOid ) {
-            this.uddiRegistryManager = uddiRegistryManager;
-            this.uddiHelper = uddiHelper;
-            this.uddiTemplateManager = uddiTemplateManager;
-            this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
-            this.aggregator = aggregator;
-            this.clusterPropertyCache = clusterPropertyCache;
+            this.factory = factory;
             this.registryOid = registryOid;
         }
 
@@ -135,9 +112,9 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         public void apply( final UDDITaskContext context ) {
             logger.fine( "Publishing metrics to UDDI for registry (#"+registryOid+")" );
             try {
-                UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
+                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() && uddiRegistry.isMetricsEnabled() ) {
-                    final UDDITemplate template = uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
+                    final UDDITemplate template = factory.uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
                     if ( template == null ) {
                         throw new UDDIException("Template not found for UDDI registry type '"+uddiRegistry.getUddiRegistryType()+"'.");
                     }
@@ -145,14 +122,14 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                     final long endTime = System.currentTimeMillis();
 
                     final Collection<UDDIBusinessServiceStatus> toPublish =
-                            uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.PUBLISH );
+                            factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.PUBLISH );
 
                     final Collection<UDDIBusinessServiceStatus> toUpdate =
-                            uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.PUBLISHED );
+                            factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.PUBLISHED );
 
                     final Map<Long,MetricsRequestContext> metricsMap = new HashMap<Long,MetricsRequestContext>();
 
-                    final UDDIClient client = uddiHelper.newUDDIClient( uddiRegistry );
+                    final UDDIClient client = factory.uddiHelper.newUDDIClient( uddiRegistry );
 
                     if ( !toPublish.isEmpty() || !toUpdate.isEmpty() ) {
                         // authenticate early to avoid error for every service 
@@ -173,7 +150,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                 businessService.setUddiMetricsTModelKey( metricsTModelKey );
                                 businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.PUBLISHED );
                                 try {
-                                    uddiBusinessServiceStatusManager.update( businessService );
+                                    factory.uddiBusinessServiceStatusManager.update( businessService );
                                 } catch (UpdateException e) {
                                     logger.log( Level.WARNING, "Error updating UDDIBusinessServiceStatus", e );
                                 }
@@ -278,11 +255,11 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                         break;
                     case CLUSTER:
                         if ( metricsSub != null && !metricsSub.isEmpty() ) {
-                            ClusterProperty property = clusterPropertyCache.getCachedEntityByName( metricsSub, 30000 );
+                            ClusterProperty property = factory.clusterPropertyCache.getCachedEntityByName( metricsSub, 30000 );
                             if ( property != null && !property.isHiddenProperty() ) {
                                 value = property.getValue();
                                 if ( value == null ) {
-                                    value = clusterPropertyCache.getPropertyValueWithDefaultFallback( metricsSub );  
+                                    value = factory.clusterPropertyCache.getPropertyValueWithDefaultFallback( metricsSub );
                                 }
                             }
                         }
@@ -351,7 +328,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             MetricsRequestContext context = metricsMap.get( serviceOid );
 
             if ( context == null ) {
-                final MetricsSummaryBin bin = aggregator.getMetricsForService(serviceOid);
+                final MetricsSummaryBin bin = factory.aggregator.getMetricsForService(serviceOid);
                 if ( bin != null ) {
                     context = new MetricsRequestContext(bin, true, null, endTime - bin.getStartTime());
                     metricsMap.put( serviceOid, context );
@@ -368,21 +345,12 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
     private static final class MetricsCleanupUDDITask extends UDDITask {
         private static final Logger logger = Logger.getLogger( MetricsCleanupUDDITask.class.getName() );
 
-        private final UDDIRegistryManager uddiRegistryManager;
-        private final UDDIHelper uddiHelper;
-        private final UDDITemplateManager uddiTemplateManager;
-        private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
+        private final MetricsUDDITaskFactory factory;
         private final long registryOid;
 
-        MetricsCleanupUDDITask( final UDDIRegistryManager uddiRegistryManager,
-                                final UDDIHelper uddiHelper,
-                                final UDDITemplateManager uddiTemplateManager,
-                                final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
+        MetricsCleanupUDDITask( final MetricsUDDITaskFactory factory,
                                 final long registryOid ) {
-            this.uddiRegistryManager = uddiRegistryManager;
-            this.uddiHelper = uddiHelper;
-            this.uddiTemplateManager = uddiTemplateManager;
-            this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
+            this.factory = factory;
             this.registryOid = registryOid;
         }
 
@@ -390,9 +358,9 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
         public void apply( final UDDITaskContext context ) {
             logger.fine( "Cleanup metrics in UDDI for registry (#"+registryOid+")" );
             try {
-                UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
+                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {  // cleanup even if metrics is not enabled
-                    final UDDITemplate template = uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
+                    final UDDITemplate template = factory.uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
                     if ( template == null ) {
                         throw new UDDIException("Template not found for UDDI registry type '"+uddiRegistry.getUddiRegistryType()+"'.");
                     }
@@ -402,9 +370,9 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                             template.getServiceMetricsKeyedReference().getKey();
                     if ( referenceKey != null ) {
                         final Collection<UDDIBusinessServiceStatus> toDelete =
-                                uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
+                                factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
 
-                        final UDDIClient client = uddiHelper.newUDDIClient( uddiRegistry );
+                        final UDDIClient client = factory.uddiHelper.newUDDIClient( uddiRegistry );
 
                         for ( UDDIBusinessServiceStatus businessService : toDelete ) {
                             final String serviceKey = businessService.getUddiServiceKey();
@@ -415,7 +383,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
 
                             businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.NONE );
                             businessService.setUddiPolicyTModelKey( null );
-                            uddiBusinessServiceStatusManager.update( businessService );
+                            factory.uddiBusinessServiceStatusManager.update( businessService );
                         }
                     }
                 } else {

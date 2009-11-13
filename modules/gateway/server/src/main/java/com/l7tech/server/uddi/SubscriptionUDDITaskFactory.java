@@ -74,10 +74,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             TimerUDDIEvent timerEvent = (TimerUDDIEvent) event;
             if ( timerEvent.getType() == TimerUDDIEvent.Type.SUBSCRIPTION_POLL ) {
                 task = new SubscriptionPollUDDITask(
-                        uddiRegistryManager,
-                        uddiHelper,
-                        uddiRegistrySubscriptionManager,
-                        uddiServiceControlManager,
+                        this,
                         timerEvent.getRegistryOid() );
             }
         } else if ( event instanceof SubscribeUDDIEvent ) {
@@ -85,40 +82,29 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             switch ( subscribeEvent.getType() ) {
                 case SUBSCRIBE:
                     task = new SubscribeUDDITask(
-                            uddiRegistryManager,
-                            uddiHelper,
-                            uddiRegistrySubscriptionManager,
+                            this,
                             subscribeEvent.getRegistryOid(),
                             subscribeEvent.isExpiredOnly() );
                     break;
                 case UNSUBSCRIBE:
                     task = new UnsubscribeUDDITask(
-                            uddiRegistryManager,
-                            uddiHelper,
-                            uddiRegistrySubscriptionManager,
+                            this,
                             subscribeEvent.getRegistryOid() );
                     break;
             }
         } else if ( event instanceof NotificationUDDIEvent ) {
             NotificationUDDIEvent notificationEvent = (NotificationUDDIEvent) event;
             task = new SubscriptionNotificationUDDITask(
-                    uddiRegistrySubscriptionManager,
-                    uddiServiceControlManager,                                                          
+                    this,
                     notificationEvent.getMessage() );
         } else if(event instanceof BusinessServiceUpdateUDDIEvent){
             BusinessServiceUpdateUDDIEvent busEvent = (BusinessServiceUpdateUDDIEvent) event;
 
             task = new BusinessServiceUpdateUDDITask(
+                    this,
                     busEvent.getServiceKey(),
                     busEvent.getRegistryOid(),
-                    busEvent.isDeleted(),
-                    uddiServiceControlManager,
-                    uddiRegistryManager,
-                    uddiHelper,
-                    uddiServiceControlMonitorRuntimeManager,
-                    serviceManager,
-                    serviceDocumentManager,
-                    httpClientFactory );
+                    busEvent.isDeleted() );
         }
 
         return task;
@@ -141,21 +127,15 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private static final class SubscribeUDDITask extends SubscriptionProcessingUDDITask {
         private static final Logger logger = Logger.getLogger( SubscribeUDDITask.class.getName() );
 
-        private final UDDIRegistryManager uddiRegistryManager;
-        private final UDDIHelper uddiHelper;
-        private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
+        private final SubscriptionUDDITaskFactory factory;
         private final long registryOid;
         private final boolean expiredOnly;
 
-        public SubscribeUDDITask( final UDDIRegistryManager uddiRegistryManager,
-                                  final UDDIHelper uddiHelper,
-                                  final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager,
+        public SubscribeUDDITask( final SubscriptionUDDITaskFactory factory,
                                   final long registryOid,
                                   final boolean expiredOnly ) {
             super( logger, null );
-            this.uddiRegistryManager = uddiRegistryManager;
-            this.uddiHelper = uddiHelper;
-            this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
+            this.factory = factory;
             this.registryOid = registryOid;
             this.expiredOnly = expiredOnly;
         }
@@ -165,11 +145,12 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             // TODO Renew subscription rather than delete and replace?
             logger.info( "Subscribing to UDDI for registry "+registryOid+"." );
             try {
-                UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
+                final UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                    UDDIClient uddiClient = uddiHelper.newUDDIClient( uddiRegistry );
+                    final UDDIClient uddiClient = factory.uddiHelper.newUDDIClient( uddiRegistry );
 
-                    UDDIRegistrySubscription uddiRegistrySubscription = uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
+                    UDDIRegistrySubscription uddiRegistrySubscription =
+                            factory.uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
                     if ( uddiRegistrySubscription != null && uddiRegistrySubscription.getSubscriptionKey()!=null ) {
                         if ( expiredOnly && !isExpiring(uddiRegistrySubscription) ) {
                             return;    
@@ -214,9 +195,9 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
                     try {
                         if ( uddiRegistrySubscription.getOid()==UDDIRegistrySubscription.DEFAULT_OID ) {
-                            uddiRegistrySubscriptionManager.save( uddiRegistrySubscription );
+                            factory.uddiRegistrySubscriptionManager.save( uddiRegistrySubscription );
                         } else {
-                            uddiRegistrySubscriptionManager.update( uddiRegistrySubscription );
+                            factory.uddiRegistrySubscriptionManager.update( uddiRegistrySubscription );
                         }
                     } catch ( Exception e ) {
                         logger.log( Level.WARNING, "Error persisting uddi subscription for registry "+uddiRegistry.getName()+" (#"+uddiRegistry.getOid()+").", e );
@@ -240,309 +221,15 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         }
     }
 
-    private static final class BusinessServiceUpdateUDDITask extends UDDITask {
-        private static final Logger logger = Logger.getLogger( BusinessServiceUpdateUDDITask.class.getName() );
-
-        private final UDDIServiceControlManager uddiServiceControlManager;
-        private final UDDIRegistryManager uddiRegistryManager;
-        private final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager;
-        private final UDDIHelper uddiHelper;
-        private final String serviceKey;
-        private final long registryOid;
-        private final boolean isDeleted;
-        private final ServiceManager serviceManager;
-        private final ServiceDocumentManager serviceDocumentManager;
-        private final HttpClientFactory httpClientFactory;
-
-        public BusinessServiceUpdateUDDITask( final String serviceKey,
-                                              final long registryOid,
-                                              final boolean deleted,
-                                              final UDDIServiceControlManager uddiServiceControlManager,
-                                              final UDDIRegistryManager uddiRegistryManager,
-                                              final UDDIHelper uddiHelper,
-                                              final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager,
-                                              final ServiceManager serviceManager,
-                                              final ServiceDocumentManager serviceDocumentManager,
-                                              final HttpClientFactory httpClientFactory ) {
-            this.uddiServiceControlManager = uddiServiceControlManager;
-            this.serviceKey = serviceKey;
-            this.registryOid = registryOid;
-            this.isDeleted = deleted;
-            this.uddiRegistryManager = uddiRegistryManager;
-            this.uddiHelper = uddiHelper;
-            this.uddiServiceControlMonitorRuntimeManager = uddiServiceControlMonitorRuntimeManager;
-            this.serviceManager = serviceManager;
-            this.serviceDocumentManager = serviceDocumentManager;
-            this.httpClientFactory = httpClientFactory;
-        }
-
-        @Override
-        public void apply(UDDITaskContext context) throws UDDITaskException {
-            //may just be url update or may be entire WSDL
-            //if just URL - download the accessPoint and see what it's value is
-            try {
-                //each result is for a unique PublishedService. More than one results is when more than one
-                //published service is monitoring the same WSDL in UDDI
-                final Collection<UDDIServiceControl> allApplicableServiceControls =
-                        uddiServiceControlManager.findByUDDIRegistryAndServiceKey(registryOid, serviceKey, null);
-
-                if ( isDeleted ) {
-                    logger.log(Level.INFO, "Service with key: " + serviceKey +
-                            " has been deleted from UDDI Registry #(" + registryOid + "). Removing record of UDDI BusinessService.");
-                    //will not ignore reality, if we know the service is gone from uddi, then no point having a record of it
-
-                    boolean deleted = false;
-                    for(final UDDIServiceControl serviceControl: allApplicableServiceControls) {
-                        deleted = true;
-                        uddiServiceControlManager.delete(serviceControl);
-                        if (!serviceControl.isUnderUddiControl() || !serviceControl.isMonitoringEnabled()) continue;
-
-                        if(serviceControl.isDisableServiceOnChange()) {
-                            //take correct action -disable service if set up
-                            disableService(context, serviceControl);
-                        }
-                    }
-                    
-                    if ( deleted ) {
-                        context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_DELETED, serviceKey);
-                    }
-                } else {
-                    //Get the last modified time stamp
-                    final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(registryOid);
-                    if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                        final UDDIClient uddiClient = uddiHelper.newUDDIClient(uddiRegistry);
-                        final long uddiModifiedTime;
-                        try {
-                            UDDIOperationalInfo operationalInfo = uddiClient.getOperationalInfo(serviceKey);
-                            uddiModifiedTime = operationalInfo.getModifiedIncludingChildrenTime();
-                        } catch (UDDIException e) {
-                            context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
-                                    "Could not get operation information for serviceKey: " + serviceKey);
-                            throw new UDDITaskException("Cannot find Operational Information for serviceKey: "
-                                    + serviceKey + " from UDDIRegistry #(" + uddiRegistry.getOid() + ")");
-                        }
-
-                        for(final UDDIServiceControl serviceControl: allApplicableServiceControls) {
-                            if (!serviceControl.isUnderUddiControl() || !serviceControl.isMonitoringEnabled()) continue;
-
-                            final PublishedService ps = serviceManager.findByPrimaryKey(serviceControl.getPublishedServiceOid());
-                            final UDDIServiceControlMonitorRuntime monitorRuntime = uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControl.getOid());
-                            if (monitorRuntime == null) {
-                                //this should never happen, (its a coding error managing UDDIServiceControl entities),
-                                // if it does we will just create a record for it. If the db allows it, then proceed
-                                final UDDIServiceControlMonitorRuntime monitorRuntimeNew = new UDDIServiceControlMonitorRuntime(serviceControl.getOid(), uddiModifiedTime);
-                                uddiServiceControlMonitorRuntimeManager.save(monitorRuntimeNew);
-                                logger.log(Level.WARNING, "Recieved notification for service for which we had no persisted runtime " +
-                                        "information. Created record for serviceKey: " + serviceControl.getUddiServiceKey() +
-                                        " from UDDIRegistry #(" + uddiRegistry.getOid() + ")");
-                            } else {
-                                final long lastKnownModificationTime = monitorRuntime.getLastUDDIModifiedTimeStamp();
-                                if (uddiModifiedTime <= lastKnownModificationTime) {
-                                    logger.log(Level.FINE, "Recieved duplicate notification for serviceKey: " + serviceControl.getUddiServiceKey() +
-                                            " from UDDIRegistry #(" + uddiRegistry.getOid() + ")");
-                                    return;
-                                }
-                            }
-
-                            //Now we start processing the update
-                            UDDIUtilities.UDDIBindingImplementionInfo bindingImplInfo = null;
-                            try {
-                                bindingImplInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
-                                        serviceControl.getUddiServiceKey(), serviceControl.getWsdlPortName(), serviceControl.getWsdlPortBinding());
-                            } catch (UDDIException e) {
-                                context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
-                                        "Could not find UDDI bindingTemplate implement wsdl:binding "
-                                                + serviceControl.getWsdlPortBinding() + " for serviceKey: " + serviceControl.getUddiServiceKey());
-                            }
-
-                            if ( bindingImplInfo == null ) {
-                                context.logAndAudit(
-                                        SystemMessages.UDDI_NOTIFICATION_ENDPOINT_NOT_FOUND, 
-                                        serviceKey,
-                                        serviceControl.getWsdlPortName(),
-                                        uddiRegistry.getName()+" (#"+uddiRegistry.getOid()+")" );
-                                continue;
-                            }
-
-                            //only want changes to the accessPoint
-                            //we do this regardless of configuration. UDDI is the authorative source of info for the endPoint
-                            boolean serviceUpdated = false;
-                            boolean updated = false;
-                            final String endPoint = getUpdatedEndPoint(bindingImplInfo, serviceControl, context, uddiRegistry);
-                            if ( endPoint != null && (serviceControl.getAccessPointUrl()==null || !serviceControl.getAccessPointUrl().equals( endPoint ))) {
-                                //now we can update our records
-                                //if we need to extract a url from the wsdl see UDDIUtilities.extractEndPointFromWsdl
-                                updated = true;
-                                serviceUpdated = true;
-                                ps.setDefaultRoutingUrl(endPoint);
-                                serviceControl.setAccessPointUrl(endPoint);
-                                context.logAndAudit(
-                                        SystemMessages.UDDI_NOTIFICATION_ENDPOINT_UPDATED,
-                                        endPoint,
-                                        serviceKey,
-                                        serviceControl.getWsdlPortName(),
-                                        uddiRegistry.getName()+" (#"+uddiRegistry.getOid()+")");
-                            }
-
-                            //do we need to update our serviceControl record?
-                            if(!bindingImplInfo.getImplementingWsdlPort().equals(serviceControl.getWsdlPortName())){
-                                updated = true;
-                                serviceControl.setWsdlPortName(bindingImplInfo.getImplementingWsdlPort());
-                            }
-
-                            if ( updated ) {
-                                uddiServiceControlManager.update(serviceControl);
-                            }
-
-                            //if we didn't accept the endpoint above, we can still update our wsdl, which makes all available
-                            //endpoints available on the client - manually
-                            if ( serviceControl.isUpdateWsdlOnChange() || serviceControl.isDisableServiceOnChange() ) {
-                                // Validate url
-                                String wsdlUrlStr = bindingImplInfo.getImplementingWsdlUrl();
-                                try {
-                                    new URL(wsdlUrlStr);
-                                } catch (MalformedURLException e) {
-                                    final String msg = "WSDL URL obtained from UDDI is not a valid URL (" +
-                                            bindingImplInfo.getImplementingWsdlUrl() + ") for serviceKey: " +
-                                            serviceControl.getUddiServiceKey()+" from UDDI Registry #(" + serviceControl.getUddiRegistryOid()  +")";
-                                    context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
-                                            msg);
-                                    throw new UDDITaskException(msg);
-                                }
-
-                                // Fetch wsdl
-                                final SimpleHttpClient httpClient = new SimpleHttpClient(httpClientFactory.createHttpClient(), 10*1024*1024);
-                                try {
-                                    final RemoteEntityResolver resolver = new RemoteEntityResolver( httpClient );
-                                    final DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
-                                    final Map<String,String> contents = processor.processDocument( wsdlUrlStr, new DocumentReferenceProcessor.ResourceResolver(){
-                                        @Override
-                                        public String resolve( final String resourceUrl ) throws IOException {
-                                            String content = resolver.fetchResourceFromUrl( resourceUrl );
-                                            return ResourceTrackingWSDLLocator.processResource(resourceUrl, content, resolver, false, true);
-                                        }
-                                    } );
-
-                                    final Collection<ResourceTrackingWSDLLocator.WSDLResource> sourceDocs =
-                                            ResourceTrackingWSDLLocator.toWSDLResources(wsdlUrlStr, contents, false, false, false);
-
-                                    final List<ServiceDocument> serviceDocuments = ServiceDocumentWsdlStrategy.fromWsdlResources( sourceDocs );
-
-                                    // Check if WSDL has changed
-                                    Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId(ps.getOid());
-                                    Wsdl wsdl = ServiceDocumentWsdlStrategy.parseWsdl( ps, existingServiceDocuments );
-                                    Wsdl newWsdl = ServiceDocumentWsdlStrategy.parseWsdl( wsdlUrlStr ,contents.get(wsdlUrlStr), existingServiceDocuments );
-
-                                    if ( !wsdl.getHash().equals( newWsdl.getHash() ) ) {
-                                        serviceUpdated = true;
-
-                                        // Disable if so configured
-                                        if ( serviceControl.isDisableServiceOnChange() ) {
-                                            ps.setDisabled( true );
-                                            context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_DISABLED, ps.getId());
-                                        }
-
-                                        if ( serviceControl.isUpdateWsdlOnChange() ) {
-                                            //if we need to extract a url from the wsdl see UDDIUtilities.extractEndPointFromWsdl
-                                            ps.setWsdlUrl( wsdlUrlStr );
-                                            ps.setWsdlXml( contents.get(wsdlUrlStr) );
-                                            for (ServiceDocument serviceDocument : existingServiceDocuments) {
-                                                serviceDocumentManager.delete(serviceDocument);
-                                            }
-                                            for (ServiceDocument serviceDocument : serviceDocuments) {
-                                                serviceDocument.setServiceId(ps.getOid());
-                                                serviceDocumentManager.save(serviceDocument);
-                                            }
-
-                                            context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_UPDATE, ps.displayName() + " (#"+ps.getOid()+")" );
-                                        }
-                                    } else {
-                                        logger.info( "WSDL is not updated for business service '"+serviceKey+"'." );
-                                    }
-                                } catch ( IOException ioe ) {
-                                    context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ioe, ps.displayName() + " (#"+ps.getOid()+")" );
-                                } catch ( WSDLException we ) {
-                                    context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, we, ps.displayName() + " (#"+ps.getOid()+")" );
-                                }
-                            }
-
-                            if ( serviceUpdated ) {
-                                serviceManager.update(ps);
-                            }
-
-                            UDDIServiceControlMonitorRuntime monitorRuntimeToUpdate = uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControl.getOid());
-                            monitorRuntimeToUpdate.setLastUDDIModifiedTimeStamp(uddiModifiedTime);
-                            uddiServiceControlMonitorRuntimeManager.update(monitorRuntimeToUpdate);
-                        }
-                    }
-                }
-            } catch (ObjectModelException e) {
-                context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
-                        "Database error when processing notification for registry #"+registryOid+" and serviceKey: " + serviceKey+".");
-            }
-        }
-
-        private void disableService(UDDITaskContext context, UDDIServiceControl serviceControl) throws FindException, UpdateException {
-            final PublishedService ps = serviceManager.findByPrimaryKey(serviceControl.getPublishedServiceOid());
-            ps.setDisabled(true);
-            serviceManager.update(ps);
-            context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_DISABLED, ps.getOidAsLong().toString());
-        }
-
-        /**
-         * Get the endpoint from UDDI for this update. All auditing, logging and throwing is done here.
-         * @return String endpoint. Null if not found
-         */
-        private String getUpdatedEndPoint(final UDDIUtilities.UDDIBindingImplementionInfo bindingImplInfo,
-                                          final UDDIServiceControl serviceControl,
-                                          final UDDITaskContext context,
-                                          final UDDIRegistry uddiRegistry) throws UDDITaskException {
-
-            final String endPoint = bindingImplInfo.getEndPoint();
-
-            boolean endPointValid = true;
-            if(endPoint == null || endPoint.trim().isEmpty()){
-                endPointValid = false;
-            }else{
-                try {
-                    new URL(endPoint);
-                } catch (MalformedURLException e) {
-                    endPointValid = false;
-                }
-            }
-
-            if(endPointValid && !serviceControl.getAccessPointUrl().equals(endPoint)){
-                //check if it's a gateway endpoint
-                if(UDDIUtilities.isGatewayUrl(endPoint, ServerConfig.getInstance().getHostname())){
-                    final String msg = "endPoint found which would route back to the gateway: " + endPoint+" for serviceKey: " + serviceControl.getUddiServiceKey();
-                    context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, msg);
-                    throw new UDDITaskException("Problem with endPoint found for serviceKey: " + serviceControl.getUddiServiceKey()+
-                            " for a bindingTemplate representing the wsdl:port '"+serviceControl.getWsdlPortName()+"'" +
-                            " from UDDIRegistry #(" + uddiRegistry.getOid()+"): " + msg);
-                }
-            }else if(!endPointValid){
-                logger.log(Level.INFO, "Found invalid URL from UDDI. Ignoring");
-            }
-
-            return endPoint;
-        }
-    }
-
     private static final class UnsubscribeUDDITask extends UDDITask {
         private static final Logger logger = Logger.getLogger( UnsubscribeUDDITask.class.getName() );
 
-        private final UDDIRegistryManager uddiRegistryManager;
-        private final UDDIHelper uddiHelper;
-        private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
+        private final SubscriptionUDDITaskFactory factory;
         private final long registryOid;
 
-        public UnsubscribeUDDITask( final UDDIRegistryManager uddiRegistryManager,
-                                    final UDDIHelper uddiHelper,
-                                    final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager,
+        public UnsubscribeUDDITask( final SubscriptionUDDITaskFactory factory,
                                     final long registryOid ) {
-            this.uddiRegistryManager = uddiRegistryManager;
-            this.uddiHelper = uddiHelper;
-            this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
+            this.factory = factory;
             this.registryOid = registryOid;
         }
 
@@ -550,11 +237,11 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         public void apply( final UDDITaskContext context ) {
             logger.info( "Unsubscribing from UDDI for registry "+registryOid+"." );
             try {
-                UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
+                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                    UDDIClient uddiClient = uddiHelper.newUDDIClient( uddiRegistry );
+                    UDDIClient uddiClient = factory.uddiHelper.newUDDIClient( uddiRegistry );
 
-                    UDDIRegistrySubscription uddiRegistrySubscription = uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
+                    UDDIRegistrySubscription uddiRegistrySubscription = factory.uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
                     if ( uddiRegistrySubscription != null ) {
                         final String subscriptionKey = uddiRegistrySubscription.getSubscriptionKey();
                         if ( subscriptionKey != null ) {
@@ -563,7 +250,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                             logger.log( Level.WARNING, "Missing subscription key for registry "+registryOid+", unsubscription not performed." );
                         }
 
-                        uddiRegistrySubscriptionManager.delete( uddiRegistrySubscription );
+                        factory.uddiRegistrySubscriptionManager.delete( uddiRegistrySubscription );
                     } else {
                         logger.log( Level.WARNING, "Cannot find subscription information for registry "+registryOid+", unsubscription not performed." );
                     }
@@ -624,20 +311,13 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private static final class SubscriptionPollUDDITask extends SubscriptionProcessingUDDITask {
         private static final Logger logger = Logger.getLogger( SubscriptionPollUDDITask.class.getName() );
 
-        private final UDDIRegistryManager uddiRegistryManager;
-        private final UDDIHelper uddiHelper;
-        private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
+        private final SubscriptionUDDITaskFactory factory;
         private final long registryOid;
 
-        SubscriptionPollUDDITask( final UDDIRegistryManager uddiRegistryManager,
-                                  final UDDIHelper uddiHelper,
-                                  final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager,
-                                  final UDDIServiceControlManager uddiServiceControlManager,
+        SubscriptionPollUDDITask( final SubscriptionUDDITaskFactory factory,
                                   final long registryOid ) {
-            super(logger,uddiServiceControlManager);
-            this.uddiRegistryManager = uddiRegistryManager;
-            this.uddiHelper = uddiHelper;
-            this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
+            super(logger,factory.uddiServiceControlManager);
+            this.factory = factory;
             this.registryOid = registryOid;
         }
 
@@ -645,11 +325,11 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         public void apply( final UDDITaskContext context ) {
             logger.fine( "Polling UDDI registry subscriptions." );
             try {
-                UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
+                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                    UDDIClient uddiClient = uddiHelper.newUDDIClient( uddiRegistry );
+                    UDDIClient uddiClient = factory.uddiHelper.newUDDIClient( uddiRegistry );
 
-                    UDDIRegistrySubscription uddiRegistrySubscription = uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
+                    UDDIRegistrySubscription uddiRegistrySubscription = factory.uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
                     if ( uddiRegistrySubscription != null ) {
                         final String subscriptionKey = uddiRegistrySubscription.getSubscriptionKey();
                         final long lastCheckTime = uddiRegistrySubscription.getSubscriptionCheckTime();
@@ -659,7 +339,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         processSubscriptionResults( context, uddiRegistrySubscription, results );
 
                         uddiRegistrySubscription.setSubscriptionCheckTime( newCheckTime );
-                        uddiRegistrySubscriptionManager.update( uddiRegistrySubscription );
+                        factory.uddiRegistrySubscriptionManager.update( uddiRegistrySubscription );
                     } else {
                         context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, "Missing subscription for registry "+uddiRegistry.getName()+"(#"+registryOid+").");
                     }
@@ -677,16 +357,13 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private static final class SubscriptionNotificationUDDITask extends SubscriptionProcessingUDDITask {
         private static final Logger logger = Logger.getLogger( SubscriptionNotificationUDDITask.class.getName() );
 
-        private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
-        private final UDDIServiceControlManager uddiServiceControlManager;
+        private final SubscriptionUDDITaskFactory factory;
         private final String message;
 
-        public SubscriptionNotificationUDDITask( final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager,
-                                                 final UDDIServiceControlManager uddiServiceControlManager,
+        public SubscriptionNotificationUDDITask( final SubscriptionUDDITaskFactory factory,
                                                  final String message ) {
-            super(logger,uddiServiceControlManager);
-            this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
-            this.uddiServiceControlManager = uddiServiceControlManager;
+            super(logger,factory.uddiServiceControlManager);
+            this.factory = factory;
             this.message = message;
         }
 
@@ -698,14 +375,14 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             try {
                 final UDDISubscriptionResults results = UDDISubscriptionResultFactory.buildResults( message );
                 subscriptionKey = results.getSubscriptionKey();
-                final Collection<UDDIRegistrySubscription> subscriptions = uddiRegistrySubscriptionManager.findBySubscriptionKey( subscriptionKey );
+                final Collection<UDDIRegistrySubscription> subscriptions = factory.uddiRegistrySubscriptionManager.findBySubscriptionKey( subscriptionKey );
 
                 UDDIRegistrySubscription subscription = null;
                 if ( subscriptions.size() > 1 ) {
                     // Then we have to look at the service keys to find which registry this is for.
                     outer:
                     for ( UDDISubscriptionResults.Result result : results.getResults() ) {
-                        Collection<UDDIServiceControl> controls = uddiServiceControlManager.findByUDDIServiceKey( result.getEntityKey() );
+                        Collection<UDDIServiceControl> controls = factory.uddiServiceControlManager.findByUDDIServiceKey( result.getEntityKey() );
                         for ( UDDIServiceControl control : controls ) {
                             for ( UDDIRegistrySubscription sub : subscriptions ) {
                                 if ( sub.getUddiRegistryOid() == control.getUddiRegistryOid() ) {
@@ -724,13 +401,285 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 if ( subscription != null ) {
                     processSubscriptionResults( context, subscription, results );
                     subscription.setSubscriptionNotifiedTime( results.getEndTime() ); //TODO check for missed notification(s) and poll?
-                    uddiRegistrySubscriptionManager.update( subscription );
+                    factory.uddiRegistrySubscriptionManager.update( subscription );
                 }
             } catch (ObjectModelException e) {
                 context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_NOTIFICATION_FAILED, e, "Database error when processing subscription for "+subscriptionKey+".");
             } catch (UDDIException ue) {
                 context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_NOTIFICATION_FAILED, ue, ExceptionUtils.getMessage(ue));
             }
+        }
+    }
+
+    private static final class BusinessServiceUpdateUDDITask extends UDDITask {
+        private static final Logger logger = Logger.getLogger( BusinessServiceUpdateUDDITask.class.getName() );
+
+        private final SubscriptionUDDITaskFactory factory;
+        private final String serviceKey;
+        private final long registryOid;
+        private final boolean isDeleted;
+
+        public BusinessServiceUpdateUDDITask( final SubscriptionUDDITaskFactory factory,
+                                              final String serviceKey,
+                                              final long registryOid,
+                                              final boolean deleted ) {
+            this.factory = factory;
+            this.serviceKey = serviceKey;
+            this.registryOid = registryOid;
+            this.isDeleted = deleted;
+        }
+
+        @Override
+        public void apply(UDDITaskContext context) throws UDDITaskException {
+            //may just be url update or may be entire WSDL
+            //if just URL - download the accessPoint and see what it's value is
+            try {
+                //each result is for a unique PublishedService. More than one results is when more than one
+                //published service is monitoring the same WSDL in UDDI
+                final Collection<UDDIServiceControl> allApplicableServiceControls =
+                        factory.uddiServiceControlManager.findByUDDIRegistryAndServiceKey(registryOid, serviceKey, null);
+
+                if ( isDeleted ) {
+                    logger.log(Level.INFO, "Service with key: " + serviceKey +
+                            " has been deleted from UDDI Registry #(" + registryOid + "). Removing record of UDDI BusinessService.");
+                    //will not ignore reality, if we know the service is gone from uddi, then no point having a record of it
+
+                    boolean deleted = false;
+                    for(final UDDIServiceControl serviceControl: allApplicableServiceControls) {
+                        deleted = true;
+                        factory.uddiServiceControlManager.delete(serviceControl);
+                        if (!serviceControl.isUnderUddiControl() || !serviceControl.isMonitoringEnabled()) continue;
+
+                        if(serviceControl.isDisableServiceOnChange()) {
+                            //take correct action -disable service if set up
+                            disableService(context, serviceControl);
+                        }
+                    }
+
+                    if ( deleted ) {
+                        context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_DELETED, serviceKey);
+                    }
+                } else {
+                    //Get the last modified time stamp
+                    final UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey(registryOid);
+                    if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
+                        final UDDIClient uddiClient = factory.uddiHelper.newUDDIClient(uddiRegistry);
+                        final long uddiModifiedTime;
+                        try {
+                            UDDIOperationalInfo operationalInfo = uddiClient.getOperationalInfo(serviceKey);
+                            uddiModifiedTime = operationalInfo.getModifiedIncludingChildrenTime();
+                        } catch (UDDIException e) {
+                            context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
+                                    "Could not get operation information for serviceKey: " + serviceKey);
+                            throw new UDDITaskException("Cannot find Operational Information for serviceKey: "
+                                    + serviceKey + " from UDDIRegistry #(" + uddiRegistry.getOid() + ")");
+                        }
+
+                        for(final UDDIServiceControl serviceControl: allApplicableServiceControls) {
+                            if (!serviceControl.isUnderUddiControl() || !serviceControl.isMonitoringEnabled()) continue;
+
+                            final PublishedService ps =
+                                    factory.serviceManager.findByPrimaryKey(serviceControl.getPublishedServiceOid());
+                            final UDDIServiceControlMonitorRuntime monitorRuntime =
+                                    factory.uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControl.getOid());
+                            if (monitorRuntime == null) {
+                                //this should never happen, (its a coding error managing UDDIServiceControl entities),
+                                // if it does we will just create a record for it. If the db allows it, then proceed
+                                final UDDIServiceControlMonitorRuntime monitorRuntimeNew = new UDDIServiceControlMonitorRuntime(serviceControl.getOid(), uddiModifiedTime);
+                                factory.uddiServiceControlMonitorRuntimeManager.save(monitorRuntimeNew);
+                                logger.log(Level.WARNING, "Recieved notification for service for which we had no persisted runtime " +
+                                        "information. Created record for serviceKey: " + serviceControl.getUddiServiceKey() +
+                                        " from UDDIRegistry #(" + uddiRegistry.getOid() + ")");
+                            } else {
+                                final long lastKnownModificationTime = monitorRuntime.getLastUDDIModifiedTimeStamp();
+                                if (uddiModifiedTime <= lastKnownModificationTime) {
+                                    logger.log(Level.FINE, "Recieved duplicate notification for serviceKey: " + serviceControl.getUddiServiceKey() +
+                                            " from UDDIRegistry #(" + uddiRegistry.getOid() + ")");
+                                    return;
+                                }
+                            }
+
+                            //Now we start processing the update
+                            UDDIUtilities.UDDIBindingImplementionInfo bindingImplInfo = null;
+                            try {
+                                bindingImplInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
+                                        serviceControl.getUddiServiceKey(), serviceControl.getWsdlPortName(), serviceControl.getWsdlPortBinding());
+                            } catch (UDDIException e) {
+                                context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
+                                        "Could not find UDDI bindingTemplate implement wsdl:binding "
+                                                + serviceControl.getWsdlPortBinding() + " for serviceKey: " + serviceControl.getUddiServiceKey());
+                            }
+
+                            if ( bindingImplInfo == null ) {
+                                context.logAndAudit(
+                                        SystemMessages.UDDI_NOTIFICATION_ENDPOINT_NOT_FOUND,
+                                        serviceKey,
+                                        serviceControl.getWsdlPortName(),
+                                        uddiRegistry.getName()+" (#"+uddiRegistry.getOid()+")" );
+                                continue;
+                            }
+
+                            //only want changes to the accessPoint
+                            //we do this regardless of configuration. UDDI is the authorative source of info for the endPoint
+                            boolean serviceUpdated = false;
+                            boolean updated = false;
+                            final String endPoint = getUpdatedEndPoint(bindingImplInfo, serviceControl, context, uddiRegistry);
+                            if ( endPoint != null && (serviceControl.getAccessPointUrl()==null || !serviceControl.getAccessPointUrl().equals( endPoint ))) {
+                                //now we can update our records
+                                //if we need to extract a url from the wsdl see UDDIUtilities.extractEndPointFromWsdl
+                                updated = true;
+                                serviceUpdated = true;
+                                ps.setDefaultRoutingUrl(endPoint);
+                                serviceControl.setAccessPointUrl(endPoint);
+                                context.logAndAudit(
+                                        SystemMessages.UDDI_NOTIFICATION_ENDPOINT_UPDATED,
+                                        endPoint,
+                                        serviceKey,
+                                        serviceControl.getWsdlPortName(),
+                                        uddiRegistry.getName()+" (#"+uddiRegistry.getOid()+")");
+                            }
+
+                            //do we need to update our serviceControl record?
+                            if(!bindingImplInfo.getImplementingWsdlPort().equals(serviceControl.getWsdlPortName())){
+                                updated = true;
+                                serviceControl.setWsdlPortName(bindingImplInfo.getImplementingWsdlPort());
+                            }
+
+                            if ( updated ) {
+                                factory.uddiServiceControlManager.update(serviceControl);
+                            }
+
+                            //if we didn't accept the endpoint above, we can still update our wsdl, which makes all available
+                            //endpoints available on the client - manually
+                            if ( serviceControl.isUpdateWsdlOnChange() || serviceControl.isDisableServiceOnChange() ) {
+                                // Validate url
+                                String wsdlUrlStr = bindingImplInfo.getImplementingWsdlUrl();
+                                try {
+                                    new URL(wsdlUrlStr);
+                                } catch (MalformedURLException e) {
+                                    final String msg = "WSDL URL obtained from UDDI is not a valid URL (" +
+                                            bindingImplInfo.getImplementingWsdlUrl() + ") for serviceKey: " +
+                                            serviceControl.getUddiServiceKey()+" from UDDI Registry #(" + serviceControl.getUddiRegistryOid()  +")";
+                                    context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
+                                            msg);
+                                    throw new UDDITaskException(msg);
+                                }
+
+                                // Fetch wsdl
+                                final SimpleHttpClient httpClient = new SimpleHttpClient(factory.httpClientFactory.createHttpClient(), 10*1024*1024);
+                                try {
+                                    final RemoteEntityResolver resolver = new RemoteEntityResolver( httpClient );
+                                    final DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
+                                    final Map<String,String> contents = processor.processDocument( wsdlUrlStr, new DocumentReferenceProcessor.ResourceResolver(){
+                                        @Override
+                                        public String resolve( final String resourceUrl ) throws IOException {
+                                            String content = resolver.fetchResourceFromUrl( resourceUrl );
+                                            return ResourceTrackingWSDLLocator.processResource(resourceUrl, content, resolver, false, true);
+                                        }
+                                    } );
+
+                                    final Collection<ResourceTrackingWSDLLocator.WSDLResource> sourceDocs =
+                                            ResourceTrackingWSDLLocator.toWSDLResources(wsdlUrlStr, contents, false, false, false);
+
+                                    final List<ServiceDocument> serviceDocuments = ServiceDocumentWsdlStrategy.fromWsdlResources( sourceDocs );
+
+                                    // Check if WSDL has changed
+                                    Collection<ServiceDocument> existingServiceDocuments = factory.serviceDocumentManager.findByServiceId(ps.getOid());
+                                    Wsdl wsdl = ServiceDocumentWsdlStrategy.parseWsdl( ps, existingServiceDocuments );
+                                    Wsdl newWsdl = ServiceDocumentWsdlStrategy.parseWsdl( wsdlUrlStr ,contents.get(wsdlUrlStr), existingServiceDocuments );
+
+                                    if ( !wsdl.getHash().equals( newWsdl.getHash() ) ) {
+                                        serviceUpdated = true;
+
+                                        // Disable if so configured
+                                        if ( serviceControl.isDisableServiceOnChange() ) {
+                                            ps.setDisabled( true );
+                                            context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_DISABLED, ps.getId());
+                                        }
+
+                                        if ( serviceControl.isUpdateWsdlOnChange() ) {
+                                            //if we need to extract a url from the wsdl see UDDIUtilities.extractEndPointFromWsdl
+                                            ps.setWsdlUrl( wsdlUrlStr );
+                                            ps.setWsdlXml( contents.get(wsdlUrlStr) );
+                                            for (ServiceDocument serviceDocument : existingServiceDocuments) {
+                                                factory.serviceDocumentManager.delete(serviceDocument);
+                                            }
+                                            for (ServiceDocument serviceDocument : serviceDocuments) {
+                                                serviceDocument.setServiceId(ps.getOid());
+                                                factory.serviceDocumentManager.save(serviceDocument);
+                                            }
+
+                                            context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_UPDATE, ps.displayName() + " (#"+ps.getOid()+")" );
+                                        }
+                                    } else {
+                                        logger.info( "WSDL is not updated for business service '"+serviceKey+"'." );
+                                    }
+                                } catch ( IOException ioe ) {
+                                    context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ioe, ps.displayName() + " (#"+ps.getOid()+")" );
+                                } catch ( WSDLException we ) {
+                                    context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, we, ps.displayName() + " (#"+ps.getOid()+")" );
+                                }
+                            }
+
+                            if ( serviceUpdated ) {
+                                factory.serviceManager.update(ps);
+                            }
+
+                            UDDIServiceControlMonitorRuntime monitorRuntimeToUpdate = factory.uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControl.getOid());
+                            monitorRuntimeToUpdate.setLastUDDIModifiedTimeStamp(uddiModifiedTime);
+                            factory.uddiServiceControlMonitorRuntimeManager.update(monitorRuntimeToUpdate);
+                        }
+                    }
+                }
+            } catch (ObjectModelException e) {
+                context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
+                        "Database error when processing notification for registry #"+registryOid+" and serviceKey: " + serviceKey+".");
+            }
+        }
+
+        private void disableService(UDDITaskContext context, UDDIServiceControl serviceControl) throws FindException, UpdateException {
+            final PublishedService ps = factory.serviceManager.findByPrimaryKey(serviceControl.getPublishedServiceOid());
+            ps.setDisabled(true);
+            factory.serviceManager.update(ps);
+            context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_DISABLED, ps.getOidAsLong().toString());
+        }
+
+        /**
+         * Get the endpoint from UDDI for this update. All auditing, logging and throwing is done here.
+         * @return String endpoint. Null if not found
+         */
+        private String getUpdatedEndPoint(final UDDIUtilities.UDDIBindingImplementionInfo bindingImplInfo,
+                                          final UDDIServiceControl serviceControl,
+                                          final UDDITaskContext context,
+                                          final UDDIRegistry uddiRegistry) throws UDDITaskException {
+
+            final String endPoint = bindingImplInfo.getEndPoint();
+
+            boolean endPointValid = true;
+            if(endPoint == null || endPoint.trim().isEmpty()){
+                endPointValid = false;
+            }else{
+                try {
+                    new URL(endPoint);
+                } catch (MalformedURLException e) {
+                    endPointValid = false;
+                }
+            }
+
+            if(endPointValid && !serviceControl.getAccessPointUrl().equals(endPoint)){
+                //check if it's a gateway endpoint
+                if(UDDIUtilities.isGatewayUrl(endPoint, ServerConfig.getInstance().getHostname())){
+                    final String msg = "endPoint found which would route back to the gateway: " + endPoint+" for serviceKey: " + serviceControl.getUddiServiceKey();
+                    context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, msg);
+                    throw new UDDITaskException("Problem with endPoint found for serviceKey: " + serviceControl.getUddiServiceKey()+
+                            " for a bindingTemplate representing the wsdl:port '"+serviceControl.getWsdlPortName()+"'" +
+                            " from UDDIRegistry #(" + uddiRegistry.getOid()+"): " + msg);
+                }
+            }else if(!endPointValid){
+                logger.log(Level.INFO, "Found invalid URL from UDDI. Ignoring");
+            }
+
+            return endPoint;
         }
     }
 

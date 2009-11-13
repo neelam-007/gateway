@@ -37,10 +37,7 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
         if ( event instanceof WsPolicyUDDIEvent ) {
             WsPolicyUDDIEvent wsPolicyEvent = (WsPolicyUDDIEvent) event;
             task = new WsPolicyPublishUDDITask(
-                    uddiRegistryManager,
-                    uddiHelper,
-                    uddiTemplateManager,
-                    uddiBusinessServiceStatusManager,
+                    this,
                     wsPolicyEvent.getRegistryOid() );
         }
 
@@ -64,21 +61,12 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
         private static final String DEFAULT_NAME = "{0}";
         private static final String DEFAULT_DESCRIPTION = "Associated Policy";
 
-        private final UDDIRegistryManager uddiRegistryManager;
-        private final UDDIHelper uddiHelper;
-        private final UDDITemplateManager uddiTemplateManager;
-        private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
+        private final WsPolicyAttachmentTaskFactory factory;
         private final long registryOid;
 
-        WsPolicyPublishUDDITask( final UDDIRegistryManager uddiRegistryManager,
-                                 final UDDIHelper uddiHelper,
-                                 final UDDITemplateManager uddiTemplateManager,
-                                 final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager,
+        WsPolicyPublishUDDITask( final WsPolicyAttachmentTaskFactory factory,
                                  final long registryOid ) {
-            this.uddiRegistryManager = uddiRegistryManager;
-            this.uddiHelper = uddiHelper;
-            this.uddiTemplateManager = uddiTemplateManager;
-            this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
+            this.factory = factory;
             this.registryOid = registryOid;
         }
 
@@ -86,20 +74,20 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
         public void apply( final UDDITaskContext context ) {
             logger.fine( "Updating ws-policy attachments in UDDI for registry (#"+registryOid+")" );
             try {
-                UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey( registryOid );
+                UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey( registryOid );
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
-                    final UDDITemplate template = uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
+                    final UDDITemplate template = factory.uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
                     if ( template == null ) {
                         throw new UDDIException("Template not found for UDDI registry type '"+uddiRegistry.getUddiRegistryType()+"'.");
                     }
 
                     final Collection<UDDIBusinessServiceStatus> toPublish =
-                            uddiBusinessServiceStatusManager.findByRegistryAndWsPolicyPublishStatus( registryOid, UDDIBusinessServiceStatus.Status.PUBLISH );
+                            factory.uddiBusinessServiceStatusManager.findByRegistryAndWsPolicyPublishStatus( registryOid, UDDIBusinessServiceStatus.Status.PUBLISH );
 
                     final Collection<UDDIBusinessServiceStatus> toDelete =
-                            uddiBusinessServiceStatusManager.findByRegistryAndWsPolicyPublishStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
+                            factory.uddiBusinessServiceStatusManager.findByRegistryAndWsPolicyPublishStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
 
-                    final UDDIClient client = uddiHelper.newUDDIClient( uddiRegistry );
+                    final UDDIClient client = factory.uddiHelper.newUDDIClient( uddiRegistry );
 
                     if ( !toPublish.isEmpty() || !toDelete.isEmpty() ) {
                         // authenticate early to avoid error for every service
@@ -139,7 +127,7 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
                         businessService.setUddiPolicyUrl( policyUrl );
                         businessService.setUddiPolicyPublishUrl( null );
                         businessService.setUddiPolicyTModelKey( tModelKey );
-                        uddiBusinessServiceStatusManager.update( businessService );
+                        factory.uddiBusinessServiceStatusManager.update( businessService );
                     }
 
                     for ( UDDIBusinessServiceStatus businessService : toDelete ) {
@@ -166,7 +154,7 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
                         businessService.setUddiPolicyStatus( UDDIBusinessServiceStatus.Status.NONE );
                         businessService.setUddiPolicyUrl( null );
                         businessService.setUddiPolicyTModelKey( null );
-                        uddiBusinessServiceStatusManager.update( businessService );
+                        factory.uddiBusinessServiceStatusManager.update( businessService );
                     }
                 } else {
                     logger.info( "Ignoring ws-policy event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );
