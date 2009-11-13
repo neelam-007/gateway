@@ -37,6 +37,7 @@ public class BuiltinVariables {
 
     public static final String SERVICE_SUFFIX_NAME = "name";
     public static final String SERVICE_SUFFIX_OID = "oid";
+    public static final String SERVICE_SUFFIX_ROUTINGURL = "defaultRoutingURL";
 
     @Deprecated
     public static final String SERVICE_SUFFIX_URL = "url";
@@ -127,6 +128,7 @@ public class BuiltinVariables {
         //which can have suffixes attached to it, unlike service.url which can have service.url.host etc...
         new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_NAME, false, false, null, false),
         new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_OID, false, false, null, false),
+        new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_ROUTINGURL, false, false, null, false),
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST, true, false, null, false, DataType.MESSAGE),
         new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE, true, false, null, false, DataType.MESSAGE),

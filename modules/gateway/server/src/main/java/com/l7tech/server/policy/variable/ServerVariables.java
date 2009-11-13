@@ -18,8 +18,10 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.wsdl.Operation;
+import javax.wsdl.WSDLException;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -309,6 +311,29 @@ public class ServerVariables {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
                 return context.getService().getId();
+            }
+        }),
+
+        new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_ROUTINGURL, new Getter() {
+            @Override
+            public Object get(String name, PolicyEnforcementContext context) {
+                String routingUrl = null;
+
+                try {
+                    routingUrl = context.getService().serviceUrl().toString();
+                } catch (WSDLException e) {
+                    logger.log(
+                            Level.WARNING,
+                            "Could not access default routing URL for service '"+context.getService().displayName()+"', due to '"+ExceptionUtils.getMessage(e)+"'.",
+                            ExceptionUtils.getDebugException(e));
+                } catch (MalformedURLException e) {
+                    logger.log(
+                            Level.WARNING,
+                            "Could not access default routing URL for service '"+context.getService().displayName()+"', due to '"+ExceptionUtils.getMessage(e)+"'.",
+                            ExceptionUtils.getDebugException(e));
+                }
+
+                return routingUrl;
             }
         }),
 

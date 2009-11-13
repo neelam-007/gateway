@@ -255,7 +255,11 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @throws MalformedURLException if the protected service URL could not be parsed
      */
     public synchronized URL serviceUrl() throws WSDLException, MalformedURLException {
-        if (!isSoap()) return null;
+        if ( defaultRoutingUrl != null && _serviceUrl == null ) {
+            _serviceUrl = new URL(defaultRoutingUrl);
+        }
+
+        if (!isSoap()) return _serviceUrl;
         if (_serviceUrl == null) {
             Port wsdlPort = wsdlPort();
             if (wsdlPort == null) return null;
@@ -267,12 +271,12 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
                 throw new WSDLException( SoapUtil.FC_SERVER, err);
             }
 
-            String baseURI = Wsdl.extractBaseURI(getWsdlUrl());
-            if(baseURI != null && baseURI.startsWith("http") || uri.startsWith("HTTP")) {
-                if(uri.startsWith("http") || uri.startsWith("HTTP")) {
+            String baseURI = getWsdlUrl();
+            if(baseURI != null && baseURI.toLowerCase().startsWith("http")) {
+                if(uri.toLowerCase().startsWith("http")) {
                     _serviceUrl = new URL(uri);
                 } else {
-                    _serviceUrl = new URL( baseURI + uri);
+                    _serviceUrl = new URL(new URL(baseURI),uri);
                 }
             } else {
                 _serviceUrl = new URL(uri);
@@ -403,6 +407,20 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      */
     public void setRoutingUri(String routingUri) {
         this.routingUri = routingUri;
+    }
+
+    /**
+     * Get the default routing URL for the service (If any).
+     *
+     * @return The default routing URL
+     * @see #serviceUrl() <code>serviceUrl</code>, which should be used to get the URL with fallback to WSDL endpoint
+     */
+    public String getDefaultRoutingUrl() {
+        return defaultRoutingUrl;
+    }
+
+    public void setDefaultRoutingUrl( final String defaultRoutingUrl ) {
+        this.defaultRoutingUrl = defaultRoutingUrl;
     }
 
     /**
@@ -549,6 +567,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     private boolean soap = true;
     private boolean internal = false;
     private String routingUri;
+    private String defaultRoutingUrl;
     private Set<HttpMethod> httpMethods = EnumSet.copyOf(METHODS_SOAP);
     private boolean laxResolution;
     private boolean wssProcessingEnabled = true;

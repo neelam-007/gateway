@@ -195,7 +195,7 @@ CREATE TABLE uddi_service_control (
   wsdl_service_name varchar(255) NOT NULL,
   wsdl_port_name varchar(255) NOT NULL,
   wsdl_port_binding varchar(255) NOT NULL,
-  access_point_url varchar(255) NOT NULL,
+  access_point_url varchar(4096) NOT NULL,
   under_uddi_control tinyint(1) NOT NULL DEFAULT 0,
   monitoring_enabled tinyint(1) NOT NULL DEFAULT 0,
   update_wsdl_on_change tinyint(1) NOT NULL DEFAULT 0,
@@ -267,6 +267,11 @@ CREATE TABLE cluster_master (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 INSERT INTO cluster_master (nodeid, touched_time, version) VALUES (NULL, 0, 0);
+
+--
+-- Add default routing url to published service
+--
+ALTER TABLE published_service ADD COLUMN default_routing_url varchar(4096);
 
 --
 -- Reenable FK at very end of script

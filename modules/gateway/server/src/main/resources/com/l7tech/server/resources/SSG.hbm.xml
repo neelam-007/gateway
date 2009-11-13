@@ -33,6 +33,7 @@
         <property name="soap" column="soap" type="boolean"/>
         <property name="internal" column="internal" type="boolean"/>
         <property name="routingUri" column="routing_uri" type="string"/>
+        <property name="defaultRoutingUrl" column="default_routing_url" type="string"/>
         <property name="httpMethods" column="http_methods" type="http_methods_type"/>
         <property name="laxResolution" column="lax_resolution" type="boolean"/>
         <property name="wssProcessingEnabled" column="wss_processing" type="boolean"/>

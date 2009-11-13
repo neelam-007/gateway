@@ -722,6 +722,12 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
 
+        if ( wsdlUnderUDDIControlCheckBox.isSelected() && uddiServiceControl != null ) {
+            subject.setDefaultRoutingUrl( uddiServiceControl.getAccessPointUrl() );
+        } else {
+            subject.setDefaultRoutingUrl( null );
+        }
+
         //attempt to save the changes
         try {
             Collection<ServiceDocument> documents = getServiceDocuments();
