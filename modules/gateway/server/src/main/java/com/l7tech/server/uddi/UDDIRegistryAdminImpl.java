@@ -162,7 +162,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     public void deleteGatewayWsdlFromUDDI(final UDDIProxiedServiceInfo proxiedServiceInfo)
             throws FindException, UDDIRegistryNotEnabledException, UpdateException, DeleteException {
 
-        if(proxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY)
+        if(proxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY &&
+                proxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.OVERWRITE)
             throw new IllegalStateException("Cannot delete UDDIProxiedServiecInfo as gateway WSDL was not published.");
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
@@ -304,14 +305,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(serviceControl.isUnderUddiControl() && removeOthers)
             throw new SaveException("Published service with id #("+publishedServiceOid+") is not under UDDI control so cannot remove existing bindingTemplates");
 
-        final String wsdlHash;
-        try {
-            wsdlHash = service.parsedWsdl().getHash();
-        } catch (Exception e) {
-            final String msg = "Cannot get generate hash of WSDL";
-            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            throw new RuntimeException(msg, ExceptionUtils.getDebugException(e));
-        }
+        final String wsdlHash = getWsdlHash(service);
 
         final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getEndPointPublishInfo(service.getOid(),
                 uddiRegistry.getOid(), serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(),
@@ -321,6 +315,30 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
         uddiPublishStatusManager.save(newStatus);
         //the save event is picked up by the UDDICoordinator, which does the UDDI work
+    }
+
+    @Override
+    public void overwriteBusinessServiceInUDDI(long publishedServiceOid, final boolean updateWhenGatewayWsdlChanges)
+            throws SaveException, FindException {
+        final PublishedService publishedService = serviceCache.getCachedService(publishedServiceOid);
+        if(publishedService == null) throw new IllegalArgumentException("No PublishedService found for #(" +publishedServiceOid+")" );
+
+        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(publishedService.getOid());
+        if(serviceControl == null)
+            throw new SaveException("Cannot overwrite service as there is no record of the BusinessService in UDDI from which the Published Service was created");
+
+        final String wsdlHash = getWsdlHash(publishedService);
+
+        final UDDIProxiedServiceInfo uddiProxiedServiceInfo =
+                UDDIProxiedServiceInfo.getOverwriteProxyServicePublishInfo(publishedService.getOid(),
+                        serviceControl.getUddiRegistryOid(), serviceControl.getUddiBusinessKey(),
+                        serviceControl.getUddiBusinessName(), wsdlHash, updateWhenGatewayWsdlChanges);
+
+        final long oid = uddiProxiedServiceInfoManager.save(uddiProxiedServiceInfo);
+        final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
+        uddiPublishStatusManager.save(newStatus);
+        //the save event is picked up by the UDDICoordinator, which does the UDDI work
+
     }
 
     @Override
@@ -343,14 +361,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final PublishedService service = serviceCache.getCachedService(publishedServiceOid);
         if(service == null) throw new SaveException("PublishedService with id #(" + publishedServiceOid + ") was not found");
 
-        final String wsdlHash;
-        try {
-            wsdlHash = service.parsedWsdl().getHash();
-        } catch (Exception e) {
-            final String msg = "Cannot get generate hash of WSDL";
-            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            throw new RuntimeException(msg, ExceptionUtils.getDebugException(e));
-        }
+        final String wsdlHash = getWsdlHash(service);
 
         final UDDIProxiedServiceInfo uddiProxiedServiceInfo = UDDIProxiedServiceInfo.getProxyServicePublishInfo(service.getOid(),
                 uddiRegistry.getOid(), uddiBusinessKey, uddiBusinessName,
@@ -360,6 +371,18 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
         uddiPublishStatusManager.save(newStatus);
         //the save event is picked up by the UDDICoordinator, which does the UDDI work
+    }
+
+    private String getWsdlHash(PublishedService service) {
+        final String wsdlHash;
+        try {
+            wsdlHash = service.parsedWsdl().getHash();
+        } catch (Exception e) {
+            final String msg = "Cannot get generate hash of WSDL";
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+            throw new RuntimeException(msg, ExceptionUtils.getDebugException(e));
+        }
+        return wsdlHash;
     }
 
     @Override

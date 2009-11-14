@@ -30,8 +30,11 @@ public class WsdlToUDDIModelConverter {
     private static Logger logger = Logger.getLogger(WsdlToUDDIModelConverter.class.getName());
     protected static final String LANAGUAGE = "en-US";
     protected static final String UDDI_WSDL_CATEGORIZATION_PROTOCOL = "uddi:uddi.org:wsdl:categorization:protocol";
+    protected static final String SOAP_1_2_V3 = "uuid:soap12";
     protected static final String SOAP_PROTOCOL_V3 = "uddi:uddi.org:protocol:soap"; //v2 = uuid:aa254698-93de-3870-8df3-a5c075d64a0e
+    protected static final String SOAP_PROTOCOL_V2 = "uuid:aa254698-93de-3870-8df3-a5c075d64a0e";
     protected static final String HTTP_TRANSPORT_V3 = "uddi:uddi.org:transport:http"; //v2 = uuid:68DE9E80-AD09-469D-8A37-088422BFBC36
+    protected static final String HTTP_TRANSPORT_V2 = "uuid:68DE9E80-AD09-469D-8A37-088422BFBC36";
     protected static final String WSDL_INTERFACE = "wsdlInterface";
     public static final String UDDI_WSDL_TYPES = "uddi:uddi.org:wsdl:types";
     public static final String UDDI_XML_NAMESPACE = "uddi:uddi.org:xml:namespace";
@@ -41,15 +44,14 @@ public class WsdlToUDDIModelConverter {
     protected static final String UDDI_XML_LOCALNAME = "uddi:uddi.org:xml:localname";
     protected static final String WSDL_BINDING_INSTANCE_DESCRIPTION = "the wsdl:binding that this wsdl:port implements";
     
-    public static final String PORT_TMODEL_IDENTIFIER = "_PortType";
-    public static final String BINDING_TMODEL_IDENTIFIER = "_Binding";
+    protected static final String PORT_TMODEL_IDENTIFIER = "_PortType";
+    protected static final String BINDING_TMODEL_IDENTIFIER = "_Binding";
 
     private final Wsdl wsdl;
     private final String wsdlURL;
     private final String gatewayURL;
     private final long serviceOid;
     private Map<String, String> serviceNameToWsdlServiceNameMap;
-    //using a pair as don't want to use BusinessService as a key in a map
     private List<Pair<BusinessService, Map<String, TModel>>> servicesAndDependentTModels;
 
     /**
@@ -191,7 +193,7 @@ public class WsdlToUDDIModelConverter {
 
         KeyedReference localNameRef = new KeyedReference();
         localNameRef.setKeyName("service local name");
-        localNameRef.setKeyValue(localName);  //this is ok to use the Layer7 name, allowed to be the name of the service
+        localNameRef.setKeyValue(serviceName);  //this cannot be the layer7 name, this must be the name of the wsdl:service
         localNameRef.setTModelKey(UDDI_XML_LOCALNAME);
         categoryBag.getKeyedReference().add(localNameRef);
 
@@ -246,6 +248,8 @@ public class WsdlToUDDIModelConverter {
 
         //For v3, we don't care about what type of element represents the endPoint e.g. whether it's soap:address
         //soap12:address or http:addresss, as they all represent an endpoint.
+        //TODO [Donal] we do care. We should not say we accept a protocol / transport which we do not
+        //Using a WSDL implies a SOAP request
         AccessPoint accessPoint = new AccessPoint();
         accessPoint.setUseType("endPoint");
         accessPoint.setValue(gatewayURL);

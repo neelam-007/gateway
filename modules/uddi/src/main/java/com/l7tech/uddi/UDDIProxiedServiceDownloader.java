@@ -36,7 +36,7 @@ public class UDDIProxiedServiceDownloader {//TODO [Donal] rename to be UDDIBusin
      *
      * @param serviceKeys Set String of serviceKeys to download
      * @return Pair of a List of Business Services and a Map of tModelKeys to TModels, which the Business Services are
-     * dependant apon. Neverl null. Neither left or right are ever null either.
+     * dependant apon. Never null. Neither left or right are ever null either.
      * @throws UDDIException any problems searching the UDDI Registry
      */
     public List<Pair<BusinessService, Map<String, TModel>>> getBusinessServiceModels(Set<String> serviceKeys) throws UDDIException {
@@ -44,6 +44,7 @@ public class UDDIProxiedServiceDownloader {//TODO [Donal] rename to be UDDIBusin
         final List<Pair<BusinessService, Map<String, TModel>>> servicesToDependentTModels =
                 new ArrayList<Pair<BusinessService, Map<String, TModel>>>();
 
+        //TODO [Donal] handle the fact that a key may not exist, and this throws a specific type of exception - change to 1 by 1 in try / catch
         List<BusinessService> businessServices = uddiClient.getBusinessServices(serviceKeys);
 
         for(final BusinessService businessService: businessServices){

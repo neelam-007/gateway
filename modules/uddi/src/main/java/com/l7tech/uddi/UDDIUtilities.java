@@ -50,6 +50,11 @@ public class UDDIUtilities {
             TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
             List<TModelInstanceInfo> tModelInstanceInfos = tModelInstanceDetails.getTModelInstanceInfo();
             for (TModelInstanceInfo tModelInstanceInfo : tModelInstanceInfos) {
+                //it's possible we have bindingTemplates which already exist. if the referenced tModelKey
+                //does not reference a placeholder, then do not process
+                if(!tModelInstanceInfo.getTModelKey().endsWith(WsdlToUDDIModelConverter.BINDING_TMODEL_IDENTIFIER) &&
+                        !tModelInstanceInfo.getTModelKey().endsWith(WsdlToUDDIModelConverter.PORT_TMODEL_IDENTIFIER)) continue;
+
                 final TModel tModel = dependentTModels.get(tModelInstanceInfo.getTModelKey());
                 tModelInstanceInfo.setTModelKey(tModel.getTModelKey());
             }
@@ -78,7 +83,7 @@ public class UDDIUtilities {
                 if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_PORTTYPEREFERENCE))
                     continue;
                 final TModel publishedTModel = dependentTModels.get(keyedReference.getKeyValue());
-                keyedReference.setKeyValue(publishedTModel.getTModelKey());
+                keyedReference.setKeyValue(publishedTModel.getTModelKey());      //todo put in break after this
             }
         }
     }

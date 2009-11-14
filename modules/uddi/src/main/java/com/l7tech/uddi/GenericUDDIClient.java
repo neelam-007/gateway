@@ -265,6 +265,21 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
+    public void updateBusinessService(BusinessService businessService) throws UDDIException {
+        final SaveService saveService = new SaveService();
+        saveService.setAuthInfo(getAuthToken());
+        saveService.getBusinessService().add(businessService);
+        try {
+            getPublishPort().saveService(saveService);
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error getting business service", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error getting business service", e);
+        }
+
+    }
+
+    @Override
     public void deleteTModel(Set<String> tModelKeys) throws UDDIException {
         if(tModelKeys == null) throw new IllegalArgumentException("tModelKeys cannot be null or empty");
         if(tModelKeys.isEmpty()){

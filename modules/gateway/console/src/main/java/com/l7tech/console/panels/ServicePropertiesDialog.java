@@ -475,7 +475,7 @@ public class ServicePropertiesDialog extends JDialog {
         }else{
             clearButton.setEnabled(canUpdate);
 
-            if(uddiServiceControl.isHasHadEndpointRemoved()){
+            if(uddiServiceControl.isHasBeenOverwritten()){
                 wsdlUnderUDDIControlCheckBox.setEnabled(false);
             }else{
                 wsdlUnderUDDIControlCheckBox.setEnabled(canUpdate);

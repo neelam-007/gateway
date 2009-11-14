@@ -269,7 +269,6 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
      * via the publish end point feature in the 'Publish' tab, then the service can never be under uddi control
      * again, as we know that the read endpoints have been deleted, so there is nothing to monitor. We could
      * publish metrics still to it, but that is not currently supported
-     * @return
      */
     @Column(name = "has_had_endpoints_removed")
     public boolean isHasHadEndpointRemoved() {
@@ -278,6 +277,19 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
 
     public void setHasHadEndpointRemoved(boolean hasHadEndpointRemoved) {
         this.hasHadEndpointRemoved = hasHadEndpointRemoved;
+    }
+
+    /**
+     * If a business service created from UDDI has had the 'overwrite service' feature used, then this is a record
+     * of it. When this happens we can never monitor the service again as it will route back to the SSG.
+     */
+    @Column(name = "has_been_overwritten")
+    public boolean isHasBeenOverwritten() {
+        return hasBeenOverwritten;
+    }
+
+    public void setHasBeenOverwritten(boolean hasBeenOverwritten) {
+        this.hasBeenOverwritten = hasBeenOverwritten;
     }
 
     @Override
@@ -308,4 +320,5 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
     private boolean publishWsPolicyFull;
     private boolean publishWsPolicyInlined;
     private boolean hasHadEndpointRemoved;
+    private boolean hasBeenOverwritten;
 }

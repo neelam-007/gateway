@@ -72,4 +72,11 @@ interface JaxWsUDDIClient {
      */
     BusinessService getBusinessService(final String serviceKey) throws UDDIException;
 
+    /**
+     * Update an existing BusinessService. Simply save it as it is
+     * @param businessService
+     * @throws UDDIException
+     */
+    void updateBusinessService(final BusinessService businessService) throws UDDIException;
+
 }

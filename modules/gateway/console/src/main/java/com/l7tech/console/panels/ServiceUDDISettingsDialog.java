@@ -256,6 +256,9 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     setLabelStatus(bindingTemplateStatusLabel);
                     break;
                 case OVERWRITE:
+                    overwriteExistingBusinessServiceWithRadioButton.setSelected(true);
+                    updateWhenGatewayWSDLCheckBoxOverwrite.setSelected(uddiProxyServiceInfo.isUpdateProxyOnLocalChange());
+                    setLabelStatus(overwriteStatusLabel);
                     break;
             }
 
@@ -373,6 +376,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
             final boolean overwritePublished = uddiProxyServiceInfo != null &&
                     uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE;
             enableDisablePublishOverwriteControls(!overwritePublished);
+            updateWhenGatewayWSDLCheckBoxOverwrite.setEnabled(true);
         } else if(dontPublishRadioButton.isSelected()){
             //enable all applicable radio buttons
             if(uddiProxyServiceInfo != null){
@@ -460,8 +464,8 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     private void enableDisablePublishOverwriteControls(boolean enable){
         //overwrite
-        overwriteExistingBusinessServiceWithRadioButton.setEnabled(false);//todo change when implemented
-        updateWhenGatewayWSDLCheckBoxOverwrite.setEnabled(false); //todo change when implemented
+        overwriteExistingBusinessServiceWithRadioButton.setEnabled(enable);
+        updateWhenGatewayWSDLCheckBoxOverwrite.setEnabled(enable); 
     }
 
     /**
@@ -511,7 +515,38 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 return publishEndpointToBusinessService();
             }
         }else if(overwriteExistingBusinessServiceWithRadioButton.isSelected()){
+            if(uddiProxyServiceInfo == null){
+                return overwriteExistingService();
+            }else {
+                //update if the check box's value has changed
+                if(uddiProxyServiceInfo.isUpdateProxyOnLocalChange() != updateWhenGatewayWSDLCheckBoxOverwrite.isSelected() ||
+                   uddiProxyServiceInfo.isMetricsEnabled() != isProxyMetricsEnabled() ||
+                   publishWsPolicySettingsChanged() ){
+                    uddiProxyServiceInfo.setUpdateProxyOnLocalChange(updateWhenGatewayWSDLCheckBoxOverwrite.isSelected());
+                    uddiProxyServiceInfo.setMetricsEnabled(isProxyMetricsEnabled());
+                    if ( isProxyPublishWsPolicyEnabled() ) {
+                        uddiProxyServiceInfo.setPublishWsPolicyEnabled( true );
+                        uddiProxyServiceInfo.setPublishWsPolicyFull( publishFullPolicyCheckBox.isSelected() );
+                        uddiProxyServiceInfo.setPublishWsPolicyInlined( publishFullPolicyCheckBox.isSelected() && inlinePolicyIncludesCheckBox.isSelected() );
+                    } else {
+                        uddiProxyServiceInfo.setPublishWsPolicyEnabled( false );
+                        uddiProxyServiceInfo.setPublishWsPolicyFull( false );
+                        uddiProxyServiceInfo.setPublishWsPolicyInlined( false );
+                    }
 
+                    try {
+                        uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyServiceInfo);
+                    } catch (UpdateException e) {
+                        logger.log(Level.WARNING, "Problem updating UDDIProxiedService: " + e.getMessage());
+                        DialogDisplayer.showMessageDialog(this, "Problem updating Gateway: " + e.getMessage()
+                                , "Problem updating", JOptionPane.ERROR_MESSAGE, null);
+                    } catch (FindException e) {
+                        logger.log(Level.WARNING, "Problem finding UDDIProxiedService: " + e.getMessage());
+                        DialogDisplayer.showMessageDialog(this, "Problem finding UDDIProxiedService: " + e.getMessage()
+                                , "Problem finding", JOptionPane.ERROR_MESSAGE, null);
+                    }
+                }
+            }
         } else if(dontPublishRadioButton.isSelected()){
             if(uddiProxyServiceInfo != null){
                 UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
@@ -533,7 +568,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         removeUDDIProxiedEndpoint();
                         break;
                     case OVERWRITE:
-                        //todo let user know we cannot undo, we will just delete from UDDI
+                        removeUDDIOverwrittenProxiedService();
                         break;
                 }
             }
@@ -580,6 +615,31 @@ public class ServiceUDDISettingsDialog extends JDialog {
                                 final String msg = "Problem deleting pubished Gateway endpoint from UDDI: " + ExceptionUtils.getMessage(ex);
                                 logger.log(Level.WARNING, msg);
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, msg
+                                        , "Error deleting from UDDI", JOptionPane.ERROR_MESSAGE, null);
+                            }
+                        }
+                    }
+                });
+    }
+
+    private void removeUDDIOverwrittenProxiedService(){
+        DialogDisplayer.showConfirmDialog(this,
+                                                   "Remove overwritten BusinessService from UDDI Registry?",
+                                                   "Confirm Removal from UDDI",
+                                                   JOptionPane.YES_NO_OPTION,
+                                                   JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.YES_OPTION){
+                            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+                            try {
+                                uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
+                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
+                                        "Task to remove overwritten BusinessService from from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+
+                            } catch (Exception ex) {
+                                logger.log(Level.WARNING, "Problem deleting overwritten BusinessService UDDI: " + ex.getMessage());
+                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, "Problem deleting overwritten BusinessService from UDDI Registry: " + ex.getMessage()
                                         , "Error deleting from UDDI", JOptionPane.ERROR_MESSAGE, null);
                             }
                         }
@@ -637,6 +697,35 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         }
                     }
                 });
+    }
+
+    private boolean overwriteExistingService(){
+        final boolean [] choice = new boolean[1];
+        DialogDisplayer.showConfirmDialog(this,
+                                                   "Overwrite existing BusinessService in UDDI with corresponding Gateway WSDL information?",
+                                                   "Confirm UDDI Overwrite Task",
+                                                   JOptionPane.YES_NO_OPTION,
+                                                   JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.YES_OPTION){
+                            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+                            try {
+                                uddiRegistryAdmin.overwriteBusinessServiceInUDDI(service.getOid(), updateWhenGatewayWSDLCheckBoxOverwrite.isSelected());
+                                choice[0] = true;
+                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
+                                        "Task to overwrite BusinessService in UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+
+                            } catch (Exception ex) {
+                                final String msg = "Could not create overwrite BusinessService in UDDI task: " + ExceptionUtils.getMessage(ex);
+                                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(ex));
+                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, msg,
+                                        "Error overwriting UDDI", JOptionPane.ERROR_MESSAGE, null);
+                            }
+                        }
+                    }
+                });
+        return choice[0];
     }
 
     private boolean publishEndpointToBusinessService() {

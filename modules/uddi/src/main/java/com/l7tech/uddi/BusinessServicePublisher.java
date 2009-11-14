@@ -165,30 +165,6 @@ public class BusinessServicePublisher {
     }
 
     /**
-     * Try to delete a tModel published to UDDI. Will not throw a UDDIException
-     * @param tModelKey String tModelKey to delete
-     */
-    private void handleTModelRollback(final String tModelKey){
-        try {
-            logger.log(Level.FINE, "Attemping to delete tModel published to UDDI with tModelKey: " + tModelKey);
-            uddiClient.deleteTModel(tModelKey);
-            logger.log(Level.FINE, "Succesfully deleted tModel with tModelKey: " + tModelKey);
-        } catch (UDDIException e1) {
-            logger.log(Level.WARNING, "Could not rollback published tModel with key " + tModelKey + "to UDDI: " + ExceptionUtils.getMessage(e1));
-        }
-    }
-
-    private void handleBindingTemplateRollback(final String bindingKey){
-        try {
-            logger.log(Level.FINE, "Attemping to delete bindingTemplate published to UDDI with bindingKey: " + bindingKey);
-            uddiClient.deleteBindingTemplate(bindingKey);
-            logger.log(Level.FINE, "Succesfully deleted tModel with bindingKey: " + bindingKey);
-        } catch (UDDIException e1) {
-            logger.log(Level.WARNING, "Could not rollback published bindingTemplate with key " + bindingKey + "to UDDI: " + ExceptionUtils.getMessage(e1));
-        }
-    }
-
-    /**
      * Publish the list of Business Services from the WSDL to the UDDI Registry
      * <p/>
      * Provides best effort commit / rollback behaviour
@@ -198,7 +174,7 @@ public class BusinessServicePublisher {
      * @param businessKey                 String businessKey of the BusinssEntity which owns all of the published BusinessServices
      * @return List of UDDIBusinessService, one for each BusinessService published
      * @throws UDDIException any problems publishing UDDI info
-     */
+     */                              //todo delete - not used anywhere
     public List<UDDIBusinessService> publishServicesToUDDIRegistry(final String protectedServiceExternalURL,
                                                                    final String protectedServiceWsdlURL,
                                                                    final String businessKey) throws UDDIException {
@@ -235,12 +211,64 @@ public class BusinessServicePublisher {
         return newlyPublishedServices;
     }
 
-    public Pair<Set<String>, Set<UDDIBusinessService>> updateServicesToUDDIRegistry(final String protectedServiceExternalURL,
-                                                                                    final String protectedServiceWsdlURL,
-                                                                                    final String businessKey,
-                                                                                    final Set<String> publishedServiceKeys) throws UDDIException {
+    /**
+     * Should only be called once for a WSDL. Will do the house cleaning required to publish a proxied wsdl:service
+     * to UDDI, which represents an 'overwritten' service
+     *
+     * @param serviceKey
+     * @param wsdlPortName
+     * @param protectedServiceExternalURL
+     * @param protectedServiceWsdlURL
+     * @param businessKey
+     */
+    public Pair<Set<String>, Set<UDDIBusinessService>> overwriteServiceInUDDI(final String serviceKey,
+                                       final String wsdlPortName,
+                                       final String protectedServiceExternalURL,
+                                       final String protectedServiceWsdlURL,
+                                       final String businessKey) throws UDDIException {
+        
+        final UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+        final Set<String> serviceKeys = new HashSet<String>();
+        serviceKeys.add(serviceKey);
+        final List<Pair<BusinessService, Map<String, TModel>>> uddiServicesToDependentTModelsPairs = serviceDownloader.getBusinessServiceModels(serviceKeys);
 
-        WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
+        if(uddiServicesToDependentTModelsPairs.isEmpty()) throw new UDDIException("No BusinessService found for serviceKey: " + serviceKey);
+        final Pair<BusinessService, Map<String, TModel>> serviceToDependentTModels = uddiServicesToDependentTModelsPairs.iterator().next();
+
+        BusinessService overwriteService = serviceToDependentTModels.left;//not final as we will update it's reference
+        final BindingTemplates templates = overwriteService.getBindingTemplates();
+        if(templates == null){
+            //we can work with this, we don't care as were going to be uploading our own bindingTemplates
+            //this happens if all bindings are removed between when we got our record of the service and us
+            //initiating this overwrite action
+            BindingTemplates newTemplates = new BindingTemplates();
+            overwriteService.setBindingTemplates(newTemplates);
+        }
+
+        final Map<String, TModel> allDependentTModels = serviceToDependentTModels.right;
+
+        final Pair<Set<String>, Set<String>> deleteAndKeep = getBindingsToDeleteAndKeep(templates.getBindingTemplate(), allDependentTModels);
+        final Set<String> deleteSet = deleteAndKeep.left;
+
+        for(String bindingKey: deleteSet){
+            uddiClient.deleteBindingTemplate(bindingKey);    
+        }
+        //Redownload the service
+        overwriteService = jaxWsUDDIClient.getBusinessService(overwriteService.getServiceKey());
+
+        //add all kept bind
+
+        //extract the service's local name from it's keyed references - it must exist to be valid
+        if(overwriteService.getCategoryBag() == null){
+            throw new UDDIException("Invalid BusinessService. It does not contain a CategoryBag. serviceKey: " + overwriteService.getServiceKey());
+        }
+
+        final Pair<String, String> serviceNameAndNameSpace = getServiceNameAndNameSpace(overwriteService);
+
+        //we must find both the service name and the correct namespace in the Gateway's WSDL, otherwise we are mis configured
+
+        //Now work with the WSDL, the information we will publish comes from the Gateway's WSDL
+        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
                 protectedServiceExternalURL, businessKey, serviceOid);
         try {
             modelConverter.convertWsdlToUDDIModel();
@@ -249,12 +277,211 @@ public class BusinessServicePublisher {
         }
 
         final List<Pair<BusinessService, Map<String, TModel>>> wsdlServiceNameToDependentTModels = modelConverter.getServicesAndDependentTModels();
+
+        final List<Pair<BusinessService, Map<String, TModel>>> pairToUseList =
+                extractSingleService(serviceNameAndNameSpace.left, serviceNameAndNameSpace.right, wsdlServiceNameToDependentTModels);
+
+        //now we are ready to work with this service. We will publish all soap bindings found and leave any others on
+        //the original service in UDDI intact - this will likely be a configurable option in the future
+        final Map<String, String> serviceNameToWsdlNameMap = new HashMap<String, String>();
+        //overwrite the service's name to be the Layer7 name, we own this service now
+        Name name = new Name();
+        Pair<BusinessService, Map<String, TModel>> foundPair = pairToUseList.get(0);
+        name.setValue(foundPair.left.getName().get(0).getValue());
+        overwriteService.getName().clear();
+        overwriteService.getName().add(name);
+        jaxWsUDDIClient.updateBusinessService(overwriteService);
+        serviceNameToWsdlNameMap.put(overwriteService.getName().get(0).getValue(), serviceNameAndNameSpace.left);
+        //true here means that we will keep any existing bindings found on the BusinessService
+        return publishToUDDI(serviceKeys, pairToUseList, serviceNameToWsdlNameMap, true);
+    }
+
+    /**
+     * Extract out the real wsdl:service name and namespace if applicable from the supplied BusinessService.
+     * @param overwriteService BusinessService to get the information from. Cannot be null
+     * @return Pair of strings. The left is the service name, the right is the namespace. The namespace can be null.
+     * @throws UDDIException If the service name is not found, or the namepace is empty. No UDDI interactions are done here.
+     */
+    private Pair<String, String> getServiceNameAndNameSpace(final BusinessService overwriteService) throws UDDIException {
+        if(overwriteService.getCategoryBag() == null){
+            throw new UDDIException("Invalid BusinessService. It does not contain a CategoryBag. serviceKey: " + overwriteService.getServiceKey());
+        }
+
+        String foundServiceName = null;
+        String foundNameSpace = null;
+        for(KeyedReference kr: overwriteService.getCategoryBag().getKeyedReference()){
+            if(kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME)){
+                foundServiceName = kr.getKeyValue();
+            } else if(kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE)){
+                foundNameSpace = kr.getKeyValue();
+            }
+        }
+
+        if(foundServiceName == null || foundServiceName.trim().isEmpty()){
+            throw new UDDIException("BusinessService does not contain a local name KeyedReference with the name of the service. serviceKey: " + overwriteService.getServiceKey());
+        }
+        if(foundNameSpace != null){
+            //ok if namespace is null, but if it's supplied it can't be an empty string
+            if(foundNameSpace.trim().isEmpty()){
+                throw new UDDIException("BusinessService does not contain a non empty namespace KeyedReference. serviceKey: " + overwriteService.getServiceKey());
+            }
+        }
+        return new Pair<String, String>(foundServiceName, foundNameSpace);
+    }
+
+    /**
+     *
+     * @param foundServiceName String service name. Required.
+     * @param foundNameSpace String Can be null. If not null it cannot be the empty string after a trim
+     * @param wsdlServiceNameToDependentTModels
+     * @return
+     * @throws UDDIException
+     */
+    private List<Pair<BusinessService, Map<String, TModel>>> extractSingleService(
+            final String foundServiceName,
+            final String foundNameSpace,
+            final List<Pair<BusinessService, Map<String, TModel>>> wsdlServiceNameToDependentTModels) throws UDDIException {
+        if(foundNameSpace != null && foundNameSpace.trim().isEmpty())
+            throw new IllegalArgumentException("If foundNameSpace is supplied, it cannot be the empty string");
+
+        Pair<BusinessService, Map<String, TModel>> foundPair = null;
+        for (Pair<BusinessService, Map<String, TModel>> pair : wsdlServiceNameToDependentTModels) {
+            final BusinessService checkIfItsTheOne = pair.left;
+
+            String uddiServiceLocalName = null;
+            String uddiNameSpace = null;
+            for (KeyedReference kr : checkIfItsTheOne.getCategoryBag().getKeyedReference()) {
+                if (kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME)) {
+                    uddiServiceLocalName = kr.getKeyValue();
+                } else if (kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE)) {
+                    uddiNameSpace = kr.getKeyValue();
+                }
+            }
+
+            final boolean localNameOk = uddiServiceLocalName != null && !uddiServiceLocalName.trim().isEmpty();
+            final boolean nameSpaceOk = foundNameSpace != null && (uddiNameSpace != null && !uddiNameSpace.trim().isEmpty());
+
+            if (!localNameOk) {
+                continue;//this service is not valid, cannot use
+            }
+
+            if (uddiServiceLocalName.equalsIgnoreCase(foundServiceName) &&
+                    (!nameSpaceOk || uddiNameSpace.equalsIgnoreCase(foundNameSpace))) {
+                foundPair = pair;
+                break;
+            }
+        }
+
+        //if foundPair is null, then the UDDI does not model the WSDL, we cannot work with this
+        if (foundPair == null)
+            throw new UDDIException("The wsdl:service '" + foundServiceName + "' is not contained in the Gateway's WSDL. Cannot overwrite original service");
+
+        return Arrays.asList(foundPair);
+    }
+
+    /**
+     * Get the set of services which should be deleted and the set of services which were published as a result
+     * of publishing the gateway wsdl
+     * <p/>
+     * This handles both an initial publish and a subsequent publish. For updates, existing serviceKeys are reused
+     * where they represent the same wsdl:service from the wsdl
+     *
+     * @param protectedServiceExternalURL String url which will be come the value of 'endPoint' in the accessPoint element
+     *                                    of a bindingTemplate
+     * @param protectedServiceWsdlURL     String url the overview url where the wsdl can be downloaded from the gateway from
+     *                                    which will be included in every tModel published
+     * @param businessKey                 String business key of the BusinessEntity in UDDi which owns all services published
+     * @param publishedServiceKeys        Set String of known service keys. Can be empty, but not null
+     * @param isOverwriteUpdate           boolean if true, then we aer updating an overwritten service. In this case we need
+     *                                    to make sure we only publish a single service from the WSDL. The first serviceKey found in publishedServiceKeys is then
+     *                                    assumed to be the serviceKey of the overwritten service.
+     * @return Pair Left side: Set of serviceKeys which should be deleted. Right side: set of services published
+     *         as a result of this publish / update operation
+     * @throws UDDIException any problems searching / updating UDDI or with data model
+     */
+    public Pair<Set<String>, Set<UDDIBusinessService>> publishServicesToUDDIRegistry(
+            final String protectedServiceExternalURL,
+            final String protectedServiceWsdlURL,
+            final String businessKey,
+            final Set<String> publishedServiceKeys,
+            final boolean isOverwriteUpdate) throws UDDIException {
+
+        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
+                protectedServiceExternalURL, businessKey, serviceOid);
+        try {
+            modelConverter.convertWsdlToUDDIModel();
+        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
+            throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid + ") into UDDI object model.", e);
+        }
+
+        //not final as we may modify the reference
+        List<Pair<BusinessService, Map<String, TModel>>> wsdlServiceNameToDependentTModels = modelConverter.getServicesAndDependentTModels();
+
+        if (isOverwriteUpdate) {
+            final BusinessService overwriteService = jaxWsUDDIClient.getBusinessService(publishedServiceKeys.iterator().next());
+            final Pair<String, String> serviceNameAndNameSpace = getServiceNameAndNameSpace(overwriteService);
+            wsdlServiceNameToDependentTModels =
+                    extractSingleService(serviceNameAndNameSpace.left, serviceNameAndNameSpace.right, wsdlServiceNameToDependentTModels);
+        }
+
         final Map<String, String> serviceToWsdlServiceName = modelConverter.getServiceNameToWsdlServiceNameMap();
 
-        //Get the info on all published business services from UDDI
-        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+        return publishToUDDI(publishedServiceKeys, wsdlServiceNameToDependentTModels, serviceToWsdlServiceName, isOverwriteUpdate);
+    }
 
-        //TODO [Donal] some keys we requested may not have been returned. When this happens delete from our database
+    //- PROTECTED
+
+    /**
+     * Publish all TModels contained in the dependentTModels map, which are not already published. Only the type
+     * of TModel represented by tmodelType will be published. This is to allow for TModels to be published in their
+     * dependency order
+     * <p/>
+     * Any exception occurs and an attempt is made to delete any tModels which were successfully published.
+     *
+     * @param dependentTModels tModels to publish
+     * @param tmodelType       TMODEL_TYPE the type of TModel we should publish.
+     * @return List of TModels which were successfully published
+     * @throws UDDIException any exception publishing the tmodels
+     */
+    List<TModel> publishDependentTModels(final Map<String, TModel> dependentTModels,
+                                         final UDDIUtilities.TMODEL_TYPE tmodelType) throws UDDIException {
+        final List<TModel> publishedTModels = new ArrayList<TModel>();
+        try {
+            for (Map.Entry<String, TModel> entrySet : dependentTModels.entrySet()) {
+                final TModel tModel = entrySet.getValue();
+                //only publish the type were currently interested in
+                if (UDDIUtilities.getTModelType(tModel, true) != tmodelType) continue;
+                 //todo dont need to publish if it doesnt have a null / empty key
+                final boolean published = jaxWsUDDIClient.publishTModel(tModel);
+                if (published) publishedTModels.add(tModel);
+            }
+        } catch (UDDIException e) {
+            logger.log(Level.WARNING, "Exception publishing tModels: " + e.getMessage());
+            handleUDDIRollback(uddiClient, publishedTModels, Collections.<BusinessService>emptySet(), e);
+            throw e;
+        }
+        return Collections.unmodifiableList(publishedTModels);
+    }
+
+    //- PRIVATE
+
+    /**
+     *
+     * @param publishedServiceKeys
+     * @param wsdlServiceNameToDependentTModels
+     * @param serviceToWsdlServiceName
+     * @param isOverwriteUpdate if true, if a previously published BusinessService is found, along with
+     * it's serviceKey, any bindings it has will also be reused
+     * @return
+     * @throws UDDIException
+     */
+    private Pair<Set<String>, Set<UDDIBusinessService>> publishToUDDI(
+            final Set<String> publishedServiceKeys,
+            final List<Pair<BusinessService, Map<String, TModel>>> wsdlServiceNameToDependentTModels,
+            final Map<String, String> serviceToWsdlServiceName,
+            final boolean isOverwriteUpdate) throws UDDIException {
+        final UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+        //Get the info on all published business services from UDDI
         //Now we know every single tModel reference each existing Business Service contains
         final List<Pair<BusinessService, Map<String, TModel>>>
                 uddiServicesToDependentModels = serviceDownloader.getBusinessServiceModels(publishedServiceKeys);
@@ -265,11 +492,12 @@ public class BusinessServicePublisher {
         }
 
         //map to look up existing services
-        final Map<String, BusinessService> previouslyPublishedServiceMap = new HashMap<String, BusinessService>();
+        final Map<String, BusinessService> uddiPreviouslyPublishedServiceMap = new HashMap<String, BusinessService>();
         for (BusinessService bs : uddiPreviouslyPublishedServices) {
-            previouslyPublishedServiceMap.put(bs.getName().get(0).getValue(), bs);
+            uddiPreviouslyPublishedServiceMap.put(bs.getName().get(0).getValue(), bs);
         }
 
+        //create a map to look up the serviecs from the wsdl to publish
         final Map<String, BusinessService> wsdlServicesToPublish = new HashMap<String, BusinessService>();
         for (Pair<BusinessService, Map<String, TModel>> serviceToModels : wsdlServiceNameToDependentTModels) {
             BusinessService bs = serviceToModels.left;
@@ -279,13 +507,38 @@ public class BusinessServicePublisher {
         //find which services already exist, and reuse their serviceKeys if found
         //also need to know which BusinessServices to delete
         serviceDeleteSet = new HashSet<BusinessService>();
-        for (String publishedSvcName : previouslyPublishedServiceMap.keySet()) {
-            final BusinessService uddiPublishedService = previouslyPublishedServiceMap.get(publishedSvcName);
+
+        //for overwrite - we keep non soap/http bindings. for these bindings, do not delete any tmodels they reference
+        final Map<String, TModel> uddiNonSoapBindingTmodels = new HashMap<String, TModel>();
+
+        for (String publishedSvcName : uddiPreviouslyPublishedServiceMap.keySet()) {
+            final BusinessService uddiPublishedService = uddiPreviouslyPublishedServiceMap.get(publishedSvcName);
             //has this service already been published?
             //a BusinessService represents a wsdl:service, if the name is the same reuse the service key
             //a wsdl:service from a wsdl will always produce the same name, see WsdlToUDDIModelConverter
             if (wsdlServicesToPublish.containsKey(publishedSvcName)) {
-                wsdlServicesToPublish.get(publishedSvcName).setServiceKey(uddiPublishedService.getServiceKey());
+                final BusinessService businessService = wsdlServicesToPublish.get(publishedSvcName);
+                businessService.setServiceKey(uddiPublishedService.getServiceKey());
+                if (isOverwriteUpdate) {
+                    if(businessService.getBindingTemplates() == null) businessService.setBindingTemplates(new BindingTemplates());
+                    if(uddiPublishedService.getBindingTemplates() == null) uddiPublishedService.setBindingTemplates(new BindingTemplates());
+
+                    final Pair<Set<String>, Set<String>> deleteAndKeep =
+                            getBindingsToDeleteAndKeep(uddiPublishedService.getBindingTemplates().getBindingTemplate(),
+                                    uddiServicesToDependentModels.iterator().next().right);
+
+                    //all tmodels from uddi for this service
+                    final Map<String, TModel> keepTModelMap = uddiServicesToDependentModels.iterator().next().right;
+
+                    //only keep the bindings where are not soap / http
+                    for(BindingTemplate bt: uddiPublishedService.getBindingTemplates().getBindingTemplate()){
+                        if(!deleteAndKeep.right.contains(bt.getBindingKey())) continue;
+                        businessService.getBindingTemplates().getBindingTemplate().add(bt);
+                        for(TModelInstanceInfo infos: bt.getTModelInstanceDetails().getTModelInstanceInfo()){
+                            uddiNonSoapBindingTmodels.put(infos.getTModelKey(), keepTModelMap.get(infos.getTModelKey()));
+                        }
+                    }
+                }
             } else {
                 serviceDeleteSet.add(uddiPublishedService);
             }
@@ -313,14 +566,16 @@ public class BusinessServicePublisher {
 
         //Now find what tModels are no longer referenced by any remaining service which already existed in UDDI
         for(Pair<BusinessService, Map<String, TModel>> aServiceToItsModel: uddiServicesToDependentModels){
-            BusinessService bs = aServiceToItsModel.left;
+            final BusinessService bs = aServiceToItsModel.left;
             //if a service was deleted, so were its tmodels
             if(deleteSet.contains(bs.getServiceKey())) continue;
 
             //we will delete every tModel the service used to reference, as new ones have been created for it
             //if we get here it's because the service is still in UDDI
-            Set<String> oldTModels = new HashSet<String>();
+            final Set<String> oldTModels = new HashSet<String>();
             for(TModel tModel: aServiceToItsModel.right.values()){
+                //don't delete any tmodels we left after taking over a service
+                if(uddiNonSoapBindingTmodels.containsKey(tModel.getTModelKey())) continue;
                 oldTModels.add(tModel.getTModelKey());
             }
             try {
@@ -353,6 +608,7 @@ public class BusinessServicePublisher {
         deleteSet.addAll(keysDeletedViaUDDI);
 
         return new Pair<Set<String>, Set<UDDIBusinessService>>(deleteSet, newlyCreatedSet);
+
     }
 
     private void publishServicesToUDDI(final List<Pair<BusinessService, Map<String, TModel>>> serviceNameToDependentTModels) throws UDDIException {
@@ -389,38 +645,6 @@ public class BusinessServicePublisher {
             handleUDDIRollback(uddiClient, rollbackTModelsToDelete, newlyPublishedServices, e);
             throw e;
         }
-    }
-
-    /**
-     * Publish all TModels contained in the dependentTModels map, which are not already published. Only the type
-     * of TModel represented by tmodelType will be published. This is to allow for TModels to be published in their
-     * dependency order
-     * <p/>
-     * Any exception occurs and an attempt is made to delete any tModels which were successfully published.
-     *
-     * @param dependentTModels tModels to publish
-     * @param tmodelType       TMODEL_TYPE the type of TModel we should publish.
-     * @return List of TModels which were successfully published
-     * @throws UDDIException any exception publishing the tmodels
-     */
-    List<TModel> publishDependentTModels(final Map<String, TModel> dependentTModels,
-                                         final UDDIUtilities.TMODEL_TYPE tmodelType) throws UDDIException {
-        final List<TModel> publishedTModels = new ArrayList<TModel>();
-        try {
-            for (Map.Entry<String, TModel> entrySet : dependentTModels.entrySet()) {
-                final TModel tModel = entrySet.getValue();
-                //only publish the type were currently interested in
-                if (UDDIUtilities.getTModelType(tModel, true) != tmodelType) continue;
-
-                final boolean published = jaxWsUDDIClient.publishTModel(tModel);
-                if (published) publishedTModels.add(tModel);
-            }
-        } catch (UDDIException e) {
-            logger.log(Level.WARNING, "Exception publishing tModels: " + e.getMessage());
-            handleUDDIRollback(uddiClient, publishedTModels, Collections.<BusinessService>emptySet(), e);
-            throw e;
-        }
-        return Collections.unmodifiableList(publishedTModels);
     }
 
     private void handleUDDIRollback(final UDDIClient uddiClient,
@@ -468,5 +692,106 @@ public class BusinessServicePublisher {
         }
 
         return uddiClient;
-    }    
+    }
+
+    /**
+     * Get all the bindingTemplates which should be removed. Any template which implements a wsdl:binding
+     * with soap / http should be returned
+     * @param templates List of BindingTemplates from which to determine which should be removed
+     * @param allDependentTModels Every single tmodel keyed by it's tModelKey which the owning BusinessService is
+     * known to depend on. It is only needed for it's binding tModels, if it only contained that, it would suffice
+     * @return Set String of bindingKeys to delete. Can be empty, never null
+     */
+    private Pair<Set<String>, Set<String>> getBindingsToDeleteAndKeep(List<BindingTemplate> templates, Map<String, TModel> allDependentTModels) {
+        final Set<String> bindingKeysToDelete = new HashSet<String>();
+        for(final BindingTemplate bindingTemplate: templates){
+            //remove all soap/http bindings
+            final TModelInstanceDetails modelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
+            if(modelInstanceDetails == null){
+                bindingKeysToDelete.add(bindingTemplate.getBindingKey());
+                continue;
+            }
+
+            for(final TModelInstanceInfo tii: modelInstanceDetails.getTModelInstanceInfo()){
+                final String tModelRefKey = tii.getTModelKey();
+                final TModel tModel = allDependentTModels.get(tModelRefKey);
+                if(tModel == null) throw new IllegalStateException("Should have all dependent tModels. Missing tModel: " + tModelRefKey);
+
+                final UDDIUtilities.TMODEL_TYPE type = UDDIUtilities.getTModelType(tModel, false);
+                switch (type) {
+                    case WSDL_BINDING:
+                        break;
+                    default:
+                        //don't know what this tModel is, it's not what we require so move onto next tModelInstanceInfo
+                        continue;
+                }
+
+                final CategoryBag categoryBag = tModel.getCategoryBag();
+                if(categoryBag == null){
+                    //this is a messed up tModel which from the above switch is a wsdl:binding
+                    //which means we can't tell what the implementing protocol / transport is - leave it alone
+                    //nothing to do, this is for the comment only
+                    break;
+                }
+
+                boolean protocolIsSoap = false;
+                boolean transportIsHttp = false;
+                for(KeyedReference kf: categoryBag.getKeyedReference()){
+                    if(kf.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_CATEGORIZATION_PROTOCOL)) {
+                        if (kf.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.SOAP_PROTOCOL_V3) ||
+                                kf.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.SOAP_PROTOCOL_V2) ||
+                                        kf.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.SOAP_1_2_V3)) {
+                            protocolIsSoap = true;
+                        }
+                    }else if(kf.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_CATEGORIZATION_TRANSPORT)){
+                        if(kf.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.HTTP_TRANSPORT_V3) ||
+                                kf.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.HTTP_TRANSPORT_V2)){
+                            transportIsHttp= true;
+                        }
+                    }
+                }
+                if(protocolIsSoap && transportIsHttp){
+                    bindingKeysToDelete.add(bindingTemplate.getBindingKey());
+                }
+            }
+        }
+
+        final Set<String> bindingKeysToKeep = new HashSet<String>();
+        for(final BindingTemplate bindingTemplate: templates){
+            if(!bindingKeysToDelete.contains(bindingTemplate.getBindingKey())){
+                bindingKeysToKeep.add(bindingTemplate.getBindingKey());
+            }
+        }
+
+        if(bindingKeysToKeep.size() + bindingKeysToDelete.size() != templates.size()){
+            throw new IllegalStateException("Invalid calculation of which bindings to keep and which to delete");
+        }
+
+        return new Pair<Set<String>, Set<String>>(bindingKeysToDelete, bindingKeysToKeep);
+    }
+
+    /**
+     * Try to delete a tModel published to UDDI. Will not throw a UDDIException
+     * @param tModelKey String tModelKey to delete
+     */
+    private void handleTModelRollback(final String tModelKey){
+        try {
+            logger.log(Level.FINE, "Attemping to delete tModel published to UDDI with tModelKey: " + tModelKey);
+            uddiClient.deleteTModel(tModelKey);
+            logger.log(Level.FINE, "Succesfully deleted tModel with tModelKey: " + tModelKey);
+        } catch (UDDIException e1) {
+            logger.log(Level.WARNING, "Could not rollback published tModel with key " + tModelKey + "to UDDI: " + ExceptionUtils.getMessage(e1));
+        }
+    }
+
+    private void handleBindingTemplateRollback(final String bindingKey){
+        try {
+            logger.log(Level.FINE, "Attemping to delete bindingTemplate published to UDDI with bindingKey: " + bindingKey);
+            uddiClient.deleteBindingTemplate(bindingKey);
+            logger.log(Level.FINE, "Succesfully deleted tModel with bindingKey: " + bindingKey);
+        } catch (UDDIException e1) {
+            logger.log(Level.WARNING, "Could not rollback published bindingTemplate with key " + bindingKey + "to UDDI: " + ExceptionUtils.getMessage(e1));
+        }
+    }
+
 }

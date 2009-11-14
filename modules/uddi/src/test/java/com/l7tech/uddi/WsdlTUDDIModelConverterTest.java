@@ -117,7 +117,7 @@ public class WsdlTUDDIModelConverterTest {
         Assert.assertEquals("Incorret tModelKey found", WsdlToUDDIModelConverter.UDDI_WSDL_TYPES, serviceTypeRef.getTModelKey());
 
         KeyedReference serviceLocalName = keyedReferences.get(1);
-        Assert.assertEquals("Incorrect keyValue found", "Layer7 Warehouse " + serviceOid, serviceLocalName.getKeyValue());
+        Assert.assertEquals("Incorrect keyValue found", "Warehouse", serviceLocalName.getKeyValue());
         Assert.assertEquals("Incorrect keyName found", "service local name", serviceLocalName.getKeyName());
         Assert.assertEquals("Incorret tModelKey found", WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME, serviceLocalName.getTModelKey());
 

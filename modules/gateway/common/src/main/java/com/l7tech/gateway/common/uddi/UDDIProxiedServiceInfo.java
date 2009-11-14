@@ -86,6 +86,24 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         return info;
     }
 
+    public static UDDIProxiedServiceInfo getOverwriteProxyServicePublishInfo(final long publishedServiceOid,
+                                                                             final long uddiRegistryOid,
+                                                                             final String uddiBusinessKey,
+                                                                             final String uddiBusinessName,
+                                                                             final String wsdlHash,
+                                                                             final boolean updateProxyOnLocalChange) {
+
+        final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
+        info.setPublishedServiceOid(publishedServiceOid);
+        info.setUddiRegistryOid(uddiRegistryOid);
+        info.setUddiBusinessKey(uddiBusinessKey);
+        info.setUddiBusinessName(uddiBusinessName);
+        info.setPublishType(PublishType.OVERWRITE);
+        info.setWsdlHash(wsdlHash);
+        info.setRemoveOtherBindings(updateProxyOnLocalChange);
+        return info;
+    }
+
     /**
      * Used to determine if 'this' UDDIProxiedService has had a property modified which should not be modified once
      * the entity has been created based on application logic

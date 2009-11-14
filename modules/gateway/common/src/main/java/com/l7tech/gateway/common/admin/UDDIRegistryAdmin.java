@@ -97,6 +97,15 @@ public interface UDDIRegistryAdmin {
             throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException, UDDIRegistryNotEnabledException;
 
     /**
+     * Overwrite the Business Service in UDDI which we have a record for.
+     *
+     * @param publishedServiceOid long oid of the Published Service which we have a UDDIServiceControl entity which
+     * contains the details of the Business Service in UDDI from which it was created
+     */
+    void overwriteBusinessServiceInUDDI(long publishedServiceOid, final boolean updateWhenGatewayWsdlChanges)
+            throws SaveException, FindException;
+
+    /**
      * Publish an endpoint to an existing service in UDDI
      *
      * Service must be logically under UDDI control

@@ -109,7 +109,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     @Override
     public void afterPropertiesSet() throws Exception {
         loadUDDIRegistries(false);
-        final long maintenanceFrequency = SyspropUtil.getLong(PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000);//start it in 15 minutes, run it every 15 minutes
+        final long maintenanceFrequency = SyspropUtil.getLong(PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000);
         timer.schedule(new PublishedProxyMaintenanceTimerTask(this), maintenanceFrequency, maintenanceFrequency);
     }
 
@@ -151,7 +151,10 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                                 return;
                             }
 
-                            notifyPublishEvent(uddiProxiedServiceInfo, uddiPublishStatus);
+                            final UDDIServiceControl serviceControl =
+                                    uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                            //ok if serviceControl is null
+                            notifyPublishEvent(uddiProxiedServiceInfo, uddiPublishStatus, serviceControl);
 
                         } catch (FindException e) {
                             logger.log(Level.WARNING, "Could not find created UDDIPublishStatus with id #(" + id + ")");
@@ -453,7 +456,11 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                 final UDDIProxiedServiceInfo info = oidToProxyServiceMap.get(publishStatus.getUddiProxiedServiceInfoOid());
                 logger.log(Level.FINER, "Creating event to update published proxy service info in UDDDI. Service #("
                         + info.getPublishedServiceOid()+") in status " + status.toString());
-                notifyPublishEvent( info, publishStatus);
+                final UDDIServiceControl serviceControl =
+                        uddiServiceControlManager.findByPublishedServiceOid(info.getPublishedServiceOid());
+                //ok if serviceControl is null
+
+                notifyPublishEvent( info, publishStatus, serviceControl);
             }
         }
 
@@ -665,10 +672,17 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         return serviceStatus;
     }
 
+    /**
+     *
+     * @param uddiProxiedServiceInfo
+     * @param uddiPublishStatus
+     * @param serviceControl can be null
+     */
     private void notifyPublishEvent(final UDDIProxiedServiceInfo uddiProxiedServiceInfo,
-                                    final UDDIPublishStatus uddiPublishStatus) {
+                                    final UDDIPublishStatus uddiPublishStatus,
+                                    final UDDIServiceControl serviceControl) {
         //do not log event creation, as more than one event may be created per user interaction, duplicates are ignored later
-        final UDDIEvent uddiEvent = new PublishUDDIEvent(uddiProxiedServiceInfo, uddiPublishStatus);
+        final UDDIEvent uddiEvent = new PublishUDDIEvent(uddiProxiedServiceInfo, uddiPublishStatus, serviceControl);
         notifyEvent(uddiEvent);
     }
 

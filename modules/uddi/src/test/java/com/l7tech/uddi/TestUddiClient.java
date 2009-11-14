@@ -63,6 +63,11 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
+    public void updateBusinessService(BusinessService businessService) throws UDDIException {
+
+    }
+
+    @Override
     public void publishBindingTemplate(BindingTemplate bindingTemplate) throws UDDIException {
         final String key = "uddi:"+UUID.randomUUID();
         bindingTemplate.setBindingKey(key);

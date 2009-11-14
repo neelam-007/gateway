@@ -281,9 +281,10 @@ public class TestGenericUDDIClient {
      */
     @Test
     public void testTModelReferencedDelete() throws UDDIException{
-uddiClient.deleteTModel("uddi:ee613b50-cb2d-11de-8486-c4344922f660");
-uddiClient.deleteTModel("uddi:edfab150-cb2d-11de-8486-fdc8e7430f2c");
-    
+
+        uddiClient.deleteTModel("uddi:647f6ea0-d08e-11de-a2bb-f4a2db84c921");
+        uddiClient.deleteTModel("uddi:24bd4210-d08e-11de-a2bb-d7a960a62d33");
+
     }
 
     @Test
@@ -295,6 +296,13 @@ uddiClient.deleteTModel("uddi:edfab150-cb2d-11de-8486-fdc8e7430f2c");
         }
     }
 
+    @Test
+    public void testGetTModel() throws UDDIException {
+        String tModelKey = "uuid:aa254698-93de-3870-8df3-a5c075d64a0e";
+        GenericUDDIClient genericUDDIClient = (GenericUDDIClient) uddiClient;
+        TModel tModel = genericUDDIClient.getTModel(tModelKey);
+        Assert.assertNotNull(tModel);
+    }
     /**
      * Bug number 7898
      * @throws UDDIException
