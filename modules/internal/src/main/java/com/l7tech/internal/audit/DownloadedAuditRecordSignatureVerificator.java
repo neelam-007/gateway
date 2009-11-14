@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.Signature;
+import java.security.interfaces.ECKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -145,12 +147,11 @@ public class DownloadedAuditRecordSignatureVerificator {
         try {
             KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, cert);
             byte[] decodedSig = HexUtils.decodeBase64(signature);
-            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            rsaCipher.init(Cipher.DECRYPT_MODE, pub);
-            byte[] decrypteddata = rsaCipher.doFinal(decodedSig);
-            if (Arrays.equals(decrypteddata, digestvalue)) {
-                return true;
-            }
+            boolean isEcc = pub instanceof ECKey || "EC".equals(pub.getAlgorithm());
+            Signature sig = Signature.getInstance(isEcc ? "NONEwithECDSA" : "NONEwithRSA");
+            sig.initVerify(pub);
+            sig.update(digestvalue);
+            sig.verify(decodedSig);
         } catch (Exception e) {
             throw new IOException(e);
         }

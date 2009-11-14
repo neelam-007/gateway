@@ -5,6 +5,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.common.io.SignatureOutputStream;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.objectmodel.SaveException;
@@ -14,11 +15,15 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.HexUtils;
+import com.l7tech.security.prov.JceProvider;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.interfaces.ECKey;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -337,21 +342,17 @@ public class AuditContextImpl implements AuditContext {
 
     private void signRecord(AuditRecord signatureSubject) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-512");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] siginput;
-            try {
-                signatureSubject.serializeSignableProperties(baos);
-                byte[] tmp = baos.toByteArray();
-                siginput = digest.digest(tmp);
-            } finally {
-                baos.close();
-            }
             PrivateKey pk = keystore.getSslInfo().getPrivate();
-            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            rsaCipher.init(Cipher.ENCRYPT_MODE, pk);
-            byte[] encrypteddata = rsaCipher.doFinal(siginput);
-            String signature = HexUtils.encodeBase64(encrypteddata, true);
+            boolean isEcc = pk instanceof ECKey || "EC".equals(pk.getAlgorithm());
+            Signature sig = JceProvider.getInstance().getSignature(isEcc ? "SHA512withECDSA" : "SHA512withRSA");
+            sig.initSign(pk);
+            SignatureOutputStream os = new SignatureOutputStream(sig);
+            try {
+                signatureSubject.serializeSignableProperties(os);
+            } finally {
+                os.close();
+            }
+            String signature = HexUtils.encodeBase64(os.sign(), true);
             signatureSubject.setSignature(signature);
         } catch (Exception e) {
             logger.log(Level.WARNING, "ERROR GENERATING AUDIT SIGNATURE", e);
