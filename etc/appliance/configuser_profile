@@ -10,6 +10,7 @@ HSMCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/config/scahsmconfig.sh"
 EMCONFWIZARD="sudo -u layer7 /opt/SecureSpan/EnterpriseManager/config/emconfig.sh"
 MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
 CHECK_USB_KEY="sudo -u layer7 ${MASTERKEYMANAGE} probe &> /dev/null"
+PATCHTOOL="/opt/SecureSpan/Controller/bin/patch.sh"
 
 GETROOT="su -"
 MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak"
@@ -28,6 +29,13 @@ checkForEm() {
     EM_ENABLED=""
     if [ -d "/opt/SecureSpan/EnterpriseManager" ] ; then
         EM_PRESENT="true"
+    fi
+}
+
+checkForPatcher() {
+    PATCHER_PRESENT=""
+    if [ -e "/opt/SecureSpan/Controller/bin/patch.sh" ] ; then
+        PATCHER_PRESENT="true"
     fi
 }
 
@@ -489,9 +497,220 @@ doHsmConfiguration() {
     done
 }
 
+doPatchManagementMenu() {
+    isMenuValid="n"
+    while [ "$isMenuValid" != "y" ]
+    do
+        clear
+        echo "This menu allows you to manage SecureSpan patches on the"
+        echo "SecureSpan Gateway Appliance"
+        echo ""
+        echo "What would you like to do?"
+        echo ""
+        echo " 1) Register/Upload and verify a new patch"
+        echo " 2) Install a register a verified patch"
+        echo " 3) Unregister a patch"
+        echo " 4) List all registered patches and their status"
+        echo " X) Exit menu"
+        echo ""
+        echo -n "Please make a selection: "
+        read choice
+
+        case $choice in
+                1)
+                    clear;
+                    doPatchUpload
+                    clear;;
+                2)
+                    clear;
+                    doPatchInstall
+                    clear;;
+                3)
+                    clear;
+                    doPatchDelete
+                    clear;;
+                4)
+                    clear;
+                    doPatchList
+                    clear;;
+                x|X)
+                    clear;
+                    isMenuValid="y";
+                    clear;;
+                *)
+                    clear;
+                    confirmedMessage "That is not a valid selection";
+                    clear;;
+        esac
+    done
+}
+
+registerPatch() {
+    whichone=$1
+    if [ -e $whichone ] ; then
+        echo "You have chosen to register the patch named "
+        confirmedMessage "\"$whichone\""
+        echo ""
+        echo "Please wait while the patch is registered ..."
+        ($PATCHTOOL upload $whichone)
+        ERR=$?
+        if [ $ERR -ne 0 ] ; then
+            echo ""
+            confirmedMessage "There was an error while registering the patch"
+            return $ERR
+        else
+            echo ""
+            confirmedMessage "The patch was registered successfully."
+            return 0
+        fi
+    fi
+}
+
+installPatch() {
+    patchinfo=$1
+    echo ""
+    echo "You have chosen to install the patch with the following information"
+    confirmedMessage "$patchinfo"
+    echo "Please wait while the patch is installed ..."
+    id=getidfrompatchinfo "$patchinfo"
+    echo "($PATCHTOOL install $id)"
+}
+
+deletePatch() {
+    patchinfo=$1
+    echo ""
+    echo "You have chosen to unregister the patch with the following information"
+    confirmedMessage "$patchinfo"
+    echo "Please wait while the patch is unregistered ..."
+    id=getidfrompatchinfo "$patchinfo"
+    echo "($PATCHTOOL delete $id)"
+}
+
+doPatchUpload() {
+    isMenuValid="n"
+    while [ "$isMenuValid" != "y" ]
+    do
+
+        echo "Specify the patch you would like to register from the following list."
+
+        DROPBOXPATCHES=(`find $HOME -iname "*.L7P"`)
+        LEN=${#DROPBOXPATCHES[*]}
+
+        for (( i = 0 ; i < $LEN ; i++))
+        do
+            index=$[$i+1]
+            patchname=${DROPBOXPATCHES[$i]}
+            echo "$index) `basename $patchname`"
+        done
+
+        echo "S) Specify a patch not listed here"
+        echo "X) Exit menu"
+        echo ""
+        echo -n "Please make a selection: "
+        read choice
+        case $choice in
+            s|S)
+                echo -n "Please enter the path to the patch you wish to register: "
+                read whichone
+                registerPatch "$whichone"
+                echo ""
+                clear;;
+            x|X)
+                clear;
+                isMenuValid="y";
+                clear;;
+            *)
+                realindex=$[$choice-1]
+                if [ $realindex -ge 0 ] && [ $realindex -lt $LEN ] ; then
+                    whichone=${DROPBOXPATCHES[$realindex]}
+                    registerPatch "$whichone"
+                else
+                    confirmedMessage "That is not a valid selection";
+                fi
+                clear;;
+        esac
+    done
+}
+
+doPatchInstall() {
+    echo "Please wait while the list of available patches is retrieved..."
+    REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK"`)
+    LEN=${#REGISTEREDPATCHES[*]}
+
+    for (( i = 0 ; i < $LEN ; i++))
+    do
+        index=$[$i+1]
+        patchinfo=${REGISTEREDPATCHES[$i]}
+        echo "$index) `basename $patchinfo`"
+    done
+    echo "X) Exit menu"
+    echo ""
+    echo -n "Please make a selection: "
+    read choice
+    case $choice in
+            x|X)
+                clear;
+                isMenuValid="y";
+                clear;;
+            *)
+                realindex=$[$choice-1]
+                if [ $realindex -ge 0 ] && [ $realindex -lt $LEN ] ; then
+                    whichone=${REGISTEREDPATCHES[$realindex]}
+                    installPatch "$whichone"
+                else
+                    confirmedMessage "That is not a valid selection";
+                fi
+                clear;;
+        esac
+}
+
+doPatchDelete() {
+    echo "Please wait while the list of available patches is retrieved..."
+    REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK"`)
+    LEN=${#REGISTEREDPATCHES[*]}
+
+    for (( i = 0 ; i < $LEN ; i++))
+    do
+        index=$[$i+1]
+        patchinfo=${REGISTEREDPATCHES[$i]}
+        echo "$index) `basename $patchinfo`"
+    done
+    echo "X) Exit menu"
+    echo ""
+    echo -n "Please make a selection: "
+    read choice
+    case $choice in
+        x|X)
+            clear;
+            isMenuValid="y";
+            clear;;
+        *)
+            realindex=$[$choice-1]
+            if [ $realindex -ge 0 ] && [ $realindex -lt $LEN ] ; then
+                whichone=${REGISTEREDPATCHES[$realindex]}
+                deletePatch "$whichone"
+            else
+                confirmedMessage "That is not a valid selection";
+            fi
+            clear;;
+    esac
+}
+
+doPatchList() {
+    echo "Please wait while the list of patches is retrieved ..."
+    REGISTEREDPATCHES=(`$PATCHTOOL list`)
+    LEN=${#REGISTEREDPATCHES[*]}
+    for (( i = 0 ; i < $LEN ; i++))
+    do
+        patchinfo=${REGISTEREDPATCHES[$i]}
+        echo "`basename $patchinfo`"
+    done
+    confirmedMessage ""
+}
 
 checkForSca
 checkForEm
+checkForPatcher
 isValid="n"
 while [ "$isValid" != "y" ]
 do
@@ -513,6 +732,10 @@ do
         if [ "${EM_PRESENT}" == "true" ] ; then
             echo " 7) Display Enterprise Service Manager configuration menu"
         fi
+        if [ "${PATCHER_PRESENT}" == "true" ] ; then
+            echo " 8) Display Patch Management menu"
+        fi
+
         echo " R) Reboot the SSG appliance (apply the new configuration)"
         echo " X) Exit (no reboot)"
 
@@ -552,6 +775,10 @@ do
                     elif [ "$choice" == "7" ] && [ "${EM_PRESENT}" == "true" ]; then
                         clear;
                         doEmsConfiguration
+                        clear;
+                    elif [ "$choice" == "8" ] && [ "${PATCHER_PRESENT}" == "true" ]; then
+                        clear;
+                        doPatchManagementMenu
                         clear;
                     else
                         isValid="n";
