@@ -268,6 +268,12 @@ CREATE TABLE cluster_master (
 
 INSERT INTO cluster_master (nodeid, touched_time, version) VALUES (NULL, 0, 0);
 
+
+--
+-- Increase width of audit signature column to allow for larger signing keys and hashes
+--
+ALTER TABLE audit_main CHANGE COLUMN signature signature VARCHAR(1024);
+
 --
 -- Add default routing url to published service
 --

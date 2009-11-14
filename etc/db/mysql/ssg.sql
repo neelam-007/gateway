@@ -576,7 +576,7 @@ CREATE TABLE audit_main (
   user_name varchar(255),
   user_id varchar(255),
   provider_oid bigint(20) NOT NULL DEFAULT -1,
-  signature varchar(175),
+  signature varchar(1024),
   PRIMARY KEY  (objectid),
   KEY idx_time (time),
   KEY idx_ip_address (ip_address),
