@@ -61,8 +61,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                            final ServiceCache serviceCache,
                            final ClusterMaster clusterMaster,
                            final Timer timer,
-                           final Collection<UDDITaskFactory> taskFactories,
-                           final UDDIProxiedServiceManager uddiProxiedServiceManager) {
+                           final Collection<UDDITaskFactory> taskFactories ) {
         this.transactionManager = transactionManager;
         this.uddiHelper = uddiHelper;
         this.uddiRegistryManager = uddiRegistryManager;
@@ -74,7 +73,6 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
-        this.uddiProxiedServiceManager = uddiProxiedServiceManager;
         this.taskContext = new UDDICoordinatorTaskContext( this );
     }
 
@@ -218,7 +216,6 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     private final UDDIHelper uddiHelper;
     private final UDDIRegistryManager uddiRegistryManager;
     private final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager;
-    private final UDDIProxiedServiceManager uddiProxiedServiceManager;
     private final UDDIPublishStatusManager uddiPublishStatusManager;
     private final UDDIServiceControlManager uddiServiceControlManager;
     private final UDDIBusinessServiceStatusManager uddiBusinessServiceStatusManager;
@@ -315,7 +312,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
      * Load the current registry settings and configure timer tasks for any
      * registries that need timed events.
      */
-    private synchronized void loadUDDIRegistries( final boolean updateSubscriptions ) {
+    private synchronized void loadUDDIRegistries( final boolean doUpdates ) {
         final Map<Long,UDDIRegistryRuntime> registries = new HashMap<Long,UDDIRegistryRuntime>();
 
         try {
@@ -331,8 +328,16 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             runtime.dispose();
         }
 
-        if ( updateSubscriptions && clusterMaster.isMaster() ) {
+        if ( doUpdates && clusterMaster.isMaster() ) {
             checkSubscriptions( oldRegistries, registries, false );
+
+            Collection<Long> registryOids = registriesUpdated( oldRegistries, registries );
+            if ( !registryOids.isEmpty() ) {
+                timer.schedule( new PublishedProxyMaintenanceTimerTask(this), 0);
+                for ( long uddiRegistryOid : registryOids ) {
+                    notifyEvent(new WsPolicyUDDIEvent(uddiRegistryOid));
+                }
+            }
         }
 
         registryRuntimes.set( Collections.unmodifiableMap( registries ) );
@@ -358,6 +363,28 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                 notifyEvent( new SubscribeUDDIEvent( registryOid, SubscribeUDDIEvent.Type.UNSUBSCRIBE ) );
             }
         }
+    }
+
+    /**
+     * Check if any existing registry has been updated and is currently enabled, if so we should retry any UDDI updates.
+     */
+    private Collection<Long> registriesUpdated( final Map<Long,UDDIRegistryRuntime> oldr,
+                                                final Map<Long,UDDIRegistryRuntime> newr ) {
+        Collection<Long> oids = new ArrayList<Long>();
+
+        if ( !oldr.isEmpty() ) {
+            for ( Map.Entry<Long,UDDIRegistryRuntime> registryEntry : newr.entrySet() ) {
+                UDDIRegistryRuntime oldRuntime = oldr.get(registryEntry.getKey());
+                if ( oldRuntime != null ) {
+                    if ( oldRuntime.registry.getVersion() != registryEntry.getValue().registry.getVersion() &&
+                         registryEntry.getValue().registry.isEnabled() ) {
+                        oids.add( registryEntry.getValue().registry.getOid() );    
+                    }
+                }
+            }
+        }
+
+        return oids;
     }
 
     /**
@@ -825,7 +852,8 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                                 }
                             }
                         } );
-                    }});
+                    }
+                });
             }
         }
     }
