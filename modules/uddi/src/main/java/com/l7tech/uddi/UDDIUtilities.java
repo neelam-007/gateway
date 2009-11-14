@@ -549,21 +549,6 @@ public class UDDIUtilities {
                 + wsdlPortBinding + "' binding");
     }
 
-    public static boolean isGatewayUrl(final String endPoint, final String ssgLocalHostName){     //TODO [Donal] add test case
-
-        final String hName;
-        if(ssgLocalHostName.indexOf("[") != -1){
-            hName = ssgLocalHostName.substring(0, ssgLocalHostName.indexOf("["));
-        }else if(ssgLocalHostName.indexOf(".") != -1){
-            hName = ssgLocalHostName.substring(0, ssgLocalHostName.indexOf("."));
-        }else{
-            hName = ssgLocalHostName;
-        }
-
-        return endPoint.indexOf(hName) != -1;
-
-    }
-
     public static class WsdlEndPointNotFoundException extends Exception{
         public WsdlEndPointNotFoundException(String message) {
             super(message);
