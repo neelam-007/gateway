@@ -96,6 +96,8 @@ public class BusinessServicePublisher {
             throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
         } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
             throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
+        } catch (WsdlToUDDIModelConverter.NonSoapBindingFoundException e) {
+            throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
         }
 
         //Get the service

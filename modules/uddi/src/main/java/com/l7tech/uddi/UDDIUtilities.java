@@ -224,7 +224,7 @@ public class UDDIUtilities {
                                                                                     final String wsdlPortBinding,
                                                                                     final String protectedServiceExternalURL,
                                                                                     final String protectedServiceWsdlURL)
-            throws PortNotFoundException, WsdlToUDDIModelConverter.MissingWsdlReferenceException {
+            throws PortNotFoundException, WsdlToUDDIModelConverter.MissingWsdlReferenceException, WsdlToUDDIModelConverter.NonSoapBindingFoundException {
 
         Port foundPort = null;
         Port candidatePort = null;

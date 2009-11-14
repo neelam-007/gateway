@@ -8,6 +8,9 @@ import javax.wsdl.Service;
 import javax.wsdl.Port;
 import javax.wsdl.Binding;
 import javax.wsdl.PortType;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.wsdl.extensions.soap12.SOAP12Address;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -65,6 +68,16 @@ public class WsdlToUDDIModelConverter {
             super(message);
         }
     }
+
+    /**
+     * If we find a non soap binding for a wsdl:port this exception is thrown so that the wsdl:port is ignored
+     */
+    public static class NonSoapBindingFoundException extends Exception{
+        public NonSoapBindingFoundException(String message) {
+            super(message);
+        }
+    }
+
     /**
      * This businessKey will be the parent of all created Business Services
      */
@@ -174,6 +187,8 @@ public class WsdlToUDDIModelConverter {
             } catch (MissingWsdlReferenceException e) {
                 //already logged, we ignore the bindingTemplate as it is invalid
                 logger.log(Level.INFO, "Ignored bindingTemplate as the wsdl:port contains invalid references");
+            } catch (NonSoapBindingFoundException e) {
+                logger.log(Level.INFO, "Ignored bindingTemplate as the wsdl:port does not implement a soap binding");
             }
         }
 
@@ -243,7 +258,21 @@ public class WsdlToUDDIModelConverter {
         this.serviceOid = -1;
     }
 
-    BindingTemplate createUddiBindingTemplate(final Map<String, TModel> serviceToTModels, final Port wsdlPort) throws MissingWsdlReferenceException {
+    BindingTemplate createUddiBindingTemplate(final Map<String, TModel> serviceToTModels, final Port wsdlPort)
+            throws MissingWsdlReferenceException, NonSoapBindingFoundException {
+
+        List<ExtensibilityElement> elements = wsdlPort.getExtensibilityElements();
+
+        boolean soapFound = false;
+        for (ExtensibilityElement ee : elements) {
+            if (ee instanceof SOAPAddress || ee instanceof SOAP12Address) {
+                soapFound = true;
+                break;
+            }
+        }
+        //We will only convert wsdl:ports which implement a soap biding
+        if (!soapFound) throw new NonSoapBindingFoundException("No soap:address found in wsdl");
+
         BindingTemplate bindingTemplate = new BindingTemplate();
 
         //For v3, we don't care about what type of element represents the endPoint e.g. whether it's soap:address

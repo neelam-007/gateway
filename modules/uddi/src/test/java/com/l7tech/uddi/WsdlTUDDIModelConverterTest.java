@@ -128,13 +128,34 @@ public class WsdlTUDDIModelConverterTest {
     }
 
     /**
-     * Tests that http:address is supported.
+     * Tests that http:address is supported. - does not cause exception if encountered, the port itself is ignored
      * @throws Exception
      */
     @BugNumber(7925)
     @Test
     public void testHttpAddressSupport() throws Exception{
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("httpaddress.wsdl"));
+
+        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+        final String gatewayURL = "http://localhost:8080/3828382";
+        final String targetNameSpace = wsdl.getTargetNamespace();
+
+        final int serviceOid = 3828382;
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
+        Assert.assertEquals("Incorrect number of Business Services found", 1, serviceToDependentModels.size());
+        //bug is fixed, can successfully convert into UDDI data model
+    }
+
+    /**
+     * Tests that a wsdl with no soap bindings causes the correct exception
+     * @throws Exception
+     */
+    @Test (expected = WsdlToUDDIModelConverter.MissingWsdlReferenceException.class)
+    public void testHttpAddressException() throws Exception{
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("nosoapbindings.wsdl"));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
@@ -182,6 +203,7 @@ public class WsdlTUDDIModelConverterTest {
         final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
         Assert.assertEquals("Incorrect number of BusinessServices found", 1, serviceToDependentModels.size());
     }
+
 
     /**
      * Confirms that the tModel created confirms to
