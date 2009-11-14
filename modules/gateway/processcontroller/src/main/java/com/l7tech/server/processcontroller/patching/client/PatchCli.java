@@ -52,7 +52,7 @@ public class PatchCli {
             Collection<PatchStatus> result = patchAction.call(api);
             if (result != null && ! result.isEmpty()) {
                 for(PatchStatus status : result) {
-                    System.out.println(status.toString());
+                    System.out.println(status.toString(patchAction.getOutputFormat()));
                 }
             } else {
                 System.out.println("No patches have been uploaded.");
@@ -164,10 +164,12 @@ public class PatchCli {
                 final PatchStatus status = api.getStatus(getArgument());
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
-        LIST("", "Returns a list of the patches and their statuses on the gateway.") {
+        LIST("[output_format]", "Returns a list of the patches and their statuses on the gateway. Status fields to be replaced by their value are preceeded and followed by a colon, for example: \"Patch ID=:id:, status is :state:\"") {
             @Override
             void extractActionArguments(List<String> args) {
-                /*no extra arguments for list*/
+                if (! args.isEmpty() && args.size() > 1) {
+                    this.outputFormat = extractOneStringActionArgument(args);
+                }
             }
             @Override
             public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException {
@@ -188,6 +190,10 @@ public class PatchCli {
 
         public String getArgument() {
             return argument;
+        }
+
+        public String getOutputFormat() {
+            return outputFormat;
         }
 
         public static PatchAction fromArgs(String[] args) {
@@ -226,6 +232,7 @@ public class PatchCli {
 
         String target;
         String argument;
+        String outputFormat;
 
         // - PRIVATE
 

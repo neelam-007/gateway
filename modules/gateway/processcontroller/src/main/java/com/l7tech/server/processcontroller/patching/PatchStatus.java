@@ -61,7 +61,7 @@ public class PatchStatus {
         STATUS_MSG(false) {
             @Override
             public String displayValue(String value) {
-                return value == null || value.isEmpty() ? "" : ", Status message is: \n" + value + "\n"; 
+                return value == null || value.isEmpty() ? "" : ", Status message is: \n" + value + "\n";
             }};
 
 
@@ -157,6 +157,23 @@ public class PatchStatus {
         return State.valueOf(getField(Field.STATE)).allowDelete();
     }
 
+    public String toString(String outputFormat) {
+        if (outputFormat == null) {
+            return toString();
+        } else {
+            StringBuilder output = new StringBuilder();
+            String[] format = outputFormat.split(FORMAT_DELIMITER);
+            for(String token : format) {
+                try {
+                    output.append(getField(Field.valueOf(token.toUpperCase())));
+                } catch (Exception e) {
+                    output.append(token);
+                }
+            }
+            return output.toString();
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();
@@ -189,6 +206,7 @@ public class PatchStatus {
     private static final Logger logger = Logger.getLogger(PatchStatus.class.getName());
 
     private Properties properties = new Properties();
+    private static final String FORMAT_DELIMITER = ":";
 
     private PatchStatus() {
     }
