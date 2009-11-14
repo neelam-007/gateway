@@ -1452,6 +1452,7 @@
                         <value>org.apache.xerces</value>
                         <value>org.apache.xml.serializer</value>
                         <value>org.apache.xalan</value>
+                        <value>org.hibernate</value>
                     </list>
                 </constructor-arg>
                 <constructor-arg index="3" value="true"/>
