@@ -164,7 +164,7 @@ public class PatchCli {
                 final PatchStatus status = api.getStatus(getArgument());
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
-        LIST("[output_format]", "Returns a list of the patches and their statuses on the gateway. Status fields to be replaced by their value are preceeded and followed by a colon, for example: \"Patch ID=:id:, status is :state:\"") {
+        LIST("[output_format]", "Returns a list of the patches and their statuses on the gateway. Status fields to be replaced by their value are preceded and followed by a colon, for example: \"Patch ID=:id:, status is :state:\"") {
             @Override
             void extractActionArguments(List<String> args) {
                 if (! args.isEmpty() && args.size() > 1) {
