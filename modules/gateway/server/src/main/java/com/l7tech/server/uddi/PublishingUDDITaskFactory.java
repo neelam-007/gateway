@@ -33,15 +33,13 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                                      final ServiceCache serviceCache,
                                      final UDDIHelper uddiHelper,
                                      final UDDIServiceControlManager uddiServiceControlManager,
-                                     final UDDIPublishStatusManager uddiPublishStatusManager,
-                                     final UDDIProxiedServiceManager uddiProxiedServiceManager) {
+                                     final UDDIPublishStatusManager uddiPublishStatusManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.serviceCache = serviceCache;
         this.uddiHelper = uddiHelper;
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
-        this.uddiProxiedServiceManager = uddiProxiedServiceManager;
     }
 
     @Override
@@ -93,58 +91,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     }
                     break;
             }
-        }else if(event instanceof UDDIMaintenanceEvent){
-            task = new UDDIMaintanceTask( this );
         }
-
         return task;
-    }
-
-    //-PACKAGE
-
-    static class UDDIMaintenanceEvent extends UDDIEvent{}
-
-    static class UDDIMaintanceTask extends UDDITask{
-        private static final Logger logger = Logger.getLogger(UDDIMaintanceTask.class.getName());
-
-        private final PublishingUDDITaskFactory factory;
-
-        public UDDIMaintanceTask( final PublishingUDDITaskFactory factory ) {
-            this.factory = factory;
-        }
-
-        @Override
-        public void apply(UDDITaskContext context) throws UDDITaskException {
-            try {
-                final Collection<UDDIRegistry> allRegistries = factory.uddiRegistryManager.findAll();
-                for (UDDIRegistry registry : allRegistries) {
-                    if (!registry.isEnabled()) continue;
-
-                    final UDDIClient uddiClient = factory.uddiHelper.newUDDIClient(registry);
-                    final Collection<UDDIProxiedServiceInfo> infoCollection =
-                            factory.uddiProxiedServiceInfoManager.findByUDDIRegistryOid(registry.getOid());
-                    for (UDDIProxiedServiceInfo info : infoCollection) {
-                        for (UDDIProxiedService ps : info.getProxiedServices()) {
-                            final UDDIBusinessService foundService = uddiClient.getUDDIBusinessServiceInvalidKeyOk(ps.getUddiServiceKey());
-                            if (foundService == null) {
-                                //delete it
-                                logger.log(Level.FINE, "Proxied Service has been removed from UDDI. serviceKey: " + ps.getUddiServiceKey());
-                                try {
-                                    factory.uddiProxiedServiceManager.delete(ps);
-                                } catch (DeleteException e) {
-                                    context.logAndAudit(SystemMessages.UDDI_MAINTENANCE_SERVICE_DELETED, e, registry.getOidAsLong().toString(), ps.getUddiServiceKey());
-                                    throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (FindException e) {
-                throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
-            } catch (UDDIException e) {
-                throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
-            }
-        }
     }
 
     //- PRIVATE
@@ -155,7 +103,6 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
     private final ServiceCache serviceCache;
     private final UDDIHelper uddiHelper;
     private final UDDIServiceControlManager uddiServiceControlManager;
-    private final UDDIProxiedServiceManager uddiProxiedServiceManager;
 
     private static final class PublishUDDIEndpointTask extends UDDITask {
         private static final Logger logger = Logger.getLogger(PublishUDDIEndpointTask.class.getName());

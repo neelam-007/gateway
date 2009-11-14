@@ -463,10 +463,6 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                 notifyPublishEvent( info, publishStatus, serviceControl);
             }
         }
-
-        //validate all serviceKeys
-        final UDDIEvent uddiEvent = new PublishingUDDITaskFactory.UDDIMaintenanceEvent();
-        notifyEvent(uddiEvent);
     }
 
     /**
