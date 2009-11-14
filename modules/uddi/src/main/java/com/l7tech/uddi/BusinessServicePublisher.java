@@ -103,7 +103,7 @@ public class BusinessServicePublisher {
         //Get the service
         Set<String> serviceKeys = new HashSet<String>();
         serviceKeys.add(serviceKey);
-        final List<BusinessService> foundServices = uddiClient.getBusinessServices(serviceKeys);
+        final List<BusinessService> foundServices = uddiClient.getBusinessServices(serviceKeys, false);
         if (foundServices.isEmpty())
             throw new UDDIException("Could not find BusinessService with serviceKey: " + serviceKey);
         final BusinessService businessService = foundServices.get(0);
@@ -387,6 +387,8 @@ public class BusinessServicePublisher {
      * <p/>
      * This handles both an initial publish and a subsequent publish. For updates, existing serviceKeys are reused
      * where they represent the same wsdl:service from the wsdl
+     *
+     * If isOverWriteUpdate is true, then publishedServiceKeys must contain at least 1 key.
      *
      * @param protectedServiceExternalURL String url which will be come the value of 'endPoint' in the accessPoint element
      *                                    of a bindingTemplate

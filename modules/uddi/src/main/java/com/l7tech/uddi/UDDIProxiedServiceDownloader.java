@@ -44,8 +44,7 @@ public class UDDIProxiedServiceDownloader {//TODO [Donal] rename to be UDDIBusin
         final List<Pair<BusinessService, Map<String, TModel>>> servicesToDependentTModels =
                 new ArrayList<Pair<BusinessService, Map<String, TModel>>>();
 
-        //TODO [Donal] handle the fact that a key may not exist, and this throws a specific type of exception - change to 1 by 1 in try / catch
-        List<BusinessService> businessServices = uddiClient.getBusinessServices(serviceKeys);
+        List<BusinessService> businessServices = uddiClient.getBusinessServices(serviceKeys, true);
 
         for(final BusinessService businessService: businessServices){
             final Map<String, TModel> tModelKeyToModel = new HashMap<String, TModel>();

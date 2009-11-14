@@ -144,7 +144,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
-    public List<BusinessService> getBusinessServices(Set<String> serviceKeys) throws UDDIException {
+    public List<BusinessService> getBusinessServices(Set<String> serviceKeys, boolean allowInvalidKeys) throws UDDIException {
         if (dataStructureForDownloaderTest != null) return dataStructureForDownloaderTest;
 
         BusinessService service = new BusinessService();

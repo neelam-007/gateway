@@ -289,7 +289,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                     for(UDDIProxiedService ps: proxiedServices){
                         serviceKeys.add(ps.getUddiServiceKey());
                     }
-                    List<BusinessService> services = uddiClient.getBusinessServices( serviceKeys );
+                    List<BusinessService> services = uddiClient.getBusinessServices( serviceKeys, false);
                     if ( services.size() == 1 ) {
                         String serviceKey = services.get( 0 ).getServiceKey();
                         bindingKey = uddiClient.getBindingKeyForService( serviceKey );

@@ -447,7 +447,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
-    public List<BusinessService> getBusinessServices(final Set<String> serviceKeys) throws UDDIException {
+    public List<BusinessService> getBusinessServices(final Set<String> serviceKeys, boolean allowInvalidKeys) throws UDDIException {
         if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
         if(serviceKeys.isEmpty()){
             logger.log(Level.FINE, "serviceKeys is empty. Nothing at do");
@@ -455,26 +455,36 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
 
         if(serviceKeys.isEmpty()) throw new IllegalArgumentException("serviceKeys cannot be null");
-        final GetServiceDetail getServiceDetail = new GetServiceDetail();
-        getServiceDetail.setAuthInfo(getAuthToken());
-        getServiceDetail.getServiceKey().addAll(serviceKeys);
 
         final List<BusinessService> businessServices = new ArrayList<BusinessService>();
-        try {         //todo [Donal] this may result in a key not found error - this the task will be retired, and the maintenance task should fix it
-            final ServiceDetail serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);//todo [Donal] are we concerned if the results are truncated?
-            if(serviceDetail.getBusinessService() != null){
-                for(BusinessService businessService: serviceDetail.getBusinessService()){
-                    businessServices.add(businessService);
-                }
-            }else{
-                logger.log(Level.FINE, "No matching BusinessServices were found");
-            }
-        } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error getting business services", drfm);
-        } catch (RuntimeException e) {
-            throw buildErrorException("Error getting business services", e);
-        }
+        for(String aServiceKey:serviceKeys){
+            try {
+                final GetServiceDetail getServiceDetail = new GetServiceDetail();
+                getServiceDetail.setAuthInfo(getAuthToken());
+                getServiceDetail.getServiceKey().add(aServiceKey);
 
+                final ServiceDetail serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);
+                if(serviceDetail.getBusinessService() != null){
+                    for(BusinessService businessService: serviceDetail.getBusinessService()){
+                        businessServices.add(businessService);
+                    }
+                }else{
+                    logger.log(Level.FINE, "No matching BusinessServices were found for serviceKey: " + aServiceKey);//never happen
+                }
+            } catch (DispositionReportFaultMessage drfm) {
+                final UDDIException ex = buildFaultException("Error getting business services", drfm);
+                if(ex instanceof UDDIInvalidKeyException && allowInvalidKeys){
+                    //we accept some keys may not exist
+                    logger.log(Level.FINE, "No matching BusinessServices were found for serviceKey: " + aServiceKey);
+                    continue;
+                }else{
+                    throw ex;
+                }
+            } catch (RuntimeException e) {
+                throw buildErrorException("Error getting business services", e);
+            }
+
+        }
         return businessServices;
     }
 

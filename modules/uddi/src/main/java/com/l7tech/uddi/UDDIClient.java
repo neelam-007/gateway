@@ -237,10 +237,12 @@ public interface UDDIClient extends Closeable {
      * Find all BusinessServices with the supplied keys
      *
      * @param serviceKeys Set String of serviceKeys to find. Cannot be null.
+     * @param allowInvalidKeys if true then an invalid key will not caus a UDDIException to be thrown. This does not
+     * stop other UDDIExceptions from being thrown.
      * @return List of BusinessServices which were found. Not guaranteed to be the same size as the serviceKeys set
      * @throws UDDIException if problem searching UDDI
      */                      //TODO [Donal] - change return type to UDDIBusinessService
-    List<BusinessService> getBusinessServices(final Set<String> serviceKeys) throws UDDIException;
+    List<BusinessService> getBusinessServices(final Set<String> serviceKeys, final boolean allowInvalidKeys) throws UDDIException;
 
     /**
      * Get the UDDIBusinessServices for the serviceKey
