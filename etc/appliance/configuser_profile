@@ -569,21 +569,39 @@ registerPatch() {
 installPatch() {
     patchinfo=$1
     echo ""
-    echo "You have chosen to install the patch with the following information"
-    confirmedMessage "$patchinfo"
+    echo "You have chosen to install the following patch"
+    confirmedMessage "\" $patchinfo\""
     echo "Please wait while the patch is installed ..."
-    id=getidfrompatchinfo "$patchinfo"
-    echo "($PATCHTOOL install $id)"
+    ($PATCHTOOL install $patchinfo)
+    ERR=$?
+    if [ $ERR -ne 0 ] ; then
+        echo ""
+        confirmedMessage "There was an error while installing the patch"
+        return $ERR
+    else
+        echo ""
+        confirmedMessage "The patch was installed successfully."
+        return 0
+    fi
 }
 
 deletePatch() {
     patchinfo=$1
     echo ""
-    echo "You have chosen to unregister the patch with the following information"
-    confirmedMessage "$patchinfo"
+    echo "You have chosen to unregister the following patch"
+    confirmedMessage "\" $patchinfo\""
     echo "Please wait while the patch is unregistered ..."
-    id=getidfrompatchinfo "$patchinfo"
-    echo "($PATCHTOOL delete $id)"
+    ($PATCHTOOL delete $patchinfo)
+    ERR=$?
+    if [ $ERR -ne 0 ] ; then
+        echo ""
+        confirmedMessage "There was an error while unregistering the patch"
+        return $ERR
+    else
+        echo ""
+        confirmedMessage "The patch was successfully unregistered."
+        return 0
+    fi
 }
 
 doPatchUpload() {
@@ -634,14 +652,23 @@ doPatchUpload() {
 
 doPatchInstall() {
     echo "Please wait while the list of available patches is retrieved..."
+    old=$IFS
+IFS='
+'
     REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK"`)
+    IFS=$old
     LEN=${#REGISTEREDPATCHES[*]}
 
+    declare -a patch_ids
     for (( i = 0 ; i < $LEN ; i++))
     do
         index=$[$i+1]
         patchinfo=${REGISTEREDPATCHES[$i]}
-        echo "$index) `basename $patchinfo`"
+        patchid=`echo $patchinfo | awk -F'(' '{print $1}' | sed 's/Patch ID \(.*\)/\1/'`
+        patchdesc=`echo $patchinfo | awk -F'(' '{print $2}' | awk -F')' '{print $1}'`
+        patch_ids[$i]=$patchid
+        echo "$index) ID: $patchid"
+        echo "   DESCRIPTION: $patchdesc"
     done
     echo "X) Exit menu"
     echo ""
@@ -654,8 +681,9 @@ doPatchInstall() {
                 clear;;
             *)
                 realindex=$[$choice-1]
-                if [ $realindex -ge 0 ] && [ $realindex -lt $LEN ] ; then
-                    whichone=${REGISTEREDPATCHES[$realindex]}
+                patch_ids_len=${#patch_ids[*]}
+                if [ $realindex -ge 0 ] && [ $realindex -lt $patch_ids_len ] ; then
+                    whichone=${patch_ids[$realindex]}
                     installPatch "$whichone"
                 else
                     confirmedMessage "That is not a valid selection";
@@ -666,44 +694,63 @@ doPatchInstall() {
 
 doPatchDelete() {
     echo "Please wait while the list of available patches is retrieved..."
+    old=$IFS
+IFS='
+'
     REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK"`)
+    IFS=$old
     LEN=${#REGISTEREDPATCHES[*]}
-
-    for (( i = 0 ; i < $LEN ; i++))
-    do
-        index=$[$i+1]
-        patchinfo=${REGISTEREDPATCHES[$i]}
-        echo "$index) `basename $patchinfo`"
-    done
-    echo "X) Exit menu"
-    echo ""
-    echo -n "Please make a selection: "
-    read choice
-    case $choice in
-        x|X)
-            clear;
-            isMenuValid="y";
-            clear;;
-        *)
-            realindex=$[$choice-1]
-            if [ $realindex -ge 0 ] && [ $realindex -lt $LEN ] ; then
-                whichone=${REGISTEREDPATCHES[$realindex]}
-                deletePatch "$whichone"
-            else
-                confirmedMessage "That is not a valid selection";
-            fi
-            clear;;
-    esac
+    if [ $LEN -eq 0 ] ; then
+        confirmedMessage "There are no patches that can be unregistered"
+    else
+        declare -a patch_ids
+        for (( i = 0 ; i < $LEN ; i++))
+        do
+            index=$[$i+1]
+            patchinfo=${REGISTEREDPATCHES[$i]}
+            patchid=`echo $patchinfo | awk -F'(' '{print $1}' | sed 's/Patch ID \(.*\)/\1/'`
+            patchdesc=`echo $patchinfo | awk -F'(' '{print $2}' | awk -F')' '{print $1}'`
+            patch_ids[$i]=$patchid
+            echo "$index) ID: $patchid"
+            echo "   DESCRIPTION: $patchdesc"
+        done
+        echo "X) Exit menu"
+        echo ""
+        echo -n "Please make a selection: "
+        read choice
+        case $choice in
+            x|X)
+                clear;
+                isMenuValid="y";
+                clear;;
+            *)
+                realindex=$[$choice-1]
+                patch_ids_len=${#patch_ids[*]}
+                if [ $realindex -ge 0 ] && [ $realindex -lt $patch_ids_len ] ; then
+                    whichone=${patch_ids[$realindex]}
+                    deletePatch "$whichone"
+                else
+                    confirmedMessage "That is not a valid selection";
+                fi
+                clear;;
+        esac
+    fi
 }
 
 doPatchList() {
     echo "Please wait while the list of patches is retrieved ..."
+    old=$IFS
+IFS='
+'
     REGISTEREDPATCHES=(`$PATCHTOOL list`)
+    IFS=$old
     LEN=${#REGISTEREDPATCHES[*]}
     for (( i = 0 ; i < $LEN ; i++))
     do
         patchinfo=${REGISTEREDPATCHES[$i]}
-        echo "`basename $patchinfo`"
+        index=$[$i+1]
+        echo "$index) $patchinfo"
+        echo ""
     done
     confirmedMessage ""
 }
