@@ -8,6 +8,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.SyspropUtil;
 
@@ -21,6 +22,8 @@ import java.lang.reflect.Proxy;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
 import java.text.MessageFormat;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 import org.apache.cxf.jaxws.JaxWsClientProxy;
 import org.apache.cxf.transport.http.HTTPConduit;
@@ -122,6 +125,31 @@ public class UDDIHelper {
 
     public String getExternalUrlForService( final long serviceOid ) {
         return buildCompleteGatewayUrl(SecureSpanConstants.SERVICE_FILE) + serviceOid;
+    }
+
+    public boolean isGatewayUrl( final String endPoint ){ //TODO [Donal] add test case
+        boolean gateway = false;
+
+        try {
+            URL url = new URL(endPoint);
+            if ( url.getHost() != null ) {
+                final String urlHost = url.getHost();
+                gateway = InetAddressUtil.isLocalSystemAddress( urlHost );
+
+                if ( !gateway ) {
+                    for ( String host : getClusterNodeHostnames() ) {
+                        if ( urlHost.equalsIgnoreCase( host )) {
+                            gateway = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (MalformedURLException e) {
+           // not a gateway url
+        }
+
+        return gateway;
     }
 
     public UDDINamedEntity[] getMatchingBusinesses( final UDDIClient uddiClient,
@@ -309,6 +337,13 @@ public class UDDIHelper {
             port = ":" + port;
         }
         return port;
+    }
+
+    private Collection<String> getClusterNodeHostnames(){
+        Collection<String> hostnames = new ArrayList<String>();
+        hostnames.add( getExternalHostName() );
+        hostnames.add( serverConfig.getHostname() );
+        return hostnames;
     }
 
     private UDDIClientTLSConfig buildTLSConfig( final UDDIRegistry uddiRegistry ) {

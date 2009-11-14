@@ -13,7 +13,6 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.uddi.*;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceDocumentManager;
@@ -668,7 +667,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
             if(endPointValid && !serviceControl.getAccessPointUrl().equals(endPoint)){
                 //check if it's a gateway endpoint
-                if(UDDIUtilities.isGatewayUrl(endPoint, ServerConfig.getInstance().getHostname())){
+                if(factory.uddiHelper.isGatewayUrl(endPoint)){
                     final String msg = "endPoint found which would route back to the gateway: " + endPoint+" for serviceKey: " + serviceControl.getUddiServiceKey();
                     context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, msg);
                     throw new UDDITaskException("Problem with endPoint found for serviceKey: " + serviceControl.getUddiServiceKey()+

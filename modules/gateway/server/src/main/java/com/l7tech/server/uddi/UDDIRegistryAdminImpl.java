@@ -7,7 +7,6 @@ import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.ServerConfig;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -231,7 +230,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 //            }
 
             //make sure that we are not monitoring an endpoint of this SSG
-            if(UDDIUtilities.isGatewayUrl(endPoint, ServerConfig.getInstance().getHostname())){
+            if(uddiHelper.isGatewayUrl(endPoint)){
                 final String msg = "Cannot save UDDIServiceControl as the WSDL endpoint routes back to the SecureSpan Gateway";
                 logger.log(Level.WARNING, msg);
                 throw new SaveException(msg);

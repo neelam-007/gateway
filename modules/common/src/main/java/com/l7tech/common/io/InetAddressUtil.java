@@ -7,6 +7,8 @@ package com.l7tech.common.io;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -63,7 +65,7 @@ public class InetAddressUtil {
         if (matcher.matches())
         {
             //at least it's got a sane format.
-            int start = 0;
+            int start;
             int end = 255;
 
             for (int i = 1; i <= matcher.groupCount(); ++i) {
@@ -208,5 +210,31 @@ public class InetAddressUtil {
 
     public static boolean looksLikeIpv4Address(String str) {
         return validIpAddressPattern.matcher(str).matches();
+    }
+
+    /**
+     * Check if the given hostname resolves to an IP address for the local system.
+     *
+     * @param hostname The hostname to check
+     * @return True if the hostname resolves to a local IP
+     */
+    public static boolean isLocalSystemAddress( final String hostname ) {
+        boolean isLocal = false;
+
+        try {
+            InetAddress addr = InetAddress.getByName( hostname );
+            if ( addr.isLoopbackAddress() ) {
+                isLocal = true;
+            } else {
+                NetworkInterface ni = NetworkInterface.getByInetAddress( addr );
+                isLocal = ni!=null;
+            }
+        } catch (SocketException e) {
+            // assume not local
+        } catch (UnknownHostException e) {
+            // assume not local
+        }
+
+        return isLocal;
     }
 }
