@@ -1348,48 +1348,68 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
 
         try {
-            // check for existing references and remove them
-            for (CategoryBag cbag : cbags) {
-                Collection<KeyedReference> updated = new ArrayList<KeyedReference>();
-                if (cbag.getKeyedReference() != null) {
-                    for (KeyedReference kref : cbag.getKeyedReference()) {
-                        if (kref.getTModelKey().equals(tModelKeyLocalPolicyReference) ||
-                            kref.getTModelKey().equals(tModelKeyRemotePolicyReference)) {
-                            if (force == null)
-                                throw new UDDIExistingReferenceException(kref.getKeyValue());
-                            if (!force)
-                                updated.add(kref);
-                        }
-                        else {
-                            updated.add(kref);
-                        }
-                    }
-                }
+            boolean serviceUpdated = false;
 
+            // check for existing references and remove them
+            outer:
+            for (CategoryBag cbag : cbags) {
+                KeyedReference policyReference = null;
                 if ( localReference ) {
-                    updated.add(buildKeyedReference(tModelKeyLocalPolicyReference, description, policyKey));
+                    policyReference = buildKeyedReference(tModelKeyLocalPolicyReference, description, policyKey);
                 }
 
                 if ( remoteReference ) {
-                    updated.add(buildKeyedReference(tModelKeyRemotePolicyReference, description, policyUrl));
+                    policyReference = buildKeyedReference(tModelKeyRemotePolicyReference, description, policyUrl);
                 }
 
-                cbag.getKeyedReference().clear();
-                cbag.getKeyedReference().addAll(updated);
-            }            
+                if ( policyReference != null ) {
+                    Collection<KeyedReference> updated = new ArrayList<KeyedReference>();
+                    if (cbag.getKeyedReference() != null) {
+                        for (KeyedReference kref : cbag.getKeyedReference()) {
+                            if ( kref.getTModelKey().equals( policyReference.getTModelKey() ) &&
+                                 kref.getKeyValue().equals( policyReference.getKeyValue() ) ) {
+                                // already referenced
+                                break outer;
+                            }
+                        }
+
+                        for (KeyedReference kref : cbag.getKeyedReference()) {
+                            if (kref.getTModelKey().equals(tModelKeyLocalPolicyReference) ||
+                                kref.getTModelKey().equals(tModelKeyRemotePolicyReference)) {
+                                if (force == null)
+                                    throw new UDDIExistingReferenceException(kref.getKeyValue());
+                                if (!force)
+                                    updated.add(kref);
+                            }
+                            else {
+                                updated.add(kref);
+                            }
+                        }
+                    }
+
+                    updated.add(policyReference);
+
+                    serviceUpdated = true;
+                    cbag.getKeyedReference().clear();
+                    cbag.getKeyedReference().addAll(updated);
+                }
+            }
 
             // Are we updating the endpoints?
             if (isEndpoint) {
                 if (toUpdate.getBindingTemplates() != null && serviceUrl != null) {
                     for (BindingTemplate bt : toUpdate.getBindingTemplates().getBindingTemplate()) {
+                        serviceUpdated = true;
                         bt.setAccessPoint(buildAccessPoint("http", serviceUrl));
                     }
                 }
             }
 
-            // update service in uddi
-            UDDIPublicationPortType publicationPort = getPublishPort();
-            publicationPort.saveService(buildSaveService( authToken, toUpdate ));
+            if ( serviceUpdated ) {
+                // update service in uddi
+                UDDIPublicationPortType publicationPort = getPublishPort();
+                publicationPort.saveService(buildSaveService( authToken, toUpdate ));
+            }
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error updating service details", drfm);
         } catch (RuntimeException e) {
