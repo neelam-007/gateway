@@ -84,7 +84,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
 
         setContentPane(mainPanel);
         setModal(true);
-        getRootPane().setDefaultButton(cancelButton);
+        getRootPane().setDefaultButton(okButton);
         Utilities.setEscKeyStrokeDisposes(this);
 
         connectionNameTextField.setDocument(new MaxLengthDocument(128));
