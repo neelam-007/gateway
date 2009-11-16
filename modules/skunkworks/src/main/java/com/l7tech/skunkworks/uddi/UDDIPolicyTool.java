@@ -1,42 +1,21 @@
 package com.l7tech.skunkworks.uddi;
 
-import com.l7tech.util.IOUtils;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeUnit;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
-import javax.xml.namespace.QName;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
-import javax.xml.soap.SOAPPart;
-import javax.xml.transform.Source;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.ws.Binding;
-import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Holder;
-import javax.xml.ws.handler.Handler;
-import javax.xml.ws.handler.MessageContext;
-import javax.xml.ws.handler.soap.SOAPHandler;
-import javax.xml.ws.handler.soap.SOAPMessageContext;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.datatype.DatatypeFactory;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.*;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -55,10 +34,9 @@ import java.util.logging.Logger;
  *
  * @author Steve Jones
  */
-public class UDDIPolicyTool extends JFrame {
+public class UDDIPolicyTool extends UDDISupport {
     private static final Logger logger = Logger.getLogger(UDDIPolicyTool.class.getName());
 
-    private static final String UDDIV3_NAMESPACE = "urn:uddi-org:api_v3_service";
     private static final String POLICY_TYPE_KEY_VALUE = "policy";
     private static final String TMODEL_KEY_WSDL_TYPES = "uddi:uddi.org:wsdl:types";
     private static final String WSDL_TYPES_SERVICE = "service";
@@ -108,22 +86,26 @@ public class UDDIPolicyTool extends JFrame {
     private JButton addSubscriptionButton;
     private JButton subscriptionResultsButton;
     private JTextField subscriptionBindingKeyTextField;
+    private JButton deleteTModelButton;
+    private JButton deleteTModelReferencesButton;
 
-    private String authToken;
-    private String login;
+    private JFrame window;
 
     public UDDIPolicyTool() {
-        super("UDDI Tool v0.6");
+        super(logger);
+        JFrame window = new JFrame("UDDI Tool v0.6");
 
-        setContentPane(mainPanel);
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        window.setContentPane(mainPanel);
+        window.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         policySearchList.setCellRenderer(new TextListCellRenderer<Object>(new TextListCellProvider(true), new TextListCellProvider(false), false));
         serviceForPolicyList.setCellRenderer(new TextListCellRenderer<Object>(new TextListCellProvider(true), new TextListCellProvider(false), false));
         initListeners();
         initData();
-        pack();
+        window.pack();
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        setLocation((int)(screenSize.getWidth()-getWidth())/2, (int)(screenSize.getHeight()-getHeight())/2);
+        window.setLocation((int)(screenSize.getWidth()-window.getWidth())/2, (int)(screenSize.getHeight()-window.getHeight())/2);
+
+        this.window = window;
     }
 
     private void initListeners() {
@@ -152,7 +134,7 @@ public class UDDIPolicyTool extends JFrame {
             public void actionPerformed(final ActionEvent e) {
                 try {
                     int result = JOptionPane.showConfirmDialog(
-                            UDDIPolicyTool.this,
+                            UDDIPolicyTool.this.window,
                             "Really delete policy and any reference(s) to it?",
                             "Confirm Policy Deletion",
                             JOptionPane.OK_CANCEL_OPTION);
@@ -255,6 +237,26 @@ public class UDDIPolicyTool extends JFrame {
                 }
             }
         });
+        deleteTModelButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                try {
+                    deleteTModel();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        deleteTModelReferencesButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                try {
+                    deleteTModelReferences();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
         searchSubscriptionsButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(final ActionEvent e) {
@@ -325,33 +327,65 @@ public class UDDIPolicyTool extends JFrame {
     }
 
     private void initData() {
-        urlInquiryTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/inquiry");
-        urlPublishTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/publish");
-        urlSubscriptionTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/publish");
-        urlSecurityTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/publish");
-        credsUsernameTextField.setText("layer7");
+//        urlInquiryTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/inquiry");
+//        urlPublishTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/publish");
+//        urlSubscriptionTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/publish");
+//        urlSecurityTextField.setText("http://centrasite8.l7tech.com:53307/UddiRegistry/publish");
+//        credsUsernameTextField.setText("layer7");
 
 //        urlInquiryTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/inquiry");
 //        urlPublishTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/publish");
-//        urlSubscriptionTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/subscriptions");
+//        urlSubscriptionTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/publish");
 //        urlSecurityTextField.setText("http://donalwinxp.l7tech.com:53307/UddiRegistry/publish");
 //        credsUsernameTextField.setText("administrator");
 
-//        urlInquiryTextField.setText("http://centrasitegov:2020/registry/uddi/inquiry");
-//        urlPublishTextField.setText("http://centrasitegov:2020/registry/uddi/publish");
-//        urlSecurityTextField.setText("http://centrasitegov:2020/registry/uddi/security");
+//        urlInquiryTextField.setText("http://centrasitegov.l7tech.com:2020/registry/uddi/inquiry");
+//        urlPublishTextField.setText("http://centrasitegov.l7tech.com:2020/registry/uddi/publish");
+//        urlSecurityTextField.setText("http://centrasitegov.l7tech.com:2020/registry/uddi/security");
+//        urlSubscriptionTextField.setText("http://centrasitegov.l7tech.com:2020/registry/uddi/subscription");
 //        credsUsernameTextField.setText("administrator@webmethods.com");
 
-//        urlInquiryTextField.setText("http://CentrasiteUDDI:53307/UddiRegistry/inquiry");
-//        urlPublishTextField.setText("http://CentrasiteUDDI:53307/UddiRegistry/publish");
-//        urlSecurityTextField.setText("http://CentrasiteUDDI:53307/UddiRegistry/publish");
+//        urlInquiryTextField.setText("http://centrasiteuddi.l7tech.com:53307/UddiRegistry/inquiry");
+//        urlPublishTextField.setText("http://centrasiteuddi.l7tech.com:53307/UddiRegistry/publish");
+//        urlSecurityTextField.setText("http://centrasiteuddi.l7tech.com:53307/UddiRegistry/publish");
+//        urlSubscriptionTextField.setText("http://centrasiteuddi.l7tech.com:53307/UddiRegistry/publish");
 //        credsUsernameTextField.setText("administrator");
 
+        urlInquiryTextField.setText("http://systinet.l7tech.com:8080/uddi/inquiry");
+        urlPublishTextField.setText("http://systinet.l7tech.com:8080/uddi/publishing");
+        urlSecurityTextField.setText("http://systinet.l7tech.com:8080/uddi/security");
+        urlSubscriptionTextField.setText("http://systinet.l7tech.com:8080/uddi/subscription");
+        credsUsernameTextField.setText("admin");
+    }
 
-//        urlInquiryTextField.setText("http://systinet.l7tech.com:8080/uddi/inquiry");
-//        urlPublishTextField.setText("http://systinet.l7tech.com:8080/uddi/publishing");
-//        urlSecurityTextField.setText("http://systinet.l7tech.com:8080/uddi/security");
-//        credsUsernameTextField.setText("admin");
+    @Override
+    protected String getUsername() {
+        return credsUsernameTextField.getText();
+    }
+
+    @Override
+    protected String getPassword() {
+        return new String(credsPasswordField.getPassword());
+    }
+
+    @Override
+    protected String getInquiryUrl() {
+        return urlInquiryTextField.getText();
+    }
+
+    @Override
+    protected String getPublishingUrl() {
+        return urlPublishTextField.getText();
+    }
+
+    @Override
+    protected String getSubscriptionUrl() {
+        return urlSubscriptionTextField.getText();
+    }
+
+    @Override
+    protected String getSecurityUrl() {
+        return urlSecurityTextField.getText();
     }
 
     /**
@@ -741,7 +775,7 @@ public class UDDIPolicyTool extends JFrame {
                     if (tModel.getName() != null) {
                         String key = tModel.getTModelKey();
                         String tmodelname = tModel.getName().getValue();
-                        String desc = tModel.getDescription().toString();
+                        String desc = toString(tModel.getDescription());
 
                         System.out.println("Key: " + key + " Name: " + tmodelname + " Desc:" + desc );
                         model.addRow(new String[]{ key, tmodelname, desc });
@@ -751,6 +785,16 @@ public class UDDIPolicyTool extends JFrame {
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error listing policies: ", drfm);
         }
+    }
+
+    private String toString( final List<Description> descriptions ) {
+        String desc = "";
+
+        if ( descriptions != null && !descriptions.isEmpty() ) {
+            desc = descriptions.get( 0 ).getValue();           
+        }
+
+        return desc;
     }
 
     /**
@@ -802,6 +846,132 @@ public class UDDIPolicyTool extends JFrame {
             }
         } else {
             System.out.println( "No selected row." );
+        }
+    }
+
+    private void deleteTModel() throws Exception {
+        int row = tModelResultsTable.getSelectedRow();
+        if ( row >= 0 ) {
+            int modelRow = tModelResultsTable.convertRowIndexToModel(row);
+            String tModelKey = (String)((DefaultTableModel)tModelResultsTable.getModel()).getValueAt(modelRow, 0);
+            System.out.println( "Selected key is: " + tModelKey );
+
+            try {
+                String authToken = authToken();
+
+                UDDIPublicationPortType publicationPort = getPublishPort();
+
+                // delete tmodel
+                DeleteTModel deleteTModel = new DeleteTModel();
+                deleteTModel.setAuthInfo(authToken);
+                deleteTModel.getTModelKey().add(tModelKey);
+
+                publicationPort.deleteTModel( deleteTModel );
+            } catch (DispositionReportFaultMessage drfm) {
+                throw buildFaultException("Error deleting TModel: ", drfm);
+            }
+        } else {
+            System.out.println( "No selected row." );
+        }
+    }
+
+    /**
+     * Delete keyed reference from any service that references the TModel 
+     */
+    private void deleteTModelReferences() throws Exception {
+        int row = tModelResultsTable.getSelectedRow();
+        if ( row >= 0 ) {
+            int modelRow = tModelResultsTable.convertRowIndexToModel(row);
+            String tModelKey = (String)((DefaultTableModel)tModelResultsTable.getModel()).getValueAt(modelRow, 0);
+            System.out.println( "Selected key is: " + tModelKey );
+
+            try {
+                String authToken = authToken();
+
+                UDDIInquiryPortType inquiryPort = getInquirePort();
+
+                FindService findService = new FindService();
+                findService.setAuthInfo(authToken);
+                findService.setFindQualifiers(buildFindQualifiers(false));
+
+                // category constraints
+                CategoryBag cb2 = new CategoryBag();
+
+                // WSDL services only
+                KeyedReference keyedReference = new KeyedReference();
+                keyedReference.setKeyValue(WSDL_TYPES_SERVICE);
+                keyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
+                cb2.getKeyedReference().add(keyedReference);
+
+                // tModel reference
+                KeyedReference keyedReference2 = new KeyedReference();
+                keyedReference2.setKeyValue(tModelKey);
+                keyedReference2.setTModelKey(tModelKeyLocalPolicyReference);
+                cb2.getKeyedReference().add(keyedReference2);
+
+                findService.setCategoryBag( cb2 );
+
+                ServiceList serviceList = inquiryPort.findService(findService);
+
+                //
+                List<UDDINamedEntity> services = new ArrayList<UDDINamedEntity>();
+                ServiceInfos serviceInfos = serviceList.getServiceInfos();
+                if (serviceInfos != null) {
+                    for (ServiceInfo serviceInfo : serviceInfos.getServiceInfo()) {
+                        String name = get(serviceInfo.getName(), "service name", false).getValue();
+                        services.add(new UDDINamedEntity(serviceInfo.getServiceKey(), name));
+                    }
+                }
+
+                for ( UDDINamedEntity service : services ) {
+                    System.out.println( "Referenced from service : " + service.getName() + " " + service.getKey() );    
+                }
+
+                UDDIPublicationPortType publicationPort = getPublishPort();
+                for (UDDINamedEntity uddiEntity : services) {
+                    String serviceKey = uddiEntity.getKey();
+
+                    GetServiceDetail getServiceDetail = new GetServiceDetail();
+                    getServiceDetail.setAuthInfo(authToken);
+                    getServiceDetail.getServiceKey().add(serviceKey);
+                    ServiceDetail serviceDetail = inquiryPort.getServiceDetail(getServiceDetail);
+
+                    if (serviceDetail.getBusinessService().size() != 1) {
+                        String msg = "UDDI registry returned either empty serviceDetail or " +
+                                     "more than one business services";
+                        throw new Exception(msg);
+                    }
+
+                    //get the bag for the service
+                    BusinessService toUpdate = get(serviceDetail.getBusinessService(), "service", true);
+                    CategoryBag cbag = toUpdate.getCategoryBag();
+
+                    // find references and remove them
+                    if ( cbag != null ) {
+                        Collection<KeyedReference> updated = new ArrayList<KeyedReference>();
+                        if (cbag.getKeyedReference() != null) {
+                            for (KeyedReference kref : cbag.getKeyedReference()) {
+                                if (kref.getKeyValue().equals(tModelKey)) {
+                                    // then we don't wan't this one
+                                } else {
+                                    updated.add(kref);
+                                }
+                            }
+                        }
+
+                        cbag.getKeyedReference().clear();
+                        cbag.getKeyedReference().addAll(updated);
+
+                        // update service in uddi
+                        SaveService saveService = new SaveService();
+                        saveService.setAuthInfo(authToken);
+                        saveService.getBusinessService().add(toUpdate);
+                        publicationPort.saveService(saveService);
+                    }
+                }   
+            } catch (DispositionReportFaultMessage drfm) {
+                throw buildFaultException("Error removing references to TModel: ", drfm);
+            }
         }
     }
 
@@ -996,7 +1166,7 @@ public class UDDIPolicyTool extends JFrame {
                 }
 
                 if ( !services.equals(oldServicesList) ) {
-                    JOptionPane.showMessageDialog(this,
+                    JOptionPane.showMessageDialog(window,
                             "The list of services does not match those found in UDDI.\nPlease search for services and try again.",
                             "Unable to delete policy",
                             JOptionPane.OK_OPTION);
@@ -1195,138 +1365,6 @@ public class UDDIPolicyTool extends JFrame {
         }
     }
 
-    private String authToken() throws Exception {
-        login = credsUsernameTextField.getText();
-        String password = new String(credsPasswordField.getPassword());
-
-        if (authToken == null && (login!=null && login.trim().length()>0)) {
-            authToken = getAuthToken(login.trim(), password);
-        }
-
-        return authToken;
-    }
-
-    private String getAuthToken(final String login,
-                                  final String password) throws Exception {
-        String authToken = null;
-
-        if ( login != null && login.length() > 0 ) {
-            try {
-                UDDISecurityPortType securityPort = getSecurityPort();
-                GetAuthToken getAuthToken = new GetAuthToken();
-                getAuthToken.setUserID(login);
-                getAuthToken.setCred(password);
-                authToken = securityPort.getAuthToken(getAuthToken).getAuthInfo();
-            } catch (DispositionReportFaultMessage drfm) {
-                throw buildFaultException("Error getting authentication token: ", drfm);
-            } catch (RuntimeException e) {
-                throw new Exception("Error getting authentication token.", e);
-            }
-        }
-
-        return authToken;
-    }
-
-   private UDDISecurityPortType getSecurityPort() {
-        UDDISecurity security = new UDDISecurity(buildUrl("resources/uddi_v3_service_s.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDISecurity"));
-        UDDISecurityPortType securityPort = security.getUDDISecurityPort();
-        stubConfig(securityPort, urlSecurityTextField.getText());
-        return securityPort;
-    }
-
-    private UDDIInquiryPortType getInquirePort() {
-        UDDIInquiry inquiry = new UDDIInquiry(buildUrl("resources/uddi_v3_service_i.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDIInquiry"));
-        UDDIInquiryPortType inquiryPort = inquiry.getUDDIInquiryPort();
-        stubConfig(inquiryPort, urlInquiryTextField.getText());
-        return inquiryPort;
-    }
-
-    private UDDIPublicationPortType getPublishPort() {
-        UDDIPublication publication = new UDDIPublication(buildUrl("resources/uddi_v3_service_p.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDIPublication"));
-        UDDIPublicationPortType publicationPort = publication.getUDDIPublicationPort();
-        stubConfig(publicationPort, urlPublishTextField.getText());
-        return publicationPort;
-    }
-
-    private UDDISubscriptionPortType getSubscriptionPort() {
-        UDDISubscription subscription = new UDDISubscription(buildUrl("resources/uddi_v3_service_sub.wsdl"), new QName(UDDIV3_NAMESPACE, "UDDISubscription"));
-        UDDISubscriptionPortType subscriptionPort = subscription.getUDDISubscriptionPort();
-        stubConfig(subscriptionPort, urlSubscriptionTextField.getText());
-        return subscriptionPort;
-    }
-
-    private URL buildUrl(String relativeUrl) {
-        return UDDIInquiry.class.getResource(relativeUrl);
-    }
-
-    private void stubConfig(Object proxy, String url) {
-        BindingProvider bindingProvider = (BindingProvider) proxy;
-        Binding binding = bindingProvider.getBinding();
-        Map<String,Object> context = bindingProvider.getRequestContext();
-        List<Handler> handlerChain = new ArrayList<Handler>();
-
-        // Add handler to fix any issues with invalid faults
-        handlerChain.add(new SOAPHandler<SOAPMessageContext>(){
-            @Override
-            public Set<QName> getHeaders() {
-                return null;
-            }
-
-            @Override
-            public boolean handleMessage(SOAPMessageContext context) {
-                SOAPMessage soapMessage = context.getMessage();
-
-                if ( soapMessage != null ) {
-                    try {
-                        SOAPPart soapPart = soapMessage.getSOAPPart();
-
-                        Source source = soapPart.getContent();
-
-                        if (source instanceof StreamSource) {
-                            StreamSource streamSource = (StreamSource) source;
-
-                            InputStream in = null;
-                            try {
-                                in = streamSource.getInputStream();
-                                IOUtils.copyStream(in, System.out);
-                            } finally {
-                                ResourceUtils.closeQuietly(in);
-                            }
-                        } else if (source instanceof DOMSource) {
-                            XmlUtil.nodeToFormattedOutputStream(((DOMSource)source).getNode(), System.out);
-                        }
-                    } catch (SOAPException se) {
-                        logger.log(Level.INFO,
-                                "Error processing SOAP message when checking namespaces: " + ExceptionUtils.getMessage(se),
-                                ExceptionUtils.getDebugException(se));
-                    } catch (IOException ioe) {
-                        logger.log(Level.INFO,
-                                "Error processing SOAP message when checking namespaces: " + ExceptionUtils.getMessage(ioe),
-                                ExceptionUtils.getDebugException(ioe));
-                    }
-                }
-
-
-                return true;
-            }
-
-            @Override
-            public boolean handleFault(SOAPMessageContext context) {
-                return true;
-            }
-
-            @Override
-            public void close(MessageContext context) {
-            }
-        });
-
-        // Set handlers
-        binding.setHandlerChain(handlerChain);
-
-        // Set endpoint
-        context.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
-    }
-
     private <T> T get(List<T> list, String description, boolean onlyOne) throws Exception {
         if (list == null || list.isEmpty()) {
             throw new Exception("Missing " + description);
@@ -1335,67 +1373,6 @@ public class UDDIPolicyTool extends JFrame {
         }
 
         return list.get(0);
-    }
-
-    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    private Exception buildFaultException(final String contextMessage,
-                                          final DispositionReportFaultMessage faultMessage) {
-        Exception exception;
-
-        if ( hasResult(faultMessage, 10150) ) {
-            exception = new Exception("Authentication failed for '" + login + "'.");
-        } else if ( hasResult(faultMessage, 10140) ||
-                    hasResult(faultMessage, 10120)) {
-                exception = new Exception("Authorization failed for '" + login + "'.");
-        } else if ( hasResult(faultMessage, 10110)) {
-                exception = new Exception("Session expired or invalid.");
-        } else if ( hasResult(faultMessage, 10400)) {
-                exception = new Exception("UDDI registry is too busy.");
-        } else if ( hasResult(faultMessage, 10040)) {
-                exception = new Exception("UDDI registry version mismatch.");
-        } else if ( hasResult(faultMessage, 10050)) {
-                exception = new Exception("UDDI registry does not support a required feature.");
-        } else {
-            // handle general exception
-            exception = new Exception(contextMessage + toString(faultMessage));
-        }
-
-        return exception;
-    }
-
-    private String toString(DispositionReportFaultMessage dispositionReport) {
-        StringBuffer buffer = new StringBuffer(512);
-
-        DispositionReport report = dispositionReport.getFaultInfo();
-        if ( report != null ) {
-            for (Result result : report.getResult()) {
-                buffer.append("errno:");
-                buffer.append(result.getErrno());
-                ErrInfo info = result.getErrInfo();
-                buffer.append("/errcode:");
-                buffer.append(info.getErrCode());
-                buffer.append("/description:");
-                buffer.append(info.getValue());
-            }
-        }
-
-        return buffer.toString();
-    }    
-
-    private boolean hasResult(DispositionReportFaultMessage faultMessage, int errorCode) {
-        boolean foundResult = false;
-
-        DispositionReport report = faultMessage.getFaultInfo();
-        if ( report != null ) {
-            for (Result result : report.getResult()) {
-                if ( result.getErrno() == errorCode ) {
-                    foundResult = true;
-                    break;
-                }
-            }
-        }
-
-        return foundResult;
     }
 
     private void mergePolicyUrlToInfo(final String policyKey,
@@ -1456,7 +1433,7 @@ public class UDDIPolicyTool extends JFrame {
      *
      */
     public static void main(String[] args) {
-        new UDDIPolicyTool().setVisible(true);
+        new UDDIPolicyTool().window.setVisible(true);
     }
 
     /**
