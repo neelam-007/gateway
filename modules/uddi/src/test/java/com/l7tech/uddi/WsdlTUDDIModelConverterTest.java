@@ -28,7 +28,7 @@ public class WsdlTUDDIModelConverterTest {
     @Test
     @BugNumber(7970)
     public void testUniqueTModelPerService() throws Exception{
-        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("WarehouseTwoServices.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader( "com/l7tech/uddi/WarehouseTwoServices.wsdl" ));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
@@ -58,7 +58,7 @@ public class WsdlTUDDIModelConverterTest {
     @Test
     public void testWsdlToUddiConverstionEndPoint() throws Exception{
 
-        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("Warehouse.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader( "com/l7tech/uddi/Warehouse.wsdl" ));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
@@ -136,7 +136,7 @@ public class WsdlTUDDIModelConverterTest {
     @BugNumber(7925)
     @Test
     public void testHttpAddressSupport() throws Exception{
-        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("httpaddress.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader( "com/l7tech/uddi/httpaddress.wsdl" ));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
@@ -157,7 +157,7 @@ public class WsdlTUDDIModelConverterTest {
      */
     @Test (expected = WsdlToUDDIModelConverter.MissingWsdlReferenceException.class)
     public void testHttpAddressException() throws Exception{
-        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("nosoapbindings.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader( "com/l7tech/uddi/nosoapbindings.wsdl" ));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
@@ -175,7 +175,7 @@ public class WsdlTUDDIModelConverterTest {
     @BugNumber(7930)
     @Test(expected = WsdlToUDDIModelConverter.MissingWsdlReferenceException.class)
     public void testProblemWsdl() throws Exception{
-        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("problemwsdl.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader( "com/l7tech/uddi/problemwsdl.wsdl" ));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
@@ -194,7 +194,7 @@ public class WsdlTUDDIModelConverterTest {
     @BugNumber(7930)
     @Test
     public void testProblemWsdlConverts() throws Exception{
-        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("problemWsdlOneValidService.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader( "com/l7tech/uddi/problemWsdlOneValidService.wsdl" ));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";

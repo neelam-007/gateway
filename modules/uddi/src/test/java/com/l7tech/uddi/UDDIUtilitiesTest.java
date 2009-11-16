@@ -30,7 +30,7 @@ public class UDDIUtilitiesTest {
     @Before
     public void setUp() throws Exception {
 
-        wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("Warehouse.wsdl"));
+        wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader( "com/l7tech/uddi/Warehouse.wsdl" ));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
@@ -196,11 +196,11 @@ public class UDDIUtilitiesTest {
      */
     @Test
     public void testGetUDDIBindingImplInfo() throws UDDIException {
-        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/BusinessService.xml");
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/BusinessService.xml");
         final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
-        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_binding.xml");
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_binding.xml");
         final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
-        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_portType.xml");
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_portType.xml");
         final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));        
@@ -222,11 +222,11 @@ public class UDDIUtilitiesTest {
      */
     @Test
     public void testGetUDDIBindingImplInfoFindOtherBinding() throws UDDIException {
-        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/BusinessServiceDiffBindings.xml");
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/BusinessServiceDiffBindings.xml");
         final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
-        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_binding.xml");
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_binding.xml");
         final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
-        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("UDDIObjects/tModel_portType.xml");
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_portType.xml");
         final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
 
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));

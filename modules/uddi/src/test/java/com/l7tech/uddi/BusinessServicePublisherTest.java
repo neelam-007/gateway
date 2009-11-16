@@ -12,7 +12,6 @@ import com.l7tech.util.Pair;
 
 import javax.xml.bind.JAXB;
 import java.util.*;
-import java.io.InputStream;
 
 public class BusinessServicePublisherTest {
 
@@ -26,7 +25,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     public void testBusinessServicePublisher() throws Exception {
-        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("Warehouse.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader( "com/l7tech/uddi/Warehouse.wsdl" ));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
@@ -87,7 +86,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     public void testPublishEndPoint() throws Exception{
-        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("Warehouse.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader( "com/l7tech/uddi/Warehouse.wsdl" ));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";

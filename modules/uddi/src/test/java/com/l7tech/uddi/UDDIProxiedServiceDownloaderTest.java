@@ -28,7 +28,7 @@ public class UDDIProxiedServiceDownloaderTest {
     @Test
     public void testServiceDownload() throws Exception {
         //Set up the test, need to configure the UDDIClient
-        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader("Warehouse.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader( "com/l7tech/uddi/Warehouse.wsdl" ));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
