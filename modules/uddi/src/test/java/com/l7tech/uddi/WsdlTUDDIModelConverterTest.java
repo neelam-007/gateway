@@ -46,7 +46,8 @@ public class WsdlTUDDIModelConverterTest {
                 allTModelKeys.add(m.getTModelKey());
             }
         }
-        Assert.assertEquals("Incorrect number of unique tModels found", 6, allTModelKeys.size());
+        //2 services. Each service has two wsdl:ports. Each wsdlPort requires 2 tModels = 2 * 2 * 2 = 8
+        Assert.assertEquals("Incorrect number of unique tModels found", 8, allTModelKeys.size());
 
     }
 
@@ -72,7 +73,8 @@ public class WsdlTUDDIModelConverterTest {
         Assert.assertEquals("Incorrect number of Business Services found", 1, serviceToDependentModels.size());
 
         Map<String, TModel> keysToTModels = serviceToDependentModels.get(0).right;
-        Assert.assertEquals("Incorrect number of tModels published", 3, keysToTModels.keySet().size());
+        //1 service with 2 wsdl:port. Each wsdl:port requries 2 tmodels = 1 * 2 * 2 = 4
+        Assert.assertEquals("Incorrect number of tModels published", 4, keysToTModels.keySet().size());
 
         for(Map.Entry<String, TModel> entry: keysToTModels.entrySet()) {
             System.out.println("tModelKey: " + entry.getKey());

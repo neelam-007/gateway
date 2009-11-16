@@ -21,7 +21,7 @@ public class UDDIProxiedServiceDownloaderTest {
 
 
     /**
-     * Tests that when given a list of BusinessServices, the UDDIProxiedServiceDownloader correct processes
+     * Tests that when given a list of BusinessServices, the UDDIProxiedServiceDownloader correctly processes
      * them 
      * @throws WSDLException
      */

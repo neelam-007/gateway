@@ -273,18 +273,15 @@ public class WsdlToUDDIModelConverter {
         //We will only convert wsdl:ports which implement a soap biding
         if (!soapFound) throw new NonSoapBindingFoundException("No soap:address found in wsdl");
 
-        BindingTemplate bindingTemplate = new BindingTemplate();
+        final BindingTemplate bindingTemplate = new BindingTemplate();
 
-        //For v3, we don't care about what type of element represents the endPoint e.g. whether it's soap:address
-        //soap12:address or http:addresss, as they all represent an endpoint.
-        //TODO [Donal] we do care. We should not say we accept a protocol / transport which we do not
         //Using a WSDL implies a SOAP request
-        AccessPoint accessPoint = new AccessPoint();
+        final AccessPoint accessPoint = new AccessPoint();
         accessPoint.setUseType("endPoint");
         accessPoint.setValue(gatewayURL);
         bindingTemplate.setAccessPoint(accessPoint);
 
-        TModelInstanceDetails tModelInstanceDetails = new TModelInstanceDetails();
+        final TModelInstanceDetails tModelInstanceDetails = new TModelInstanceDetails();
 
         //tModel for wsdl:binding, that this wsdl:port implements
         final Binding binding = wsdlPort.getBinding();
@@ -293,11 +290,11 @@ public class WsdlToUDDIModelConverter {
             logger.log(Level.INFO, msg);
             throw new MissingWsdlReferenceException(msg);
         }
-        final String bindingTModelKey = createUddiBindingTModel(serviceToTModels, binding);
-        TModelInstanceInfo bindingTModelInstanceInfo = new TModelInstanceInfo();
+        final String bindingTModelKey = createUddiBindingTModel(serviceToTModels, binding, wsdlPort);
+        final TModelInstanceInfo bindingTModelInstanceInfo = new TModelInstanceInfo();
         bindingTModelInstanceInfo.setTModelKey(bindingTModelKey);
 
-        InstanceDetails instanceDetails = new InstanceDetails();
+        final InstanceDetails instanceDetails = new InstanceDetails();
         instanceDetails.getDescription().add(getDescription(WSDL_BINDING_INSTANCE_DESCRIPTION));
         instanceDetails.setInstanceParms(binding.getQName().getLocalPart());
         bindingTModelInstanceInfo.setInstanceDetails(instanceDetails);
@@ -305,7 +302,7 @@ public class WsdlToUDDIModelConverter {
         tModelInstanceDetails.getTModelInstanceInfo().add(bindingTModelInstanceInfo);
 
         //tModel for the wsdl:portType referenced by the wsdl:binding
-        final String portTypeTModelKey = createUddiPortTypeTModel(serviceToTModels, binding.getPortType());
+        final String portTypeTModelKey = createUddiPortTypeTModel(serviceToTModels, binding.getPortType(), wsdlPort);
         TModelInstanceInfo portTypeTModelInstanceInfo = new TModelInstanceInfo();
         portTypeTModelInstanceInfo.setTModelKey(portTypeTModelKey);
 
@@ -324,23 +321,25 @@ public class WsdlToUDDIModelConverter {
      * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.MissingWsdlReferenceException if the binding contains a reference
      * to a wsdl:portType which does not exist
      */
-    private String createUddiBindingTModel(final Map<String, TModel> serviceToTModels, final Binding binding) throws MissingWsdlReferenceException {
+    private String createUddiBindingTModel(final Map<String, TModel> serviceToTModels,
+                                           final Binding binding,
+                                           final Port wsdlPort) throws MissingWsdlReferenceException {
         final String bindingName = binding.getQName().getLocalPart();//+ " " + serviceOid; - don't do this, it breaks the technical note
 
         //A binding name is UNIQUE across all wsdl:bindings in the entire WSDL!
         //See http://www.w3.org/TR/wsdl#_bindings
         //appending BINDING_TMODEL_IDENTIFIER as a wsdl:portType could have the same name
-        final String key = bindingName + BINDING_TMODEL_IDENTIFIER;
+        final String key = bindingName + wsdlPort.getName() + BINDING_TMODEL_IDENTIFIER;
 
-        TModel tModel = new TModel();
+        final TModel tModel = new TModel();
 
         tModel.setName(getName(bindingName));
 
         tModel.getOverviewDoc().addAll(getOverViewDocs());
         
-        CategoryBag categoryBag = new CategoryBag();
+        final CategoryBag categoryBag = new CategoryBag();
 
-        KeyedReference bindingEntityReference = new KeyedReference();
+        final KeyedReference bindingEntityReference = new KeyedReference();
         bindingEntityReference.setKeyValue("binding");
         bindingEntityReference.setTModelKey(UDDI_WSDL_TYPES);
         categoryBag.getKeyedReference().add(bindingEntityReference);
@@ -350,14 +349,14 @@ public class WsdlToUDDIModelConverter {
             logger.log(Level.INFO, msg);
             throw new MissingWsdlReferenceException(msg);
         }
-        final String portTypeTModelKey = createUddiPortTypeTModel(serviceToTModels, binding.getPortType());
-        KeyedReference portTypeReference = new KeyedReference();
+        final String portTypeTModelKey = createUddiPortTypeTModel(serviceToTModels, binding.getPortType(), wsdlPort);
+        final KeyedReference portTypeReference = new KeyedReference();
         portTypeReference.setKeyName("portType reference");
         portTypeReference.setTModelKey(UDDI_WSDL_PORTTYPEREFERENCE);
         portTypeReference.setKeyValue(portTypeTModelKey);
         categoryBag.getKeyedReference().add(portTypeReference);
 
-        KeyedReference wsdlSpecReference = new KeyedReference();
+        final KeyedReference wsdlSpecReference = new KeyedReference();
         wsdlSpecReference.setKeyValue("wsdlSpec");
         wsdlSpecReference.setTModelKey(UDDI_CATEGORIZATION_TYPES);
         categoryBag.getKeyedReference().add(wsdlSpecReference);
@@ -405,7 +404,9 @@ public class WsdlToUDDIModelConverter {
         return returnList;
     }
 
-    private String createUddiPortTypeTModel(final Map<String, TModel> serviceToTModels, final PortType portType) {
+    private String createUddiPortTypeTModel(final Map<String, TModel> serviceToTModels,
+                                            final PortType portType,
+                                            final Port wsdlPort) {
         //calling code should not have called with null pointer
         if(portType == null) throw new NullPointerException("Missing reference to wsdl:portType");
         final String portTypeName = portType.getQName().getLocalPart();//+ " " + serviceOid; - this breaks the techincal spec - don't modify the name
@@ -413,14 +414,14 @@ public class WsdlToUDDIModelConverter {
         //A portName is UNIQUE across all wsdl:portTypes in the entire WSDL!
         //See http://www.w3.org/TR/wsdl#_porttypes
         //appending PORT_TMODEL_IDENTIFIER as a wsdl:binding could have the same name
-        final String key = portTypeName + PORT_TMODEL_IDENTIFIER;
+        final String key = portTypeName + wsdlPort.getName() + PORT_TMODEL_IDENTIFIER;//Cannot append any value to this constant
 
-        TModel tModel = new TModel();
+        final TModel tModel = new TModel();
         tModel.setName(getName(portTypeName));
 
         tModel.getOverviewDoc().addAll(getOverViewDocs());
 
-        CategoryBag categoryBag = new CategoryBag();
+        final CategoryBag categoryBag = new CategoryBag();
 
         //all required keyed references
         KeyedReference portTypeEntityReference = new KeyedReference();
