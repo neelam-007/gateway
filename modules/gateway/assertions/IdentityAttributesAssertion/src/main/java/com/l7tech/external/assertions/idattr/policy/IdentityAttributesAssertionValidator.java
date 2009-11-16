@@ -37,7 +37,7 @@ public class IdentityAttributesAssertionValidator implements AssertionValidator 
                 authenticatedProviders.add(((IdentityAssertion)assertion).getIdentityProviderOid());
             } else if (assertion == this.assertion) {
                 if (firstIdPos == -1 || firstIdPos > i || !authenticatedProviders.contains(this.assertion.getIdentityProviderOid())) {
-                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by an Identity Assertion (e.g. Authenticate User or Group) matching the expected Identity Provider", null));
+                    result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "Must be preceded by an Identity Assertion (e.g. Authenticate User or Group) matching the expected Identity Provider", null));
                 }
                 break;
             }
