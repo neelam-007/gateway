@@ -659,6 +659,11 @@ IFS='
     IFS=$old
     LEN=${#REGISTEREDPATCHES[*]}
 
+    echo ""
+    echo "The following patches are available for installation. "
+    echo "Please make your selection via line number."
+    echo ""
+    
     declare -a patch_ids
     for (( i = 0 ; i < $LEN ; i++))
     do
