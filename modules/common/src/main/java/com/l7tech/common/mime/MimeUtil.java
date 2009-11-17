@@ -20,6 +20,8 @@ import java.util.Enumeration;
 public class MimeUtil {
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String CONTENT_LENGTH = "Content-Length";
+    public static final String CONTENT_ID = "Content-Id";
+    public static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding";
 
     // TODO these should all be package private
     public static final String DEFAULT_ENCODING = "UTF-8";
@@ -28,7 +30,6 @@ public class MimeUtil {
     public static final String MULTIPART_TYPE = "type";
     public static final String MULTIPART_BOUNDARY = "boundary";
     public static final String MULTIPART_BOUNDARY_PREFIX = "--";
-    public static final String CONTENT_ID = "Content-Id";
     private static final SecureRandom random = new SecureRandom();
     public static final byte[] CRLF = "\r\n".getBytes();
 
@@ -41,7 +42,7 @@ public class MimeUtil {
      * @throws IOException if the InputStream could not be read
      */
     public static MimeHeaders parseHeaders(InputStream stream) throws IOException {
-        InternetHeaders headers = null;
+        InternetHeaders headers;
         try {
             headers = new InternetHeaders(stream);
         } catch (MessagingException e) {

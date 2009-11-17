@@ -84,6 +84,21 @@ public class ContentTypeHeader extends MimeHeader {
     }
 
     /**
+     * Constructor for use when the value is known to be good.
+     *
+     * @param contentTypeHeaderValue The value for the header
+     * @return The new ContentTypeHeader (never null)
+     * @throws IllegalArgumentException if the contentTypeHeaderValue is not valid
+     */
+    public static ContentTypeHeader create( final String contentTypeHeaderValue ) {
+        try {
+            return parseValue( contentTypeHeaderValue );
+        } catch ( IOException e ) {
+            throw new IllegalArgumentException( e );
+        }
+    }
+
+    /**
      * Parse a MIME Content-Type: header, not including the header name and colon.
      * Example: <code>{@link #parseValue}("text/html; charset=\"UTF-8\"")</code>
      *
