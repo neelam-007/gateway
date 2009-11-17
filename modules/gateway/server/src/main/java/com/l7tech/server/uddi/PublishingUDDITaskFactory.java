@@ -233,7 +233,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e, "Database error when publishing proxy endpoint.");
                 throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_UNEXPECTED_ERROR, e, ExceptionUtils.getMessage(e));
                 if(uddiPublishStatus != null){
                     throwHandledTaskException(context, e, uddiPublishStatus.getOid(), factory, true);
@@ -396,7 +396,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, "Database error when publishing proxy services.");
                 throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_UNEXPECTED_ERROR, e, ExceptionUtils.getMessage(e));
                 if(uddiPublishStatus != null){
                     throwHandledTaskException(context, e, uddiPublishStatus.getOid(), factory, true);
@@ -509,7 +509,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, "Database error when publishing proxy services.");
                 throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_UNEXPECTED_ERROR, e, ExceptionUtils.getMessage(e));
                 if(uddiPublishStatus != null){
                     throwHandledTaskException(context, e, uddiPublishStatus.getOid(), factory, true);
@@ -596,7 +596,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_FAILED, e, "Database error when deleting proxy endpoint.");
                 throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_UNEXPECTED_ERROR, e, ExceptionUtils.getMessage(e));
                 if(uddiPublishStatus != null){
                     throwHandledTaskException(context, e, uddiPublishStatus.getOid(), factory, false);
@@ -724,7 +724,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, "Database error when deleting proxy services.");
                 throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_UNEXPECTED_ERROR, e, ExceptionUtils.getMessage(e));
                 if(uddiPublishStatus != null){
                     throwHandledTaskException(context, e, uddiPublishStatus.getOid(), factory, false);
@@ -739,7 +739,6 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
      * If the UDDI publish has failed more than the allowable configured amount, it is set to the failedStatus,
      * othewise its status is set to the retry status
      *
-     * @param statusManager UDDIPublishStatusManager
      * @param retryOkStatus UDDIPublishStatus.PublishStatus the status to set on the UDDIPublishStatus if the publish
      * task can be retried
      * @param failedStatus UDDIPublishStatus.PublishStatus the status to set on the UDDIPublishStatus if the publish
