@@ -82,7 +82,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         info.setUddiBusinessName(uddiBusinessName);
         info.setPublishType(PublishType.PROXY);
         info.setWsdlHash(wsdlHash);
-        info.setRemoveOtherBindings(updateProxyOnLocalChange);
+        info.setUpdateProxyOnLocalChange(updateProxyOnLocalChange);
         return info;
     }
 
@@ -100,7 +100,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         info.setUddiBusinessName(uddiBusinessName);
         info.setPublishType(PublishType.OVERWRITE);
         info.setWsdlHash(wsdlHash);
-        info.setRemoveOtherBindings(updateProxyOnLocalChange);
+        info.setUpdateProxyOnLocalChange(updateProxyOnLocalChange);
         return info;
     }
 
