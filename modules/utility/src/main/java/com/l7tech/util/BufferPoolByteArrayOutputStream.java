@@ -5,11 +5,11 @@
 
 package com.l7tech.util;
 
-import com.l7tech.util.BufferPool;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 
 /**
  * A version of ByteArrayOutputStream that uses the BufferPool.  This class is not synchronized.
@@ -57,6 +57,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      *
      * @param   b   the byte to be written.
      */
+    @Override
     public void write(int b) throws IOException {
         int newcount = count + 1;
         if (buf == null) throw new IOException("BufferPool OutputStream is closed");
@@ -79,6 +80,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      * @param   off   the start offset in the data.
      * @param   len   the number of bytes to write.
      */
+    @Override
     public void write(byte b[], int off, int len) throws IOException {
         if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
@@ -179,6 +181,87 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
     }
 
     /**
+     * Removes the backing array from this stream and returns as InputStream.
+     *
+     * <p>You can not use this stream after calling this method, this stream
+     * will not use the array after this method is called.</p>
+     *
+     * <p>It is safe (but not necessary) to call {@link #close} after calling
+     * this method.</p>
+     *
+     * <p>Closing the returned stream will re-pool the returned array.</p>
+     *
+     * @return The input stream.
+     */
+    public InputStream toInputStream() {
+        final int length = count;
+        final byte[] buffer = buf;
+        buf = null;
+        count = 0;
+
+        return new InputStream() {
+            private final InputStream delegate = new ByteArrayInputStream( buffer, 0, length );
+            private boolean closed = false;
+
+            @Override
+            public int read() throws IOException {
+                checkOpen();
+                return delegate.read();
+            }
+
+            @Override
+            public int read( byte[] b ) throws IOException {
+                checkOpen();
+                return delegate.read( b );
+            }
+
+            @Override
+            public int read( byte[] b, int off, int len ) throws IOException {
+                checkOpen();
+                return delegate.read( b, off, len );
+            }
+
+            @Override
+            public long skip( long n ) throws IOException {
+                checkOpen();
+                return delegate.skip( n );
+            }
+
+            @Override
+            public int available() throws IOException {
+                checkOpen();
+                return delegate.available();
+            }
+
+            @Override
+            public void mark( int readlimit ) {
+                delegate.mark( readlimit );
+            }
+
+            @Override
+            public void reset() throws IOException {
+                checkOpen();
+                delegate.reset();
+            }
+
+            @Override
+            public boolean markSupported() {
+                return delegate.markSupported();
+            }
+
+            @Override
+            public void close() throws IOException {
+                closed = true;
+                BufferPool.returnBuffer( buffer );
+            }
+
+            private void checkOpen() throws IOException {
+                if ( closed ) throw new IOException( "Stream is closed" );
+            }
+        };
+    }
+
+    /**
      * Returns the current size of the buffer.
      *
      * @return  the value of the <code>count</code> field, which is the number
@@ -197,6 +280,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      * @throws IllegalStateException if the output stream has been closed.
      * @since  JDK1.1
      */
+    @Override
     public String toString() {
         if (buf == null) throw new IllegalStateException("BufferPool OutputStream is closed");
         return new String(buf, 0, count);
@@ -217,6 +301,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
         return new String(buf, 0, count, enc);
     }
 
+    @Override
     public void close() {
         if (buf != null) {
             BufferPool.returnBuffer(buf);
