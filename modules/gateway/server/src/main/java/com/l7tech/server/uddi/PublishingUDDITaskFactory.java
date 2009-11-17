@@ -201,7 +201,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         try {
                             uddiClient.deleteBindingTemplate(bindingKeyToCheck);
                         } catch (UDDIException e) {
-                            PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus, context, factory.uddiPublishStatusManager);
+                            PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                             context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING, e, ExceptionUtils.getMessage(e), uddiProxiedServiceInfo.getProxyBindingKey());
                             return;
                         }
@@ -210,7 +210,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             serviceControl.getWsdlPortName(), serviceControl.getWsdlPortBinding(), protectedServiceExternalURL, protectedServiceWsdlURL,
                             uddiProxiedServiceInfo.isRemoveOtherBindings());
                 } catch (UDDIException e) {
-                    PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus, context, factory.uddiPublishStatusManager);
+                    PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e, ExceptionUtils.getMessage(e));
                     return;
                 }
@@ -236,7 +236,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             } catch (Exception e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_UNEXPECTED_ERROR, e, ExceptionUtils.getMessage(e));
                 if(uddiPublishStatus != null){
-                    throwHandledTaskException(context, e, uddiPublishStatus, factory, true);
+                    throwHandledTaskException(context, e, uddiPublishStatus.getOid(), factory, true);
                 }
             }
         }
@@ -359,7 +359,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     deletedAndNewServices = businessServicePublisher.publishServicesToUDDIRegistry(
                             protectedServiceExternalURL, protectedServiceWsdlURL, uddiProxiedServiceInfo.getUddiBusinessKey(), serviceKeys, serviceWasOverwritten);
                 } catch (UDDIException e) {
-                    PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus, context, factory.uddiPublishStatusManager);
+                    PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
                     return;
                 }
@@ -399,7 +399,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             } catch (Exception e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_UNEXPECTED_ERROR, e, ExceptionUtils.getMessage(e));
                 if(uddiPublishStatus != null){
-                    throwHandledTaskException(context, e, uddiPublishStatus, factory, true);
+                    throwHandledTaskException(context, e, uddiPublishStatus.getOid(), factory, true);
                 }
             }
         }
@@ -496,7 +496,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             serviceControl.getWsdlPortName(), protectedServiceExternalURL, protectedServiceWsdlURL, serviceControl.getUddiBusinessKey());
 
                 } catch (UDDIException e) {
-                    PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus, context, factory.uddiPublishStatusManager);
+                    PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
                     return;
                 }
@@ -512,7 +512,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             } catch (Exception e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_UNEXPECTED_ERROR, e, ExceptionUtils.getMessage(e));
                 if(uddiPublishStatus != null){
-                    throwHandledTaskException(context, e, uddiPublishStatus, factory, true);
+                    throwHandledTaskException(context, e, uddiPublishStatus.getOid(), factory, true);
                 }
             }
         }
@@ -587,7 +587,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
                                 ExceptionUtils.getDebugException(e),
                                 uddiProxiedServiceInfo.getProxyBindingKey());
-                        PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus, context, factory.uddiPublishStatusManager);
+                        PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                         return;
                     }
                 }
@@ -599,7 +599,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             } catch (Exception e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_UNEXPECTED_ERROR, e, ExceptionUtils.getMessage(e));
                 if(uddiPublishStatus != null){
-                    throwHandledTaskException(context, e, uddiPublishStatus, factory, false);
+                    throwHandledTaskException(context, e, uddiPublishStatus.getOid(), factory, false);
                 }
             }
         }
@@ -710,7 +710,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     logger.log(Level.FINE, "Successfully deleted published Gateway WSDL from UDDI Registry");
                 } catch (UDDIException e) {
                     context.logAndAudit(SystemMessages.UDDI_REMOVE_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
-                    PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus, context, factory.uddiPublishStatusManager);
+                    PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     return;
                 }
 
@@ -727,7 +727,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             } catch (Exception e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_UNEXPECTED_ERROR, e, ExceptionUtils.getMessage(e));
                 if(uddiPublishStatus != null){
-                    throwHandledTaskException(context, e, uddiPublishStatus, factory, false);
+                    throwHandledTaskException(context, e, uddiPublishStatus.getOid(), factory, false);
                 }
             }
         }
@@ -740,14 +740,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
      * othewise its status is set to the retry status
      *
      * @param statusManager UDDIPublishStatusManager
-     * @param retryOkStatus
-     * @param failedStatus
-     * @param uddiPublishStatusOid long oid of the UDDIPublishStatus to update. Not passed by reference as the
-     * UDDIPublishStatus should be updated in a transaction separate to the transaction which caused this exception
-     * @param taskContext
-     * @param statusManager
-     * @throws UpdateException
-     * @throws com.l7tech.objectmodel.FindException
+     * @param retryOkStatus UDDIPublishStatus.PublishStatus the status to set on the UDDIPublishStatus if the publish
+     * task can be retried
+     * @param failedStatus UDDIPublishStatus.PublishStatus the status to set on the UDDIPublishStatus if the publish
+     * task cannot be retried
+     * @param uddiPublishStatusOid long oid of the UDDIPublishStatus to update.
+     * @param taskContext UDDITaskContext to provide access to the max retry attempts
+     * @param statusManager UDDIPublishStatusManager statusManager provide to look up the most up to date value for the
+     * UDDIPublishStatus
+     * @throws UpdateException any problems updating the db
+     * @throws com.l7tech.objectmodel.FindException any problems searching the db
      */
     private static void handleUddiUpdateFailure(final long uddiPublishStatusOid,
                                                 final UDDITaskContext taskContext,
@@ -768,42 +770,49 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
         statusManager.update(uddiPublishStatus);
     }
     
-    private static void handleUddiPublishFailure(final UDDIPublishStatus uddiPublishStatus,
+    private static void handleUddiPublishFailure(final long uddiPublishStatusOid,
                                                  final UDDITaskContext taskContext,
                                                  final UDDIPublishStatusManager uddiPublishStatusManager)
             throws UpdateException, FindException {
-        handleUddiUpdateFailure(uddiPublishStatus.getOid(), taskContext, uddiPublishStatusManager,
+        handleUddiUpdateFailure(uddiPublishStatusOid, taskContext, uddiPublishStatusManager,
                 UDDIPublishStatus.PublishStatus.PUBLISH_FAILED, UDDIPublishStatus.PublishStatus.CANNOT_PUBLISH);
     }
 
-    private static void handleUddiDeleteFailure(final UDDIPublishStatus uddiPublishStatus,
+    private static void handleUddiDeleteFailure(final long uddiPublishStatusOid,
                                                 final UDDITaskContext taskContext,
                                                 final UDDIPublishStatusManager uddiPublishStatusManager) throws UpdateException, FindException {
-        handleUddiUpdateFailure(uddiPublishStatus.getOid(), taskContext, uddiPublishStatusManager,
+        handleUddiUpdateFailure(uddiPublishStatusOid, taskContext, uddiPublishStatusManager,
                 UDDIPublishStatus.PublishStatus.DELETE_FAILED, UDDIPublishStatus.PublishStatus.CANNOT_DELETE);
     }
 
-    private static void throwHandledTaskException(final UDDITaskContext context, final Exception e,
-                                                  final UDDIPublishStatus finalStatus,
+    /**
+     * Handle an unexpected error. Update the status of the publish / delete task so it gets retried again and avoids any 
+     * task which causes a runtime exception from staying in the 'PUBLISH' status. We need users to see the problem in the SSM
+     * @param context UDDITaskContext from the UDDITask
+     * @param e Exception The unexpected runtime exception
+     * @param publishStatusOid long oid of PublishStatus the status for the UDDIProxiedServiceInfo
+     * @param factory PublishingUDDITaskFactory providing access to all required Managers
+     * @param isPublishing boolean if true, then the UDDIPublishStatus will following lifecycle for PUBLISH->PUBLISH_FAILED->CANNOT_PUBLISH,
+     * if false, then the UDDIPublishStatus will following lifecycle for DELETE->DELETE_FAILED->CANNOT_DELETE, 
+     * @throws UDDIHandledTaskException
+     */
+    private static void throwHandledTaskException(final UDDITaskContext context,
+                                                  final Exception e,
+                                                  final long publishStatusOid,
                                                   final PublishingUDDITaskFactory factory,
                                                   final boolean isPublishing) throws UDDIHandledTaskException {
         throw new UDDIHandledTaskException(ExceptionUtils.getMessage(e), e) {
             @Override
             public void handleTaskError() {
-                //this is an unexpected error. Update the status of the publish / delete task so it gets retried again
-                //avoids any task which causes a runtime exception from staying in the 'PUBLISH' status. We need users to see the
-                //problem in the SSM
-                if (finalStatus != null) {
-                    try {
-                        if(isPublishing) handleUddiPublishFailure(finalStatus, context, factory.uddiPublishStatusManager);
-                        else handleUddiDeleteFailure(finalStatus, context, factory.uddiPublishStatusManager);
-                    } catch (UpdateException e1) {
-                        if(isPublishing) context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e1, "Database error when updating database with publish fail stats.");
-                        else context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e1, "Database error when updating database with delete fail stats.");
-                    } catch (FindException e1) {
-                        if(isPublishing) context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e1, "Database error when updating database with publish fail stats.");
-                        else context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e1, "Database error when updating database with delete fail stats.");
-                    }
+                try {
+                    if(isPublishing) handleUddiPublishFailure(publishStatusOid, context, factory.uddiPublishStatusManager);
+                    else handleUddiDeleteFailure(publishStatusOid, context, factory.uddiPublishStatusManager);
+                } catch (UpdateException e1) {
+                    if(isPublishing) context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e1, "Database error when updating database with publish fail stats.");
+                    else context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e1, "Database error when updating database with delete fail stats.");
+                } catch (FindException e1) {
+                    if(isPublishing) context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e1, "Database error when updating database with publish fail stats.");
+                    else context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e1, "Database error when updating database with delete fail stats.");
                 }
             }
         };

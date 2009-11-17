@@ -15,6 +15,7 @@ import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.Component;
@@ -62,7 +63,8 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                            final ServiceCache serviceCache,
                            final ClusterMaster clusterMaster,
                            final Timer timer,
-                           final Collection<UDDITaskFactory> taskFactories ) {
+                           final Collection<UDDITaskFactory> taskFactories,
+                           final ServerConfig serverConfig) {
         this.transactionManager = transactionManager;
         this.uddiHelper = uddiHelper;
         this.uddiRegistryManager = uddiRegistryManager;
@@ -74,7 +76,8 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
-        this.taskContext = new UDDICoordinatorTaskContext( this );
+        this.serverConfig = serverConfig;
+        this.taskContext = new UDDICoordinatorTaskContext( this, serverConfig);
     }
 
     public boolean isNotificationServiceAvailable( final long registryOid ) {
@@ -230,8 +233,10 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     private final UDDITaskFactory.UDDITaskContext taskContext;
     private final AtomicReference<Map<Long,UDDIRegistryRuntime>> registryRuntimes = // includes disabled registries
             new AtomicReference<Map<Long,UDDIRegistryRuntime>>( Collections.<Long,UDDIRegistryRuntime>emptyMap() );
+    private final ServerConfig serverConfig;
     private ApplicationEventPublisher eventPublisher;
     private Audit auditor;
+
 
     private PublishedService getServiceForHandlingUDDINotifications( final long registryOid ) {
         PublishedService notificationService = null;
@@ -932,9 +937,13 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
     private static final class UDDICoordinatorTaskContext implements UDDITaskFactory.UDDITaskContext {
         private final UDDICoordinator coordinator;
+        private final ServerConfig serverConfig;
+        private static final String UDDI_WSDL_PUBLISH_MAX_RETRIES = "uddi.wsdlpublish.maxretries"; 
 
-        UDDICoordinatorTaskContext( final UDDICoordinator coordinator  ) {
-            this.coordinator = coordinator;   
+        UDDICoordinatorTaskContext(final UDDICoordinator coordinator,
+                                   final ServerConfig serverConfig) {
+            this.coordinator = coordinator;
+            this.serverConfig = serverConfig;
         }
 
         @Override
@@ -987,7 +996,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
         @Override
         public int getMaxRetryAttempts() {
-            return 3;//TODO [Donal] replace with cluster property
+            return serverConfig.getIntProperty( UDDI_WSDL_PUBLISH_MAX_RETRIES, 3);
         }
     }
 }
