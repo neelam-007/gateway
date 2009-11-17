@@ -508,7 +508,7 @@ doPatchManagementMenu() {
         echo "What would you like to do?"
         echo ""
         echo " 1) Register/Upload and verify a new patch"
-        echo " 2) Install a register a verified patch"
+        echo " 2) Install a registered and verified patch"
         echo " 3) Unregister a patch"
         echo " 4) List all registered patches and their status"
         echo " X) Exit menu"
@@ -609,10 +609,28 @@ doPatchUpload() {
     while [ "$isMenuValid" != "y" ]
     do
 
-        echo "Specify the patch you would like to register from the following list."
-
         DROPBOXPATCHES=(`find $HOME -iname "*.L7P"`)
         LEN=${#DROPBOXPATCHES[*]}
+
+        echo ""
+        if [ $LEN -eq 0 ] ; then
+
+            echo "No patches were found in the ssgconfig directory."
+            echo ""
+            echo "You can still specify the full path to a patch file"
+            echo "using the \"S\" option below."
+            echo ""
+            echo "NOTE: patches supplied by Layer 7 have an L7P extension."
+        else
+            echo "Specify the patch you would like to register from the following list."
+            echo ""
+            echo "You can also specify the full path to a patch file."
+            echo "using the \"S\" option below."
+            echo ""
+            echo "NOTE: patches supplied by Layer 7 have an L7P extension."
+        fi
+
+        echo ""
 
         for (( i = 0 ; i < $LEN ; i++))
         do
