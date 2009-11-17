@@ -8,6 +8,7 @@ package com.l7tech.xml.tarari;
 import com.l7tech.util.Functions;
 import org.xml.sax.SAXException;
 
+import javax.xml.transform.ErrorListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -25,10 +26,15 @@ public interface TarariCompiledStylesheet {
      * @param output  stream to which the transformation output will be written.  Must not be null.
      * @param varsUsed  names of variables used by this stylesheet, or null.
      * @param variableGetter  variableGetter to look up variables used by this stylesheet, or null.
+     * @param errorListener  listener for xsl:messages
      * @throws IOException if there is a problem writing to output
      * @throws SAXException if the input document can't be parsed.  (Probably can't happen here.)
      */
-    void transform(TarariMessageContext input, OutputStream output, String[] varsUsed, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException;
+    void transform( TarariMessageContext input,
+                    OutputStream output,
+                    String[] varsUsed,
+                    Functions.Unary<Object, String> variableGetter,
+                    ErrorListener errorListener ) throws IOException, SAXException;
 
     /**
      * Perform a Tarari XSLT transformation upon the specified XML message stream.
@@ -37,9 +43,14 @@ public interface TarariCompiledStylesheet {
      * @param output  stream to which the transformation output will be written.  Must not be null.
      * @param varsUsed  names of variables used by this stylesheet, or null.
      * @param variableGetter  variableGetter to look up variables used by this stylesheet, or null.
+     * @param errorListener  listener for xsl:messages
      * @throws IOException if the input document can't be read.
      * @throws SAXException if the input document can't be parsed.
      * @throws IOException if there is a problem writing to output
      */
-    void transform(InputStream input, OutputStream output, String[] varsUsed, Functions.Unary<Object, String> variableGetter) throws SAXException, IOException;
+    void transform( InputStream input,
+                    OutputStream output,
+                    String[] varsUsed,
+                    Functions.Unary<Object, String> variableGetter,
+                    ErrorListener errorListener ) throws SAXException, IOException;
 }

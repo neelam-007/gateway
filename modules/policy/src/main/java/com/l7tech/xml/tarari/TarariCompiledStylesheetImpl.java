@@ -15,11 +15,14 @@ import com.tarari.xml.XmlSource;
 import com.tarari.xml.rax.RaxDocument;
 import com.tarari.xml.util.UriResolver;
 import com.tarari.xml.xslt11.Stylesheet;
+import com.tarari.xml.xslt11.MessageListener;
 import com.tarari.xml.xslt11.parser.XsltParseException;
 import com.tarari.xml.xslt11.parser.StylesheetParser;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.TransformerException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -89,18 +92,30 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
         }
     }
 
-    public void transform(TarariMessageContext input, OutputStream output, String[] varsUsed, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
+    public void transform( final TarariMessageContext input,
+                           final OutputStream output,
+                           final String[] varsUsed,
+                           final Functions.Unary<Object, String> variableGetter,
+                           final ErrorListener errorListener ) throws IOException, SAXException {
         XmlSource source = (XmlSource)xmlSource.get();
         RaxDocument raxDocument = ((TarariMessageContextImpl)input).getRaxDocument();
         source.setData(raxDocument);
-        transform(source, output, varsUsed, variableGetter);
+        transform(source, output, varsUsed, variableGetter, errorListener);
     }
 
-    public void transform(InputStream input, OutputStream output, String[] varsUsed, Functions.Unary<Object, String> variableGetter) throws SAXException, IOException {
-        transform(new XmlSource(input), output, varsUsed, variableGetter);
+    public void transform( final InputStream input,
+                           final OutputStream output,
+                           final String[] varsUsed,
+                           final Functions.Unary<Object, String> variableGetter,
+                           final ErrorListener errorListener ) throws SAXException, IOException {
+        transform(new XmlSource(input), output, varsUsed, variableGetter, errorListener);
     }
 
-    private void transform(XmlSource source, OutputStream output, String[] varsUsed, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
+    private void transform( final XmlSource source,
+                            final OutputStream output,
+                            final String[] varsUsed,
+                            final Functions.Unary<Object, String> variableGetter,
+                            final ErrorListener errorListener ) throws IOException, SAXException {
         Stylesheet transformer = new Stylesheet(master);
         transformer.setValidate(false);
         if (varsUsed != null && variableGetter != null) {
@@ -109,6 +124,18 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
                 if (value != null) transformer.setParameter(variableName, value);
             }
         }
+        transformer.setMessageListener( new MessageListener() {
+            @Override
+            public void message( String s ) {
+                if ( errorListener != null ) {
+                    try {
+                        errorListener.warning( new TransformerException( s ) );
+                    } catch (TransformerException e) {
+                        // listener error will not stop transform with Tarari
+                    }
+                }
+            }
+        } );
         XmlResult result = new XmlResult(output);
         try {
             transformer.transform(source, result);

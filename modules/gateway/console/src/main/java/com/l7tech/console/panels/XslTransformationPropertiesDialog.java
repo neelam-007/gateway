@@ -35,6 +35,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private JPanel innerPanel;
     private JComboBox cbXslLocation;
     private TargetMessagePanel targetMessagePanel;
+    private JTextField messageVariablePrefixTextField;
 
     private XslTransformation assertion;
     private final XslTransformationSpecifyPanel specifyPanel;
@@ -104,6 +105,19 @@ public class XslTransformationPropertiesDialog extends JDialog {
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(whichMimePartSpinner, "MIME part"));
         //noinspection UnnecessaryBoxing
         whichMimePartSpinner.setValue(new Integer(assertion.getWhichMimePart()));
+
+        inputValidator.constrainTextField(messageVariablePrefixTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String prefix = messageVariablePrefixTextField.getText();
+                if (prefix == null || prefix.trim().isEmpty()) {
+                    return "XSLT Message Variable Prefix must be specified.";
+                } else {
+                    return null;
+                }
+            }
+        });
+        messageVariablePrefixTextField.setText(assertion.getMsgVarPrefix());
 
         AssertionResourceInfo ri = assertion.getResourceInfo();
         AssertionResourceType rit = ri.getType();
@@ -196,6 +210,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
         targetMessagePanel.updateModel(assertion);
 
         assertion.setWhichMimePart(((Number)whichMimePartSpinner.getValue()).intValue());
+        assertion.setMsgVarPrefix(messageVariablePrefixTextField.getText());
 
         wasoked = true;
         dispose();

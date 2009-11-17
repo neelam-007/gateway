@@ -9,6 +9,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -44,7 +46,9 @@ import java.util.logging.Logger;
  */
 @RequiresXML
 @HardwareAccelerated( type=HardwareAccelerated.Type.XSLT )
-public class XslTransformation extends MessageTargetableAssertion implements UsesVariables, UsesResourceInfo {
+public class XslTransformation extends MessageTargetableAssertion implements UsesVariables, UsesResourceInfo, SetsVariables {
+    public static final String DEFAULT_PREFIX = "xslt";
+    public static final String VARIABLE_NAME = "messages";
     private static final Logger logger = Logger.getLogger(XslTransformation.class.getName());
 
     @Deprecated
@@ -55,6 +59,7 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
     public static final int APPLY_TO_OTHER = -1;
 
     private String transformName;
+    private String msgVarPrefix;
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
     private int whichMimePart = 0;
 
@@ -100,6 +105,14 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
 
     public void setTransformName(String name) {
         transformName = name;
+    }
+
+    public String getMsgVarPrefix() {
+        return (msgVarPrefix == null || msgVarPrefix.trim().isEmpty())? DEFAULT_PREFIX : msgVarPrefix;
+    }
+
+    public void setMsgVarPrefix(String msgVarPrefix) {
+        this.msgVarPrefix = (msgVarPrefix == null || msgVarPrefix.trim().isEmpty())? DEFAULT_PREFIX : msgVarPrefix;
     }
 
     /**
@@ -206,6 +219,16 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
 
         return meta;
 
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return new VariableMetadata[] {
+            new VariableMetadata(getMsgVarPrefix(), true, false, null, false, DataType.STRING),
+            new VariableMetadata(getMsgVarPrefix() + "." + VARIABLE_NAME, false, false, null, false, DataType.STRING),
+            new VariableMetadata(getMsgVarPrefix() + "." + VARIABLE_NAME + ".first", false, false, null, false, DataType.STRING),
+            new VariableMetadata(getMsgVarPrefix() + "." + VARIABLE_NAME + ".last", false, false, null, false, DataType.STRING)
+        };
     }
 
     private transient volatile String[] varsUsed;

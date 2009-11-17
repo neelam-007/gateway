@@ -60,7 +60,7 @@ public class CompiledStylesheet {
             ElementCursor ec = input.getElementCursor();
             TarariMessageContext tmc = ec.getTarariMessageContext();
             if (tmc != null) {
-                transformTarari(input, tmc, output);
+                transformTarari(input, tmc, output, errorListener);
                 return;
             }
         }
@@ -68,7 +68,7 @@ public class CompiledStylesheet {
         transformDom(input, output, errorListener);
     }
 
-    private void transformTarari(TransformInput t, TarariMessageContext tmc, TransformOutput output)
+    private void transformTarari(TransformInput t, TarariMessageContext tmc, TransformOutput output, ErrorListener errorListener )
             throws IOException, SAXException
     {
         assert tmc != null;
@@ -76,7 +76,7 @@ public class CompiledStylesheet {
 
         BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream(4096);
         try {
-            tarariStylesheet.transform(tmc, os, varsUsed, t.getVariableGetter());
+            tarariStylesheet.transform(tmc, os, varsUsed, t.getVariableGetter(), errorListener);
             output.setBytes(os.toByteArray());
             logger.finest("Tarari xsl transformation completed");
         } finally {

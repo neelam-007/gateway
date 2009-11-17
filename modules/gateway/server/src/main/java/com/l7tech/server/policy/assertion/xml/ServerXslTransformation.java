@@ -25,7 +25,6 @@ import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.url.UrlResolver;
@@ -64,6 +63,9 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -287,7 +289,7 @@ public class ServerXslTransformation
             // These variables are used ONLY for interpolation into a remote URL; variables used inside
             // the stylesheet itself are fed in via the variableGetter inside TransformInput
             Map urlVars = context.getVariableMap(urlVarsUsed, auditor);
-            return transform(transformInput, transformOutput, urlVars);
+            return transform(transformInput, transformOutput, urlVars, context);
         } finally {
             if (transformInput instanceof Closeable) {
                 ((Closeable)transformInput).close();
@@ -296,7 +298,7 @@ public class ServerXslTransformation
     }
 
     //  Get a stylesheet from the resourceGetter and transform input into output
-    private AssertionStatus transform(TransformInput input, TransformOutput output, Map urlVars)
+    private AssertionStatus transform(TransformInput input, TransformOutput output, Map urlVars, PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException
     {
         try {
@@ -314,7 +316,7 @@ public class ServerXslTransformation
                 return AssertionStatus.SERVER_ERROR;
             }
 
-            resource.transform(input, output, getErrorListener());
+            resource.transform(input, output, getErrorListener(context));
             return AssertionStatus.NONE;
 
         } catch (ResourceGetter.InvalidMessageException e) {
@@ -349,9 +351,10 @@ public class ServerXslTransformation
         }
     }
 
-    private ErrorListener getErrorListener() {
+    private ErrorListener getErrorListener(final PolicyEnforcementContext context) {
         return new ErrorListener() {
             public void warning(TransformerException exception) throws TransformerException {
+                addXsltMessageIntoVariable(context, exception.getMessage());
                 auditor.logAndAudit(AssertionMessages.XSLT_TRANS_WARN, exception.getMessageAndLocation());
             }
             public void error(TransformerException exception) throws TransformerException {
@@ -361,6 +364,43 @@ public class ServerXslTransformation
                 throw exception;
             }
         };
+    }
+
+    /**
+     * Add a message into the XSLT Messages context variable.
+     *
+     * @param context: PolicyEnforcementContext
+     * @param message: An XSLT message to be added.
+     */
+    private void addXsltMessageIntoVariable(PolicyEnforcementContext context, String message) {
+        // Get the name of the context variable
+        final String msgVarName = getXsltMessagesContextVariableName();
+
+        // Get previous messages
+        String[] prevMessageArray;
+        try {
+            prevMessageArray = (String[]) context.getVariable(msgVarName);
+        } catch (NoSuchVariableException e) {
+            prevMessageArray = null;
+        }
+
+        // Initialize a message list by adding all previous messages.
+        List<String> messageList = new ArrayList<String>();
+        if (prevMessageArray != null) {
+            messageList.addAll(Arrays.asList(prevMessageArray));
+        }
+
+        // Insert the current message
+        messageList.add(message);
+
+        // Update these context variables
+        context.setVariable(msgVarName, messageList.toArray(new String[messageList.size()]));
+        context.setVariable(msgVarName + ".first", messageList.isEmpty()? null : messageList.get(0));
+        context.setVariable(msgVarName + ".last", messageList.isEmpty()? null : messageList.get(messageList.size() - 1));
+    }
+
+    private String getXsltMessagesContextVariableName() {
+        return assertion.getMsgVarPrefix() + "." + XslTransformation.VARIABLE_NAME;
     }
 
     /**
