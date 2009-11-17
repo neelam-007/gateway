@@ -39,6 +39,11 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
+    public void deleteBusinessServicesByKey(String serviceKey) throws UDDIException {
+
+    }
+
+    @Override
     public Collection<TModel> getTModels(Set<String> tModelKeys) throws UDDIException {
         return tModelsForTest;
     }

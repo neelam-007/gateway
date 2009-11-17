@@ -19,18 +19,22 @@ public class Pair<L,R> implements Serializable, Map.Entry<L, R> {
         this.right = right;
     }
 
+    @Override
     public L getKey() {
         return left;
     }
 
+    @Override
     public R getValue() {
         return right;
     }
 
+    @Override
     public R setValue(R value) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -54,6 +58,6 @@ public class Pair<L,R> implements Serializable, Map.Entry<L, R> {
 
     @Override
     public String toString() {
-        return String.format("(%s,%s})", left, right);
+        return String.format("(%s,%s)", left, right);
     }
 }

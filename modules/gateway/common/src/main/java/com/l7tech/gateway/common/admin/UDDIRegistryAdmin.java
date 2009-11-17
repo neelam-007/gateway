@@ -174,13 +174,13 @@ public interface UDDIRegistryAdmin {
     /**
      * Find the UDDIProxiedService for a service, if it exists
      *
-     * @param serviceOid the service to get the UDDIProxiedServiec for
+     * @param publishedServiceOid the service to get the UDDIProxiedService for
      * @return UDDIProxiedService or null if the service does not have one
      * @throws com.l7tech.objectmodel.FindException Any problem finding the proxied service
      */
     @Transactional(readOnly=true)
     @Secured(types={EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype= MethodStereotype.FIND_ENTITY)
-    UDDIProxiedServiceInfo getUDDIProxiedServiceInfo(long serviceOid) throws FindException;
+    UDDIProxiedServiceInfo findProxiedServiceInfoForPublishedService(long publishedServiceOid) throws FindException;
 
     /**
      * Get the UDDIPublishStatus for the UDDIProxiedServiceInfo. Allows the UI to display
@@ -223,12 +223,15 @@ public interface UDDIRegistryAdmin {
     /**
      * Delete the UDDIServiceControl with id uddiServiceControlOid
      *
+     * Cannot delete successfully if the UDDIServiceControl has had an endpoint added to it, or if it has been
+     * overwritten
+     *
      * @param uddiServiceControlOid long id of the UDDIServiceControl to delete
      * @throws FindException   if there is a problem reading from the database or if the UDDIServiceControl is not found
      * @throws DeleteException any problems deleting from the database
      */
     @Secured(types = {EntityType.UDDI_SERVICE_CONTROL}, stereotype = MethodStereotype.DELETE_BY_ID)
-    void deleteUDDIServiceControl(final long uddiServiceControlOid) throws FindException, DeleteException;
+    void deleteUDDIServiceControl(final long uddiServiceControlOid) throws FindException, DeleteException, UpdateException;
 
     /**
      * Find the UDDIServiceControl for a service, if it exists

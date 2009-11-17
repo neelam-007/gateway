@@ -32,6 +32,7 @@ public abstract class UDDITaskFactory {
          * Run the task.
          *
          * @param context The context for the task
+         * @throws com.l7tech.server.uddi.UDDITaskFactory.UDDITaskException
          */
         public abstract void apply( UDDITaskContext context ) throws UDDITaskException;
     }
@@ -44,5 +45,21 @@ public abstract class UDDITaskFactory {
         public UDDITaskException(String message, Throwable cause) {
             super(message, cause);
         }
+    }
+
+    public static abstract class UDDIHandledTaskException extends UDDITaskException{
+        public UDDIHandledTaskException(String message) {
+            super(message);
+        }
+
+        public UDDIHandledTaskException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        /**
+         * If the Task encounters an unexpected error, then this method will be called so that the task
+         * can perform any required actions. This will be called in a new transaction
+         */
+        public abstract void handleTaskError();
     }
 }

@@ -234,6 +234,13 @@ public interface UDDIClient extends Closeable {
     void deleteBusinessServicesByKey(final Collection<String> serviceKeys) throws UDDIException;
 
     /**
+     * Delete a single BusinessService from UDDI and all of it's referenced tModels
+     * @param serviceKey
+     * @throws UDDIException
+     */
+    void deleteBusinessServicesByKey(final String serviceKey) throws UDDIException;
+
+    /**
      * Find all BusinessServices with the supplied keys
      *
      * @param serviceKeys Set String of serviceKeys to find. Cannot be null.

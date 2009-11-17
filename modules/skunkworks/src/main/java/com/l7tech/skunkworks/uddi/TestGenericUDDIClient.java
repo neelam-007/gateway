@@ -92,7 +92,7 @@ public class TestGenericUDDIClient {
 
     @Test
     public void testDeleteBindingTemplates() throws UDDIException {
-        final String bindingKey = "uddi:38ed2f50-ce74-11de-8486-86e998070d36";
+        final String bindingKey = "uddi:4bdcbc80-d32d-11de-a970-89ce79ba3797";
         uddiClient.deleteBindingTemplate(bindingKey);
     }
 
@@ -201,7 +201,7 @@ public class TestGenericUDDIClient {
         serviceToPublish.setWsdlXml(XmlUtil.nodeToString(dom));
         serviceAdmin.savePublishedService(serviceToPublish);
 
-        UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.getUDDIProxiedServiceInfo(serviceToPublish.getOid());
+        UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.findProxiedServiceInfoForPublishedService(serviceToPublish.getOid());
         if(uddiProxiedServiceInfo == null) throw new IllegalStateException("UDDIProxiedService not found");
         uddiRegistryAdmin.updatePublishedGatewayWsdl(uddiProxiedServiceInfo.getOid());
 
@@ -248,7 +248,7 @@ public class TestGenericUDDIClient {
         serviceToPublish.setWsdlXml(XmlUtil.nodeToString(dom));
         serviceAdmin.savePublishedService(serviceToPublish);
 
-        UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.getUDDIProxiedServiceInfo(serviceToPublish.getOid());
+        UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.findProxiedServiceInfoForPublishedService(serviceToPublish.getOid());
         if(uddiProxiedServiceInfo == null) throw new IllegalStateException("UDDIProxiedServiceInfo not found");
         uddiRegistryAdmin.updatePublishedGatewayWsdl(uddiProxiedServiceInfo.getOid());
 
@@ -263,7 +263,7 @@ public class TestGenericUDDIClient {
         SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
         UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
 
-//        UDDIProxiedService proxiedService = uddiRegistryAdmin.getUDDIProxiedServiceInfo(70615040);
+//        UDDIProxiedService proxiedService = uddiRegistryAdmin.findProxiedServiceInfoForPublishedService(70615040);
 //        uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(proxiedService);
 
         System.clearProperty("com.l7tech.console.suppressVersionCheck");

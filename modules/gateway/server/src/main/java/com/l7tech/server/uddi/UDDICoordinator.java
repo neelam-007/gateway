@@ -41,6 +41,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 
@@ -434,6 +435,9 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     /**
      * Goes thorugh all UDDIProxiedServiceInfo entities, and creates events to publish for events which are
      * waiting to publish, or those which have either failed to publish or to delete
+     *
+     * Note: this will retry tasks which are in the 'PUBLISH' state.
+     * @throws com.l7tech.objectmodel.ObjectModelException if any db exception happens
      */
     private void fireMaintenancePublishEvents() throws ObjectModelException {
         final Collection<UDDIProxiedServiceInfo> proxiedServices = uddiProxiedServiceInfoManager.findAll();
@@ -787,20 +791,45 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                 AuditContextUtils.doAsSystem( new Runnable(){
                     @Override
                     public void run() {
+                        final UDDITaskFactory.UDDIHandledTaskException uddiTaskException []= new UDDITaskFactory.UDDIHandledTaskException[1];
                         try {
-                            new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                            final TransactionTemplate transactionTemplate = new TransactionTemplate(coordinator.transactionManager);
+                            transactionTemplate.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
+                            transactionTemplate.execute( new TransactionCallbackWithoutResult(){
                                 @Override
                                 protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
                                     try {
                                         coordinator.handleEvent( event );
+                                        //RuntimeExceptions are caught by Spring and cause a rollback
                                     } catch (UDDITaskFactory.UDDITaskException e) {
                                         logger.log( Level.WARNING, "Error processing UDDI event", e );
                                         transactionStatus.setRollbackOnly();
+                                        if(e != null && (e instanceof UDDITaskFactory.UDDIHandledTaskException)){
+                                            uddiTaskException[0] = (UDDITaskFactory.UDDIHandledTaskException) e;
+                                        }
                                     }
                                 }
                             } );
                         } catch ( TransactionException te ) {
-                            logger.log( Level.WARNING, "Error processing transaction for UDDI event.", te );                              
+                            //te is a RuntimeException
+                            logger.log( Level.WARNING, "Error processing transaction for UDDI event.", te );
+                        }
+
+                        //Run handleTaskError in a separate transaction so we can update the UDDIPublishStatus correctly
+                        if(uddiTaskException[0] != null){
+                            try {
+                                final TransactionTemplate transactionTemplate = new TransactionTemplate(coordinator.transactionManager);
+                                transactionTemplate.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
+                                transactionTemplate.execute( new TransactionCallbackWithoutResult(){
+                                    @Override
+                                    protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
+                                        uddiTaskException[0].handleTaskError();
+                                    }
+                                } );
+                            } catch ( TransactionException te ) {
+                                //te is a RuntimeException
+                                logger.log( Level.WARNING, "Error handling exception caused by UDDI event.", te );
+                            }
                         }
 
                         ApplicationEventPublisher publisher = coordinator.eventPublisher;

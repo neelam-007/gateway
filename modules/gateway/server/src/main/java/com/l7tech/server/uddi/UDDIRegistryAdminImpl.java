@@ -124,7 +124,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public UDDIProxiedServiceInfo getUDDIProxiedServiceInfo(long serviceOid) throws FindException {
+    public UDDIProxiedServiceInfo findProxiedServiceInfoForPublishedService(long serviceOid) throws FindException {
         return uddiProxiedServiceInfoManager.findByPublishedServiceOid(serviceOid);
     }
 
@@ -272,8 +272,18 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public void deleteUDDIServiceControl(long uddiServiceControlOid) throws FindException, DeleteException {
-        uddiServiceControlManager.delete(uddiServiceControlOid);
+    public void deleteUDDIServiceControl(long uddiServiceControlOid) throws FindException, DeleteException, UpdateException {
+
+        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPrimaryKey(uddiServiceControlOid);
+        if(serviceControl == null)
+            throw new FindException("Cannot find UDDIServiceControl with id #(" + uddiServiceControlOid + ")");
+
+        final UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(serviceControl.getPublishedServiceOid());
+        if(serviceInfo != null && serviceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY){
+            throw new DeleteException("Cannot delete record of how service was created until any published binding or overwritten service has been deleted");
+        } else {
+            uddiServiceControlManager.delete(uddiServiceControlOid);
+        }
     }
 
     @Override

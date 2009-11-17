@@ -504,6 +504,13 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
+    public void deleteBusinessServicesByKey(String serviceKey) throws UDDIException {
+        final Set<String> keys = new HashSet<String>();
+        keys.add(serviceKey);
+        deleteBusinessServicesByKey(keys);
+    }
+
+    @Override
     public void deleteBusinessServicesByKey(Collection<String> serviceKeys) throws UDDIException {
         if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
         if(serviceKeys.isEmpty()){
@@ -540,9 +547,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             }
         }
 
-        //Now delete the service followed by it's dependent tModels
-        //this is not strictly required, but seems like the logical approach, as the services refer to the tModels,
-        //so deleting the service first seems more correct
+        //Now delete the service
         try {
             final DeleteService deleteService = new DeleteService();
             deleteService.setAuthInfo(getAuthToken());
@@ -551,10 +556,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             final UDDIPublicationPortType publicationPortType = getPublishPort();
             publicationPortType.deleteService(deleteService);
             logger.log(Level.FINE, "Deleted service with key: " + businessService.getServiceKey());
-
-//            for(String tModelKey: tModelsToDelete){
-//                deleteTModel(tModelKey);
-//            }
 
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error deleting business service '"+serviceKey+"'", drfm);

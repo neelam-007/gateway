@@ -172,7 +172,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
         //determine if there is a UDDIProxiedService for this service
         try {
-            uddiProxyServiceInfo = getUDDIRegistryAdmin().getUDDIProxiedServiceInfo(service.getOid());
+            uddiProxyServiceInfo = getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(service.getOid());
             if(uddiProxyServiceInfo != null){
                 try {
                     publishStatus =
@@ -394,7 +394,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 }
             }else{
                 publishProxiedWsdlRadioButton.setEnabled(true);
-                final boolean uddiControl = uddiServiceControl != null;
+                final boolean uddiControl = uddiServiceControl != null && !uddiServiceControl.isUnderUddiControl();
                 publishGatewayEndpointAsRadioButton.setEnabled(uddiControl);
                 overwriteExistingBusinessServiceWithRadioButton.setEnabled(uddiControl);
             }
@@ -477,7 +477,9 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
         if(publishProxiedWsdlRadioButton.isSelected()){
             if(uddiProxyServiceInfo == null){
-                if(publishWsdlValidators.validateWithDialog()) publishUDDIProxiedService();
+                if(publishWsdlValidators.validateWithDialog()){
+                    if(!publishUDDIProxiedService()) return false;
+                }
                 else return false;
             }else {
                 //update if the check box's value has changed
@@ -562,18 +564,21 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 UDDIProxiedServiceInfo.PublishType publishType = uddiProxyServiceInfo.getPublishType();
                 switch (publishType){
                     case PROXY:
-                        removeUDDIProxiedService();
+                        if(!removeUDDIProxiedService()) return false;
                         break;
                     case ENDPOINT:
-                        removeUDDIProxiedEndpoint();
+                        if(!removeUDDIProxiedEndpoint()) return false;
                         break;
                     case OVERWRITE:
-                        removeUDDIOverwrittenProxiedService();
+                        if(!removeUDDIOverwrittenProxiedService()) return false;
                         break;
                 }
             }
         }
 
+        //nothing below here should stop the dialog from dismissing if execution reaches here
+        //above we have updated the state of the gateway so the dialog must dismiss.
+        //todo refactor so this constraint is removed
         if ( uddiServiceControl != null ) {
             uddiServiceControl.setMetricsEnabled( isMetricsEnabled() );
             if ( isPublishWsPolicyEnabled() ) {
@@ -597,7 +602,12 @@ public class ServiceUDDISettingsDialog extends JDialog {
         return true;
     }
 
-    private void removeUDDIProxiedEndpoint(){
+    /**
+     *
+     * @return true if dialog can be disposed, false otherwise
+     */
+    private boolean removeUDDIProxiedEndpoint(){
+        final boolean [] choice = new boolean[1];
         DialogDisplayer.showConfirmDialog(this,
                                                    "Remove published Gateway endpoint from UDDI Registry?",
                                                    "Confirm Removal from UDDI",
@@ -606,6 +616,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     @Override
                     public void reportResult(int option) {
                         if (option == JOptionPane.YES_OPTION){
+                            choice[0] = true;
                             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             try {
                                 uddiRegistryAdmin.deleteGatewayEndpointFromUDDI(uddiProxyServiceInfo);
@@ -620,9 +631,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         }
                     }
                 });
+        return choice[0];
     }
 
-    private void removeUDDIOverwrittenProxiedService(){
+    private boolean removeUDDIOverwrittenProxiedService(){
+        final boolean [] choice = new boolean[1];
         DialogDisplayer.showConfirmDialog(this,
                                                    "Remove overwritten BusinessService from UDDI Registry?",
                                                    "Confirm Removal from UDDI",
@@ -631,6 +644,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     @Override
                     public void reportResult(int option) {
                         if (option == JOptionPane.YES_OPTION){
+                            choice[0] = true;
                             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             try {
                                 uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
@@ -645,9 +659,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         }
                     }
                 });
+        return choice[0];
     }
 
-    private void removeUDDIProxiedService(){
+    private boolean removeUDDIProxiedService(){
+        final boolean [] choice = new boolean[1];
         DialogDisplayer.showConfirmDialog(this,
                                                    "Remove published Gateway WSDL from UDDI Registry?",
                                                    "Confirm Removal from UDDI",
@@ -656,11 +672,12 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     @Override
                     public void reportResult(int option) {
                         if (option == JOptionPane.YES_OPTION){
-                            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+                            choice[0] = true;
+                            final UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             try {
                                 uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to removal Gateway WSDL from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+                                        "Task to remove Gateway WSDL from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
 
                             } catch (Exception ex) {
                                 logger.log(Level.WARNING, "Problem deleting pubished Gateway WSDL from UDDI: " + ex.getMessage());
@@ -670,9 +687,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         }
                     }
                 });
+        return choice[0];
     }
 
-    private void publishUDDIProxiedService(){
+    private boolean publishUDDIProxiedService(){
+        final boolean [] choice = new boolean[1];
         DialogDisplayer.showConfirmDialog(this,
                                                    "Publish Gateway WSDL to UDDI Registry?",
                                                    "Confirm Publish to UDDI Task",
@@ -681,6 +700,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     @Override
                     public void reportResult(int option) {
                         if (option == JOptionPane.YES_OPTION){
+                            choice[0] = true;
                             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
                             try {
@@ -697,6 +717,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                         }
                     }
                 });
+        return choice[0];
     }
 
     private boolean overwriteExistingService(){

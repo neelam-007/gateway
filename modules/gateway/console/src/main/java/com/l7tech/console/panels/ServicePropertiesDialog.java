@@ -19,6 +19,7 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -335,11 +336,31 @@ public class ServicePropertiesDialog extends JDialog {
 
                 if(uddiServiceControl == null) return;
 
-                //TODO [Donal] bug 7959
                 try {
-                    Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
-                    uddiServiceControl = null;
-                } catch (Exception e1) {
+                    final UDDIProxiedServiceInfo serviceInfo =
+                            Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(uddiServiceControl.getPublishedServiceOid());
+                    if(serviceInfo == null || serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY){
+                        Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
+                        uddiServiceControl = null;
+                    } else{
+                        String errorMsg = "";
+                        if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE){
+                            errorMsg = "BusinessService in UDDI has been overwritten. Please remove before deleting";
+                        }else if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.ENDPOINT){
+                            errorMsg = "BusinessService in UDDI has has a Gateway endpoint added. Please remove before deleting";
+                        }else{
+                            throw new IllegalStateException("Illegal publish type found");//can only happen if either publish type enum changes or above logic does
+                        }
+                        showErrorMessage("Cannot delete", errorMsg, null, false);
+                        return;
+                    }
+                } catch (FindException e1) {
+                    showErrorMessage("Cannot find", "Cannot determine if any proxied UDDI info was published to the service from the Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
+                    return;
+                } catch (DeleteException e1) {
+                    showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
+                    return;
+                } catch (UpdateException e1) {
                     showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
                     return;
                 }
@@ -468,16 +489,18 @@ public class ServicePropertiesDialog extends JDialog {
 
         if(uddiServiceControl == null){
             clearButton.setEnabled( false );
+            selectButton.setEnabled(canUpdate);
             wsdlUnderUDDIControlCheckBox.setEnabled( false );
             monitoringEnabledCheckBox.setEnabled( false );
             monitoringUpdateWsdlCheckBox.setEnabled( false );
             monitoringDisableServicecheckBox.setEnabled( false );
         }else{
             clearButton.setEnabled(canUpdate);
+            selectButton.setEnabled(false);            
 
-            if(uddiServiceControl.isHasBeenOverwritten()){
+            if(uddiServiceControl.isHasBeenOverwritten() || uddiServiceControl.isHasHadEndpointRemoved()){
                 wsdlUnderUDDIControlCheckBox.setEnabled(false);
-            }else{
+            } else{
                 wsdlUnderUDDIControlCheckBox.setEnabled(canUpdate);
             }
 
