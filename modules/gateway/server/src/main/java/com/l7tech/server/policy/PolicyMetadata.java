@@ -31,7 +31,7 @@ public interface PolicyMetadata {
      * <p>This can be used to determine if a request should be processed by a
      * particular policy.</p>
      *
-     * @return true if the policy processes multipart.
+     * @return true if the policy processes (request) multipart.
      */
     boolean isMultipart();
 }

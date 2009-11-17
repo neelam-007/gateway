@@ -1019,7 +1019,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                 tarariWanted = true;
             } else if( Assertion.isRequest( ass ) && Assertion.isWSSecurity( ass ) ) {
                 wssInPolicy = true;
-            } else if ( Assertion.isMultipart( ass ) ) {
+            } else if ( Assertion.isMultipart( ass ) && Assertion.isRequest( ass ) ) {
                 multipartInPolicy = true;
             }
         }
