@@ -52,6 +52,7 @@ public class CertUtils {
 
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static CertificateFactory certFactory;
+    private static final String X509_PROVIDER = SyspropUtil.getString( "com.l7tech.common.x509Provider", "SUN" );
 
     public static final String ALG_MD5 = "MD5";
     public static final String ALG_SHA1 = "SHA1";
@@ -303,10 +304,18 @@ public class CertUtils {
     public synchronized static CertificateFactory getFactory() {
         try {
             if (certFactory == null)
-                certFactory = CertificateFactory.getInstance(FACTORY_ALGORITHM);
+                certFactory = CertificateFactory.getInstance(FACTORY_ALGORITHM, X509_PROVIDER);
             return certFactory;
         } catch ( CertificateException e ) {
             throw new RuntimeException(e);
+        } catch ( NoSuchProviderException e ) {
+            logger.warning( "X.509 provider not found '" + X509_PROVIDER + "' falling back to default X.509 provider.");
+            try {
+                certFactory = CertificateFactory.getInstance(FACTORY_ALGORITHM);
+                return certFactory;
+            } catch ( CertificateException ce ) {
+                throw new RuntimeException(ce);
+            }
         }
     }
 
