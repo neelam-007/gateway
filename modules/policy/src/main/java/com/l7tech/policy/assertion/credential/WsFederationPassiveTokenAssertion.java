@@ -67,6 +67,7 @@ public abstract class WsFederationPassiveTokenAssertion extends Assertion {
         this.setAuthenticate(source.isAuthenticate());
         this.setReplyUrl(source.getReplyUrl());
         this.setContext(source.getContext());
+        this.setEnabled(source.isEnabled());
     }
 
     @Override
