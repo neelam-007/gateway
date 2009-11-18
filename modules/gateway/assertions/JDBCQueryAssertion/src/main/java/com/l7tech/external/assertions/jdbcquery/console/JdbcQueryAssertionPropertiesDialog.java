@@ -87,7 +87,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private void initialize() {
         setContentPane(mainPanel);
         setModal(true);
-        getRootPane().setDefaultButton(cancelButton);
+        getRootPane().setDefaultButton(okButton);
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
 
@@ -307,6 +307,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                 @Override
                 public void reportResult(int option) {
                     if (option == JOptionPane.CANCEL_OPTION) {
+                        warningMsg[0] = "canceled";
                         return;
                     }
                     String connName = (String) connectionComboBox.getSelectedItem();
@@ -329,12 +330,14 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                DialogDisplayer.showMessageDialog(
-                    JdbcQueryAssertionPropertiesDialog.this,
-                    (warningMsg[0] == null)? resources.getString("message.query.testing.passed") : resources.getString("message.query.testing.failed") + " " + warningMsg[0],
-                    resources.getString("dialog.title.test.query"),
-                    (warningMsg[0] == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
-                    null);
+                if (! "canceled".equals(warningMsg[0])) {
+                    DialogDisplayer.showMessageDialog(
+                        JdbcQueryAssertionPropertiesDialog.this,
+                        (warningMsg[0] == null)? resources.getString("message.query.testing.passed") : resources.getString("message.query.testing.failed") + " " + warningMsg[0],
+                        resources.getString("dialog.title.test.query"),
+                        (warningMsg[0] == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+                        null);
+                }
             }
         });
     }
