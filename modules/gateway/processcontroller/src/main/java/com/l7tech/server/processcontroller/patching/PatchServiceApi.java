@@ -1,6 +1,7 @@
 package com.l7tech.server.processcontroller.patching;
 
 import javax.jws.WebService;
+import javax.activation.DataHandler;
 import java.util.Collection;
 
 /**
@@ -9,7 +10,7 @@ import java.util.Collection;
 @WebService
 public interface PatchServiceApi {
 
-    public PatchStatus uploadPatch(byte[] patchData) throws PatchException;
+    public PatchStatus uploadPatch(DataHandler patchData) throws PatchException;
 
     public PatchStatus installPatch(String patchId, Collection<String> nodes) throws PatchException;
 

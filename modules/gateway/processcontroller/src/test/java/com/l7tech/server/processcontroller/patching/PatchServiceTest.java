@@ -18,6 +18,9 @@ import com.l7tech.common.io.JarSignerParams;
 import com.l7tech.common.io.JarUtils;
 import junit.framework.Assert;
 
+import javax.activation.DataHandler;
+import javax.activation.FileDataSource;
+import javax.mail.util.ByteArrayDataSource;
 import java.io.*;
 import java.security.cert.X509Certificate;
 import java.security.cert.Certificate;
@@ -90,7 +93,7 @@ public class PatchServiceTest {
     public void testDeployedPatchUpload() throws Exception {
         PatchServiceApi api = new CxfUtils.ApiBuilder("https://localhost:8765/services/patchServiceApi").build(PatchServiceApi.class);
         File patch = PatchUtils.buildPatch(getTestPatchSpec("success_touch_tmp_helloworld_txt"), getTestPatchSigningParams());
-        PatchStatus status = api.uploadPatch(IOUtils.slurpFile(patch));
+        PatchStatus status = api.uploadPatch(new DataHandler(new FileDataSource(patch)));
         Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
     }
 
@@ -105,7 +108,7 @@ public class PatchServiceTest {
         boolean tempDeleteOk;
         try {
             patch = PatchUtils.buildPatch(getTestPatchSpec("success_touch_tmp_helloworld_txt"), getTestPatchSigningParams());
-            PatchStatus status = patchService.uploadPatch(IOUtils.slurpFile(patch));
+            PatchStatus status = patchService.uploadPatch(new DataHandler(new FileDataSource(patch)));
             Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
         } finally {
             tempDeleteOk = patch == null || ! patch.exists() || patch.delete();
@@ -123,7 +126,7 @@ public class PatchServiceTest {
         try {
             patch = PatchUtils.buildPatch(getTestPatchSpec(patchId), getTestPatchSigningParams());
             // first upload
-            PatchStatus status = patchService.uploadPatch(IOUtils.slurpFile(patch));
+            PatchStatus status = patchService.uploadPatch(new DataHandler(new FileDataSource(patch)));
             Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
             Assert.assertEquals("Uploaded patch id is not the expected one.", patchId, status.getField(PatchStatus.Field.ID));
             // install
@@ -131,7 +134,7 @@ public class PatchServiceTest {
             Assert.assertEquals(status.getField(PatchStatus.Field.STATUS_MSG), PatchStatus.State.INSTALLED.name(), status.getField(PatchStatus.Field.STATE));
             // second upload
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(patch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(patch)));
                 Assert.fail("Packages of installed paches should not be overwriteable.");
             } catch (PatchException expected) {
                 // do nothing
@@ -151,7 +154,7 @@ public class PatchServiceTest {
         try {
             patch = PatchUtils.buildPatch(getTestPatchSpec(patchId), getTestPatchSigningParams());
             // upload
-            PatchStatus status = patchService.uploadPatch(IOUtils.slurpFile(patch));
+            PatchStatus status = patchService.uploadPatch(new DataHandler(new FileDataSource(patch)));
             Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
             Assert.assertEquals("Uploaded patch id is not the expected one.", patchId, status.getField(PatchStatus.Field.ID));
             // install
@@ -205,7 +208,7 @@ public class PatchServiceTest {
             String patchId = "success_touch_tmp_helloworld_txt_allow_rollback";
             patch = PatchUtils.buildPatch(getTestPatchSpec(patchId).property(PatchPackage.Property.ROLLBACK_ALLOWED, Boolean.toString(allowRollback)), getTestPatchSigningParams());
             // upload
-            PatchStatus status = patchService.uploadPatch(IOUtils.slurpFile(patch));
+            PatchStatus status = patchService.uploadPatch(new DataHandler(new FileDataSource(patch)));
             Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
             Assert.assertEquals("Uploaded patch id is not the expected one.", patchId, status.getField(PatchStatus.Field.ID));
             // install
@@ -216,7 +219,7 @@ public class PatchServiceTest {
             // upload rollback
             String rollbackId = "rollback_touch_tmp_helloworld_txt_allow_rollback";
             rollback = PatchUtils.buildPatch(getTestPatchSpec(rollbackId).property(PatchPackage.Property.ROLLBACK_FOR_ID, patchId), getTestPatchSigningParams());
-            status = patchService.uploadPatch(IOUtils.slurpFile(rollback));
+            status = patchService.uploadPatch(new DataHandler(new FileDataSource(rollback)));
             Assert.assertEquals(PatchStatus.State.UPLOADED.name(), status.getField(PatchStatus.Field.STATE));
             Assert.assertEquals("Uploaded patch id is not the expected one.", rollbackId, status.getField(PatchStatus.Field.ID));
             // rollback
@@ -262,7 +265,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar manifest", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if a file did not have a manifest entry.");
             } catch (PatchException expected) {
                 // do nothing
@@ -305,7 +308,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar manifest", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if a file did not have a digest in the manifest.");
             } catch (PatchException expected) {
                 // do nothing
@@ -349,7 +352,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar signature file", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if a file did not have a digest in the signature file.");
             } catch (PatchException expected) {
                 // do nothing
@@ -392,7 +395,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar signature file", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if a file did not have a digest in the signature file.");
             } catch (PatchException expected) {
                 // do nothing
@@ -449,7 +452,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if a file did not have a manifest or signature file entry.");
             } catch (PatchException expected) {
                 // do nothing
@@ -492,7 +495,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar signature file", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if the manifest was not signed.");
             } catch (PatchException expected) {
                 // do nothing
@@ -535,7 +538,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar signature file", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if the manifest main attributes were not signed.");
             } catch (PatchException expected) {
                 // do nothing
@@ -581,7 +584,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if there was an extra entry in the jar file.");
             } catch (PatchException expected) {
                 // do nothing
@@ -624,7 +627,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if there was an extra entry in the manifest.");
                 // should pass per jar signing api; make sure our own check fails
                 // http://java.sun.com/javase/6/docs/technotes/guides/jar/jar.html#Signature%20File
@@ -671,7 +674,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if the manifest file was modified.");
             } catch (PatchException expected) {
                 // do nothing
@@ -715,7 +718,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if the signature file was modified.");
             } catch (PatchException expected) {
                 // do nothing
@@ -758,7 +761,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if the signature block file was modified.");
             } catch (PatchException expected) {
                 // do nothing
@@ -801,7 +804,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if a file was modified.");
             } catch (PatchException expected) {
                 // do nothing
@@ -828,7 +831,7 @@ public class PatchServiceTest {
                 byte[] modified = new byte[patchSize + 1];
                 IOUtils.slurpStream(new FileInputStream(patch), modified);
                 modified[patchSize] = 0x0a;
-                patchService.uploadPatch(modified);
+                patchService.uploadPatch(new DataHandler(new ByteArrayDataSource(modified, "")));
                 Assert.fail("Patch upload should have failed if a file was modified.");
             } catch (PatchException expected) {
                 // do nothing
@@ -848,7 +851,7 @@ public class PatchServiceTest {
         try {
             patch = PatchUtils.buildPatch(getTestPatchSpec(null), getUntrustedPatchSigningParams());
             //ReflectionTestUtils.setField(config, "trustedPatchCerts", new HashSet<X509Certificate>());
-            patchService.uploadPatch(IOUtils.slurpFile(patch));
+            patchService.uploadPatch(new DataHandler(new FileDataSource(patch)));
             Assert.fail("Patch upload should have failed if the signer of the patch is not trusted.");
         } catch (PatchException expected) {
         } finally {
@@ -890,7 +893,7 @@ public class PatchServiceTest {
 
             File modifiedSignedPatch = JarUtils.sign(modifiedPatch, getTestPatchSigningParams());
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedSignedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedSignedPatch)));
                 Assert.fail("Patch upload should have failed if the jar main class is not specified.");
             } catch (PatchException expected) {
                 // do nothing
@@ -933,7 +936,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if the jar main class was modified.");
             } catch (PatchException expected) {
                 // do nothing
@@ -970,7 +973,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(JarUtils.sign(modifiedPatch, getTestPatchSigningParams())));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(JarUtils.sign(modifiedPatch, getTestPatchSigningParams()))));
                 Assert.fail("Patch upload should have failed if the jar main class was modified.");
             } catch (PatchException expected) {
                 // do nothing
@@ -1006,7 +1009,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if there was no patch.properties file.");
             } catch (PatchException expected) {
                 // do nothing
@@ -1055,7 +1058,7 @@ public class PatchServiceTest {
             Assert.assertTrue("Failed to modify jar.", modified[0]);
 
             try {
-                patchService.uploadPatch(IOUtils.slurpFile(modifiedPatch));
+                patchService.uploadPatch(new DataHandler(new FileDataSource(modifiedPatch)));
                 Assert.fail("Patch upload should have failed if there was an extra entry under META-INF/.");
             } catch (PatchException expected) {
                 System.out.println("");

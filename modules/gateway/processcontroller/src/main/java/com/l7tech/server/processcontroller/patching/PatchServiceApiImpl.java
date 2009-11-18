@@ -5,6 +5,7 @@ import org.apache.cxf.interceptor.OutFaultInterceptors;
 
 import javax.jws.WebService;
 import javax.annotation.Resource;
+import javax.activation.DataHandler;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
@@ -43,12 +44,12 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     }
 
     @Override
-    public PatchStatus uploadPatch(byte[] patchData) throws PatchException {
+    public PatchStatus uploadPatch(DataHandler patchData) throws PatchException {
         File tempPatchFile = null;
         try {
             tempPatchFile = File.createTempFile("patchzip", null);
             tempPatchFile.deleteOnExit();
-            IOUtils.copyStream(new ByteArrayInputStream(patchData), new FileOutputStream(tempPatchFile));
+            IOUtils.copyStream(patchData.getInputStream(), new FileOutputStream(tempPatchFile));
             PatchPackage patch = new PatchPackageImpl(tempPatchFile);
             checkTrustedCertificates(patch);
             logger.info("Uploading patch: " + patch.getProperty(PatchPackage.Property.ID));

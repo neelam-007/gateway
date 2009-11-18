@@ -1,7 +1,6 @@
 package com.l7tech.server.processcontroller.patching.client;
 
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.server.processcontroller.patching.*;
@@ -10,6 +9,8 @@ import com.l7tech.server.processcontroller.ConfigService;
 import com.l7tech.server.processcontroller.ConfigServiceImpl;
 import com.l7tech.server.processcontroller.PCUtils;
 
+import javax.activation.DataHandler;
+import javax.activation.FileDataSource;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.io.File;
@@ -131,7 +132,7 @@ public class PatchCli {
             }
             @Override
             public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException, IOException {
-                final PatchStatus status = api.uploadPatch(IOUtils.slurpFile(new File(getArgument())));
+                final PatchStatus status = api.uploadPatch(new DataHandler(new FileDataSource(getArgument())));
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
         INSTALL("<patch_id>", "Installs the (previously uploaded) patch represented by the provided ID on the gateway.") {
