@@ -484,7 +484,7 @@ public class ProcessController implements InitializingBean {
         File gatewayShutdown = new File(getGatewayControl());
         if ( gatewayShutdown.exists() ) {
             try {
-                ProcUtils.exec(ssgPwd, gatewayShutdown, new String[]{"pc", "stop", "-force"}, null, false );
+                ProcUtils.exec(ssgPwd, gatewayShutdown, new String[]{"pc", "stop", "-force"}, (byte[])null, false );
             } catch ( IOException ioe ) {
                 logger.log(Level.WARNING, "Failed to kill node '"+node.getName()+"':\n" + ioe.getMessage() );
             }

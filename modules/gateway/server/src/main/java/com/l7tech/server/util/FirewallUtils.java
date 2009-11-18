@@ -83,7 +83,7 @@ public class FirewallUtils {
         logger.log(Level.FINE, "Using firewall rules updater program: sudo " + program);
 
         try {
-            ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), firewallRules, start ? "start" : "stop" }, null, false);
+            ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), firewallRules, start ? "start" : "stop" }, (byte[])null, false);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to execute firewall rules program: " + program + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
         }

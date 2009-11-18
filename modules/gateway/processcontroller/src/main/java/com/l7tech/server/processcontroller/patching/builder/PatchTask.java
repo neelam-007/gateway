@@ -1,8 +1,5 @@
 package com.l7tech.server.processcontroller.patching.builder;
 
-import java.io.File;
-
-
 /**
  * Interface for launching patch tasks.
  *
@@ -18,9 +15,12 @@ public interface PatchTask {
     public static final int PATCH_TASK_SUCCESS = 0;
     public static final int PATCH_TASK_ERROR = 1;
 
-    public static final String TASK_FILE = "patch_tasks.txt";
-    public static final String TASK_LIST_ENTRY_NAME = PatchMain.class.getPackage().getName().replace(".", File.separator) + "/" + TASK_FILE;
+    public static final String TASK_FILE = "PatchTasks.txt";
+    public static final String TASK_LIST_ENTRY_NAME = PatchMain.class.getPackage().getName().replace(".", "/") + "/" + TASK_FILE;
+    public static final String TASK_RESOURCE_FILE = "task.properties";
 
-    void runPatch() throws Exception;
+    void runPatch(String resourceDirEntry) throws Exception;
 
+    /** Each task must declare its dependencies, until we todo: figure out how to discover them. */
+    String[] getClassDependencies();
 }

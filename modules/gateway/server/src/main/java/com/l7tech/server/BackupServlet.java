@@ -261,7 +261,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                 if(includeAudits) paramList.add("-ia");
 
                 ProcResult result = ProcUtils.exec(backupHome, new File(backupHome, "ssgbackup.sh"),
-                        paramList.toArray(new String[paramList.size()]), null, false);
+                        paramList.toArray(new String[paramList.size()]), (byte[])null, false);
                 logger.log( Level.INFO, "Backup completed with output: \n{0}", new String( result.getOutput()) );
             } catch (IOException e) {
                 logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_CREATE_IMAGE, e, nodeName);

@@ -28,8 +28,13 @@ public class PatchSpecClassEntry implements PatchSpecEntry {
     }
 
     @Override
+    public void setEntryName(String entryName) {
+        throw new IllegalStateException("Class entry names cannot be modified.");
+    }
+
+    @Override
     public void toJar(JarOutputStream jos) throws IOException {
-        InputStream is = clazz.getResourceAsStream(clazz.getSimpleName() + ".class");
+        InputStream is = clazz.getResourceAsStream(PatchUtils.getSimpleClassResourceName(clazz));
         try {
             jos.putNextEntry(new ZipEntry(getEntryName()));
             IOUtils.copyStream(is, jos);

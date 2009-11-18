@@ -77,4 +77,11 @@ public class PatchUtils {
 
     private PatchUtils() { }
 
+    public static String getSimpleClassResourceName(Class<?> cl) {
+        String className = cl.getName();
+        if (className.endsWith("."))
+            throw new IllegalArgumentException("Class name cannot end with dot: " + className);
+        int lastDot = className.lastIndexOf(".");
+        return (lastDot < 0 ? className : className.substring(lastDot + 1)) + ".class";
+    }
 }

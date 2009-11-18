@@ -13,5 +13,6 @@ public interface PatchSpecEntry {
     String getEntryName();
 
     void toJar(JarOutputStream jos) throws IOException;
-    
+
+    void setEntryName(String entryName);
 }

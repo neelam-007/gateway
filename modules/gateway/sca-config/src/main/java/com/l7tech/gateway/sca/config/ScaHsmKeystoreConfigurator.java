@@ -252,7 +252,7 @@ public class ScaHsmKeystoreConfigurator {
         try {
             String[] args = ProcUtils.args(zeroHsmExec.getAbsolutePath());
             logger.finest(MessageFormat.format("Executing {0} {1}", sudo.getAbsolutePath(), zeroHsmExec.getAbsolutePath()));
-            ProcResult result = ProcUtils.exec(null, sudo, args, null, true);
+            ProcResult result = ProcUtils.exec(null, sudo, args, (byte[]) null, true);
             if (result.getExitStatus() == 0) {
                 System.out.println("Successfully zeroed the HSM");
                 logger.info("Successfully zeroed the HSM");
@@ -271,7 +271,7 @@ public class ScaHsmKeystoreConfigurator {
         String[] args = ProcUtils.args(masterkeyManage.getAbsolutePath(), "init", String.valueOf(keystorePassword));
         ProcResult result = null;
         try {
-            result = ProcUtils.exec(null, sudo, args, null, true);
+            result = ProcUtils.exec(null, sudo, args, (byte[]) null, true);
             if (result.getExitStatus() != 0) {
                 logHSMManagementProblemAndThrow(result, masterkeyManage.getAbsolutePath(), "There was an error while trying to initialize the HSM");
             } else {
@@ -337,7 +337,7 @@ public class ScaHsmKeystoreConfigurator {
         logger.finest(MessageFormat.format("Executing {0} {1} {2} {3} {4} {5}",sudo.getAbsolutePath(), masterkeyManage.getAbsolutePath(), "restore", "<keystorePassword>", MASTER_KEY_BACKUP_FILE_NAME, "<backupPassword>"));
         ProcResult result = null;
         try {
-            result = ProcUtils.exec(null, sudo, args, null, true);
+            result = ProcUtils.exec(null, sudo, args, (byte[]) null, true);
             if (result.getExitStatus() != 0) {
                 logHSMManagementProblemAndThrow(result, masterkeyManage.getAbsolutePath() ,"There was an error trying to restore the HSM master key. Please ensure that the USB key is attached and that the password is correct.");
             } else {

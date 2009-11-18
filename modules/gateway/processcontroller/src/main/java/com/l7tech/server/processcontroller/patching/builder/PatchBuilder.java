@@ -6,10 +6,10 @@ import com.l7tech.server.processcontroller.patching.PatchException;
 import com.l7tech.server.processcontroller.patching.PatchPackage;
 import com.l7tech.common.io.JarSignerParams;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 
 import java.util.*;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * @author jbufu
@@ -17,9 +17,6 @@ import java.io.IOException;
 public class PatchBuilder {
 
     // - PUBLIC
-
-    public static final int SYNTAX_ERROR = 1;
-    public static final int PATCH_BUILDER_ERROR = 2;
 
     public static void main(String[] args) throws IOException, PatchException {
         BuilderConfig config = null;
@@ -31,17 +28,14 @@ public class PatchBuilder {
             System.exit(SYNTAX_ERROR);
         }
 
-        try {
-            File patch = config.buildPatch();
-            System.out.println("Created patch: " + patch.getAbsolutePath());
-        } catch (Exception e) {
-            System.out.println("Error: " + ExceptionUtils.getMessage(e) + "\n");
-            System.exit(PATCH_BUILDER_ERROR);
-        }
+        File patch = config.buildPatch();
+        System.out.println("Created patch: " + patch.getAbsolutePath());
         System.exit(0);
     }
 
     // - PRIVATE
+
+    private static final int SYNTAX_ERROR = 1;
 
     private static void printUsage() {
         System.out.println("Usage: " + PatchBuilder.class.getSimpleName() + " <options>");
@@ -139,7 +133,7 @@ public class PatchBuilder {
             }
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
-                spec.property(PatchPackage.Property.ROLLBACK_ALLOWED, Boolean.toString(config.hasOption(this)));
+                spec.property(PatchPackage.Property.ROLLBACK_ALLOWED, Boolean.toString(!config.hasOption(this)));
             }},
 
         ROLLBACK_FOR_ID("-rollback-id", "<rollback_id>", false, "The patch identifier which the generated patch will roll back.") {
@@ -149,8 +143,8 @@ public class PatchBuilder {
             }
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
-                if (config.hasOption(this))
-                    spec.property(PatchPackage.Property.ROLLBACK_FOR_ID, config.getSingleValue(this));
+                if ( ! config.hasOption(this)) return;
+                spec.property(PatchPackage.Property.ROLLBACK_FOR_ID, config.getSingleValue(this));
             }},
 
         JAVA_BINARY("-java-path", "<java_binary_path>", false, "The path to the java binary to be used for installing the patch. Defaults to process controller's configuration if not specified.") {
@@ -160,8 +154,8 @@ public class PatchBuilder {
             }
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
-                if (config.hasOption(this))
-                    spec.property(PatchPackage.Property.JAVA_BINARY, config.getSingleValue(this));
+                if ( ! config.hasOption(this)) return;
+                spec.property(PatchPackage.Property.JAVA_BINARY, config.getSingleValue(this));
             }},
 
         MAIN_CLASS("-main-class", "<class_name> <file_name>", false,
@@ -179,31 +173,49 @@ public class PatchBuilder {
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
                 if (config.hasOption(this)) {
+                    if ( ! config.hasOption(this)) return;
                     spec.mainClass(config.options.get(this).get(0));
                     spec.entry(new PatchSpecFileEntry(spec.getMainClassEntryName(), config.options.get(this).get(1)));
                 } else {
-                    spec.mainClass(PatchMain.class.getName());
-                    spec.entry(new PatchSpecStreamEntry(spec.getMainClassEntryName(), PatchMain.class.getResourceAsStream(PatchMain.class.getSimpleName() + ".class")));
+                    try {
+                        spec.mainClass(PatchMain.class.getName());
+                        PatchTaskBuilderUtils.addClassDependencies(spec, PatchMain.getClassDependencies());
+                    } catch (ClassNotFoundException e) {
+                        throw new IllegalArgumentException("Error adding class dependencies for " + PatchMain.class.getName(), e);
+                    }
                 }
             }},
 
         RESTART_AFTER("-restart-after", "<service_name>", false, "Restarts the specified at the end of patch application.") {
             @Override
             public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
-                return null;
+                return extractOneArgumentOption(args, config, this);
             }
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
-
+                if (!config.hasOption(this)) return;
+                Class<? extends PatchTask> taskClass = OSCommandPatchTask.class;
+                for (String service : config.options.get(this)) {
+                    PatchTaskBuilderUtils.addTask(spec, taskClass, PatchSpecTaskListEntry.Position.POST,
+                        new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(("/sbin/service " + service + " restart").getBytes())));
+                }
             }},
 
         STOP_SERVICE("-stop-service", "<service_name>", false, "Stops the specified service during the patch application and starts it at the end.") {
             @Override
             public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
-                return null;
+                return extractOneArgumentOption(args, config, this);
             }
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
+                if (!config.hasOption(this)) return;
+                Class<? extends PatchTask> taskClass = OSCommandPatchTask.class;
+                for (String service : config.options.get(this)) {
+                    PatchTaskBuilderUtils.addTask(spec, taskClass, PatchSpecTaskListEntry.Position.PRE,
+                        new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(("/sbin/service " + service + " stop").getBytes())));
+                    PatchTaskBuilderUtils.addTask(spec, taskClass, PatchSpecTaskListEntry.Position.POST,
+                        new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(("/sbin/service " + service + " start").getBytes())));
+                }
             }},
 
         REBOOT_NEEDED("-reboot-needed", "[reboot_message]", false, "Informs the user that a reboot is needed after the patch was applied; the reboot is not performed automatically.") {
@@ -218,34 +230,137 @@ public class PatchBuilder {
             }
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
-                if(config.options.containsKey(this)) {
-                    new RebootNeededPatchTaskBuilder(spec, config.options.get(this));
-                }
+                if ( ! config.hasOption(this)) return;
+                String rebootMsg = config.options.get(this).isEmpty() ? "" : config.options.get(this).get(0);
+                Class<? extends PatchTask> taskClass = RebootNeededPatchTask.class;
+                PatchTaskBuilderUtils.addTask(spec, taskClass, PatchSpecTaskListEntry.Position.POST,
+                    new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(rebootMsg.getBytes())));
             }},
 
         EXPECTED_RPMS("-expected-rpms", "<expected_rpm|file_with_expected_rpms>", false, "RPM name or file containing RPM names, one per line, in the default format used by 'rpm -q'") {
             @Override
             public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
-                return null;
+                return extractOneArgumentOption(args, config, this);
             }
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
+                if ( ! config.hasOption(this)) return;
+                for (String rpmOrList : config.options.get(this)) {
+                    String rpmList = concat(rpmList(rpmOrList), " ");
+                    Class<? extends PatchTask> taskClass = OSCommandPatchTask.class;
+                    PatchTaskBuilderUtils.addTask(spec, taskClass, PatchSpecTaskListEntry.Position.PRE,
+                        new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(("/bin/rpm -q " + rpmList).getBytes())));
+                }
             }},
 
         RPM_UPDATE("-rpm-update", "<rpm_file|file_with_rpm_file_names>", false, "Updates the specified RPM package, or the packages listed, one per line, in the specified file.") {
             @Override
             public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
-                return null;
+                return extractOneArgumentOption(args, config, this);
             }
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
+                if ( ! config.hasOption(this)) return;
+                for (final String rpmFileOrList : config.options.get(this)) {
+                    List<String> rpmList = rpmFileOrList.toLowerCase().endsWith(".rpm") ? new ArrayList<String>() {{ add(rpmFileOrList); }} : rpmList(rpmFileOrList);
+                    List<PatchSpecEntry> resources = new ArrayList<PatchSpecEntry>();
+                    resources.add(new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(concat(rpmList, "\n").getBytes())));
+                    resources.addAll(Functions.map(rpmList, new Functions.Unary<PatchSpecEntry, String>() {
+                            @Override
+                            public PatchSpecEntry call(String rpmFileName) {
+                                return new PatchSpecFileEntry(rpmFileName, rpmFileName);
+                            }
+                        }));
+                    Class<? extends PatchTask> taskClass = RpmUpdatePatchTask.class;
+                    PatchTaskBuilderUtils.addTask(spec, taskClass, resources.toArray(new PatchSpecEntry[resources.size()]));
+                }
             }},
 
-/*
-        FILE_UPDATE("-file-update", "<existing_file_absolute_path> <replacement_file>", false, "Updates the specified file with the provided replacement.") {
+        FILE_UPDATE("-file-update", "<target_file_path> <file>", false, "Updates the specified file with the provided replacement.") {
+            @Override
+            public BuilderConfig parseArgs(final List<String> args, BuilderConfig config) {
+                extractArg(args, getCommandLineArg(), getCommandLineArg()); // -file-update
+                config.options.put(this, new ArrayList<String>() {{
+                    add(extractArg(args, getCommandLineArg(), null)); // target path
+                    add(extractArg(args, getCommandLineArg(), null)); // local file name
+                }});
+                return Option.parseNextArg(args,config);
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+                if ( ! config.hasOption(this)) return;
+                Class<? extends PatchTask> taskClass = FileUpdatePatchTask.class;
+                Iterator<String> argIterator = config.options.get(this).iterator();
+                String targetPath;
+                String file;
+                while(argIterator.hasNext() && (targetPath = argIterator.next()) != null && (file = argIterator.next()) != null) {
+                    List<PatchSpecEntry> resources = new ArrayList<PatchSpecEntry>();
+                    resources.add(new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream((targetPath + "\n" + file).getBytes())));
+                    resources.add(new PatchSpecFileEntry(file, file));
+                    PatchTaskBuilderUtils.addTask(spec, taskClass, resources.toArray(new PatchSpecEntry[resources.size()]));
+                }
+            }},
 
+        DB_UPDATE("-db-update", "<node_name>, <db_update_script>", false, "Runs the database update script on the specified node.") {
+            @Override
+            public BuilderConfig parseArgs(final List<String> args, BuilderConfig config) {
+                extractArg(args, getCommandLineArg(), getCommandLineArg()); // -db-update
+                config.options.put(this, new ArrayList<String>() {{
+                    add(extractArg(args, getCommandLineArg(), null)); // node name
+                    add(extractArg(args, getCommandLineArg(), null)); // db update script
+                }});
+                return Option.parseNextArg(args,config);
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+                if ( ! config.hasOption(this)) return;
+                Class<? extends PatchTask> taskClass = DbUpdatePatchTask.class;
+                Iterator<String> argIterator = config.options.get(this).iterator();
+                String nodeName;
+                String dbUpdateScript;
+                while(argIterator.hasNext() && (nodeName = argIterator.next()) != null && (dbUpdateScript = argIterator.next()) != null) {
+                    List<PatchSpecEntry> resources = new ArrayList<PatchSpecEntry>();
+                    resources.add(new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream((nodeName + "\n" + dbUpdateScript).getBytes())));
+                    resources.add(new PatchSpecFileEntry(dbUpdateScript, dbUpdateScript));
+                    PatchTaskBuilderUtils.addTask(spec, taskClass, resources.toArray(new PatchSpecEntry[resources.size()]));
+                }
+            }
         },
 
+        COMMAND("-command", "<command_to_run>", false, "Executes the specified command on the gateway.") {
+            @Override
+            public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
+                return extractOneArgumentOption(args, config, this);
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+                if ( ! config.hasOption(this)) return;
+                Class<? extends PatchTask> taskClass = OSCommandPatchTask.class;
+                for (String command : config.options.get(this)) {
+                    PatchTaskBuilderUtils.addTask(spec, taskClass, new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(command.getBytes())));
+                }
+            }
+        },
+
+        SCRIPT("-script", "<shell_script", false, "Executes the supplied shell script using the bash interpreter on the gateway") {
+            @Override
+            public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
+                return extractOneArgumentOption(args, config, this);
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+                if ( ! config.hasOption(this)) return;
+                Class<? extends PatchTask> taskClass = ShellScriptPatchTask.class;
+                for (String script : config.options.get(this)) {
+                    List<PatchSpecEntry> resources = new ArrayList<PatchSpecEntry>();
+                    resources.add(new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(script.getBytes())));
+                    resources.add(new PatchSpecFileEntry(script, script));
+                    PatchTaskBuilderUtils.addTask(spec, taskClass, resources.toArray(new PatchSpecEntry[resources.size()]));
+                }
+            }
+        },
+
+/*
         EXPECTED_FILE("-expected-file", "<existing_file_absolute_path> <expected_md5>", false, "Verifies that ...") {
 
         },
@@ -283,6 +398,14 @@ public class PatchBuilder {
             }},
         ;
 
+        private static String concat(List<String> strings, String delimiter) {
+            StringBuilder result = new StringBuilder();
+            for (String s : strings) {
+                result.append(s).append(delimiter);
+            }
+            return result.toString();
+        }
+
         public static Option fromArg(String arg) {
             if (argToOption.containsKey(arg))
                 return argToOption.get(arg);
@@ -316,7 +439,7 @@ public class PatchBuilder {
             return required;
         }
 
-        // - PRIVATE
+        // - Option PRIVATE
 
         private String commandLineArg;
         private String syntax;
@@ -363,7 +486,10 @@ public class PatchBuilder {
 
         private static BuilderConfig extractOneArgumentOption(final List<String> args, BuilderConfig config, final Option option) {
             extractArg(args, option.getCommandLineArg(), option.getCommandLineArg());
-            config.options.put(option, new ArrayList<String>() {{ add(extractArg(args, option.getCommandLineArg(), null)); }});
+            if (! config.options.containsKey(option))
+                config.options.put(option, new ArrayList<String>());
+            List<String> argList = config.options.get(option);
+            argList.add(extractArg(args, option.getCommandLineArg(), null));
             return Option.parseNextArg(args, config);
         }
 
@@ -372,6 +498,28 @@ public class PatchBuilder {
             String jarOptionValue = extractArg(args, jarOption, null);
             config.jarOptions.put(JarSignerParams.Option.fromCommandLineArg(jarOption), jarOptionValue);
             return Option.parseNextArg(args, config);
+        }
+
+        private static List<String> rpmList(final String rpmOrList) {
+            if (rpmOrList == null || rpmOrList.isEmpty())
+                throw new IllegalArgumentException("Invalid RPM list: " + rpmOrList);
+
+            File rpmList = new File(rpmOrList);
+            if (rpmList.exists()) {
+                try {
+                    List<String> result = new ArrayList<String>();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(rpmList)));
+                    String line;
+                    while ( (line = reader.readLine()) != null) {
+                        result.add(line);
+                    }
+                    return result;
+                } catch (IOException e) {
+                    throw new RuntimeException("Error readin rpm file list: " + rpmOrList); 
+                }
+            } else {
+                return new ArrayList<String>() {{ add(rpmOrList); }};
+            }
         }
     }
 }

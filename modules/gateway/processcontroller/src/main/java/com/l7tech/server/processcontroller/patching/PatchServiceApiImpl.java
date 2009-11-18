@@ -91,9 +91,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             getPatchLauncher(commandLine, patch);
             getInstallParams(commandLine, patch, nodes);
             logger.log(Level.INFO, "Executing " + commandLine);
-            File command = new File(commandLine.get(0));
-            commandLine.remove(0);
-            result = ProcUtils.exec(command, commandLine.toArray(new String[commandLine.size()]));
+            result = ProcUtils.exec(commandLine.toArray(new String[commandLine.size()]));
             recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.INSTALL, nodes));
             if (rollback != null)
                 recordManager.save(new PatchRecord(System.currentTimeMillis(), rollback, Action.ROLLBACK, nodes));

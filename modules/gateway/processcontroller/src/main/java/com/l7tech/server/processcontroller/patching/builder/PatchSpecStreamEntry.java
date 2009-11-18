@@ -26,6 +26,11 @@ public class PatchSpecStreamEntry implements PatchSpecEntry {
     }
 
     @Override
+    public void setEntryName(String entryName) {
+        this.entryName = entryName;
+    }
+
+    @Override
     public void toJar(JarOutputStream jos) throws IOException {
         try {
             jos.putNextEntry(new ZipEntry(entryName));
@@ -38,7 +43,7 @@ public class PatchSpecStreamEntry implements PatchSpecEntry {
 
     // - PRIVATE
 
-    private final String entryName;
+    private String entryName;
     private final InputStream input;
 
 }

@@ -1,11 +1,8 @@
 package com.l7tech.server.processcontroller.patching.builder;
 
-import com.l7tech.util.IOUtils;
-
-import java.io.InputStream;
-import java.io.File;
-
 /**
+ * Patch task that outputs a "resboot is needed" message on successful installation.
+ *
  * @author jbufu
  */
 public class RebootNeededPatchTask implements PatchTask {
@@ -15,18 +12,18 @@ public class RebootNeededPatchTask implements PatchTask {
     public RebootNeededPatchTask() { }
 
     @Override
-    public void runPatch() throws Exception {
-        String rebootMsg = null;
-        InputStream msgIn = this.getClass().getResourceAsStream(REBOOT_MSG_ENTRY_NAME);
-        if (msgIn != null)
-            rebootMsg = new String(IOUtils.slurpStream(msgIn));
+    public void runPatch(String resourceDirEntry) throws Exception {
+        String rebootMsg = PatchMain.readResource(this.getClass(), resourceDirEntry + PatchTask.TASK_RESOURCE_FILE);
         String patchId = null; // todo: add to interface?
-        System.out.println("Patch ID: " + patchId + " is installed. " + (rebootMsg == null ? DEFAULT_REBOOT_MSG : rebootMsg));
+        System.out.println("Patch ID: " + patchId + " is installed. " + (rebootMsg == null || rebootMsg.isEmpty() ? DEFAULT_REBOOT_MSG : rebootMsg));
     }
 
-    // - PACKAGE
-
-    static final String REBOOT_MSG_ENTRY_NAME = RebootNeededPatchTask.class.getPackage().getName().replace(".", File.separator) + "/reboot_msg.txt";
+    @Override
+    public String[] getClassDependencies() {
+        return new String[] {
+            "com.l7tech.util.IOUtils"
+        };
+    }
 
     // - PRIVATE
 

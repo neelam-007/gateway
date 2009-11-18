@@ -27,6 +27,11 @@ public class PatchSpecFileEntry implements PatchSpecEntry {
     }
 
     @Override
+    public void setEntryName(String entryName) {
+        this.entryName = entryName;
+    }
+
+    @Override
     public void toJar(JarOutputStream jos) throws IOException {
         InputStream in = null;
         try {
@@ -41,6 +46,6 @@ public class PatchSpecFileEntry implements PatchSpecEntry {
 
     // - PRIVATE
 
-    private final String entryName;
+    private String entryName;
     private final String fileName;
 }

@@ -9,6 +9,8 @@ import java.util.*;
  * Patch builder configuration holder: specifies the patch properties, the jar entries to be added,
  * the Main-Class execution entry point and optionally the filename where the generated patch should be written.
  *
+ * todo: serialize/load, argument to PatchBuilder
+ *
  * @author jbufu
  */
 public class PatchSpec {
@@ -30,7 +32,12 @@ public class PatchSpec {
     }
 
     public PatchSpec entry(PatchSpecEntry entry) {
-        if (entries.put(entry.getEntryName(), entry) != null)
+        return entry(entry, true);
+    }
+
+    public PatchSpec entry(PatchSpecEntry entry, boolean failIfAlreadyAdded) {
+        PatchSpecEntry previousEntry = entries.put(entry.getEntryName(), entry);
+        if (failIfAlreadyAdded && previousEntry != null)
             throw new IllegalStateException("Entry already exists in the patch spec: " + entry.getEntryName());
         return this;
     }

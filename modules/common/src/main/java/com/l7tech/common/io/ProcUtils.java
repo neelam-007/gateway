@@ -5,10 +5,7 @@ import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -44,7 +41,43 @@ public class ProcUtils {
                 ret.add(arg.toString());
         }
 
-        return ret.toArray(new String[0]);
+        return ret.toArray(new String[ret.size()]);
+    }
+
+    /**
+     * Runs the command line given as a string array. The first element is the command, the rest are its arguments.
+     *
+     * @see #exec(java.io.File, String[])
+     */
+    public static ProcResult exec(String[] commandLine) throws IOException {
+        return exec(commandLine, (byte[]) null);
+    }
+
+    public static ProcResult exec(String[] commandLine, byte[] stdin) throws IOException {
+        return exec(commandLine, stdin != null ? new ByteArrayInputStream(stdin) : null);
+    }
+
+    public static ProcResult exec(String[] commandLine, InputStream stdin) throws IOException {
+        int length = commandLine.length;
+        String[] args = length > 1 ? Arrays.asList(commandLine).subList(1, length).toArray(new String[length-1]) : new String[0];
+        return exec(null, new File(commandLine[0]), args, stdin, true);
+    }
+
+    /**
+     * Executes the given command line. The space character is the delimeter between the command and its arguments.
+     *
+     * @see #exec(java.io.File, String[])
+     */
+    public static ProcResult exec(String commandLine) throws IOException {
+        return exec(commandLine, (byte[]) null);
+    }
+
+    public static ProcResult exec(String commandLine, byte[] stdin) throws IOException {
+        return exec(commandLine, stdin != null ? new ByteArrayInputStream(stdin) : null);
+    }
+
+    public static ProcResult exec(String commandLine, InputStream stdin) throws IOException {
+        return exec(commandLine.split(" "), stdin);
     }
 
     /**
@@ -58,7 +91,7 @@ public class ProcUtils {
      * @throws java.io.IOException if there is a problem running the subprocess, or the subprocess exits nonzero.
      */
     public static ProcResult exec(File program) throws IOException {
-        return exec(null, program, new String[0], null, true);
+        return exec(null, program, new String[0], (byte[])null, true);
     }
 
     /**
@@ -75,7 +108,7 @@ public class ProcUtils {
      * @throws java.io.IOException if there is a problem running the subprocess, or the subprocess exits nonzero.
      */
     public static ProcResult exec(File cwd, File program) throws IOException {
-        return exec(cwd, program, new String[0], null, true);
+        return exec(cwd, program, new String[0], (byte[])null, true);
     }
 
     /**
@@ -90,7 +123,7 @@ public class ProcUtils {
      * @throws java.io.IOException if there is a problem running the subprocess, or the subprocess exits nonzero.
      */
     public static ProcResult exec(File program, String[] args) throws IOException {
-        return exec(null, program, args, null, true);
+        return exec(null, program, args, (byte[])null, true);
     }
 
     /**
@@ -108,7 +141,7 @@ public class ProcUtils {
      * @throws java.io.IOException if there is a problem running the subprocess, or the subprocess exits nonzero.
      */
     public static ProcResult exec(File cwd, File program, String[] args) throws IOException {
-        return exec(cwd, program, args, null, true);
+        return exec(cwd, program, args, (byte[])null, true);
     }
 
     /**
@@ -184,6 +217,12 @@ public class ProcUtils {
      * @throws java.io.IOException if there is a problem running the subprocess, or the subprocess exits nonzero.
      */
     public static ProcResult exec(File cwd, File program, String[] args, byte[] stdin, boolean allowNonzeroExit) throws IOException {
+        if (stdin != null && logger.isLoggable(Level.FINEST))
+            logger.finest("Sending " + stdin.length + " bytes of input into program: " + program.getName());
+        return exec(cwd, program, args, stdin != null ? new ByteArrayInputStream(stdin) : null, allowNonzeroExit);
+    }
+
+    public static ProcResult exec(File cwd, File program, String[] args, InputStream stdin, boolean allowNonzeroExit) throws IOException {
         try {
             return doExec(cwd, program, args, stdin, allowNonzeroExit);
         } catch (IOException e) {
@@ -197,7 +236,7 @@ public class ProcUtils {
         }
     }
 
-    private static ProcResult doExec(File cwd, File program, String[] args, byte[] stdin, boolean allowNonzeroExit) throws InterruptedException, IOException, ExecutionException {
+    private static ProcResult doExec(File cwd, File program, String[] args, InputStream stdin, boolean allowNonzeroExit) throws InterruptedException, IOException, ExecutionException {
         String[] cmdArray = new String[args.length + 1];
         cmdArray[0] = program.getPath();
         System.arraycopy(args, 0, cmdArray, 1, args.length);
@@ -211,8 +250,12 @@ public class ProcUtils {
 
             os = proc.getOutputStream();
             if (stdin != null) {
-                if (logger.isLoggable(Level.FINEST)) logger.finest("Sending " + stdin.length + " bytes of input into program: " + program.getName());
-                os.write(stdin);
+                if (logger.isLoggable(Level.FINEST)) logger.finest("Copying the provided input stream as input into program: " + program.getName());
+                try {
+                    IOUtils.copyStream(stdin, os);
+                } finally {
+                    ResourceUtils.closeQuietly(stdin);
+                }
                 os.flush();
             }
             os.close(); os = null;
