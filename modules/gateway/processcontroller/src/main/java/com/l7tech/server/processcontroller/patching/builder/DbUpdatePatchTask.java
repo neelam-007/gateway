@@ -1,17 +1,15 @@
 package com.l7tech.server.processcontroller.patching.builder;
 
 import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.server.util.PropertiesDecryptor;
 import com.l7tech.server.processcontroller.patching.PatchException;
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
 
+import java.util.Properties;
 import java.text.MessageFormat;
 import java.io.*;
-import java.util.Properties;
 
 /**
  * @author jbufu
@@ -27,19 +25,6 @@ public class DbUpdatePatchTask implements PatchTask {
         String nodeName = nodeDbUpdate[0];
         String dbUpdateScript = nodeDbUpdate[1];
 
-        File tempFile = File.createTempFile("patch_sql_update", "");
-        tempFile.deleteOnExit();
-        InputStream dbScriptIn = null;
-        OutputStream tempOut = null;
-        try {
-            dbScriptIn = PatchMain.getResourceStream(this.getClass(), resourceDirEntry + dbUpdateScript);
-            tempOut = new FileOutputStream(tempFile);
-            IOUtils.copyStream(dbScriptIn, tempOut);
-        } finally {
-            ResourceUtils.closeQuietly(dbScriptIn);
-            ResourceUtils.closeQuietly(tempOut);
-        }
-
         File masterPasswordFile = new File(MessageFormat.format(MASTER_PASSWORD_FORMAT, nodeName));
         Properties nodeProperties =  new Properties();
         nodeProperties.load(new FileInputStream(MessageFormat.format(NODE_PROPERTIES_FORMAT, nodeName)));
@@ -53,7 +38,7 @@ public class DbUpdatePatchTask implements PatchTask {
         commandLine.append(" -p").append(nodeProperties.get("node.db.config.main.pass"));
         commandLine.append(" ").append(nodeProperties.get("node.db.config.main.name"));
 
-        ProcResult result = ProcUtils.exec(commandLine.toString(), IOUtils.slurpFile(tempFile));
+        ProcResult result = ProcUtils.exec(commandLine.toString(), PatchMain.getResourceStream(this.getClass(), resourceDirEntry + dbUpdateScript));
         if(result.getExitStatus() != 0) {
             byte[] output = result.getOutput();
             throw new PatchException("Error applying database update: " + (output == null ? "" : new String(output) ));
@@ -65,7 +50,6 @@ public class DbUpdatePatchTask implements PatchTask {
         return new String[] {
             "com.l7tech.util.FileUtils",
             "com.l7tech.util.FileUtils$Saver",
-            "com.l7tech.util.ResourceUtils",
             "com.l7tech.common.io.ProcUtils",
             "com.l7tech.common.io.ProcUtils$1",
             "com.l7tech.common.io.ProcUtils$ByteArrayHolder",
