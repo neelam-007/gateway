@@ -202,7 +202,7 @@ public class SearchUddiDialog extends JDialog {
                             final UDDIRegistry uddiRegistry = allRegistries.get(regName);
                             final SelectWsdlPortDialog portDialog;
                             try {
-                                portDialog = new SelectWsdlPortDialog(uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey());
+                                portDialog = new SelectWsdlPortDialog(SearchUddiDialog.this, uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey());
                             } catch (FindException e1) {
                                 showErrorMessage("Cannot find wsdl:port information", "Cannot display all applicable wsdl:port for the BusinessService: " + ExceptionUtils.getMessage(e1), e1);
                                 return;

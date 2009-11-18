@@ -26,8 +26,10 @@ public class SelectWsdlPortDialog extends JDialog {
     private final long uddiRegistryOid;
     private final String serviceKey;
 
-    public SelectWsdlPortDialog(final long uddiRegistryOid,
+    public SelectWsdlPortDialog(final JDialog parent,
+                                final long uddiRegistryOid,
                                 final String serviceKey) throws FindException {
+        super(parent, "Select wsdl:port");
         this.uddiRegistryOid = uddiRegistryOid;
         this.serviceKey = serviceKey;
         setContentPane(contentPane);
@@ -124,7 +126,7 @@ public class SelectWsdlPortDialog extends JDialog {
     }
 
     public static void main(String[] args) throws FindException {
-        SelectWsdlPortDialog dialog = new SelectWsdlPortDialog(-1, "");
+        SelectWsdlPortDialog dialog = new SelectWsdlPortDialog(null, -1, "");
         dialog.pack();
         dialog.setVisible(true);
         System.exit(0);
