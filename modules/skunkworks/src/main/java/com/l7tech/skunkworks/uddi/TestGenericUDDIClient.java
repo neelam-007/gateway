@@ -19,10 +19,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.Pair;
 
 import java.util.*;
-import java.io.Reader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.IOException;
+import java.util.logging.LogManager;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
 
@@ -46,6 +44,7 @@ public class TestGenericUDDIClient {
 
     @Before
     public void setUp(){
+        initializeLogging();
         tModelKeys.clear();
         serviceKeys.clear();
     }
@@ -339,6 +338,51 @@ public class TestGenericUDDIClient {
         System.clearProperty("com.l7tech.console.suppressVersionCheck");
     }
 
+    @Test
+    public void testListWsdls() throws UDDIException {
+
+        final Collection<WsdlPortInfo> infoCollection = uddiClient.listServiceWsdls("%", false, 0, 1000, false);
+        Assert.assertNotNull(infoCollection);
+        for(WsdlPortInfo wi: infoCollection) {
+            System.out.println(wi.getBusinessServiceName() + "\t" + wi.getWsdlUrl());
+        }
+    }
+
+    @Test
+    public void testListWsdlsNoWslds() throws UDDIException {
+
+        final Collection<WsdlPortInfo> infoCollection = uddiClient.listServiceWsdls("%", false, 0, 1000, true);
+        Assert.assertNotNull(infoCollection);
+        for(WsdlPortInfo wi: infoCollection) {
+            System.out.println(wi.getBusinessServiceName() + "\t" + wi.getWsdlUrl());
+        }
+    }
+
+    private static void initializeLogging() {
+        final LogManager logManager = LogManager.getLogManager();
+
+        final File file = new File("logging.properties");
+        if (file.exists()) {
+            InputStream in = null;
+            try {
+                in = file.toURI().toURL().openStream();
+                if (in != null) {
+                    logManager.readConfiguration(in);
+                }
+            } catch (IOException e) {
+                System.err.println("Cannot initialize logging " + e.getMessage());
+            } finally {
+                try {
+                    if (in != null) in.close();
+                } catch (IOException e) { // should not happen
+                    System.err.println("Cannot close logging properties input stream " + e.getMessage());
+                }
+            }
+        } else {
+            System.err.println("Cannot initialize logging");
+        }
+    }
+
     private UDDIClient getUDDIClient(){
         return new GenericUDDIClient("http://DONALWINXP:53307/UddiRegistry/inquiry",
                         "http://DONALWINXP:53307/UddiRegistry/publish",
@@ -347,6 +391,13 @@ public class TestGenericUDDIClient {
                         "administrator",
                         "7layer",
                         PolicyAttachmentVersion.v1_2/*not important here*/, null){};
+//        return new GenericUDDIClient("http://centrasiteuddi:53307/UddiRegistry/inquiry",
+//                        "http://centrasiteuddi:53307/UddiRegistry/publish",
+//                        null,
+//                        "http://centrasiteuddi:53307/UddiRegistry/security",
+//                        "administrator",
+//                        "7layer",
+//                        PolicyAttachmentVersion.v1_2/*not important here*/, null){};
     }
 
     public Reader getWsdlReader(String resourcetoread) {

@@ -68,6 +68,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return serviceAliasManager.findAliasByEntityAndFolder(serviceOid, folderOid);
     }
 
+    @Override
+    public WsdlPortInfo[] findWsdlInfosForSingleBusinessService(long registryOid, String serviceKey, boolean getFirstOnly) throws FindException {
+        return new WsdlPortInfo[0];
+    }
+
     /**
      * Used by the console to retreive the actual wsdl located at a target
      * as seen by the ssg.
@@ -238,10 +243,10 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @param registryOid
      * @param namePattern   The string of the service name (wildcard % is supported)
      * @param caseSensitive True if case sensitive, false otherwise.   @return
-     * @throws FindException
+     * @param showWsdlURL @throws FindException
      */
     @Override
-    public WsdlPortInfo[] findWsdlUrlsFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException {
+    public WsdlPortInfo[] findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean showWsdlURL) throws FindException {
         WsdlPortInfo[] siList = new WsdlPortInfo[3];
 
         siList[0] = new WsdlPortInfoImpl("Google Service", "http://api.google.com/GoogleSearch.wsdl");

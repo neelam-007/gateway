@@ -16,8 +16,7 @@ import java.util.Comparator;
 public class WsdlTableSorter extends FilteredDefaultTableModel {
 
     public static final int WSDL_TABLE_SERVICE_NAME_COLUMN_INDEX = 0;
-    public static final int WSDL_PORT_COLUMN_INDEX = 1;
-    public static final int WSDL_TABLE_WSDL_COLUMN_INDEX = 2;
+    public static final int WSDL_TABLE_WSDL_COLUMN_INDEX = 1;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private boolean ascending = true;
@@ -140,9 +139,6 @@ public class WsdlTableSorter extends FilteredDefaultTableModel {
             case WSDL_TABLE_SERVICE_NAME_COLUMN_INDEX:
                 return ((WsdlPortInfo) sortedData[row]).getBusinessServiceName();
 
-            case WSDL_PORT_COLUMN_INDEX:
-                return ((WsdlPortInfo) sortedData[row]).getWsdlPortName();
-
             case WSDL_TABLE_WSDL_COLUMN_INDEX:
                 return ((WsdlPortInfo) sortedData[row]).getWsdlUrl();
 
@@ -190,10 +186,6 @@ public class WsdlTableSorter extends FilteredDefaultTableModel {
                     elementB = ((WsdlPortInfo) b).getBusinessServiceName();
                     break;
 
-                case WSDL_PORT_COLUMN_INDEX:
-                    elementA = ((WsdlPortInfo) a).getWsdlPortName();
-                    elementB = ((WsdlPortInfo) b).getWsdlPortName();
-                    break;
                 case WSDL_TABLE_WSDL_COLUMN_INDEX:
                     elementA = ((WsdlPortInfo) a).getWsdlUrl();
                     elementB = ((WsdlPortInfo) b).getWsdlUrl();

@@ -41,11 +41,11 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     public String validate(){
 
         if(!checkStringValue(wsdlUrl)) return "WSDL URL was not set";
-        if(!checkStringValue(wsdlPortName)) return "wsdl:port name from bindingTemplate instance parameter not set";
-        if(!checkStringValue(wsdlPortBinding)) return "wsdl:binding referenced from wsdl:port not set";
+//        if(!checkStringValue(wsdlPortName)) return "wsdl:port name from bindingTemplate instance parameter not set";
+//        if(!checkStringValue(wsdlPortBinding)) return "wsdl:binding referenced from wsdl:port not set";
         if(!checkStringValue(businessServiceKey)) return "serviceKey not set";
-        if(!checkStringValue(businessEntityKey)) return "businessKey not set";
-        if(!checkStringValue(wsdlServiceName)) return "wsdl:service name not set";
+//        if(!checkStringValue(businessEntityKey)) return "businessKey not set";
+//        if(!checkStringValue(wsdlServiceName)) return "wsdl:service name not set";
         if(!checkStringValue(accessPointURL)) return "accessPointURL name not set";
         return null;
     }

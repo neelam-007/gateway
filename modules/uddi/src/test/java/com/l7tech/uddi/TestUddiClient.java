@@ -44,6 +44,11 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
+    public Collection<WsdlPortInfo> listWsdlPortsForService(String serviceKey, boolean getFirstOnly) throws UDDIException {
+        return null;
+    }
+
+    @Override
     public Collection<TModel> getTModels(Set<String> tModelKeys) throws UDDIException {
         return tModelsForTest;
     }
@@ -220,7 +225,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
-    public Collection<WsdlPortInfo> listServiceWsdls(String serviceName, boolean caseSensitive, int offset, int maxRows) throws UDDIException {
+    public Collection<WsdlPortInfo> listServiceWsdls(String serviceName, boolean caseSensitive, int offset, int maxRows, boolean noWsdlInfo) throws UDDIException {
         return null;
     }
 

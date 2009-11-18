@@ -4,7 +4,7 @@
  */
 package com.l7tech.uddi;
 
-public interface WsdlPortInfo {
+public interface WsdlPortInfo {//todo [Donal] rename this class
     // This is a flag URI.  Do not change this URI -- it is recognized by the SSM to mean that a search was truncated
     String MAXED_OUT_UDDI_RESULTS_URL = "http://layer7-tech.com/flag/maxed_out_search_result";
     String MAXED_OUT_UDDI_RESULTS_NAME = "SEARCH TOO BROAD";

@@ -127,7 +127,12 @@ public class UDDIHelper {
         return buildCompleteGatewayUrl(SecureSpanConstants.SERVICE_FILE) + serviceOid;
     }
 
-    public boolean isGatewayUrl( final String endPoint ){ //TODO [Donal] add test case
+    /**
+     * Determine if the hostname part of endPoint points to this Gateway
+     * @param endPoint String URL, can contain more than just the hostname
+     * @return true if the hostname points to the this Gateway
+     */
+    public boolean isGatewayUrl( final String endPoint ){ 
         boolean gateway = false;
 
         try {
@@ -182,46 +187,38 @@ public class UDDIHelper {
         return uddiNamedEntities.toArray(new UDDINamedEntity[uddiNamedEntities.size()]);
     }
 
+    public WsdlPortInfo[] getWsdlInfoForServiceKey(final UDDIClient uddiClient, final String serviceKey, final boolean getFirstOnly) throws UDDIException {
+        final Collection<WsdlPortInfo> infoCollection = uddiClient.listWsdlPortsForService(serviceKey, getFirstOnly);
+        return infoCollection.toArray(new WsdlPortInfo[infoCollection.size()]);
+    }
+
     public WsdlPortInfo[] getWsdlByServiceName(final UDDIClient uddiClient,
                                                final String namePattern,
-                                               final boolean caseSensitive) throws UDDIException {
+                                               final boolean caseSensitive,
+                                               final boolean getWsdlURL) throws UDDIException {
         // % denotes wildcard of string (any number of characters), underscore denotes wildcard of a single character
 
         final List<WsdlPortInfo> wsdlPortInfos = new ArrayList<WsdlPortInfo>();
         final int resultRowsMax = getResultRowsMax();
         final int resultBatchSize = getResultBatchSize();
 
-        final String wsdlUrl = getBaseWsdlUrl();
         final String queryUrl = getQueryWsdlString();
-        final String hostName = ServerConfig.getInstance().getHostname();
-        final String hName;
-        if(hostName.indexOf("[") != -1){
-            hName = hostName.substring(0, hostName.indexOf("["));
-        }else if(hostName.indexOf(".") != -1){
-            hName = hostName.substring(0, hostName.indexOf("."));
-        }else{
-            hName = hostName;
-        }
 
         for (int i = 0; wsdlPortInfos.size() < resultRowsMax; i++) {
             int head = i * resultBatchSize;
             if (head > 0) head++; // one based
 
             Collection<WsdlPortInfo> foundWsdlPortInfos =
-                    uddiClient.listServiceWsdls(namePattern, caseSensitive, head, resultBatchSize);
+                    uddiClient.listServiceWsdls(namePattern, caseSensitive, head, resultBatchSize, getWsdlURL);
             for(WsdlPortInfo wsdlPortInfo: foundWsdlPortInfos){
                 final String wsdl = wsdlPortInfo.getWsdlUrl();
-                if(wsdl.indexOf(wsdlUrl) != -1){
+                if(wsdl == null) continue;
+                if(isGatewayUrl(wsdl)){
                     if(wsdlPortInfo instanceof WsdlPortInfoImpl){
                         WsdlPortInfoImpl impl = (WsdlPortInfoImpl) wsdlPortInfo;
                         impl.setGatewayWsdl(true);//ssm will not allow this wsdl to be used
                     }
                 } else if(wsdl.indexOf(queryUrl) != -1){
-                    if(wsdlPortInfo instanceof WsdlPortInfoImpl){
-                        WsdlPortInfoImpl impl = (WsdlPortInfoImpl) wsdlPortInfo;
-                        impl.setLikelyGatewayWsdl(true);//ssm will warn the user
-                    }
-                }else if(wsdl.indexOf(hName) != -1){
                     if(wsdlPortInfo instanceof WsdlPortInfoImpl){
                         WsdlPortInfoImpl impl = (WsdlPortInfoImpl) wsdlPortInfo;
                         impl.setLikelyGatewayWsdl(true);//ssm will warn the user

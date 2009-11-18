@@ -153,12 +153,34 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      * @param registryOid   long oid of the UDDIRegistry to search
      * @param namePattern   The string of the service name (wildcard % is supported)
      * @param caseSensitive True if case sensitive, false otherwise.
+     * @param getWsdlURL boolean if true then the WSDL URL is inculded in each returned WsdlPortInfo. Setting to false
+     * will dramatically increase search performance 
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
-    WsdlPortInfo[] findWsdlUrlsFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException;
+    WsdlPortInfo[]
+    findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL) throws FindException;
+
+    /**
+     * Get all bindingTemplates for a BusinessService as an array of WsdlPortInfo's
+     *
+     * Only valid bindingTemplates from the BusinessService will be included in the results. For each valid
+     * bindingTemplate there will be one WsdlPortInfo in the returned array.
+     *
+     * Valid bindingTemplates is defined according to the technical note on using a WSDL in UDDI
+     *
+     * @param registryOid long oid of the UDDIRegistry to search
+     * @param serviceKey String serviceKey of the BusinessService to retrieve wsdl:port infomration for
+     * @param getFirstOnly if true, the first value result will be returned. Useful when only a WSDL URL is required.
+     * @return WsdlPortInfo array.
+     * @throws FindException if there was a problem accessing the requested information.
+     */
+    @Transactional(readOnly = true)
+    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
+    WsdlPortInfo[]
+    findWsdlInfosForSingleBusinessService(long registryOid, String serviceKey, boolean getFirstOnly) throws FindException;
 
     /**
      * Find all Businesses from the UDDI Registry given the service name pattern.

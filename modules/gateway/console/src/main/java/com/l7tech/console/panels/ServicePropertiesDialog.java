@@ -374,7 +374,7 @@ public class ServicePropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    SearchUddiDialog swd = new SearchUddiDialog(ServicePropertiesDialog.this, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH);
+                    SearchUddiDialog swd = new SearchUddiDialog(ServicePropertiesDialog.this, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH, true);
                     swd.addSelectionListener(new SearchUddiDialog.ItemSelectedListener() {
                         @Override
                         public void itemSelected(Object item) {
@@ -449,7 +449,7 @@ public class ServicePropertiesDialog extends JDialog {
         wsdlUnderUDDIControlCheckBox.addActionListener( enableDisableChangeListener );
         monitoringEnabledCheckBox.addActionListener( enableDisableChangeListener );
 
-        Utilities.setEscAction(this, new AbstractAction() {
+        Utilities.setEscAction(this, new AbstractAction() {//todo why is this not working?
             @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();

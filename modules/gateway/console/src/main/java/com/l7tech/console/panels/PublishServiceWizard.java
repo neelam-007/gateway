@@ -208,17 +208,22 @@ public class PublishServiceWizard extends Wizard {
             //record this
             final WsdlPortInfo wsdlPortInfo = saBundle.getWsdlPortInfo();
             if(wsdlPortInfo != null && wsdlPortInfo.getWsdlUrl().equals(saBundle.getService().getWsdlUrl())){
-                UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
-                        wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
-                        wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
-                        wsdlPortInfo.getAccessPointURL(), true);
+                //check we have all required info
+                if(wsdlPortInfo.getAccessPointURL() != null && wsdlPortInfo.getWsdlPortBinding() != null &&
+                        wsdlPortInfo.getWsdlPortName() != null && wsdlPortInfo.getWsdlServiceName() != null){
 
-                try {
-                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
-                } catch (Exception e) {
-                    final String msg = "Cannot record UDDI information for service: " + e.getMessage();
-                    logger.log(Level.WARNING, msg, e);
-                    DialogDisplayer.showMessageDialog(this, msg, "Error saving UDDI information", e);
+                    UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
+                            wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
+                            wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
+                            wsdlPortInfo.getAccessPointURL(), true);
+
+                    try {
+                        Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
+                    } catch (Exception e) {
+                        final String msg = "Error: " + ExceptionUtils.getMessage(e);
+                        logger.log(Level.WARNING, msg, e);
+                        DialogDisplayer.showMessageDialog(this, msg, "Cannot put WSDL under UDDI control", JOptionPane.ERROR_MESSAGE, null);
+                    }
                 }
             }
         } catch (Exception e) {

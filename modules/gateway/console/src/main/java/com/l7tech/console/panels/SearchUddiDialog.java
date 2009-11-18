@@ -48,6 +48,8 @@ public class SearchUddiDialog extends JDialog {
     private JComboBox uddiRegistryComboBox;
     private JLabel nameOfSearchItem;
     private JLabel searchTitleLabel;
+    private JCheckBox showSelectWsdlPortDialogCheckBox;
+    private JCheckBox retrieveWSDLURLCheckBox;
 
     private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
 
@@ -56,6 +58,8 @@ public class SearchUddiDialog extends JDialog {
     private static final String EQUALS = "Equals";
     private static final String CONTAINS = "Contains";
     private static final String UDDI_REGISTRY = "UDDI.TYPE";
+    private static final String WSDL_PORT_DIALOG = "UDDI.WSDL.PORT.DIALOG";
+    private static final String RETRIEVE_WSDL = "UDDI.WSDL.RETRIEVE";
     private static final int MAX_SERVICE_NAME_LENGTH = 255;
     private Map<String, UDDIRegistry> allRegistries;
     private BusinessEntityTable businessEntityTable;
@@ -69,12 +73,24 @@ public class SearchUddiDialog extends JDialog {
      */
     private final String onlyAvailableRegistry;
 
+    private final boolean requireWsdlPortDialog;
+
     public SearchUddiDialog(JDialog parent, SEARCH_TYPE searchType, String onlyAvailableRegistry) throws FindException {
         super(parent, resources.getString("window.title"), true);
         this.searchType = searchType;
         if(onlyAvailableRegistry != null && onlyAvailableRegistry.trim().isEmpty())
             throw new IllegalArgumentException("onlyAvailableRegistry cannot be the empty string");
         this.onlyAvailableRegistry = onlyAvailableRegistry;
+        requireWsdlPortDialog = false;
+        initialize();
+    }
+
+    public SearchUddiDialog(JDialog parent, SEARCH_TYPE searchType, boolean requireWsdlPortDialog) throws FindException {
+        super(parent, resources.getString("window.title"), true);
+        this.searchType = searchType;
+        this.requireWsdlPortDialog = requireWsdlPortDialog;
+        requireWsdlPortDialog = false;
+        onlyAvailableRegistry = null;
         initialize();
     }
 
@@ -82,6 +98,7 @@ public class SearchUddiDialog extends JDialog {
         super(parent, resources.getString("window.title"), true);
         this.searchType = searchType;
         this.onlyAvailableRegistry = null;
+        requireWsdlPortDialog = false;
         initialize();
     }
 
@@ -89,6 +106,7 @@ public class SearchUddiDialog extends JDialog {
         super(parent, resources.getString("window.title"), true);
         this.searchType = searchType;
         onlyAvailableRegistry = null;
+        requireWsdlPortDialog = false;
         initialize();
     }
 
@@ -144,8 +162,26 @@ public class SearchUddiDialog extends JDialog {
 
         switch(searchType){
             case WSDL_SEARCH:
+                if(requireWsdlPortDialog){
+                    showSelectWsdlPortDialogCheckBox.setSelected(true);
+                    showSelectWsdlPortDialogCheckBox.setEnabled(false);
+                }else{
+                    final String wsdlDialogChoice = preferences.getString(WSDL_PORT_DIALOG, "");
+                    if(wsdlDialogChoice.equals("")){
+                        showSelectWsdlPortDialogCheckBox.setSelected(false);
+                    }else{
+                        showSelectWsdlPortDialogCheckBox.setSelected(Boolean.valueOf(wsdlDialogChoice));
+                    }
+                }
+                final String retrieveWsdlPreference = preferences.getString(RETRIEVE_WSDL, "");
+                if(retrieveWsdlPreference.equals("")){
+                    retrieveWSDLURLCheckBox.setSelected(true);
+                }else{
+                    retrieveWSDLURLCheckBox.setSelected(Boolean.valueOf(retrieveWsdlPreference));
+                }
+
                 nameOfSearchItem.setText("Service Name:");
-                wsdlTable = new WsdlTable();
+                wsdlTable = new WsdlTable(retrieveWSDLURLCheckBox.isSelected());
                 searchResultsScrollPane.setViewportView(wsdlTable);
                 selectButton.addActionListener(new ActionListener() {
 
@@ -153,39 +189,86 @@ public class SearchUddiDialog extends JDialog {
                     public void actionPerformed(ActionEvent e) {
 
                         int row = wsdlTable.getSelectedRow();
-                        final boolean [] canFireEventAndDispose = new boolean[]{true};
-                        if (row != -1) {
-                            final WsdlPortInfo wsdlPortInfo = (WsdlPortInfo) wsdlTable.getTableSorter().getData(row);
+                        if(row < 0) {
+                            dispose();
+                            return;
+                        }
 
-                            //Check if the selected WSDL may be from this Gateway
-                            if(wsdlPortInfo.isGatewayWsdl()){
-                                DialogDisplayer.showMessageDialog(SearchUddiDialog.this,  "This WSDL is from the SecureSpan Gateway. Cannot route to self",
-                                        "Cannot select WSDL", JOptionPane.WARNING_MESSAGE, null);
+                        final WsdlPortInfo selectedWsdlInfo = (WsdlPortInfo) wsdlTable.getTableSorter().getData(row);
+
+                        if(showSelectWsdlPortDialogCheckBox.isSelected()){
+                            //Show new dialog and get user selection
+                            final String regName = (String) uddiRegistryComboBox.getSelectedItem();
+                            final UDDIRegistry uddiRegistry = allRegistries.get(regName);
+                            final SelectWsdlPortDialog portDialog;
+                            try {
+                                portDialog = new SelectWsdlPortDialog(uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey());
+                            } catch (FindException e1) {
+                                showErrorMessage("Cannot find wsdl:port information", "Cannot display all applicable wsdl:port for the BusinessService: " + ExceptionUtils.getMessage(e1), e1);
                                 return;
                             }
-                            
-                            if(wsdlPortInfo.isLikelyGatewayWsdl()){
-                                DialogDisplayer.showConfirmDialog(SearchUddiDialog.this,
-                                        "It is likely this WSDL is from the SecureSpan Gateway. Please confirm selection",
-                                        "Confirm WSDL selection", JOptionPane.YES_NO_OPTION,
-                                        new DialogDisplayer.OptionListener() {
-                                    @Override
-                                    public void reportResult(int option) {
-                                        if(option != JOptionPane.YES_OPTION) canFireEventAndDispose[0] = false;
+
+                            final WsdlPortInfo [] wsdlPortInfo = new WsdlPortInfo[1];
+                            portDialog.addSelectionListener(new SelectWsdlPortDialog.ItemSelectedListener() {
+                                @Override
+                                public void itemSelected(Object item) {
+                                    if(item == null) return;
+                                    if(!(item instanceof WsdlPortInfo)) return;
+                                    wsdlPortInfo[0] = (WsdlPortInfo) item;
+                                }
+                            });
+                            portDialog.setSize(700, 500);
+                            portDialog.setModal(true);
+                            DialogDisplayer.display(portDialog, new Runnable() {
+                                @Override
+                                public void run() {
+                                    if(wsdlPortInfo[0] == null) return;
+                                    final boolean canDispose = validateWsdlSelection(SearchUddiDialog.this, wsdlPortInfo[0]);
+                                    if(canDispose){
+                                        fireItemSelectedEvent(wsdlPortInfo[0]);
+                                        dispose();
                                     }
-                                });
+                                }
+                            });
+                        }else{
+                            if(!retrieveWSDLURLCheckBox.isSelected()){
+                                //we need to get the WSDL from UDDI
+                                final String regName = (String) uddiRegistryComboBox.getSelectedItem();
+                                final UDDIRegistry uddiRegistry = allRegistries.get(regName);
+
+                                try {
+                                    final WsdlPortInfo[] allApplicableWsdlInfos =
+                                            Registry.getDefault().getServiceManager().findWsdlInfosForSingleBusinessService(uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey(), true);
+                                    if(allApplicableWsdlInfos == null || allApplicableWsdlInfos.length == 0){
+                                        throw new FindException("No WSDL URL could be found for BusinessService");
+                                    }
+                                    final boolean canDispose = validateWsdlSelection(SearchUddiDialog.this, allApplicableWsdlInfos[0]);
+                                    if(canDispose){
+                                        fireItemSelectedEvent(allApplicableWsdlInfos[0]);
+                                        dispose();
+                                    }
+                                    
+                                } catch (FindException e1) {
+                                    showErrorMessage("Error getting WSDL", "Cannot get WSDL from UDDI for BusinessService: " + ExceptionUtils.getMessage(e1), e1);
+                                    return;
+                                }
 
                             }
-
-                            if(canFireEventAndDispose[0]) fireItemSelectedEvent(wsdlPortInfo);
+                            //this will show any required warnings to the user
+                            final boolean canDispose = validateWsdlSelection(SearchUddiDialog.this, selectedWsdlInfo);
+                            if(canDispose){
+                                fireItemSelectedEvent(selectedWsdlInfo);
+                                dispose();
+                            }
                         }
-                        if(canFireEventAndDispose[0]) dispose();
                     }
                 });
                 Utilities.setDoubleClickAction(wsdlTable, selectButton);
                 searchTitleLabel.setText("Search UDDI Registry for WSDLs");
                 break;
             case BUSINESS_ENTITY_SEARCH:
+                showSelectWsdlPortDialogCheckBox.setEnabled(false);
+                showSelectWsdlPortDialogCheckBox.setVisible(false);
                 nameOfSearchItem.setText("Business Name:");
                 businessEntityTable = new BusinessEntityTable();
                 searchResultsScrollPane.setViewportView(businessEntityTable);
@@ -278,7 +361,7 @@ public class SearchUddiDialog extends JDialog {
 
                             switch(searchType){
                                 case WSDL_SEARCH:
-                                    return serviceAdmin.findWsdlUrlsFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected());
+                                    return serviceAdmin.findWsdlInfosFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected(), retrieveWSDLURLCheckBox.isSelected());
                                 case BUSINESS_ENTITY_SEARCH:
                                     return serviceAdmin.findBusinessesFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected());
                             }
@@ -309,6 +392,7 @@ public class SearchUddiDialog extends JDialog {
                         if (result instanceof WsdlPortInfo[]) {
                             // store prefs on successful search
                             preferences.putProperty(UDDI_REGISTRY, registryName);
+                            preferences.putProperty(WSDL_PORT_DIALOG, (showSelectWsdlPortDialogCheckBox.isSelected()) ? "true" : "false");
 
                             boolean searchTruncated = false;
                             Vector<WsdlPortInfo> urlList = new Vector<WsdlPortInfo>();
@@ -375,6 +459,37 @@ public class SearchUddiDialog extends JDialog {
         Utilities.centerOnScreen(this);
     }
 
+    /**
+     *
+     * @param parent Component parent. Cannot be null
+     * @param wsdlPortInfo WsdlPortInfo user select. Cannot be null. wsdlUrl property must not return null
+     * @return true if the WSDL does not route to the Gateway or it may, but the user decided to choose it anyway, false
+     * otherwise, in which case the WsdlPortInfo should not be used
+     */
+    static boolean validateWsdlSelection(final Component parent, final WsdlPortInfo wsdlPortInfo){
+        final boolean [] canFireEventAndDispose = new boolean[]{true};
+        //Check if the selected WSDL may be from this Gateway
+        if(wsdlPortInfo.isGatewayWsdl()){
+            DialogDisplayer.showMessageDialog(parent,  "This WSDL is from the SecureSpan Gateway. Cannot route to self",
+                    "Cannot select WSDL", JOptionPane.WARNING_MESSAGE, null);
+            return false;
+        }
+
+        if(wsdlPortInfo.isLikelyGatewayWsdl()){
+            DialogDisplayer.showConfirmDialog(parent,
+                    "It is likely this WSDL is from the SecureSpan Gateway. Please confirm selection",
+                    "Confirm WSDL selection", JOptionPane.YES_NO_OPTION,
+                    new DialogDisplayer.OptionListener() {
+                @Override
+                public void reportResult(int option) {
+                    if(option != JOptionPane.YES_OPTION) canFireEventAndDispose[0] = false;
+                }
+            });
+        }
+
+        return canFireEventAndDispose[0];
+    }
+
     private void loadUddiRegistries() {
         try {
             UDDIRegistryAdmin uddiRegistryAdmin = getUDDIRegistryAdmin();
@@ -437,9 +552,9 @@ public class SearchUddiDialog extends JDialog {
     }
 
     /**
-     * notfy the listeners
+     * notify the listeners
      *
-     * @param  item the trusted certs
+     * @param  item Object to send to listeners
      */
     private void fireItemSelectedEvent(final Object item) {
         SwingUtilities.invokeLater(new Runnable() {

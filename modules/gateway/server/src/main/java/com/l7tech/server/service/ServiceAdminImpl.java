@@ -528,11 +528,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public WsdlPortInfo[] findWsdlUrlsFromUDDIRegistry(final long registryOid, String namePattern, boolean caseSensitive) throws FindException {
+    public WsdlPortInfo[] findWsdlInfosForSingleBusinessService(long registryOid, final String serviceKey, boolean getFirstOnly) throws FindException {
         try {
             final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
             if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
-            WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
+            final WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlInfoForServiceKey(getUDDIClient(uddiRegistry), serviceKey, getFirstOnly);
             for(WsdlPortInfo wsdlPortInfo: wsdlPortInfoInfo){
                 wsdlPortInfo.setUddiRegistryOid(registryOid);
             }
@@ -541,6 +541,41 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                 @Override
                 public String resolve(WsdlPortInfo key) {
                     return key.getBusinessServiceKey() + "" + key.getWsdlPortName();
+                }
+            }, false));
+            return wsdlPortInfoInfo;
+        } catch (UDDIException e) {
+            String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
+            if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
+                 ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
+                 ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
+                 ExceptionUtils.causedBy( e, ConnectException.class ) ||
+                 ExceptionUtils.causedBy( e, NoRouteToHostException.class )) {
+                logger.log(Level.WARNING, msg + " : '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e ))+ "'", ExceptionUtils.getDebugException( e ));
+            } else {
+                logger.log(Level.WARNING, msg, e);
+            }
+            throw new FindException(msg);
+        }
+    }
+
+    @Override
+    public WsdlPortInfo[] findWsdlInfosFromUDDIRegistry(final long registryOid,
+                                                       final String namePattern,
+                                                       final boolean caseSensitive,
+                                                       final boolean showWsdlURL) throws FindException {
+        try {
+            final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
+            if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
+            WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive, showWsdlURL);
+            for(WsdlPortInfo wsdlPortInfo: wsdlPortInfoInfo){
+                wsdlPortInfo.setUddiRegistryOid(registryOid);
+            }
+            //noinspection unchecked
+            Arrays.sort(wsdlPortInfoInfo, new ResolvingComparator(new Resolver<WsdlPortInfo,String>(){
+                @Override
+                public String resolve(WsdlPortInfo key) {
+                    return key.getBusinessServiceName();
                 }
             }, false));
             return wsdlPortInfoInfo;
