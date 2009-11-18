@@ -53,6 +53,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         setAssertionFailureEnabled(source.isAssertionFailureEnabled());
         setQueryName(source.getQueryName());
         setNamingMap(copyMap(source.getNamingMap()));
+        setEnabled(source.isEnabled());
     }
 
     @Override
