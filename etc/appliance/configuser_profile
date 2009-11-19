@@ -659,12 +659,18 @@ doPatchUpload() {
                 isMenuValid="y";
                 clear;;
             *)
-                realindex=$[$choice-1]
-                if [ $realindex -ge 0 ] && [ $realindex -lt $LEN ] ; then
-                    whichone=${DROPBOXPATCHES[$realindex]}
-                    registerPatch "$whichone"
-                else
+                if ! [[ "$choice" =~ ^[0-9]+$ ]] ; then
+                    isValid="n";
                     confirmedMessage "That is not a valid selection";
+                else
+                    realindex=$[$choice-1]
+                    if [ $realindex -ge 0 ] && [ $realindex -lt $LEN ] ; then
+                        clear
+                        whichone=${DROPBOXPATCHES[$realindex]}
+                        registerPatch "$whichone"
+                    else
+                        confirmedMessage "That is not a valid selection";
+                    fi
                 fi
                 clear;;
         esac
@@ -675,6 +681,7 @@ doPatchInstall() {
     isValid="n"
     shouldReload="y"
 
+    declare -a REGISTEREDPATCHES
     while [ "$isValid" != "y" ]
     do
         if [ "$shouldReload" == "y" ] ; then
@@ -682,55 +689,65 @@ doPatchInstall() {
             old=$IFS
 IFS='
 '
-            REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK"`)
+            REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK" || true`)
             IFS=$old
             LEN=${#REGISTEREDPATCHES[*]}
         fi
 
-        echo ""
-        echo "The following patches are available for installation. "
-        echo "Please make your selection via line number."
-        echo ""
+        if [ $LEN -eq 0 ] ; then
+            echo ""
+            echo "No patches are available for installation."
+            echo ""
+            echo "Please use the patch management menu to register and verify a"
+            echo "patch before it can be installed."
+            confirmedMessage ""
+            isValid="y"
+        else
+            echo ""
+            echo "The following patches are available for installation. "
+            echo "Please make your selection via line number."
+            echo ""
 
-        declare -a patch_ids
-        for (( i = 0 ; i < $LEN ; i++))
-        do
-            index=$[$i+1]
-            patchinfo=${REGISTEREDPATCHES[$i]}
-            patchid=`echo $patchinfo | awk -F'(' '{print $1}' | sed 's/Patch ID \(.*\)/\1/'`
-            patchdesc=`echo $patchinfo | awk -F'(' '{print $2}' | awk -F')' '{print $1}'`
-            patch_ids[$i]=$patchid
-            echo "$index) ID: $patchid"
-            echo "   DESCRIPTION: $patchdesc"
-        done
-        echo "X) Exit menu"
-        echo ""
-        echo -n "Please make a selection: "
-        read choice
-        case $choice in
-            x|X)
-                isValid="y";
-                clear;;
-            *)
-                shouldReload="n"
-                if ! [[ "$choice" =~ ^[0-9]+$ ]] ; then
-                    isValid="n";
-                    confirmedMessage "That is not a valid selection";
-                else
-                    patch_ids_len=${#patch_ids[*]}
-                    if [ $choice -ge 1 ] && [ $choice -le $patch_ids_len ] ; then
-                        clear
-                        realindex=$[$choice-1]
-                        whichone=${patch_ids[$realindex]}
-                        installPatch "$whichone"
-                        shouldReload="y"
-                    else
+            declare -a patch_ids
+            for (( i = 0 ; i < $LEN ; i++))
+            do
+                index=$[$i+1]
+                patchinfo=${REGISTEREDPATCHES[$i]}
+                patchid=`echo $patchinfo | awk -F'(' '{print $1}' | sed 's/Patch ID \(.*\)/\1/'`
+                patchdesc=`echo $patchinfo | awk -F'(' '{print $2}' | awk -F')' '{print $1}'`
+                patch_ids[$i]=$patchid
+                echo "$index) ID: $patchid"
+                echo "   DESCRIPTION: $patchdesc"
+            done
+            echo "X) Exit menu"
+            echo ""
+            echo -n "Please make a selection: "
+            read choice
+            case $choice in
+                x|X)
+                    isValid="y";
+                    clear;;
+                *)
+                    shouldReload="n"
+                    if ! [[ "$choice" =~ ^[0-9]+$ ]] ; then
                         isValid="n";
                         confirmedMessage "That is not a valid selection";
+                    else
+                        patch_ids_len=${#patch_ids[*]}
+                        realindex=$[$choice-1]
+                        if [ $realindex -ge 0 ] && [ $realindex -lt $patch_ids_len ] ; then
+                            clear
+                            whichone=${patch_ids[$realindex]}
+                            installPatch "$whichone"
+                            shouldReload="y"
+                        else
+                            isValid="n";
+                            confirmedMessage "That is not a valid selection";
+                        fi
                     fi
-                fi
-                clear;;
-        esac
+                    clear;;
+            esac
+        fi
     done
 }
 
@@ -739,11 +756,16 @@ doPatchDelete() {
     old=$IFS
 IFS='
 '
-    REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK"`)
+    REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK" || true`)
     IFS=$old
     LEN=${#REGISTEREDPATCHES[*]}
     if [ $LEN -eq 0 ] ; then
-        confirmedMessage "There are no patches that can be unregistered"
+        echo ""
+        echo "There are no patches that can be unregistered."
+        echo ""
+        echo "Only patches that are currently uploaded but not yet"
+        echo "installed can be unregistered."
+        confirmedMessage ""
     else
         declare -a patch_ids
         for (( i = 0 ; i < $LEN ; i++))
