@@ -83,7 +83,8 @@ public class UDDIUtilities {
                 if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_PORTTYPEREFERENCE))
                     continue;
                 final TModel publishedTModel = dependentTModels.get(keyedReference.getKeyValue());
-                keyedReference.setKeyValue(publishedTModel.getTModelKey());      //todo put in break after this
+                keyedReference.setKeyValue(publishedTModel.getTModelKey());
+                break;
             }
         }
     }

@@ -101,7 +101,7 @@ public class BusinessServicePublisher {
         }
 
         //Get the service
-        Set<String> serviceKeys = new HashSet<String>();
+        final Set<String> serviceKeys = new HashSet<String>();
         serviceKeys.add(serviceKey);
         final List<BusinessService> foundServices = uddiClient.getBusinessServices(serviceKeys, false);
         if (foundServices.isEmpty())
@@ -110,7 +110,7 @@ public class BusinessServicePublisher {
 
         final Set<String> allOtherBindingKeys;
         if (businessService.getBindingTemplates() != null) {
-            List<BindingTemplate> bindingTemplates = businessService.getBindingTemplates().getBindingTemplate();
+            final List<BindingTemplate> bindingTemplates = businessService.getBindingTemplates().getBindingTemplate();
             allOtherBindingKeys = new HashSet<String>();
             for (BindingTemplate template : bindingTemplates) {
                 allOtherBindingKeys.add(template.getBindingKey());
@@ -119,14 +119,14 @@ public class BusinessServicePublisher {
             allOtherBindingKeys = Collections.emptySet();
         }
 
-//        Publish the tModels first
         final Map<String, TModel> tModelsToPublish = bindingToModels.right;
         try {
+            //publish the wsdl:portType tmodels first so we can update the binding tmodel references to them
             for (Map.Entry<String, TModel> entry : tModelsToPublish.entrySet()) {
+                if (UDDIUtilities.getTModelType(entry.getValue(), true) != UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE) continue;
                 jaxWsUDDIClient.publishTModel(entry.getValue());
             }
 
-//            publishDependentTModels(bindingToModels.right, WSDL_PORT_TYPE);
             final List<TModel> allBindingTModels = new ArrayList<TModel>();
             for (final TModel tModel : bindingToModels.right.values()) {
                 if (UDDIUtilities.getTModelType(tModel, true) != UDDIUtilities.TMODEL_TYPE.WSDL_BINDING) continue;
@@ -134,6 +134,11 @@ public class BusinessServicePublisher {
             }
             if (allBindingTModels.isEmpty()) throw new IllegalStateException("No binding tModels were found");
             UDDIUtilities.updateBindingTModelReferences(allBindingTModels, bindingToModels.right);
+
+            //now publish the binding tmodels after they have been updated
+            for(TModel bindingModel: allBindingTModels){
+                jaxWsUDDIClient.publishTModel(bindingModel);
+            }
 
             bindingToModels.left.setServiceKey(businessService.getServiceKey());
 

@@ -298,7 +298,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
     @Override
     public void publishGatewayEndpoint(long publishedServiceOid, boolean removeOthers) throws FindException, SaveException, UDDIRegistryNotEnabledException {
-        //todo [Donal] implement removeOthers
         if(publishedServiceOid < 1) throw new IllegalArgumentException("publishedServiceOid must be >= 1");
 
         final PublishedService service = serviceCache.getCachedService(publishedServiceOid);
