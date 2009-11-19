@@ -347,7 +347,7 @@ public class ServicePropertiesDialog extends JDialog {
                         if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE){
                             errorMsg = "BusinessService in UDDI has been overwritten. Please remove before deleting";
                         }else if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.ENDPOINT){
-                            errorMsg = "BusinessService in UDDI has has a Gateway endpoint added. Please remove before deleting";
+                            errorMsg = "BusinessService in UDDI has had a Gateway endpoint added. Please remove before deleting";
                         }else{
                             throw new IllegalStateException("Illegal publish type found");//can only happen if either publish type enum changes or above logic does
                         }
