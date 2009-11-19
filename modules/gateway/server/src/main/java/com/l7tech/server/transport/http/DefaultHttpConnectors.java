@@ -69,7 +69,8 @@ public class DefaultHttpConnectors {
             https.setEndpoints(defaultEndpoints);
             setListenerCiphers(https);
             https.setPort(initPort);
-            https.setKeyAlias("SSL");
+            https.setKeyAlias(null);
+            https.setKeystoreOid(null);
             https.setSecure(true);
             https.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
             https.setEnabled(true);
@@ -89,7 +90,8 @@ public class DefaultHttpConnectors {
             https.setEndpoints(defaultEndpoints);
             setListenerCiphers(https);
             https.setPort(8443);
-            https.setKeyAlias("SSL");
+            https.setKeyAlias(null);
+            https.setKeystoreOid(null);
             https.setSecure(true);
             https.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
             https.setEnabled(enableOtherConnectors);
@@ -110,7 +112,8 @@ public class DefaultHttpConnectors {
         httpsNocc.setEndpoints(defaultEndpoints);
         setListenerCiphers(httpsNocc);
         httpsNocc.setPort(9443);
-        httpsNocc.setKeyAlias("SSL");
+        httpsNocc.setKeyAlias(null);
+        httpsNocc.setKeystoreOid(null);
         httpsNocc.setSecure(true);
         httpsNocc.setClientAuth(SsgConnector.CLIENT_AUTH_NEVER);
         httpsNocc.setEnabled(enableOtherConnectors);
@@ -151,7 +154,8 @@ public class DefaultHttpConnectors {
         nodeHttps.setScheme(SsgConnector.SCHEME_HTTPS);
         nodeHttps.setEndpoints(SsgConnector.Endpoint.NODE_COMMUNICATION.name() + "," + SsgConnector.Endpoint.PC_NODE_API.name());
         nodeHttps.setPort(port);
-        nodeHttps.setKeyAlias("SSL");
+        nodeHttps.setKeyAlias(null);
+        nodeHttps.setKeystoreOid(null);
         nodeHttps.setSecure(true);
         nodeHttps.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
         nodeHttps.putProperty(SsgConnector.PROP_CIPHERLIST, defaultInternodeStrongCiphers);

@@ -339,7 +339,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * <p/>
      * See {@link #getKeyAlias()} for more information.
      *
-     * @param keyAlias the private key alias, or null if one is not to be used.
+     * @param keyAlias the private key alias, or null if one is not configured.
      */
     public void setKeyAlias(String keyAlias) {
         checkLocked();
