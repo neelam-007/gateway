@@ -1,6 +1,7 @@
 
 set -u
 set -e
+#set -x
 
 trap doLogout INT
 
@@ -563,6 +564,9 @@ registerPatch() {
             confirmedMessage "The patch was registered successfully."
             return 0
         fi
+    else
+        confirmedMessage "Patch file not found: $whichone"
+        return $?
     fi
 }
 
