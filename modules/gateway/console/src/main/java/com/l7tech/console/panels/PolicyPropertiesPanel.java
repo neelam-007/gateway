@@ -108,11 +108,16 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         typeCombo.setModel(new DefaultComboBoxModel(types.toArray(new PolicyType[types.size()])));
 
         List<String> tagList = new ArrayList<String>();
+        String policyInternalTag = policy.getInternalTag();
+        if (looksLikeAuditSinkPolicy(policy) && policyInternalTag != null && !policyTags.containsKey(policyInternalTag))
+            tagList.add(policyInternalTag);
         tagList.addAll(policyTags.keySet());
         tagCombo.setModel(new DefaultComboBoxModel(tagList.toArray(new String[policyTags.size()])));
 
-        if (policy.getInternalTag() != null)
-            tagCombo.setSelectedItem(policy.getInternalTag());
+        if (policyInternalTag != null)
+            tagCombo.setSelectedItem(policyInternalTag);
+        else
+            tagCombo.setSelectedIndex(-1);
         
         // The max length of a policy name is 255. 
         ((AbstractDocument)nameField.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
