@@ -703,6 +703,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             final Map<String, Set<String>> bindingKeyToRefTModels = new HashMap<String, Set<String>>();
             final List<String> allTModelKeys = new ArrayList<String>();
             final Map<String, BindingTemplate> bindingKeyToObject = new HashMap<String, BindingTemplate>();
+            final Map<String, String> tModelKeyToPotentialInstanceParam = new HashMap<String, String>();
             for(BindingTemplate bindingTemplate: bindingDetail.getBindingTemplate()){
                 final Set<String> refTModelKeys = new HashSet<String>();
                 if(bindingTemplate.getTModelInstanceDetails() == null) continue;
@@ -710,6 +711,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     //add all tModels, we will extract the wsdl:portType (for correctness) and wsdl:binding (for return info) later
                     refTModelKeys.add(tmii.getTModelKey());
                     allTModelKeys.add(tmii.getTModelKey());
+                    if(tmii.getInstanceDetails() != null){
+                        tModelKeyToPotentialInstanceParam.put(tmii.getTModelKey(), tmii.getInstanceDetails().getInstanceParms());
+                    }
                 }
                 bindingKeyToRefTModels.put(bindingTemplate.getBindingKey(), refTModelKeys);
                 bindingKeyToObject.put(bindingTemplate.getBindingKey(), bindingTemplate);
@@ -783,6 +787,15 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 if(wsdlUrl == null){
                     logger.log(Level.FINE,
                             "Not including binding in results as we could not find an overviewDoc of use type 'wsdlInterface' from either the wsdl:portType or wsdl:binding tModel referenced from the bindingTemplate with bindingKey: "
+                                    + bindingKey+ " for serviceKey: " + serviceKey);
+                    continue;
+                }
+
+                //find out what the wsdl:port is
+                final String wsdlPortName = tModelKeyToPotentialInstanceParam.get(bindingTModel.getTModelKey());
+                if(wsdlPortName == null){
+                    logger.log(Level.FINE,
+                            "Not including binding in results as we could not find an instanceParam for a tModel of type wsdl:binding. bindingKey: "
                                     + bindingKey+ " for serviceKey: " + serviceKey);
                     continue;
                 }
