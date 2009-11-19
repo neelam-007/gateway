@@ -5,6 +5,8 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.URL;
@@ -19,6 +21,7 @@ import java.lang.reflect.Proxy;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Binding;
 import javax.xml.ws.Holder;
+import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.Handler;
 import javax.xml.namespace.QName;
 import javax.xml.datatype.DatatypeFactory;
@@ -476,7 +479,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 if(ex instanceof UDDIInvalidKeyException && allowInvalidKeys){
                     //we accept some keys may not exist
                     logger.log(Level.FINE, "No matching BusinessServices were found for serviceKey: " + aServiceKey);
-                    continue;
                 }else{
                     throw ex;
                 }
@@ -1073,9 +1075,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         if (bindingTemplate.getTModelInstanceDetails() == null ||
                 accessPoint == null ||
                 (accessPoint.getUseType() != null &&
-                        !accessPoint.getUseType().trim().equals("") &&
-                        (!accessPoint.getUseType().equalsIgnoreCase( USE_TYPE_END_POINT ) && !accessPoint.getUseType().trim().equalsIgnoreCase("http")))) {
-            logger.log(Level.FINE, "Invalid / unsupported accessPoint useType found: " + accessPoint.getUseType());
+                        !accessPoint.getUseType().trim().isEmpty() &&
+                        (!accessPoint.getUseType().equalsIgnoreCase( USE_TYPE_END_POINT ) && !accessPoint.getUseType().trim().equalsIgnoreCase(USE_TYPE_HTTP)))) {
+            logger.log(Level.FINE, "Invalid / unsupported accessPoint useType found: " + (accessPoint==null ? null : accessPoint.getUseType()));
             return null;
         }
 
@@ -1380,7 +1382,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                         if ( bindingTemplateList != null ) {
                             for ( BindingTemplate bindingTemplate : bindingTemplateList ) {
                                 if ( bindingTemplate.getAccessPoint() != null &&
-                                     USE_TYPE_END_POINT.equals(bindingTemplate.getAccessPoint().getUseType()) ) {
+                                     USE_TYPE_END_POINT.equalsIgnoreCase(bindingTemplate.getAccessPoint().getUseType()) ) {
                                     bindingKey = bindingTemplate.getBindingKey();
                                     break;
                                 }
@@ -1390,7 +1392,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                                 // fall back to "http" useType.
                                 for ( BindingTemplate bindingTemplate : bindingTemplateList ) {
                                     if ( bindingTemplate.getAccessPoint() != null &&
-                                         "http".equals(bindingTemplate.getAccessPoint().getUseType()) ) {
+                                         USE_TYPE_HTTP.equalsIgnoreCase(bindingTemplate.getAccessPoint().getUseType()) ) {
                                         bindingKey = bindingTemplate.getBindingKey();
                                         break;
                                     }
@@ -2212,6 +2214,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     private static final String FINDQUALIFIER_APPROXIMATE = "approximateMatch";
     private static final String FINDQUALIFIER_CASEINSENSITIVE = "caseInsensitiveMatch";
     private static final String USE_TYPE_END_POINT = "endPoint";
+    private static final String USE_TYPE_HTTP = "http";
 
     // From http://www.uddi.org/pubs/uddi_v3.htm#_Toc85908004
     private static final int MAX_LENGTH_KEY = 255;
@@ -2387,20 +2390,46 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         return null;
     }
 
+    private static final String HTTP_ERROR_REGEX = "[Hh][Tt][Tt][Pp][a-zA-Z0-9:\\-,\\.; ]{0,1024}([2-5][0-9][0-9])";
+
     private boolean isNetworkException( final Exception exception ) {
-        return ExceptionUtils.causedBy( exception, ConnectException.class ) ||
+        boolean network = ExceptionUtils.causedBy( exception, ConnectException.class ) ||
                ExceptionUtils.causedBy( exception, NoRouteToHostException.class ) ||
                ExceptionUtils.causedBy( exception, UnknownHostException.class ) ||
                ExceptionUtils.causedBy( exception, SocketTimeoutException.class );
+
+        if ( !network ) {
+            final WebServiceException wse = ExceptionUtils.getCauseIfCausedBy( exception, WebServiceException.class );
+            if ( wse != null ) {
+                final String message = ExceptionUtils.getMessage(wse);
+                final Pattern pattern = Pattern.compile(HTTP_ERROR_REGEX);
+                final Matcher matcher = pattern.matcher( message );
+                if ( matcher.find() ) {
+                    network = true;
+                }
+            }
+        }
+
+        return network;
     }
 
-    private String describeNetworkException( final Exception exception ) {
+    private static String describeNetworkException( final Exception exception ) {
         String description = "connection error";
 
         if ( ExceptionUtils.causedBy( exception, UnknownHostException.class ) ) {
             description = "unknown host '"+ExceptionUtils.getCauseIfCausedBy( exception, UnknownHostException.class ).getMessage()+"'";
         } else if ( ExceptionUtils.causedBy( exception, SocketTimeoutException.class ) ) {
             description = "network read timed out";
+        } else if ( ExceptionUtils.causedBy( exception, WebServiceException.class ) ) {
+            final WebServiceException wse = ExceptionUtils.getCauseIfCausedBy( exception, WebServiceException.class );
+            if ( wse != null ) {
+                final String message = ExceptionUtils.getMessage(wse);
+                final Pattern pattern = Pattern.compile(HTTP_ERROR_REGEX);
+                final Matcher matcher = pattern.matcher( message );
+                if ( matcher.find() ) {
+                    description = "HTTP Error " + matcher.group( 1 );
+                }
+            }
         }
 
         return description;
@@ -2451,50 +2480,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 throw new UDDIDataException("Value for " + description + " exceeds maximum length of " + maxLength + " characters.");
             }
         }
-    }
-
-    private FindBinding buildFindBinding( final ServiceInfo serviceInfo ) throws UDDIException {
-        FindBinding findBinding = new FindBinding();
-        findBinding.setAuthInfo(getAuthToken());
-        findBinding.setServiceKey(serviceInfo.getServiceKey());
-
-        // We want them all, but setting limit at 50 //todo accecpt this value as a param from cluster variable
-        findBinding.setMaxRows(50);
-
-        // TODO This does not work with CentraSite
-        //CategoryBag bindingCategoryBag = new CategoryBag();
-        //KeyedReference bindingKeyedReference = new KeyedReference();
-        //bindingKeyedReference.setKeyValue(WSDL_TYPES_PORT);
-        //bindingKeyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
-        //bindingCategoryBag.getKeyedReference().add(bindingKeyedReference);
-        //findBinding.setCategoryBag(bindingCategoryBag);
-        return findBinding;
-    }
-
-    private FindService buildFindService( final String servicePattern,
-                                          final boolean caseSensitive,
-                                          final int offset,
-                                          final int maxRows) throws UDDIException {
-        String authToken = getAuthToken();
-        Name[] names = buildNames(servicePattern);
-        FindService findService = new FindService();
-        findService.setAuthInfo(authToken);
-        if (maxRows > 0)
-            findService.setMaxRows(maxRows);
-        if (offset > 0)
-            findService.setListHead(offset);
-        findService.setFindQualifiers(buildFindQualifiers(servicePattern, caseSensitive));
-        if (names != null)
-            findService.getName().addAll(Arrays.asList(names));
-
-        KeyedReference keyedReference = new KeyedReference();
-        keyedReference.setKeyValue(WSDL_TYPES_SERVICE);
-        keyedReference.setTModelKey(TMODEL_KEY_WSDL_TYPES);
-        CategoryBag categoryBag = new CategoryBag();
-        categoryBag.getKeyedReference().add(keyedReference);
-        findService.setCategoryBag(categoryBag);
-
-        return findService;
     }
 
     private ServiceDetail getServiceDetail( final String serviceKey, final String authToken ) throws UDDIException {
@@ -2652,34 +2637,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         if (temp.contains("%") || temp.contains("_")) result = true;
         return result;
     }
-
-//    private FindTModel getFindTModel(TModel tModelToFind, boolean approxomiateMatch) throws UDDIException {
-//        FindTModel findTModel = new FindTModel();
-//        findTModel.setAuthInfo(getAuthToken());
-//
-//        FindQualifiers findQualifiers = new FindQualifiers();
-//        List<String> qualifiers = findQualifiers.getFindQualifier();
-//        qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
-//        if(approxomiateMatch) qualifiers.add(FINDQUALIFIER_APPROXIMATE);
-//
-//        Name name= new Name();
-//        name.setValue(tModelToFind.getName().getValue());
-//
-//        findTModel.setName(name);
-//        findTModel.setFindQualifiers(findQualifiers);
-//        if(tModelToFind.getCategoryBag() != null){
-//            CategoryBag searchCategoryBag = new CategoryBag();
-//            searchCategoryBag.getKeyedReference().addAll(tModelToFind.getCategoryBag().getKeyedReference());
-//            findTModel.setCategoryBag(searchCategoryBag);
-//        }
-//
-//        if(tModelToFind.getIdentifierBag() != null){
-//            IdentifierBag searchIdentifierBag = new IdentifierBag();
-//            searchIdentifierBag.getKeyedReference().addAll(tModelToFind.getIdentifierBag().getKeyedReference());
-//            findTModel.setIdentifierBag(searchIdentifierBag);
-//        }
-//        return findTModel;
-//    }
 
     private static class UDDIOperationalInfoImpl implements UDDIOperationalInfo {
         private final OperationalInfo info;
