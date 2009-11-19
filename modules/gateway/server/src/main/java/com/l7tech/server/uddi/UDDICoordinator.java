@@ -2,6 +2,7 @@ package com.l7tech.server.uddi;
 
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIClient;
+import com.l7tech.uddi.UDDINetworkException;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ExceptionUtils;
@@ -965,7 +966,10 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
                 // Only audit a UDDIException if it has a cause
                 Throwable auditThrowable = e;
-                if ( auditThrowable instanceof UDDIException ) {
+                if( auditThrowable instanceof UDDINetworkException ){
+                    //this is expected, dont log / audit stack trace
+                    auditThrowable = null;
+                } else if ( auditThrowable instanceof UDDIException ) {
                     if ( auditThrowable.getCause()==null ) {
                         auditThrowable = null;
                     }
