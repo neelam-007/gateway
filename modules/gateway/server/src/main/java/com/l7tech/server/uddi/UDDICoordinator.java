@@ -6,6 +6,7 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Config;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
@@ -15,7 +16,6 @@ import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.Component;
@@ -64,7 +64,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                            final ClusterMaster clusterMaster,
                            final Timer timer,
                            final Collection<UDDITaskFactory> taskFactories,
-                           final ServerConfig serverConfig) {
+                           final Config config) {
         this.transactionManager = transactionManager;
         this.uddiHelper = uddiHelper;
         this.uddiRegistryManager = uddiRegistryManager;
@@ -76,8 +76,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
-        this.serverConfig = serverConfig;
-        this.taskContext = new UDDICoordinatorTaskContext( this, serverConfig);
+        this.taskContext = new UDDICoordinatorTaskContext( this, config );
     }
 
     public boolean isNotificationServiceAvailable( final long registryOid ) {
@@ -193,10 +192,9 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                         //perhaps turn off cascade delete
                     }
                 }
-                if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ) {
-                    timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
-                }
-            } else if ( UDDIServiceControl.class.equals(entityInvalidationEvent.getEntityClass())) {
+            } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ) {
+                timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
+            } else if ( UDDIServiceControl.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
             }
 
@@ -233,7 +231,6 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     private final UDDITaskFactory.UDDITaskContext taskContext;
     private final AtomicReference<Map<Long,UDDIRegistryRuntime>> registryRuntimes = // includes disabled registries
             new AtomicReference<Map<Long,UDDIRegistryRuntime>>( Collections.<Long,UDDIRegistryRuntime>emptyMap() );
-    private final ServerConfig serverConfig;
     private ApplicationEventPublisher eventPublisher;
     private Audit auditor;
 
@@ -937,13 +934,13 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
     private static final class UDDICoordinatorTaskContext implements UDDITaskFactory.UDDITaskContext {
         private final UDDICoordinator coordinator;
-        private final ServerConfig serverConfig;
+        private final Config config;
         private static final String UDDI_WSDL_PUBLISH_MAX_RETRIES = "uddi.wsdlpublish.maxretries"; 
 
         UDDICoordinatorTaskContext(final UDDICoordinator coordinator,
-                                   final ServerConfig serverConfig) {
+                                   final Config config) {
             this.coordinator = coordinator;
-            this.serverConfig = serverConfig;
+            this.config = config;
         }
 
         @Override
@@ -996,7 +993,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
         @Override
         public int getMaxRetryAttempts() {
-            return serverConfig.getIntProperty( UDDI_WSDL_PUBLISH_MAX_RETRIES, 3);
+            return config.getIntProperty( UDDI_WSDL_PUBLISH_MAX_RETRIES, 3);
         }
     }
 }

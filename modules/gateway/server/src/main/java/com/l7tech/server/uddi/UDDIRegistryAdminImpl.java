@@ -200,7 +200,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         proxiedServiceInfo.throwIfFinalPropertyModified(original);
 
         if(original.isUpdateProxyOnLocalChange() == proxiedServiceInfo.isUpdateProxyOnLocalChange() &&
-           original.isMetricsEnabled() == proxiedServiceInfo.isMetricsEnabled() ) return;
+           original.isMetricsEnabled() == proxiedServiceInfo.isMetricsEnabled() &&
+           original.isPublishWsPolicyEnabled() == proxiedServiceInfo.isPublishWsPolicyEnabled() &&
+           original.isPublishWsPolicyFull() == proxiedServiceInfo.isPublishWsPolicyFull() &&
+           original.isPublishWsPolicyInlined() == proxiedServiceInfo.isPublishWsPolicyInlined()) return;
+
 
         uddiProxiedServiceInfoManager.update(proxiedServiceInfo);
     }

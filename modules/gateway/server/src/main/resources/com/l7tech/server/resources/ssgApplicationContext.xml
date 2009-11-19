@@ -1108,6 +1108,7 @@
                 <ref bean="uddiRegistryManager"/>
                 <ref bean="uddiPublishStatusManager" />
                 <ref bean="uddiServiceControlManager"/>
+                <ref bean="uddiProxiedServiceInfoManager"/>
                 <ref bean="serviceManager" />
             </list>
         </property>
