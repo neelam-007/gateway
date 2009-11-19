@@ -795,7 +795,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 wsdlPortInfo.setWsdlServiceName(businessServiceWsdlLocalName);
                 //the instance param value from the bindingTemplate is the name of the wsdl:port
                 //todo [Donal] namespaces - get and persist the binding's namespace
-                wsdlPortInfo.setWsdlPortName(bindingTModel.getName().getValue());
+                wsdlPortInfo.setWsdlPortName(portTypeTModel.getName().getValue());
                 wsdlPortInfo.setWsdlPortBinding(bindingTModel.getName().getValue());
                 wsdlPortInfo.setAccessPointURL(accessPointURL);
                 wsdlPortInfo.setWsdlUrl(wsdlUrl);
