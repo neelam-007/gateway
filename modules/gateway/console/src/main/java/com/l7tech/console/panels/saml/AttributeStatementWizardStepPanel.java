@@ -303,7 +303,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
 
         if ( nameFormat != null ) {
             defaultNameFormat = nameFormat;
-        } else if ( samlVersion < 2 ) {
+        } else if ( samlVersion == 1 ) {
             defaultNameFormat = null;        
         }
 
