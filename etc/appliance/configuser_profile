@@ -1,7 +1,6 @@
 
 set -u
 set -e
-#set -x
 
 trap doLogout INT
 
@@ -673,50 +672,66 @@ doPatchUpload() {
 }
 
 doPatchInstall() {
-    echo "Please wait while the list of available patches is retrieved..."
-    old=$IFS
+    isValid="n"
+    shouldReload="y"
+
+    while [ "$isValid" != "y" ]
+    do
+        if [ "$shouldReload" == "y" ] ; then
+            echo "Please wait while the list of available patches is retrieved..."
+            old=$IFS
 IFS='
 '
-    REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK"`)
-    IFS=$old
-    LEN=${#REGISTEREDPATCHES[*]}
+            REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK"`)
+            IFS=$old
+            LEN=${#REGISTEREDPATCHES[*]}
+        fi
 
-    echo ""
-    echo "The following patches are available for installation. "
-    echo "Please make your selection via line number."
-    echo ""
-    
-    declare -a patch_ids
-    for (( i = 0 ; i < $LEN ; i++))
-    do
-        index=$[$i+1]
-        patchinfo=${REGISTEREDPATCHES[$i]}
-        patchid=`echo $patchinfo | awk -F'(' '{print $1}' | sed 's/Patch ID \(.*\)/\1/'`
-        patchdesc=`echo $patchinfo | awk -F'(' '{print $2}' | awk -F')' '{print $1}'`
-        patch_ids[$i]=$patchid
-        echo "$index) ID: $patchid"
-        echo "   DESCRIPTION: $patchdesc"
-    done
-    echo "X) Exit menu"
-    echo ""
-    echo -n "Please make a selection: "
-    read choice
-    case $choice in
+        echo ""
+        echo "The following patches are available for installation. "
+        echo "Please make your selection via line number."
+        echo ""
+
+        declare -a patch_ids
+        for (( i = 0 ; i < $LEN ; i++))
+        do
+            index=$[$i+1]
+            patchinfo=${REGISTEREDPATCHES[$i]}
+            patchid=`echo $patchinfo | awk -F'(' '{print $1}' | sed 's/Patch ID \(.*\)/\1/'`
+            patchdesc=`echo $patchinfo | awk -F'(' '{print $2}' | awk -F')' '{print $1}'`
+            patch_ids[$i]=$patchid
+            echo "$index) ID: $patchid"
+            echo "   DESCRIPTION: $patchdesc"
+        done
+        echo "X) Exit menu"
+        echo ""
+        echo -n "Please make a selection: "
+        read choice
+        case $choice in
             x|X)
-                clear;
-                isMenuValid="y";
+                isValid="y";
                 clear;;
             *)
-                realindex=$[$choice-1]
-                patch_ids_len=${#patch_ids[*]}
-                if [ $realindex -ge 0 ] && [ $realindex -lt $patch_ids_len ] ; then
-                    whichone=${patch_ids[$realindex]}
-                    installPatch "$whichone"
-                else
+                shouldReload="n"
+                if ! [[ "$choice" =~ ^[0-9]+$ ]] ; then
+                    isValid="n";
                     confirmedMessage "That is not a valid selection";
+                else
+                    patch_ids_len=${#patch_ids[*]}
+                    if [ $choice -ge 1 ] && [ $choice -le $patch_ids_len ] ; then
+                        clear
+                        realindex=$[$choice-1]
+                        whichone=${patch_ids[$realindex]}
+                        installPatch "$whichone"
+                        shouldReload="y"
+                    else
+                        isValid="n";
+                        confirmedMessage "That is not a valid selection";
+                    fi
                 fi
                 clear;;
         esac
+    done
 }
 
 doPatchDelete() {
