@@ -269,6 +269,9 @@ public class SearchUddiDialog extends JDialog {
             case BUSINESS_ENTITY_SEARCH:
                 showSelectWsdlPortDialogCheckBox.setEnabled(false);
                 showSelectWsdlPortDialogCheckBox.setVisible(false);
+                retrieveWSDLURLCheckBox.setEnabled(false);
+                retrieveWSDLURLCheckBox.setVisible(false);
+                
                 nameOfSearchItem.setText("Business Name:");
                 businessEntityTable = new BusinessEntityTable();
                 searchResultsScrollPane.setViewportView(businessEntityTable);
