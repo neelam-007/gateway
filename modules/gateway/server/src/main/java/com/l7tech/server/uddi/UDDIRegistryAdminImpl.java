@@ -7,6 +7,9 @@ import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.service.ServiceCache;
+import com.l7tech.wsdl.Wsdl;
+
+import javax.wsdl.WSDLException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -220,19 +223,22 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ){
             final PublishedService service = serviceCache.getCachedService(uddiServiceControl.getPublishedServiceOid());
 
+            final Wsdl wsdl;
+            try {
+                wsdl = service.parsedWsdl();
+            } catch (WSDLException e) {
+                throw new SaveException("Cannot parse services WSDL: " + ExceptionUtils.getDebugException(e));
+            }
             //validate that an end point can be found
             final String endPoint = uddiServiceControl.getAccessPointUrl();
-            //TODO [Donal] We need to ensure it's logical that we allow this related business service to be persisted.
-//            try {
-//                endPoint = UDDIUtilities.extractEndPointFromWsdl(wsdl, uddiServiceControl.getWsdlServiceName(),
-//                        uddiServiceControl.getWsdlPortName(), uddiServiceControl.getWsdlPortBinding());
-//            } catch (UDDIUtilities.WsdlEndPointNotFoundException e) {
-//                final String msg = "Cannot save UDDIServiceControl as no valid endpoint can be found from the Published Service's WSDL: "
-//                        + ExceptionUtils.getMessage(e);
-//                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-//                throw new SaveException(msg);
-//            }
+            //TODO [Donal] Add namespace support
+            final boolean wsdlImplementUddiWsdlPort = UDDIUtilities.validatePortBelongsToWsdl(wsdl, uddiServiceControl.getWsdlServiceName(), null,
+                    uddiServiceControl.getWsdlPortName(), uddiServiceControl.getWsdlPortBinding(), null);
 
+            if(!wsdlImplementUddiWsdlPort){
+                throw new SaveException("The published service's WSDL does not relate to the BusinessService information from UDDI");
+            }
+            
             //make sure that we are not monitoring an endpoint of this SSG
             if(uddiHelper.isGatewayUrl(endPoint)){
                 final String msg = "WSDL endpoint routes back to the SecureSpan Gateway";

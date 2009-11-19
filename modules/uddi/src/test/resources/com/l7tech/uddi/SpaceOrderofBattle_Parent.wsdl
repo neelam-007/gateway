@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This parent WSDL defines a wsdl:binding and wsdl:port defined in the imported wsdl, but they have a different namespace-->        
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://SOB.IPD.LMCO/" xmlns:i0="http://SOB.IPD.LMCO/ExternalWSDL" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" targetNamespace="http://SOB.IPD.LMCO/">
+	<wsdl:import namespace="http://SOB.IPD.LMCO/ExternalWSDL" location="modules/uddi/src/test/resources/com/l7tech/uddi/SpaceOrderofBattle_Child.wsdl"/>
+	<wsdl:types>
+		<s:schema targetNamespace="http://SOB.IPD.LMCO/">
+			<s:import schemaLocation="schema1.xsd" namespace="http://SOB.IPD.LMCO/ExternalWSDL"/>
+			<s:import schemaLocation="schema2.xsd" namespace="http://SADB.DataAccess.InfoServices.SISP.IPD/xsd"/>
+			<s:import schemaLocation="schema3.xsd" namespace="http://DataAccess.InfoServices.SISP.IPD/xsd"/>
+			<s:import schemaLocation="schema4.xsd" namespace="http://Database.DataAccess.InfoServices.SISP.IPD/xsd"/>
+			<s:import schemaLocation="schema5.xsd" namespace="http://MCRS.DataAccess.InfoServices.SISP.IPD/xsd"/>
+			<s:import schemaLocation="schema6.xsd" namespace="http://sql.java/xsd"/>
+		</s:schema>
+	</wsdl:types>
+    <wsdl:portType name="JMSSOB">
+        <wsdl:operation name="GetTLE">
+            <wsdl:input message="tns:GetTLESoapIn"/>
+            <wsdl:output message="tns:GetTLESoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetDecomposedTLE">
+            <wsdl:input message="tns:GetDecomposedTLESoapIn"/>
+            <wsdl:output message="tns:GetDecomposedTLESoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetLaunchSchedule">
+            <wsdl:input message="tns:GetLaunchScheduleSoapIn"/>
+            <wsdl:output message="tns:GetLaunchScheduleSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetOnOrbit">
+            <wsdl:input message="tns:GetOnOrbitSoapIn"/>
+            <wsdl:output message="tns:GetOnOrbitSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetTerrestrial">
+            <wsdl:input message="tns:GetTerrestrialSoapIn"/>
+            <wsdl:output message="tns:GetTerrestrialSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetTerrestrialDetails">
+            <wsdl:input message="tns:GetTerrestrialDetailsSoapIn"/>
+            <wsdl:output message="tns:GetTerrestrialDetailsSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="GetOnOrbitDetails">
+            <wsdl:input message="tns:GetOnOrbitDetailsSoapIn"/>
+            <wsdl:output message="tns:GetOnOrbitDetailsSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="getSYSCAPData">
+            <wsdl:input message="tns:getSYSCAPDataSoapIn"/>
+            <wsdl:output message="tns:getSYSCAPDataSoapOut"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="JMSSOB" type="tns:JMSSOB">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="GetTLE">
+            <soap:operation soapAction="http://SOB.IPD.LMCO/GetTLE" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetDecomposedTLE">
+            <soap:operation soapAction="http://SOB.IPD.LMCO/GetDecomposedTLE" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetLaunchSchedule">
+            <soap:operation soapAction="http://SOB.IPD.LMCO/GetLaunchSchedule" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetOnOrbit">
+            <soap:operation soapAction="http://SOB.IPD.LMCO/GetOnOrbit" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetTerrestrial">
+            <soap:operation soapAction="http://SOB.IPD.LMCO/GetTerrestrial" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetTerrestrialDetails">
+            <soap:operation soapAction="http://SOB.IPD.LMCO/GetTerrestrialDetails" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="GetOnOrbitDetails">
+            <soap:operation soapAction="http://SOB.IPD.LMCO/GetOnOrbitDetails" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getSYSCAPData">
+            <soap:operation soapAction="http://SOB.IPD.LMCO/getSYSCAPData" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+	<wsdl:service name="SpaceOrderofBattle">
+		<wsdl:port name="JMSSOB" binding="tns:JMSSOB">
+			<soap:address location="http://localhost:1610/SpaceOrderofBattle.asmx"/>
+		</wsdl:port>
+		<wsdl:port name="JMSSOB1" binding="i0:JMSSOB1">
+			<soap12:address location="http://localhost:1610/SpaceOrderofBattle.asmx"/>
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

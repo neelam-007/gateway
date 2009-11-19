@@ -419,12 +419,18 @@ public class ServicePropertiesDialog extends JDialog {
                                     if(e1 instanceof SaveException || e1 instanceof UpdateException){
                                         final String msg = "Cannot save UDDI information to Gateway: " + ExceptionUtils.getMessage(e1);
                                         showErrorMessage("Cannot save", msg, ExceptionUtils.getDebugException(e1), true);
-                                        return;
                                     }else throw new RuntimeException(e1);
                                 }
                             }
 
-
+                            //reset the UDDIServiceControl
+                            try {
+                                uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(subject.getOid());
+                            } catch (FindException e1) {
+                                final String msg = "Cannot look up UDDI infomration from the Gateway: " + ExceptionUtils.getMessage(e1);
+                                showErrorMessage("Cannot find", msg, ExceptionUtils.getDebugException(e1), true);
+                                uddiServiceControl = null;
+                            }
                             //now update the UI with selections
                             modelToView();
                             enableDisableControls();

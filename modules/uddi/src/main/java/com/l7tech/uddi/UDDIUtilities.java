@@ -470,6 +470,74 @@ public class UDDIUtilities {
         private String implementingWsdlPort;
         private String implementingWsdlUrl;
     }
+
+    /**
+     * Validate that a wsdl:port name is contained within the supplied WSDL
+     * <p/>
+     * This can be used to determine if  WSDL can go under the control of a UDDI Business Service.
+     * The wsdl parameters should have been obtained from UDDI
+     *
+     * Supports namespaces
+     * 
+     * @param wsdl
+     * @param wsdlServiceName
+     * @param wsdlPortName
+     * @return true if the wsdl implements the wsdl:port name, false otherwise
+     * @throws WsdlEndPointNotFoundException
+     */
+    public static boolean validatePortBelongsToWsdl(final Wsdl wsdl,
+                                                    final String wsdlServiceName,
+                                                    final String wsdlServiceNamespace,
+                                                    final String wsdlPortName,
+                                                    final String wsdlBinding,
+                                                    final String wsdlBindingNamespace) {
+        if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
+        if(wsdlServiceName == null || wsdlServiceName.trim().isEmpty()) throw new IllegalArgumentException("wsdlServiceName cannot be null or empty");
+        if(wsdlPortName == null || wsdlPortName.trim().isEmpty()) throw new IllegalArgumentException("wsdlPortName cannot be null or empty");
+        if(wsdlBinding == null || wsdlBinding.trim().isEmpty()) throw new IllegalArgumentException("wsdlBinding cannot be null or empty");
+        
+        final boolean useServiceNamespace = wsdlServiceNamespace != null && !wsdlServiceNamespace.trim().isEmpty();
+        final boolean useBindingNamespace = wsdlBindingNamespace != null && !wsdlBindingNamespace.trim().isEmpty();
+
+        for (Service wsdlService : wsdl.getServices()){
+            if(!wsdlService.getQName().getLocalPart().equalsIgnoreCase(wsdlServiceName)){
+                logger.log(Level.FINE, "No wsdl:service name match. Wsdl service name is '" +
+                        wsdlService.getQName().getLocalPart()+"' requested service name is '" + wsdlServiceName+"'");
+                continue;
+            }
+
+            if(useServiceNamespace && !wsdlService.getQName().getNamespaceURI().equalsIgnoreCase(wsdlServiceNamespace)){
+                logger.log(Level.FINE, "No wsdl:service namespace match. Wsdl service namespace is '" +
+                        wsdlService.getQName().getNamespaceURI()+"' requested service namespace is '" + wsdlServiceNamespace+"'");
+                continue;
+            }
+
+            final Map<String, Port> stringPortMap = wsdlService.getPorts();
+            for(Port port: stringPortMap.values()){
+                if(!port.getName().equalsIgnoreCase(wsdlPortName)){
+                    logger.log(Level.FINE, "No wsdl:port name match. Wsdl port name is '" +
+                            port.getName()+"' requested port name is '" + wsdlPortName+"'");
+                    continue;
+                }
+
+                final Binding binding = port.getBinding();
+                if(!binding.getQName().getLocalPart().equalsIgnoreCase(wsdlBinding)) {
+                    logger.log(Level.FINE, "No wsdl:binding name match. Wsdl binding name is '" +
+                            binding.getQName().getLocalPart()+"' requested binding name is '" + wsdlBinding+"'");
+                    continue;
+                }
+                if(useBindingNamespace && !binding.getQName().getNamespaceURI().equalsIgnoreCase(wsdlBindingNamespace)) {
+                    logger.log(Level.FINE, "No wsdl:binding namespace match. Wsdl binding namespace is '" +
+                            binding.getQName().getNamespaceURI()+"' requested binding namespace is '" + wsdlBindingNamespace+"'");
+                    continue;
+                }
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Given the WSDL and the other supplied information, determine the URL which should be considered the end point
      * for the supplied info
@@ -479,10 +547,9 @@ public class UDDIUtilities {
      * 1) Check the bindingTemplate of the wsdl:port of the supplied wsdl:service
      * 2) find any bindingTemplate which implements the correct wsdl:binding, return it's accessPoint value
      * <p/>
-     * //todo work in progress - not needed anywhere yet - not deleting yet - may be required for a uddi notification when uddi no longer represents the contents of the wsdl
      *
      * @param wsdl WSDL to extract end point information from
-     * @param wsdlServiceName
+     * @param wsdlServiceName        //todo delete when sure no use for this
      * @param wsdlPortName
      * @param wsdlPortBinding
      * @return String end point

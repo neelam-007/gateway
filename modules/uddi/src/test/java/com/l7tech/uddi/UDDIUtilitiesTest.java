@@ -14,6 +14,7 @@ import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE;
 import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
 
 import javax.xml.bind.JAXB;
+import javax.wsdl.WSDLException;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
@@ -163,6 +164,52 @@ public class UDDIUtilitiesTest {
             }
             Assert.assertEquals("Incorrect number of references updated for bindingTemplate", 2, numUpdatedReferences);
         }
+
+    }
+
+    @Test
+    public void testValidatePortBelongsToWsdl() throws WSDLException {
+
+        final String namespace = "http://warehouse.acme.com/ws";
+        Assert.assertTrue("Should be valid, all info supplied",
+                UDDIUtilities.validatePortBelongsToWsdl(wsdl, "Warehouse", namespace, "WarehouseSoap" , "WarehouseSoap", namespace));
+
+        Assert.assertTrue("Should be valid, even with no namespace",
+                UDDIUtilities.validatePortBelongsToWsdl(wsdl, "Warehouse", null, "WarehouseSoap", "WarehouseSoap", ""));
+
+        Assert.assertFalse("Should be invalid due to namespace supplied",
+                UDDIUtilities.validatePortBelongsToWsdl(wsdl, "Warehouse", namespace+"1", "WarehouseSoap" , "WarehouseSoap", namespace));
+
+        Assert.assertFalse("Should be invalid due to namespace supplied",
+                UDDIUtilities.validatePortBelongsToWsdl(wsdl, "Warehouse", namespace, "WarehouseSoap" , "WarehouseSoap", namespace+"1"));
+
+        Assert.assertFalse("Should be invalid due to service name supplied",
+                UDDIUtilities.validatePortBelongsToWsdl(wsdl, "Warehouse1", namespace, "WarehouseSoap" , "WarehouseSoap", namespace));
+
+        Assert.assertFalse("Should be invalid due to wsdl port name supplied",
+                UDDIUtilities.validatePortBelongsToWsdl(wsdl, "Warehouse", namespace, "WarehouseSoap1" , "WarehouseSoap", namespace));
+
+        Assert.assertFalse("Should be invalid due to wsdl binding name supplied",
+                UDDIUtilities.validatePortBelongsToWsdl(wsdl, "Warehouse", namespace, "WarehouseSoap" , "WarehouseSoap1", namespace));
+
+        //tests imports work correctly
+        final Wsdl importWsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader( "com/l7tech/uddi/SpaceOrderofBattle_Parent.wsdl" ));
+        final String spaceNs = "http://SOB.IPD.LMCO/";
+        final String childNs = "http://SOB.IPD.LMCO/ExternalWSDL";
+        Assert.assertTrue("Testing binding defined in child wsdl implement by a parent wsdl:port",
+                UDDIUtilities.validatePortBelongsToWsdl(importWsdl, "SpaceOrderofBattle", spaceNs, "JMSSOB1" , "JMSSOB1", childNs));
+
+        Assert.assertTrue("Testing binding defined with same name in parent, but different namespace",
+                UDDIUtilities.validatePortBelongsToWsdl(importWsdl, "SpaceOrderofBattle", spaceNs, "JMSSOB" , "JMSSOB", spaceNs));
+
+        Assert.assertFalse("Testing binding defined with same name in parent, incorrect binding namespace, provided child namespace which the port does not implement",
+                UDDIUtilities.validatePortBelongsToWsdl(importWsdl, "SpaceOrderofBattle", spaceNs, "JMSSOB" , "JMSSOB", childNs));
+
+        Assert.assertFalse("Testing binding defined with same name in parent, but is not implement by any wsdl:port",
+                UDDIUtilities.validatePortBelongsToWsdl(importWsdl, "SpaceOrderofBattle", spaceNs, "JMSSOB" , "JMSSOB", childNs));
+
+        Assert.assertTrue("Testing that true is returend when no namespace is supplied, inaccurate match",
+                UDDIUtilities.validatePortBelongsToWsdl(importWsdl, "SpaceOrderofBattle", spaceNs, "JMSSOB1" , "JMSSOB1", null));
 
     }
 
