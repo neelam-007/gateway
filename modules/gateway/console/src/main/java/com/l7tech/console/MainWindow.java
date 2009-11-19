@@ -1434,11 +1434,16 @@ public class MainWindow extends JFrame implements SheetHolder {
                     description = can.getDescriptionText();
                 }
 
+                String contentType = descriptionText.getContentType();
+
                 if (description == null) {
                     description = ""; // clear currently displayed description
+                    descriptionText.setContentType("text");
                 }
                 descriptionText.setText(description);
                 descriptionText.getCaret().setDot(0);
+
+                descriptionText.setContentType(contentType);
             }
         });
         TopComponents.getInstance().registerComponent(AssertionsTree.NAME, tree);
