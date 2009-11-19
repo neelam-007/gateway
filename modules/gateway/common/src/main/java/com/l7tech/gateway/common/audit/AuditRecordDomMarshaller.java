@@ -60,6 +60,7 @@ public class AuditRecordDomMarshaller {
         if (rec == null)
             return;
 
+        String id = rec.getId();
         String ipAddress = rec.getIpAddress();
         String message = rec.getMessage();
         long millis = rec.getMillis();
@@ -69,7 +70,8 @@ public class AuditRecordDomMarshaller {
         String requestId = rec.getStrRequestId();
         long sequenceNumber = rec.getSequenceNumber();
 
-        e.setAttribute("id", rec.getId());
+        if (!("0".equals(id)))
+            e.setAttribute("id", id);
         e.setAttribute("name", rec.getName());
         e.setAttribute("sequenceNumber", Long.toString(sequenceNumber));
         e.setAttribute("level", Integer.toString(level.intValue()));

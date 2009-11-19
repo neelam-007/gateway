@@ -57,6 +57,8 @@ public class AuditRecordDomMarshallerTest {
         AuditRecord auditRecord = makeMessageAuditRecord();
         auditRecord.setThrown(null);
         //noinspection deprecation
+        auditRecord.setOid(232);
+        //noinspection deprecation
         auditRecord.getDetails().iterator().next().setException(null);
         Element got = m.marshal(d, auditRecord);
         XmlUtil.nodeToFormattedOutputStream(got, System.out);
