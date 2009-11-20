@@ -398,11 +398,6 @@ public class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.routing.mustbebefore"), null));
         }
 
-        if (getMessageTargetContext(targetName).seenAccessControl && isDefaultActor(a) || seenCredentialsSinceModified(a)) {
-            result.addWarning(new PolicyValidatorResult.
-              Warning(a, assertionPath, bundle.getString("accesscontrol.uncommonuse"), null));
-        }
-
         if (a instanceof RequireWssX509Cert) {
             if ( seenWssSignature(a, targetName) && !getMessageTargetContext(targetName).allowsMultipleSignatures ) {
                 result.addWarning(new PolicyValidatorResult.
