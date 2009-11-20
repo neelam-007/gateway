@@ -327,7 +327,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 status = "Status: Publish failed "+ (publishStatus.getFailCount() +1) +" times. Set to retry";
                 break;
             case CANNOT_PUBLISH:
-                status = "Status: Cannot publish. Tried "+ (publishStatus.getFailCount() +1) +" times. Please select 'Dont Publish' to retry";
+                status = "Status: Cannot publish. Tried "+ (publishStatus.getFailCount() +1) +" times. Please select \"Don't Publish\" to clear";
                 break;
             case DELETE:
                 status = "Status: Deleting";
@@ -336,7 +336,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 status = "Status: Delete failed "+ (publishStatus.getFailCount() +1) +" times. Set to retry";
                 break;
             case CANNOT_DELETE:
-                status = "Status: Cannot delete. Tried "+ (publishStatus.getFailCount() +1) +" times. Please select 'Dont Publish' to retry";
+                status = "Status: Cannot delete. Tried "+ (publishStatus.getFailCount() +1) +" times. Please select \"Don't Publish\" to clear";
                 break;
             default:
                 status = "";
