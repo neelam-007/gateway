@@ -363,8 +363,25 @@ public class UDDIHelper {
             }
         }
 
-        long connectTimeout = serverConfig.getLongProperty( PROP_UDDI_CONNECT_TIMEOUT, 30000);
-        long readTimeout = serverConfig.getLongProperty( PROP_UDDI_READ_TIMEOUT, 60000);
+        final int defaultConnectTimeout = 30000;
+        long connectTimeout = serverConfig.getLongProperty( PROP_UDDI_CONNECT_TIMEOUT, defaultConnectTimeout);
+        if(connectTimeout == 0) {
+            connectTimeout = defaultConnectTimeout;
+            logger.log(Level.WARNING, "A value of 0 is not allowed for cluster property: '" + PROP_UDDI_CONNECT_TIMEOUT+"'. Using default of " + defaultConnectTimeout);
+        }else if(connectTimeout < 0){
+            connectTimeout = defaultConnectTimeout;
+            logger.log(Level.WARNING, "Illegal negative value supplied for cluster property: '" + PROP_UDDI_CONNECT_TIMEOUT+"'. Using default of " + defaultConnectTimeout);
+        }
+
+        final int defaultReadTimeout = 60000;
+        long readTimeout = serverConfig.getLongProperty( PROP_UDDI_READ_TIMEOUT, defaultReadTimeout);
+        if(readTimeout == 0) {
+            readTimeout = defaultReadTimeout;
+            logger.log(Level.WARNING, "A value of 0 is not allowed for cluster property: '" + PROP_UDDI_READ_TIMEOUT+"'. Using default of " + defaultReadTimeout);
+        }else if(readTimeout < 0){
+            readTimeout = defaultReadTimeout;
+            logger.log(Level.WARNING, "Illegal negative value supplied for cluster property: '" + PROP_UDDI_READ_TIMEOUT+"'. Using default of " + defaultReadTimeout);
+        }
 
         return new UDDIClientTLSConfig( keyManager, trustManager, hostnameVerifier, connectTimeout, readTimeout );
     }
