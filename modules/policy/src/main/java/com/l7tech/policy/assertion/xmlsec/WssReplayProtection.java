@@ -120,6 +120,7 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
         meta.put(AssertionMetadata.DESCRIPTION, "Protect against replay of messages. By default the message must contain a WSS signed timestamp; if a signed wsa:MessageID is also present the MessageID value will be asserted unique; otherwise the timestamp's Created date is used. If custom protection is used then a context variable will be asserted unique within a specified scope.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Message Replay Protection Properties");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.ReplayProtectionPropertiesDialog" );
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "threatProtection", "xmlSecurity" });
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
