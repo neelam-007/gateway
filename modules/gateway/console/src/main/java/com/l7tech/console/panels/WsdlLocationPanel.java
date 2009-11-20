@@ -8,6 +8,7 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.admin.TimeoutRuntimeException;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.objectmodel.FindException;
@@ -643,6 +644,29 @@ public class WsdlLocationPanel extends JPanel {
                                                               "'\n",
                                                               "Error",
                                                               JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    });
+                } catch (final Exception e1) {
+                    SwingUtilities.invokeLater(new Runnable(){
+                        @Override
+                        public void run() {
+                            if(dlg.isVisible()) {
+                                dlg.setVisible(false);
+                                if (ExceptionUtils.causedBy(e1, TimeoutRuntimeException.class)) {
+                                    logger.log(Level.INFO, "Read timed out.", e1);
+                                    JOptionPane.showMessageDialog(null,
+                                        "Could not fetch the WSDL at location '" + wsdlUrlTextField.getText() + "'\n",
+                                        "Read timed out",
+                                        JOptionPane.ERROR_MESSAGE);
+                                } else {
+                                    logger.log(Level.INFO, "Unexpected error.", e1);
+                                    dlg.setVisible(false);
+                                    JOptionPane.showMessageDialog(null,
+                                        "Could not fetch the WSDL at location '" + wsdlUrlTextField.getText() + "'\n",
+                                        "Error",
+                                        JOptionPane.ERROR_MESSAGE);
+                                }
                             }
                         }
                     });
