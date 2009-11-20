@@ -557,7 +557,7 @@ registerPatch() {
         if [ $ERR -ne 0 ] ; then
             echo ""
             confirmedMessage "There was an error while registering the patch"
-            return $ERR
+            return 0
         else
             echo ""
             confirmedMessage "The patch was registered successfully."
@@ -580,7 +580,7 @@ installPatch() {
     if [ $ERR -ne 0 ] ; then
         echo ""
         confirmedMessage "There was an error while installing the patch"
-        return $ERR
+        return 0
     else
         echo ""
         confirmedMessage "The patch was installed successfully."
@@ -599,7 +599,7 @@ deletePatch() {
     if [ $ERR -ne 0 ] ; then
         echo ""
         confirmedMessage "There was an error while unregistering the patch"
-        return $ERR
+        return 0
     else
         echo ""
         confirmedMessage "The patch was successfully unregistered."
