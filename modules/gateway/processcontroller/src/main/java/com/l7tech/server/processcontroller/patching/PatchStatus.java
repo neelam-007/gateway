@@ -211,7 +211,7 @@ public class PatchStatus {
     private PatchStatus() {
     }
 
-    private PatchStatus(String patchId, String description, State state) throws PatchException {
+    private PatchStatus(String patchId, String description, State state) {
         properties.setProperty(Field.ID.name(), patchId);
         properties.setProperty(Field.DESCRIPTION.name(), description);
         properties.setProperty(Field.STATE.name(), state.name());

@@ -103,6 +103,17 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         // check exec result and update status
         PatchStatus status2;
         if (result.getExitStatus() == 0) {
+            // revert any rollback's statuses from INSTALLED to ROLLED_BACK
+            if (PatchStatus.State.ROLLED_BACK.name().equals(status1.getField(PatchStatus.Field.STATE))) {
+                for(String maybeInstalledRolledback : packageManager.getRollbacksFor(patchId)) {
+                    PatchStatus rollbackStatus = packageManager.getPackageStatus(maybeInstalledRolledback);
+                    if (PatchStatus.State.INSTALLED.name().equals(rollbackStatus.getField(PatchStatus.Field.STATE))) {
+                        packageManager.updatePackageStatus(maybeInstalledRolledback, PatchStatus.Field.STATE, PatchStatus.State.ROLLED_BACK.name());
+                        recordManager.save(new PatchRecord(System.currentTimeMillis(), maybeInstalledRolledback, Action.ROLLBACK));
+                    }
+                }
+            }
+
             status1.setField(PatchStatus.Field.STATE, PatchStatus.State.INSTALLED.name());
             byte[] output = result.getOutput();
             status1.setField(PatchStatus.Field.STATUS_MSG, output != null ? new String(output) : "");
