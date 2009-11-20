@@ -42,17 +42,15 @@ public class ServerInclude extends AbstractServerAssertion<Include> {
         try {
             PolicyCache policyCache = (PolicyCache) spring.getBean("policyCache", PolicyCache.class);
             String guid = assertion.getPolicyGuid();
-            if ( guid == null ) { // avoid NPE with invalid policy
-                this.serverPolicy = policyCache.getServerPolicy(-2L);
-            } else {
-                this.serverPolicy = policyCache.getServerPolicy(guid);
-            }
+            // avoid NPE with invalid policy
+            this.serverPolicy = guid == null ? null : policyCache.getServerPolicy(guid);
         } catch ( BeansException be ) {
             logger.log( Level.WARNING,  "Error accessing policy cache", be );
             throw new ServerPolicyException( assertion, "Error accessing policy cache", be );   
         } 
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
         try {
             if ( serverPolicy != null ) {
