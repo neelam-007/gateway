@@ -142,10 +142,10 @@ public interface UDDIRegistryAdmin {
      * Registry must be enabled
      *
      * @param uddiProxiedServiceInfo UDDIProxiedServiceInfo and associated data in UDDI to delete
-     * @return String error message if there were any problems deleting from UDDI. null if no errors
      * @throws FindException if there is a problem reading from the database or if the UDDIProxiedService is not found
      * @throws UpdateException any problems updating the database
      * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.UDDIRegistryNotEnabledException if the registry is not enabled
+     * @throws com.l7tech.objectmodel.DeleteException
      */
     @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.DELETE_ENTITY)
     void deleteGatewayWsdlFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
@@ -157,7 +157,7 @@ public interface UDDIRegistryAdmin {
      * @param uddiProxiedServiceInfo UDDIProxiedServiceInfo which contains the information on the bindingTemplate
      */
     @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.DELETE_ENTITY)
-    void deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) throws FindException, UDDIRegistryNotEnabledException, UpdateException;
+    void deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) throws FindException, UDDIRegistryNotEnabledException, UpdateException, DeleteException;
 
     /**
      * Allows for non final properties which do not rely on UDDI data like the UDDIProxiedServiceInfo's

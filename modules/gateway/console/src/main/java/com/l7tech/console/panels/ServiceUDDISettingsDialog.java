@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.ResourceBundle;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -323,19 +324,19 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 status = "Status: Publishing";
                 break;
             case PUBLISH_FAILED:
-                status = "Status: Publish failed "+ publishStatus.getFailCount() +" times. Set to retry";
+                status = "Status: Publish failed "+ (publishStatus.getFailCount() +1) +" times. Set to retry";
                 break;
             case CANNOT_PUBLISH:
-                status = "Status: Cannot publish. Tried "+ publishStatus.getFailCount() +" times. Please select 'Dont Publish' to retry";
+                status = "Status: Cannot publish. Tried "+ (publishStatus.getFailCount() +1) +" times. Please select 'Dont Publish' to retry";
                 break;
             case DELETE:
                 status = "Status: Deleting";
                 break;
             case DELETE_FAILED:
-                status = "Status: Delete failed "+ publishStatus.getFailCount() +" times. Set to retry";
+                status = "Status: Delete failed "+ (publishStatus.getFailCount() +1) +" times. Set to retry";
                 break;
             case CANNOT_DELETE:
-                status = "Status: Cannot delete. Tried "+ publishStatus.getFailCount() +" times. Please select 'Dont Publish' to retry";
+                status = "Status: Cannot delete. Tried "+ (publishStatus.getFailCount() +1) +" times. Please select 'Dont Publish' to retry";
                 break;
             default:
                 status = "";
@@ -557,7 +558,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     return false;
                 }
                 if(publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH){
-                    showErrorMessage("Cannot Update UDDI", "UDDI is being updated. Please close dialog and try again in a few minutes", null, false);
+                    showErrorMessage("Cannot Update UDDI", "Publishing to UDDI in progress. Please close dialog and try again in a few minutes", null, false);
                     return false;
                 }
 
@@ -602,11 +603,47 @@ public class ServiceUDDISettingsDialog extends JDialog {
         return true;
     }
 
+    private boolean doShowDeleteWarningBeforeTakingAction(final Callable callable) {
+        final boolean [] choice = new boolean[1];
+        DialogDisplayer.showConfirmDialog(this,
+                                                   "UDDI information failed to delete and is waiting to retry. Do you want to continue and possibly leave data in UDDI?",
+                                                   "Confirm Removal from UDDI",
+                                                   JOptionPane.YES_NO_OPTION,
+                                                   JOptionPane.WARNING_MESSAGE, new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.YES_OPTION){
+                            try {
+                                choice[0] = (Boolean) callable.call();
+                            } catch (Exception e) {
+                                //all callable implementations must catch and handle their errors correctly. This should not happen
+                                logger.log(Level.WARNING, "Error attempting delete from UDDI: " + ExceptionUtils.getMessage(e));
+                            }
+                        }
+                    }
+                });
+        return choice[0];
+    }
+
     /**
      *
      * @return true if dialog can be disposed, false otherwise
      */
     private boolean removeUDDIProxiedEndpoint(){
+        if( publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED ){
+            Callable callable = new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    return doRemoveProxiedEndpoint();
+                }
+            };
+            return doShowDeleteWarningBeforeTakingAction(callable);
+        }else{
+            return doRemoveProxiedEndpoint();
+        }
+    }
+
+    private boolean doRemoveProxiedEndpoint(){
         final boolean [] choice = new boolean[1];
         DialogDisplayer.showConfirmDialog(this,
                                                    "Remove published Gateway endpoint from UDDI Registry?",
@@ -635,6 +672,20 @@ public class ServiceUDDISettingsDialog extends JDialog {
     }
 
     private boolean removeUDDIOverwrittenProxiedService(){
+        if( publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED ){
+            Callable callable = new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    return doDeleteOverwrittenService();
+                }
+            };
+            return doShowDeleteWarningBeforeTakingAction(callable);
+        }else{
+            return doDeleteOverwrittenService();
+        }
+    }
+
+    private boolean doDeleteOverwrittenService() {
         final boolean [] choice = new boolean[1];
         DialogDisplayer.showConfirmDialog(this,
                                                    "Remove overwritten BusinessService from UDDI Registry?",
@@ -663,6 +714,20 @@ public class ServiceUDDISettingsDialog extends JDialog {
     }
 
     private boolean removeUDDIProxiedService(){
+        if( publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED ){
+            Callable callable = new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    return doRemoveUDDIProxiedService();
+                }
+            };
+            return doShowDeleteWarningBeforeTakingAction(callable);
+        }else{
+            return doRemoveUDDIProxiedService();
+        }
+    }
+
+    private boolean doRemoveUDDIProxiedService(){
         final boolean [] choice = new boolean[1];
         DialogDisplayer.showConfirmDialog(this,
                                                    "Remove published Gateway WSDL from UDDI Registry?",

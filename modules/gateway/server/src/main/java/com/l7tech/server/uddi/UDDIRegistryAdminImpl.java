@@ -142,22 +142,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
     @Override
     public void deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo proxiedServiceInfo)
-            throws FindException, UDDIRegistryNotEnabledException, UpdateException {
+            throws FindException, UDDIRegistryNotEnabledException, UpdateException, DeleteException {
         if(proxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.ENDPOINT)
             throw new IllegalStateException("Cannot delete UDDIProxiedServiecInfo as gateway URL was not published as a bindingTemplate.");
 
-        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
-        throwIfGatewayNotEnabled(uddiRegistry);
-
-        final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(proxiedServiceInfo.getOid());
-        if(uddiPublishStatus == null)
-            throw new FindException("Cannot find UDDIPublishStatus for UDDIProxiedServiceInfo with id#(" + proxiedServiceInfo.getOid() + ")");
-
-        uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
-        /**
-         * This triggers an entity invalidation event which the UDDICoordinator picks up
-         */
-        uddiPublishStatusManager.update(uddiPublishStatus);
+        handleUddiProxiedServiceInfoDelete(proxiedServiceInfo);
     }
 
     @Override
@@ -167,6 +156,12 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(proxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY &&
                 proxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.OVERWRITE)
             throw new IllegalStateException("Cannot delete UDDIProxiedServiecInfo as gateway WSDL was not published.");
+
+        handleUddiProxiedServiceInfoDelete(proxiedServiceInfo);
+    }
+
+    private void handleUddiProxiedServiceInfoDelete(UDDIProxiedServiceInfo proxiedServiceInfo)
+            throws DeleteException, UpdateException, FindException, UDDIRegistryNotEnabledException {
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(proxiedServiceInfo.getUddiRegistryOid());
         throwIfGatewayNotEnabled(uddiRegistry);
@@ -183,15 +178,18 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             //if we cannot delete or we have already tried, allow the user to stop any more attempts
             //this may cause queued tasks problems, but they will just fail
             if (uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED) {
-                logger.log(Level.WARNING, "Stopping attept to delete from UDDI. Data may be orphaned in UDDI");
+                logger.log(Level.WARNING, "Stopping attempt to delete from UDDI. Data may be orphaned in UDDI");
             }
             uddiProxiedServiceInfoManager.delete(proxiedServiceInfo);
         } else if (uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED) {
             uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
+            //This triggers an entity invalidation event which the UDDICoordinator picks up
             uddiPublishStatusManager.update(uddiPublishStatus);
             logger.log(Level.INFO, "Set status to delete for published UDDI data");
         }else if(uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH){
             logger.log(Level.WARNING, "Cannot delete Gateway WSDL from UDDI while it is being published");
+        }else if(uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE){
+            logger.log(Level.WARNING, "UDDI data is currently set to delete. Please wait for delete to complete");
         }
     }
 
