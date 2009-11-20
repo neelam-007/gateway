@@ -155,7 +155,7 @@ public class PatchCli {
                 final PatchStatus status = api.deletePackageArchive(getArgument());
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
-        STATUS("<patch_id>", "Returns the status of the patch represented by the provided ID on the gateway.") {
+        STATUS("<patch_id>", "Returns the status of the patch represented by the provided ID on the gateway.", true) {
             @Override
             void extractActionArguments(List<String> args) {
                 this.argument = extractOneStringActionArgument(args);
@@ -195,6 +195,10 @@ public class PatchCli {
 
         public String getOutputFormat() {
             return outputFormat;
+        }
+
+        public boolean isHidden() {
+            return hidden;
         }
 
         public static PatchAction fromArgs(String[] args) {
@@ -239,10 +243,15 @@ public class PatchCli {
 
         private final String syntax;
         private final String description;
+        private final boolean hidden;
 
         private PatchAction(String syntax, String description) {
+            this(syntax, description, false);
+        }
+        private PatchAction(String syntax, String description, boolean hidden) {
             this.syntax = syntax;
             this.description = description;
+            this.hidden = hidden;
         }
 
         private static String extractOneStringActionArgument(List<String> args) {
@@ -288,6 +297,7 @@ public class PatchCli {
         System.out.println("\t\t\"" + DEFAULT_PC_HOME + "\" on software installations.");
         System.out.println("\n\t<action>:");
         for (PatchAction o : PatchAction.values()) {
+            if (o.isHidden()) continue;
             System.out.println("\t" + o.name().toLowerCase() + " " + o.getSyntax() + "\n\t\t" + o.getDescription());
         }
     }
