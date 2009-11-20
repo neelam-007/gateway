@@ -105,11 +105,13 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     private void loadConnectionTimeout() {
         long ldapConnectionTimeout = config.getTimeUnitProperty(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT);
         logger.config("Connection timeout = " + ldapConnectionTimeout);
+        this.ldapConnectionTimeout.set(ldapConnectionTimeout);
     }
 
     private void loadReadTimeout() {
         long ldapReadTimeout = config.getTimeUnitProperty(ServerConfig.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT);
         logger.config("Read timeout = " + ldapReadTimeout);
+        this.ldapReadTimeout.set(ldapReadTimeout);
     }
 
     private void loadMaxSearchResultSize() {
