@@ -78,7 +78,7 @@ public class BusinessServicePublisherTest {
      */
     @Test
     public void testPublishEndPoint() throws Exception {
-        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/Warehouse.wsdl"));
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
@@ -90,8 +90,7 @@ public class BusinessServicePublisherTest {
         UDDIClient uddiClient = new TestUddiClient();
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
-        Pair<BindingTemplate, List<TModel>> bindingAndModels =
-                servicePublisher.publishEndPointToExistingService("serviceKey", "WarehouseSoap", "WarehouseSoap", gatewayURL, gatewayWsdlUrl, false);
+        Pair<BindingTemplate, List<TModel>> bindingAndModels = servicePublisher.publishEndPointToExistingService("serviceKey", "YessoTestWebServicesPort", "YessoTestWebServicesPortBinding", gatewayURL, gatewayWsdlUrl, false);
 
 
         testBindingTemplate(gatewayWsdlUrl, gatewayURL, "serviceKey", bindingAndModels);
@@ -184,7 +183,7 @@ public class BusinessServicePublisherTest {
         Assert.assertEquals("Invalid key value found", "pretend service key", containsRef.getKeyValue());
 
     }
-
+                    //todo [Donal] update tests for namespaces
     private void testBindingTemplate(String gatewayWsdlUrl, String gatewayURL, String serviceKey, Pair<BindingTemplate, List<TModel>> bindingAndModels) {
         Map<String, TModel> keyToModel = new HashMap<String, TModel>();
         for (TModel model : bindingAndModels.right) {
@@ -216,12 +215,12 @@ public class BusinessServicePublisherTest {
         for (TModelInstanceInfo instanceInfo : tModelInstanceInfos) {
             if (instanceInfo.getInstanceDetails() != null) {
                 InstanceDetails instanceDetails = instanceInfo.getInstanceDetails();
-                Assert.assertEquals("Invalid instanceParam found", "WarehouseSoap", instanceDetails.getInstanceParms());
+                Assert.assertEquals("Invalid instanceParam found", "YessoTestWebServicesPort", instanceDetails.getInstanceParms());
                 found = true;
                 //while were here, test the wsdl:binding tModel
                 TModel newbindingTModel = keyToModel.get(instanceInfo.getTModelKey());
                 Assert.assertEquals("Incorrect tModel type found", UDDIUtilities.TMODEL_TYPE.WSDL_BINDING, UDDIUtilities.getTModelType(newbindingTModel, true));
-                Assert.assertEquals("Incorrect tModel name found", "WarehouseSoap", newbindingTModel.getName().getValue());
+                Assert.assertEquals("Incorrect tModel name found", "YessoTestWebServicesPortBinding", newbindingTModel.getName().getValue());
                 //make sure it's got all of it's references
                 List<KeyedReference> allRefs = newbindingTModel.getCategoryBag().getKeyedReference();
                 Assert.assertEquals("Incorrect number of keyedReferences found", 6, allRefs.size());
@@ -257,7 +256,7 @@ public class BusinessServicePublisherTest {
 
                 Assert.assertTrue("namespace keyed ref not found",
                         tModelKeyToRef.containsKey(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE));
-                Assert.assertEquals("Invalid namespace value found", "http://warehouse.acme.com/ws", tModelKeyToRef.get(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE).getKeyValue());
+                Assert.assertEquals("Invalid namespace value found", "http://samples.soamoa.yesso.eu/", tModelKeyToRef.get(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE).getKeyValue());
                 Assert.assertEquals("Invalid namespace name found", "binding namespace", tModelKeyToRef.get(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE).getKeyName());
 
                 //Overview doc
@@ -268,7 +267,7 @@ public class BusinessServicePublisherTest {
                 //this is the wsdl:portType tModel reference
                 TModel newPortTypeTModel = keyToModel.get(instanceInfo.getTModelKey());
                 Assert.assertEquals("Incorrect tModel type found", UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE, UDDIUtilities.getTModelType(newPortTypeTModel, true));
-                Assert.assertEquals("Incorrect tModel name found", "WarehouseSoap", newPortTypeTModel.getName().getValue());
+                Assert.assertEquals("Incorrect tModel name found", "YessoTestWebServices", newPortTypeTModel.getName().getValue());
 
                 List<KeyedReference> allRefs = newPortTypeTModel.getCategoryBag().getKeyedReference();
                 Assert.assertEquals("Incorrect number of keyedReferences found", 2, allRefs.size());
@@ -285,7 +284,7 @@ public class BusinessServicePublisherTest {
 
                 Assert.assertTrue("namespace keyed ref not found",
                         tModelKeyToRef.containsKey(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE));
-                Assert.assertEquals("Invalid namespace value found", "http://warehouse.acme.com/ws", tModelKeyToRef.get(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE).getKeyValue());
+                Assert.assertEquals("Invalid namespace value found", "http://samples.soamoa.yesso.eu/", tModelKeyToRef.get(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE).getKeyValue());
                 Assert.assertEquals("Invalid namespace name found", "portType namespace", tModelKeyToRef.get(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE).getKeyName());
                 //Overview doc
                 Assert.assertEquals("Incorrect number of overview docs found", 2, newPortTypeTModel.getOverviewDoc().size());

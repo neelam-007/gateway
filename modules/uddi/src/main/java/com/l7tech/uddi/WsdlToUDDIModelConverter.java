@@ -296,7 +296,8 @@ public class WsdlToUDDIModelConverter {
 
         final InstanceDetails instanceDetails = new InstanceDetails();
         instanceDetails.getDescription().add(getDescription(WSDL_BINDING_INSTANCE_DESCRIPTION));
-        instanceDetails.setInstanceParms(binding.getQName().getLocalPart());
+        final String wsdlPortName = wsdlPort.getName();
+        instanceDetails.setInstanceParms(wsdlPortName);
         bindingTModelInstanceInfo.setInstanceDetails(instanceDetails);
 
         tModelInstanceDetails.getTModelInstanceInfo().add(bindingTModelInstanceInfo);
