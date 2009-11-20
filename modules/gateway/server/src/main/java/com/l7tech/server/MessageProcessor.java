@@ -19,6 +19,7 @@ import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SecurityTokenResolver;
@@ -37,6 +38,7 @@ import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -53,6 +55,7 @@ import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
@@ -206,8 +209,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         try {
             final AssertionStatus[] securityProcessingAssertionStatus = { null };
             final IOException[] securityProcessingIOException = { null };
-            final ServiceCache.ResolutionListener securityProcessingResolutionListener =
-                    new SecurityProcessingResolutionListener(context, wssOutput, securityProcessingAssertionStatus, securityProcessingIOException);
+            final boolean[] preServicePoliciesRun = { false };
+            final SecurityProcessingResolutionListener securityProcessingResolutionListener =
+                    new SecurityProcessingResolutionListener(policyCache, context, wssOutput, securityProcessingAssertionStatus, securityProcessingIOException, preServicePoliciesRun);
 
             // Policy Verification Step
             PublishedService service = serviceCache.resolve(context.getRequest(), securityProcessingResolutionListener);
@@ -320,6 +324,30 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
             }
 
+            // Ensure pre-service policies are run
+            if ( !preServicePoliciesRun[0] ) {
+                boolean success = securityProcessingResolutionListener.processPreServicePolicies(
+                    PolicyType.PRE_SECURITY_FRAGMENT,
+                    MessageProcessingMessages.RUNNING_PRE_SECURITY_POLICY,
+                    MessageProcessingMessages.ERROR_PRE_SECURITY );
+
+                if ( success ) {
+                    success = securityProcessingResolutionListener.processPreServicePolicies(
+                        PolicyType.PRE_SERVICE_FRAGMENT,
+                        MessageProcessingMessages.RUNNING_PRE_SERVICE_POLICY,
+                        MessageProcessingMessages.ERROR_PRE_SERVICE );
+                }
+
+                if (!success) {
+                    if ( securityProcessingIOException[0] != null ) {
+                        throw securityProcessingIOException[0];
+                    } else {
+                        status = securityProcessingAssertionStatus[0];
+                        return securityProcessingAssertionStatus[0];
+                    }
+                }
+            }
+
             // Run the policy
             auditor.logAndAudit(MessageProcessingMessages.RUNNING_POLICY);
             stats = serviceCache.getServiceStatistics(service.getOid());
@@ -360,6 +388,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             context.setPolicyResult(status);
+
+            // Run post service global policies
+            processPostServicePolicies( context,
+                    PolicyType.POST_SERVICE_FRAGMENT,
+                    MessageProcessingMessages.RUNNING_POST_SERVICE_POLICY,
+                    MessageProcessingMessages.ERROR_POST_SERVICE );
 
             // add signature confirmations
             WSSecurityProcessorUtils.addSignatureConfirmations(response, auditor);
@@ -420,6 +454,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     throw new PolicyAssertionException(null, "Failed to apply WSS decoration to response", e);
                 }
             }
+
+            // Run post WS-Security decoration global service policies
+            processPostServicePolicies( context,
+                    PolicyType.POST_SECURITY_FRAGMENT,
+                    MessageProcessingMessages.RUNNING_POST_SECURITY_POLICY,
+                    MessageProcessingMessages.ERROR_POST_SECURITY );
 
             return status;
 
@@ -557,12 +597,62 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
     }
 
+    /**
+     * Process post service policies and audit errors.
+     *
+     * <p>Post service policy execution does not affect the overall policy processing
+     * status.</p>
+     */
+    private void processPostServicePolicies( final PolicyEnforcementContext context,
+                                             final PolicyType policyType,
+                                             final AuditDetailMessage notificationMessage,
+                                             final AuditDetailMessage errorMessage ) {
+        final Set<String> guids = policyCache.getGlobalPoliciesByType( policyType );        
+        if ( !guids.isEmpty() ) {
+            auditor.logAndAudit( notificationMessage );
+
+            for ( String guid : guids ) {
+                try {
+                    processServicePolicy( policyCache, context, guid );
+                } catch (IOException e) {
+                    auditor.logAndAudit(errorMessage, new String[]{ExceptionUtils.getMessage( e )}, ExceptionUtils.getDebugException(e));
+                } catch (PolicyAssertionException e) {
+                    auditor.logAndAudit(errorMessage, new String[]{ExceptionUtils.getMessage( e )}, e);
+                }
+            }
+        }
+    }
+
+    private AssertionStatus processServicePolicy( final PolicyCache policyCache,
+                                                  final PolicyEnforcementContext context,
+                                                  final String guid ) throws PolicyAssertionException, IOException {
+        AssertionStatus result;
+
+        ServerPolicyHandle handle = null;
+        PolicyEnforcementContext pec = null;
+        try {
+            handle = policyCache.getServerPolicy( guid );
+            if ( handle != null ) {
+                pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( context );
+                result = handle.checkRequest( pec );
+            } else {
+                result = AssertionStatus.NONE;
+            }
+        } finally {
+            ResourceUtils.closeQuietly( pec );
+            ResourceUtils.closeQuietly( handle );
+        }
+
+        return result;
+    }
+
     public void registerTrafficMonitorCallback(TrafficMonitor tm) {
         if (!trafficMonitors.contains(tm)) {
             trafficMonitors.add(tm);
         }
     }
 
+    @SuppressWarnings({ "deprecation" })
     private AssertionStatus doDeferredAssertions(PolicyEnforcementContext context)
       throws PolicyAssertionException, IOException
     {
@@ -634,19 +724,25 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private final class SecurityProcessingResolutionListener implements ServiceCache.ResolutionListener {
+        private final PolicyCache policyCache;
         private final PolicyEnforcementContext context;
         private final ProcessorResult[] wssOutputHolder;
         private final AssertionStatus[] assertionStatusHolder;
         private final IOException[] ioExceptionHolder;
+        private final boolean[] preServicePoliciesRun;
 
-        private SecurityProcessingResolutionListener(final PolicyEnforcementContext context,
+        private SecurityProcessingResolutionListener(final PolicyCache policyCache,
+                                                     final PolicyEnforcementContext context,
                                                      final ProcessorResult[] wssOutput,
                                                      final AssertionStatus[] assertionStatus,
-                                                     final IOException[] ioException) {
+                                                     final IOException[] ioException,
+                                                     final boolean[] preServicePoliciesRun ) {
+            this.policyCache = policyCache;
             this.context = context;
             this.wssOutputHolder = wssOutput;
             this.assertionStatusHolder = assertionStatus;
             this.ioExceptionHolder = ioException;
+            this.preServicePoliciesRun = preServicePoliciesRun;
         }
 
         @Override
@@ -655,6 +751,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             boolean hasSecurity = false;
             boolean preferDom = true;
             boolean performSecurityProcessing = false;
+
+            // Run pre WS-Security undecoration global service policies
+            preServicePoliciesRun[0] = true;
+            if ( !processPreServicePolicies(
+                    PolicyType.PRE_SECURITY_FRAGMENT,
+                    MessageProcessingMessages.RUNNING_PRE_SECURITY_POLICY,
+                    MessageProcessingMessages.ERROR_PRE_SECURITY ) ) {
+                return false;
+            }
 
             // If any service does not use WSS then don't prefer DOM
             for (ServiceCache.ServiceMetadata serviceMetadata : serviceMetadataSet) {
@@ -770,7 +875,53 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 auditor.logAndAudit(MessageProcessingMessages.WSS_PROCESSING_COMPLETE);
             }
 
-            return true;
+            // Run pre service global policies
+            return processPreServicePolicies(
+                    PolicyType.PRE_SERVICE_FRAGMENT,
+                    MessageProcessingMessages.RUNNING_PRE_SERVICE_POLICY,
+                    MessageProcessingMessages.ERROR_PRE_SERVICE );
+        }
+
+        /**
+         * Process pre service policies and audit errors.
+         *
+         * <p>Pre service policy execution affects the overall policy processing
+         * status.</p>
+         */
+        public boolean processPreServicePolicies( final PolicyType policyType,
+                                                  final AuditDetailMessage notifiy,
+                                                  final AuditDetailMessage error ) {
+            boolean success = true;
+
+            final Set<String> guids = policyCache.getGlobalPoliciesByType( policyType );
+            if ( !guids.isEmpty() ) {
+                auditor.logAndAudit( notifiy );
+
+                // If the service is not resolved then it should be null from the
+                // PEC, it is not desirable to set a fake published service. If
+                // any assertions rely on a service being set they should be fixed.
+
+                for ( String guid : guids ) {
+                    try {
+                        AssertionStatus status = processServicePolicy( policyCache, context, guid );
+                        if ( status != AssertionStatus.NONE ) {
+                            assertionStatusHolder[0] = status;
+                            success = false;
+                            break;
+                        }
+                    } catch (IOException ioe) {
+                        ioExceptionHolder[0] = ioe;
+                        success = false;
+                    } catch (PolicyAssertionException e) {
+                        auditor.logAndAudit(error, new String[]{ExceptionUtils.getMessage( e )}, e);
+                        context.setAuditLevel( Level.WARNING);
+                        assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
+                        success = false;
+                    }
+                }
+            }
+
+            return success;
         }
     }
 

@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
@@ -151,7 +152,7 @@ public class KerberosOutboundRoutingTest extends KerberosTest {
         Message res = new Message();
 
 
-        PolicyEnforcementContext peCtx = new PolicyEnforcementContext(req, res);
+        PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, res);
         peCtx.setService(new PublishedService());
         return peCtx;
     }

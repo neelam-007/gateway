@@ -14,15 +14,14 @@ import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.transport.jms.BytesMessageInputStream;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
@@ -56,8 +55,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;
-    private SoapFaultManager soapFaultManager;
-    private ClusterPropertyCache clusterPropertyCache;
     private StashManagerFactory stashManagerFactory;
     private MessageProducer responseProducer;
     private final ApplicationEventPublisher messageProcessingEventChannel;
@@ -72,9 +69,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         }
         messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
-        soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
         serverConfig = (ServerConfig)ctx.getBean("serverConfig", ServerConfig.class);
-        clusterPropertyCache = (ClusterPropertyCache)ctx.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
         messageProcessingEventChannel = (ApplicationEventPublisher) ctx.getBean("messageProcessingEventChannel", EventChannel.class);
     }
@@ -197,23 +192,16 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     }
                 });
 
-                final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
-                                                                                      new com.l7tech.message.Message());
-
+                PolicyEnforcementContext context = null;
                 String faultMessage = null;
                 String faultCode = null;
 
                 try {
-                    context.setAuditContext(auditContext);
-                    context.setSoapFaultManager(soapFaultManager);
-                    context.setClusterPropertyCache(clusterPropertyCache);
-
+                    final boolean replyExpected;
                     final Destination replyToDest = jmsRequest.getJMSReplyTo();
-                    if (replyToDest != null || jmsRequest.getJMSCorrelationID() != null) {
-                        context.setReplyExpected(true);
-                    } else {
-                        context.setReplyExpected(false);
-                    }
+                    replyExpected = replyToDest != null || jmsRequest.getJMSCorrelationID() != null;
+
+                    context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, replyExpected);
 
                     boolean stealthMode = false;
                     InputStream responseStream = null;
@@ -500,10 +488,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
     public void setAuditContext(AuditContext auditContext) {
         this.auditContext = auditContext;
-    }
-
-    public void setSoapFaultManager(SoapFaultManager soapFaultManager) {
-        this.soapFaultManager = soapFaultManager;
     }
 
     public void setStashManagerFactory(StashManagerFactory stashManagerFactory) {

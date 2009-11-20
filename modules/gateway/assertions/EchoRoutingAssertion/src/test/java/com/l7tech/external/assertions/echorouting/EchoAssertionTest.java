@@ -19,7 +19,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.audit.AuditContextStub;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -133,7 +133,7 @@ public class EchoAssertionTest extends TestCase {
     public void testBug4570RoutingStatus() throws Exception {
         Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         context.setService(new PublishedService());
 
         ServerAssertion sa = new ServerEchoRoutingAssertion(new EchoRoutingAssertion(), servletApi.getApplicationContext());
@@ -164,8 +164,6 @@ public class EchoAssertionTest extends TestCase {
     public void testInstantiateEchoAssertion() throws Exception {
         ApplicationContext testApplicationContext = ApplicationContexts.getTestApplicationContext();
         AllAssertion echo = new AllAssertion(Arrays.asList(new EchoRoutingAssertion()));
-        PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message());
-        pp.setAuditContext(new AuditContextStub());
         ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
         ServerAssertion serverAll = pfac.compilePolicy(echo, true);
         assertTrue(((ServerCompositeAssertion)serverAll).getChildren().get(0) instanceof ServerEchoRoutingAssertion);

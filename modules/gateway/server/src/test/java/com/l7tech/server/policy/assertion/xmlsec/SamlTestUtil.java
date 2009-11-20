@@ -17,6 +17,7 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.StubMessageIdManager;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.xml.saml.SamlAssertion;
@@ -100,7 +101,7 @@ public class SamlTestUtil {
     }
 
     public static PolicyEnforcementContext createWssProcessedContext(Message request) {
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         ProcessorResult processorResult = WSSecurityProcessorUtils.getWssResults(request, "req", securityTokenResolver, new LogOnlyAuditor(logger));
         request.getSecurityKnob().setProcessorResult(processorResult);
         return context;

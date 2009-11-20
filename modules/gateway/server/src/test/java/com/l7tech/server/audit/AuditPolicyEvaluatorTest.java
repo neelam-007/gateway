@@ -94,7 +94,7 @@ public class AuditPolicyEvaluatorTest {
     }
 
     AuditPolicyEvaluator sink(boolean open) {
-        AuditPolicyEvaluator ape = new AuditPolicyEvaluator(serverConfig, policyCache, null);
+        AuditPolicyEvaluator ape = new AuditPolicyEvaluator(serverConfig, policyCache);
         if (open)
             fireStartedEvent(ape);
         return ape;

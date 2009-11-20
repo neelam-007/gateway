@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
 import com.l7tech.xml.InvalidXpathException;
@@ -124,7 +125,7 @@ public class ServerNonSoapCheckVerifyResultsAssertionTest {
         dog = XmlUtil.createAndAppendElement(doc, "dog");
         snake = XmlUtil.createAndAppendElement(doc, "snake");
         message = new Message(pets);
-        pec = new PolicyEnforcementContext(message, new Message());
+        pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(message, new Message());
 
         // Default assertion bean config for these tests
         ass = new NonSoapCheckVerifyResultsAssertion();

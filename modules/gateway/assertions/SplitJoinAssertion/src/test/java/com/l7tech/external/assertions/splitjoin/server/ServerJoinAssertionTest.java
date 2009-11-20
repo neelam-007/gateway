@@ -5,6 +5,7 @@ import com.l7tech.util.TextUtils;
 import com.l7tech.external.assertions.splitjoin.JoinAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -43,7 +44,7 @@ public class ServerJoinAssertionTest extends TestCase {
     public void setUp() throws Exception {
         request = new Message();
         response = new Message();
-        context = new PolicyEnforcementContext(request, response);
+        context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         b1 = "blah 1 blah blah";
         b2 = "bleeh 1 blee blee";
         b3 = "blih 1 blih blih";

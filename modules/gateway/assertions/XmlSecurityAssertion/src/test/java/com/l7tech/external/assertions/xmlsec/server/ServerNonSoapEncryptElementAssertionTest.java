@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.xml.XencUtil;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.InvalidXpathException;
@@ -49,7 +50,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         Message req = makeReq();
         NonSoapEncryptElementAssertion ass = makeAss();
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
-        AssertionStatus result = sass.checkRequest(new PolicyEnforcementContext(req, new Message()));
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
         assertEquals(AssertionStatus.NONE, result);
         checkResult(req, 1);
     }
@@ -74,7 +75,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         NonSoapEncryptElementAssertion ass = makeAss();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = $somevariable]"));
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(req, new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         context.setVariable("somevariable", "passwordd");
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.FALSIFIED, result);
@@ -87,7 +88,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         NonSoapEncryptElementAssertion ass = makeAss();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = $somevariable]"));
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(req, new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         context.setVariable("somevariable", "password");
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -102,7 +103,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
             put("par", "urn:noapar");
         }}));
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(req, new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         checkResult(req, 1);
@@ -114,7 +115,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         NonSoapEncryptElementAssertion ass = makeAss();
         ass.setXpathExpression(new XpathExpression("/*/*"));
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
-        AssertionStatus result = sass.checkRequest(new PolicyEnforcementContext(req, new Message()));
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
         assertEquals(AssertionStatus.NONE, result);
         checkResult(req, 3);
     }
@@ -125,7 +126,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         NonSoapEncryptElementAssertion ass = makeAss();
         ass.setXpathExpression(new XpathExpression("/*"));
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
-        AssertionStatus result = sass.checkRequest(new PolicyEnforcementContext(req, new Message()));
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
         assertEquals(AssertionStatus.NONE, result);
         checkResult(req, 1);
     }
@@ -136,7 +137,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         NonSoapEncryptElementAssertion ass = makeAss();
         ass.setXpathExpression(new XpathExpression("/nonexistent"));
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
-        AssertionStatus result = sass.checkRequest(new PolicyEnforcementContext(req, new Message()));
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
         assertEquals(AssertionStatus.FALSIFIED, result);
         checkResult(req, 0);
     }
@@ -147,7 +148,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
         NonSoapEncryptElementAssertion ass = makeAss();
         ass.setXpathExpression(new XpathExpression("3=4"));
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
-        AssertionStatus result = sass.checkRequest(new PolicyEnforcementContext(req, new Message()));
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
         assertEquals(AssertionStatus.FAILED, result);
         checkResult(req, 0);
     }

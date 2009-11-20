@@ -8,9 +8,9 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.message.Message;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.MockServletApi;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.Assertion;
@@ -53,7 +53,7 @@ public class OversizedTextAssertionTest extends TestCase {
 
     // Creates a PEC holding the specified request document.
     private PolicyEnforcementContext makeContext(String doc) throws Exception {
-        return new PolicyEnforcementContext(new Message( XmlUtil.stringToDocument(doc)), new Message());
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message( XmlUtil.stringToDocument(doc)), new Message());
     }
 
     // Passes the specified request to the specified asseriton and returns the result.

@@ -12,6 +12,7 @@ import com.l7tech.policy.CircularPolicyException;
 import com.l7tech.policy.InvalidPolicyException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -41,6 +42,7 @@ import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -91,6 +93,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @Override
     public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
         auditor = new Auditor(this, applicationContext, logger);
         eventSink = applicationContext;
@@ -103,6 +106,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         eventSink = applicationEventPublisher;
     }
 
+    @Override
     public PolicyMetadata getPolicyMetadata(Policy policy) {
         if( policy == null ) {
             throw new IllegalArgumentException( "policy must not be null" );
@@ -111,6 +115,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         return getPolicyMetadata( policy.getOid() );
     }
 
+    @Override
     public PolicyMetadata getPolicyMetadata(long policyOid) {
         if( policyOid == Policy.DEFAULT_OID )
             throw new IllegalArgumentException( "Can't compile a brand-new policy--it must be saved first" );
@@ -137,6 +142,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @Override
     public ServerPolicyHandle getServerPolicy( final Policy policy ) {
         if( policy == null ) {
             throw new IllegalArgumentException( "policy must not be null" );
@@ -148,6 +154,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @Override
     public ServerPolicyHandle getServerPolicy( final long policyOid ) {
         if( policyOid == Policy.DEFAULT_OID )
             throw new IllegalArgumentException( "Can't compile a brand-new policy--it must be saved first" );
@@ -166,6 +173,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         return null;
     }
 
+    @Override
     public ServerPolicyHandle getServerPolicy(final String policyGuid) {
         if(policyGuid == null) {
             throw new IllegalArgumentException( "Can't compile a brand-new policy--it must be saved first" );
@@ -188,9 +196,70 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         return null;
     }
 
+    @Override
+    public Set<String> getGlobalPoliciesByType( final PolicyType type ) {
+        ensureCacheValid();
+
+        final Set<String> guids = new HashSet<String>();
+        final Lock read = lock.readLock();
+        read.lock();
+        try {
+            for ( PolicyCacheEntry pce : policyCache.values() ) {
+                if ( type == null || type == pce.policy.getType() ) {
+                    guids.add( pce.policy.getGuid() );
+                }
+            }
+        } finally {
+            read.unlock();
+        }
+
+        return guids;
+    }
+
+    @Override
+    public String registerGlobalPolicy( final String name,
+                                        final PolicyType type,
+                                        final String xml ) {
+        ensureCacheValid();
+
+        RegisteredPolicy policy = new RegisteredPolicy( name, type, xml );
+
+        final Lock write = lock.writeLock();
+        write.lock();
+        try {
+            guidToPolicyMap.put( policy.getGuid(), policy );
+            updateInternal( policy );
+        } finally {
+            write.unlock();
+        }
+
+        return policy.getGuid();
+    }
+
+    @Override
+    public void unregisterGlobalPolicy( final String policyGuid ) {
+        ensureCacheValid();
+
+        Long oid = null;
+
+        final Lock read = lock.readLock();
+        read.lock();
+        try {
+            guidToPolicyMap.remove( policyGuid );
+            oid = guidToOidMap.get( policyGuid );
+        } finally {
+            read.unlock();
+        }
+
+        if(oid != null) {
+            removeInternal( oid );
+        }
+    }
+
     /**
      *
      */
+    @Override
     public Map<Long, Integer> getDependentVersions( final long policyOid ) {
         ensureCacheValid();
 
@@ -215,6 +284,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @Override
     public String getUniquePolicyVersionIdentifer( final long policyOid ) {
         ensureCacheValid();
 
@@ -237,6 +307,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @Override
     public void update( final Policy policy ) {
         ensureCacheValid();
 
@@ -249,6 +320,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @Override
     public void validate( final Policy policy ) throws CircularPolicyException {
         ensureCacheValid();
 
@@ -280,6 +352,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @Override
     public void validateRemove( final long oid ) throws PolicyDeletionForbiddenException {
         ensureCacheValid();
 
@@ -296,6 +369,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @Override
     public Set<Policy> findUsages( final long oid ) {
         ensureCacheValid();
 
@@ -305,6 +379,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @Override
     public boolean remove( final long oid ) {
         ensureCacheValid();
 
@@ -338,6 +413,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                findDependentPoliciesIfDirty( policy, null, new HashSet<Long>(), new HashMap<Long, Integer>(), events );
             }
 
+            // rebuild registered
+            for ( RegisteredPolicy policy : guidToPolicyMap.values() ) {
+                findDependentPoliciesIfDirty( policy, null, new HashSet<Long>(), new HashMap<Long, Integer>(), events );
+            }
+
             cacheIsInvalid = false;
         } catch ( FindException fe ) {
             markDirty();
@@ -357,6 +437,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @Override
     public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
         if( applicationEvent instanceof LicenseEvent || applicationEvent instanceof AssertionModuleRegistrationEvent ) {
             transactionIfAvailable( new Runnable() {
@@ -510,6 +591,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             logAndAudit( MessageProcessingMessages.POLICY_CACHE_UNLICENSED, policy.getName(), Long.toString( policy.getOid() ), ExceptionUtils.getMessage( le ));
             final String message = "Assertion not available: " + ExceptionUtils.getMessage( le );
             serverRootAssertion = new AbstractServerAssertion<UnknownAssertion>( new UnknownAssertion() ) {
+                @Override
                 public AssertionStatus checkRequest( PolicyEnforcementContext context ) throws PolicyAssertionException {
                     throw new PolicyAssertionException( getAssertion(), message, new LicenseException(message) );
                 }
@@ -545,6 +627,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     private final Set<Long> policiesThatAreUnlicensed = new HashSet<Long>();
     private final Map<Long, PolicyCacheEntry> policyCache = new HashMap<Long, PolicyCacheEntry>(); // policy cache entries must be closed on removal
     private final Map<String, Long> guidToOidMap = new HashMap<String, Long>();
+    private final Map<String, RegisteredPolicy> guidToPolicyMap = new HashMap<String,RegisteredPolicy>();
 
     private void notifyUpdate( final Policy policy ) {
           updateInternal( policy );
@@ -1041,14 +1124,17 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final boolean metaWssInPolicy = wssInPolicy;
         final boolean metaMultipartInPolicy = multipartInPolicy;
         return new PolicyMetadata() {
+            @Override
             public boolean isTarariWanted() {
                 return metaTarariWanted;
             }
 
+            @Override
             public boolean isWssInPolicy() {
                 return metaWssInPolicy;
             }
 
+            @Override
             public boolean isMultipart() {
                 return metaMultipartInPolicy;
             }
@@ -1291,6 +1377,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             dirty = true;
         }
 
+        @Override
         public void close() {
             if ( handle != null ) {
                 handle.close();
@@ -1303,6 +1390,25 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             } else {
                 return handle.getPolicyMetadata();
             }
+        }
+    }
+
+    private static final class RegisteredPolicy extends Policy {
+        private static final AtomicLong registeredOidCounter = new AtomicLong(-100000);
+
+        RegisteredPolicy( final String name,
+                          final PolicyType type,
+                          final String xml ){
+            if ( name==null || name.trim().isEmpty() ) throw new IllegalArgumentException("name is required.");
+            if ( type==null ) throw new IllegalArgumentException("type is required.");
+            if ( xml==null || xml.trim().isEmpty() ) throw new IllegalArgumentException("xml is required.");
+
+            setOid( registeredOidCounter.getAndDecrement() );
+            setGuid( UUID.randomUUID().toString() );
+            setName( name );
+            setType( type );
+            setXml( xml );
+            lock();
         }
     }
 }

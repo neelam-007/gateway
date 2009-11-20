@@ -10,8 +10,8 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.ComparisonOperator;
-import com.l7tech.util.Functions;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
@@ -28,7 +28,7 @@ public class ServerComparisonAssertionTest {
 
     @Test
     public void testStringVariable() throws Exception {
-        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable("asdf", new String[] { "12345", "12345" });
 
         ComparisonAssertion comp = make();
@@ -60,7 +60,7 @@ public class ServerComparisonAssertionTest {
 
     @Test
     public void testNumeric() throws Exception {
-        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable("asdf", new String[] { "12345", "12346" });
 
         ComparisonAssertion comp = new ComparisonAssertion();
@@ -77,7 +77,7 @@ public class ServerComparisonAssertionTest {
     @Test
     public void testGeneratedIntegerComparison() throws Exception {
         int value = 12345;
-        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable("asdf", Integer.toString(value));
         ComparisonAssertion comp = new ComparisonAssertion();
         comp.setExpression1("${asdf}");
@@ -99,7 +99,7 @@ public class ServerComparisonAssertionTest {
 
     @Test
     public void testNullRightValue() throws Exception {
-        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable("asdf", "asdf");
         ComparisonAssertion comp = new ComparisonAssertion();
         comp.setExpression1("${asdf}");
@@ -110,7 +110,7 @@ public class ServerComparisonAssertionTest {
 
     @Test
     public void testNullLeftValue() throws Exception {
-        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable("asdf", "asdf");
         ComparisonAssertion comp = new ComparisonAssertion();
         comp.setExpression1("${nonexistent}");

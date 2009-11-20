@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.script.server;
 
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.message.Message;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -75,7 +76,7 @@ public class ServerScriptAssertionTest extends TestCase {
         BSFManager manager = new BSFManager();
         MyThing myThing = new MyThing();
         manager.declareBean("appContext", myThing, MyThing.class);
-        manager.declareBean("policyContext", new PolicyEnforcementContext(new Message(), new Message()), PolicyEnforcementContext.class);
+        manager.declareBean("policyContext", PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message()), PolicyEnforcementContext.class);
         manager.declareBean("out", System.out, PrintStream.class);
         show(manager.eval("javascript", "policy/293823/assertionOrdinal/4242/script", 0, 0, js));
         manager.terminate();

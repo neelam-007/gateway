@@ -15,7 +15,8 @@ import org.springframework.mock.web.MockServletContext;
  import org.xml.sax.SAXException;
  import com.l7tech.server.ApplicationContexts;
  import com.l7tech.server.message.PolicyEnforcementContext;
- import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
  import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
  import com.l7tech.common.io.XmlUtil;
  import com.l7tech.message.HttpServletRequestKnob;
@@ -310,7 +311,7 @@ import org.springframework.mock.web.MockServletContext;
          MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
          MockHttpServletResponse hresponse = new MockHttpServletResponse();
 
-         PolicyEnforcementContext policyEnforcementContext = new PolicyEnforcementContext(request, response);
+         PolicyEnforcementContext policyEnforcementContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
          if(contextVariableName != null && !contextVariableName.isEmpty()){
              policyEnforcementContext.setVariable(contextVariableName,

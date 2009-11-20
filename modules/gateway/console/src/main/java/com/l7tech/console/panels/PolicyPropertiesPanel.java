@@ -14,6 +14,8 @@ import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.util.ResolvingComparator;
+import com.l7tech.util.Resolver;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -45,6 +47,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     private Map<String, String> policyTags;
     
     private RunOnChangeListener syntaxListener = new RunOnChangeListener(new Runnable() {
+        @Override
         public void run() {
             checkSyntax();
         }
@@ -84,15 +87,24 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         return pep != null && policy.getOid() == pep.getPolicyOid() && pep.isUnsavedChanges();
     }
 
+    @Override
     protected Object getModel() {
         return policy;
     }
 
+    @Override
     protected void initComponents() {
+        PolicyType selectedType = policy.getType();
         java.util.List<PolicyType> types = new ArrayList<PolicyType>();
         for ( PolicyType type : PolicyType.values()) {
-            if (type.isShownInGui()) types.add(type);
+            if (type.isShownInGui() || selectedType==type) types.add(type);
         }
+        Collections.sort( types, new ResolvingComparator<PolicyType,String>(new Resolver<PolicyType,String>(){
+            @Override
+            public String resolve( final PolicyType key ) {
+                return key.getName().toLowerCase();
+            }
+        }, false) );
 
         policyTags = new LinkedHashMap<String, String>();
 
@@ -136,6 +148,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         nameField.getDocument().addDocumentListener(syntaxListener);
 
         typeCombo.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     enableDisable();
@@ -174,10 +187,12 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         return null;
     }
 
+    @Override
     public void focusFirstComponent() {
         nameField.requestFocus();
     }
 
+    @Override
     protected void doUpdateModel() {
         policy.setName(nameField.getText().trim());
         policy.setSoap(soapCheckbox.isSelected());

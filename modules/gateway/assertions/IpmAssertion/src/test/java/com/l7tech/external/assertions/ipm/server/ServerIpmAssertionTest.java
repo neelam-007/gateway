@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.ipm.IpmAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.IOUtils;
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -45,7 +46,7 @@ public class ServerIpmAssertionTest {
         Message request = new Message();
         request.initialize(ContentTypeHeader.XML_DEFAULT, requestStr.getBytes("UTF-8"));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         context.setVariable("databuff", extractDataBuff(requestStr));
 
         AssertionStatus result = sass.checkRequest(context);
@@ -75,7 +76,7 @@ public class ServerIpmAssertionTest {
         Message request = new Message();
         request.initialize(ContentTypeHeader.XML_DEFAULT, requestStr.getBytes("UTF-8"));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         context.setVariable("databuff", extractDataBuff(requestStr));
 
         AssertionStatus result = sass.checkRequest(context);

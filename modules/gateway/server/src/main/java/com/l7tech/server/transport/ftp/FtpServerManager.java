@@ -8,7 +8,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
@@ -49,7 +48,6 @@ public class FtpServerManager extends TransportModule implements ApplicationList
     //- PUBLIC
 
     public FtpServerManager(final AuditContext auditContext,
-                            final ClusterPropertyCache clusterPropertyCache,
                             final MessageProcessor messageProcessor,
                             final SoapFaultManager soapFaultManager,
                             final StashManagerFactory stashManagerFactory,
@@ -62,7 +60,6 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
 
         this.auditContext = auditContext;
-        this.clusterPropertyCache = clusterPropertyCache;
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
@@ -78,6 +75,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
     @Override
     protected void init() {
         timer.schedule(new TimerTask(){
+            @Override
             public void run() {
                 updateControlConnectionAccessTimes();
             }
@@ -96,6 +94,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         return true;
     }
 
+    @Override
     protected void addConnector(SsgConnector connector) throws ListenerException {
         removeConnector(connector.getOid());
         FtpServer ftpServer = createFtpServer(connector);
@@ -108,6 +107,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         }
     }
 
+    @Override
     protected void removeConnector(long oid) {
         FtpServer ftpServer = ftpServers.remove(oid);
         if (ftpServer == null)
@@ -122,6 +122,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         }
     }
 
+    @Override
     protected Set<String> getSupportedSchemes() {
         return schemes;
     }
@@ -161,7 +162,6 @@ public class FtpServerManager extends TransportModule implements ApplicationList
 
     private final Set<String> schemes = new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_FTP, SsgConnector.SCHEME_FTPS));
     private final AuditContext auditContext;
-    private final ClusterPropertyCache clusterPropertyCache;
     private final MessageProcessor messageProcessor;
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
@@ -253,12 +253,10 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         final UserManager ftpUserManager = new FtpUserManager(this);
         final IpRestrictor ftpIpRestrictor = new FtpIpRestrictor();
         final Ftplet messageProcessingFtplet = new MessageProcessingFtplet(
-                getApplicationContext(),
                 this,
                 messageProcessor,
                 auditContext,
                 soapFaultManager,
-                clusterPropertyCache,
                 stashManagerFactory,
                 messageProcessingEventChannel);
 
@@ -269,18 +267,23 @@ public class FtpServerManager extends TransportModule implements ApplicationList
 
         try {
             FtpServerContext context = new ConfigurableFtpServerContext(configuration) {
+                @Override
                 public Ftplet getFtpletContainer() {
                     return messageProcessingFtplet;
                 }
+                @Override
                 public UserManager getUserManager() {
                     return ftpUserManager;
                 }
+                @Override
                 public FileSystemManager getFileSystemManager() {
                     return ftpFileSystem;
                 }
+                @Override
                 public CommandFactory getCommandFactory() {
                     return ftpCommandFactory;
                 }
+                @Override
                 public IpRestrictor getIpRestrictor() {
                     return ftpIpRestrictor;
                 }

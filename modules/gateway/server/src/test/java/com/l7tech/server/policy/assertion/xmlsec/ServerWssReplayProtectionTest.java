@@ -4,6 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.l7tech.message.Message;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.server.util.MessageIdManager;
@@ -31,7 +32,7 @@ public class ServerWssReplayProtectionTest {
     @Test
     public void testCustomProtection() throws Exception {
         final WssReplayProtection wrp = buildAssertion( 15000, "var", null );
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable( "var", "customid" );
 
         final AssertionStatus result = buildServerAssertion( wrp ).checkRequest(context);
@@ -44,7 +45,7 @@ public class ServerWssReplayProtectionTest {
     @Test
     public void testCustomProtectionWithScope() throws Exception {
         final WssReplayProtection wrp = buildAssertion( 15000, "var", "${myScope}" );
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable( "var", "customid" );
         context.setVariable( "myScope", "scope" );
 
@@ -67,7 +68,7 @@ public class ServerWssReplayProtectionTest {
     @Test
     public void testCustomProtectionReplay() throws Exception {
         final WssReplayProtection wrp = buildAssertion( 15000, "var", null );
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable( "var", "customid" );
 
         final ServerWssReplayProtection swrp = buildServerAssertion( wrp );
@@ -84,7 +85,7 @@ public class ServerWssReplayProtectionTest {
     @Test
     public void testCustomProtectionReplayWithScope() throws Exception {
         final WssReplayProtection wrp = buildAssertion( 15000, "var", "${scopeVar}" );
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable( "var", "customid" );
         context.setVariable( "scopeVar", "customscope1" );
 
@@ -107,7 +108,7 @@ public class ServerWssReplayProtectionTest {
     @Test
     public void testCustomProtectionReplayWithStaticScope() throws Exception {
         final WssReplayProtection wrp = buildAssertion( 900000, "var", "scope" );
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable( "var", "customid" );
 
         final ServerWssReplayProtection swrp = buildServerAssertion( wrp );
@@ -121,7 +122,7 @@ public class ServerWssReplayProtectionTest {
     @Test
     public void testMissingIdVariable() throws Exception {
         final WssReplayProtection wrp = buildAssertion( 900000, "var", null );
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
 
         final ServerWssReplayProtection swrp = buildServerAssertion( wrp );
         final AssertionStatus result1 = swrp.checkRequest(context);
@@ -131,7 +132,7 @@ public class ServerWssReplayProtectionTest {
     @Test
     public void testEmptyIdVariable() throws Exception {
         final WssReplayProtection wrp = buildAssertion( 900000, "var", null );
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.setVariable( "var", "" );
 
         final ServerWssReplayProtection swrp = buildServerAssertion( wrp );
@@ -142,7 +143,7 @@ public class ServerWssReplayProtectionTest {
     @Test
     public void testMissingScopeVariable() throws Exception {
         final WssReplayProtection wrp = buildAssertion( 900000, "var", "${scope}" );
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
 
         final ServerWssReplayProtection swrp = buildServerAssertion( wrp );
         final AssertionStatus result1 = swrp.checkRequest(context);

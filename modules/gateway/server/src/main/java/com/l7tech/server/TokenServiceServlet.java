@@ -20,16 +20,14 @@ import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
-import com.l7tech.xml.SoapFaultLevel;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -102,12 +100,9 @@ public class TokenServiceServlet extends HttpServlet {
         final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(res);
         response.attachHttpResponseKnob(respKnob);
 
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
 
         try {
-            context.setAuditContext(auditContext);
-            context.setSoapFaultManager(soapFaultManager);
-
             AssertionStatus status;
             try {
                 final StashManager stashManager = stashManagerFactory.createStashManager();

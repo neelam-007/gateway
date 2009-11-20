@@ -6,6 +6,7 @@ import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -14,14 +15,10 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
-import java.util.logging.Logger;
-
 /**
  *
  */
 public class ServerSslAssertionTest extends TestCase {
-    private static final Logger log = Logger.getLogger(ServerSslAssertionTest.class.getName());
-
 
     public ServerSslAssertionTest(String name) {
         super(name);
@@ -52,7 +49,7 @@ public class ServerSslAssertionTest extends TestCase {
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
         response.attachHttpResponseKnob(new HttpServletResponseKnob(hresponse));
 
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         ssa.checkRequest(context);
 
         assertTrue(context.isRequestPolicyViolated());

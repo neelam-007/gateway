@@ -8,6 +8,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditLogFormatter;
 import com.l7tech.server.audit.AuditLogListener;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.JdkLoggerConfigurator;
 
 import java.beans.PropertyChangeEvent;
@@ -161,7 +162,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      * Get the name for the current service.
      */
     private String getServiceName() {
-        PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.getCurrent();
 
         if ( pec != null && pec.getService() != null ) {
             return pec.getService().getName() + " [" + pec.getService().getOid() + "]";

@@ -13,6 +13,7 @@ import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.IOUtils;
 import org.w3c.dom.Document;
@@ -138,7 +139,7 @@ class MessageSelector implements ExpandVariables.Selector {
         return new MessageAttributeSelector(){
             @Override
             public Selection select( final Message context, final String name, final Syntax.SyntaxErrorHandler handler, final boolean strict ) {
-                final PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
+                final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.getCurrent();
                 Object got = pec==null ? null : authenticatedUserGetter.get( name, pec );
                 return got == null ?  null : new Selection(got);
             }
@@ -150,7 +151,7 @@ class MessageSelector implements ExpandVariables.Selector {
             @Override
             public Selection select( final Message context, final String name, final Syntax.SyntaxErrorHandler handler, final boolean strict ) {
                 Object got = null;
-                final PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
+                final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.getCurrent();
                 final LoginCredentials creds = pec==null ? null : pec.getAuthenticationContext(message).getLastCredentials();
                 if ( creds != null ) {
                     if ( AUTH_USER_USERNAME.equals( credentialPart ) ) {

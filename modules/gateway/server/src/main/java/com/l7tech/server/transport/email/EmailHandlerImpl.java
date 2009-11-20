@@ -9,13 +9,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.cluster.ClusterPropertyCache;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
@@ -41,9 +39,6 @@ import java.util.logging.Logger;
 public class EmailHandlerImpl implements EmailHandler {
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;
-    private SoapFaultManager soapFaultManager;
-    private ClusterPropertyManager clusterPropertyManager;
-    private ClusterPropertyCache clusterPropertyCache;
     private StashManagerFactory stashManagerFactory;
     private EventChannel messageProcessingEventChannel;
     
@@ -53,9 +48,6 @@ public class EmailHandlerImpl implements EmailHandler {
         }
         messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
-        soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
-        clusterPropertyManager = (ClusterPropertyManager)ctx.getBean("clusterPropertyManager", ClusterPropertyManager.class);
-        clusterPropertyCache = (ClusterPropertyCache)ctx.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
         messageProcessingEventChannel = (EventChannel) ctx.getBean("messageProcessingEventChannel", EventChannel.class);
     }
@@ -153,19 +145,12 @@ public class EmailHandlerImpl implements EmailHandler {
                 }
             });
 
-            final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
-                    new com.l7tech.message.Message());
+            final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, false);
 
             String faultMessage = null;
             String faultCode = null;
 
             try {
-                context.setAuditContext(auditContext);
-                context.setSoapFaultManager(soapFaultManager);
-                context.setClusterPropertyCache(clusterPropertyCache);
-
-                context.setReplyExpected(false);
-
                 boolean stealthMode = false;
                 InputStream responseStream = null;
                 if ( !messageTooLarge ) {

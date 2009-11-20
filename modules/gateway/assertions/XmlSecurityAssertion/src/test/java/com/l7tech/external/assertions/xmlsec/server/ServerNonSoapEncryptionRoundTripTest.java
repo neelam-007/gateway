@@ -10,6 +10,7 @@ import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.util.Pair;
 import com.l7tech.util.HexUtils;
@@ -58,7 +59,7 @@ public class ServerNonSoapEncryptionRoundTripTest {
         Message request = new Message(XmlUtil.stringAsDocument(encryptedXml));
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         final Document doc = request.getXmlKnob().getDocumentReadOnly();
@@ -72,7 +73,7 @@ public class ServerNonSoapEncryptionRoundTripTest {
         NonSoapEncryptElementAssertion ass = ServerNonSoapEncryptElementAssertionTest.makeAss();
         ass.setRecipientCertificateBase64(recipb64);
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
-        AssertionStatus encryptResult = sass.checkRequest(new PolicyEnforcementContext(req, new Message()));
+        AssertionStatus encryptResult = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
         assertEquals(AssertionStatus.NONE, encryptResult);
         return XmlUtil.nodeToString(req.getXmlKnob().getDocumentReadOnly());
     }

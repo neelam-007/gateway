@@ -6,7 +6,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TimeOfDay;
 import com.l7tech.policy.assertion.TimeOfDayRange;
 import com.l7tech.policy.assertion.TimeRange;
-import com.l7tech.server.audit.AuditContextStub;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.util.Calendar;
@@ -79,8 +79,7 @@ public class TestServerTimeOfDay {
     }
 
     private void testCondition() throws Exception {
-        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
-        context.setAuditContext(new AuditContextStub());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message(), false);
 
         boolean result = ((new ServerTimeRange(condition, ApplicationContexts.getTestApplicationContext())).checkRequest(context) == AssertionStatus.NONE);
         if (result) System.out.println("passed");

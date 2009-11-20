@@ -6,6 +6,7 @@ package com.l7tech.server.policy;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.policy.CircularPolicyException;
+import com.l7tech.policy.PolicyType;
 
 import java.util.Set;
 import java.util.Map;
@@ -81,6 +82,31 @@ public interface PolicyCache {
      * @return true if removed
      */
     boolean remove(long policyOid);
+
+    /**
+     * Get GUIDs for global policies by type.
+     *
+     * @param type The type of policy (null for any type)
+     * @return The set of GUIDs for matching policies
+     */
+    Set<String> getGlobalPoliciesByType( PolicyType type );
+
+    /**
+     * Register a global policy.
+     *
+     * @param name The name for the policy (required)
+     * @param type The type of the policy (required)
+     * @param xml The policy XML (required)
+     * @return The GUID for the registered policy
+     */
+    String registerGlobalPolicy( String name, PolicyType type, String xml );
+
+    /**
+     * Unregister a global policy.
+     *
+     * @param guid The GUID of the policy to unregister (required)
+     */
+    void unregisterGlobalPolicy( String guid );
 
     /**
      * Find any Policies that directly use the policy with the specified OID.

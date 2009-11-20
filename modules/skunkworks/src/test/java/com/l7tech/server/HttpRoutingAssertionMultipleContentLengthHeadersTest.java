@@ -9,6 +9,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.security.MockGenericHttpClient;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.util.TestingHttpClientFactory;
@@ -38,7 +39,7 @@ public class HttpRoutingAssertionMultipleContentLengthHeadersTest {
         ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
         Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
         HttpHeaders headers = new GenericHttpHeaders(new HttpHeader[]{
                 new GenericHttpHeader("Content-Length", "6, 6"),

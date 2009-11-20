@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.util.HexUtils;
 import com.l7tech.xml.InvalidXpathException;
@@ -142,7 +143,7 @@ public class ServerNonSoapSignatureRoundTripTest {
 
         ServerNonSoapVerifyElementAssertion sass = new ServerNonSoapVerifyElementAssertion(ass, beanFactory, null);
         Message request = new Message(XmlUtil.stringAsDocument(signedXml));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(expectedAssertionResult, result);
         return context;
@@ -158,7 +159,7 @@ public class ServerNonSoapSignatureRoundTripTest {
 
         ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
         Message request = new Message(XmlUtil.stringAsDocument("<foo><bar/></foo>"));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         Document doc = request.getXmlKnob().getDocumentReadOnly();

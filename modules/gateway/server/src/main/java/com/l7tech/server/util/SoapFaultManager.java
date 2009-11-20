@@ -19,6 +19,7 @@ import com.l7tech.policy.wsp.TypeMappingUtils;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
@@ -77,6 +78,7 @@ public class SoapFaultManager implements ApplicationContextAware {
     private long lastParsedFromSettings;
     private SoapFaultLevel fromSettings;
     private Auditor auditor;
+    private final AuditContext auditContext;
     private ClusterPropertyManager clusterPropertiesManager;
     private BeanFactory context;
     private final HashMap<Integer, String> cachedOverrideAuditMessages = new HashMap<Integer, String>();
@@ -85,18 +87,22 @@ public class SoapFaultManager implements ApplicationContextAware {
 
     private final Timer checker;
 
-    public SoapFaultManager( Config config, Timer timer) {
+    public SoapFaultManager( final Config config,
+                             final AuditContext auditContext,
+                             Timer timer) {
         if (timer == null) timer = new Timer("Soap fault manager refresh", true);
         this.config = config;
         this.checker = timer;
+        this.auditContext = auditContext;
     }
 
     /**
      * For tests only 
      */
-    SoapFaultManager( Config config ) {
+    SoapFaultManager( Config config, AuditContext auditContext ) {
         this.config = config;
         this.checker = null;
+        this.auditContext = auditContext;
     }
 
     /**
@@ -158,8 +164,9 @@ public class SoapFaultManager implements ApplicationContextAware {
      * constructs a soap fault based on the pec and the level desired.
      * @return returns a Pair of content type, string.  The string may be empty if faultLevel is SoapFaultLevel.DROP_CONNECTION.
      */
-    public Pair<ContentTypeHeader, String> constructReturningFault( final SoapFaultLevel faultLevelInfo,
+    public Pair<ContentTypeHeader, String> constructReturningFault( final SoapFaultLevel inFaultLevelInfo,
                                                                     final PolicyEnforcementContext pec ) {
+        final SoapFaultLevel faultLevelInfo = inFaultLevelInfo==null ? getDefaultBehaviorSettings() : inFaultLevelInfo;
         String output = "";
         AssertionStatus globalstatus = pec.getPolicyResult();
         ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
@@ -376,6 +383,7 @@ public class SoapFaultManager implements ApplicationContextAware {
         }
 
         SoapFaultLevel faultLevelInfo = pec.getFaultlevel();
+        if ( faultLevelInfo==null ) faultLevelInfo = getDefaultBehaviorSettings();
         if ( faultLevelInfo.isSignSoapFault() ) {
             output = signFault( output, pec.getAuthenticationContext( pec.getRequest() ), pec.getRequest().getSecurityKnob(), faultLevelInfo );
         }
@@ -420,7 +428,7 @@ public class SoapFaultManager implements ApplicationContextAware {
             Element faultactor = (Element)res.item(0);
             faultactor.setTextContent(actor);
 
-            List<PolicyEnforcementContext.AssertionResult> results = pec.getAssertionResults(pec.getAuditContext());
+            List<PolicyEnforcementContext.AssertionResult> results = pec.getAssertionResults();
             for (PolicyEnforcementContext.AssertionResult result : results) {
                 if (result.getStatus() == AssertionStatus.NONE && !includeSuccesses) {
                     continue;
@@ -429,7 +437,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 assertionResultEl.setAttribute("status", result.getStatus().getMessage());
                 String assertionattr = "l7p:" + TypeMappingUtils.findTypeMappingByClass(result.getAssertion().getClass(), null).getExternalName();
                 assertionResultEl.setAttribute("assertion", assertionattr);
-                List<AuditDetail> details = result.getDetails();
+                List<AuditDetail> details = auditContext.getDetails().get( result.getDetailsKey() );
                 if (details != null) {
                     for (AuditDetail detail : details) {
                         int msgid = detail.getMessageId();

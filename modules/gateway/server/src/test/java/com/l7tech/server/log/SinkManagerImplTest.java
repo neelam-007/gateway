@@ -3,6 +3,7 @@ package com.l7tech.server.log;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.log.syslog.SyslogManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.SoapFaultManager;
@@ -42,7 +43,7 @@ public class SinkManagerImplTest extends TestCase {
             _sinkMgr = new SinkManagerImpl(_config,
                                            new SyslogManager(),
                                            new TrafficLogger(_config,
-                                           new SoapFaultManager(_config, null)),
+                                           new SoapFaultManager(_config, new AuditContextStub(), null)),
                                            new ApplicationEventProxy());
     }
 

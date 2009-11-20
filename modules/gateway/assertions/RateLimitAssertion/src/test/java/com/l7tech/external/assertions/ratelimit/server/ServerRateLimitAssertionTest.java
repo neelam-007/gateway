@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.util.ExceptionUtils;
@@ -118,7 +119,7 @@ public class ServerRateLimitAssertionTest {
     private PolicyEnforcementContext makeContext() throws Exception {
         Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
         Message response = new Message();
-        return new PolicyEnforcementContext(request, response);
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }
 
     private ServerAssertion makePolicy(RateLimitAssertion rla) throws Exception {

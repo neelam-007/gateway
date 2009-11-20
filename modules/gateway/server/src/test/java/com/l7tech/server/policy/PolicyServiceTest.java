@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.policy;
@@ -28,8 +26,8 @@ import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestDefaultKey;
-import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.identity.TestIdentityProvider;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -101,7 +99,7 @@ public class PolicyServiceTest extends TestCase {
         response.attachHttpRequestKnob(httpRequestKnob);
         response.attachHttpResponseKnob(httpResponseKnob);
 
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
         context.getDefaultAuthenticationContext().addCredentials(loginCredentials);
         if (loginCredentials != null) {
             requestDoc = PolicyServiceClient.createGetPolicyRequest("123");
@@ -141,7 +139,6 @@ public class PolicyServiceTest extends TestCase {
             }
         };
 
-        context.setAuditContext(new AuditContextStub());
         ps.respondToPolicyDownloadRequest(context, true, policyGetter);
         if (context.getPolicyResult() == AssertionStatus.AUTH_FAILED) {
             throw new BadCredentialsException(context.getPolicyResult().toString());

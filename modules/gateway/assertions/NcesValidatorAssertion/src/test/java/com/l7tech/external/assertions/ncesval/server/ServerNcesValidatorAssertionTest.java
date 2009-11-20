@@ -16,6 +16,7 @@ import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.server.security.cert.TestCertValidationProcessor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.message.Message;
 
@@ -49,7 +50,7 @@ public class ServerNcesValidatorAssertionTest {
             ServerNcesValidatorAssertion ncesValidator =
                     new ServerNcesValidatorAssertion( assertion, null, new LogOnlyAuditor(logger), certValidationProcessor, securityTokenResolver, trustedCertServices, false  );
 
-            PolicyEnforcementContext pec = new PolicyEnforcementContext( new Message(XmlUtil.parse(REQUEST_COMBINED_SIGNATURE)), new Message() );
+            PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(XmlUtil.parse(REQUEST_COMBINED_SIGNATURE)), new Message() );
             AssertionStatus status = ncesValidator.checkRequest( pec );
             Assert.assertEquals( "Fails with FALSIFIED", AssertionStatus.FALSIFIED, status );
         }
@@ -73,7 +74,7 @@ public class ServerNcesValidatorAssertionTest {
             ServerNcesValidatorAssertion ncesValidator =
                     new ServerNcesValidatorAssertion( assertion, null, new LogOnlyAuditor(logger), certValidationProcessor, securityTokenResolver, trustedCertServices, true  );
 
-            PolicyEnforcementContext pec = new PolicyEnforcementContext( new Message(XmlUtil.parse(REQUEST_COMBINED_SIGNATURE)), new Message() );
+            PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(XmlUtil.parse(REQUEST_COMBINED_SIGNATURE)), new Message() );
             AssertionStatus status = ncesValidator.checkRequest( pec );
             Assert.assertEquals( "Fails with BAD_REQUEST", AssertionStatus.BAD_REQUEST, status );
         }
@@ -83,7 +84,7 @@ public class ServerNcesValidatorAssertionTest {
             ServerNcesValidatorAssertion ncesValidator =
                     new ServerNcesValidatorAssertion( assertion, null, new LogOnlyAuditor(logger), certValidationProcessor, securityTokenResolver, trustedCertServices, false  );
 
-            PolicyEnforcementContext pec = new PolicyEnforcementContext( new Message(XmlUtil.parse(REQUEST_COMBINED_SIGNATURE)), new Message() );
+            PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(XmlUtil.parse(REQUEST_COMBINED_SIGNATURE)), new Message() );
             AssertionStatus status = ncesValidator.checkRequest( pec );
             Assert.assertEquals( "Success", AssertionStatus.NONE, status );
         }

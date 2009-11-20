@@ -21,6 +21,7 @@ import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.server.TestMessageProcessor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerRegex;
@@ -74,6 +75,7 @@ public class RegexAssertionTest {
         getServicesHelper().deleteAllServices();
         assertionRegistry.registerAssertion(TestEchoAssertion.class);
         HttpTransportModuleTester.setGlobalConnector(new SsgConnector() {
+            @Override
             public boolean offersEndpoint(Endpoint endpoint) {
                 return true;
             }
@@ -88,6 +90,7 @@ public class RegexAssertionTest {
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
 
         SoapMessageGenerator sm = new SoapMessageGenerator(new SoapMessageGenerator.MessageInputGenerator() {
+            @Override
             public String generate(String messagePartName, String operationName, Definition definition) {
                 ++tokenCount;
                 return matchToken;
@@ -127,6 +130,7 @@ public class RegexAssertionTest {
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
 
         SoapMessageGenerator sm = new SoapMessageGenerator(new SoapMessageGenerator.MessageInputGenerator() {
+            @Override
             public String generate(String messagePartName, String operationName, Definition definition) {
                 ++tokenCount;
                 return matchToken;
@@ -167,6 +171,7 @@ public class RegexAssertionTest {
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
 
         SoapMessageGenerator sm = new SoapMessageGenerator(new SoapMessageGenerator.MessageInputGenerator() {
+            @Override
             public String generate(String messagePartName, String operationName, Definition definition) {
                 ++tokenCount;
                 return matchToken;
@@ -235,7 +240,7 @@ public class RegexAssertionTest {
     private void testReplacement(String message, Regex regex) throws SAXException, LicenseException, IOException, PolicyAssertionException {
         Message request = new Message(XmlUtil.stringToDocument(message));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         ServerAssertion sass =  serverPolicyFactory.compilePolicy(regex, false);
         AssertionStatus result = sass.checkRequest(context);
         request.getXmlKnob().getDocumentReadOnly();
@@ -251,16 +256,19 @@ public class RegexAssertionTest {
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
 
         SoapMessageGenerator sm = new SoapMessageGenerator(new SoapMessageGenerator.MessageInputGenerator() {
+            @Override
             public String generate(String messagePartName, String operationName, Definition definition) {
                 ++tokenCount;
                 return matchToken;
             }
         }, null);
         MessageProcessorListener procesorListener = new MessageProcessorListener() {
+            @Override
             public void beforeProcessMessage(PolicyEnforcementContext context) {
                 context.setVariable("bingo", "ZZZ");
             }
 
+            @Override
             public void afterProcessMessage(PolicyEnforcementContext context) {
             }
         };
@@ -327,7 +335,7 @@ public class RegexAssertionTest {
     private PolicyEnforcementContext context(String request, String response, String varname, Object value) throws IOException {
         Message req = message(request);
         Message resp = response == null ? new Message() : message(response);
-        PolicyEnforcementContext context = new PolicyEnforcementContext(req, resp);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, resp);
         if (varname != null) context.setVariable(varname, value);
         return context;
     }

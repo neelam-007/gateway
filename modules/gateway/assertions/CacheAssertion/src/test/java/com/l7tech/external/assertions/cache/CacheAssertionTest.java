@@ -15,6 +15,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.system.Stopping;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ResourceUtils;
 import junit.framework.Test;
@@ -165,7 +166,7 @@ public class CacheAssertionTest extends TestCase {
         request.initialize( XmlUtil.stringAsDocument( "<myrequest/>" ) );
         Message response = new Message();
         response.initialize( XmlUtil.stringAsDocument( res ) );
-        return new PolicyEnforcementContext( request, response );
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
     }
 
     // This test shuts down the cache and so must be the final test executed

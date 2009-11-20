@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.ftpcredential.server;
 
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.message.Message;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -90,7 +91,7 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
             });
         }
 
-        return new PolicyEnforcementContext(request, response);
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }
 
     private ServerAssertion makePolicy(FtpCredentialAssertion fca) throws Exception {

@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import static com.l7tech.policy.PolicyType.*;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -292,7 +293,8 @@ public final class RootNode extends FolderNode {
             List<OrganizationHeader> allFolderEntities = new ArrayList<OrganizationHeader>();
             ServiceHeader[] serviceHeaders = serviceManager.findAllPublishedServices(true);
             List<ServiceHeader> serviceHeadersList = Arrays.asList(serviceHeaders);
-            Collection<PolicyHeader> policyHeaders = policyAdmin.findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL), true);
+            EnumSet<PolicyType> policyTypes = EnumSet.of( INCLUDE_FRAGMENT, INTERNAL, PRE_SERVICE_FRAGMENT, POST_SERVICE_FRAGMENT, PRE_SECURITY_FRAGMENT, POST_SECURITY_FRAGMENT);
+            Collection<PolicyHeader> policyHeaders = policyAdmin.findPolicyHeadersWithTypes(policyTypes, true);
 
             allFolderEntities.addAll(serviceHeadersList);
             allFolderEntities.addAll(policyHeaders);

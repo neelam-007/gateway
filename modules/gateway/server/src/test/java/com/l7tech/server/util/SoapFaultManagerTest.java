@@ -7,11 +7,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
 
+import com.l7tech.server.message.PolicyEnforcementContextWrapper;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.TestDefaultKey;
-import com.l7tech.message.Message;
+import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
@@ -43,7 +45,7 @@ public class SoapFaultManagerTest {
     @Test
     public void testSoap12ExceptionFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
-        String fault = sfm.constructExceptionFault( constructException(), getSoap12PEC(false, sfm) );
+        String fault = sfm.constructExceptionFault( constructException(), getSoap12PEC(false) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.2", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
@@ -55,7 +57,7 @@ public class SoapFaultManagerTest {
     @Test
     public void testSoap11ExceptionFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
-        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(false, sfm) );
+        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(false) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.1", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
@@ -67,7 +69,7 @@ public class SoapFaultManagerTest {
     @Test
     public void testSoap12PolicyVersionFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
-        String fault = sfm.constructExceptionFault( constructException(), getSoap12PEC(true, sfm) );
+        String fault = sfm.constructExceptionFault( constructException(), getSoap12PEC(true) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.2", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
@@ -79,7 +81,7 @@ public class SoapFaultManagerTest {
     @Test
     public void testSoap11PolicyVersionFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
-        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true, sfm) );
+        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.1", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
@@ -93,7 +95,7 @@ public class SoapFaultManagerTest {
         SoapFaultManager sfm = buildSoapFaultManager();
         SoapFaultLevel level = new SoapFaultLevel();
         level.setLevel(SoapFaultLevel.GENERIC_FAULT);
-        Pair<ContentTypeHeader,String> fault = sfm.constructReturningFault( level, getSoap12PEC(false, sfm) );
+        Pair<ContentTypeHeader,String> fault = sfm.constructReturningFault( level, getSoap12PEC(false) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault.right );
         assertEquals( "SOAP 1.2", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
@@ -107,7 +109,7 @@ public class SoapFaultManagerTest {
         SoapFaultManager sfm = buildSoapFaultManager();
         SoapFaultLevel level = new SoapFaultLevel();
         level.setLevel(SoapFaultLevel.GENERIC_FAULT);
-        Pair<ContentTypeHeader, String> fault = sfm.constructReturningFault( level, getSoap11PEC(false, sfm) );
+        Pair<ContentTypeHeader, String> fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault.right );
         assertEquals( "SOAP 1.1", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
@@ -119,7 +121,7 @@ public class SoapFaultManagerTest {
     @Test
     public void testDefaultSignedSoapFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager(true, null);
-        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true, sfm) );
+        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.1", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
@@ -132,7 +134,7 @@ public class SoapFaultManagerTest {
     @Test
     public void testDefaultSignedSoap12Fault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager(true, null);
-        String fault = sfm.constructExceptionFault( constructException(), getSoap12PEC(true, sfm) );
+        String fault = sfm.constructExceptionFault( constructException(), getSoap12PEC(true) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.2", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
@@ -145,7 +147,7 @@ public class SoapFaultManagerTest {
     @Test
     public void testDefaultSignedSoapFaultWithPrivateKey() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager(true, "alice");
-        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true, sfm) );
+        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertTrue("Service URL in fault", fault.contains( SERVICE_URL ));
@@ -157,7 +159,7 @@ public class SoapFaultManagerTest {
     @Test
     public void testDefaultSignedSoapFaultWithInvalidPrivateKey() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager(true, "123111alice");
-        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true, sfm) );
+        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertTrue("Service URL in fault", fault.contains( SERVICE_URL ));
@@ -170,7 +172,7 @@ public class SoapFaultManagerTest {
         SoapFaultLevel level = new SoapFaultLevel();
         level.setLevel(SoapFaultLevel.GENERIC_FAULT);
         level.setSignSoapFault( true );
-        Pair<ContentTypeHeader, String> fault = sfm.constructReturningFault( level, getSoap11PEC(false, sfm) );
+        Pair<ContentTypeHeader, String> fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault.right );
         assertTrue("Service URL in fault", fault.right.contains( SERVICE_URL ));
@@ -188,7 +190,7 @@ public class SoapFaultManagerTest {
         level.setUsesDefaultKeyStore( false );
         level.setNonDefaultKeystoreId( -1 );
         level.setKeyAlias( "alice" );
-        Pair<ContentTypeHeader, String> fault = sfm.constructReturningFault( level, getSoap11PEC(false, sfm) );
+        Pair<ContentTypeHeader, String> fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault.right );
         assertTrue("Service URL in fault", fault.right.contains( SERVICE_URL ));
@@ -204,7 +206,7 @@ public class SoapFaultManagerTest {
         level.setLevel(SoapFaultLevel.GENERIC_FAULT);
         level.setSignSoapFault( true );
 
-        PolicyEnforcementContext context = getSoap11PEC(false, sfm);
+        PolicyEnforcementContext context = getSoap11PEC(false);
         context.getRequest().getSecurityKnob().setProcessorResult( new MockProcessorResult(){
             @Override
             public SecurityActor getProcessedActor() {
@@ -233,7 +235,7 @@ public class SoapFaultManagerTest {
         level.setLevel(SoapFaultLevel.GENERIC_FAULT);
         level.setSignSoapFault( true );
 
-        PolicyEnforcementContext context = getSoap11PEC(false, sfm);
+        PolicyEnforcementContext context = getSoap11PEC(false);
         context.getRequest().getSecurityKnob().setProcessorResult( new MockProcessorResult(){
             @Override
             public SecurityActor getProcessedActor() {
@@ -266,7 +268,7 @@ public class SoapFaultManagerTest {
         if ( keyAlias != null ) {
             props.setProperty( "defaultfaultkeyalias", keyAlias );
         }
-        SoapFaultManager sfm = new SoapFaultManager(new MockConfig(props));
+        SoapFaultManager sfm = new SoapFaultManager(new MockConfig(props), new AuditContextStub());
         sfm.setBeanFactory( new SimpleSingletonBeanFactory( new HashMap<String,Object>(){{
             put( "ssgKeyStoreManager", new SsgKeyStoreManagerStub(new SsgKeyFinderStub( Arrays.asList(getAliceKey()))) );
             put( "defaultKey", new TestDefaultKey( getBobKey() ) );
@@ -287,9 +289,8 @@ public class SoapFaultManagerTest {
         return new RuntimeException("Something went wrong");
     }
 
-    private PolicyEnforcementContext getSoap12PEC( final boolean wrongPolicyVersion,
-                                                   final SoapFaultManager soapFaultManager ) {
-        PolicyEnforcementContext pec = new PolicyEnforcementContext( new Message(), new Message() ){
+    private PolicyEnforcementContext getSoap12PEC( final boolean wrongPolicyVersion ) {
+        PolicyEnforcementContext pec = new PolicyEnforcementContextWrapper( PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null ) ){
             @Override
             public Object getVariable(String name) throws NoSuchVariableException {
                 return SERVICE_URL;
@@ -300,8 +301,6 @@ public class SoapFaultManagerTest {
                 return wrongPolicyVersion;
             }
         };
-
-        pec.setSoapFaultManager( soapFaultManager );
 
         PublishedService service = new PublishedService();
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(null) );
@@ -313,9 +312,8 @@ public class SoapFaultManagerTest {
         return pec;
     }
 
-    private PolicyEnforcementContext getSoap11PEC( final boolean wrongPolicyVersion,
-                                                   final SoapFaultManager soapFaultManager ) {
-        PolicyEnforcementContext pec = new PolicyEnforcementContext( new Message(), new Message() ){
+    private PolicyEnforcementContext getSoap11PEC( final boolean wrongPolicyVersion ) {
+        return new PolicyEnforcementContextWrapper( PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null ) ){
             @Override
             public Object getVariable(String name) throws NoSuchVariableException {
                 return SERVICE_URL;
@@ -326,10 +324,6 @@ public class SoapFaultManagerTest {
                 return wrongPolicyVersion;
             }
         };
-
-        pec.setSoapFaultManager( soapFaultManager );
-
-        return pec;
     }
 
     private boolean isValidSignature( final Document document, final SsgKeyEntry key ) throws Exception {

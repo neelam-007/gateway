@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.xml.soap.SoapUtil;
@@ -49,7 +50,7 @@ public class ServerNonSoapSignElementAssertionTest {
 
         ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
         Message request = new Message(XmlUtil.stringAsDocument("<foo><bar/></foo>"));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         Document doc = request.getXmlKnob().getDocumentReadOnly();
@@ -71,7 +72,7 @@ public class ServerNonSoapSignElementAssertionTest {
 
         ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
         Message request = new Message(XmlUtil.stringAsDocument("<foo><bar/></foo>"));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         Document doc = request.getXmlKnob().getDocumentReadOnly();

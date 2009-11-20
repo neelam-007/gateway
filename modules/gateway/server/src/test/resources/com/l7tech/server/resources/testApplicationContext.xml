@@ -190,8 +190,9 @@
     </bean>
     
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg>
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="auditContext"/>
+        <constructor-arg index="2" >
             <null/>
         </constructor-arg>
     </bean>

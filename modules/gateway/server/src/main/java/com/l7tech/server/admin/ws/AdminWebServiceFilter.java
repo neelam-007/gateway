@@ -27,14 +27,14 @@ import com.l7tech.security.xml.processor.*;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.system.AdminWebServiceEvent;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.util.DelegatingServletInputStream;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapVersion;
@@ -70,7 +70,6 @@ import java.util.logging.Logger;
 public class AdminWebServiceFilter implements Filter {
     private WebApplicationContext applicationContext;
     private AuditContext auditContext;
-    private SoapFaultManager soapFaultManager;
     private ServerAssertion adminPolicy;
     private SecurityTokenResolver securityTokenResolver;
     private StashManagerFactory stashManagerFactory;
@@ -79,9 +78,10 @@ public class AdminWebServiceFilter implements Filter {
     private static final Logger log = Logger.getLogger(AdminWebServiceFilter.class.getName());
     private static final String ERR_PREFIX = "Configuration error; could not get ";
 
-    private Object getBean(ApplicationContext context, String name, String desc, Class clazz) throws ServletException {
+    @SuppressWarnings({ "unchecked" })
+    private <T> T getBean(ApplicationContext context, String name, String desc, Class<T> clazz) throws ServletException {
         try {
-            Object bean = context.getBean(name, clazz);
+            T bean = (T) context.getBean(name, clazz);
             if (bean == null) throw new ServletException(ERR_PREFIX + desc);
             return bean;
         }
@@ -98,11 +98,10 @@ public class AdminWebServiceFilter implements Filter {
             throw new ServletException(ERR_PREFIX + "application context");
         }
 
-        auditContext = (AuditContext)getBean(applicationContext, "auditContext", "audit context", AuditContext.class);
-        soapFaultManager = (SoapFaultManager)getBean(applicationContext, "soapFaultManager", "soapFaultManager", SoapFaultManager.class);
-        securityTokenResolver = (SecurityTokenResolver)getBean(applicationContext, "securityTokenResolver", "certificate resolver", SecurityTokenResolver.class);
-        stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
-        adminLogin = (AdminLogin) applicationContext.getBean("adminLogin", AdminLogin.class);
+        auditContext = getBean(applicationContext, "auditContext", "audit context", AuditContext.class);
+        securityTokenResolver = getBean(applicationContext, "securityTokenResolver", "certificate resolver", SecurityTokenResolver.class);
+        stashManagerFactory = getBean(applicationContext, "stashManagerFactory", "stashManagerFactory", StashManagerFactory.class);
+        adminLogin = getBean(applicationContext, "adminLogin", "adminLogin", AdminLogin.class);
 
         final AllAssertion policy = new AllAssertion(Arrays.asList(
             new OneOrMoreAssertion(Arrays.asList(
@@ -168,10 +167,7 @@ public class AdminWebServiceFilter implements Filter {
         final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(httpServletResponse);
         response.attachHttpResponseKnob(respKnob);
 
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-        context.setReplyExpected(true); // HTTP always expects to receive a reply
-        context.setAuditContext(auditContext);
-        context.setSoapFaultManager(soapFaultManager);
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
 
         final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
         AssertionStatus status = null;
@@ -264,6 +260,7 @@ public class AdminWebServiceFilter implements Filter {
             } catch(Exception se) {
                 log.log(Level.WARNING, "Error dispatching event.", se);
             } finally {
+                auditContext.flush();
                 context.close();
             }
         }

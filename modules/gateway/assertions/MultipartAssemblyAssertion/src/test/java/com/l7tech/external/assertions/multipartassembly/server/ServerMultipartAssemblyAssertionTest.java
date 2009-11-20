@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.multipartassembly.MultipartAssemblyAsserti
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -102,7 +103,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
                                       new ByteArrayInputStream(MESS2.getBytes()));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
         context.setVariable("blprefix.payloads", new Object[] { bodySoap, bodyRuby, bodySoap } );
         context.setVariable("blprefix.contentTypes", new Object[] { ctypeSoap, ctypeRuby, ctypeSoap });
@@ -154,7 +155,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
                                       new ByteArrayInputStream(MESS2.getBytes()));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
         CloseFlaggingStream bodySoapStream = new CloseFlaggingStream(bodySoap);
         CloseFlaggingStream bodyRubyStream = new CloseFlaggingStream(bodyRuby);

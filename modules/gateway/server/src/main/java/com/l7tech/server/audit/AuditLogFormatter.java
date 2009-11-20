@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.variable.ExpandVariables;
 
 import java.text.MessageFormat;
@@ -93,7 +94,7 @@ public class AuditLogFormatter<REC extends AuditRecord> {
             this.otherDetail = templateOtherDetail;
         }
 
-        PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.getCurrent();
         if (pec != null && pec.getService() != null) {
             this.serviceOid = (pec.getService().getOidAsLong() != null ? pec.getService().getOidAsLong().toString() : "");
             if ( pec.getService().getRoutingUri() == null ) {

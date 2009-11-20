@@ -25,6 +25,7 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import com.l7tech.server.policy.assertion.ServerXpathAssertion;
 import com.l7tech.test.BugNumber;
@@ -228,7 +229,7 @@ public class ExpandVariablesTest {
 
     @Test
     public void testRequestHttpParam() throws Exception {
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(makeTinyRequest(), new Message());
 
         final Map<String, Object> vars = pec.getVariableMap(new String[]{"request.http.parameter.foo"}, audit);
         String paramValue = ExpandVariables.process("${request.http.parameter.foo}", vars, audit, true);
@@ -237,7 +238,7 @@ public class ExpandVariablesTest {
 
     @Test
     public void testRequestHttpParamCaseInsensitivity() throws Exception {
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(makeTinyRequest(), new Message());
 
         final Map<String, Object> vars = pec.getVariableMap(new String[]{"request.http.parameter.Foo"}, audit);
         String paramValue = ExpandVariables.process("${request.http.parameter.fOO}", vars, audit, true);
@@ -246,7 +247,7 @@ public class ExpandVariablesTest {
 
     @Test
     public void testRequestHttpParamCaseInsensitivity2() throws Exception {
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(makeTinyRequest(), new Message());
 
         final Map<String, Object> vars = pec.getVariableMap(new String[]{"request.http.parameter.Foo"}, audit);
         String paramValue = ExpandVariables.process("${request.HttP.paRAMeter.fOO}", vars, audit, true);
@@ -271,7 +272,7 @@ public class ExpandVariablesTest {
     @Test
     public void testMessageVariable() throws Exception {
         final Message foo = makeTinyRequest();
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(new Message(), new Message());
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         pec.setVariable("foo", foo);
 
         final Map<String, Object> vars = pec.getVariableMap(new String[]{"foo.mainPart"}, audit);
@@ -282,7 +283,7 @@ public class ExpandVariablesTest {
     @Test
     public void testMessageVariableCaseInsensitive() throws Exception {
         final Message foo = makeTinyRequest();
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(new Message(), new Message());
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         pec.setVariable("fOo", foo);
 
         final Map<String, Object> vars = pec.getVariableMap(new String[]{"fOO.mainPart"}, audit);
@@ -410,7 +411,7 @@ public class ExpandVariablesTest {
     public void testProcessSingleVariableAsDisplayableObject() throws Exception {
         final ApplicationContext spring = ApplicationContexts.getTestApplicationContext();
         final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(doc), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
 
         final RequestXpathAssertion ass = new RequestXpathAssertion(new XpathExpression("/s:Envelope/s:Body/ns1:placeOrder/*", nsmap()));
         final AllAssertion all = new AllAssertion(Arrays.asList(ass, new AuditDetailAssertion("${requestXpath.elements}")));
@@ -442,7 +443,7 @@ public class ExpandVariablesTest {
     @BugNumber(7664)
     @Test(expected = VariableNameSyntaxException.class)
     public void testProcessNonExistentVariable() throws Exception {
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(makeTinyRequest(), new Message());
         final Map<String, Object> vars = pec.getVariableMap(new String[]{}, audit);
         ExpandVariables.process("${dontexist}", vars, audit, true);
     }
@@ -462,7 +463,7 @@ public class ExpandVariablesTest {
     @BugNumber(7688)
     @Test
     public void testProcessNoFormat() throws Exception{
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(makeTinyRequest(), new Message());
         final Map<String, Object> vars = pec.getVariableMap(new String[]{}, audit);
         vars.put("varname", "value");
         List<Object> paramValue = ExpandVariables.processNoFormat("${varname}", vars, audit, true);

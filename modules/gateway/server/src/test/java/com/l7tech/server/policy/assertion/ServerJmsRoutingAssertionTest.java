@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -252,7 +253,7 @@ public class ServerJmsRoutingAssertionTest {
 
         Message req = new Message( testMessage(testMessage) );
         Message res = new Message();
-        PolicyEnforcementContext peCtx = new PolicyEnforcementContext(req, res);
+        PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, res);
         peCtx.setService(new PublishedService());
         return peCtx;
     }

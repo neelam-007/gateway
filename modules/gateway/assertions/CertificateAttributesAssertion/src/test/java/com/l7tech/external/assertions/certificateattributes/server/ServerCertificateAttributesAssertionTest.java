@@ -11,6 +11,7 @@ import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.test.BugNumber;
 import static org.junit.Assert.*;
@@ -57,7 +58,7 @@ public class ServerCertificateAttributesAssertionTest {
     private PolicyEnforcementContext pec(final X509Certificate cert) {
         Message req = new Message();
         Message resp = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(req, resp);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, resp);
         LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(cert), SslAssertion.class);
         context.getDefaultAuthenticationContext().addCredentials(creds);
         context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new UserBean(), creds.getSecurityTokens(), cert, false));

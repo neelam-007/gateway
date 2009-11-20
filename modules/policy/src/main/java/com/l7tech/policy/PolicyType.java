@@ -5,6 +5,7 @@ package com.l7tech.policy;
 
 import static com.l7tech.policy.PolicyType.Supertype.SERVICE;
 import static com.l7tech.policy.PolicyType.Supertype.*;
+import com.l7tech.util.SyspropUtil;
 
 /**
  * Types of {@link Policy} objects
@@ -14,6 +15,7 @@ import static com.l7tech.policy.PolicyType.Supertype.*;
  * @author alex
  */
 public enum PolicyType {
+    
     /**
      * A policy that belongs to a single PublishedService
      */
@@ -23,6 +25,7 @@ public enum PolicyType {
      * A policy that can be used by any PublishedService
      */
     SHARED_SERVICE(SERVICE, "Shared Service Policy", false),
+
     /**
      * A reusable fragment that can be included into another policy
      */
@@ -31,12 +34,22 @@ public enum PolicyType {
     /**
      * A fragment that gets run prior to the invocation of a {@link #SHARED_SERVICE} or {@link #PRIVATE_SERVICE} policy
      */
-    PRE_SERVICE_FRAGMENT(FRAGMENT, "Pre-Service Policy Fragment", false),
+    PRE_SERVICE_FRAGMENT(FRAGMENT, "Pre-Service Policy Fragment", isEnableGlobalPolicies() ),
 
     /**
      * A fragment that gets run after the invocation of a {@link #SHARED_SERVICE} or {@link #PRIVATE_SERVICE} policy
      */
-    POST_SERVICE_FRAGMENT(FRAGMENT, "Post-Service Policy Fragment", false),
+    POST_SERVICE_FRAGMENT(FRAGMENT, "Post-Service Policy Fragment", isEnableGlobalPolicies() ),
+
+    /**
+     * A fragment that gets run prior to WS-Security processing for a {@link #SHARED_SERVICE} or {@link #PRIVATE_SERVICE} policy
+     */
+    PRE_SECURITY_FRAGMENT(FRAGMENT, "Pre-Security Policy Fragment", isEnableGlobalPolicies() ),
+
+    /**
+     * A fragment that gets run after to WS-Security decoration for a {@link #SHARED_SERVICE} or {@link #PRIVATE_SERVICE} policy
+     */
+    POST_SECURITY_FRAGMENT(FRAGMENT, "Post-Security Policy Fragment", isEnableGlobalPolicies() ),
 
     /**
      * A fragment that gets run before any routing assertion is attempted
@@ -119,6 +132,10 @@ public enum PolicyType {
      */
     public boolean isShownInGui() {
         return shownInGui;
+    }
+
+    private static boolean isEnableGlobalPolicies() {
+        return SyspropUtil.getBoolean( "com.l7tech.policy.globalEnabled", false );
     }
 
     private final String name;

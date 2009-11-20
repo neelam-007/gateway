@@ -6,6 +6,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -38,7 +39,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
         Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         final Document doc = request.getXmlKnob().getDocumentReadOnly();
@@ -55,7 +56,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
         Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_FOR_SOMEONE_ELSE));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
         assertEquals(AssertionStatus.BAD_REQUEST, result);
         final Document doc = request.getXmlKnob().getDocumentReadOnly();
@@ -71,7 +72,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
         Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_FOR_DATA));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         final Document doc = request.getXmlKnob().getDocumentReadOnly();

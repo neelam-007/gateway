@@ -7,8 +7,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
@@ -20,7 +20,6 @@ import org.apache.ftpserver.ServerDataConnectionFactory;
 import org.apache.ftpserver.ftplet.*;
 import org.apache.ftpserver.interfaces.FtpServerSession;
 import org.apache.ftpserver.listener.AbstractListener;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,20 +43,16 @@ class MessageProcessingFtplet extends DefaultFtplet {
     /**
      * Bean constructor
      */
-    public MessageProcessingFtplet(final ApplicationContext applicationContext,
-                                   final FtpServerManager ftpServerManager,
+    public MessageProcessingFtplet(final FtpServerManager ftpServerManager,
                                    final MessageProcessor messageProcessor,
                                    final AuditContext auditContext,
                                    final SoapFaultManager soapFaultManager,
-                                   final ClusterPropertyCache clusterPropertyCache,
                                    final StashManagerFactory stashManagerFactory,
                                    final EventChannel messageProcessingEventChannel) {
-        this.applicationContext = applicationContext;
         this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
         this.auditContext = auditContext;
         this.soapFaultManager = soapFaultManager;
-        this.clusterPropertyCache = clusterPropertyCache;
         this.stashManagerFactory = stashManagerFactory;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
     }
@@ -65,6 +60,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     /**
      * Ensure that on initial connection the data connection is secure if the control connection is.
      */
+    @Override
     public FtpletEnum onConnect(FtpSession ftpSession, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
         DataConnectionFactory dataConnectionFactory = ftpSession.getDataConnection();
         if (dataConnectionFactory instanceof ServerDataConnectionFactory) {
@@ -87,6 +83,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     /**
      * Override the default SITE extensions. 
      */
+    @Override
     public FtpletEnum onSite(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
         ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_502_COMMAND_NOT_IMPLEMENTED, "Command SITE not implemented for " + ftpRequest.getArgument()));
         return FtpletEnum.RET_SKIP;
@@ -95,6 +92,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     /**
      * Redirect uploads to the message processor
      */
+    @Override
     public FtpletEnum onUploadStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
         return handleUploadStart(ftpSession, ftpRequest, ftpReplyOutput, false);
     }
@@ -102,6 +100,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     /**
      * Redirect uploads to the message processor
      */
+    @Override
     public FtpletEnum onUploadUniqueStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
         return handleUploadStart(ftpSession, ftpRequest, ftpReplyOutput, true);
     }
@@ -114,12 +113,10 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private static final int STORE_RESULT_FAULT = 1;
     private static final int STORE_RESULT_DROP = 2;
 
-    private final ApplicationContext applicationContext;
     private final FtpServerManager ftpServerManager;
     private final MessageProcessor messageProcessor;
     private final AuditContext auditContext;
     private final SoapFaultManager soapFaultManager;
-    private final ClusterPropertyCache clusterPropertyCache;
     private final StashManagerFactory stashManagerFactory;
     private final EventChannel messageProcessingEventChannel;
 
@@ -131,7 +128,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
         String fileName = ftpRequest.getArgument();
 
         if (logger.isLoggable(Level.FINE))
-            logger.log(Level.FINE, "Handling STOR for file ''{0}'' (unique:{1}).", new Object[]{fileName, Boolean.valueOf(unique)});
+            logger.log(Level.FINE, "Handling STOR for file ''{0}'' (unique:{1}).", new Object[]{fileName, unique});
 
         if (!ftpServerManager.isLicensed()) {
             if (logger.isLoggable(Level.INFO))
@@ -218,7 +215,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.INFO, "Security levels, control secure ''{0}'', data secure ''{1}''.",
-                        new Object[] {Boolean.valueOf(controlSecure), Boolean.valueOf(dataSecure)});
+                        new Object[] {controlSecure, dataSecure});
 
             secure = dataSecure && controlSecure;
         }
@@ -241,7 +238,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
             logger.log(Level.FINE, "Processing STOR for path ''{0}'' and file ''{1}''.", new String[]{path, file});
         
         // Create request message
-        Message request = null;
+        Message request;
         ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
         Message requestMessage = new Message();
         requestMessage.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)));
@@ -258,17 +255,13 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
         // process request message
         if (request != null) {
-            final PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+            final PolicyEnforcementContext context =
+                    PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
 
             AssertionStatus status = AssertionStatus.UNDEFINED;
             String faultXml = null;
 
             try {
-                context.setAuditContext(auditContext);
-                context.setSoapFaultManager(soapFaultManager);
-                context.setClusterPropertyCache(clusterPropertyCache);
-                context.setReplyExpected(false);
-
                 try {
                     status = messageProcessor.processMessage(context);
 
@@ -334,24 +327,31 @@ class MessageProcessingFtplet extends DefaultFtplet {
      */
     private FtpRequestKnob buildFtpKnob(final InetAddress serverAddress, final int port, final InetAddress clientAddress, final String file, final String path, final boolean secure, final boolean unique, final User user) {
         return new FtpRequestKnob(){
+            @Override
             public int getLocalPort() {
                 return port;
             }
+            @Override
             public String getRemoteAddress() {
                 return clientAddress.getHostAddress();
             }
+            @Override
             public String getRemoteHost() {
                 return clientAddress.getHostAddress();
             }
+            @Override
             public String getFile() {
                 return file;
             }
+            @Override
             public String getPath() {
                 return path;
             }
+            @Override
             public String getRequestUri() {
                 return path;
             }
+            @Override
             public String getRequestUrl() {
                 StringBuffer urlBuffer = new StringBuffer();
 
@@ -367,12 +367,15 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
                 return urlBuffer.toString();
             }
+            @Override
             public boolean isSecure() {
                 return secure;
             }
+            @Override
             public boolean isUnique() {
                 return unique;
             }
+            @Override
             public PasswordAuthentication getCredentials() {
                 PasswordAuthentication passwordAuthentication = null;
                 if (user.getPassword()!=null) {
@@ -393,6 +396,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
         final CountDownLatch startedSignal = new CountDownLatch(1);
         Thread thread = new Thread(new Runnable(){
+            @Override
             public void run() {
                 PipedOutputStream pos = null;
                 try {

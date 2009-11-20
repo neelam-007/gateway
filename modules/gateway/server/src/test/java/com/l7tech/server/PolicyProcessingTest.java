@@ -24,10 +24,10 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
@@ -78,7 +78,6 @@ public class PolicyProcessingTest {
     private static MessageProcessor messageProcessor = null;
     private static AuditContext auditContext = null;
     private static SoapFaultManager soapFaultManager = null;
-    private static ClusterPropertyCache clusterPropertyCache = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
 
     static {
@@ -165,7 +164,6 @@ public class PolicyProcessingTest {
         messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
-        clusterPropertyCache = (ClusterPropertyCache) applicationContext.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
         ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
@@ -1331,17 +1329,12 @@ public class PolicyProcessingTest {
         final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(hresponse);
         response.attachHttpResponseKnob(respKnob);
 
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-        context.setReplyExpected(true); // HTTP always expects to receive a reply
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
 
         final StashManager stashManager = TestStashManagerFactory.getInstance().createStashManager();
 
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
-            context.setAuditContext(auditContext);
-            context.setSoapFaultManager(soapFaultManager);
-            context.setClusterPropertyCache(clusterPropertyCache);
-
             //TODO cleanup cookie init?
             context.addCookie(new HttpCookie("cookie", "invalue", 0, null, null));
 
@@ -1362,6 +1355,7 @@ public class PolicyProcessingTest {
             // if the policy is not successful AND the stealth flag is on, drop connection
             if (status != AssertionStatus.NONE) {
                 SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+                if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
                 logger.finest("checking for potential connection drop because status is " + status.getMessage());
                 if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
                     logger.info("No policy found and global setting is to go stealth in this case. " +
@@ -1439,7 +1433,7 @@ public class PolicyProcessingTest {
                 }
             }
 
-            for ( PolicyEnforcementContext.AssertionResult result : context.getAssertionResults( context.getAuditContext() ) ) {
+            for ( PolicyEnforcementContext.AssertionResult result : context.getAssertionResults() ) {
                 logger.info( "Assertion '" + result.getAssertion() + "', result: " + result.getStatus() );
             }
 
@@ -1480,20 +1474,16 @@ public class PolicyProcessingTest {
             }
         });
 
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-        context.setReplyExpected(true); // HTTP always expects to receive a reply
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
 
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
-            context.setAuditContext(auditContext);
-            context.setSoapFaultManager(soapFaultManager);
-            context.setClusterPropertyCache(clusterPropertyCache);
-
             status = messageProcessor.processMessage(context);
 
             // if the policy is not successful AND the stealth flag is on, drop connection
             if (status != AssertionStatus.NONE) {
                 SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+                if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
                 logger.finest("checking for potential connection drop because status is " + status.getMessage());
                 if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
                     logger.info("No policy found and global setting is to go stealth in this case. " +

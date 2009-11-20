@@ -13,12 +13,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.SoapConstants;
@@ -39,25 +38,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class JmsRequestHandler {
-    final private ApplicationContext springContext;
     final private MessageProcessor messageProcessor;
     final private AuditContext auditContext;
-    final private SoapFaultManager soapFaultManager;
-    final private ClusterPropertyCache clusterPropertyCache;
     final private StashManagerFactory stashManagerFactory;
     final private ApplicationEventPublisher messageProcessingEventChannel;
 
     public JmsRequestHandler(ApplicationContext ctx) {
-        this.springContext = ctx;
         if (ctx == null) {
             throw new IllegalArgumentException("Spring Context is required");
         }
         messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
-        soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
-        clusterPropertyCache = (ClusterPropertyCache)ctx.getBean("clusterPropertyCache", ClusterPropertyCache.class);
-        stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
-        messageProcessingEventChannel = (ApplicationEventPublisher) springContext.getBean("messageProcessingEventChannel", EventChannel.class);
+        stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
+        messageProcessingEventChannel = (ApplicationEventPublisher) ctx.getBean("messageProcessingEventChannel", EventChannel.class);
     }
 
     /**
@@ -125,7 +118,7 @@ class JmsRequestHandler {
 
                 // Gets the JMS message property to use as SOAPAction, if present.
                 String soapActionValue = null;
-                final String jmsMsgPropWithSoapAction = (String)receiver.getConnection().properties().get(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION);
+                final String jmsMsgPropWithSoapAction = receiver.getConnection().properties().getProperty(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION);
                 if (jmsMsgPropWithSoapAction != null) {
                     soapActionValue = (String)reqJmsMsgProps.get(jmsMsgPropWithSoapAction);
                     if (_logger.isLoggable(Level.FINER))
@@ -180,23 +173,19 @@ class JmsRequestHandler {
                     }
                 });
 
-                final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
-                                                                                      new com.l7tech.message.Message());
-
+                PolicyEnforcementContext context = null;
                 String faultMessage = null;
                 String faultCode = null;
 
                 try {
-                    context.setAuditContext(auditContext);
-                    context.setSoapFaultManager(soapFaultManager);
-                    context.setClusterPropertyCache(clusterPropertyCache);
-
+                    final boolean replyExpected;
                     final Destination replyToDest = jmsRequest.getJMSReplyTo();
-                    if (replyToDest != null || jmsRequest.getJMSCorrelationID() != null) {
-                        context.setReplyExpected(true);
-                    } else {
-                        context.setReplyExpected(false);
-                    }
+                    replyExpected = replyToDest != null || jmsRequest.getJMSCorrelationID() != null;
+
+                    context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                            request,
+                            null,
+                            replyExpected );
 
                     boolean stealthMode = false;
                     InputStream responseStream = null;
@@ -282,7 +271,7 @@ class JmsRequestHandler {
 
                         // Copies the JMS message properties from the response JmsKnob to the response JMS message.
                         // Propagation rules has already been enforced in the knob by the JMS routing assertion.
-                        final JmsKnob jmsResponseKnob = (JmsKnob)context.getResponse().getKnob(JmsKnob.class);
+                        final JmsKnob jmsResponseKnob = context.getResponse().getKnob(JmsKnob.class);
                         if (jmsResponseKnob != null) {
                             final Map<String, Object> respJmsMsgProps = jmsResponseKnob.getJmsMsgPropMap();
                             for (String name : respJmsMsgProps.keySet()) {

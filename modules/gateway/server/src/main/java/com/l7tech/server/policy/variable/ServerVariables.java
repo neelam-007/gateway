@@ -18,6 +18,7 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.wsdl.Operation;
@@ -41,6 +42,7 @@ public class ServerVariables {
 
     private static final Map<String, Variable> varsByName = new HashMap<String, Variable>();
     private static final Map<String, Variable> varsByPrefix = new HashMap<String, Variable>();
+    private static ClusterPropertyCache clusterPropertyCache;
 
     static Variable getVariable(String name, PolicyEnforcementContext targetContext) {
         final String lname = name.toLowerCase();
@@ -369,19 +371,18 @@ public class ServerVariables {
         new Variable(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                if (context.getClusterPropertyCache() != null) {
+                if (getClusterPropertyCache() != null) {
                     if (name.length() < (BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 2)) {
                         logger.warning("variable name " + name + " cannot be resolved to a cluster property");
                         return null;
                     }
                     name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
-                    // TODO make this cache timeout configurable
-                    ClusterProperty cp = context.getClusterPropertyCache().getCachedEntityByName(name, 30000);
+                    ClusterProperty cp = getClusterPropertyCache().getCachedEntityByName(name, 30000);
                     if (cp != null && cp.isHiddenProperty()) return null;
                     return cp != null && cp.getValue() != null ? cp.getValue() :
-                                 context.getClusterPropertyCache().getPropertyValueWithDefaultFallback(name);
+                                 getClusterPropertyCache().getPropertyValueWithDefaultFallback(name);
                 } else {
-                    logger.severe("cannot get ClusterPropertyCache through context");
+                    logger.severe("cannot get ClusterPropertyCache context");
                     return null;
                 }
             }
@@ -519,6 +520,16 @@ public class ServerVariables {
         } else {
             logger.log(Level.WARNING, "Can't handle variable named " + name);
             return null;
+        }
+    }
+
+    private static ClusterPropertyCache getClusterPropertyCache() {
+        return clusterPropertyCache;
+    }
+
+    public static void setClusterPropertyCache( final ClusterPropertyCache cache ) {
+        if ( clusterPropertyCache == null ) {
+            clusterPropertyCache = cache;
         }
     }
 

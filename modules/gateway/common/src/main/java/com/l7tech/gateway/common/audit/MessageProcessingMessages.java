@@ -45,6 +45,14 @@ public class MessageProcessingMessages extends Messages {
     public static final M ERROR_WSS_PROCESSING_INFO   = m(3032, Level.INFO, "Error in WSS processing of request: {0}");
     public static final M MESSAGE_NO_SIG_CONFIRMATION = m(3033, Level.WARNING, "No suitable decoration was found for adding signature confirmations.");
     public static final M ERROR_WSS_RESPONSE          = m(3034, Level.WARNING, "Error in WSS processing of response: {0}");
+    public static final M RUNNING_PRE_SERVICE_POLICY  = m(3035, Level.FINEST, "Processing pre-service server policies");
+    public static final M ERROR_PRE_SERVICE           = m(3036, Level.WARNING, "Error processing pre-service policy: {0}");
+    public static final M RUNNING_POST_SERVICE_POLICY = m(3037, Level.FINEST, "Processing post-service server policies");
+    public static final M ERROR_POST_SERVICE          = m(3038, Level.WARNING, "Error processing post-service policy: {0}");
+    public static final M RUNNING_PRE_SECURITY_POLICY = m(3039, Level.FINEST, "Processing pre-security server policies");
+    public static final M ERROR_PRE_SECURITY          = m(3040, Level.WARNING, "Error processing pre-security policy: {0}");
+    public static final M RUNNING_POST_SECURITY_POLICY= m(3041, Level.FINEST, "Processing post-security server policies");
+    public static final M ERROR_POST_SECURITY         = m(3042, Level.WARNING, "Error processing post-security policy: {0}");
 
     // Service resolver messages
     public static final M SR_HTTPURI_CACHEDFAIL      = m(3100, Level.FINE, "Using cached failure @\"{0}\"");

@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.AuditRecordToXmlAssertion;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import static org.junit.Assert.*;
 import org.junit.*;
@@ -34,7 +35,7 @@ public class ServerAuditRecordToXmlAssertionTest {
     @Test
     public void testSimpleConvertAudit() throws Exception {
         ServerAuditRecordToXmlAssertion sass = new ServerAuditRecordToXmlAssertion(new AuditRecordToXmlAssertion(), null, null);
-        PolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(makeMessageAuditRecord(), null);
+        PolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(makeMessageAuditRecord(), PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null ), null);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         assertEquals("audit", context.getRequest().getXmlKnob().getDocumentReadOnly().getDocumentElement().getLocalName());

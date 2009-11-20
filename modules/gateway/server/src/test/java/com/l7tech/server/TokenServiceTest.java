@@ -29,8 +29,8 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -91,7 +91,7 @@ public class TokenServiceTest {
                                                       testTokenResolver)
         {
             @Override
-            public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context, CredentialsAuthenticator authenticator, boolean useThumbprintForSamlSignature, boolean useThumbprintForSamlSubject) throws InvalidDocumentFormatException, TokenServiceException, ProcessorException, BadSecurityContextException, GeneralSecurityException, AuthenticationException {
+            public AssertionStatus respondToSecurityTokenRequest( PolicyEnforcementContext context, CredentialsAuthenticator authenticator, boolean useThumbprintForSamlSignature, boolean useThumbprintForSamlSubject) throws InvalidDocumentFormatException, TokenServiceException, ProcessorException, BadSecurityContextException, GeneralSecurityException, AuthenticationException {
                 setApplicationContext(applicationContext);
                 return super.respondToSecurityTokenRequest(context, authenticator, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
             }
@@ -110,8 +110,7 @@ public class TokenServiceTest {
         final Message response = new Message();
         final Message request = new Message();
         request.initialize(requestMsg);
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-        context.setAuditContext(new AuditContextStub());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, false);
 
         AssertionStatus status = service.respondToSecurityTokenRequest(context, authenticator, false, false);
         Assert.assertEquals(status, AssertionStatus.NONE);
@@ -168,8 +167,7 @@ public class TokenServiceTest {
         request.initialize(requestMsg);
         request.attachHttpRequestKnob(new HttpServletRequestKnob(getFakeServletRequest()));
 
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-        context.setAuditContext(new AuditContextStub());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, false);
         AssertionStatus status = service.respondToSecurityTokenRequest(context, authenticator, false, false);
         Assert.assertEquals(status, AssertionStatus.NONE);
 

@@ -10,6 +10,7 @@ import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
@@ -44,7 +45,7 @@ public class ServerRequireWssTimestampTest {
         final Message req = new Message();
         req.initialize(TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_REQUEST));
         final Message res = new Message();
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(req, res);
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, res);
         final SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver();
         final ServerRequireWssX509Cert srwxc = new ServerRequireWssX509Cert(new RequireWssX509Cert(), new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("securityTokenResolver", resolver);

@@ -70,10 +70,28 @@
         <constructor-arg index="2"  ref="serverConfig"/>
     </bean>
 
+    <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" parent="hibernateBean">
+    </bean>
+
+    <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
+        <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
+        <property name="clusterPropertyListener" ref="serverConfig"/>
+        <property name="serverConfig" ref="serverConfig"/>
+    </bean>
+
+    <bean id="configureServerVariablesClusterPropertyCache"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.server.policy.variable.ServerVariables.setClusterPropertyCache"/>
+        <property name="arguments">
+            <list>
+                <ref local="clusterPropertyCache"/>
+            </list>
+        </property>
+    </bean>    
+
     <bean id="auditPolicyEvaluator" class="com.l7tech.server.audit.AuditPolicyEvaluator">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="policyCache"/>
-        <constructor-arg index="2" ref="clusterPropertyCache"/>
     </bean>
 
     <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher"/>
@@ -992,15 +1010,6 @@
 
     <bean id="aggregator" class="com.l7tech.server.wsdm.Aggregator"/>
 
-    <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" parent="hibernateBean">
-    </bean>
-
-    <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
-        <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
-        <property name="clusterPropertyListener" ref="serverConfig"/>
-        <property name="serverConfig" ref="serverConfig"/>
-    </bean>
-
     <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker" depends-on="cryptoInit">
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
@@ -1120,8 +1129,9 @@
     </bean>
 
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager" depends-on="clusterPropertyManager">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg>
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="auditContext"/>
+        <constructor-arg index="2" >
             <bean class="com.l7tech.server.util.ManagedTimer">
                 <constructor-arg value="Soap fault manager refresh"/>
             </bean>
@@ -1224,7 +1234,6 @@
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
         <constructor-arg ref="auditContext"/>
-        <constructor-arg ref="clusterPropertyCache"/>
         <constructor-arg ref="messageProcessor"/>
         <constructor-arg ref="soapFaultManager"/>
         <constructor-arg ref="stashManagerFactory"/>

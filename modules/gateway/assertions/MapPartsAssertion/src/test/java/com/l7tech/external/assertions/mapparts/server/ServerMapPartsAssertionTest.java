@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.mapparts.MapPartsAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -44,7 +45,7 @@ public class ServerMapPartsAssertionTest extends TestCase {
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
                                       new ByteArrayInputStream(MESS2.getBytes()));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         assertTrue(Arrays.equals(new String[] { "-76394136.13454", "-76392836.13454" }, 

@@ -21,9 +21,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.ListenerException;
@@ -85,12 +85,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private WebApplicationContext applicationContext;
     private ServerConfig serverConfig;
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
-    private ClusterPropertyCache clusterPropertyCache;
     private LicenseManager licenseManager;
     private StashManagerFactory stashManagerFactory;
     private ApplicationEventPublisher messageProcessingEventChannel;
@@ -99,7 +97,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        WebApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
@@ -107,7 +105,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         messageProcessor = (MessageProcessor)applicationContext.getBean("messageProcessor");
         auditContext = (AuditContext)applicationContext.getBean("auditContext");
         soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
-        clusterPropertyCache = (ClusterPropertyCache)applicationContext.getBean("clusterPropertyCache");
         licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
         stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
         messageProcessingEventChannel = (EventChannel)applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
@@ -200,8 +197,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
           ? ContentTypeHeader.parseValue(rawct)
           : ContentTypeHeader.XML_DEFAULT;
 
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-        context.setReplyExpected(true); // HTTP always expects to receive a reply
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response,  true);
         context.setRequestWasCompressed(gzipEncodedTransaction);
 
         initCookies(hrequest.getCookies(), context);
@@ -210,10 +206,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         AssertionStatus status = null;
         try {
-            context.setAuditContext(auditContext);
-            context.setSoapFaultManager(soapFaultManager);
-            context.setClusterPropertyCache(clusterPropertyCache);
-
             if (gzipEncodedTransaction) {
                 request.initialize(stashManager, ctype, gis);
             } else {
@@ -233,6 +225,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // if the policy is not successful AND the stealth flag is on, drop connection
             if (status != AssertionStatus.NONE) {
                 SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+                if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
                 logger.finest("checking for potential connection drop because status is " + status.getMessage());
                 if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
                     logger.info("No policy found and global setting is to go stealth in this case. " +
@@ -444,6 +437,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             hresp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+            if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
                 if (shouldSendBackPolicyUrl(context)) {
                     PublishedService pserv = context.getService();
@@ -484,6 +478,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             hresp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+            if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
                 if (shouldSendBackPolicyUrl(context)) {
                     PublishedService pserv = context.getService();

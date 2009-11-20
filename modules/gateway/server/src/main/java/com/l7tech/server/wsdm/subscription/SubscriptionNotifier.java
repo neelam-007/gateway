@@ -23,6 +23,7 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.service.ServiceCache;
@@ -429,8 +430,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         try {
             final Message request = new Message(XmlUtil.stringAsDocument(message));
             request.attachHttpRequestKnob(new HttpRequestKnobAdapter(null));
-            context = new PolicyEnforcementContext(request, new Message());
-            context.setAuditContext(auditContext);
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, false);
             context.setAuditLevel(Level.INFO);
 
             // Use fake service

@@ -9,6 +9,7 @@ import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.TestingHttpClientFactory;
@@ -46,7 +47,6 @@ import java.text.ParseException;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 11, 2004<br/>
- * $Id$<br/>
  *
  */
 public class XslTransformationTest {
@@ -93,7 +93,7 @@ public class XslTransformationTest {
 
         Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
         Message res = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(req, res);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, res);
 
         serverAss.checkRequest(context);
         String after = XmlUtil.nodeToString(req.getXmlKnob().getDocumentReadOnly());
@@ -115,7 +115,7 @@ public class XslTransformationTest {
         for (int i = 0; i < num; i++) {
             Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
             Message res = new Message();
-            PolicyEnforcementContext context = new PolicyEnforcementContext(req, res);
+            PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, res);
 
             serverAss.checkRequest(context);
             String after = XmlUtil.nodeToString(req.getXmlKnob().getDocumentReadOnly());
@@ -212,7 +212,7 @@ public class XslTransformationTest {
 
         Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         context.setVariable("ecf-mde-id", "VARIABLE CONTENT");
         sa.checkRequest(context);
 
@@ -245,7 +245,7 @@ public class XslTransformationTest {
 
         Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         context.setVariable("ecf-mde-id", "VARIABLE CONTENT");
         sa.checkRequest(context);
 
@@ -265,7 +265,7 @@ public class XslTransformationTest {
         xsl.setDirection(XslTransformation.APPLY_TO_REQUEST);
 
         Message request = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new URL(responseUrl).openStream());
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
         ServerXslTransformation sxsl = new ServerXslTransformation(xsl, ApplicationContexts.getTestApplicationContext());
         AssertionStatus status = sxsl.checkRequest(pec);

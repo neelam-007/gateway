@@ -33,14 +33,14 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.server.event.system.AdminAppletEvent;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -104,7 +104,6 @@ public class ManagerAppletFilter implements Filter {
     private AdminSessionManager adminSessionManager;
     private AdminLogin adminLogin;
     private AuditContext auditContext;
-    private SoapFaultManager soapFaultManager;
 
     private ServerAssertion dogfoodPolicy;
     private Document fakeDoc;
@@ -133,7 +132,6 @@ public class ManagerAppletFilter implements Filter {
         adminSessionManager = (AdminSessionManager)getBean("adminSessionManager", AdminSessionManager.class);
         adminLogin = (AdminLogin)getBean("adminLogin", AdminLogin.class);
         auditContext = (AuditContext)getBean("auditContext", AuditContext.class);
-        soapFaultManager = (SoapFaultManager)getBean("soapFaultManager", SoapFaultManager.class);
 
         //CompositeAssertion dogfood = new AllAssertion();
         CompositeAssertion dogfood = new OneOrMoreAssertion();
@@ -197,10 +195,7 @@ public class ManagerAppletFilter implements Filter {
             HttpServletResponseKnob hsrespKnob = new HttpServletResponseKnob(hresp);
             response.attachHttpResponseKnob(hsrespKnob);
 
-            context = new PolicyEnforcementContext(request, response);
-            context.setReplyExpected(true);
-            context.setAuditContext(auditContext);
-            context.setSoapFaultManager(soapFaultManager);
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
 
             AuthResult authResult = authenticate(hreq, hresp, context, auditor);
             if (authResult == AuthResult.CHALLENGED) {

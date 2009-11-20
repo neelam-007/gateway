@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.messagecontext.server;
 
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.external.assertions.messagecontext.MessageContextAssertion;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.message.Message;
@@ -28,7 +29,7 @@ public class ServerMessageContextAssertionTest {
     @Before
     public void setUp() throws Exception {
         applicationContext = ApplicationContexts.getTestApplicationContext();
-        policyEnforcementContext = new PolicyEnforcementContext(new Message(), new Message());
+        policyEnforcementContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.l7tech.external.assertions.stripparts.console.StripPartsPropertiesDia
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -60,7 +61,7 @@ public class ServerStripPartsAssertionTest extends TestCase {
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
                                       new ByteArrayInputStream(MESS2.getBytes()));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
         assertIsMultipart(context.getRequest());
     }
@@ -74,7 +75,7 @@ public class ServerStripPartsAssertionTest extends TestCase {
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
                                       new ByteArrayInputStream(MESS2.getBytes()));
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(result, AssertionStatus.NONE);
 
@@ -96,7 +97,7 @@ public class ServerStripPartsAssertionTest extends TestCase {
         Message response = new Message(new ByteArrayStashManager(),
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
                                       new ByteArrayInputStream(MESS2.getBytes()));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(result, AssertionStatus.NONE);
 

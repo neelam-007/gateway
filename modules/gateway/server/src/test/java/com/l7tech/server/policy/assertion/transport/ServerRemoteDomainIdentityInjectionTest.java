@@ -6,6 +6,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.proxy.util.DomainIdInjectorTest;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.message.HttpRequestKnobAdapter;
 import com.l7tech.message.Message;
@@ -24,7 +25,7 @@ public class ServerRemoteDomainIdentityInjectionTest {
     @Test
     public void testNonHttpRequest() throws Exception {
         ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection(), null);
-        AssertionStatus result = sass.checkRequest(new PolicyEnforcementContext(new Message(), new Message()));
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message()) );
         assertEquals(AssertionStatus.NOT_APPLICABLE, result);
     }
 
@@ -34,7 +35,7 @@ public class ServerRemoteDomainIdentityInjectionTest {
         Message request = new Message();
         request.attachHttpRequestKnob(new HttpRequestKnobAdapter());
 
-        AssertionStatus result = sass.checkRequest(new PolicyEnforcementContext(request, new Message()));
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message()) );
 
         assertEquals(AssertionStatus.FALSIFIED, result);
     }
@@ -47,7 +48,7 @@ public class ServerRemoteDomainIdentityInjectionTest {
         headers.add(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.HEADER_DOMAINIDSTATUS, "lakjhsfaolkjsdh asldkjfhasldfha sdflaskdjfhas;asgh asgkjahgfalkjhg"));
         request.attachHttpRequestKnob(new HttpRequestKnobStub(headers));
 
-        AssertionStatus result = sass.checkRequest(new PolicyEnforcementContext(request, new Message()));
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message()) );
 
         assertEquals(AssertionStatus.BAD_REQUEST, result);
     }
@@ -57,7 +58,7 @@ public class ServerRemoteDomainIdentityInjectionTest {
         ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection(), null);
         Message request = new Message();
         request.attachHttpRequestKnob(new HttpRequestKnobStub(DomainIdInjectorTest.injectSampleHeaders().getExtraHeaders()));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
         AssertionStatus result = sass.checkRequest(context);
 
@@ -72,7 +73,7 @@ public class ServerRemoteDomainIdentityInjectionTest {
         ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection(), null);
         Message request = new Message();
         request.attachHttpRequestKnob(new HttpRequestKnobStub(DomainIdInjectorTest.injectUnicodeHeaders().getExtraHeaders()));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
         AssertionStatus result = sass.checkRequest(context);
 

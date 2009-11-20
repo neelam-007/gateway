@@ -7,6 +7,7 @@
 package com.l7tech.external.assertions.xacmlpdp.server;
 
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerXpathAssertion;
@@ -2069,7 +2070,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
 
-        PolicyEnforcementContext policyEnforcementContext = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext policyEnforcementContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
         response.attachHttpResponseKnob(new HttpServletResponseKnob(hresponse));

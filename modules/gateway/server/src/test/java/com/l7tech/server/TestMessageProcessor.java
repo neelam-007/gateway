@@ -54,7 +54,7 @@ public class TestMessageProcessor extends MessageProcessor {
                 new AuditContextStub(),
                 ServerConfig.getInstance(),
                 new TrafficLogger(ServerConfig.getInstance(), null),
-                new SoapFaultManager(ServerConfig.getInstance(), new ManagedTimer("Soap fault manager refresh")),
+                new SoapFaultManager(ServerConfig.getInstance(), new AuditContextStub(), new ManagedTimer("Soap fault manager refresh")),
                 null);
     }
 

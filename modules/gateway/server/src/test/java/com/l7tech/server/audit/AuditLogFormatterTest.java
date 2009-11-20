@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.TestCase;
 import org.springframework.context.ApplicationContext;
@@ -52,7 +53,7 @@ public class AuditLogFormatterTest extends TestCase {
             pubsvc.setRoutingUri("/wh2");
             Message req = new Message(XmlUtil.createEmptyDocument());
             Message resp = new Message(XmlUtil.createEmptyDocument());
-            pec = new PolicyEnforcementContext(req, resp);
+            pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, resp);
             pec.setService(pubsvc);
         }
         if (appCtx != null && pec != null) {

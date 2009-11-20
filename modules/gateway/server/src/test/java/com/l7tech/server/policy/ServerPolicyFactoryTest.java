@@ -8,8 +8,8 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
-import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerUnknownAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -40,14 +40,15 @@ public class ServerPolicyFactoryTest extends TestCase {
      * ServerPolicyFactoryTest <code>TestCase</code>
      */
     public static Test suite() throws IOException {
-        TestSuite suite = new TestSuite(ServerPolicyFactoryTest.class);
-        return suite;
+        return new TestSuite(ServerPolicyFactoryTest.class);
     }
 
+    @Override
     public void setUp() throws Exception {
         // put set up code here
     }
 
+    @Override
     public void tearDown() throws Exception {
         // put tear down code here
     }
@@ -58,53 +59,48 @@ public class ServerPolicyFactoryTest extends TestCase {
 
         ServerAssertion foo;
         Assertion[] everything = AllAssertions.GATEWAY_EVERYTHING;
-        for (int i = 0; i < everything.length; i++) {
-            foo = pfac.compilePolicy(everything[i], false);
-            if (!(everything[i] instanceof UnknownAssertion)) {
-                assertFalse(foo instanceof ServerUnknownAssertion);
+        for ( Assertion anEverything : everything ) {
+            foo = pfac.compilePolicy( anEverything, false );
+            if ( !( anEverything instanceof UnknownAssertion ) ) {
+                assertFalse( foo instanceof ServerUnknownAssertion );
             }
         }
     }
 
     public void testSimplePolicy() throws Exception {
-        AllAssertion allTrue = new AllAssertion(Arrays.asList(new Assertion[]{
-            new TrueAssertion(),
-            new TrueAssertion(),
-            new TrueAssertion()
-        }));
+        AllAssertion allTrue = new AllAssertion(Arrays.asList(
+                new TrueAssertion(),
+                new TrueAssertion(),
+                new TrueAssertion() ));
 
-        AllAssertion allFalse = new AllAssertion(Arrays.asList(new Assertion[]{
-            new FalseAssertion(),
-            new FalseAssertion(),
-            new FalseAssertion()
-        }));
+        AllAssertion allFalse = new AllAssertion(Arrays.asList(
+                new FalseAssertion(),
+                new FalseAssertion(),
+                new FalseAssertion() ));
 
-        AllAssertion someFalse = new AllAssertion(Arrays.asList(new Assertion[]{
-            new TrueAssertion(),
-            new FalseAssertion(),
-            new TrueAssertion()
-        }));
+        AllAssertion someFalse = new AllAssertion(Arrays.asList(
+                new TrueAssertion(),
+                new FalseAssertion(),
+                new TrueAssertion() ));
 
-        AllAssertion falseTree = new AllAssertion(Arrays.asList(new Assertion[]{
-            new TrueAssertion(),
-            someFalse,
-            new TrueAssertion()}));
+        AllAssertion falseTree = new AllAssertion(Arrays.asList(
+                new TrueAssertion(),
+                someFalse,
+                new TrueAssertion() ));
 
-        AllAssertion trueTree = new AllAssertion(Arrays.asList(new Assertion[]{
-            new TrueAssertion(),
-            allTrue,
-            new TrueAssertion()}));
+        AllAssertion trueTree = new AllAssertion(Arrays.asList(
+                new TrueAssertion(),
+                allTrue,
+                new TrueAssertion() ));
 
-        AllAssertion real = new AllAssertion(Arrays.asList(new Assertion[]{
-            new HttpBasic(),
-            new SpecificUser(),
-            new RequireWssSaml(),
-            new HttpRoutingAssertion()
-        }));
+        AllAssertion real = new AllAssertion(Arrays.asList(
+                new HttpBasic(),
+                new SpecificUser(),
+                new RequireWssSaml(),
+                new HttpRoutingAssertion() ));
         ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
 
-        PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message());
-        pp.setAuditContext(new AuditContextStub());
+        PolicyEnforcementContext pp = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message(), false);
 
         ServerAssertion serverAllTrue = pfac.compilePolicy(allTrue, true);
         assertTrue(serverAllTrue.checkRequest(pp) == AssertionStatus.NONE);
@@ -121,7 +117,7 @@ public class ServerPolicyFactoryTest extends TestCase {
         ServerAssertion serverTrueTree = pfac.compilePolicy(trueTree, true);
         assertTrue(serverTrueTree.checkRequest(pp) == AssertionStatus.NONE);
 
-        ServerAssertion serverReal = pfac.compilePolicy(real, true);
+        pfac.compilePolicy(real, true);
     }
 
     public static class ServerRunnablesAssertion extends AbstractServerAssertion<RunnablesAssertion> {
@@ -130,6 +126,7 @@ public class ServerPolicyFactoryTest extends TestCase {
             if (assertion.ctorRunnable != null) assertion.ctorRunnable.run();
         }
 
+        @Override
         public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
             if (assertion.checkRequestRunnable != null) assertion.checkRequestRunnable.run();
             return AssertionStatus.NONE;
@@ -148,6 +145,7 @@ public class ServerPolicyFactoryTest extends TestCase {
             this.checkRequestRunnable = checkRequestRunnable;
         }
 
+        @Override
         public AssertionMetadata meta() {
             DefaultAssertionMetadata meta = super.defaultMeta();
             meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, ServerRunnablesAssertion.class.getName());
@@ -157,6 +155,7 @@ public class ServerPolicyFactoryTest extends TestCase {
 
     private static final String EXCEPTION_MESS = "this is a RuntimeException";
     private static final Runnable EXCEPTION_THROWER = new Runnable() {
+        @Override
         public void run() {
             throw new RuntimeException(EXCEPTION_MESS);
         }
@@ -164,6 +163,7 @@ public class ServerPolicyFactoryTest extends TestCase {
 
     private static final String ERROR_MESS = "This is an Error";
     private static final Runnable ERROR_THROWER = new Runnable() {
+        @Override
         public void run() {
             throw new Error(ERROR_MESS);
         }

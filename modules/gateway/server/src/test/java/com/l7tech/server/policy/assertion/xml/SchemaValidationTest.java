@@ -17,6 +17,7 @@ import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestStashManagerFactory;
 import com.tarari.xml.rax.schema.SchemaLoader;
@@ -133,6 +134,7 @@ public class SchemaValidationTest {
     @Ignore("Tarari only test")
     public void testTarariSchemaImportsWithInlineNamespaceDecl() throws Exception {
         SchemaResolver resolver = new SchemaResolver() {
+            @Override
             public byte[] resolveSchema(String string, String string1, String string2) {
                 throw new RuntimeException("Screw you!");
             }
@@ -162,6 +164,7 @@ public class SchemaValidationTest {
     public void testReutersUrlSchemaJaxp() throws Exception {
         SchemaFactory sfac = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
         sfac.setResourceResolver(new LSResourceResolver() {
+            @Override
             public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
                 logger.info(type + ", " + namespaceURI + ", " + publicId + ", " + systemId + ", " + baseURI);
                 return null;
@@ -171,14 +174,17 @@ public class SchemaValidationTest {
         Schema s = sfac.newSchema(getSchemaSource());
         Validator val = s.newValidator();
         val.setErrorHandler(new ErrorHandler() {
+            @Override
             public void warning(SAXParseException exception) throws SAXException {
                 logger.log(Level.INFO, ExceptionUtils.getMessage(exception), exception);
             }
 
+            @Override
             public void error(SAXParseException exception) throws SAXException {
                 logger.log(Level.WARNING, ExceptionUtils.getMessage(exception), exception);
             }
 
+            @Override
             public void fatalError(SAXParseException exception) throws SAXException {
                 logger.log(Level.SEVERE, ExceptionUtils.getMessage(exception), exception);
             }
@@ -220,7 +226,7 @@ public class SchemaValidationTest {
         assertion.setResourceInfo(new StaticResourceInfo(schema));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, testApplicationContext);
         Message requestMsg = new Message(XmlUtil.stringToDocument(request));
-        PolicyEnforcementContext context = new PolicyEnforcementContext(requestMsg, new Message());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, new Message());
         AssertionStatus res = serverAssertion.validateMessage(requestMsg, context);
         Assert.assertTrue(res == AssertionStatus.NONE);
     }
@@ -267,7 +273,7 @@ public class SchemaValidationTest {
 
 
     private PolicyEnforcementContext getResAsContext(String path) throws IOException, NoSuchPartException {
-        return new PolicyEnforcementContext(
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(
                 new Message((TestStashManagerFactory.getInstance().createStashManager()),
                             ContentTypeHeader.XML_DEFAULT,
                             TestDocuments.getInputStream(path)),

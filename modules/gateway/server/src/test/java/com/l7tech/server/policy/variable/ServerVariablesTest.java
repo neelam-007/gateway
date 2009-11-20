@@ -27,6 +27,7 @@ import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
@@ -355,7 +356,7 @@ public class ServerVariablesTest {
     public void testOriginalRequest() throws Exception {
         System.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "true");
         Message req = new Message(XmlUtil.stringAsDocument(REQUEST_BODY));
-        PolicyEnforcementContext c = new PolicyEnforcementContext(req, new Message());
+        PolicyEnforcementContext c = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         addTextNode(c.getRequest(), "reqfoo");
         String newreq = "<myrequest>reqfoo</myrequest>";
         expandAndCheck(c, "${request.originalmainpart}", REQUEST_BODY);
@@ -374,7 +375,7 @@ public class ServerVariablesTest {
         request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
         Message response = new Message();
         response.initialize(XmlUtil.stringAsDocument(RESPONSE_BODY));
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(request, response);
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
         String host = "servername.l7tech.com";
         String protocol = "http";
@@ -563,7 +564,7 @@ public class ServerVariablesTest {
     @Test
     public void testSystemAuditRecordFields() throws Exception {
         SystemAuditRecord rec = new SystemAuditRecord(Level.WARNING, "node1", Component.GW_CSR_SERVLET, "CSR servlet is dancing!", true, 0, null, null, "Dancing", "1.2.3.4");
-        final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, context());
+        final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, delegate(), context());
         expandAndCheck(c, "${audit.type}", "system");
         expandAndCheck(c, "${audit.levelStr}", "WARNING");
         expandAndCheck(c, "${audit.name}", "Certificate Signing Service");
@@ -584,7 +585,7 @@ public class ServerVariablesTest {
     public void testAdminAuditRecordFields() throws Exception {
         AdminAuditRecord rec = new AdminAuditRecord(Level.WARNING, "node1", 31, "com.l7tech.MyEntity", "thename", 'U', "Updated thename", -2, "alice", "483", "1.4.2.1");
         rec.setReqId(new RequestId("222-333"));
-        final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, context());
+        final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, delegate(), context());
         expandAndCheck(c, "${audit.type}", "admin");
         expandAndCheck(c, "${audit.name}", "thename");
         expandAndCheck(c, "${audit.sequenceNumber}", String.valueOf(c.getAuditRecord().getSequenceNumber()));
@@ -671,11 +672,15 @@ public class ServerVariablesTest {
         request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
         Message response = new Message();
         response.initialize(XmlUtil.stringAsDocument(RESPONSE_BODY));
-        return new PolicyEnforcementContext(request, response);
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+    }
+
+    private PolicyEnforcementContext delegate() {
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null );
     }
 
     private AuditSinkPolicyEnforcementContext sinkcontext() {
-        return new AuditSinkPolicyEnforcementContext(auditRecord(), context());
+        return new AuditSinkPolicyEnforcementContext(auditRecord(), delegate(), context());
     }
 
     @SuppressWarnings({"deprecation"})

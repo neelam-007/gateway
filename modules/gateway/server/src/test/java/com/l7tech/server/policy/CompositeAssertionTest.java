@@ -17,12 +17,12 @@ import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerExactlyOneAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion;
 import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.audit.AuditContextStub;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -56,12 +56,10 @@ public class CompositeAssertionTest extends TestCase {
 
     public void testSimpleLogic() throws Exception {
         ServerPolicyFactory.doWithEnforcement(false, new Callable<Void>() {
+            @Override
             public Void call() throws Exception {
-                PolicyEnforcementContext context = new
-                        PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
-                        ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message());
-                context.setAuditContext(new AuditContextStub());
-
+                PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),
+                ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message(), false);
                 {
                     final List kidsTrueFalseTrue = Arrays.asList(
                             new TrueAssertion(),
@@ -112,10 +110,10 @@ public class CompositeAssertionTest extends TestCase {
 
     public void testCompositeLogic() throws Exception {
         final PolicyEnforcementContext context =
-                new PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),
                         ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
-                        new Message());
-        context.setAuditContext(new AuditContextStub());
+                        new Message(),
+                        false);
 
         final List kidsTrueFalseTrue = Arrays.asList(
                 new TrueAssertion(),
@@ -144,6 +142,7 @@ public class CompositeAssertionTest extends TestCase {
         final ExactlyOneAssertion true4 = new ExactlyOneAssertion(kidsTrueFalse);
 
         ServerPolicyFactory.doWithEnforcement(false, new Callable<Void>() {
+            @Override
             public Void call() throws Exception {
                 assertTrue(new ServerOneOrMoreAssertion(true1, applicationContext).checkRequest(context) == AssertionStatus.NONE);
                 assertTrue(new ServerOneOrMoreAssertion(true2, applicationContext).checkRequest(context) == AssertionStatus.NONE);

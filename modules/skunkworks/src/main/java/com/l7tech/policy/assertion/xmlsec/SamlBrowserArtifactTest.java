@@ -3,6 +3,7 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.xmlsec.ServerSamlBrowserArtifact;
 import com.l7tech.security.token.http.HttpBasicToken;
@@ -41,7 +42,7 @@ public class SamlBrowserArtifactTest extends TestCase {
         ApplicationContext spring = null/*ApplicationContexts.getTestApplicationContext()*/;
         ServerSamlBrowserArtifact ssba = new ServerSamlBrowserArtifact(sba, spring);
 
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(new Message(), new Message());
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         pec.getDefaultAuthenticationContext().addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("testuser", "passw0rd".toCharArray()), HttpBasic.class));
         ssba.checkRequest(pec);
     }

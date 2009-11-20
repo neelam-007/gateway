@@ -1,6 +1,5 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.Policy;
 import com.l7tech.common.http.HttpConstants;
@@ -36,6 +35,7 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.transport.ListenerException;
@@ -83,7 +83,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private SoapFaultManager soapFaultManager;
     private byte[] serverCertificate;
     private ServerConfig serverConfig;
-    private ClusterPropertyCache clusterPropertyCache;
     private PolicyPathBuilder policyPathBuilder;
     private PolicyCache policyCache;
 
@@ -97,7 +96,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             DefaultKey ku = (DefaultKey)applicationContext.getBean("defaultKey", DefaultKey.class);
             serverCertificate = ku.getSslInfo().getCertificate().getEncoded();
             serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
-            clusterPropertyCache = (ClusterPropertyCache)applicationContext.getBean("clusterPropertyCache");
             PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
             policyPathBuilder = pathBuilderFactory.makePathBuilder();
             policyCache = (PolicyCache) applicationContext.getBean( "policyCache", PolicyCache.class );
@@ -143,10 +141,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             Message response = new Message();
             response.attachHttpResponseKnob(new HttpServletResponseKnob(servletResponse));
 
-            context = new PolicyEnforcementContext(request, response);
-            context.setAuditContext(auditContext);
-            context.setSoapFaultManager(soapFaultManager);
-            context.setClusterPropertyCache(clusterPropertyCache);
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
             boolean success = false;
 
             try {
@@ -200,6 +195,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             sendExceptionFault(context, e, servletResponse);
         }
         finally {
+            auditContext.flush();
             ResourceUtils.closeQuietly(context);
         }
     }

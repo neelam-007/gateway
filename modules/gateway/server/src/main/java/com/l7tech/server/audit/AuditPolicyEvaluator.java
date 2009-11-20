@@ -6,9 +6,9 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.util.ExceptionUtils;
@@ -36,15 +36,13 @@ public class AuditPolicyEvaluator implements ApplicationListener {
 
     private final ServerConfig serverConfig;
     private final PolicyCache policyCache;
-    private final ClusterPropertyCache clusterPropertyCache;
 
     private final AtomicBoolean sinkOpen = new AtomicBoolean(false);
     private final Queue<SystemAuditRecord> startupRecords = new ConcurrentLinkedQueue<SystemAuditRecord>();
 
-    public AuditPolicyEvaluator(ServerConfig serverConfig, PolicyCache policyCache, ClusterPropertyCache clusterPropertyCache) {
+    public AuditPolicyEvaluator(ServerConfig serverConfig, PolicyCache policyCache) {
         this.serverConfig = serverConfig;
         this.policyCache = policyCache;
-        this.clusterPropertyCache = clusterPropertyCache;
     }
 
     private String loadAuditSinkPolicyGuid() {
@@ -79,10 +77,11 @@ public class AuditPolicyEvaluator implements ApplicationListener {
                 }
             }
 
-            context = new AuditSinkPolicyEnforcementContext(auditRecord, originalContext);
-            context.setAuditContext(new NullAuditContext());
+            context = new AuditSinkPolicyEnforcementContext(
+                    auditRecord,
+                    PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null ),
+                    originalContext);
             context.setAuditLevel(Level.INFO);
-            context.setClusterPropertyCache(clusterPropertyCache);
 
             // Use fake service
             final PublishedService svc = new PublishedService();
