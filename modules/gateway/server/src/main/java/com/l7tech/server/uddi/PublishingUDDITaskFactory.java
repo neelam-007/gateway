@@ -11,12 +11,12 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.Config;
 
 import javax.wsdl.WSDLException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  * No tasks are thread safe for business logic. All access to each task defined in this factory must be serialized.
@@ -24,7 +24,6 @@ import java.util.HashSet;
  * be managed correctly
  */
 public class PublishingUDDITaskFactory extends UDDITaskFactory {
-
     //- PUBLIC
 
     public PublishingUDDITaskFactory(final UDDIRegistryManager uddiRegistryManager,
@@ -32,13 +31,15 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                                      final ServiceCache serviceCache,
                                      final UDDIHelper uddiHelper,
                                      final UDDIServiceControlManager uddiServiceControlManager,
-                                     final UDDIPublishStatusManager uddiPublishStatusManager) {
+                                     final UDDIPublishStatusManager uddiPublishStatusManager,
+                                     final Config config) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.serviceCache = serviceCache;
         this.uddiHelper = uddiHelper;
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
+        this.config = config;
     }
 
     @Override
@@ -103,6 +104,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
     private final ServiceCache serviceCache;
     private final UDDIHelper uddiHelper;
     private final UDDIServiceControlManager uddiServiceControlManager;
+    private final Config config;
+    private static final Logger logger = Logger.getLogger(PublishingUDDITaskFactory.class.getName());
 
     private static final class PublishUDDIEndpointTask extends UDDITask {
         private static final Logger logger = Logger.getLogger(PublishUDDIEndpointTask.class.getName());
@@ -354,10 +357,14 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         uddiProxiedServiceInfo.getPublishedServiceOid(),
                         factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
 
+                final UDDIRegistrySpecificMetaData registrySpecificMetaData =
+                        PublishingUDDITaskFactory.getRegistrySpecificMetaData(uddiRegistry, serviceControl, factory);
+
                 final Pair<Set<String>, Set<UDDIBusinessService>> deletedAndNewServices;
                 try {
                     deletedAndNewServices = businessServicePublisher.publishServicesToUDDIRegistry(
-                            protectedServiceExternalURL, protectedServiceWsdlURL, uddiProxiedServiceInfo.getUddiBusinessKey(), serviceKeys, serviceWasOverwritten);
+                            protectedServiceExternalURL, protectedServiceWsdlURL, uddiProxiedServiceInfo.getUddiBusinessKey(),
+                            serviceKeys, serviceWasOverwritten, registrySpecificMetaData);
                 } catch (UDDIException e) {
                     PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
@@ -403,6 +410,77 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
             }
         }
+    }
+
+    /**
+     * If any UDDI Registry has meta data requirements specific to it, then here is the current place to collect
+     * that infomration from the UDDIServiceControl and UDDIRegistry. If the UDDIProxiedServiceInfo is required it
+     * can also be added as an argument
+     * 
+     * @param uddiRegistry
+     * @param serviceControl
+     * @param uddiFactory
+     * @return UDDIRegistrySpecificMetaData, not null if there are registry specific meta data requirements, null otherwise
+     */
+    private static UDDIRegistrySpecificMetaData getRegistrySpecificMetaData(final UDDIRegistry uddiRegistry,
+                                                                            final UDDIServiceControl serviceControl,
+                                                                            final PublishingUDDITaskFactory uddiFactory) {
+        final boolean isActiveSOAVirtualService = serviceControl != null &&
+                uddiRegistry.getUddiRegistryType().equals(UDDIRegistry.UDDIRegistryType.CENTRASITE_ACTIVE_SOA.toString()) &&
+                serviceControl.getUddiRegistryOid() == uddiRegistry.getOid();
+        //we know here whether the UDDIRegistry is Active SOA or not
+        //true when both the original service and proxied service will be in the same registry
+
+        if (isActiveSOAVirtualService) {
+            return new UDDIRegistrySpecificMetaData() {
+                @Override
+                public Collection<UDDIClient.UDDIKeyedReference> getBusinessServiceKeyedReferences() {
+                    final Collection<UDDIClient.UDDIKeyedReference> returnColl = new ArrayList<UDDIClient.UDDIKeyedReference>();
+
+                    //download the tmodel key for active soa
+                    final UDDIClient uddiClient = uddiFactory.uddiHelper.newUDDIClient(uddiRegistry);
+                    final String virtualKey = uddiFactory.config.getProperty("uddi.activesoa.virtual.service.tmodelkey", "uddi:9de0173b-5117-11de-8cf9-da0192ff3739");
+
+                    final boolean isValid;
+                    try {
+                        isValid = uddiClient.validateTModelExists(virtualKey);
+                    } catch (UDDIException e) {
+                        logger.log(Level.INFO, "No virtual keyed reference will be added as no tModel can be found for tModelKey: " + virtualKey);
+                        return null;
+                    }
+
+                    if(!isValid){
+                        logger.log(Level.INFO, "No virtual keyed reference will be added as no tModel can be found for tModelKey: " + virtualKey);
+                        return null;
+                    }
+
+                    final UDDIClient.UDDIKeyedReference kr =
+                            new UDDIClient.UDDIKeyedReference(virtualKey, null, "Virtual service");
+                    returnColl.add(kr);
+                    return Collections.unmodifiableCollection(returnColl);
+                }
+
+                @Override
+                public Collection<UDDIClient.UDDIKeyedReferenceGroup> getBusinessServiceKeyedReferenceGroups() {
+                    final Collection<UDDIClient.UDDIKeyedReferenceGroup> returnColl = new ArrayList<UDDIClient.UDDIKeyedReferenceGroup>();
+                    final UDDIClient.UDDIKeyedReference kr =
+                            new UDDIClient.UDDIKeyedReference("uddi:uddi.org:categorization:general_keywords",
+                                    "Contains", serviceControl.getUddiServiceKey());
+
+                    final Collection<UDDIClient.UDDIKeyedReference> allRefs = new ArrayList<UDDIClient.UDDIKeyedReference>();
+                    allRefs.add(kr);
+
+                    final UDDIClient.UDDIKeyedReferenceGroup krg =
+                            new UDDIClient.UDDIKeyedReferenceGroup("uddi:centrasite.com:attributes:relationship",
+                                    Collections.unmodifiableCollection(allRefs));
+
+                    returnColl.add(krg);
+                    return Collections.unmodifiableCollection(returnColl);
+                }
+            };
+        }
+
+        return null;
     }
 
     /**

@@ -413,6 +413,14 @@ public interface UDDIClient extends Closeable {
     UDDISubscriptionResults pollSubscription( long startTime, long endTime, String subscriptionKey ) throws UDDIException;
 
     /**
+     * Validate that a tModel exists
+     *
+     * @param tModelKey String tModelKey to validate represents a real tModel
+     * @return true if the tModel exists, false otherwise
+     */
+    boolean validateTModelExists( String tModelKey) throws UDDIException;
+
+    /**
      * Represents a UDDI KeyedReference.
      */
     static final class UDDIKeyedReference extends Triple<String,String,String> {
@@ -440,6 +448,60 @@ public interface UDDIClient extends Closeable {
 
         public String getValue() {
             return this.right;
+        }
+    }
+
+    static final class UDDIKeyedReferenceGroup{
+        private final String tModelKey;
+        private final Collection<UDDIKeyedReference> keyedReferences;
+
+        /**
+         * @param tModelKey required
+         * @param keyedReferences required, must not be empty
+         */
+        public UDDIKeyedReferenceGroup(final String tModelKey,
+                                       final Collection<UDDIKeyedReference> keyedReferences) {
+            if(tModelKey == null || tModelKey.trim().isEmpty()) throw new IllegalArgumentException("tModelKey must not be null or empty");
+            if(keyedReferences == null || keyedReferences.isEmpty()) throw new IllegalArgumentException("keyedReferences must not be null or empty");
+            
+            this.tModelKey = tModelKey;
+            this.keyedReferences = keyedReferences;
+        }
+
+        /**
+         *
+         * @return String tModelKey, never null or empty
+         */
+        public String getTModelKey() {
+            return tModelKey;
+        }
+
+        /**
+         *
+         * @return Collection UDDIKeyedReference never null or empty
+         */
+        public Collection<UDDIKeyedReference> getKeyedReferences() {
+            return keyedReferences;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            UDDIKeyedReferenceGroup that = (UDDIKeyedReferenceGroup) o;
+
+            if (!keyedReferences.equals(that.keyedReferences)) return false;
+            if (!tModelKey.equals(that.tModelKey)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = tModelKey.hashCode();
+            result = 31 * result + keyedReferences.hashCode();
+            return result;
         }
     }
 }

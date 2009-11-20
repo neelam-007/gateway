@@ -461,7 +461,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                     status != UDDIPublishStatus.PublishStatus.CANNOT_DELETE &&
                     status != UDDIPublishStatus.PublishStatus.PUBLISHED){
                 final UDDIProxiedServiceInfo info = oidToProxyServiceMap.get(publishStatus.getUddiProxiedServiceInfoOid());
-                logger.log(Level.FINER, "Creating event to update published proxy service info in UDDDI. Service #("
+                logger.log(Level.FINER, "Creating event to update published proxy service info in UDDI. Service #("
                         + info.getPublishedServiceOid()+") in status " + status.toString());
                 final UDDIServiceControl serviceControl =
                         uddiServiceControlManager.findByPublishedServiceOid(info.getPublishedServiceOid());
@@ -997,7 +997,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
         @Override
         public int getMaxRetryAttempts() {
-            return config.getIntProperty( UDDI_WSDL_PUBLISH_MAX_RETRIES, 3);
+            return config.getIntProperty( UDDI_WSDL_PUBLISH_MAX_RETRIES, 3) - 1;//the first time is the first attempt
         }
     }
 }

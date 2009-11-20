@@ -250,15 +250,14 @@ public class SearchUddiDialog extends JDialog {
                                     
                                 } catch (FindException e1) {
                                     showErrorMessage("Error getting WSDL", "Cannot get WSDL from UDDI for BusinessService: " + ExceptionUtils.getMessage(e1), e1);
-                                    return;
                                 }
-
-                            }
-                            //this will show any required warnings to the user
-                            final boolean canDispose = validateWsdlSelection(SearchUddiDialog.this, selectedWsdlInfo);
-                            if(canDispose){
-                                fireItemSelectedEvent(selectedWsdlInfo);
-                                dispose();
+                            }else{
+                                //this will show any required warnings to the user
+                                final boolean canDispose = validateWsdlSelection(SearchUddiDialog.this, selectedWsdlInfo);
+                                if(canDispose){
+                                    fireItemSelectedEvent(selectedWsdlInfo);
+                                    dispose();
+                                }
                             }
                         }
                     }

@@ -2012,6 +2012,22 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         return uddiResults;
     }
 
+    @Override
+    public boolean validateTModelExists(String tModelKey) throws UDDIException {
+        GetTModelDetail detail = new GetTModelDetail();
+        detail.setAuthInfo(getAuthToken());
+        detail.getTModelKey().add(tModelKey);
+        final TModelDetail modelDetail;
+        try {
+            modelDetail = getInquirePort().getTModelDetail(detail);
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error validating tModelKey: " + tModelKey, drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error validating tModelKey: " + tModelKey, e);
+        }
+        return !modelDetail.getTModel().isEmpty();
+    }
+
     /**
      * 
      */

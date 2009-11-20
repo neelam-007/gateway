@@ -19,6 +19,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     private List<BusinessService> dataStructureForDownloaderTest;
     private BusinessService businessServiceForTest;
     private List<TModel> tModelsForTest;
+    private boolean dontCreateFakeServices;
 
     public TestUddiClient(List<BusinessService> dataStructureForDownloaderTest) {
         this.dataStructureForDownloaderTest = dataStructureForDownloaderTest;
@@ -31,6 +32,10 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     public TestUddiClient() {
+    }
+
+    public TestUddiClient(boolean dontCreateFakeServices) {
+        this.dontCreateFakeServices = dontCreateFakeServices;
     }
 
     @Override
@@ -108,6 +113,13 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
         return null;
     }
 
+    //used to collect results after a test
+    private List<BusinessService> publishedServices = new ArrayList<BusinessService>();
+
+    public List<BusinessService> getPublishedServices() {
+        return publishedServices;
+    }
+
     @Override
     public boolean publishBusinessService(BusinessService businessService) throws UDDIException {
         final String key = "uddi:"+UUID.randomUUID();
@@ -120,6 +132,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
             bindingTemplate.setServiceKey(key);
             bindingTemplate.setBindingKey(templateKey);
         }
+        publishedServices.add(businessService);
         return true;
     }
 
@@ -157,9 +170,16 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     public List<BusinessService> getBusinessServices(Set<String> serviceKeys, boolean allowInvalidKeys) throws UDDIException {
         if (dataStructureForDownloaderTest != null) return dataStructureForDownloaderTest;
 
-        BusinessService service = new BusinessService();
-        service.setServiceKey("serviceKey");
-        return Arrays.asList(service);
+        List<BusinessService> returnColl = new ArrayList<BusinessService>();
+        if(dontCreateFakeServices) return returnColl;
+
+        for(String s: serviceKeys){
+            BusinessService service = new BusinessService();
+            service.setServiceKey(s);
+            returnColl.add(service);
+        }
+
+        return returnColl;
 
     }
 
@@ -271,5 +291,10 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     @Override
     public UDDISubscriptionResults pollSubscription( final long startTime, final long endTime, final String subscriptionKey ) throws UDDIException {
         return null;
+    }
+
+    @Override
+    public boolean validateTModelExists(String tModelKey) throws UDDIException {
+        return false;
     }
 }

@@ -47,7 +47,7 @@ public class UDDIRegistry extends NamedEntityImp {
     }
 
     private boolean isEnabled = true;
-    private String uddiRegistryType;
+    private String uddiRegistryType;//todo persist this as an enum to avoid string equals compares everywhere its used
     private String baseUrl;
     private String inquiryUrl;
     private String publishUrl;

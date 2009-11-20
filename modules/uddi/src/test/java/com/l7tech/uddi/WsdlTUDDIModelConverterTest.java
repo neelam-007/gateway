@@ -52,6 +52,30 @@ public class WsdlTUDDIModelConverterTest {
     }
 
     /**
+     * Tests that the Warehouse wsdl converts successfully and that the correct number of wsdl's and dependent
+     * tmodels are found
+     * @throws Exception
+     */
+    @Test
+    public void testBasicConvert() throws Exception{
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader( "com/l7tech/uddi/Warehouse.wsdl" ));
+
+        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+        final String gatewayURL = "http://localhost:8080/3828382";
+
+        final int serviceOid = 3828382;
+        final String businessKey = "uddi:uddi_business_key";
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
+        Assert.assertNotNull(serviceToDependentModels);
+        Assert.assertEquals("Incorrect number of business services pairs found", 1, serviceToDependentModels.size());
+        final Pair<BusinessService, Map<String, TModel>> serviceMapPair = serviceToDependentModels.iterator().next();
+        Assert.assertEquals("Incorrect number of dependent tmodels found", 4, serviceMapPair.right.size());
+    }
+    
+    /**
      * This entire test case depends on the structure of the Warehoumse.wsdl resource
      * @throws Exception
      */

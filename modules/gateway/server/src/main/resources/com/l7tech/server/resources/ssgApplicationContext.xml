@@ -1619,6 +1619,7 @@
                     <constructor-arg index="3" ref="uddiHelper" />
                     <constructor-arg index="4" ref="uddiServiceControlManager"/>
                     <constructor-arg index="5" ref="uddiPublishStatusManager"/>
+                    <constructor-arg index="6" ref="serverConfig" />
                 </bean>
                 <bean class="com.l7tech.server.uddi.WsPolicyAttachmentTaskFactory">
                     <constructor-arg index="0" ref="uddiRegistryManager"/>
