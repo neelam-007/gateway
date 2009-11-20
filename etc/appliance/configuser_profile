@@ -498,8 +498,8 @@ doHsmConfiguration() {
 }
 
 doPatchManagementMenu() {
-    isMenuValid="n"
-    while [ "$isMenuValid" != "y" ]
+    isPatchMenuValid="n"
+    while [ "$isPatchMenuValid" != "y" ]
     do
         clear
         echo "This menu allows you to manage SecureSpan patches on the"
@@ -535,7 +535,7 @@ doPatchManagementMenu() {
                     clear;;
                 x|X)
                     clear;
-                    isMenuValid="y";
+                    isPatchMenuValid="y";
                     clear;;
                 *)
                     clear;
@@ -608,8 +608,8 @@ deletePatch() {
 }
 
 doPatchUpload() {
-    isMenuValid="n"
-    while [ "$isMenuValid" != "y" ]
+    isPatchUploadMenuValid="n"
+    while [ "$isPatchUploadMenuValid" != "y" ]
     do
 
         DROPBOXPATCHES=(`find $HOME -iname "*.L7P"`)
@@ -656,7 +656,7 @@ doPatchUpload() {
                 clear;;
             x|X)
                 clear;
-                isMenuValid="y";
+                isPatchUploadMenuValid="y";
                 clear;;
             *)
                 if ! [[ "$choice" =~ ^[0-9]+$ ]] ; then
@@ -678,11 +678,11 @@ doPatchUpload() {
 }
 
 doPatchInstall() {
-    isValid="n"
+    isPatchInstallMenuValid="n"
     shouldReload="y"
 
     declare -a REGISTEREDPATCHES
-    while [ "$isValid" != "y" ]
+    while [ "$isPatchInstallMenuValid" != "y" ]
     do
         if [ "$shouldReload" == "y" ] ; then
             echo "Please wait while the list of available patches is retrieved..."
@@ -701,7 +701,7 @@ IFS='
             echo "Please use the patch management menu to register and verify a"
             echo "patch before it can be installed."
             confirmedMessage ""
-            isValid="y"
+            isPatchInstallMenuValid="y"
         else
             echo ""
             echo "The following patches are available for installation. "
@@ -725,12 +725,12 @@ IFS='
             read choice
             case $choice in
                 x|X)
-                    isValid="y";
+                    isPatchInstallMenuValid="y";
                     clear;;
                 *)
                     shouldReload="n"
                     if ! [[ "$choice" =~ ^[0-9]+$ ]] ; then
-                        isValid="n";
+                        isPatchInstallMenuValid="n";
                         confirmedMessage "That is not a valid selection";
                     else
                         patch_ids_len=${#patch_ids[*]}
@@ -741,7 +741,7 @@ IFS='
                             installPatch "$whichone"
                             shouldReload="y"
                         else
-                            isValid="n";
+                            isPatchInstallMenuValid="n";
                             confirmedMessage "That is not a valid selection";
                         fi
                     fi
@@ -785,7 +785,6 @@ IFS='
         case $choice in
             x|X)
                 clear;
-                isMenuValid="y";
                 clear;;
             *)
                 realindex=$[$choice-1]
@@ -822,8 +821,8 @@ IFS='
 checkForSca
 checkForEm
 checkForPatcher
-isValid="n"
-while [ "$isValid" != "y" ]
+isPatchListMenuValid="n"
+while [ "$isPatchListMenuValid" != "y" ]
 do
     clear
         echo "Welcome to the SecureSpan Gateway"
@@ -892,7 +891,7 @@ do
                         doPatchManagementMenu
                         clear;
                     else
-                        isValid="n";
+                        isPatchListMenuValid="n";
                         confirmedMessage "That is not a valid selection";
                     fi;;
         esac
