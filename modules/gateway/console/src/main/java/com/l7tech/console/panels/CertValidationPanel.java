@@ -41,6 +41,8 @@ public class CertValidationPanel extends WizardStepPanel {
     private void initialize() {
         add(mainPanel);
 
+        certificateIsATrustCheckBox.setSelected(true); // the default is set to be selected.
+
         setVerifySslHostnameCheckBoxEnabled(false);
 
         revocationCheckSelectedRadioButton.addChangeListener(new ChangeListener(){
@@ -88,7 +90,7 @@ public class CertValidationPanel extends WizardStepPanel {
                 TrustedCert tc = (TrustedCert) settings;
 
                 tc.setTrustAnchor(certificateIsATrustCheckBox.isSelected());
-                tc.setVerifyHostname(verifySslHostnameCheckBox.isSelected() && verifySslHostnameCheckBox.isEnabled());
+                tc.setVerifyHostname(verifySslHostnameCheckBox.isEnabled() && verifySslHostnameCheckBox.isSelected());
 
                 if (revocationCheckSelectedRadioButton.isSelected()) {
                     tc.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.SPECIFIED);
@@ -103,7 +105,14 @@ public class CertValidationPanel extends WizardStepPanel {
             }
         }
     }
+    
+    public boolean isTrustAnchor() {
+        return certificateIsATrustCheckBox.isSelected();
+    }
 
+    public boolean isVerifyHostname() {
+        return verifySslHostnameCheckBox.isEnabled() && verifySslHostnameCheckBox.isSelected();
+    }
 
     public void setVerifySslHostnameCheckBoxEnabled(boolean enabled) {
         verifySslHostnameCheckBox.setEnabled(enabled);

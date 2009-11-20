@@ -41,7 +41,7 @@ public class CertUsagePanel extends WizardStepPanel {
         ActionListener sslOptionListener = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (certValidationPanel != null)
-                    certValidationPanel.setVerifySslHostnameCheckBoxEnabled(
+                    certValidationPanel.setVerifySslHostnameCheckBoxEnabled (
                         signingServerCertCheckBox.isSelected() || outboundSSLConnCheckBox.isSelected());
             }
         };
@@ -68,7 +68,10 @@ public class CertUsagePanel extends WizardStepPanel {
                 tc.setTrustedForSigningServerCerts(signingServerCertCheckBox.isSelected());
                 tc.setTrustedForSsl(outboundSSLConnCheckBox.isSelected());
                 tc.setTrustedAsSamlAttestingEntity(samlAttestingEntityCheckBox.isSelected());
-            }
+
+                tc.setTrustAnchor(certValidationPanel == null? true : certValidationPanel.isTrustAnchor());
+                tc.setVerifyHostname(certValidationPanel == null? (tc.isTrustedForSsl() || tc.isTrustedForSigningServerCerts()) : certValidationPanel.isVerifyHostname());
+           }
         }
     }
 
