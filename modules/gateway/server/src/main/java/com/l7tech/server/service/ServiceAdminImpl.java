@@ -479,17 +479,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             sort( uddiNamedEntities );
             return uddiNamedEntities;
         } catch (UDDIException e) {
-            String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
-            if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
-                 ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
-                 ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
-                 ExceptionUtils.causedBy( e, ConnectException.class ) ||
-                 ExceptionUtils.causedBy( e, NoRouteToHostException.class )) {
-                logger.log(Level.WARNING, msg + " : '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e ))+ "'", ExceptionUtils.getDebugException( e ));
-            } else {
-                logger.log(Level.WARNING, msg, e);
-            }
-            throw new FindException(msg);
+            throw buildFindException(e);
         }
     }
 
@@ -504,17 +494,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             sort( uddiNamedEntities );
             return uddiNamedEntities;
         } catch (UDDIException e) {
-            String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
-            if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
-                 ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
-                 ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
-                 ExceptionUtils.causedBy( e, ConnectException.class ) ||
-                 ExceptionUtils.causedBy( e, NoRouteToHostException.class )) {
-                logger.log(Level.WARNING, msg + " : '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e ))+ "'", ExceptionUtils.getDebugException( e ));
-            } else {
-                logger.log(Level.WARNING, msg, e);
-            }
-            throw new FindException(msg);
+            throw buildFindException(e);
         }
     }
 
@@ -545,17 +525,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             }, false));
             return wsdlPortInfoInfo;
         } catch (UDDIException e) {
-            String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
-            if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
-                 ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
-                 ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
-                 ExceptionUtils.causedBy( e, ConnectException.class ) ||
-                 ExceptionUtils.causedBy( e, NoRouteToHostException.class )) {
-                logger.log(Level.WARNING, msg + " : '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e ))+ "'", ExceptionUtils.getDebugException( e ));
-            } else {
-                logger.log(Level.WARNING, msg, e);
-            }
-            throw new FindException(msg);
+            throw buildFindException(e);
         }
     }
 
@@ -580,18 +550,24 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             }, false));
             return wsdlPortInfoInfo;
         } catch (UDDIException e) {
-            String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
-            if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
-                 ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
-                 ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
-                 ExceptionUtils.causedBy( e, ConnectException.class ) ||
-                 ExceptionUtils.causedBy( e, NoRouteToHostException.class )) {
-                logger.log(Level.WARNING, msg + " : '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e ))+ "'", ExceptionUtils.getDebugException( e ));
-            } else {
-                logger.log(Level.WARNING, msg, e);
-            }
-            throw new FindException(msg);
+            throw buildFindException(e);
         }
+    }
+
+    private FindException buildFindException(UDDIException e)  {
+        String msg = "Error searching UDDI registry: "+ ExceptionUtils.getMessage(e);
+        if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
+             ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
+             ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
+             ExceptionUtils.causedBy( e, ConnectException.class ) ||
+             ExceptionUtils.causedBy( e, NoRouteToHostException.class)  ||
+             ExceptionUtils.causedBy( e, SocketTimeoutException.class )) {
+            msg = msg + " Caused by '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e )) + "'";
+            logger.log(Level.WARNING, msg , ExceptionUtils.getDebugException( e ));
+        } else {
+            logger.log(Level.WARNING, msg, e);
+        }
+        return new FindException(msg);
     }
 
     private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {

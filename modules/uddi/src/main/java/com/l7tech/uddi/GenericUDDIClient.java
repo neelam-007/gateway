@@ -826,9 +826,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             }
             return returnColl;
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error listing services: ", drfm);
+            throw buildFaultException("Error listing wsdl ports: ", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error listing services.", e);
+            throw new UDDIException("Error listing wsdl ports.", e);
         }
     }
 

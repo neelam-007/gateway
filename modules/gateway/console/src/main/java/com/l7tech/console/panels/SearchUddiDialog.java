@@ -371,7 +371,7 @@ public class SearchUddiDialog extends JDialog {
                             return null;
                         } catch (FindException e) {
                             logger.log(Level.WARNING, errorMessage, e);
-                            JOptionPane.showMessageDialog(SearchUddiDialog.this, "Find Exception, " + e.getMessage(), "Search UDDI Registry", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(SearchUddiDialog.this, e.getMessage(), "Error Searching UDDI Registry", JOptionPane.ERROR_MESSAGE);
                             return null;
                         }
                     }
