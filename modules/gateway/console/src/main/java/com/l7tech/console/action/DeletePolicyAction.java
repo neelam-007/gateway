@@ -43,6 +43,7 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
         super(en, confirmationEnabled);
     }
 
+    @Override
     protected OperationType getOperation() {
         return OperationType.DELETE;
     }
@@ -71,6 +72,7 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
         return "com/l7tech/console/resources/delete.gif";
     }
 
+    @Override
     public boolean deleteEntity(){
         final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
         Object userObj = node.getUserObject();
@@ -115,11 +117,13 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
         return msg;
     }
 
+    @Override
     public String getUserConfirmationMessage() {
         final String nodeName = node.getName().length() > 43 ? node.getName().substring(0, 40) +  "..." : node.getName();
         return "Are you sure you want to delete the '" + nodeName + "' policy?";
     }
 
+    @Override
     public String getUserConfirmationTitle() {
         return "Delete Policy";
     }

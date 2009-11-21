@@ -3,6 +3,7 @@ package com.l7tech.server.uddi;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
@@ -423,5 +424,21 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     private void throwIfGatewayNotEnabled(UDDIRegistry uddiRegistry) throws UDDIRegistryNotEnabledException {
         if(!uddiRegistry.isEnabled())
             throw new UDDIRegistryNotEnabledException("UDDIRegistry with id #(" + uddiRegistry.getOid() + ") is not enabled");
+    }
+
+    @Override
+    public Collection<ServiceHeader> getServicesPublishedToUDDI(Collection<Long> allServiceIds) throws FindException {
+        if(allServiceIds == null) throw new NullPointerException("allServiceIds cannot be null");
+
+        final Collection<ServiceHeader> returnColl = new HashSet<ServiceHeader>();
+        for(Long oid: allServiceIds){
+            if(uddiProxiedServiceInfoManager.findByPublishedServiceOid(oid) != null){
+                final PublishedService publishedService = serviceCache.getCachedService(oid);
+                final ServiceHeader serviceHeader = new ServiceHeader(publishedService);
+                returnColl.add(serviceHeader);
+            }
+        }
+
+        return Collections.unmodifiableCollection(returnColl);
     }
 }

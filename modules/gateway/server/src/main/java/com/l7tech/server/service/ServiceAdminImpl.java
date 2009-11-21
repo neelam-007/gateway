@@ -555,14 +555,14 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     private FindException buildFindException(UDDIException e)  {
-        String msg = "Error searching UDDI registry: "+ ExceptionUtils.getMessage(e);
+        String msg = "Error searching UDDI registry: "+ ExceptionUtils.getMessage(e)+".";
         if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
              ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
              ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
              ExceptionUtils.causedBy( e, ConnectException.class ) ||
              ExceptionUtils.causedBy( e, NoRouteToHostException.class)  ||
              ExceptionUtils.causedBy( e, SocketTimeoutException.class )) {
-            msg = msg + " Caused by '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e )) + "'";
+            msg = msg + ". Caused by '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e )) + "'";
             logger.log(Level.WARNING, msg , ExceptionUtils.getDebugException( e ));
         } else {
             logger.log(Level.WARNING, msg, e);

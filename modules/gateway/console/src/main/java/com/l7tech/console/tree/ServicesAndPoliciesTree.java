@@ -12,8 +12,10 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.policy.PolicyHeader;
@@ -166,45 +168,151 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
          */
         @Override
         public void keyPressed(KeyEvent e) {
-            JTree tree = (JTree)e.getSource();
+            JTree tree = (JTree) e.getSource();
             // Sometimes, multiple items (folders, published services, policies, or aliases) are selected.
-            List<AbstractTreeNode> abstractTreeNodes = ((ServicesAndPoliciesTree)tree).getSmartSelectedNodes();
+            final List<AbstractTreeNode> abstractTreeNodes = ((ServicesAndPoliciesTree) tree).getSmartSelectedNodes();
             if (abstractTreeNodes == null || abstractTreeNodes.isEmpty()) return;
 
-            boolean hasMultipleSelection = abstractTreeNodes.size() > 1;
+            final boolean hasMultipleSelection = abstractTreeNodes.size() > 1;
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
                 if (hasMultipleSelection) {
-                    int result = JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                        "Are you sure you want to delete multiple selected targets?",
-                        "Multi-deletion Confirmation",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE);
-                    if(result != JOptionPane.YES_OPTION) {
-                        return;
-                    }
+                    DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                            "Are you sure you want to delete multiple selected targets?",
+                            "Multi-deletion Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,
+                            new DialogDisplayer.OptionListener() {
+                                @Override
+                                public void reportResult(int option) {
+                                    if (option == JOptionPane.YES_OPTION) {
+                                        handleMultipleEntityDelete(abstractTreeNodes);
+                                    }
+                                }
+                            });
                 }
 
-                boolean confirmationEnabled = !hasMultipleSelection;
-                for (AbstractTreeNode node: abstractTreeNodes) {
-                    if (!node.canDelete()) return;
-                    if (node instanceof ServiceNodeAlias) {
-                        new DeleteServiceAliasAction((ServiceNodeAlias)node, confirmationEnabled).actionPerformed(null);
-                    } else if (node instanceof ServiceNode) {
-                        new DeleteServiceAction((ServiceNode)node, confirmationEnabled).actionPerformed(null);
-                    } else if (node instanceof PolicyEntityNodeAlias) {
-                        new DeletePolicyAliasAction((PolicyEntityNodeAlias)node, confirmationEnabled).actionPerformed(null);
-                    } else if (node instanceof EntityWithPolicyNode) {
-                        new DeletePolicyAction((PolicyEntityNode)node, confirmationEnabled).actionPerformed(null);
-                    } else if (node instanceof FolderNode) {
-                        FolderNode folderNode = (FolderNode) node;
-                        new DeleteFolderAction(folderNode.getOid(), node, Registry.getDefault().getFolderAdmin(), confirmationEnabled).actionPerformed(null);
-                    }
-                }
             } else if (keyCode == KeyEvent.VK_ENTER && !hasMultipleSelection) {
                 AbstractTreeNode node = abstractTreeNodes.get(0);
                 if (node instanceof EntityWithPolicyNode)
-                    new EditPolicyAction((EntityWithPolicyNode)node).actionPerformed(null);
+                    new EditPolicyAction((EntityWithPolicyNode) node).actionPerformed(null);
+            }
+        }
+    }
+
+    private void handleMultipleEntityDelete(final List<AbstractTreeNode> abstractTreeNodes){
+        final Set<Long> allServicesInUddi = new HashSet<Long>();
+        //find out if any have uddi data
+        for(AbstractTreeNode abstractTreeNode: abstractTreeNodes){
+            if(abstractTreeNode instanceof ServiceNode){
+                final ServiceNode serviceNode = (ServiceNode) abstractTreeNode;
+                try {
+                    allServicesInUddi.add(serviceNode.getEntity().getOid());
+                } catch (FindException e1) {
+                    log.log(Level.WARNING, e1.getMessage(), e1);
+                    throw new RuntimeException(e1);
+                }
+            }
+        }
+
+        final Collection<ServiceHeader> servicesInUDDI;
+        try {
+            if(!allServicesInUddi.isEmpty()){
+                servicesInUDDI = Registry.getDefault().getUDDIRegistryAdmin().getServicesPublishedToUDDI(allServicesInUddi);
+            }else{
+                servicesInUDDI = Collections.emptySet();
+            }
+
+        } catch (FindException e) {
+            log.log(Level.WARNING, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+
+        if (!servicesInUDDI.isEmpty()) {
+            final JTextArea textArea = new JTextArea();
+            textArea.setEditable(false);
+            textArea.setEnabled(true);
+            final StringBuilder builder = new StringBuilder();
+            builder.append("The following services have published data to UDDI:\n");
+
+            final Set<Long> allOids = new HashSet<Long>();
+            for(ServiceHeader header: servicesInUDDI){
+                builder.append(header.getDisplayName());
+                builder.append("\n");
+                allOids.add(header.getOid());
+            }
+            textArea.setText(builder.toString());
+            final JScrollPane jScrollPane = new JScrollPane();
+            jScrollPane.setViewportView(textArea);
+            jScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+            final ButtonGroup buttonGroup= new ButtonGroup();
+            final JRadioButton deleteAll = new JRadioButton("Delete all selected");
+            buttonGroup.add(deleteAll);
+            final JRadioButton onlyNonUDDI = new JRadioButton("Delete all apart from those published to UDDI");
+            buttonGroup.add(onlyNonUDDI);
+            onlyNonUDDI.setSelected(true);
+            final JPanel radioPanel = new JPanel();
+            radioPanel.setLayout(new GridLayout(2, 2));
+            radioPanel.add(onlyNonUDDI);
+            radioPanel.add(deleteAll);
+
+            final JPanel container = new JPanel();
+            container.setLayout(new BorderLayout());
+            container.add(jScrollPane, BorderLayout.CENTER);
+            container.add(radioPanel, BorderLayout.SOUTH);
+
+            container.setPreferredSize(new Dimension(600, 200));
+            DialogDisplayer.showOptionDialog(TopComponents.getInstance().getTopParent(),
+                    "Confirm whether all selected services should be deleted or just those which have not published data to UDDI.\n" +
+                            "If all services are deleted then data will be orphaned in UDDI.",
+                    "Services have published data to UDDI", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null,
+                    new Object[]{container, "Ok", "Cancel"}, null, new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(int option) {
+                            if (option == 1) {//ok
+                                if(deleteAll.isSelected()){
+                                    deleteMultipleEntities(abstractTreeNodes);
+                                }else{
+                                    final List<AbstractTreeNode> subset = new ArrayList<AbstractTreeNode>();
+                                    for(AbstractTreeNode abstractTreeNode: abstractTreeNodes){
+                                        if(abstractTreeNode instanceof ServiceNode){
+                                            ServiceNode serviceNode = (ServiceNode) abstractTreeNode;
+                                            try {
+                                                final PublishedService service = serviceNode.getEntity();
+                                                if(allOids.contains(service.getOid())) continue;
+                                            } catch (FindException e) {
+                                                log.log(Level.WARNING, e.getMessage(), e);
+                                                throw new RuntimeException(e);
+                                            }
+                                        }
+                                        subset.add(abstractTreeNode);
+                                    }
+                                    deleteMultipleEntities(subset);
+                                }
+                            }
+                            //else nothing to do
+                        }
+                    });
+        } else {
+            deleteMultipleEntities(abstractTreeNodes);
+        }
+    }
+
+    private void deleteMultipleEntities(final List<AbstractTreeNode> abstractTreeNodes){
+        final boolean confirmationEnabled = abstractTreeNodes.size() <= 1;
+
+        for (AbstractTreeNode node: abstractTreeNodes) {
+            if (!node.canDelete()) return;
+            if (node instanceof ServiceNodeAlias) {
+                new DeleteServiceAliasAction((ServiceNodeAlias)node, confirmationEnabled).actionPerformed(null);
+            } else if (node instanceof ServiceNode) {
+                new DeleteServiceAction((ServiceNode)node, confirmationEnabled).actionPerformed(null);
+            } else if (node instanceof PolicyEntityNodeAlias) {
+                new DeletePolicyAliasAction((PolicyEntityNodeAlias)node, confirmationEnabled).actionPerformed(null);
+            } else if (node instanceof EntityWithPolicyNode) {
+                new DeletePolicyAction((PolicyEntityNode)node, confirmationEnabled).actionPerformed(null);
+            } else if (node instanceof FolderNode) {
+                FolderNode folderNode = (FolderNode) node;
+                new DeleteFolderAction(folderNode.getOid(), node, Registry.getDefault().getFolderAdmin(), confirmationEnabled).actionPerformed(null);
             }
         }
     }

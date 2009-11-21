@@ -7,16 +7,23 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
+import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.Collection;
+import java.util.logging.Level;
 
 /**
  * Abstract class which implements the logic of deleting an entity whether it's a service, policy or an alias of
@@ -34,6 +41,7 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
         this.confirmationEnabled = confirmationEnabled;
     }
 
+    @Override
     protected OperationType getOperation() {
         return OperationType.DELETE;
     }
@@ -42,17 +50,20 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
      * Removing super impl by making abstract, forcing subclass to implement it
      * @return String name of the entity being deleted 
      */
+    @Override
     public abstract String getName();
 
     /**
      * Removing super impl by making abstract, forcing subclass to implement it
      * @return String description of the entity being deleted
      */
+    @Override
     public abstract String getDescription();
 
     /**
      * subclasses override this method specifying the resource name
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/delete.gif";
     }
@@ -78,22 +89,57 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         if (! confirmationEnabled) {
             deleteEntityNode();
             return;
         }
 
+        boolean isPublishedToUddi = false;
+        if(node instanceof ServiceNode){
+            final ServiceNode serviceNode = (ServiceNode) node;            
+            //if confirmation is enabled, it means that it's a single delete, so we should check if UDDI has data
+            final Set<Long> serviceOidSet = new HashSet<Long>();
+            try {
+                serviceOidSet.add(serviceNode.getEntity().getOid());
+                final Collection<ServiceHeader> headers = Registry.getDefault().getUDDIRegistryAdmin().getServicesPublishedToUDDI(serviceOidSet);
+                isPublishedToUddi = !headers.isEmpty();
+            } catch (FindException e) {
+                log.log(Level.WARNING, e.getMessage(), e);
+                throw new RuntimeException(e);
+            }
+        }
+
+        if(isPublishedToUddi){
+            DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                    "Service has published information to UDDI. If service is deleted, data will be left in UDDI. Continue?",
+                    "Services have published data to UDDI",
+                    JOptionPane.WARNING_MESSAGE, new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(int option) {
+                            if(option != JOptionPane.YES_OPTION) return;
+                            handleDeleteAction();
+                        }
+                    });
+        }else{
+            handleDeleteAction();
+        }
+    }
+
+    private void handleDeleteAction(){
         final String message = getUserConfirmationMessage();
         final String title = getUserConfirmationTitle();
-        
+
         Actions.getUserConfirmationAndCallBack(message, title, new Functions.UnaryVoid<Boolean>() {
+            @Override
             public void call(Boolean confirmed) {
                 if (!confirmed) return;
 
                 Registry.getDefault().getSecurityProvider().refreshPermissionCache();
 
                 Runnable runnable = new Runnable() {
+                    @Override
                     public void run() {
                         deleteEntityNode();
                     }

@@ -40,6 +40,7 @@ public final class DeleteServiceAction extends DeleteEntityNodeAction<ServiceNod
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Delete Service";
     }
@@ -47,19 +48,23 @@ public final class DeleteServiceAction extends DeleteEntityNodeAction<ServiceNod
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "Delete the Web service";
     }
 
+    @Override
     public String getUserConfirmationMessage() {
         final String nodeName = node.getName().length() > 43 ? node.getName().substring(0, 40) +  "..." : node.getName();
         return "Are you sure you want to delete the '" + nodeName + "' service?";
     }
 
+    @Override
     public String getUserConfirmationTitle() {
         return "Delete Service";
     }
 
+    @Override
     public boolean deleteEntity(){
         final ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
         Object userObj = node.getUserObject();

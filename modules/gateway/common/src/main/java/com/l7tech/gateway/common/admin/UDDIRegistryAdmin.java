@@ -17,6 +17,7 @@ import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.uddi.UDDIException;
 
@@ -255,6 +256,16 @@ public interface UDDIRegistryAdmin {
     @Secured(types={EntityType.UDDI_SERVICE_CONTROL}, stereotype= MethodStereotype.FIND_ENTITIES)
     Collection<UDDIServiceControl> getAllServiceControlsForRegistry(long registryOid) throws FindException;
 
+    /**
+     * Get the list of services headers from the supplied list which have information published to UDDI
+     *
+     * @param allServiceIds Collection Long oids of services to query for. Required, cannot be null
+     * @return Collection ServiceHeader of all services which have data in UDDI. Can be empty, never null
+     * @throws FindException any db problems
+     */
+    @Transactional(readOnly=true)
+    @Secured(types={EntityType.SERVICE}, stereotype= MethodStereotype.FIND_ENTITIES)
+    Collection<ServiceHeader> getServicesPublishedToUDDI(Collection<Long> allServiceIds) throws FindException;
 
     static class PublishProxiedServiceException extends Exception{
         public PublishProxiedServiceException(String message) {
