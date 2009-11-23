@@ -162,6 +162,7 @@ public class JmsQueuesWindow extends JDialog {
             }
         });
         filterPanel.add(filterButton);
+        getRootPane().setDefaultButton(filterButton);
 
         return filterPanel;
     }
