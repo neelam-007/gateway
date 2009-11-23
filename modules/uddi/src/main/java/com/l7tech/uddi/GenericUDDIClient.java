@@ -927,7 +927,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             categoryBag.getKeyedReference().add(keyedReference);
             findService.setCategoryBag(categoryBag);
 
-
             logger.log(Level.FINEST, "Searching BusinessServices");
             final ServiceList serviceList = inquiryPort.findService(findService);
             logger.log(Level.FINEST, "Got BusinessServices");

@@ -8,6 +8,7 @@ import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.wsdl.Wsdl;
 
 import javax.wsdl.WSDLException;
@@ -30,6 +31,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     final private UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager;
     final private UDDICoordinator uddiCoordinator;
     final private ServiceCache serviceCache;
+    final private ServiceManager sericeManager;
 
     public UDDIRegistryAdminImpl(final UDDIRegistryManager uddiRegistryManager,
                                  final UDDIHelper uddiHelper,
@@ -38,7 +40,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                  final ServiceCache serviceCache,
                                  final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
                                  final UDDIPublishStatusManager uddiPublishStatusManager,
-                                 final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager) {
+                                 final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager,
+                                 final ServiceManager sericeManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiHelper = uddiHelper;
         this.uddiServiceControlManager = uddiServiceControlManager;
@@ -47,6 +50,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
         this.uddiServiceControlMonitorRuntimeManager = uddiServiceControlMonitorRuntimeManager;
+        this.sericeManager = sericeManager;
     }
 
     @Override
@@ -265,6 +269,14 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             //Create the monitor runtime record for this service control as it has just been created
             final UDDIServiceControlMonitorRuntime monitorRuntime = new UDDIServiceControlMonitorRuntime(oid, lastUddiMonitoredTimeStamp);
             uddiServiceControlMonitorRuntimeManager.save(monitorRuntime);
+            final String routingUrl = uddiServiceControl.getAccessPointUrl();
+            if(routingUrl != null && !routingUrl.trim().isEmpty()) {
+                final PublishedService upToDateService = sericeManager.findByPrimaryKey(service.getOid());
+                if(upToDateService != null){
+                    upToDateService.setDefaultRoutingUrl(routingUrl);
+                    sericeManager.update(upToDateService);
+                }
+            }
             return oid;
         }else{
             UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());

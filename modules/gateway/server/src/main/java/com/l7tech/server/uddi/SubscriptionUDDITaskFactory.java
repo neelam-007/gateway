@@ -559,7 +559,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                         serviceControl.getUddiServiceKey(), serviceControl.getWsdlPortName(), serviceControl.getWsdlPortBinding());
                             } catch (UDDIException e) {
                                 context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
-                                        "Could not find UDDI bindingTemplate implement wsdl:binding "
+                                        "Could not find a UDDI bindingTemplate that implements wsdl:binding "
                                                 + serviceControl.getWsdlPortBinding() + " for serviceKey: " + serviceControl.getUddiServiceKey());
                             }
 
