@@ -56,12 +56,12 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         // Analyze the result type and perform a corresponding action.
         if (result instanceof String) {
-            auditor.logAndAudit(AssertionMessages.MCM_QUERYING_FAILURE_ASSERTION_FAILED, (String)result);
+            auditor.logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, (String)result);
             return AssertionStatus.FAILED;
         } else if (result instanceof Integer) {
             int num = (Integer)result;
             if (num == 0 && assertion.isAssertionFailureEnabled()) {
-                auditor.logAndAudit(AssertionMessages.MCM_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
+                auditor.logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
                 return AssertionStatus.FAILED;
             } else {
                 context.setVariable(getVaraiblePrefix(context) + "." + JdbcQueryAssertion.VARIABLE_COUNT, result);
@@ -71,11 +71,11 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 int affectedRows = setContextVariables((SqlRowSet)result, context);
 
                 if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
-                    auditor.logAndAudit(AssertionMessages.MCM_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
+                    auditor.logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
                     return AssertionStatus.FAILED;
                 }
             } catch (SQLException e) {
-                auditor.logAndAudit(AssertionMessages.MCM_QUERYING_FAILURE_ASSERTION_FAILED, e.getMessage());
+                auditor.logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, e.getMessage());
                 return AssertionStatus.FAILED;
             }
         } else {

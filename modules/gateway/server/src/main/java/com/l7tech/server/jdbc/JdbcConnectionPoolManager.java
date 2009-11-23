@@ -61,7 +61,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         try {
             initJndiContext();
         } catch (NamingException e) {
-            auditor.logAndAudit(AssertionMessages.MCM_CANNOT_START_POOLING, "unable to initialize a JNDI context");
+            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_START_POOLING, "unable to initialize a JNDI context");
             return;
         }
 
@@ -69,7 +69,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         try {
             allJdbcConns = jdbcConnectionManager.findAll();
         } catch (FindException e) {
-            auditor.logAndAudit(AssertionMessages.MCM_CANNOT_START_POOLING, " unable to find JDBC connections");
+            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_START_POOLING, " unable to find JDBC connections");
             return;
         }
 
@@ -77,7 +77,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             try {
                 updateConnectionPool(connection, false); // All known exceptions have been handled in the method updateConnectionPool.
             } catch (Throwable e) {
-                auditor.logAndAudit(AssertionMessages.MCM_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), e.getClass().getSimpleName() + " occurs");
+                auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), e.getClass().getSimpleName() + " occurs");
             }
         }
     }
@@ -90,7 +90,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
     public Pair<ComboPooledDataSource, String> updateConnectionPool(JdbcConnection connection, boolean isForTesting) {
         // Check if the JDBC connection is disabled or not
         if (!connection.isEnabled() && !isForTesting) {
-            auditor.logAndAudit(AssertionMessages.MCM_CONNECTION_DISABLED, connection.getName());
+            auditor.logAndAudit(AssertionMessages.JDBC_CONNECTION_DISABLED, connection.getName());
             return new Pair<ComboPooledDataSource, String>(null, null);
         }
 
@@ -102,7 +102,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             ds = null;
         } catch (NamingException e) {
             String errMsg = "Error lookup a data source binded with a JDBC connection name, " + connection.getName();
-            auditor.logAndAudit(AssertionMessages.MCM_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
+            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
             return new Pair<ComboPooledDataSource, String>(null, errMsg);
         }
 
@@ -113,7 +113,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
                     setDataSourceByJdbcConnection((ComboPooledDataSource)ds, connection);
                 } catch (InvalidPropertyException e) {
                     String errMsg = e.getMessage();
-                    auditor.logAndAudit(AssertionMessages.MCM_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
+                    auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
                     return new Pair<ComboPooledDataSource, String>(null, errMsg);
                 }
                 // Rebind the data source
@@ -121,13 +121,13 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
                     context.rebind(connection.getName(), ds);
                 } catch (NamingException e) {
                     String errMsg = "Error rebind a data source with a JDBC connection name, " + connection.getName();
-                    auditor.logAndAudit(AssertionMessages.MCM_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
+                    auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
                     return new Pair<ComboPooledDataSource, String>(null, errMsg);
                 }
                 return new Pair<ComboPooledDataSource, String>((ComboPooledDataSource)ds, null);
             } else {
                 String errMsg = "The connection pool is not a C3P0 pool.";
-                auditor.logAndAudit(AssertionMessages.MCM_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
+                auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
                 return new Pair<ComboPooledDataSource, String>(null, errMsg);
             }
         }
@@ -138,7 +138,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             setDataSourceByJdbcConnection(cpds, connection);
         } catch (InvalidPropertyException e) {
             String errMsg = e.getMessage();
-            auditor.logAndAudit(AssertionMessages.MCM_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
+            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
             return new Pair<ComboPooledDataSource, String>(null, errMsg);
         }
 
@@ -148,7 +148,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
                 context.bind(connection.getName(), cpds);
             } catch (NamingException e) {
                 String errMsg = "Error bind a data source with a JDBC connection name, " + connection.getName();
-                auditor.logAndAudit(AssertionMessages.MCM_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
+                auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
                 return new Pair<ComboPooledDataSource, String>(null, errMsg);
             }
         }
@@ -196,7 +196,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             cpds = (ComboPooledDataSource)context.lookup(connection.getName());
         } catch (NamingException e) {
             String errMsg = "Error lookup a data source by a JDBC connection name, " + connection.getName();
-            auditor.logAndAudit(AssertionMessages.MCM_CANNOT_DELETE_CONNECTION_POOL, connection.getName(), errMsg);
+            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_DELETE_CONNECTION_POOL, connection.getName(), errMsg);
             return;
         }
 
@@ -207,7 +207,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             context.unbind(connection.getName());
         } catch (NamingException e) {
             String errMsg = "Error unbind a data source with a JDBC connection name, " + connection.getName();
-            auditor.logAndAudit(AssertionMessages.MCM_CANNOT_DELETE_CONNECTION_POOL, connection.getName(), errMsg);
+            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_DELETE_CONNECTION_POOL, connection.getName(), errMsg);
         }
     }
 
