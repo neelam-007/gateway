@@ -10,6 +10,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeoutExecutor;
 import com.l7tech.message.Message;
@@ -17,6 +18,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Ignore;
 import static junit.framework.Assert.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -27,6 +29,7 @@ import java.util.concurrent.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -183,6 +186,129 @@ public class ServerRateLimitAssertionTest {
     static final ConcurrentHashMap<Treq, Object> running = new ConcurrentHashMap<Treq, Object>();
 
     @Test
+    @BugNumber(8090)
+    public void testSimpleFailLimitNoSleepNoBurst() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setMaxRequestsPerSecond(25);
+        rla.setShapeRequests(false);
+        rla.setHardLimit(true);
+        rla.setCounterName("MyTestCounter-23423");
+        rla.setMaxConcurrency(0);
+        ServerAssertion ass = makePolicy(rla);
+
+        clock.sync();
+        for (int i = 0; i < 2500; ++i) {
+            assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+            assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+            assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+            assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+            assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+            clock.advanceByNanos(ServerRateLimitAssertion.NANOS_PER_SECOND / 25);
+        }
+    }
+
+    @Test
+    @BugNumber(8090)
+    public void testSimpleFailLimitNoSleepNoBurst_moreIterations() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setMaxRequestsPerSecond(25);
+        rla.setShapeRequests(false);
+        rla.setHardLimit(true);
+        rla.setCounterName("MyTestCounter-211-43636536");
+        rla.setMaxConcurrency(0);
+        ServerAssertion ass = makePolicy(rla);
+
+        final AtomicInteger successCount = new AtomicInteger(0);
+        final AtomicInteger attemptCount = new AtomicInteger(0);
+        long nanosPerTick = ServerRateLimitAssertion.NANOS_PER_SECOND / 733;
+
+        clock.sync();
+        for (int i = 0; i < 733; ++i) {
+            attemptCount.incrementAndGet();
+            if (AssertionStatus.NONE.equals(ass.checkRequest(makeContext())))
+                successCount.incrementAndGet();
+            clock.advanceByNanos(nanosPerTick);
+        }
+
+        assertEquals(26L, successCount.get());
+    }
+
+    @Ignore("Enable this test to perform an expensive verification that rate limits with many failures work correctly with concurrency")
+    @Test
+    @BugNumber(8090)
+    public void testMultiThreadSimpleFailNoSleepNoBurst() throws Exception {
+        clock.sync();
+        final long origNanoTime = clock.nanoTime();
+        final AtomicBoolean needTicker = new AtomicBoolean(false);
+        final AtomicInteger successCount = new AtomicInteger(0);
+        final AtomicInteger attemptCount = new AtomicInteger(0);
+        final int maxReqPerSec = 100;
+
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    doRun();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public void doRun() throws Exception {
+                RateLimitAssertion rla = new RateLimitAssertion();
+                rla.setMaxRequestsPerSecond(maxReqPerSec);
+                rla.setShapeRequests(false);
+                rla.setHardLimit(true);
+                rla.setCounterName("MyTestCounter-44-2923847");
+                rla.setMaxConcurrency(0);
+                ServerAssertion ass = makePolicy(rla);
+
+                // Only one ticker thread
+                final boolean isTicker = needTicker.compareAndSet(false, true);
+                long nanosPerTick = ServerRateLimitAssertion.NANOS_PER_SECOND / 700;
+
+                for (int i = 0; i < 1000; ++i) {
+                    attemptCount.incrementAndGet();
+                    if (AssertionStatus.NONE.equals(ass.checkRequest(makeContext())))
+                        successCount.incrementAndGet();
+                    attemptCount.incrementAndGet();
+                    if (AssertionStatus.NONE.equals(ass.checkRequest(makeContext())))
+                        successCount.incrementAndGet();
+                    if (isTicker)
+                        clock.advanceByNanos(nanosPerTick);
+                    attemptCount.incrementAndGet();
+                    if (AssertionStatus.NONE.equals(ass.checkRequest(makeContext())))
+                        successCount.incrementAndGet();
+                    attemptCount.incrementAndGet();
+                    if (AssertionStatus.NONE.equals(ass.checkRequest(makeContext())))
+                        successCount.incrementAndGet();
+                    attemptCount.incrementAndGet();
+                    if (AssertionStatus.NONE.equals(ass.checkRequest(makeContext())))
+                        successCount.incrementAndGet();
+                    if (isTicker)
+                        clock.advanceByNanos(nanosPerTick);
+                }
+            }
+        };
+
+
+        BenchmarkRunner br = new BenchmarkRunner(r, 25, 5, "ratebench");
+        br.run();
+
+        System.out.println("Total requests attempted: " + attemptCount.get());
+        int successes = successCount.get();
+        System.out.println("Total requests succeeded: " + successes);
+        double seconds = ((double)(clock.nanoTime() - origNanoTime)) / ServerRateLimitAssertion.NANOS_PER_SECOND;
+        System.out.println("Total time spent (virtual): " + seconds + " sec");
+        double effectiveReqPerSec = successes / seconds;
+        System.out.println("Effective requests per second: " + effectiveReqPerSec);
+        System.out.println("Expected requests per second limit: " + maxReqPerSec);
+        assertTrue("Actual effective successful requests per second should be within 20% of rate limit",
+                Math.abs(maxReqPerSec - effectiveReqPerSec) < maxReqPerSec * 0.2); // Permitted to be off by up to 20% only
+
+    }
+
+    @Test
     public void testSimpleRateLimit() throws Exception {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setHardLimit(false);
@@ -190,6 +316,7 @@ public class ServerRateLimitAssertionTest {
         rla.setMaxRequestsPerSecond(3);
         ServerAssertion ass = makePolicy(rla);
 
+        clock.sync();
         assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
         assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
         assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));

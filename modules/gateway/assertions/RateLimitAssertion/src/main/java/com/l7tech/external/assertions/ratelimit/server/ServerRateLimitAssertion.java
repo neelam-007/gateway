@@ -38,7 +38,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final int MAX_REQUESTS_PER_SECOND = 80220368; // Limit to 80million requests per second limit to avoid nanosecond overflow
     private static final long NANOS_PER_MILLI = 1000000L;  // Number of nanoseconds in one millisecond
     private static final long MILLIS_PER_SECOND = 1000L;
-    private static final long NANOS_PER_SECOND = MILLIS_PER_SECOND * NANOS_PER_MILLI;
+    static final long NANOS_PER_SECOND = MILLIS_PER_SECOND * NANOS_PER_MILLI;
     private static final long CLUSTER_POLL_INTERVAL = 43 * MILLIS_PER_SECOND; // Check every 43 seconds to see if cluster size has changed
     private static final int DEFAULT_MAX_QUEUED_THREADS = 20;
     private static final int DEFAULT_CLEANER_PERIOD = 13613;
@@ -149,7 +149,6 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
         private synchronized long spendMilli(long now, long pointsPerSecond, long maxPoints) {
             // First add points for time passed
-            lastUsed = now;
             long idleMs;
             if (lastSpentMillis > now) {
                 // Millisecond clock changed -- ntp adjustment?  shouldn't happen
@@ -168,18 +167,17 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 newPoints -= POINTS_PER_REQUEST;
                 points = newPoints;
                 lastSpentMillis = now;
+                lastUsed = now;
                 return 0;
             }
 
             // Needs more points
-            points = newPoints;
             return POINTS_PER_REQUEST - newPoints;
         }
 
         private synchronized long spendNano(long now, long pointsPerSecond, long maxPoints) {
             // First add points for time passed
             final long maxIdleNanos = MAX_IDLE_TIME * NANOS_PER_MILLI;
-            lastUsed = now;
             final long nanoNow = clock.nanoTime();
             long idleNanos;
             if (lastSpentNanos == Long.MIN_VALUE) {
@@ -209,12 +207,12 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 // Spend-n-send
                 newPoints -= POINTS_PER_REQUEST;
                 points = newPoints;
+                lastUsed = now;
                 lastSpentNanos = nanoNow;
                 return 0;
             }
 
             // Needs more points
-            points = newPoints;
             return POINTS_PER_REQUEST - newPoints;
         }
 
