@@ -209,9 +209,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         try {
             final AssertionStatus[] securityProcessingAssertionStatus = { null };
             final IOException[] securityProcessingIOException = { null };
-            final boolean[] preServicePoliciesRun = { false };
+            final boolean[] securityProcessingEvaluatedFlag = { false };
             final SecurityProcessingResolutionListener securityProcessingResolutionListener =
-                    new SecurityProcessingResolutionListener(policyCache, context, wssOutput, securityProcessingAssertionStatus, securityProcessingIOException, preServicePoliciesRun);
+                    new SecurityProcessingResolutionListener(policyCache, context, wssOutput, securityProcessingAssertionStatus, securityProcessingIOException, securityProcessingEvaluatedFlag);
 
             // Policy Verification Step
             PublishedService service = serviceCache.resolve(context.getRequest(), securityProcessingResolutionListener);
@@ -306,7 +306,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             // Ensure security processing is run if enabled
-            if ( request.getSecurityKnob().getProcessorResult() == null &&
+            if ( !securityProcessingEvaluatedFlag[0] &&
                  (service.isWssProcessingEnabled())) {
                 PolicyMetadata policyMetadata = serverPolicy.getPolicyMetadata();
                 Set<ServiceCache.ServiceMetadata> metadatas = Collections.singleton( new ServiceCache.ServiceMetadata(policyMetadata, true) );
@@ -325,7 +325,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             // Ensure pre-service policies are run
-            if ( !preServicePoliciesRun[0] ) {
+            if ( !securityProcessingEvaluatedFlag[0] ) {
                 boolean success = securityProcessingResolutionListener.processPreServicePolicies(
                     PolicyType.PRE_SECURITY_FRAGMENT,
                     MessageProcessingMessages.RUNNING_PRE_SECURITY_POLICY,
@@ -729,31 +729,33 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         private final ProcessorResult[] wssOutputHolder;
         private final AssertionStatus[] assertionStatusHolder;
         private final IOException[] ioExceptionHolder;
-        private final boolean[] preServicePoliciesRun;
+        private final boolean[] securityProcessingEvaluatedFlag;
 
         private SecurityProcessingResolutionListener(final PolicyCache policyCache,
                                                      final PolicyEnforcementContext context,
                                                      final ProcessorResult[] wssOutput,
                                                      final AssertionStatus[] assertionStatus,
                                                      final IOException[] ioException,
-                                                     final boolean[] preServicePoliciesRun ) {
+                                                     final boolean[] securityProcessingEvaluatedFlag ) {
             this.policyCache = policyCache;
             this.context = context;
             this.wssOutputHolder = wssOutput;
             this.assertionStatusHolder = assertionStatus;
             this.ioExceptionHolder = ioException;
-            this.preServicePoliciesRun = preServicePoliciesRun;
+            this.securityProcessingEvaluatedFlag = securityProcessingEvaluatedFlag;
         }
 
         @Override
-        public boolean notifyPreParseServices(Message message, Set<ServiceCache.ServiceMetadata> serviceMetadataSet) {
+        public boolean notifyPreParseServices( final Message message,
+                                               final Set<ServiceCache.ServiceMetadata> serviceMetadataSet ) {
+            securityProcessingEvaluatedFlag[0] = true;
+
             boolean isSoap = false;
             boolean hasSecurity = false;
             boolean preferDom = true;
             boolean performSecurityProcessing = false;
 
             // Run pre WS-Security undecoration global service policies
-            preServicePoliciesRun[0] = true;
             if ( !processPreServicePolicies(
                     PolicyType.PRE_SECURITY_FRAGMENT,
                     MessageProcessingMessages.RUNNING_PRE_SECURITY_POLICY,
