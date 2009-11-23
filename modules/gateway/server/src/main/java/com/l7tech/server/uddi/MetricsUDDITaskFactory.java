@@ -266,7 +266,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                             }
                         }
                         if ( value == null || value.trim().isEmpty() ) {
-                            throw new ValueException("Cluster property value missing or empty ["+metricsSub+"].");
+                            throw new ValueException("Cluster property value missing or empty ["+metricsSub+"]");
                         }
                         break;
                     case END_TIME:
