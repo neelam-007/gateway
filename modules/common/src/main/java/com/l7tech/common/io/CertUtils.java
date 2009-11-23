@@ -52,7 +52,7 @@ public class CertUtils {
 
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static CertificateFactory certFactory;
-    private static final String X509_PROVIDER = SyspropUtil.getString( "com.l7tech.common.x509Provider", "SUN" );
+    private static final String X509_PROVIDER = SyspropUtil.getProperty( "com.l7tech.common.x509Provider");
 
     public static final String ALG_MD5 = "MD5";
     public static final String ALG_SHA1 = "SHA1";
@@ -304,7 +304,9 @@ public class CertUtils {
     public synchronized static CertificateFactory getFactory() {
         try {
             if (certFactory == null)
-                certFactory = CertificateFactory.getInstance(FACTORY_ALGORITHM, X509_PROVIDER);
+                certFactory = X509_PROVIDER==null ?
+                        CertificateFactory.getInstance(FACTORY_ALGORITHM) :
+                        CertificateFactory.getInstance(FACTORY_ALGORITHM, X509_PROVIDER);
             return certFactory;
         } catch ( CertificateException e ) {
             throw new RuntimeException(e);
