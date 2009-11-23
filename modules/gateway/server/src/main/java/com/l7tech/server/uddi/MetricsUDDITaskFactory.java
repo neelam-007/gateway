@@ -170,6 +170,8 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                 } else {
                     logger.info( "Ignoring metrics event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );
                 }
+            } catch (ValueException ve) {
+                context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_FAILED, "Error when publishing metrics for registry #"+registryOid+"; "+ExceptionUtils.getMessage(ve));
             } catch (ObjectModelException e) {
                 context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_FAILED, e, "Database error when publishing metrics for registry #"+registryOid+".");
             } catch (UDDIException ue) {
@@ -182,7 +184,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                        final UDDIClient client,
                                        final UDDIBusinessServiceStatus businessService,
                                        final long endTime,
-                                       final Map<Long,MetricsRequestContext> metricsMap ) {
+                                       final Map<Long,MetricsRequestContext> metricsMap ) throws ValueException {
             final long serviceOid = businessService.getPublishedServiceOid();
             final String serviceKey = businessService.getUddiServiceKey();
             final String serviceName = businessService.getUddiServiceName();
@@ -233,7 +235,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                  final String serviceKey,
                                  final String startDate,
                                  final String endDate,
-                                 final MetricsRequestContext metricsRequestContext ) {
+                                 final MetricsRequestContext metricsRequestContext ) throws ValueException {
             String value = null;
 
             String metricsKey = valueProperty;
@@ -263,8 +265,8 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                 }
                             }
                         }
-                        if ( value == null ) {
-                            value = "";
+                        if ( value == null || value.trim().isEmpty() ) {
+                            throw new ValueException("Cluster property value missing or empty ["+metricsSub+"].");
                         }
                         break;
                     case END_TIME:
@@ -293,7 +295,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                         break;
                 }
             } catch ( IllegalArgumentException iae ) {
-                logger.warning( "Invalid template value '"+valueProperty+"'." );
+                throw new ValueException( "Invalid value requested ["+valueProperty+"]." );
             }
 
             return value;
@@ -396,4 +398,11 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             }
         }
     }
+
+    private static final class ValueException extends Exception {
+        public ValueException( final String message ) {
+            super( message );
+        }
+    }
+
 }
