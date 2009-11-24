@@ -102,7 +102,7 @@ public class BusinessServicePublisher {
 
         final Map<String, TModel> allDependentTModels = serviceToDependentTModels.right;
 
-        final Pair<Set<String>, Set<String>> deleteAndKeep = getBindingsToDeleteAndKeep(templates.getBindingTemplate(), allDependentTModels);
+        final Pair<Set<String>, Set<String>> deleteAndKeep = getBindingsToDeleteAndKeep(overwriteService.getBindingTemplates().getBindingTemplate(), allDependentTModels);
         final Set<String> deleteSet = deleteAndKeep.left;
 
         for(String bindingKey: deleteSet){
