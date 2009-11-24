@@ -10,16 +10,16 @@ package com.l7tech.gateway.common.transport.ftp;
 
 import java.net.UnknownHostException;
 import java.io.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.jscape.inet.ftp.Ftp;
 import com.jscape.inet.ftp.FtpException;
+import com.jscape.inet.ftp.FtpAdapter;
+import com.jscape.inet.ftp.FtpUploadEvent;
+import com.jscape.inet.ftp.FtpResponseEvent;
 import com.l7tech.util.ResourceUtils;
 
 public class FtpUtils {
-    private static final Logger logger = Logger.getLogger(FtpUtils.class.getName());
-    
+
     /**
      * Wrapper method to call {@link Ftp#connect} that throws a better exception.
      *
@@ -120,26 +120,15 @@ public class FtpUtils {
      *
      * @param config FtpClientConfig containing all ftp parameters required to create Ftp object. Cannot be null
      * @param is the InputStream to upload to FTP server
+     * @param count The minimum number of bytes to upload for a successful upload
      * @param filename the name of the file on the ftp server after it has been uploaded
-     * @throws FtpException if any ftp exceptions occur
-     * @throws IllegalArgumentException if config.getSecurity != FtpSecurity.FTP_UNSECURED 
-     */
-    public static void upload(FtpClientConfig config, InputStream is, String filename)
-            throws FtpException {
-        upload(config, is, filename, false);
-    }
-
-    /**
-     *
-     * @param config FtpClientConfig containing all ftp parameters required to create Ftp object. Cannot be null
-     * @param is the InputStream to upload to FTP server
-     * @param filename the name of the file on the ftp server after it has been uploaded
-     * @param allowDirChange if true, then if filename contains directory information, then the ftp session will
-     * attemp to change into that directory. Note the assumption is that the ftp server is windows based
      * @throws FtpException if any ftp exceptions occur
      * @throws IllegalArgumentException if config.getSecurity != FtpSecurity.FTP_UNSECURED
      */
-    public static void upload(FtpClientConfig config, InputStream is, String filename, boolean allowDirChange)
+    public static void upload( final FtpClientConfig config,
+                               final InputStream is,
+                               final long count,
+                               final String filename )
             throws FtpException {
         if(config == null) throw new NullPointerException("config cannot be null");
 
@@ -148,10 +137,18 @@ public class FtpUtils {
 
         final Ftp ftp = FtpUtils.newFtpClient(config);
 
+        final FtpUploadSizeListener listener = new FtpUploadSizeListener();
         try {
+            ftp.addFtpListener( listener );
             ftp.upload(is, filename);
         } finally {
             ftp.disconnect();
+        }
+
+        if ( listener.isError() ) {
+            throw new FtpException("File '"+filename+"' upload error '"+listener.getError()+"'.");
+        } else if ( listener.getSize() < count ) {
+           throw new FtpException("File '"+filename+"' upload truncated to " + listener.getSize() + " bytes.");
         }
     }
 
@@ -188,5 +185,53 @@ public class FtpUtils {
 
     }
 
+    public static final class FtpUploadSizeListener extends FtpAdapter {
+        private static final String CODE_CONN_OPEN_START_TRANS = "125";
+        private static final String CODE_FILE_STATUS_OK_DATA_OPEN = "150";
+        private static final String CODE_FILE_ACTION_NOT_TAKEN = "450";
+        private static final String CODE_FILE_ACTION_ABORT_ERROR = "451";
+        private static final String CODE_FILE_ACTION_NO_SPACE = "452";
 
+        private boolean checkError = false;
+        private String error;
+        private long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public boolean isError() {
+            return error != null;            
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        @Override
+        public void responseReceived( final FtpResponseEvent ftpResponseEvent ) {
+            final String response = ftpResponseEvent.getResponse();
+            if ( response != null ) {
+                if ( !checkError ) {
+                    if ( response.startsWith( CODE_CONN_OPEN_START_TRANS ) ||
+                         response.startsWith( CODE_FILE_STATUS_OK_DATA_OPEN ) ) {
+                        checkError = error == null;
+                    }
+                } else {
+                    if ( response.startsWith( CODE_FILE_ACTION_NOT_TAKEN ) ||
+                         response.startsWith( CODE_FILE_ACTION_ABORT_ERROR ) ||
+                         response.startsWith( CODE_FILE_ACTION_NO_SPACE ) ) {
+                        error = response;
+                    }
+
+                    checkError = false;
+                }
+            }
+        }
+
+        @Override
+        public void upload( final FtpUploadEvent ftpUploadEvent ) {
+            size = ftpUploadEvent.getSize();
+        }
+    }
 }

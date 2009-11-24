@@ -410,7 +410,7 @@ final class BackupImpl implements Backup {
             ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
             final String filePart = ImportExportUtilities.getFilePart(destPathAndFileName);
-            FtpUtils.upload(ftpConfig, is, filePart, true);
+            FtpUtils.upload(ftpConfig, is, 0L, filePart);
             final String msg1 = "Successfully uploaded backup image to ftp server";
             ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg1, isVerbose, printStream);
         } catch (FtpException e) {

@@ -98,13 +98,14 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
         try {
             final InputStream messageBodyStream = mimeKnob.getEntireMessageBodyAsInputStream();
+            final long bodyBytes = mimeKnob.getContentLength();
             final FtpSecurity security = assertion.getSecurity();
             if (security == FtpSecurity.FTP_UNSECURED) {
-                doFtp(context, userName, password, messageBodyStream, fileName);
+                doFtp(context, userName, password, messageBodyStream, bodyBytes, fileName);
             } else if (security == FtpSecurity.FTPS_EXPLICIT) {
-                doFtps(context, true, userName, password, messageBodyStream, fileName);
+                doFtps(context, true, userName, password, messageBodyStream, bodyBytes, fileName);
             } else if (security == FtpSecurity.FTPS_IMPLICIT) {
-                doFtps(context, false, userName, password, messageBodyStream, fileName);
+                doFtps(context, false, userName, password, messageBodyStream, bodyBytes, fileName);
             }
             return AssertionStatus.NONE;
         } catch (NoSuchPartException e) {
@@ -123,6 +124,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                        String userName,
                        String password,
                        InputStream is,
+                       long count,
                        String fileName) throws FtpException {
 
         String hostName = assertion.getHostName();
@@ -137,7 +139,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         config.setPort(assertion.getPort()).setUser(userName).setPass(password).
                 setDirectory(directory).setTimeout(assertion.getTimeout());
 
-        FtpClientUtils.upload(config, is, fileName);
+        FtpClientUtils.upload(config, is, count, fileName);
     }
 
     private void doFtps(PolicyEnforcementContext context,
@@ -145,6 +147,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                         String userName,
                         String password,
                         InputStream is,
+                        long count,
                         String fileName) throws FtpException {
 
         boolean verifyServerCert = assertion.isVerifyServerCert();
@@ -179,7 +182,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             keyFinder = _keyFinder;
         }
 
-        FtpClientUtils.upload(config, is, fileName, keyFinder, trustManager, hostnameVerifier);
+        FtpClientUtils.upload(config, is, count, fileName, keyFinder, trustManager, hostnameVerifier);
     }
 
     private String expandVariables(PolicyEnforcementContext context, String pattern) {

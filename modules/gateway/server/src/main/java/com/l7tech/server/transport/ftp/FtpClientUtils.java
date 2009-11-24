@@ -231,26 +231,35 @@ public class FtpClientUtils {
         }
     }
 
-    public static void upload(FtpClientConfig config, InputStream is, String filename) throws FtpException {
-        upload(config, is, filename, null, null, null);
+    public static void upload(FtpClientConfig config, InputStream is, long count, String filename) throws FtpException {
+        upload(config, is, count, filename, null, null, null);
     }
 
     public static void upload( final FtpClientConfig config,
                                final InputStream is,
+                               final long count,
                                final String filename,
                                final DefaultKey keyFinder,
                                final X509TrustManager trustManager,
                                final HostnameVerifier hostnameVerifier ) throws FtpException {
 
         if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
-            FtpUtils.upload(config, is, filename);
+            FtpUtils.upload(config, is, count, filename);
         } else {
             final Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager, hostnameVerifier);
 
+            final FtpUtils.FtpUploadSizeListener listener = new FtpUtils.FtpUploadSizeListener();
             try {
+                ftps.addFtpListener( listener );
                 ftps.upload(is, filename);
             } finally {
                 ftps.disconnect();
+            }
+
+            if ( listener.isError() ) {
+                throw new FtpException("File '"+filename+"' upload error '"+listener.getError()+"'.");
+            } else if ( listener.getSize() < count ) {
+               throw new FtpException("File '"+filename+"' upload truncated to " + listener.getSize() + " bytes.");
             }
         }
     }
