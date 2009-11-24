@@ -195,6 +195,7 @@ public class ServicePropertiesDialog extends JDialog {
 
         if (!subject.isSoap()) {
             tabbedPane1.setEnabledAt(2, false);
+            tabbedPane1.setEnabledAt(3, false);            
             noURIRadio.setEnabled(false);
             customURIRadio.setSelected(true);
         } else {
