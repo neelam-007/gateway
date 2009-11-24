@@ -211,8 +211,21 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
            original.isPublishWsPolicyFull() == proxiedServiceInfo.isPublishWsPolicyFull() &&
            original.isPublishWsPolicyInlined() == proxiedServiceInfo.isPublishWsPolicyInlined()) return;
 
+        //check if we should trigger a publish to UDDI, but only when the check box has been checked and is being saved since it was unchecked
+        if(proxiedServiceInfo.isUpdateProxyOnLocalChange() &&
+                original.isUpdateProxyOnLocalChange() != proxiedServiceInfo.isUpdateProxyOnLocalChange()){
+            final UDDIPublishStatus publishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(proxiedServiceInfo.getOid());
+            if(publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED){
+                publishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
+                uddiPublishStatusManager.update(publishStatus);
+                logger.log(Level.INFO, "Set gateway WSDL to update in UDDI as it will now be kept synchronized with the Gateway");
+            }
+        }
 
+        //the above code must happen first, as hibernate is smart and will update the 'original' reference above
+        //once we save the incoming entity with the same identity
         uddiProxiedServiceInfoManager.update(proxiedServiceInfo);
+
     }
 
     @Override
