@@ -614,7 +614,7 @@ public class LdapIdentityProviderImpl
             logger.log(Level.WARNING, "LDAP search error, partial result.", pre);
             // don't throw, return the partial result
         } catch (NamingException e) {
-            throw new FindException("LDAP search error with filter " + filter, e);
+            throw new FindException("LDAP search error with filter " + filter, ExceptionUtils.getDebugException(e));
         }
         return output;
     }
