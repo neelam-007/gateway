@@ -23,8 +23,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.Comparator;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Simple modal dialog that allows management of the known JMS queues, and designation of which
@@ -34,6 +36,7 @@ import java.util.regex.Pattern;
  */
 public class JmsQueuesWindow extends JDialog {
     public static final int MESSAGE_SOURCE_COL = 2;
+    private static final Logger logger = Logger.getLogger(JmsQueuesWindow.class.getName());
 
     private JButton closeButton;
     private JButton propertiesButton;
@@ -466,7 +469,18 @@ public class JmsQueuesWindow extends JDialog {
         TableRowSorter<JmsQueueTableModel> sorter = (TableRowSorter<JmsQueueTableModel>) getJmsQueueTable().getRowSorter();
 
         // Reset the filter
-        sorter.setRowFilter(getFilter());
+        try {
+            sorter.setRowFilter(getFilter());
+        } catch (PatternSyntaxException e) {
+            logger.info("Invalid Regular Expression, \"" + filterString + "\" :" + e.getMessage());
+
+            DialogDisplayer.showMessageDialog(
+                JmsQueuesWindow.this,
+                "Invalid syntax for the regular expression, \"" + filterString + "\"",
+                "JMS Queues Filtering",
+                JOptionPane.WARNING_MESSAGE,
+                null);
+        }
     }
 
     /**
@@ -476,6 +490,8 @@ public class JmsQueuesWindow extends JDialog {
      * @return a RowFilter object.
      */
     private RowFilter<JmsQueueTableModel, Integer> getFilter() {
+        final Pattern pattern = filterString == null? null : Pattern.compile(filterString, Pattern.CASE_INSENSITIVE);
+
         return new RowFilter<JmsQueueTableModel, Integer>() {
             @Override
             public boolean include(Entry<? extends JmsQueueTableModel, ? extends Integer> entry) {
@@ -497,14 +513,13 @@ public class JmsQueuesWindow extends JDialog {
                 // If the filter string is not specified, then ignore the following chekcing.
                 if (filterString != null && !filterString.trim().isEmpty() && filterTarget != null) {
                     int colIdx = 1 - filterTarget.ordinal(); // Since the index of FilterTarget.NAME is 0, but the index of Name column is 1.
-                    Matcher matcher = Pattern.compile(filterString).matcher(entry.getStringValue(colIdx));
+                    Matcher matcher = pattern.matcher(entry.getStringValue(colIdx));
                     canBeShown = canBeShown && matcher.find();
                 }
 
                 return canBeShown;
             }
         };
-
     }
 
     private void enableOrDisableButtons() {
