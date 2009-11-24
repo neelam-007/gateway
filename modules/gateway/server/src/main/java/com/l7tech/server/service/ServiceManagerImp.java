@@ -111,7 +111,7 @@ public class ServiceManagerImp
         } catch (DuplicateObjectException e) {
             String msg = "Error saving service. Duplicate resolution parameters";
             logger.info(msg + " " + e.getMessage());
-            logger.log(Level.FINE, msg, e);
+            logger.log(Level.FINE, msg, ExceptionUtils.getDebugException(e));
             throw e;
         } catch (UpdateException e) {
             String msg = "cannot save service's resolution parameters.";
@@ -146,7 +146,7 @@ public class ServiceManagerImp
             resolutionManager.recordResolutionParameters(service);
         } catch (DuplicateObjectException e) {
             String msg = "cannot update service. duplicate resolution parameters";
-            logger.log(Level.INFO, msg, e);
+            logger.log(Level.INFO, msg, ExceptionUtils.getDebugException(e));
             throw new UpdateException(msg, e);
         }
 
