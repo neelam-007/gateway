@@ -5,6 +5,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
@@ -132,13 +133,34 @@ public class UddiRegistryManagerWindow extends JDialog {
             return;
         }
 
-        final String removalMsg = "Are you sure you want to remove the UDDI Registry \"" + uddiRegistry.getName() + "\"?"
-                + (((!proxiedServicesInfos.isEmpty())? " WARNING: Previously published information will be deleted": ""));
+        final Collection<UDDIServiceControl> serviceControls;
+        try{
+            serviceControls = uddiRegistryAdmin.getAllServiceControlsForRegistry(uddiRegistry.getOid());
+        } catch (FindException e) {
+            showErrorMessage("Cannot Delete UDDI Registry", "Cannot determine if services were created from this registry.", e);
+            return;
+        }
 
-        final int msgType = (proxiedServicesInfos.isEmpty())? JOptionPane.QUESTION_MESSAGE: JOptionPane.WARNING_MESSAGE;
+        final String commonMsg = "Are you sure you want to remove the UDDI Registry \"" + uddiRegistry.getName() + "\"?";
+        String warning = null;
+
+        if(!proxiedServicesInfos.isEmpty() && !serviceControls.isEmpty()){
+            warning = "WARNING: The Gateway has published to and created services from this UDDI registry. UDDI published information will not be removed.\n" +
+                    "No published services will be removed, however any Gateway's records of this UDDI registry will be deleted.";
+        }else if(!proxiedServicesInfos.isEmpty()){
+            warning = "WARNING: The Gateway has published to this UDDI registry. UDDI published information will not be removed.";
+        }else if(!serviceControls.isEmpty()){
+            warning = "WARNING: The Gateway has created services from this UDDI registry.\n" +
+                    "No published services will be removed, however any Gateway's records of this UDDI registry will be deleted.";
+        }
+        final String msgToUse = commonMsg + ((warning != null) ? "\n" + warning : "");
+
+        final int msgType = (proxiedServicesInfos.isEmpty() && serviceControls.isEmpty())? JOptionPane.QUESTION_MESSAGE: JOptionPane.WARNING_MESSAGE;
+        final String title = (proxiedServicesInfos.isEmpty()) ? "Confirm UDDI Registry Removal" : "WARNING: UDDI Registry in use. Confirm Removal";
+
         DialogDisplayer.showConfirmDialog(this,
-                                                   removalMsg,
-                                                   "Confirm Removal",
+                                                   msgToUse,
+                                                   title,
                                                    JOptionPane.YES_NO_OPTION,
                                                    msgType, new DialogDisplayer.OptionListener() {
                     @Override
