@@ -95,7 +95,10 @@ public class SelectWsdlPortDialog extends JDialog {
     private void onOK() {
 
         int row = wsdlPortTable.getSelectedRow();
-        if(row == -1) dispose();
+        if(row == -1){
+            dispose();
+            return;
+        }
 
         final WsdlPortInfo wsdlPortInfo = (WsdlPortInfo) wsdlPortTable.getTableSorter().getData(row);
         //this will show any required warnings to the user
