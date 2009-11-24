@@ -56,11 +56,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     @Override
     public long saveUDDIRegistry(final UDDIRegistry uddiRegistry) throws SaveException, UpdateException {
         if(uddiRegistry.getOid() == PersistentEntity.DEFAULT_OID){
-            logger.info("Saving UDDI Registry '" + uddiRegistry.getName()+"'");
             uddiRegistryManager.save(uddiRegistry);
+            logger.info("Saved UDDI Registry '" + uddiRegistry.getName()+"'");
         }else{
-            logger.info("Updating UDDI Registry '" + uddiRegistry.getName()+"' oid = " + uddiRegistry.getOid());
             uddiRegistryManager.update(uddiRegistry);
+            logger.info("Updated UDDI Registry '" + uddiRegistry.getName()+"' oid = " + uddiRegistry.getOid());
         }
 
         return uddiRegistry.getOid();
