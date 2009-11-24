@@ -75,7 +75,6 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     private UddiRegistryPropertiesDialog() {
         setContentPane(contentPane);
         setModal(true);
-        getRootPane().setDefaultButton(okButton);
         this.uddiRegistry = new UDDIRegistry();
         initialize();
     }
@@ -520,7 +519,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
      * Assumes caller has already checked view state against the inputValidator.
      */
     private void viewToModel() {
-        uddiRegistry.setName(registryNameTextField.getText());
+        uddiRegistry.setName(registryNameTextField.getText().trim());
         uddiRegistry.setEnabled(enabledCheckBox.isSelected());
         UDDIRegistry.UDDIRegistryType regType = (UDDIRegistry.UDDIRegistryType) uddiRegistryTypeComboBox.getSelectedItem();
         uddiRegistry.setUddiRegistryType(regType.toString());

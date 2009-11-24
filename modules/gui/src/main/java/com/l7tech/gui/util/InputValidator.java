@@ -281,7 +281,7 @@ public class InputValidator implements FocusListener {
                     return null;
 
                 String val = comp.getText();
-                if (val == null || val.length() < 1) return mess;
+                if (val == null || val.trim().isEmpty()) return mess;
                 return additionalConstraints != null ? additionalConstraints.getValidationError() : null;
             }
         };

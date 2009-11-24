@@ -56,9 +56,15 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     @Override
     public long saveUDDIRegistry(final UDDIRegistry uddiRegistry) throws SaveException, UpdateException {
         if(uddiRegistry.getOid() == PersistentEntity.DEFAULT_OID){
+            if(uddiRegistry.getName().trim().isEmpty()){
+                throw new SaveException("Cannot save a UDDI Registry with an emtpy name (or only containing spaces)");
+            }
             uddiRegistryManager.save(uddiRegistry);
             logger.info("Saved UDDI Registry '" + uddiRegistry.getName()+"'");
         }else{
+            if(uddiRegistry.getName().trim().isEmpty()){
+                throw new UpdateException("Cannot update a UDDI Registry to have an emtpy name (or only containing spaces)");
+            }
             uddiRegistryManager.update(uddiRegistry);
             logger.info("Updated UDDI Registry '" + uddiRegistry.getName()+"' oid = " + uddiRegistry.getOid());
         }
