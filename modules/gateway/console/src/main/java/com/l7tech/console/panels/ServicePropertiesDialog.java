@@ -101,6 +101,10 @@ public class ServicePropertiesDialog extends JDialog {
     private JCheckBox monitoringEnabledCheckBox;
     private JCheckBox monitoringDisableServicecheckBox;
     private JCheckBox monitoringUpdateWsdlCheckBox;
+    private JLabel wsdlBindingLabel;
+    private JTextField wsdlBindingTextField;
+    private JLabel wsdlBindingNamespaceLabel;
+    private JTextField wsdlBindingNamespaceTextField;
     private String ssgURL;
     private final boolean canUpdate;
     private UDDIServiceControl uddiServiceControl;
@@ -520,7 +524,7 @@ public class ServicePropertiesDialog extends JDialog {
     private UDDIServiceControl getNewUDDIServiceControl(WsdlPortInfo wsdlPortInfo) {
         return new UDDIServiceControl(subject.getOid(), wsdlPortInfo.getUddiRegistryOid(),
                 wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(), wsdlPortInfo.getWsdlServiceName(),
-                wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getAccessPointURL(), wsdlUnderUDDIControlCheckBox.isSelected());
+                wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getWsdlPortBindingNamespace(), wsdlUnderUDDIControlCheckBox.isSelected());
     }
 
     /**
@@ -540,6 +544,9 @@ public class ServicePropertiesDialog extends JDialog {
             bsNameTextField.setText(uddiServiceControl.getUddiBusinessName());
             bsKeyTextField.setText(uddiServiceControl.getUddiBusinessKey());
             wsdlPortTextField.setText(uddiServiceControl.getWsdlPortName());
+            wsdlBindingTextField.setText(uddiServiceControl.getWsdlPortBinding());
+            wsdlBindingNamespaceTextField.setText((uddiServiceControl.getWsdlPortBindingNamespace() != null) ? uddiServiceControl.getWsdlPortBindingNamespace() : "");
+
             wsdlUnderUDDIControlCheckBox.setSelected(uddiServiceControl.isUnderUddiControl());
             monitoringEnabledCheckBox.setSelected( uddiServiceControl.isMonitoringEnabled() );
             monitoringUpdateWsdlCheckBox.setSelected( uddiServiceControl.isUpdateWsdlOnChange() );
@@ -548,12 +555,17 @@ public class ServicePropertiesDialog extends JDialog {
             bsNameTextField.setCaretPosition( 0 );
             bsKeyTextField.setCaretPosition( 0 );
             wsdlPortTextField.setCaretPosition( 0 );
+            wsdlBindingTextField.setCaretPosition( 0 );
+            wsdlBindingNamespaceTextField.setCaretPosition( 0 );
         }else{
             //make sure all text fields are cleared
             uddiRegistryTextField.setText("");
             bsNameTextField.setText("");
             bsKeyTextField.setText("");
             wsdlPortTextField.setText("");
+            wsdlBindingTextField.setText("");
+            wsdlBindingNamespaceTextField.setText("");
+
             wsdlUnderUDDIControlCheckBox.setSelected( false );
             monitoringEnabledCheckBox.setSelected( false );
             monitoringUpdateWsdlCheckBox.setSelected( false );

@@ -31,6 +31,7 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
                               String wsdlPortName,
                               String wsdlPortBinding,
                               String accessPointUrl,
+                              String wsdlPortBindingNamespace,
                               boolean underUddiControl) {
         this.publishedServiceOid = publishedServiceOid;
         this.uddiRegistryOid = uddiRegistryOid;
@@ -41,6 +42,7 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
         this.wsdlPortName = wsdlPortName;
         this.wsdlPortBinding = wsdlPortBinding;
         this.accessPointUrl = accessPointUrl;
+        this.wsdlPortBindingNamespace = wsdlPortBindingNamespace;
         this.underUddiControl = underUddiControl;
     }
 
@@ -183,6 +185,15 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
         this.wsdlPortBinding = wsdlPortBinding;
     }
 
+    @Column(name = "wsdl_port_binding_namespace")
+    public String getWsdlPortBindingNamespace() {
+        return wsdlPortBindingNamespace;
+    }
+
+    public void setWsdlPortBindingNamespace(String wsdlPortBindingNamespace) {
+        this.wsdlPortBindingNamespace = wsdlPortBindingNamespace;
+    }
+
     @Column(name = "under_uddi_control")
     public boolean isUnderUddiControl() {
         return underUddiControl;
@@ -321,4 +332,5 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
     private boolean publishWsPolicyInlined;
     private boolean hasHadEndpointRemoved;
     private boolean hasBeenOverwritten;
+    private String wsdlPortBindingNamespace;
 }

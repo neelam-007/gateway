@@ -91,22 +91,22 @@ public class TestGenericUDDIClient {
 
     @Test
     public void testDeleteBindingTemplates() throws UDDIException {
-        final String bindingKey = "uddi:4bdcbc80-d32d-11de-a970-89ce79ba3797";
+        final String bindingKey = "uddi:1e0d7f34-d8a9-11de-bd69-fab156656beb";
         uddiClient.deleteBindingTemplate(bindingKey);
     }
 
     @Test
-    public void tetsDeleteProxiedBusinessService() throws UDDIException {
+    public void testDeleteProxiedBusinessService() throws UDDIException {
         final String serviceKey = "uddi:9259c9d0-cfe2-11de-a2bb-8068e9b1817d";
         uddiClient.deleteBusinessService(serviceKey);
     }
 
     @Test
     public void updateBindingTemplateToCauseNotification() throws UDDIException{
-        String bindingKey = "uddi:6810113d-cf34-11de-8be7-cb83aaebcf31";
+        String bindingKey = "uddi:1a43b64c-d8aa-11de-bd69-f3696a9c4eea";
         GenericUDDIClient genericUDDIClient = (GenericUDDIClient) uddiClient;
 
-        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:666a296d-cf34-11de-8be7-b162d313c13b");
+        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:0bf0d507-d8aa-11de-bd69-a03cff9a00cb");
         BindingTemplate foundTemplate = null;
         for(BindingTemplate bt: businessService.getBindingTemplates().getBindingTemplate()){
             if(bt.getBindingKey().equals(bindingKey)){
@@ -117,7 +117,8 @@ public class TestGenericUDDIClient {
 
         Assert.assertNotNull(foundTemplate);
 
-        foundTemplate.getAccessPoint().setValue("http://www.test.com/testing_3_service");
+//        foundTemplate.getAccessPoint().setValue("http://thehostwedontwanttorouteto.com:1610/SpaceOrderofBattle2.asmx");
+        foundTemplate.getAccessPoint().setValue("http://1apretendhost.com:1610/SpaceOrderofBattle.asmx");
         genericUDDIClient.publishBusinessService(businessService);
         //genericUDDIClient.publishBindingTemplate(foundTemplate);
     }
@@ -384,13 +385,22 @@ public class TestGenericUDDIClient {
     }
 
     private UDDIClient getUDDIClient(){
-        return new GenericUDDIClient("http://DONALWINXP:53307/UddiRegistry/inquiry",
-                        "http://DONALWINXP:53307/UddiRegistry/publish",
+//        return new GenericUDDIClient("http://DONALWINXP:53307/UddiRegistry/inquiry",
+//                        "http://DONALWINXP:53307/UddiRegistry/publish",
+//                        null,
+//                        "http://DONALWINXP:53307/UddiRegistry/security",
+//                        "administrator",
+//                        "7layer",
+//                        PolicyAttachmentVersion.v1_2/*not important here*/, null){};
+
+        return new GenericUDDIClient("http://10.7.2.200:53307/UddiRegistry/inquiry",
+                        "http://10.7.2.200:53307/UddiRegistry/publish",
                         null,
-                        "http://DONALWINXP:53307/UddiRegistry/security",
+                        "http://10.7.2.200:53307/UddiRegistry/security",
                         "administrator",
                         "7layer",
                         PolicyAttachmentVersion.v1_2/*not important here*/, null){};
+
 //        return new GenericUDDIClient("http://centrasiteuddi:53307/UddiRegistry/inquiry",
 //                        "http://centrasiteuddi:53307/UddiRegistry/publish",
 //                        null,

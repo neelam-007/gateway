@@ -781,9 +781,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     continue;
                 }
 
-                String wsdlUrl = getWsdlURL(bindingTModel);
+                String wsdlUrl = UDDIUtilities.extractWsdlUrl(bindingTModel);
                 //fall back to wsdl:portType tModel
-                if(wsdlUrl == null) wsdlUrl = getWsdlURL(portTypeTModel);
+                if(wsdlUrl == null) wsdlUrl = UDDIUtilities.extractWsdlUrl(portTypeTModel);
                 if(wsdlUrl == null){
                     logger.log(Level.FINE,
                             "Not including binding in results as we could not find an overviewDoc of use type 'wsdlInterface' from either the wsdl:portType or wsdl:binding tModel referenced from the bindingTemplate with bindingKey: "
@@ -807,9 +807,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 wsdlPortInfo.setBusinessServiceName(businessServiceName);
                 wsdlPortInfo.setWsdlServiceName(businessServiceWsdlLocalName);
                 //the instance param value from the bindingTemplate is the name of the wsdl:port
-                //todo [Donal] namespaces - get and persist the binding's namespace
                 wsdlPortInfo.setWsdlPortName(wsdlPortName);
                 wsdlPortInfo.setWsdlPortBinding(bindingTModel.getName().getValue());
+                wsdlPortInfo.setWsdlPortBindingNamespace(UDDIUtilities.extractNamespace(bindingTModel));//it is ok if this is null
                 wsdlPortInfo.setAccessPointURL(accessPointURL);
                 wsdlPortInfo.setWsdlUrl(wsdlUrl);
 
@@ -1069,12 +1069,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         if(type == null) return null;
         
         if(type == UDDIUtilities.TMODEL_TYPE.WSDL_BINDING){
-            for ( OverviewDoc doc : tModel.getOverviewDoc() ) {
-                OverviewURL url = doc.getOverviewURL();
-                if ( url!= null && OVERVIEW_URL_TYPE_WSDL.equals(url.getUseType()) ) {
-                    return url.getValue();
-                }
-            }
+            return UDDIUtilities.extractWsdlUrl(tModel);
         }
         return null;
     }
@@ -1094,21 +1089,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
 
         return accessPoint.getValue();
-    }
-
-    private String getWsdlURL(final TModel tModel){
-        for (OverviewDoc doc : tModel.getOverviewDoc()) {
-            OverviewURL url = doc.getOverviewURL();
-
-            if (url != null && OVERVIEW_URL_TYPE_WSDL.equalsIgnoreCase(url.getUseType())) {
-                return url.getValue();
-            }else{
-                logger.log(Level.FINE, "tModel does not contain an overviewDoc with a use type of '" + OVERVIEW_URL_TYPE_WSDL+"'" +
-                        " tModelKey: " + tModel.getTModelKey());
-            }
-        }
-
-        return null;
     }
 
     /**

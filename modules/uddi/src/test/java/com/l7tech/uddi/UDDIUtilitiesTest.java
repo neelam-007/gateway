@@ -15,11 +15,11 @@ import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
 
 import javax.xml.bind.JAXB;
 import javax.wsdl.WSDLException;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
+import java.util.logging.LogManager;
 import java.io.InputStream;
+import java.io.File;
+import java.io.IOException;
 
 public class UDDIUtilitiesTest {
     private Wsdl wsdl;
@@ -253,7 +253,7 @@ public class UDDIUtilitiesTest {
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));        
 
         UDDIUtilities.UDDIBindingImplementionInfo bindingInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
-                "uddi:8617fae0-c987-11de-8486-efda8c54fa31", "WarehouseSoap", "WarehouseSoap");
+                "uddi:8617fae0-c987-11de-8486-efda8c54fa31", "WarehouseSoap", "WarehouseSoap", null);
 
         Assert.assertNotNull(bindingInfo);
 
@@ -279,7 +279,7 @@ public class UDDIUtilitiesTest {
         TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
 
         UDDIUtilities.UDDIBindingImplementionInfo bindingInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
-                "uddi:8617fae0-c987-11de-8486-efda8c54fa31", "WarehouseSoap", "WarehouseSoap");
+                "uddi:8617fae0-c987-11de-8486-efda8c54fa31", "WarehouseSoap", "WarehouseSoap", "http://warehouse.acme.com/ws");
 
         Assert.assertNotNull(bindingInfo);
 
@@ -288,6 +288,98 @@ public class UDDIUtilitiesTest {
         Assert.assertFalse("Invalid wsdl:port information found", "WarehouseSoap".equals(bindingInfo.getImplementingWsdlPort()));
         Assert.assertEquals("Invalid wsdl:port information found", "WarehouseSoap1" , bindingInfo.getImplementingWsdlPort());
     }
+
+    /**
+     * Tests that an incorrect binding is not found if a wsdl:binding has the same name as an imported wsdl:binding
+     * which we are looking for 
+     * @throws UDDIException
+     */
+    @Test
+    public void testGetUDDIBindingImplInfoNameSpaceSupportNotFound() throws UDDIException{
+        initializeLogging();
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/SpaceOrderService.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/spaceBindingTModel.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/spacePortTypeTModel.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
+
+        UDDIUtilities.UDDIBindingImplementionInfo bindingInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
+                "uddi:9c7d0e97-d88c-11de-bd69-c3cafb478058", "ChildWsdlPort", "SameBindingName", "http://SOB.IPD.LMCO/ExternalWSDL");
+
+        Assert.assertNull("No wsdl:port implements the requested binding. No binding should be found", bindingInfo);
+    }
+
+    /**
+     * Tests that an incorrect binding is not found if a wsdl:binding has the same name as an imported wsdl:binding
+     * which we are looking for
+     * @throws UDDIException
+     */
+    @Test
+    public void testGetUDDIBindingImplInfoNameSpaceSupportFound() throws UDDIException{
+        initializeLogging();
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/SpaceOrderService.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/spaceBindingTModel.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/spacePortTypeTModel.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
+
+        UDDIUtilities.UDDIBindingImplementionInfo bindingInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
+                "uddi:9c7d0e97-d88c-11de-bd69-c3cafb478058", "ParentWsdlPort", "SameBindingName", "http://SOB.IPD.LMCO/");
+
+        Assert.assertNotNull("A wsdl:port implementing the requested binding should be found", bindingInfo);
+    }
+
+    private static void initializeLogging() {
+        final LogManager logManager = LogManager.getLogManager();
+
+        final File file = new File("logging.properties");
+        if (file.exists()) {
+            InputStream in = null;
+            try {
+                in = file.toURI().toURL().openStream();
+                if (in != null) {
+                    logManager.readConfiguration(in);
+                }
+            } catch (IOException e) {
+                System.err.println("Cannot initialize logging " + e.getMessage());
+            } finally {
+                try {
+                    if (in != null) in.close();
+                } catch (IOException e) { // should not happen
+                    System.err.println("Cannot close logging properties input stream " + e.getMessage());
+                }
+            }
+        } else {
+            System.err.println("Cannot initialize logging");
+        }
+    }
+
+    //code to download and marshall business servics and tmodels
+//    final String inquiry = "http://10.7.2.200:53307/UddiRegistry/inquiry";
+//    final String publish = "http://10.7.2.200:53307/UddiRegistry/publish";
+//    final String subscription = "http://10.7.2.200:53307/UddiRegistry/subscription";
+//    final String security = "http://10.7.2.200:53307/UddiRegistry/security";
+//    GenericUDDIClient uddiClient = new GenericUDDIClient(inquiry, publish, subscription, security, "administrator", "7layer", PolicyAttachmentVersion.v1_2, null);
+//
+//    UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+//    Set<String> serviceKeys = new HashSet<String>();
+//    serviceKeys.add("uddi:9c7d0e97-d88c-11de-bd69-c3cafb478058");
+//    final List<Pair<BusinessService, Map<String, TModel>>> businessServiceModels = serviceDownloader.getBusinessServiceModels(serviceKeys);
+//    Assert.assertEquals("Incorrect number of services found", 1, businessServiceModels.size());
+//
+//    JAXB.marshal(businessServiceModels.get(0).left, new File("/home/darmstrong/Documents/Projects/Bondo/UDDI/Marshalled/SpaceOrderService.xml"));
+//    int i = 0;
+//    for(TModel model: businessServiceModels.get(0).right.values()) {
+//        JAXB.marshal(model, new File("/home/darmstrong/Documents/Projects/Bondo/UDDI/Marshalled/spacetModel" + i + ".xml"));
+//        i++;
+//    }
+
 
     /**
      * Test the getTModelType method

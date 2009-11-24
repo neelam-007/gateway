@@ -234,9 +234,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             }
             //validate that an end point can be found
             final String endPoint = uddiServiceControl.getAccessPointUrl();
-            //TODO [Donal] Add namespace support
+            //TODO [Donal] Add namespace support for wsdl:service if needed
             final boolean wsdlImplementUddiWsdlPort = UDDIUtilities.validatePortBelongsToWsdl(wsdl, uddiServiceControl.getWsdlServiceName(), null,
-                    uddiServiceControl.getWsdlPortName(), uddiServiceControl.getWsdlPortBinding(), null);
+                    uddiServiceControl.getWsdlPortName(), uddiServiceControl.getWsdlPortBinding(), uddiServiceControl.getWsdlPortBindingNamespace());
 
             if(!wsdlImplementUddiWsdlPort){
                 throw new SaveException("The published service's WSDL does not relate to the BusinessService information from UDDI");
@@ -265,18 +265,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                 logger.log(Level.WARNING, msg, e);
                 throw new SaveException(msg);
             }
-            long oid =  uddiServiceControlManager.save(uddiServiceControl);
+            long oid = uddiServiceControlManager.save(uddiServiceControl);
             //Create the monitor runtime record for this service control as it has just been created
             final UDDIServiceControlMonitorRuntime monitorRuntime = new UDDIServiceControlMonitorRuntime(oid, lastUddiMonitoredTimeStamp);
             uddiServiceControlMonitorRuntimeManager.save(monitorRuntime);
-            final String routingUrl = uddiServiceControl.getAccessPointUrl();
-            if(routingUrl != null && !routingUrl.trim().isEmpty()) {
-                final PublishedService upToDateService = sericeManager.findByPrimaryKey(service.getOid());
-                if(upToDateService != null){
-                    upToDateService.setDefaultRoutingUrl(routingUrl);
-                    sericeManager.update(upToDateService);
-                }
-            }
             return oid;
         }else{
             UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());

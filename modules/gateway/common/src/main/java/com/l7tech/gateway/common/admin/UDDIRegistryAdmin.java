@@ -212,10 +212,12 @@ public interface UDDIRegistryAdmin {
      * Save / Update UDDIServiceControl without changes to related UDDI.
      *
      * @param uddiServiceControl the updated UDDIServiceControl
-     * @throws com.l7tech.objectmodel.UpdateException if the UDDIServiceControl cannot be updated
-     * @throws com.l7tech.objectmodel.SaveException if the UDDIServiceControl cannot be saved
      * @return the unique object ID that was updated or created.
-     * @throws com.l7tech.objectmodel.FindException any problems reading from the database
+     * @throws UpdateException if the UDDIServiceControl cannot be updated
+     * @throws SaveException   if the UDDIServiceControl cannot be saved
+     * @throws FindException   any problems reading from the database
+     * @throws UDDIRegistryAdmin.UDDIRegistryNotEnabledException
+     *                         if the UDDI Registry is not enabled
      */
     @Secured(types = {EntityType.UDDI_SERVICE_CONTROL}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
     long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl)
@@ -223,13 +225,14 @@ public interface UDDIRegistryAdmin {
 
     /**
      * Delete the UDDIServiceControl with id uddiServiceControlOid
-     *
+     * <p/>
      * Cannot delete successfully if the UDDIServiceControl has had an endpoint added to it, or if it has been
      * overwritten
      *
      * @param uddiServiceControlOid long id of the UDDIServiceControl to delete
      * @throws FindException   if there is a problem reading from the database or if the UDDIServiceControl is not found
      * @throws DeleteException any problems deleting from the database
+     * @throws UpdateException any problems updating the database
      */
     @Secured(types = {EntityType.UDDI_SERVICE_CONTROL}, stereotype = MethodStereotype.DELETE_BY_ID)
     void deleteUDDIServiceControl(final long uddiServiceControlOid) throws FindException, DeleteException, UpdateException;

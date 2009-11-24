@@ -15,6 +15,8 @@ public interface WsdlPortInfo {//todo [Donal] rename this class
 
     String getWsdlPortBinding();
 
+    String getWsdlPortBindingNamespace();
+
     String getBusinessServiceName();
 
     String getBusinessServiceKey();

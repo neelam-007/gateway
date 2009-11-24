@@ -20,9 +20,9 @@ import java.util.logging.Logger;
  * <p/>
  * Provides serveral updateXXX() methods to update a BusinessService to contain references to valid tModels which
  * represent the wsdl:binding and wsdl:portType, as well as other utilities
- *
+ * <p/>
  * Any method which uses jax-ws classes are package private so as to not expose these interfaces
- * 
+ *
  * @author darmstrong
  */
 public class UDDIUtilities {
@@ -52,8 +52,9 @@ public class UDDIUtilities {
             for (TModelInstanceInfo tModelInstanceInfo : tModelInstanceInfos) {
                 //it's possible we have bindingTemplates which already exist. if the referenced tModelKey
                 //does not reference a placeholder, then do not process
-                if(!tModelInstanceInfo.getTModelKey().endsWith(WsdlToUDDIModelConverter.BINDING_TMODEL_IDENTIFIER) &&
-                        !tModelInstanceInfo.getTModelKey().endsWith(WsdlToUDDIModelConverter.PORT_TMODEL_IDENTIFIER)) continue;
+                if (!tModelInstanceInfo.getTModelKey().endsWith(WsdlToUDDIModelConverter.BINDING_TMODEL_IDENTIFIER) &&
+                        !tModelInstanceInfo.getTModelKey().endsWith(WsdlToUDDIModelConverter.PORT_TMODEL_IDENTIFIER))
+                    continue;
 
                 final TModel tModel = dependentTModels.get(tModelInstanceInfo.getTModelKey());
                 tModelInstanceInfo.setTModelKey(tModel.getTModelKey());
@@ -161,25 +162,24 @@ public class UDDIUtilities {
     /**
      * Update the tModel references in the bindingTemplate to the real references contained in the actual
      * tModels in the dependentTModels map
-     *
+     * <p/>
      * This should only be used for BindingTemplates created by SSG code and should not be supplied a BindingTemplate
      * which came from the Wsdl class after a WSDL was parsed.
      *
-     * @param bindingTemplate The BindingTemplate must contain only the standard 2 tModelInstanceInfo's in its
-     * tModelInstanceDetails element.
-     * @param dependentTModels
+     * @param bindingTemplate  The BindingTemplate must contain only the standard 2 tModelInstanceInfo's in its
+     *                         tModelInstanceDetails element.
+     * @param dependentTModels tModels the BindingTemplate to update depends on
+     * @throws UDDIException any problems getting data from UDDI
      */
     static void updateBindingTemplateTModelReferences(final BindingTemplate bindingTemplate,
                                                       final Map<String, TModel> dependentTModels) throws UDDIException {
 
         final List<TModelInstanceInfo> tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo();
-        if(tModelInstanceDetails.isEmpty()) return;//nothing to do
+        if (tModelInstanceDetails.isEmpty()) return;//nothing to do
 
-        final Pair<TModel, TModel> portAndBindingTModel = getPortTypeAndBindingTModels(tModelInstanceDetails, dependentTModels);
-
-        for(TModelInstanceInfo tii: tModelInstanceDetails){
+        for (TModelInstanceInfo tii : tModelInstanceDetails) {
             final TModel tModel = dependentTModels.get(tii.getTModelKey());
-            if(tModel == null)//this is a coding error
+            if (tModel == null)//this is a coding error
                 throw new IllegalStateException("No tModel found for key: " + tii.getTModelKey());
             tii.setTModelKey(tModel.getTModelKey());
         }
@@ -188,8 +188,8 @@ public class UDDIUtilities {
     /**
      * Work out what wsdl element the tModel represents. Either wsdl:portType or wsdl:binding
      *
-     * @param tModel the TModel to get the type for
-     * @param throwIfNotFound
+     * @param tModel          the TModel to get the type for
+     * @param throwIfNotFound if true and the type of the tModel is not known, a runtime exception will be thrown
      * @return TMODEL_TYPE the type of TModel
      */
     static TMODEL_TYPE getTModelType(final TModel tModel, boolean throwIfNotFound) {
@@ -202,7 +202,8 @@ public class UDDIUtilities {
             if (keyValue.equals("binding")) return TMODEL_TYPE.WSDL_BINDING;
             throw new IllegalStateException("Type of TModel does not follow UDDI Technical Note: '" + keyValue + "'");
         }
-        if(throwIfNotFound) throw new IllegalStateException("TModel did not contain a KeyedReference of type " + WsdlToUDDIModelConverter.UDDI_WSDL_TYPES);
+        if (throwIfNotFound)
+            throw new IllegalStateException("TModel did not contain a KeyedReference of type " + WsdlToUDDIModelConverter.UDDI_WSDL_TYPES);
         return null;
     }
 
@@ -210,15 +211,20 @@ public class UDDIUtilities {
      * From the WSDL, extract out a BindingTemplate based on the wsdlPortName and wsdlPortBinding
      * <p/>
      * The URLs are required in the dependent tModels which will also be created.
-     *
+     * <p/>
      * None of the UDDI Objects contain real keys
      *
-     * @param wsdl
-     * @param wsdlPortName a wsdl:port name is unique in a WSDL document
-     * @param wsdlPortBinding a wsdl:binding name is unique in a WSDL document
-     * @param protectedServiceExternalURL
-     * @param protectedServiceWsdlURL
+     * @param wsdl                        Wsdl for a published service
+     * @param wsdlPortName                a wsdl:port name is unique in a WSDL document
+     * @param wsdlPortBinding             a wsdl:binding name is unique in a WSDL document
+     * @param protectedServiceExternalURL SSG's external consumption URL for a published service
+     * @param protectedServiceWsdlURL     SSG's external proxied WSDL URL for a published service
      * @return Pair of BindingTemplate to it's dependent tModels
+     * @throws PortNotFoundException if the wsdl:port implementation cannot be found
+     * @throws WsdlToUDDIModelConverter.MissingWsdlReferenceException
+     *                               if the Wsdl does not have a complete graph to wsdl:portType
+     * @throws WsdlToUDDIModelConverter.NonSoapBindingFoundException
+     *                               if no soap:bindings are found in the Wsdl (nothing to do)
      */
     static Pair<BindingTemplate, Map<String, TModel>> createBindingTemplateFromWsdl(final Wsdl wsdl,
                                                                                     final String wsdlPortName,
@@ -229,24 +235,26 @@ public class UDDIUtilities {
 
         Port foundPort = null;
         Port candidatePort = null;
-        outer: for(Service wsdlService: wsdl.getServices()){
+        outer:
+        for (Service wsdlService : wsdl.getServices()) {
             Map<String, Port> ports = wsdlService.getPorts();
             for (Map.Entry<String, Port> entry : ports.entrySet()) {
-                if(entry.getKey().equalsIgnoreCase(wsdlPortName)){
+                if (entry.getKey().equalsIgnoreCase(wsdlPortName)) {
                     foundPort = entry.getValue();
                     break outer;
                 }
-                if(entry.getValue().getBinding().getQName().getLocalPart().equalsIgnoreCase(wsdlPortBinding)){
+                if (entry.getValue().getBinding().getQName().getLocalPart().equalsIgnoreCase(wsdlPortBinding)) {
                     candidatePort = entry.getValue();
-                    if(foundPort != null) break outer;
+                    if (foundPort != null) break outer;
                 }
             }
         }
 
-        final Port wsdlPort = (foundPort != null)? foundPort: candidatePort;
-        if (wsdlPort == null) throw new PortNotFoundException("Cannot find any wsdl:port by the name of '" + wsdlPortName+
-                " or any port which implements the binding '" + wsdlPortBinding);
-        
+        final Port wsdlPort = (foundPort != null) ? foundPort : candidatePort;
+        if (wsdlPort == null)
+            throw new PortNotFoundException("Cannot find any wsdl:port by the name of '" + wsdlPortName +
+                    " or any port which implements the binding '" + wsdlPortBinding);
+
         final WsdlToUDDIModelConverter modelConverter =
                 new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL, protectedServiceExternalURL);
 
@@ -255,7 +263,7 @@ public class UDDIUtilities {
         return new Pair<BindingTemplate, Map<String, TModel>>(template, keysToModels);
     }
 
-    static class PortNotFoundException extends Exception{
+    static class PortNotFoundException extends Exception {
         public PortNotFoundException(String message) {
             super(message);
         }
@@ -273,17 +281,23 @@ public class UDDIUtilities {
      * <p/>
      * Contents of the returned UDDIBindingImplementionInfo should be validated by caller
      *
-     * @param uddiClient   UDDIClient configured for the correct uddi registry
-     * @param serviceKey   String serviceKey belonging to the above uddi registry
-     * @param wsdlPortName name of the wsdl:port, whose corresponding bindingTemplate's accessPoint's endPoint URL
-     *                     location should be obtained
-     * @return String URL of the protected service's end point from UDDI. Null if not found
+     * @param uddiClient           UDDIClient configured for the correct uddi registry
+     * @param serviceKey           String serviceKey belonging to the above uddi registry
+     * @param wsdlPortName         name of the wsdl:port, whose corresponding bindingTemplate's accessPoint's endPoint URL
+     *                             location should be obtained
+     * @param wsdlBinding          String wsdl:port name
+     * @param wsdlBindingNamespace String namespace of the binding. Should be null when ever there is no namespace,
+     *                             otherwise it should be provided. This method can tell when it's needed if a found binding contains a namespace
+     *                             but no namespace was provided. When this happens a warning is logged.
+     * @return String URL of the protected service's end point from UDDI. Null if not found, i.e. no wsdl:port implements
+     *         the binding supplied
      * @throws UDDIException any problems searching UDDI
      */
     public static UDDIBindingImplementionInfo getUDDIBindingImplInfo(final UDDIClient uddiClient,  //TODO [Donal] change to a UDDIClientConfig - just create an instance of JaxWsUDDIClient
                                                                      final String serviceKey,
                                                                      final String wsdlPortName,
-                                                                     final String wsdlBinding) throws UDDIException {
+                                                                     final String wsdlBinding,
+                                                                     final String wsdlBindingNamespace) throws UDDIException {
 
         final JaxWsUDDIClient jaxWsUDDIClient;
         if (uddiClient instanceof JaxWsUDDIClient) {
@@ -342,8 +356,11 @@ public class UDDIUtilities {
         final UDDIBindingImplementionInfo returnInfo = new UDDIBindingImplementionInfo();
         final Collection<TModel> allFoundModels = jaxWsUDDIClient.getTModels(tModelKeys);
         if (foundTemplate == null) {
-            logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " does not contain a bindingTemplate which maps to the wsdl:port with name: " + wsdlPortName);
-            logger.log(Level.INFO, "Searching for a bindingTemplate which implements the wsdl:binding with name: " + wsdlBinding);
+            logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " does not contain a bindingTemplate which maps to the wsdl:port with name '" + wsdlPortName + "'.");
+            final boolean namespaceSupplied = wsdlBindingNamespace != null && !wsdlBindingNamespace.trim().isEmpty();
+
+            logger.log(Level.INFO, "Searching for a bindingTemplate which implements the wsdl:binding with name '" + wsdlBinding + "'" +
+                    ((namespaceSupplied) ? " and namespace '" + wsdlBindingNamespace + "'." : "."));
 
             //find the first tModel which implements the wsdl:binding, then find the bindingTemplate which references it
             TModel applicableTModel = null;
@@ -352,13 +369,28 @@ public class UDDIUtilities {
                 if (tModelType != TMODEL_TYPE.WSDL_BINDING) continue;
 
                 if (tModel.getName().getValue().equals(wsdlBinding)) {
-                    applicableTModel = tModel;
-                    break;
+                    final String requiredNameSpace = extractNamespace(tModel);
+                    if (!namespaceSupplied && requiredNameSpace != null) {
+                        logger.log(Level.WARNING, "The tModel defined a namespace, but no namespace was provided for tModelKey: " +
+                                tModel.getTModelKey() + " namespace '" + requiredNameSpace + "'.");
+                    } else if (namespaceSupplied && requiredNameSpace == null) {
+                        logger.log(Level.WARNING, "The tModel does not define a namespace, however a namespace was requested. tModelKey: " +
+                                tModel.getTModelKey() + " namespace '" + namespaceSupplied + "'.");
+                    } else if (namespaceSupplied) {
+                        if (wsdlBindingNamespace.equalsIgnoreCase(requiredNameSpace.trim())) {
+                            applicableTModel = tModel;
+                            break;
+                        }
+                    } else {
+                        applicableTModel = tModel;
+                        break;
+                    }
                 }
             }
 
             if (applicableTModel == null) {
-                logger.log(Level.INFO, "No bindingTemplate found which implements the wsdl:binding with name: " + wsdlBinding);
+                logger.log(Level.INFO, "No bindingTemplate found which implements the wsdl:binding with name '" + wsdlBinding + "'" +
+                ((namespaceSupplied) ? " and namespace '" + wsdlBindingNamespace + "'." : "."));
                 return null;
             }
 
@@ -397,7 +429,7 @@ public class UDDIUtilities {
         TModel wsdlBindingTModel = null;
         for (TModel tModel : allFoundModels) {
             if (!tModel.getTModelKey().equals(wsdlBindingTModelKey)) continue;
-            wsdlBindingTModel = tModel;
+            wsdlBindingTModel = tModel;  //break required?
         }
 
         if (wsdlBindingTModel == null) throw new IllegalStateException("wsdl:binding tModel not found");
@@ -413,7 +445,7 @@ public class UDDIUtilities {
         }
 
         if (!accessPoint.getUseType().equalsIgnoreCase("endPoint") && !accessPoint.getUseType().equalsIgnoreCase("http")) {
-            logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " contians a bindingTemplate which maps to the wsdl:port with name: " + wsdlPortName +
+            logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " contains a bindingTemplate which maps to the wsdl:port with name: " + wsdlPortName +
                     " but it does not contain an accessPoint element with a useType of 'endPoint' or 'http'");
             return null;
         }
@@ -423,19 +455,74 @@ public class UDDIUtilities {
         return returnInfo;
     }
 
-    public static String extractWsdlUrl(final TModel bindingTModel){
-        if(bindingTModel == null) throw new NullPointerException("bindingTModel cannot be null");
+    /**
+     * Extract the namespace from the supplied TModel, if it has one defined.
+     *
+     * @param tModel TModel to search it's categoryBag for a namespace keyedReference
+     * @return String namespace found, never the empty string, or null if not found
+     */
+    public static String extractNamespace(final TModel tModel) {
 
-        for(OverviewDoc overviewDoc: bindingTModel.getOverviewDoc()){
-            if(overviewDoc.getOverviewURL().getUseType().equalsIgnoreCase(WsdlToUDDIModelConverter.WSDL_INTERFACE)){
-                return overviewDoc.getOverviewURL().getValue();
+        final CategoryBag categoryBag = tModel.getCategoryBag();
+        if (categoryBag == null) return null;//should never happen, not concerned here
+
+        for (KeyedReference kr : categoryBag.getKeyedReference()) {
+            if (kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE)) {
+                if(kr.getKeyValue() != null && !kr.getKeyValue().trim().isEmpty()){
+                    return kr.getKeyValue();
+                }
             }
         }
 
         return null;
     }
 
-    public static class UDDIBindingImplementionInfo{
+    /**
+     * Get the WSDL URL from the supplied tModel. The WSDL URL should exist as an overviewDoc. The overviewURL
+     * contained within an overviewDoc will be the first found which has a useType of 'wsdlInterface'. If none
+     * are found, then the first found will be returned which has no useType defined. Other useTypes e.g. 'text'
+     * will never be returned
+     * @param tModel
+     * @return String WSDL url if found, otherwise null
+     */
+    public static String extractWsdlUrl(final TModel tModel) {
+        if (tModel == null) throw new NullPointerException("tModel cannot be null");
+
+        final Map<String, String> useTypeToUrl = new HashMap<String, String>();
+
+        final String empty = "empty_";
+        int index = 1;
+        for (OverviewDoc doc : tModel.getOverviewDoc()) {
+            OverviewURL url = doc.getOverviewURL();
+
+            String useType = url.getUseType();
+            if (useType.equals("")) {
+                useType = empty + index;
+            }
+            useTypeToUrl.put(useType.toLowerCase(), url.getValue());
+            index++;
+        }
+
+        if (useTypeToUrl.containsKey(WsdlToUDDIModelConverter.WSDL_INTERFACE.toLowerCase())) {
+            return useTypeToUrl.get(WsdlToUDDIModelConverter.WSDL_INTERFACE.toLowerCase());
+        }
+
+        //search for empty keys
+        for (Map.Entry<String, String> entry : useTypeToUrl.entrySet()) {
+            if (!entry.getKey().startsWith(empty)) continue;
+            //return the first overviewDoc with an empty useType
+            return entry.getValue();
+        }
+
+
+        logger.log(Level.FINE, "tModel does not contain an overviewDoc with either an empty useType or a value of '" + WsdlToUDDIModelConverter.WSDL_INTERFACE + "'" +
+                " tModelKey: " + tModel.getTModelKey());
+
+        return null;
+
+    }
+
+    public static class UDDIBindingImplementionInfo {
 
         public String getEndPoint() {
             return endPoint;
@@ -450,9 +537,9 @@ public class UDDIUtilities {
         }
 
         public void setImplementingWsdlPort(String implementingWsdlPort) {
-            if(implementingWsdlPort == null || implementingWsdlPort.trim().isEmpty())
+            if (implementingWsdlPort == null || implementingWsdlPort.trim().isEmpty())
                 throw new IllegalArgumentException("implementingWsdlPort cannot be null or empty");
-            
+
             this.implementingWsdlPort = implementingWsdlPort;
         }
 
@@ -461,7 +548,7 @@ public class UDDIUtilities {
         }
 
         public void setImplementingWsdlUrl(String implementingWsdlUrl) {
-            if(implementingWsdlUrl == null || implementingWsdlUrl.trim().isEmpty())
+            if (implementingWsdlUrl == null || implementingWsdlUrl.trim().isEmpty())
                 throw new IllegalArgumentException("implementingWsdlUrl cannot be null or empty");
 
             this.implementingWsdlUrl = implementingWsdlUrl;
@@ -477,14 +564,16 @@ public class UDDIUtilities {
      * <p/>
      * This can be used to determine if  WSDL can go under the control of a UDDI Business Service.
      * The wsdl parameters should have been obtained from UDDI
-     *
+     * <p/>
      * Supports namespaces
-     * 
-     * @param wsdl
-     * @param wsdlServiceName
-     * @param wsdlPortName
+     *
+     * @param wsdl Wsdl for a published service
+     * @param wsdlServiceName wsdl:service local name
+     * @param wsdlServiceNamespace wsdl:service namespace
+     * @param wsdlPortName wsdl:port local name
+     * @param wsdlBinding wsdl:binding local name
+     * @param wsdlBindingNamespace wsdl:binding namespace
      * @return true if the wsdl implements the wsdl:port name, false otherwise
-     * @throws WsdlEndPointNotFoundException
      */
     public static boolean validatePortBelongsToWsdl(final Wsdl wsdl,
                                                     final String wsdlServiceName,
@@ -492,44 +581,47 @@ public class UDDIUtilities {
                                                     final String wsdlPortName,
                                                     final String wsdlBinding,
                                                     final String wsdlBindingNamespace) {
-        if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
-        if(wsdlServiceName == null || wsdlServiceName.trim().isEmpty()) throw new IllegalArgumentException("wsdlServiceName cannot be null or empty");
-        if(wsdlPortName == null || wsdlPortName.trim().isEmpty()) throw new IllegalArgumentException("wsdlPortName cannot be null or empty");
-        if(wsdlBinding == null || wsdlBinding.trim().isEmpty()) throw new IllegalArgumentException("wsdlBinding cannot be null or empty");
-        
+        if (wsdl == null) throw new NullPointerException("wsdl cannot be null");
+        if (wsdlServiceName == null || wsdlServiceName.trim().isEmpty())
+            throw new IllegalArgumentException("wsdlServiceName cannot be null or empty");
+        if (wsdlPortName == null || wsdlPortName.trim().isEmpty())
+            throw new IllegalArgumentException("wsdlPortName cannot be null or empty");
+        if (wsdlBinding == null || wsdlBinding.trim().isEmpty())
+            throw new IllegalArgumentException("wsdlBinding cannot be null or empty");
+
         final boolean useServiceNamespace = wsdlServiceNamespace != null && !wsdlServiceNamespace.trim().isEmpty();
         final boolean useBindingNamespace = wsdlBindingNamespace != null && !wsdlBindingNamespace.trim().isEmpty();
 
-        for (Service wsdlService : wsdl.getServices()){
-            if(!wsdlService.getQName().getLocalPart().equalsIgnoreCase(wsdlServiceName)){
+        for (Service wsdlService : wsdl.getServices()) {
+            if (!wsdlService.getQName().getLocalPart().equalsIgnoreCase(wsdlServiceName)) {
                 logger.log(Level.FINE, "No wsdl:service name match. Wsdl service name is '" +
-                        wsdlService.getQName().getLocalPart()+"' requested service name is '" + wsdlServiceName+"'");
+                        wsdlService.getQName().getLocalPart() + "' requested service name is '" + wsdlServiceName + "'");
                 continue;
             }
 
-            if(useServiceNamespace && !wsdlService.getQName().getNamespaceURI().equalsIgnoreCase(wsdlServiceNamespace)){
+            if (useServiceNamespace && !wsdlService.getQName().getNamespaceURI().equalsIgnoreCase(wsdlServiceNamespace)) {
                 logger.log(Level.FINE, "No wsdl:service namespace match. Wsdl service namespace is '" +
-                        wsdlService.getQName().getNamespaceURI()+"' requested service namespace is '" + wsdlServiceNamespace+"'");
+                        wsdlService.getQName().getNamespaceURI() + "' requested service namespace is '" + wsdlServiceNamespace + "'");
                 continue;
             }
 
             final Map<String, Port> stringPortMap = wsdlService.getPorts();
-            for(Port port: stringPortMap.values()){
-                if(!port.getName().equalsIgnoreCase(wsdlPortName)){
+            for (Port port : stringPortMap.values()) {
+                if (!port.getName().equalsIgnoreCase(wsdlPortName)) {
                     logger.log(Level.FINE, "No wsdl:port name match. Wsdl port name is '" +
-                            port.getName()+"' requested port name is '" + wsdlPortName+"'");
+                            port.getName() + "' requested port name is '" + wsdlPortName + "'");
                     continue;
                 }
 
                 final Binding binding = port.getBinding();
-                if(!binding.getQName().getLocalPart().equalsIgnoreCase(wsdlBinding)) {
+                if (!binding.getQName().getLocalPart().equalsIgnoreCase(wsdlBinding)) {
                     logger.log(Level.FINE, "No wsdl:binding name match. Wsdl binding name is '" +
-                            binding.getQName().getLocalPart()+"' requested binding name is '" + wsdlBinding+"'");
+                            binding.getQName().getLocalPart() + "' requested binding name is '" + wsdlBinding + "'");
                     continue;
                 }
-                if(useBindingNamespace && !binding.getQName().getNamespaceURI().equalsIgnoreCase(wsdlBindingNamespace)) {
+                if (useBindingNamespace && !binding.getQName().getNamespaceURI().equalsIgnoreCase(wsdlBindingNamespace)) {
                     logger.log(Level.FINE, "No wsdl:binding namespace match. Wsdl binding namespace is '" +
-                            binding.getQName().getNamespaceURI()+"' requested binding namespace is '" + wsdlBindingNamespace+"'");
+                            binding.getQName().getNamespaceURI() + "' requested binding namespace is '" + wsdlBindingNamespace + "'");
                     continue;
                 }
                 return true;
@@ -549,12 +641,13 @@ public class UDDIUtilities {
      * 2) find any bindingTemplate which implements the correct wsdl:binding, return it's accessPoint value
      * <p/>
      *
-     * @param wsdl WSDL to extract end point information from
-     * @param wsdlServiceName        //todo delete when sure no use for this
+     * @param wsdl            WSDL to extract end point information from
+     * @param wsdlServiceName //todo delete when sure no use for this
      * @param wsdlPortName
      * @param wsdlPortBinding
      * @return String end point
      * @throws com.l7tech.uddi.UDDIUtilities.WsdlEndPointNotFoundException
+     *
      */
     public static String extractEndPointFromWsdl(final Wsdl wsdl,
                                                  final String wsdlServiceName,
@@ -618,7 +711,7 @@ public class UDDIUtilities {
                 + wsdlPortBinding + "' binding");
     }
 
-    public static class WsdlEndPointNotFoundException extends Exception{
+    public static class WsdlEndPointNotFoundException extends Exception {
         public WsdlEndPointNotFoundException(String message) {
             super(message);
         }

@@ -556,7 +556,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                             UDDIUtilities.UDDIBindingImplementionInfo bindingImplInfo = null;
                             try {
                                 bindingImplInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
-                                        serviceControl.getUddiServiceKey(), serviceControl.getWsdlPortName(), serviceControl.getWsdlPortBinding());
+                                        serviceControl.getUddiServiceKey(), serviceControl.getWsdlPortName(), serviceControl.getWsdlPortBinding(), serviceControl.getWsdlPortBindingNamespace());
                             } catch (UDDIException e) {
                                 context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
                                         "Could not find a UDDI bindingTemplate that implements wsdl:binding "
@@ -568,7 +568,16 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                         SystemMessages.UDDI_NOTIFICATION_ENDPOINT_NOT_FOUND,
                                         serviceKey,
                                         serviceControl.getWsdlPortName(),
+                                        serviceControl.getWsdlPortBinding(),
+                                        (serviceControl.getWsdlPortBindingNamespace() != null)?"namespace '" +serviceControl.getWsdlPortBindingNamespace()+"'": "",
                                         describe(uddiRegistry) );
+
+                                //set defaultRoutingURL to be empty
+                                ps.setDefaultRoutingUrl(null);
+                                factory.serviceManager.update(ps);
+                                logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value");
+                                //remove the UDDIServiceControl object as it no longer applies
+                                factory.uddiServiceControlManager.delete(serviceControl);
                                 continue;
                             }
 

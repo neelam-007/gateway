@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TModel xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" tModelKey="uddi:aaaea43d-d88c-11de-bd69-e78cc8022e5a">
+    <ns4:name xml:lang="en-US">SameBindingName</ns4:name>
+    <ns4:description xml:lang="en-US">Concept object created according to WSDL handling defined in Technical Note &quot;Using WSDL in a UDDI Registry, Version 2.0.2&quot;</ns4:description>
+    <ns4:overviewDoc>
+        <ns4:description xml:lang="en-US">the original WSDL document</ns4:description>
+        <ns4:overviewURL useType="wsdlInterface">http://irishman:8152/SpaceOrderofBattle_Parent.wsdl</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:overviewDoc>
+        <ns4:description xml:lang="en-US">W3C Web Service Description Language document</ns4:description>
+        <ns4:overviewURL useType="copy of wsdlInterface">http://YOUR-HXBPSD34PO:53305/CentraSite/CentraSite/ino:dav/ino:dav/projects/WSDL/SOB.IPD.LMCO/uddi_aa0089ed-d88c-11de-bd69-f6bd64f915ab/DefaultOrganization_SpaceOrderTestCaseNamespaces_SpaceOrderofBattle_Parent.wsdl</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:overviewDoc>
+        <ns4:description xml:lang="en-US">Technical Note &quot;Using WSDL in a UDDI Registry, Version 2.0.2&quot;</ns4:description>
+        <ns4:overviewURL useType="text">http://www.oasis-open.org/committees/uddi-spec/doc/tn/uddi-spec-tc-tn-wsdl-v202-20040631.htm</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:categoryBag>
+        <ns4:keyedReference keyValue="http://SOB.IPD.LMCO/" keyName="binding namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
+        <ns4:keyedReference keyValue="uddi:aaac333d-d88c-11de-bd69-a4700f744063" keyName="portType reference" tModelKey="uddi:uddi.org:wsdl:porttypereference"/>
+        <ns4:keyedReference keyValue="uuid:aa254698-93de-3870-8df3-a5c075d64a0e" keyName="SOAP protocol" tModelKey="uddi:uddi.org:wsdl:categorization:protocol"/>
+        <ns4:keyedReference keyValue="uuid:68de9e80-ad09-469d-8a37-088422bfbc36" keyName="HTTP transport" tModelKey="uddi:uddi.org:wsdl:categorization:transport"/>
+        <ns4:keyedReference keyValue="binding" keyName="WSDL type" tModelKey="uddi:uddi.org:wsdl:types"/>
+        <ns4:keyedReference keyValue="wsdlSpec" tModelKey="uddi:uddi.org:categorization:types"/>
+        <ns4:keyedReferenceGroup tModelKey="uddi:centrasite.com:attributes:relationship">
+            <ns4:keyedReference keyValue="uddi:aaaea43d-d88c-11de-bd69-ada9e16093de" keyName="Implements" tModelKey="uddi:uddi.org:categorization:general_keywords"/>
+        </ns4:keyedReferenceGroup>
+    </ns4:categoryBag>
+</TModel>

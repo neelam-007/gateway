@@ -121,6 +121,24 @@
             </wsdl:output>
         </wsdl:operation>
     </wsdl:binding>
+    <wsdl:portType name="ParentPortType">
+        <wsdl:operation name="AnOperation">
+            <wsdl:input message="tns:GetTLESoapIn"/>
+            <wsdl:output message="tns:GetTLESoapOut"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="SameBindingName" type="tns:ParentPortType">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="AnOperation">
+            <soap:operation soapAction="http://SOB.IPD.LMCO/GetTLE" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
 	<wsdl:service name="SpaceOrderofBattle">
 		<wsdl:port name="JMSSOB" binding="tns:JMSSOB">
 			<soap:address location="http://localhost:1610/SpaceOrderofBattle.asmx"/>
@@ -129,4 +147,12 @@
 			<soap12:address location="http://localhost:1610/SpaceOrderofBattle.asmx"/>
 		</wsdl:port>
 	</wsdl:service>
+    <wsdl:service name="SpaceOrderTestCaseNamespaces">
+        <wsdl:port name="ParentWsdlPort" binding="tns:SameBindingName">
+            <soap:address location="http://localhost:1610/SpaceOrderofBattle.asmx"/>
+        </wsdl:port>
+        <wsdl:port name="ChildWsdlPort" binding="i0:SameBindingName">
+            <soap12:address location="http://localhost:1610/SpaceOrderofBattle.asmx"/>
+        </wsdl:port>
+    </wsdl:service>
 </wsdl:definitions>

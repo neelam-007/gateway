@@ -17,6 +17,7 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     private String wsdlUrl;
     private String wsdlPortName;
     private String wsdlPortBinding;
+    private String wsdlPortBindingNamespace;
     private String businessServiceName;
     private String businessServiceKey;
     private String businessEntityKey;
@@ -97,17 +98,26 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
         return wsdlPortName;
     }
 
+    public void setWsdlPortName(String wsdlPortName) {
+        this.wsdlPortName = wsdlPortName;
+    }
+
     @Override
     public String getWsdlPortBinding() {
         return wsdlPortBinding;
     }
 
-    public void setWsdlPortName(String wsdlPortName) {
-        this.wsdlPortName = wsdlPortName;
-    }
-
     public void setWsdlPortBinding(String wsdlPortBinding) {
         this.wsdlPortBinding = wsdlPortBinding;
+    }
+
+    @Override
+    public String getWsdlPortBindingNamespace() {
+        return wsdlPortBindingNamespace;
+    }
+
+    public void setWsdlPortBindingNamespace(String wsdlPortBindingNamespace) {
+        this.wsdlPortBindingNamespace = wsdlPortBindingNamespace;
     }
 
     @Override

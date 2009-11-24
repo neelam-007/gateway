@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TModel xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" tModelKey="uddi:aaac333d-d88c-11de-bd69-a4700f744063">
+    <ns4:name xml:lang="en-US">ParentPortType</ns4:name>
+    <ns4:description xml:lang="en-US">Interface object created according to WSDL handling defined in Technical Note &quot;Using WSDL in a UDDI Registry, Version 2.0.2&quot;</ns4:description>
+    <ns4:overviewDoc>
+        <ns4:description xml:lang="en-US">the original WSDL document</ns4:description>
+        <ns4:overviewURL useType="wsdlInterface">http://irishman:8152/SpaceOrderofBattle_Parent.wsdl</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:overviewDoc>
+        <ns4:description xml:lang="en-US">W3C Web Service Description Language document</ns4:description>
+        <ns4:overviewURL useType="copy of wsdlInterface">http://YOUR-HXBPSD34PO:53305/CentraSite/CentraSite/ino:dav/ino:dav/projects/WSDL/SOB.IPD.LMCO/uddi_aa0089ed-d88c-11de-bd69-f6bd64f915ab/DefaultOrganization_SpaceOrderTestCaseNamespaces_SpaceOrderofBattle_Parent.wsdl</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:overviewDoc>
+        <ns4:description xml:lang="en-US">Technical Note &quot;Using WSDL in a UDDI Registry, Version 2.0.2&quot;</ns4:description>
+        <ns4:overviewURL useType="text">http://www.oasis-open.org/committees/uddi-spec/doc/tn/uddi-spec-tc-tn-wsdl-v202-20040631.htm</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:categoryBag>
+        <ns4:keyedReference keyValue="http://SOB.IPD.LMCO/" keyName="portType namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
+        <ns4:keyedReference keyValue="portType" keyName="WSDL type" tModelKey="uddi:uddi.org:wsdl:types"/>
+    </ns4:categoryBag>
+</TModel>

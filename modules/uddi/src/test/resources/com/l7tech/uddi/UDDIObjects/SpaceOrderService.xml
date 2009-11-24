@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<businessService xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" businessKey="uddi:207ff1cc-25c5-544c-415c-5d98ea91060c" serviceKey="uddi:9c7d0e97-d88c-11de-bd69-c3cafb478058">
+    <ns4:name xml:lang="en-US">SpaceOrderTestCaseNamespaces</ns4:name>
+    <ns4:description xml:lang="en-US">Donal</ns4:description>
+    <ns4:bindingTemplates>
+        <ns4:bindingTemplate serviceKey="uddi:9c7d0e97-d88c-11de-bd69-c3cafb478058" bindingKey="uddi:aaaea43d-d88c-11de-bd69-e46e83c98065">
+            <ns4:accessPoint useType="endPoint">http://thehostwedontwanttorouteto.com:1610/SpaceOrderofBattle1.asmx</ns4:accessPoint>
+            <ns4:tModelInstanceDetails>
+                <ns4:tModelInstanceInfo tModelKey="uddi:aaaea43d-d88c-11de-bd69-e78cc8022e5a">
+                    <ns4:description xml:lang="en-US">The wsdl:binding that this wsdl:port implements. The instanceParms specifies the port local name.</ns4:description>
+                    <ns4:instanceDetails>
+                        <ns4:description xml:lang="en-US">The wsdl:binding that this wsdl:port implements.</ns4:description>
+                        <ns4:instanceParms>ParentWsdlPort</ns4:instanceParms>
+                    </ns4:instanceDetails>
+                </ns4:tModelInstanceInfo>
+                <ns4:tModelInstanceInfo tModelKey="uddi:aaac333d-d88c-11de-bd69-a4700f744063">
+                    <ns4:description xml:lang="en-US">The wsdl:portType that this wsdl:port implements.</ns4:description>
+                </ns4:tModelInstanceInfo>
+            </ns4:tModelInstanceDetails>
+        </ns4:bindingTemplate>
+    </ns4:bindingTemplates>
+    <ns4:categoryBag>
+        <ns4:keyedReference keyValue="1.0" keyName="Version" tModelKey="uddi:uddi.org:categorization:general_keywords"/>
+        <ns4:keyedReference keyValue="http://SOB.IPD.LMCO/" keyName="service namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
+        <ns4:keyedReference keyValue="SpaceOrderTestCaseNamespaces" keyName="service local name" tModelKey="uddi:uddi.org:xml:localname"/>
+        <ns4:keyedReference keyValue="service" keyName="WSDL type" tModelKey="uddi:uddi.org:wsdl:types"/>
+        <ns4:keyedReferenceGroup tModelKey="uddi:centrasite.com:attributes:document:reference">
+            <ns4:keyedReference keyValue="/projects/WSDL/SOB.IPD.LMCO/uddi_aa0089ed-d88c-11de-bd69-f6bd64f915ab/DefaultOrganization_SpaceOrderTestCaseNamespaces_SpaceOrderofBattle_Parent.wsdl" keyName="wsdl file: DefaultOrganization_SpaceOrderTestCaseNamespaces_SpaceOrderofBattle_Parent.wsdl" tModelKey="uddi:uddi.org:categorization:general_keywords"/>
+            <ns4:keyedReference keyValue="http://irishman:8152/SpaceOrderofBattle_Parent.wsdl" keyName="wsdl file: SpaceOrderofBattle_Parent.wsdl" tModelKey="uddi:uddi.org:categorization:general_keywords"/>
+        </ns4:keyedReferenceGroup>
+    </ns4:categoryBag>
+</businessService>

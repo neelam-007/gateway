@@ -198,7 +198,21 @@ public class PublishServiceWizard extends Wizard {
                 WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
             }
             saBundle.service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
-            long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(saBundle.getService(), saBundle.getServiceDocuments());
+
+            final WsdlPortInfo wsdlPortInfo = saBundle.getWsdlPortInfo();
+            final boolean serviceControlRequired = wsdlPortInfo != null &&
+                    wsdlPortInfo.getWsdlUrl().equals(saBundle.getService().getWsdlUrl()) &&
+                    wsdlPortInfo.getAccessPointURL() != null &&
+                    wsdlPortInfo.getWsdlPortBinding() != null &&
+                    wsdlPortInfo.getWsdlPortName() != null &&
+                    wsdlPortInfo.getWsdlServiceName() != null;
+
+            final PublishedService newService = saBundle.getService();
+            if(serviceControlRequired){
+                newService.setDefaultRoutingUrl(wsdlPortInfo.getAccessPointURL());
+            }
+
+            long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(newService, saBundle.getServiceDocuments());
             saBundle.service.setOid(oid);
             Registry.getDefault().getSecurityProvider().refreshPermissionCache();
 
@@ -206,24 +220,18 @@ public class PublishServiceWizard extends Wizard {
 
             //was the service created from UDDI, if the WSDL url still matches what was saved, then
             //record this
-            final WsdlPortInfo wsdlPortInfo = saBundle.getWsdlPortInfo();
-            if(wsdlPortInfo != null && wsdlPortInfo.getWsdlUrl().equals(saBundle.getService().getWsdlUrl())){
-                //check we have all required info
-                if(wsdlPortInfo.getAccessPointURL() != null && wsdlPortInfo.getWsdlPortBinding() != null &&
-                        wsdlPortInfo.getWsdlPortName() != null && wsdlPortInfo.getWsdlServiceName() != null){
+            if(serviceControlRequired){
+                UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
+                        wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
+                        wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
+                        wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getWsdlPortBindingNamespace(), true);
 
-                    UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
-                            wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
-                            wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
-                            wsdlPortInfo.getAccessPointURL(), true);
-
-                    try {
-                        Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
-                    } catch (Exception e) {
-                        final String msg = "Error: " + ExceptionUtils.getMessage(e);
-                        logger.log(Level.WARNING, msg, e);
-                        DialogDisplayer.showMessageDialog(this, msg, "Cannot put WSDL under UDDI control", JOptionPane.ERROR_MESSAGE, null);
-                    }
+                try {
+                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
+                } catch (Exception e) {
+                    final String msg = "Error: " + ExceptionUtils.getMessage(e);
+                    logger.log(Level.WARNING, msg, e);
+                    DialogDisplayer.showMessageDialog(this, msg, "Cannot put WSDL under UDDI control", JOptionPane.ERROR_MESSAGE, null);
                 }
             }
         } catch (Exception e) {
