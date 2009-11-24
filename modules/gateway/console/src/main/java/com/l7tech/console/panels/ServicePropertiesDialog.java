@@ -542,8 +542,8 @@ public class ServicePropertiesDialog extends JDialog {
                 return;
             }
 
-            bsNameTextField.setText(uddiServiceControl.getUddiBusinessName());
-            bsKeyTextField.setText(uddiServiceControl.getUddiBusinessKey());
+            bsNameTextField.setText(uddiServiceControl.getUddiServiceName());
+            bsKeyTextField.setText(uddiServiceControl.getUddiServiceKey());
             wsdlPortTextField.setText(uddiServiceControl.getWsdlPortName());
             wsdlBindingTextField.setText(uddiServiceControl.getWsdlPortBinding());
             wsdlBindingNamespaceTextField.setText((uddiServiceControl.getWsdlPortBindingNamespace() != null) ? uddiServiceControl.getWsdlPortBindingNamespace() : "");
