@@ -23,6 +23,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.GenericHttpException;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -677,7 +678,11 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                         logger.info( "WSDL is not updated for business service '"+serviceKey+"' for registry "+describe(uddiRegistry)+"." );
                                     }
                                 } catch ( IOException ioe ) {
-                                    context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ioe, ps.displayName() + " (#"+ps.getOid()+")" );
+                                    if(ioe instanceof GenericHttpException) {
+                                        context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ExceptionUtils.getDebugException(ioe), "Cause '" + ExceptionUtils.getMessage(ioe) + "'", ps.displayName() + " (#" + ps.getOid() + ")");
+                                    }else{
+                                        context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ioe, ps.displayName() + " (#"+ps.getOid()+")" );
+                                    }
                                 } catch ( WSDLException we ) {
                                     context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, we, ps.displayName() + " (#"+ps.getOid()+")" );
                                 }
