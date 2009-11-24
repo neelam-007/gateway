@@ -95,7 +95,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
      */
     private void initialize(){
         setContentPane(contentPane);
-        getRootPane().setDefaultButton(okButton);
+//        getRootPane().setDefaultButton(okButton);
 
         Utilities.setEscKeyStrokeDisposes(this);
 
@@ -115,7 +115,11 @@ public class UddiRegistryPropertiesDialog extends JDialog {
 
         baseUrlTextField.addFocusListener(new FocusListener() {
             @Override
-            public void focusGained(FocusEvent e) {}
+            public void focusGained(FocusEvent e) {
+                //disable the ok button as the default action when ever the base url field gets focus
+                //if ok, it will be set when focus is lost
+                getRootPane().setDefaultButton(null);
+            }
 
             @Override
             public void focusLost(FocusEvent e) {
@@ -125,6 +129,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
                 computeURLField(publishUrlTextField, PUBLISH);
                 computeURLField(subscriptionUrlTextField, SUBSCRIPTION);
                 enableOrDisableUrls();
+                enableOkButtonAfterBaseURLUpdated();
             }
         });
 
@@ -286,8 +291,30 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             }
         });
 
-
         modelToView();
+    }
+
+    /**
+     * The only purpose of this method is to stop the ok button's validation from being triggered when the base
+     * url is used to trigger an update to the other URLs. This method is called after this event happens. This
+     * stops the ok validation code from running when the URL's are empty and it may not be obvious to the user.
+     * If the user goes and deletes a value for a url field and clicks ok, it will be obvious what the problem is
+     * The default ok button action should have been removed when the base url gains focus
+     *
+     * See bug 7978
+     *
+     */
+    private void enableOkButtonAfterBaseURLUpdated(){
+        if(registryNameTextField.getText().trim().isEmpty()) return;
+
+        if(uddiRegistryTypeComboBox.getSelectedIndex() == -1) return;
+
+        if(baseUrlTextField.getText().trim().isEmpty()) return;
+
+        //just check a single url
+        if(inquiryUrlTextField.getText().trim().isEmpty()) return;
+
+        getRootPane().setDefaultButton(okButton);
     }
 
     private String validateUrl( final String label, final String url, final boolean required ) {
