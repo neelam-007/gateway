@@ -17,7 +17,6 @@ import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.url.UrlResolver;
 import com.l7tech.server.util.res.ResourceGetter;
 import com.l7tech.server.util.res.ResourceObjectFactory;
@@ -36,10 +35,7 @@ import org.xml.sax.SAXParseException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,6 +52,7 @@ public class ServerSchemaValidation
         extends AbstractServerAssertion<SchemaValidation>
 {
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
+    private static final String SCHEMA_FAILURE_VARIABLE = "schema.failure";
 
     private final Auditor auditor;
     private ResourceGetter<String> resourceGetter;
@@ -241,13 +238,17 @@ public class ServerSchemaValidation
             if (validationException != null) {
                 Collection<SAXParseException> errors = reporter.recordedErrors();
                 if (!errors.isEmpty()) {
+                    List<String> messes = new ArrayList<String>();
                     for (Object error : errors) {
-                        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, error.toString());
+                        String mess = error.toString();
+                        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, mess);
+                        messes.add(mess);
                     }
+                    context.setVariable(SCHEMA_FAILURE_VARIABLE, messes.toArray());
                     return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
                 }
                 // Tarari failure with no message
-                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, ExceptionUtils.getMessage(validationException));
+                schemaValidationFailed(context, ExceptionUtils.getMessage(validationException), ExceptionUtils.getDebugException(validationException));
                 return AssertionStatus.BAD_REQUEST;
             }
 
@@ -256,46 +257,42 @@ public class ServerSchemaValidation
             return AssertionStatus.NONE;
 
         } catch (ResourceGetter.InvalidMessageException e) {
-            logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate was not well-formed XML");
+            schemaValidationFailed(context, "The document to validate was not well-formed XML: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } catch (ResourceGetter.UrlNotFoundException e) {
-            logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate made use of namespaces for which we have no schemas registered, and did not include schema URLs for these namespaces");
+            schemaValidationFailed(context, "The document to validate made use of namespaces for which we have no schemas registered, and did not include schema URLs for these namespaces", ExceptionUtils.getDebugException(e));
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } catch (ResourceGetter.MalformedResourceUrlException e) {
-            logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate included a schema declaration pointing at an invalid URL");
+            schemaValidationFailed(context, "The document to validate included a schema declaration pointing at an invalid URL", ExceptionUtils.getDebugException(e));
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } catch (ResourceGetter.UrlNotPermittedException e) {
-            logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate included a schema declaration pointing at a URL that is not permitted by the whitelist");
+            schemaValidationFailed(context, "The document to validate included a schema declaration pointing at a URL that is not permitted by the whitelist", ExceptionUtils.getDebugException(e));
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } catch (ResourceGetter.ResourceIOException e) {
-            logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "Unable to retrieve a schema document: " + ExceptionUtils.getMessage(e));
+            schemaValidationFailed(context, "Unable to retrieve a schema document: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (ResourceGetter.ResourceParseException e) {
-            logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "A remote schema document could not be parsed: " + ExceptionUtils.getMessage(e));
+            schemaValidationFailed(context, "A remote schema document could not be parsed: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (GeneralSecurityException e) {
-            logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "A remote schema document could not be downloaded because an SSL context could not be created: " + ExceptionUtils.getMessage(e));
+            schemaValidationFailed(context, "A remote schema document could not be downloaded because an SSL context could not be created: " + ExceptionUtils.getMessage(e), e);
             return AssertionStatus.SERVER_ERROR;
         } catch (NoSuchPartException e) {
-            logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "A required MIME part was lost: " + ExceptionUtils.getMessage(e));
+            schemaValidationFailed(context, "A required MIME part was lost: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
-            logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, e.getMessage());
+            schemaValidationFailed(context, ExceptionUtils.getMessage(e), e);
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } finally {
             if (ps != null) ps.close();
         }
     }
 
+    private void schemaValidationFailed(PolicyEnforcementContext context, String msg, Throwable t) {
+        logger.log(Level.INFO, "validation failed: " + msg);
+        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[] {msg}, t);
+        context.setVariable(SCHEMA_FAILURE_VARIABLE, msg);
+    }
 
     /**
      * Goes one level deeper than getRequestBodyChild
