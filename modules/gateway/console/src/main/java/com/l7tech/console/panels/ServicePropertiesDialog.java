@@ -268,17 +268,20 @@ public class ServicePropertiesDialog extends JDialog {
 
         uriField.addKeyListener(new KeyListener() {
             @Override
-            public void keyPressed(KeyEvent e) {
-                //always start with "/" for URI
-                if (!uriField.getText().startsWith("/")) {
-                    String uri = uriField.getText();
-                    uriField.setText("/" + uri);
-                }
-            }
+            public void keyPressed(KeyEvent e) {}
+
             @Override
             public void keyReleased(KeyEvent e) {
+                //always start with "/" for URI except an empty uri.
+                String uri = uriField.getText();
+                if (uri != null && !uri.isEmpty() && !uri.startsWith("/")) {
+                    uri = "/" + uri.trim();
+                    uriField.setText(uri);
+                }
+
                 updateURL();
             }
+
             @Override
             public void keyTyped(KeyEvent e) {}
         });
