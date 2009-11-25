@@ -612,7 +612,7 @@ doPatchUpload() {
     while [ "$isPatchUploadMenuValid" != "y" ]
     do
 
-        DROPBOXPATCHES=(`find $HOME -iname "*.L7P"`)
+        DROPBOXPATCHES=(`find $HOME -maxdepth 1 -iname "*.L7P"`)
         LEN=${#DROPBOXPATCHES[*]}
 
         echo ""
