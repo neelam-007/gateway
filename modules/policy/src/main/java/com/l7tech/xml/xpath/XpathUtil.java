@@ -1,9 +1,11 @@
 package com.l7tech.xml.xpath;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.jaxen.JaxenException;
 import org.jaxen.NamespaceContext;
 import org.jaxen.SimpleNamespaceContext;
+import org.jaxen.JaxenHandler;
 import org.jaxen.dom.DOMXPath;
 import org.jaxen.saxpath.SAXPathException;
 import org.jaxen.saxpath.XPathHandler;
@@ -193,6 +195,51 @@ public class XpathUtil {
             if (o instanceof SOAPElement) {
                 final SOAPElement childElement = (SOAPElement)o;
                 addNamespaces(namespaces, childElement);
+            }
+        }
+    }
+
+    /**
+     * Remove requested unused namespaces from the given map.
+     *
+     * @param expression The xpath expression (required)
+     * @param namespaces The namespace map (required)
+     * @param removePrefixes The set of prefixes to remove if unused (required)
+     */
+    public static void removeNamespaces( final String expression,
+                                         final Map<String, String> namespaces,
+                                         final Set<String> removePrefixes ) {
+        if ( SyspropUtil.getBoolean( "com.l7tech.xml.xpath.enableNamespaceCleanup", true ) ) {
+            try {
+                final Set<String> usedPrefixes = new HashSet<String>();
+                final XPathReader reader = new XPathReader();
+                reader.setXPathHandler( new JaxenHandler(){
+                    @Override
+                    public void variableReference( final String prefix, final String variableName ) throws JaxenException {
+                        usedPrefixes.add( prefix );
+                        super.variableReference( prefix, variableName );
+                    }
+
+                    @Override
+                    public void startFunction( final String prefix, final String functionName ) throws JaxenException {
+                        usedPrefixes.add( prefix );
+                        super.startFunction( prefix, functionName );
+                    }
+
+                    @Override
+                    public void startNameStep( final int axis, final String prefix, final String localName ) throws JaxenException {
+                        usedPrefixes.add( prefix );
+                        super.startNameStep( axis, prefix, localName );
+                    }
+                } );
+                reader.parse( expression );
+                Set<String> toRemove = new HashSet<String>( removePrefixes );
+                toRemove.removeAll( usedPrefixes );
+                if ( !toRemove.isEmpty() ) {
+                    namespaces.keySet().removeAll( toRemove );
+                }
+            } catch ( SAXPathException spe ) {
+                // don't remove any namespaces
             }
         }
     }

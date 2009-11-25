@@ -12,6 +12,9 @@ import org.w3c.dom.Document;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  *
@@ -300,5 +303,36 @@ public class XpathUtilTest {
         assertFalse(XpathUtil.usesTargetDocument("$blah"));
         assertFalse(XpathUtil.usesTargetDocument("$blah > 4"));
         assertFalse(XpathUtil.usesTargetDocument("count($blah)"));
+    }
+
+    @Test
+    public void testNamespaceRemoval() {
+        Map<String,String> namespaces = new HashMap<String,String>(){{
+            put( "soap", "http://soapnamespacehere" );
+            put( "remove1", "http://namespace1here" );
+            put( "remove2", "http://namespace2here" );
+            put( "keep1", "http://namespace3here" );
+            put( "keep2", "http://namespace4here" );
+        }};
+        XpathUtil.removeNamespaces( "/soap:Envelope/soap:Body/remove1:used", namespaces, new HashSet<String>( Arrays.asList("remove1","remove2") ) );
+        assertTrue( "soap present", namespaces.containsKey("soap") );
+        assertTrue( "remove1 present", namespaces.containsKey("remove1") ); // present since used
+        assertFalse( "remove2 present", namespaces.containsKey("remove2") );
+        assertTrue( "remove1 present", namespaces.containsKey("keep1") ); // present since remove not requested
+        assertTrue( "remove1 present", namespaces.containsKey("keep2") );
+
+        XpathUtil.removeNamespaces( "'literal'", namespaces, new HashSet<String>( Arrays.asList("remove1","remove2") ) );
+        assertTrue( "soap present", namespaces.containsKey("soap") );
+        assertFalse( "remove1 present", namespaces.containsKey("remove1") );
+        assertFalse( "remove2 present", namespaces.containsKey("remove2") );
+        assertTrue( "remove1 present", namespaces.containsKey("keep1") ); // present since remove not requested
+        assertTrue( "remove1 present", namespaces.containsKey("keep2") );
+    }
+
+    @Test
+    public void testNamespaceRemovalInvalidXPath() {
+        XpathUtil.removeNamespaces( "/soap:Envelope", Collections.<String,String>emptyMap(), Collections.<String>emptySet() );
+        XpathUtil.removeNamespaces( " # 2#$@%  @@", Collections.<String,String>emptyMap(), Collections.<String>emptySet() );
+        XpathUtil.removeNamespaces( "//://///!!$@%  @@", Collections.<String,String>emptyMap(), Collections.<String>emptySet() );
     }
 }
