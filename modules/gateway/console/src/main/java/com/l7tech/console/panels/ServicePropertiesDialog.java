@@ -435,7 +435,7 @@ public class ServicePropertiesDialog extends JDialog {
                             try {
                                 uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(subject.getOid());
                             } catch (FindException e1) {
-                                final String msg = "Cannot look up UDDI infomration from the Gateway: " + ExceptionUtils.getMessage(e1);
+                                final String msg = "Cannot look up UDDI information from the Gateway: " + ExceptionUtils.getMessage(e1);
                                 showErrorMessage("Cannot find", msg, ExceptionUtils.getDebugException(e1), true);
                                 uddiServiceControl = null;
                             }

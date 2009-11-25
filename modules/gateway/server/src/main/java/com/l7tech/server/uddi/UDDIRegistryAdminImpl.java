@@ -258,7 +258,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                     uddiServiceControl.getWsdlPortName(), uddiServiceControl.getWsdlPortBinding(), uddiServiceControl.getWsdlPortBindingNamespace());
 
             if(!wsdlImplementUddiWsdlPort){
-                throw new SaveException("The published service's WSDL does not relate to the BusinessService information from UDDI");
+                throw new SaveException("The published service's WSDL does not contain the selected wsdl:port / wsdl:binding chosen from the original BusinessService in UDDI." +
+                        "\nHint: if the gateway WSDL is stale, it can be updated from the WSDL tab");
             }
             
             //make sure that we are not monitoring an endpoint of this SSG

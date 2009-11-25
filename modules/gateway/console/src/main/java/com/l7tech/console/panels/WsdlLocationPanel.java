@@ -448,7 +448,7 @@ public class WsdlLocationPanel extends JPanel {
         }
 
         // WSDLLocator may point to a WSIL document
-        final boolean[] reprocess =  new boolean[1];
+        final boolean[] reprocess = new boolean[1];
         final WSDLLocator wsdlLocator = locator;
         final CancelableOperationDialog dlg =
                 CancelableOperationDialog.newCancelableOperationDialog(this, "Resolving target", "Please wait, resolving target...");
