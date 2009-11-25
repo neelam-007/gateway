@@ -298,6 +298,7 @@ public class WspConstants {
 
         // Special types
         new BeanTypeMapping(XpathExpression.class, "xpathExpressionValue"),
+        new ArrayTypeMapping(new XpathExpression[0], "xpathExpressionArray"),
         new BeanTypeMapping(BindingInfo.class, "wsdlBindingInfo"),
         new BeanTypeMapping(BindingOperationInfo.class, "wsdlBindingOperationInfo"),
         new BeanTypeMapping(MimePartInfo.class, "wsdlMimePartInfo"),
@@ -330,7 +331,8 @@ public class WspConstants {
         new BeanTypeMapping(JmsMessagePropertyRule.class, "jmsMessagePropertyRule"),
         new ArrayTypeMapping(new JmsMessagePropertyRule[0], "jmsMessagePropertyRuleArray"),
         new BeanTypeMapping(JmsMessagePropertyRuleSet.class, "jmsMessagePropertyRuleSet"),
-        new BeanTypeMapping(IdentityTarget.class, "IdentityTarget"),            
+        new BeanTypeMapping(IdentityTarget.class, "IdentityTarget"),
+        new BeanTypeMapping(MessageTargetableSupport.class, "MessageTarget"),
 
         new Java5EnumTypeMapping(TargetMessageType.class, "target"),
         new Java5EnumTypeMapping(CertificateValidationType.class, "certificateValidation"),
