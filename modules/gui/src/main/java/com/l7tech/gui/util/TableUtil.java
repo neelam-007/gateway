@@ -156,7 +156,7 @@ public final class TableUtil {
         final int preferredWidth;
         final int maxWidth;
 
-        public Col(String name, int minWidth, int preferredWidth, int maxWidth, Functions.Unary<Object,RT> valueGetter) {
+        public Col(String name, int minWidth, int preferredWidth, int maxWidth, Functions.Unary<?,RT> valueGetter) {
             super(name, valueGetter);
             this.minWidth = minWidth;
             this.preferredWidth = preferredWidth;
@@ -176,8 +176,27 @@ public final class TableUtil {
      *                    and {@link Functions#propertyTransform(Class, String)} for easy ways to create a transform.
      * @return the newly-created column descriptor.
      */
-    public static <RT> Col<RT> column(String name, int minWidth, int preferredWidth, int maxWidth, Functions.Unary<Object,RT> valueGetter) {
+    public static <RT> Col<RT> column(String name, int minWidth, int preferredWidth, int maxWidth, Functions.Unary<?,RT> valueGetter) {
         return new Col<RT>(name, minWidth, preferredWidth, maxWidth, valueGetter);
+    }
+
+    /**
+     * Create a column descriptor to pass to {@link #configureTable}.
+     *
+     * @param name        the name of the column, to use for the default table header.  Required.
+     * @param minWidth    the minimum width of the column, per {@link TableColumn#setMinWidth(int)}
+     * @param preferredWidth  the preferred width of the column, per {@link TableColumn#setPreferredWidth(int)}
+     * @param maxWidth        the maximum width of the column, per {@link TableColumn#setMaxWidth(int)}
+     * @param valueGetter a transform to use to map instances of {@link RT} to cell values.
+     *                    See {@link Functions#getterTransform(java.lang.reflect.Method)}
+     *                    and {@link Functions#propertyTransform(Class, String)} for easy ways to create a transform.
+     * @param columnClass The class for the column
+     * @return the newly-created column descriptor.
+     */
+    public static <T,RT> Col<RT> column(String name, int minWidth, int preferredWidth, int maxWidth, Functions.Unary<T,RT> valueGetter, Class<T> columnClass) {
+        Col<RT> col = column( name, minWidth, preferredWidth, maxWidth, valueGetter );
+        col.setColumnClass( columnClass );
+        return col;
     }
 
     /**

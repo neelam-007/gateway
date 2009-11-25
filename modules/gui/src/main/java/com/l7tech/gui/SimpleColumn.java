@@ -7,7 +7,8 @@ import com.l7tech.util.Functions.Unary;
  */
 public class SimpleColumn<RT> {
     private String name;
-    private Unary<Object,RT> valueGetter;
+    private Class columnClass;
+    private Unary<?,RT> valueGetter;
 
     /**
      * Create a SimpleColumn with no special behavior configured.
@@ -32,7 +33,7 @@ public class SimpleColumn<RT> {
      * @param name the name of the column.  Required.
      * @param valueGetter the transform, or null.  See {@link #setValueGetter} for more information.
      */
-    public SimpleColumn(String name, Unary<Object, RT> valueGetter) {
+    public SimpleColumn(String name, Unary<?, RT> valueGetter) {
         this.name = name;
         this.valueGetter = valueGetter;
     }
@@ -56,11 +57,29 @@ public class SimpleColumn<RT> {
     }
 
     /**
+     * Get the class for this column.
+     *
+     * @return The class for the column or null if not set
+     */
+    public Class getColumnClass() {
+        return columnClass;
+    }
+
+    /**
+     * Set the class for the column.
+     *
+     * @param columnClass The class to use for the column or null for unspecified
+     */
+    public void setColumnClass( final Class columnClass ) {
+        this.columnClass = columnClass;
+    }
+
+    /**
      * Get the transform that will be used to map row object to cell values for this column, if any.
      *
      * @return  the transform, or null.  See {@link #setValueGetter} for more information.
      */
-    public Unary<Object, RT> getValueGetter() {
+    public Unary<?, RT> getValueGetter() {
         return valueGetter;
     }
 

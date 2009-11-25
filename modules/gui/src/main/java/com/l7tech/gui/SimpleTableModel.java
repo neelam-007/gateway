@@ -30,20 +30,33 @@ public class SimpleTableModel<RT> extends AbstractTableModel {
         fireTableStructureChanged();
     }
 
+    @Override
     public int getRowCount() {
         return rows.size();
     }
 
+    @Override
     public int getColumnCount() {
         return columns.size();
     }
 
+    @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         return columns.get(columnIndex).getValue(rows.get(rowIndex), rowIndex, columnIndex);
     }
 
+    @Override
     public String getColumnName(int column) {
         return columns.get(column).getName();
+    }
+
+    @Override
+    public Class<?> getColumnClass( final int columnIndex ) {
+        Class<?> columnClass = columns.get(columnIndex).getColumnClass();
+        if ( columnClass == null ) {
+             columnClass = super.getColumnClass( columnIndex );            
+        }
+        return columnClass;
     }
 
     /**
@@ -96,5 +109,21 @@ public class SimpleTableModel<RT> extends AbstractTableModel {
      */
     public List<RT> getRows() {
         return Collections.unmodifiableList(rows);
+    }
+
+    public void addRow( final RT row ) {
+        rows.add( row );
+        fireTableRowsInserted( rows.size()-1, rows.size()-1 );
+    }
+
+    public void removeRowAt( final int modelRowIndex ) {
+        if ( modelRowIndex > -1 & modelRowIndex < rows.size() ) {
+            rows.remove( modelRowIndex );
+            fireTableRowsDeleted( modelRowIndex, modelRowIndex );
+        }
+    }
+
+    public void removeRow( final RT row ) {
+        removeRowAt( rows.indexOf( row ) );
     }
 }
