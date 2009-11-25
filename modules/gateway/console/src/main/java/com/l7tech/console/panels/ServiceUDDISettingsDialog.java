@@ -273,7 +273,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         
         // WS-Policy settings
         boolean originalWsPolicyAvailable = uddiServiceControl != null;
-        boolean proxyWsPolicyAvailable = uddiProxyServiceInfo != null;
+        boolean proxyWsPolicyAvailable = uddiProxyServiceInfo != null && publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED;
         boolean originalWsPolicyEnabled = uddiServiceControl != null && uddiServiceControl.isPublishWsPolicyEnabled();
         boolean proxyWsPolicyEnabled = uddiProxyServiceInfo != null && uddiProxyServiceInfo.isPublishWsPolicyEnabled(); 
         if ( originalWsPolicyAvailable || proxyWsPolicyAvailable ) {
