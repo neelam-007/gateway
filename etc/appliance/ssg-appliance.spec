@@ -88,6 +88,7 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 /opt/SecureSpan/Appliance/var
 %attr(0755,root,root) /opt/SecureSpan/Appliance/bin
 %attr(0755,root,root) /opt/SecureSpan/Appliance/libexec
+%attr(0600,root,root) /opt/SecureSpan/Appliance/libexec/patchVerifier.jar
 
 # Extra ssg files
 %attr(0555,layer7,layer7) /opt/SecureSpan/Gateway/runtime/etc/profile.d/*.sh

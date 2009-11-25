@@ -112,7 +112,6 @@ rm -fr %{buildroot}
 %attr(0555,layer7,layer7) /opt/SecureSpan/Controller/bin/*
 %dir %attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc
 %config %attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc/conf
-%attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc/patchesCert.pem
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/logs
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/patches
 

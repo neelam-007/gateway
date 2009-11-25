@@ -13,8 +13,10 @@ import org.springframework.beans.factory.InitializingBean;
 import java.io.*;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
 
 /**
  * File-based implementation for the PatchManager API.
@@ -27,15 +29,18 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
 
     // - PUBLIC
 
-    public PatchPackageManagerImpl() { }
-
-    public PatchPackageManagerImpl(File repositoryDir) {
-        init(repositoryDir);
+    public PatchPackageManagerImpl(File repositoryDir, PatchTrustStore trustedSigners) {
+        init(repositoryDir, trustedSigners);
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        init(configService.getPatchesDirectory());
+        init(configService.getPatchesDirectory(), new PatchTrustStore() {
+            @Override
+            public Set<X509Certificate> getTrustedCerts() {
+                return configService.getTrustedPatchCerts();
+            }
+        });
     }
 
     @Override
@@ -63,7 +68,7 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
             throw new PatchException("The patch package for patch id: " + patchId + " was not found in the repository.");
         
         try {
-            return new PatchPackageImpl(patchFile);
+            return PatchVerifier.getVerifiedPackage(patchFile, trustedSigners.getTrustedCerts());
         } catch (IOException e) {
             throw new PatchException("Error retrieving patch package for patch identifier: " + patchId + " : " + ExceptionUtils.getMessage(e), e);
         }
@@ -150,6 +155,10 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
         return rollbacks;
     }
 
+    // - PACKAGE
+
+    PatchPackageManagerImpl() { }
+
     // - PRIVATE
 
     private static final Logger logger = Logger.getLogger(PatchPackageManagerImpl.class.getName());
@@ -158,12 +167,14 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
     private ConfigService configService;
 
     private File repositoryDir;
+    private PatchTrustStore trustedSigners;
 
     private File getPackageFile(String patchId) {
         return new File(repositoryDir, patchId + PATCH_EXTENSION);
     }
 
-    private void init(File patchesDirectory) {
+    private void init(File patchesDirectory, PatchTrustStore trustedSigners) {
         this.repositoryDir = patchesDirectory;
+        this.trustedSigners = trustedSigners;
     }
 }

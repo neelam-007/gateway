@@ -12,14 +12,12 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.*;
-import java.security.cert.X509Certificate;
 
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.processcontroller.ConfigService;
 import com.l7tech.server.processcontroller.ApiWebEndpoint;
 import com.l7tech.server.processcontroller.PCUtils;
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.ProcUtils;
 import com.l7tech.common.io.ProcResult;
 
@@ -50,8 +48,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             tempPatchFile = File.createTempFile("patchzip", null);
             tempPatchFile.deleteOnExit();
             IOUtils.copyStream(patchData.getInputStream(), new FileOutputStream(tempPatchFile));
-            PatchPackage patch = new PatchPackageImpl(tempPatchFile);
-            checkTrustedCertificates(patch);
+            PatchPackage patch = PatchVerifier.getVerifiedPackage(tempPatchFile, config.getTrustedPatchCerts());
             logger.info("Uploading patch: " + patch.getProperty(PatchPackage.Property.ID));
             PatchStatus status = packageManager.savePackage(patch);
             recordManager.save(new PatchRecord(System.currentTimeMillis(), patch.getProperty(PatchPackage.Property.ID), Action.UPLOAD));
@@ -63,7 +60,6 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             if (tempPatchFile != null && tempPatchFile.exists())
                 tempPatchFile.delete();
         }
-
     }
 
     @Override
@@ -170,22 +166,6 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     private static final Logger logger = Logger.getLogger(PatchServiceApiImpl.class.getName());
 
     private static final String APPLIANCE_PATCH_LAUNCHER = "/opt/SecureSpan/Appliance/libexec/patch_launcher";
-
-    private void checkTrustedCertificates(PatchPackage patch) throws PatchException {
-        for(List<X509Certificate> certPath : patch.getCertificatePaths()) {
-            X509Certificate signer = certPath.get(0); // only verify individual certs, not certificate paths to trusted CAs
-            boolean isTrusted = false;
-            for(X509Certificate trusted : config.getTrustedPatchCerts()) {
-                if (CertUtils.certsAreEqual(trusted, signer)) {
-                    isTrusted = true;
-                    break;
-                }
-            }
-            if (! isTrusted)
-                throw new PatchException("Certificate is not trusted for signing patches: " + signer);
-        }
-        logger.log(Level.FINE, "Patch signature is trusted for " + patch.getProperty(PatchPackage.Property.ID));
-    }
 
     /** Builds the parameter list to be passed to the patch installer */
     private void getInstallParams(List<String> commandLine, PatchPackage patch, Collection<String> nodes) {

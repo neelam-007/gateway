@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
+import java.security.cert.X509Certificate;
 
 /**
  * @author jbufu
@@ -111,8 +112,13 @@ public class PatchCli {
             try {
                 logger.log(Level.INFO, "Using patch configuration from Process Controller.");
                 System.setProperty(ConfigService.PC_HOMEDIR_PROPERTY, target);
-                ConfigService config = new ConfigServiceImpl();
-                PatchPackageManager packageManager = new PatchPackageManagerImpl(config.getPatchesDirectory());
+                final ConfigService config = new ConfigServiceImpl();
+                PatchPackageManager packageManager = new PatchPackageManagerImpl(config.getPatchesDirectory(), new PatchTrustStore() {
+                    @Override
+                    public Set<X509Certificate> getTrustedCerts() {
+                        return config.getTrustedPatchCerts();
+                    }
+                });
                 PatchRecordManager recordManager = new PatchFileRecordManager(config.getPatchesLog());
                 return new PatchServiceApiImpl(config, packageManager, recordManager);
             } catch (Exception e) {

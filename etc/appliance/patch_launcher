@@ -1,10 +1,77 @@
 #!/bin/sh
 #
-# Should be run as root, to launch a java process with a patch to install as argument
-# layer7 user has sudo rights for this launcher  
+# Must be run as root, to launch a java process with a patch to install as argument to the -jar option
+# layer7 user has sudo rights for this launcher
 
-java=$1
+#set -x
 
-shift
+APPLIANCE_JAVA=/opt/SecureSpan/JDK/jre/bin/java
+PATCH_VERIFIER=/opt/SecureSpan/Appliance/libexec/patchVerifier.jar
+PC_HOME=/opt/SecureSpan/Controller
 
-${java} $@
+checkWriteOnlyRoot() {
+  for f in "${1}" "$(dirname ${1})"
+  do
+      if [ ! -e "${f}" ] ; then
+          echo ${f} does not exist
+          exit 1
+      fi
+
+      if [ "$(stat --printf %u ${f})" != "0" ] ; then
+          echo ${f} must be owned by root
+          exit 1
+      fi
+
+      if [ "$(find ${f} -maxdepth 0 -not -perm -o+w)" != "${f}" ] ; then
+          echo ${f} must not be world writeable
+          exit 1
+      fi
+
+      if [ "$(stat --printf %g ${f})" != "0" -a "$(find ${f} -maxdepth 0 -not -perm -g+w)" != "${f}" ] ; then
+          echo ${f} must not be non-root group writeable
+          exit 1
+      fi
+  done
+
+}
+
+extractProperty() {
+    declare EP_PROP=$1
+    declare EP_ENV=$2
+    declare EP_FILE=$3
+    declare EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" | sed "s/[ ]*${EP_PROP}[ ]*=//" )
+    export "${EP_ENV}"="$(echo ${EP_EXPR} | sed 's/^[ ]*//g')"
+}
+
+
+if [ "$(id -u)" != "0" ] ; then
+    echo "Must be root to intall appliance patches."
+    exit 1
+fi
+
+self="${0}"
+java="${1}"
+
+if [ -z "${java}" ] ; then
+    echo no arguments speficied
+    exit 1
+fi
+
+checkWriteOnlyRoot "${self}"
+checkWriteOnlyRoot "${java}"
+checkWriteOnlyRoot "${APPLIANCE_JAVA}"
+checkWriteOnlyRoot "${PATCH_VERIFIER}"
+
+# don't trust any user certs from the controller's store if the store doesn't pass these checks
+extractProperty "host.controller.patch.truststore.file" PATCHES_KEYSTORE "${PC_HOME}/etc/host.properties"
+if [ "$(stat --printf %u ${PATCHES_KEYSTORE})" != "0" -o "$(find ${PATCHES_KEYSTORE} -maxdepth 0 -not -perm -o+w)" != "${PATCHES_KEYSTORE}" -o "$(stat --printf %g ${PATCHES_KEYSTORE})" != "0" -a "$(find ${PATCHES_KEYSTORE} -maxdepth 0 -not -perm -g+w)" != "${PATCHES_KEYSTORE}" ] ; then
+  PC_HOME=
+fi
+
+"${APPLIANCE_JAVA}" -Dcom.l7tech.server.processcontroller.homeDirectory="${PC_HOME}" -jar "${PATCH_VERIFIER}" "$@"
+if [ $? -eq 0 ] ; then
+  $*
+else
+  echo "Package verification failure when attempting to install patch."
+  exit 1
+fi

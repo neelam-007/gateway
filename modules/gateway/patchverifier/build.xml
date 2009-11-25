@@ -1,0 +1,43 @@
+<project name="layer7-gateway-patchverifier" default="compile">
+    <property name="module.main" value="com.l7tech.server.processcontroller.patching.PatchVerifier"/>
+    <property name="module.sign" value="true"/>
+    <property name="module.package.jar.required" value="true"/>
+    <property name="module.jar.index" value="true"/>
+    <property name="module.obfuscate.disabled" value="true"/>
+    
+    <import file="../../../etc/build/build-common.xml"/>
+
+    <!-- Custom packaging step to include an artifact into this module -->
+    <target name="package.custom">
+
+        <property name="class-dependencies" value="${build.dir}/class-dependencies"/>
+        <mkdir dir="${class-dependencies}"/>
+
+        <jar-include name="layer7-utility" dir="${class-dependencies}"/>
+        <jar-include name="layer7-common" dir="${class-dependencies}"/>
+        <jar-include name="layer7-identity" dir="${class-dependencies}"/>
+        <jar-include name="layer7-policy" dir="${class-dependencies}"/>
+        <jar-include name="layer7-uddi" dir="${class-dependencies}"/>
+        <jar-include name="layer7-wsdl" dir="${class-dependencies}"/>
+        <jar-include name="layer7-gateway-common" dir="${class-dependencies}"/>
+        <jar-include name="layer7-gateway-config" dir="${class-dependencies}"/>
+        <jar-include name="layer7-gateway-management" dir="${class-dependencies}"/>
+        <jar-include name="layer7-gateway-server" dir="${class-dependencies}"/>
+        <jar-include name="layer7-gateway-processcontroller" dir="${class-dependencies}"/>
+        <jar-include name="commons-lang" organisation="commons-lang" dir="${class-dependencies}"/>
+        <jar-include name="commons-codec" organisation="commons-codec" dir="${class-dependencies}"/>
+        <jar-include name="commons-configuration" organisation="commons-configuration" dir="${class-dependencies}"/>
+
+        <classfileset id="verifier-dependencies" dir="${class-dependencies}">
+            <root classname="com.l7tech.server.processcontroller.patching.PatchVerifier"/>
+        </classfileset>
+
+        <copy todir="${classes.main.dir}">
+            <fileset refid="verifier-dependencies"/>
+            <fileset dir="${class-dependencies}" includes="**/*.properties"/>
+        </copy>
+
+        <delete dir="${class-dependencies}"/>
+    </target>
+
+</project>

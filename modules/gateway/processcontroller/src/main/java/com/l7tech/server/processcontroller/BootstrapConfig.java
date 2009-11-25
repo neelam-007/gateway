@@ -4,7 +4,6 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.CertGenParams;
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.*;
@@ -18,8 +17,6 @@ import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.ConsoleHandler;
@@ -83,39 +80,10 @@ public class BootstrapConfig {
             createPropertiesFile(hostPropertiesFile, ksFile, getMasterPasswordManager(etcDir).encryptPassword(ksPass.toCharArray()));
         }
 
-        checkInitPatcherProperties(etcDir, hostPropertiesFile);
 
         doOverideProperties(hostPropertiesFile, overrideProperties);
         logger.info( "Configuration bootstrap complete." );
         return 0;
-    }
-
-    private static void checkInitPatcherProperties(File etcDir, File hostPropertiesFile) {
-        Properties hostProperties = new Properties();
-        FileInputStream fin = null;
-        try {
-            fin = new FileInputStream(hostPropertiesFile);
-            hostProperties.load(fin);
-        } catch (Exception e) {
-            throw new DieDieDie("Error reading host properties", 5, e);
-        } finally {
-            ResourceUtils.closeQuietly(fin);
-        }
-
-        if (!hostProperties.containsKey(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE)) {
-            final File patchKeystoreFile = checkFile(new File(etcDir, ConfigService.DEFAULT_PATCH_TRUSTSTORE_FILENAME), false);
-            final File patchCertFile = checkFile(new File(etcDir, ConfigService.DEFAULT_PATCHES_CERT_FILENAME), true);
-            hostProperties.putAll(createPatchesKeystore(etcDir, patchKeystoreFile, generatePassword(), patchCertFile));
-            FileOutputStream fos = null;
-            try {
-                fos = new FileOutputStream(hostPropertiesFile);
-                hostProperties.store(fos, null);
-            } catch (Exception e) {
-                throw new DieDieDie("Error storing patcher properties", 5, e);
-            } finally {
-                ResourceUtils.closeQuietly(fos);
-            }
-        }
     }
 
     private static void doOverideProperties(File hostPropertiesFile, File overridePropertiesFile) {
@@ -218,28 +186,6 @@ public class BootstrapConfig {
             ResourceUtils.closeQuietly(kfos);
         }
         return pass;
-    }
-
-    /** Create trust keystore for validating patches and import the supplied certificate */
-    private static Map<String,String> createPatchesKeystore(final File etcDir, final File patchKeystoreFile, final String ksPass, File patchCertFile) {
-        logger.info("Initializing trust keystore for patches...");
-        FileOutputStream kfos = null;
-        try {
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(null, null);
-            ks.setCertificateEntry(ConfigService.DEFAULT_PATCHES_CERT_ALIAS, CertUtils.decodeCert(IOUtils.slurpFile(patchCertFile)));
-            kfos = new FileOutputStream(patchKeystoreFile);
-            ks.store(kfos, ksPass.toCharArray());
-            return new HashMap<String, String>() {{
-                put(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_TYPE, "JKS");
-                put(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE, patchKeystoreFile.getAbsolutePath());
-                put(ConfigService.HOSTPROPERTIES_PATCH_TRUSTSTORE_PASSWORD, getMasterPasswordManager(etcDir).encryptPassword(ksPass.toCharArray()));
-            }};
-        } catch (Exception e) {
-            throw new DieDieDie("Unable to create trust keystore for patches.", 4, e);
-        } finally {
-            ResourceUtils.closeQuietly(kfos);
-        }
     }
 
     private static void createPropertiesFile(final File hostPropertiesFile, final File keystoreFile, final String obfKeystorePass) {

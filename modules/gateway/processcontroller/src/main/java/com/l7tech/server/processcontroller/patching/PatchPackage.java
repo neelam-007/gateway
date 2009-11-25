@@ -1,9 +1,6 @@
 package com.l7tech.server.processcontroller.patching;
 
 import java.io.File;
-import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.Set;
 
 /**
  * PatchPackage API.
@@ -34,6 +31,4 @@ public interface PatchPackage {
     public File getFile();
 
     public String getProperty(Property prop);
-
-    public Set<List<X509Certificate>> getCertificatePaths();
 }

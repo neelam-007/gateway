@@ -71,6 +71,12 @@ public class PatchServiceTest {
         ReflectionTestUtils.setField(config, "trustedPatchCerts", new HashSet<X509Certificate>() {{ add(PatchServiceTest.this.patchSignerCert); }});
         PatchPackageManager packageManager = new PatchPackageManagerImpl();
         ReflectionTestUtils.setField(packageManager, "repositoryDir", config.getPatchesDirectory());
+        ReflectionTestUtils.setField(packageManager, "trustedSigners", new PatchTrustStore() {
+            @Override
+            public Set<X509Certificate> getTrustedCerts() {
+                return config.getTrustedPatchCerts();
+            }
+        });
         ReflectionTestUtils.setField(patchService, "config", config);
         ReflectionTestUtils.setField(patchService, "packageManager", packageManager);
         ReflectionTestUtils.setField(patchService, "recordManager", new PatchRecordManager() { @Override public void save(PatchRecord record) { /*do nothing*/ } });

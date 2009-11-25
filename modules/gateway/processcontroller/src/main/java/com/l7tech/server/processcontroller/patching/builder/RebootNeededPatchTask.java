@@ -15,7 +15,7 @@ public class RebootNeededPatchTask implements PatchTask {
     public void runPatch(String resourceDirEntry) throws Exception {
         String rebootMsg = PatchMain.readResource(this.getClass(), resourceDirEntry + PatchTask.TASK_RESOURCE_FILE);
         String patchId = null; // todo: add to interface?
-        System.out.println("Patch ID: " + patchId + " is installed. " + (rebootMsg == null || rebootMsg.isEmpty() ? DEFAULT_REBOOT_MSG : rebootMsg));
+        System.out.println(rebootMsg == null || rebootMsg.isEmpty() ? DEFAULT_REBOOT_MSG : rebootMsg);
     }
 
     @Override

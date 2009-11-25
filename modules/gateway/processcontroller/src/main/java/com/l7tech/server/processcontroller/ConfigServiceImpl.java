@@ -324,10 +324,15 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     private Set<X509Certificate> readTrustedPatchCerts(Properties hostProps) throws IOException, GeneralSecurityException {
-        String patchTrustStore = getRequiredProperty(hostProps, HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE);
-        File trustedPatchCerts = new File(patchTrustStore);
+        String patchUserTrustStore = hostProps.getProperty(HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE);
+        if (patchUserTrustStore == null) {
+            logger.log(Level.INFO, "No user trusted certificates for patch verification.");
+            return new HashSet<X509Certificate>();
+        }
+
+        File trustedPatchCerts = new File(patchUserTrustStore);
         if (!trustedPatchCerts.exists())
-            throw new IllegalArgumentException("Patch certificates truststore not found: " + patchTrustStore);
+            throw new IllegalArgumentException("User patch certificates truststore not found: " + patchUserTrustStore);
         return readCerts(
             getRequiredProperty(hostProps, HOSTPROPERTIES_PATCH_TRUSTSTORE_TYPE),
             trustedPatchCerts,

@@ -1221,7 +1221,7 @@
     -->
     <target name="package"
             description="Create the SSG JAR file and SSB/SSM installers."
-            depends="package.gateway.all, package.manager, package.client, package.installclients, package.installgateway.work"/>
+            depends="package.gateway.all, package.manager, package.patchverifier, package.client, package.installclients, package.installgateway.work"/>
 
 
     <target name="package.gateway.all" depends="package.configwiz.all, package.backuprestore, package.gateway, package.modules, pack.manager, package.api, package.em, package.em.config, package.ssgbackup.zip"/>
@@ -1687,6 +1687,15 @@
     </target>
 
     <target name="package.manager" depends="package.manager.jar" unless="manager.notrequired">
+    </target>
+
+    <target name="package.patchverifier" depends="package.modules">
+        <mkdir dir="${build.dir}/patchverifier"/>
+        <copy todir="${build.dir}/patchverifier">
+            <fileset dir="modules/gateway/patchverifier/build">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
     </target>
 
     <target name="package.report.jars" depends="package.client.jar,package.gateway,package.manager.jar"/>
@@ -2856,6 +2865,7 @@
                     <include name="patch_launcher"/>
                 </fileset>
             </copy>
+            <copy file="${build.dir}/patchverifier/layer7-gateway-patchverifier.jar" tofile="@{dir}/${install.src.app.libexec}/patchVerifier.jar"/>
 
             <copy todir="@{dir}/${install.src.app.bin}">
                 <fileset dir="${src.root}/etc/appliance">
@@ -2929,7 +2939,6 @@
             </copy>
 
             <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.pc.controletc}/conf/omp.dat"/>
-            <copy file="${src.root}/etc/patchesCert.pem" tofile="@{dir}/${install.src.pc.controletc}/patchesCert.pem"/>
        </sequential>
     </macrodef>
 
