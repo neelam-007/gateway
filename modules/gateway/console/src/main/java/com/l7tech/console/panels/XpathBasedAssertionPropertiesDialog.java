@@ -223,6 +223,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         this.assertion = assertion;
     }
 
+    public Map<String,String> getRequiredNamespaces() {
+        return Collections.unmodifiableMap( requiredNamespaces );
+    }
+
     @Override
     public boolean isConfirmed() {
         return wasOk;
