@@ -1,22 +1,22 @@
 package com.l7tech.security.xml.processor;
 
 import com.ibm.xml.dsig.Canonicalizer;
-import com.ibm.xml.dsig.Transform;
 import com.ibm.xml.dsig.SignatureMethod;
+import com.ibm.xml.dsig.Transform;
 import com.ibm.xml.dsig.transform.FixedExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.security.xml.AttachmentCompleteTransform;
 import com.l7tech.security.xml.AttachmentContentTransform;
 import com.l7tech.security.xml.STRTransform;
 import com.l7tech.security.xml.SupportedSignatureMethods;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Node;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * An XSS4J AlgorithmFactory that adds some additonal features:
@@ -29,11 +29,13 @@ import java.util.HashMap;
  */
 public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     private static final boolean USE_IBM_EXC_C11R = Boolean.getBoolean("com.l7tech.common.security.xml.c14n.useIbmExcC11r");
+    private static final String PROP_PERMITTED_DIGEST_ALGS = "com.l7tech.security.xml.dsig.permittedDigestAlgorithms";
 
     private final Map<Node, Node> strToTarget;
     private boolean sawEnvelopedTransform = false;
 
     private Map<String, String> ecdsaSignatureMethodTable = new HashMap<String, String>();
+    private final Set<String> enabledDigestSet;
 
     /**
      * Create an algorithm factory that will allow the STR-Transform.
@@ -48,6 +50,10 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA256.getAlgorithmIdentifier(), "SHA256withECDSA");
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA384.getAlgorithmIdentifier(), "SHA384withECDSA");
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA512.getAlgorithmIdentifier(), "SHA512withECDSA");
+
+        String enabledDigestStr = SyspropUtil.getString(PROP_PERMITTED_DIGEST_ALGS, "SHA,SHA-1,SHA-256,SHA-384,SHA-512");
+        String[] enabledDigests = enabledDigestStr == null ? new String[0] : enabledDigestStr.toUpperCase().split(",");
+        enabledDigestSet = new HashSet<String>(Arrays.asList(enabledDigests));
     }
 
     public Canonicalizer getCanonicalizer(String string) {
@@ -63,9 +69,17 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     public SignatureMethod getSignatureMethod(String uri, Object o) throws NoSuchAlgorithmException, NoSuchProviderException {
         String sigMethod = ecdsaSignatureMethodTable.get(uri);
         if (sigMethod == null)
-            return super.getSignatureMethod(uri, o);
+            return checkSignatureMethod(super.getSignatureMethod(uri, o));
 
-        return new EcdsaSignatureMethod(sigMethod, uri, getProvider());
+        return checkSignatureMethod(new EcdsaSignatureMethod(sigMethod, uri, getProvider()));
+    }
+
+    private SignatureMethod checkSignatureMethod(SignatureMethod signatureMethod) throws NoSuchAlgorithmException {
+        // Ensure that the signature method uses a digest algorithm which is enabled
+        SupportedSignatureMethods suppsig = SupportedSignatureMethods.fromSignatureAlgorithm(signatureMethod.getURI());
+        if (!enabledDigestSet.contains(suppsig.getDigestAlgorithmName().toUpperCase()))
+            throw new NoSuchAlgorithmException("The algorithm " + suppsig.getDigestAlgorithmName() + " is not permitted for digital signature verification");
+        return signatureMethod;
     }
 
     public Transform getTransform(String s) throws NoSuchAlgorithmException {
@@ -105,6 +119,13 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         } else {
             md = super.getDigestMethod(s);
         }
+        return checkDigestMethod(md);
+    }
+
+    private MessageDigest checkDigestMethod(MessageDigest md) throws NoSuchAlgorithmException {
+        // Ensure that the digest method uses a digest algorithm which is enabled
+        if (!enabledDigestSet.contains(md.getAlgorithm().toUpperCase()))
+            throw new NoSuchAlgorithmException("The algorithm " + md.getAlgorithm() + " is not permitted for use as the digest method for signature verification.");
         return md;
     }
 }

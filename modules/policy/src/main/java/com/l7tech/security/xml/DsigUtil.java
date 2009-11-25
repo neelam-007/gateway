@@ -252,6 +252,21 @@ public class DsigUtil {
                 }
                 return super.getTransform(transform);
             }
+
+            @Override
+            public MessageDigest getDigestMethod(String s) throws NoSuchAlgorithmException, NoSuchProviderException {
+                MessageDigest dig = super.getDigestMethod(s);
+                if ("MD5".equalsIgnoreCase(dig.getAlgorithm()))
+                    throw new NoSuchAlgorithmException("MD5 not supported for digests for license signing");
+                return dig;
+            }
+
+            @Override
+            public SignatureMethod getSignatureMethod(String s, Object o) throws NoSuchAlgorithmException, NoSuchProviderException {
+                if ("MD5".equalsIgnoreCase(SupportedSignatureMethods.fromSignatureAlgorithm(s).getDigestAlgorithmName()))
+                    throw new NoSuchAlgorithmException("MD5 not supported for signature method for license signing");
+                return super.getSignatureMethod(s, o);
+            }
         });
 
         Validity validity = DsigUtil.verify(sigContext, sigElement, signingKey);
@@ -297,7 +312,7 @@ public class DsigUtil {
      * @param signatureElement  the ds:Signature DOM Element.  Required.
      * @param verificationKey   the key to use to verify the signature.  Required.
      * @return the result of SignatureContext.verify().
-     * @throws SignatureException
+     * @throws SignatureException if the signature cannot be validated
      */
     public static Validity verify(SignatureContext sigContext, Element signatureElement, Key verificationKey) throws SignatureException {
         precheckSigElement(signatureElement, verificationKey);
@@ -312,6 +327,7 @@ public class DsigUtil {
      *
      * @param sigElement the ds:Signature element to precheck
      * @param verificationKey the key that will be used to verify it
+     * @throws java.security.SignatureException if there is something unsavory about the signature element
      */
     public static void precheckSigElement(Element sigElement, Key verificationKey) throws SignatureException {
         checkForHmacOutputLength(sigElement);
