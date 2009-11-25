@@ -118,8 +118,7 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
             throw new PatchException("Error deleting patch package " + patchId);
         }
 
-        if (! PatchStatus.State.ROLLED_BACK.name().equals(status.getField(PatchStatus.Field.STATE)))
-            status = updatePackageStatus(patchId, PatchStatus.Field.STATE, PatchStatus.State.NONE.name());
+        status = updatePackageStatus(patchId, PatchStatus.Field.STATE, PatchStatus.State.NONE.name());
 
         return status;
     }
