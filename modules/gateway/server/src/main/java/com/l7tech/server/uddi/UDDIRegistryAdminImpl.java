@@ -289,9 +289,14 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             //Create the monitor runtime record for this service control as it has just been created
             final UDDIServiceControlMonitorRuntime monitorRuntime = new UDDIServiceControlMonitorRuntime(oid, lastUddiMonitoredTimeStamp);
             uddiServiceControlMonitorRuntimeManager.save(monitorRuntime);
+            if(uddiServiceControl.isUnderUddiControl()){
+                logger.log(Level.FINE, "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL");
+                uddiCoordinator.notifyEvent(new BusinessServiceUpdateUDDIEvent(uddiRegistry.getOid(), uddiServiceControl.getUddiServiceKey(), false));
+            }
             return oid;
         }else{
             UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());
+            final boolean wsdlRefreshRequired = !original.isUnderUddiControl() && uddiServiceControl.isUnderUddiControl();
             if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
             uddiServiceControl.throwIfFinalPropertyModified(original);
             //make sure the wsdl under uddi control is not being set when it is not allowed
@@ -300,6 +305,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                         "WSDL cannot be under UDDI control when the owning business service in UDDI has had its bindingTemplates removed");
             }
             uddiServiceControlManager.update( uddiServiceControl );
+            if(wsdlRefreshRequired){
+                logger.log(Level.FINE, "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL");
+                uddiCoordinator.notifyEvent(new BusinessServiceUpdateUDDIEvent(uddiServiceControl.getUddiRegistryOid(), uddiServiceControl.getUddiServiceKey(), false));
+            }
             return uddiServiceControl.getOid();
         }
     }

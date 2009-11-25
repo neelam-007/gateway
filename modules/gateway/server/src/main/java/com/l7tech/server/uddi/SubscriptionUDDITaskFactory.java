@@ -493,6 +493,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 final Collection<UDDIServiceControl> allApplicableServiceControls =
                         factory.uddiServiceControlManager.findByUDDIRegistryAndServiceKey(registryOid, serviceKey, null);
 
+                logger.log(Level.FINE, "Processing business service update. UDDIRegistry #id("+registryOid+") for serviceKey: " + serviceKey+" isDeleted = " + isDeleted);
+
                 if ( isDeleted ) {
                     logger.log(Level.INFO, "Service with key: " + serviceKey +
                             " has been deleted from UDDI Registry #(" + registryOid + "). Removing record of UDDI BusinessService.");
