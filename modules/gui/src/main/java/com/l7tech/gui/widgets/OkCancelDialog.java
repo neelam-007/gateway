@@ -27,16 +27,16 @@ public class OkCancelDialog<V> extends JDialog {
 
     private final ValidatedPanel validatedPanel;
 
-    public static OkCancelDialog createOKCancelDialog(Component owner, String title, boolean modal, ValidatedPanel panel) {
+    public static <T> OkCancelDialog<T> createOKCancelDialog(Component owner, String title, boolean modal, ValidatedPanel<T> panel) {
         Window window = SwingUtilities.getWindowAncestor(owner);
-        return new OkCancelDialog(window, title, modal, panel);
+        return new OkCancelDialog<T>(window, title, modal, panel);
     }
 
-    public OkCancelDialog(Window owner, String title, boolean modal, ValidatedPanel panel) {
+    public OkCancelDialog(Window owner, String title, boolean modal, ValidatedPanel<V> panel) {
         this( owner, title, modal, panel, false );
     }
 
-    public OkCancelDialog(Window owner, String title, boolean modal, ValidatedPanel panel, boolean readOnly) {
+    public OkCancelDialog(Window owner, String title, boolean modal, ValidatedPanel<V> panel, boolean readOnly) {
         super(owner, title, modal ? DEFAULT_MODALITY_TYPE : ModalityType.MODELESS );
         this.validatedPanel = panel;
         this.readOnly = readOnly;
