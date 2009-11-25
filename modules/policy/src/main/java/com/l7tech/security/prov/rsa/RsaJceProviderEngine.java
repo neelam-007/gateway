@@ -58,7 +58,7 @@ public class RsaJceProviderEngine extends JceProvider {
                 if (cryptoj.isFIPS140Compliant())
                     cryptoj.setMode(cryptoj.NON_FIPS140_MODE);
                 PROVIDER = cryptoj.provider;
-                Security.insertProviderAt(PROVIDER, 1);
+                Security.addProvider(PROVIDER);
             }
         } catch (InvocationTargetException e) {
             throw new RuntimeException("Unable to put SunJSSE SSL library into FIPS mode: " + ExceptionUtils.getMessage(e), e);
