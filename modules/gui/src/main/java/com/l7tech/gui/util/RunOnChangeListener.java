@@ -13,18 +13,19 @@ import javax.swing.event.ListSelectionEvent;
 
 /**
  * Utility listener that runs the given Runnable whenever it receives a change event.
- *
- * @author $Author$
- * @version $Revision$
  */
 public class RunOnChangeListener implements ActionListener, ChangeListener, DocumentListener, ItemListener, ListSelectionListener {
 
     //- PUBLIC
 
+    public RunOnChangeListener() {
+        this.runnable = null;
+    }
+
     /**
      *
      */
-    public RunOnChangeListener(Runnable runme) {
+    public RunOnChangeListener( final Runnable runme ) {
         if(runme==null) throw new NullPointerException("runme parameter must not be null");
         this.runnable = runme;
     }
@@ -34,7 +35,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
      */
     @Override
     public void actionPerformed(ActionEvent e) {
-        runnable.run();
+        run();
     }
 
     /**
@@ -42,7 +43,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
      */
     @Override
     public void stateChanged(ChangeEvent e) {
-        runnable.run();
+        run();
     }
 
     /**
@@ -50,7 +51,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
      */
     @Override
     public void changedUpdate(DocumentEvent e) {
-        runnable.run();
+        run();
     }
 
     /**
@@ -58,7 +59,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
      */
     @Override
     public void insertUpdate(DocumentEvent e) {
-        runnable.run();
+        run();
     }
 
     /**
@@ -66,7 +67,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
      */
     @Override
     public void removeUpdate(DocumentEvent e) {
-        runnable.run();
+        run();
     }
 
     /**
@@ -74,7 +75,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
      */
     @Override
     public void itemStateChanged(ItemEvent e) {
-        runnable.run();
+        run();
     }
 
     /**
@@ -82,7 +83,13 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
      */
     @Override
     public void valueChanged(ListSelectionEvent e) {
-        runnable.run();
+        run();
+    }
+
+    //- PROTECTED
+
+    protected void run() {
+        if ( runnable != null ) runnable.run();
     }
 
     //- PRIVATE
