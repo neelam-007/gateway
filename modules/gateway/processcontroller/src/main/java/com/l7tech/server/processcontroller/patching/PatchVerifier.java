@@ -213,7 +213,9 @@ public class PatchVerifier {
         CodeSource codeSource = PatchVerifier.class.getProtectionDomain().getCodeSource();
         if (codeSource != null) {
             CodeSigner[] signers = codeSource.getCodeSigners();
-            if (signers != null) {
+            if (signers == null) {
+                logger.log(Level.WARNING, "Code signer certificate for patch verification not found.");
+            } else {
                 for (CodeSigner signer : signers) {
                     Certificate signerCert = signer.getSignerCertPath().getCertificates().get(0);
                     if (! (signerCert instanceof X509Certificate)) {
