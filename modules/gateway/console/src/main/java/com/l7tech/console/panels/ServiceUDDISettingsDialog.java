@@ -34,7 +34,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(ServiceUDDISettingsDialog.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle(ServiceUDDISettingsDialog.class.getName());
     private static final String OPTION_ORIGINAL_BUSINESS_SERVICE = "Original Business Service";
-    private static final String OPTION_PROXIED_BUSINESS_SERVICE = "Proxied Business Service";
+    private static final String OPTION_PUBLISHED_BUSINESS_SERVICES = "Published Business Services";
     private static final String OPTION_BOTH_BUSINESS_SERVICES = "Both Business Services";
 
     private JPanel contentPane;
@@ -279,13 +279,13 @@ public class ServiceUDDISettingsDialog extends JDialog {
         if ( originalWsPolicyAvailable || proxyWsPolicyAvailable ) {
             java.util.List<String> options = new ArrayList<String>();
             if ( originalWsPolicyAvailable ) options.add( OPTION_ORIGINAL_BUSINESS_SERVICE );
-            if ( proxyWsPolicyAvailable ) options.add( OPTION_PROXIED_BUSINESS_SERVICE );
+            if ( proxyWsPolicyAvailable ) options.add(OPTION_PUBLISHED_BUSINESS_SERVICES);
             if ( originalWsPolicyAvailable && proxyWsPolicyAvailable ) options.add( OPTION_BOTH_BUSINESS_SERVICES );
             policyServiceComboBox.setModel( new DefaultComboBoxModel( options.toArray(new String[options.size()] ) ));
             publishPolicyCheckBox.setSelected( originalWsPolicyEnabled || proxyWsPolicyEnabled );
             if ( originalWsPolicyEnabled && proxyWsPolicyEnabled ) policyServiceComboBox.setSelectedItem( OPTION_BOTH_BUSINESS_SERVICES );
             else if ( originalWsPolicyEnabled ) policyServiceComboBox.setSelectedItem( OPTION_ORIGINAL_BUSINESS_SERVICE );
-            else if ( proxyWsPolicyEnabled ) policyServiceComboBox.setSelectedItem( OPTION_PROXIED_BUSINESS_SERVICE );
+            else if ( proxyWsPolicyEnabled ) policyServiceComboBox.setSelectedItem(OPTION_PUBLISHED_BUSINESS_SERVICES);
         }
         publishFullPolicyCheckBox.setSelected( getPublishFullPolicy(uddiServiceControl, uddiProxyServiceInfo) );
         inlinePolicyIncludesCheckBox.setSelected( getPublishInlinedPolicy(publishFullPolicyCheckBox.isSelected(), uddiServiceControl, uddiProxyServiceInfo) );
@@ -298,13 +298,13 @@ public class ServiceUDDISettingsDialog extends JDialog {
         if ( originalMetricsAvailable || proxyMetricsAvailable ) {
             java.util.List<String> options = new ArrayList<String>();
             if ( originalMetricsAvailable ) options.add( OPTION_ORIGINAL_BUSINESS_SERVICE );
-            if ( proxyMetricsAvailable ) options.add( OPTION_PROXIED_BUSINESS_SERVICE );
+            if ( proxyMetricsAvailable ) options.add(OPTION_PUBLISHED_BUSINESS_SERVICES);
             if ( originalMetricsAvailable && proxyMetricsAvailable ) options.add( OPTION_BOTH_BUSINESS_SERVICES );
             metricsServiceComboBox.setModel( new DefaultComboBoxModel( options.toArray(new String[options.size()] ) ));
             metricsEnabledCheckBox.setSelected( originalMetricsEnabled || proxyMetricsEnabled );
             if ( originalMetricsEnabled && proxyMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_BOTH_BUSINESS_SERVICES );
             else if ( originalMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_ORIGINAL_BUSINESS_SERVICE );
-            else if ( proxyMetricsEnabled ) metricsServiceComboBox.setSelectedItem( OPTION_PROXIED_BUSINESS_SERVICE );
+            else if ( proxyMetricsEnabled ) metricsServiceComboBox.setSelectedItem(OPTION_PUBLISHED_BUSINESS_SERVICES);
         }
     }
 
@@ -895,7 +895,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     public boolean isProxyMetricsEnabled() {
         return metricsEnabledCheckBox.isEnabled() && metricsEnabledCheckBox.isSelected() &&
-                ( OPTION_PROXIED_BUSINESS_SERVICE.equals( metricsServiceComboBox.getSelectedItem() ) ||
+                ( OPTION_PUBLISHED_BUSINESS_SERVICES.equals( metricsServiceComboBox.getSelectedItem() ) ||
                   OPTION_BOTH_BUSINESS_SERVICES.equals( metricsServiceComboBox.getSelectedItem() ) );
     }
 
@@ -907,7 +907,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     public boolean isProxyPublishWsPolicyEnabled() {
         return publishPolicyCheckBox.isEnabled() &&publishPolicyCheckBox.isSelected() &&
-                ( OPTION_PROXIED_BUSINESS_SERVICE.equals( policyServiceComboBox.getSelectedItem() ) ||
+                ( OPTION_PUBLISHED_BUSINESS_SERVICES.equals( policyServiceComboBox.getSelectedItem() ) ||
                   OPTION_BOTH_BUSINESS_SERVICES.equals( policyServiceComboBox.getSelectedItem() ) );
     }
 

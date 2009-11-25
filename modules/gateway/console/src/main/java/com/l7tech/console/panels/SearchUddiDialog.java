@@ -356,10 +356,6 @@ public class SearchUddiDialog extends JDialog {
 
                 final String registryName = (String) uddiRegistryComboBox.getSelectedItem();
 
-                final Callable<WsdlPortInfo[]> serviceCallable = getServiceSearchCallable(searchString);
-
-                final Callable<UDDINamedEntity[]> businessCallable = getBusinessSearchCallable(searchString);
-
                 final JProgressBar bar = new JProgressBar();
                 bar.setIndeterminate(true);
                 final CancelableOperationDialog cancelDlg =
@@ -369,10 +365,12 @@ public class SearchUddiDialog extends JDialog {
                 try {
                     switch(searchType){
                         case WSDL_SEARCH:
+                            final Callable<WsdlPortInfo[]> serviceCallable = getServiceSearchCallable(searchString);
                             final WsdlPortInfo [] serviceResult = Utilities.doWithDelayedCancelDialog(serviceCallable, cancelDlg, DELAY_INITIAL);
                             processServiceSearchResults(registryName, serviceResult);
                             break;
                         case BUSINESS_ENTITY_SEARCH:
+                            final Callable<UDDINamedEntity[]> businessCallable = getBusinessSearchCallable(searchString);                            
                             final UDDINamedEntity[] businessResult = Utilities.doWithDelayedCancelDialog(businessCallable, cancelDlg, DELAY_INITIAL);
                             processBusinessSearchResults(registryName, businessResult);
                     }
