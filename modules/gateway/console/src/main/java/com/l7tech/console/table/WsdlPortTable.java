@@ -79,8 +79,8 @@ public class WsdlPortTable extends JTable {
                 int column = tableView.convertColumnIndexToModel(viewColumn);
                 if (e.getClickCount() == 1 && column != -1) {
 
-                    ((WsdlTableSorter) tableView.getModel()).sortData(column, true);
-                    ((WsdlTableSorter) tableView.getModel()).fireTableDataChanged();
+                    ((WsdlPortTableSorter) tableView.getModel()).sortData(column, true);
+                    ((WsdlPortTableSorter) tableView.getModel()).fireTableDataChanged();
                     tableView.getTableHeader().resizeAndRepaint();
                 }
             }
@@ -258,8 +258,8 @@ public class WsdlPortTable extends JTable {
 
                 switch (column) {
                     case WSDL_PORT_NAME_COLUMN_INDEX:
-                        elementA = ((WsdlPortInfo) a).getBusinessServiceName();
-                        elementB = ((WsdlPortInfo) b).getBusinessServiceName();
+                        elementA = ((WsdlPortInfo) a).getWsdlPortName();
+                        elementB = ((WsdlPortInfo) b).getWsdlPortName();
                         break;
 
                     case WSDL_TABLE_WSDL_COLUMN_INDEX:
