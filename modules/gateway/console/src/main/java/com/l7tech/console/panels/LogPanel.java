@@ -23,6 +23,7 @@ import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.console.util.AuditLogMessage;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.objectmodel.FindException;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
@@ -1946,6 +1947,8 @@ public class LogPanel extends JPanel {
                 } else {
                     result = Boolean.valueOf(prop.getValue());
                 }
+            } catch (PermissionDeniedException e) {
+                result = false;
             } catch (FindException e) {
                 // keep old value
             }
