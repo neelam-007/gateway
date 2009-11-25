@@ -10,6 +10,7 @@
     <xsl:param name="tests">false</xsl:param>
     <xsl:param name="source.resources">false</xsl:param>
     <xsl:param name="test.resources">false</xsl:param>
+    <xsl:param name="build.output">false</xsl:param>
 
     <!-- Global settings -->
     <xsl:output method="xml" encoding="utf-8" indent="yes"/>
@@ -36,7 +37,7 @@
                 <xsl:if test="'true' = $test.resources">
                     <sourceFolder url="file://$MODULE_DIR$/src/test/resources" isTestSource="true" />
                 </xsl:if>
-                <xsl:if test="'true' = $source or 'true' = $tests or 'true' = $source.resources or 'true' = $test.resources">
+                <xsl:if test="'true' = $source or 'true' = $tests or 'true' = $source.resources or 'true' = $test.resources or 'true' = $build.output">
                     <excludeFolder url="file://$MODULE_DIR$/build" />
                 </xsl:if>
             </content>

@@ -560,6 +560,7 @@
             <param name="tests" expression="${module.tests.available}"/>
             <param name="source.resources" expression="${module.resources.available}"/>
             <param name="test.resources" expression="${module.testresources.available}"/>
+            <param name="build.output" expression="${module.build.output}"/>
         </xslt>
     </target>
 

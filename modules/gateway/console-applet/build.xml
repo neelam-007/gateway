@@ -4,6 +4,7 @@
     <property name="module.package.jar.required" value="true"/>
     <property name="module.obfuscate.disabled" value="true"/>
     <property name="module.jar.index" value="true"/>
+    <property name="module.build.output" value="true"/>
 
     <import file="../../../etc/build/build-common.xml"/>
 

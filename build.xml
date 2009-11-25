@@ -449,6 +449,7 @@
                 <propertyref name="module.compile.excludes"/>
                 <propertyref name="module.sign"/>
                 <propertyref name="module.pack200"/>
+                <propertyref name="module.build.output"/>
                 <propertyref name="src.root"/>
                 <propertyref prefix="build.version"/>
                 <propertyref prefix="build.em.version"/>
