@@ -148,19 +148,22 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
     JobId<PolicyValidatorResult> validatePolicy(String policyXml, PolicyType policyType, boolean soap, Wsdl wsdl, HashMap<String, Policy> fragments);
 
     /**
-     * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
+     * Asynchronously find all URLs of the WSDLs from UDDI Registry given the service name pattern.
      *
      * @param registryOid   long oid of the UDDIRegistry to search
      * @param namePattern   The string of the service name (wildcard % is supported)
      * @param caseSensitive True if case sensitive, false otherwise.
-     * @param getWsdlURL boolean if true then the WSDL URL is inculded in each returned WsdlPortInfo. Setting to false
-     * will dramatically increase search performance 
-     * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
+     * @param getWsdlURL    boolean if true then the WSDL URL is inculded in each returned WsdlPortInfo. Setting to false
+     *                      will dramatically increase search performance
+     * @return the job identifier of the uddi search job.
+     *         Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
+     *         and {@link #getJobResult(JobId)} to pick up the result in the form of a WsdlPortInfo[] that contains
+     *         the search results for all services whose name matches the namePattern
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
-    @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
-    WsdlPortInfo[]
+    @Secured(types = EntityType.UDDI_REGISTRY, stereotype = FIND_ENTITIES)
+    JobId<WsdlPortInfo[]>
     findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL) throws FindException;
 
     /**
@@ -183,17 +186,20 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
     findWsdlInfosForSingleBusinessService(long registryOid, String serviceKey, boolean getFirstOnly) throws FindException;
 
     /**
-     * Find all Businesses from the UDDI Registry given the service name pattern.
+     * Asynchronously find all Businesses from the UDDI Registry given the service name pattern.
      *
      * @param registryOid   long oid of the UDDIRegistry to search
      * @param namePattern   The string of the business name (wildcard % is supported)
      * @param caseSensitive True if case sensitive, false otherwise.
-     * @return A list of UDDINamedEntities of businesses whose name matches the namePattern.
+     * @return the job identifier of the uddi search job.
+     *         Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
+     *         and {@link #getJobResult(JobId)} to pick up the result in the form of a UDDINamedEntity[] that contains
+     *         the search results, for all business whose name matches the namePattern
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
-    UDDINamedEntity[] findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException;
+    JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException;
 
     /**
      * Find all WS-Policy attachments from the UDDI registry that match the given name pattern.

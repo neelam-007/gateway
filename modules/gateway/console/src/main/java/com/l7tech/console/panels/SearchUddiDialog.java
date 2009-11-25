@@ -1,10 +1,10 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.*;
-import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.console.table.WsdlTable;
 import com.l7tech.console.table.WsdlTableSorter;
 import com.l7tech.console.util.Registry;
@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.AsyncAdminMethods;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -23,8 +24,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -61,6 +64,12 @@ public class SearchUddiDialog extends JDialog {
     private static final String WSDL_PORT_DIALOG = "UDDI.WSDL.PORT.DIALOG";
     private static final String RETRIEVE_WSDL = "UDDI.WSDL.RETRIEVE";
     private static final int MAX_SERVICE_NAME_LENGTH = 255;
+
+    private static final String PROP_PREFIX = "com.l7tech.console";
+    private static final long DELAY_INITIAL = SyspropUtil.getLong(PROP_PREFIX + ".uddiSearch.serverSideDelay.initial", 100L);
+    private static final long DELAY_CAP = SyspropUtil.getLong(PROP_PREFIX + ".uddiSearch.serverSideDelay.maximum", 30000L);
+    private static final double DELAY_MULTIPLIER = SyspropUtil.getDouble(PROP_PREFIX + ".uddiSearch.serverSideDelay.multiplier", 1.6);
+    
     private Map<String, UDDIRegistry> allRegistries;
     private BusinessEntityTable businessEntityTable;
 
@@ -332,8 +341,6 @@ public class SearchUddiDialog extends JDialog {
                 }
 
                 retrievedRows.setText("Result: 0");
-                final CancelableOperationDialog dlg =
-                        new CancelableOperationDialog(SearchUddiDialog.this, "Searching UDDI", "Please wait, Searching UDDI...");
                 final String errorMessage;
                 switch(searchType){
                     case WSDL_SEARCH:
@@ -349,116 +356,172 @@ public class SearchUddiDialog extends JDialog {
 
                 final String registryName = (String) uddiRegistryComboBox.getSelectedItem();
 
+                final Callable<WsdlPortInfo[]> serviceCallable = getServiceSearchCallable(searchString);
 
-                final SwingWorker worker = new SwingWorker() {
+                final Callable<UDDINamedEntity[]> businessCallable = getBusinessSearchCallable(searchString);
 
-                    @Override
-                    public Object construct() {
-                        try {
+                final JProgressBar bar = new JProgressBar();
+                bar.setIndeterminate(true);
+                final CancelableOperationDialog cancelDlg =
+                        new CancelableOperationDialog(SearchUddiDialog.this, "Searching UDDI", "Please wait, Searching UDDI...", bar);
 
-                            ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
-                            if (serviceAdmin == null) throw new RuntimeException("Service Admin reference not found");
-                            String regName = (String) uddiRegistryComboBox.getSelectedItem();
-                            UDDIRegistry uddiRegistry = allRegistries.get(regName);
-
-                            switch(searchType){
-                                case WSDL_SEARCH:
-                                    return serviceAdmin.findWsdlInfosFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected(), retrieveWSDLURLCheckBox.isSelected());
-                                case BUSINESS_ENTITY_SEARCH:
-                                    return serviceAdmin.findBusinessesFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected());
-                            }
-
-                            return null;
-                        } catch (FindException e) {
-                            logger.log(Level.WARNING, errorMessage, e);
-                            JOptionPane.showMessageDialog(SearchUddiDialog.this, e.getMessage(), "Error Searching UDDI Registry", JOptionPane.ERROR_MESSAGE);
-                            return null;
-                        }
+                retrievedRows.setText("Result: 0");
+                try {
+                    switch(searchType){
+                        case WSDL_SEARCH:
+                            final WsdlPortInfo [] serviceResult = Utilities.doWithDelayedCancelDialog(serviceCallable, cancelDlg, DELAY_INITIAL);
+                            processServiceSearchResults(registryName, serviceResult);
+                            break;
+                        case BUSINESS_ENTITY_SEARCH:
+                            final UDDINamedEntity[] businessResult = Utilities.doWithDelayedCancelDialog(businessCallable, cancelDlg, DELAY_INITIAL);
+                            processBusinessSearchResults(registryName, businessResult);
                     }
-
-                    @Override
-                    public void finished() {
-                        dlg.dispose();
-                    }
-                };
-
-                worker.start();
-
-                DialogDisplayer.display(dlg, new Runnable() {
-                    @Override
-                    public void run() {
-                        worker.interrupt();
-                        Object result = worker.get();
-                        if (result == null)
-                            return;    // canceled
-                        if (result instanceof WsdlPortInfo[]) {
-                            // store prefs on successful search
-                            preferences.putProperty(UDDI_REGISTRY, registryName);
-                            preferences.putProperty(WSDL_PORT_DIALOG, (showSelectWsdlPortDialogCheckBox.isSelected()) ? "true" : "false");
-
-                            boolean searchTruncated = false;
-                            Vector<WsdlPortInfo> urlList = new Vector<WsdlPortInfo>();
-                            for (int i = 0; i < ((WsdlPortInfo[])result).length; i++) {
-                                final WsdlPortInfo wi = ((WsdlPortInfo[])result)[i];
-                                if (WsdlPortInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(wi.getWsdlUrl())) {
-                                    // Flag value indicating that search results were truncated
-                                    searchTruncated = true;
-                                } else {
-                                    // Normal result
-                                    urlList.add(wi);
-                                }
-                            }
-
-                            // populate the data to the table
-                            ((WsdlTableSorter) wsdlTable.getModel()).setData(urlList);
-                            String warning = "";
-                            if (searchTruncated) {
-                                warning = "  <b>(QUERY TOO BROAD - Only the first " + urlList.size() + " results are presented)</b>";
-                                retrievedRows.setForeground(new Color(255, 64, 64));
-                            } else {
-                                retrievedRows.setForeground(new JLabel().getForeground());
-                            }
-                            retrievedRows.setText("<HTML>Result: " + urlList.size() + warning);
-
-                            return;
-                        } else if (result instanceof UDDINamedEntity[]) {
-                            // store prefs on successful search
-                            preferences.putProperty(UDDI_REGISTRY, registryName);
-
-                            boolean searchTruncated = false;
-                            List<BusinessEntityTableRow> rows = new ArrayList<BusinessEntityTableRow>();
-                            for (int i = 0; i < ((UDDINamedEntity[]) result).length; i++) {
-                                final UDDINamedEntity entity = ((UDDINamedEntity[]) result)[i];
-                                if (WsdlPortInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(entity.getName())) {
-                                    // Flag value indicating that search results were truncated
-                                    searchTruncated = true;
-                                } else {
-                                    // Normal result
-                                    rows.add(new BusinessEntityTableRow(entity));
-                                }
-                            }
-
-                            // populate the data to the table
-                            businessEntityTable.setData(rows);
-                            Utilities.setRowSorter(businessEntityTable, businessEntityTable.getModel());
-                            String warning = "";
-                            if (searchTruncated) {
-                                warning = "  <b>(QUERY TOO BROAD - Only the first " + rows.size() + " results are presented)</b>";
-                                retrievedRows.setForeground(new Color(255, 64, 64));
-                            } else {
-                                retrievedRows.setForeground(new JLabel().getForeground());
-                            }
-                            retrievedRows.setText("<HTML>Result: " + rows.size() + warning);
-                            return;
-                        }
-                        retrievedRows.setText("Result: 0");
-                    }
-                });
+                } catch (InterruptedException e2) {
+                    //nothing to do, dialog was cancelled
+                    logger.log(Level.FINEST, "Search of UDDI was cancelled");
+                } catch (InvocationTargetException e2) {
+                    logger.log(Level.WARNING, errorMessage, e2);
+                    JOptionPane.showMessageDialog(SearchUddiDialog.this, e2.getMessage(), "Error Searching UDDI Registry", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
 
         pack();
         Utilities.centerOnScreen(this);
+    }
+
+    private void processBusinessSearchResults(String registryName, UDDINamedEntity[] businessResult) {
+        // store prefs on successful search
+        preferences.putProperty(UDDI_REGISTRY, registryName);
+
+        boolean searchTruncated = false;
+        List<BusinessEntityTableRow> rows = new ArrayList<BusinessEntityTableRow>();
+        for (int i = 0; i < (businessResult).length; i++) {
+            final UDDINamedEntity entity = (businessResult)[i];
+            if (WsdlPortInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(entity.getName())) {
+                // Flag value indicating that search results were truncated
+                searchTruncated = true;
+            } else {
+                // Normal result
+                rows.add(new BusinessEntityTableRow(entity));
+            }
+        }
+
+        // populate the data to the table
+        businessEntityTable.setData(rows);
+        Utilities.setRowSorter(businessEntityTable, businessEntityTable.getModel());
+        String warning = "";
+        if (searchTruncated) {
+            warning = "  <b>(QUERY TOO BROAD - Only the first " + rows.size() + " results are presented)</b>";
+            retrievedRows.setForeground(new Color(255, 64, 64));
+        } else {
+            retrievedRows.setForeground(new JLabel().getForeground());
+        }
+        retrievedRows.setText("<HTML>Result: " + rows.size() + warning);
+    }
+
+    private void processServiceSearchResults(String registryName, WsdlPortInfo[] serviceResult) {
+        // store prefs on successful search
+        preferences.putProperty(UDDI_REGISTRY, registryName);
+        preferences.putProperty(WSDL_PORT_DIALOG, (showSelectWsdlPortDialogCheckBox.isSelected()) ? "true" : "false");
+
+        boolean searchTruncated = false;
+        Vector<WsdlPortInfo> urlList = new Vector<WsdlPortInfo>();
+        for (int i = 0; i < serviceResult.length; i++) {
+            final WsdlPortInfo wi = (serviceResult)[i];
+            if (WsdlPortInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(wi.getWsdlUrl())) {
+                // Flag value indicating that search results were truncated
+                searchTruncated = true;
+            } else {
+                // Normal result
+                urlList.add(wi);
+            }
+        }
+
+        // populate the data to the table
+        ((WsdlTableSorter) wsdlTable.getModel()).setData(urlList);
+        String warning = "";
+        if (searchTruncated) {
+            warning = "  <b>(QUERY TOO BROAD - Only the first " + urlList.size() + " results are presented)</b>";
+            retrievedRows.setForeground(new Color(255, 64, 64));
+        } else {
+            retrievedRows.setForeground(new JLabel().getForeground());
+        }
+        retrievedRows.setText("<HTML>Result: " + urlList.size() + warning);
+    }
+
+    /**
+     * This callable does not return null
+     * @param searchString String UDDI search string
+     * @return Callable UDDINamedEntity[] which can be run async to search UDDI
+     * @return
+     */
+    private Callable<UDDINamedEntity[]> getBusinessSearchCallable(final String searchString) {
+        return new Callable<UDDINamedEntity[]>() {
+            @Override
+            public UDDINamedEntity[] call() throws Exception {
+                final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
+                if (serviceAdmin == null) throw new RuntimeException("Service Admin reference not found");
+                final String regName = (String) uddiRegistryComboBox.getSelectedItem();
+                final UDDIRegistry uddiRegistry = allRegistries.get(regName);
+                final AsyncAdminMethods.JobId<UDDINamedEntity[]> jobId;
+
+                jobId = serviceAdmin.findBusinessesFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected());
+
+                UDDINamedEntity [] result = null;
+                double delay = DELAY_INITIAL;
+                Thread.sleep((long)delay);
+                while (result == null) {
+                    String status = serviceAdmin.getJobStatus(jobId);
+                    if (status == null)
+                        throw new IllegalStateException("Server could not find our uddi serach job ID");
+                    if (status.startsWith("i")) {
+                        result = serviceAdmin.getJobResult(jobId).result;
+                        if (result == null)
+                            throw new RuntimeException("Server returned a null job result");
+                    }
+                    delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
+                    Thread.sleep((long)delay);
+                }
+                return result;
+            }
+        };
+    }
+
+    /**
+     * This callable does not return null.
+     * @param searchString String UDDI search string
+     * @return Callable WsdlPortInfo[] which can be run async to search UDDI
+     */
+    private Callable<WsdlPortInfo[]> getServiceSearchCallable(final String searchString) {
+        return new Callable<WsdlPortInfo[]>() {
+            @Override
+            public WsdlPortInfo[] call() throws Exception {
+                final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
+                if (serviceAdmin == null) throw new RuntimeException("Service Admin reference not found");
+                final String regName = (String) uddiRegistryComboBox.getSelectedItem();
+                final UDDIRegistry uddiRegistry = allRegistries.get(regName);
+                final AsyncAdminMethods.JobId<WsdlPortInfo[]> jobId;
+                jobId = serviceAdmin.findWsdlInfosFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected(), retrieveWSDLURLCheckBox.isSelected());
+                
+                WsdlPortInfo [] result = null;
+                double delay = DELAY_INITIAL;
+                Thread.sleep((long)delay);
+                while (result == null) {
+                    String status = serviceAdmin.getJobStatus(jobId);
+                    if (status == null)
+                        throw new IllegalStateException("Server could not find our uddi serach job ID");
+                    if (status.startsWith("i")) {
+                        result = serviceAdmin.getJobResult(jobId).result;
+                        if (result == null)
+                            throw new RuntimeException("Server returned a null job result");
+                    }
+                    delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
+                    Thread.sleep((long)delay);
+                }
+                return result;
+            }
+        };
     }
 
     /**

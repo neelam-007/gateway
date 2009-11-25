@@ -236,29 +236,14 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return publishedServicesUpdateProducer.createUpdate(oldVersionID);
     }
 
-    /**
-     * Not used right now, deleted a test which used it but was no longer needed following the move to UDDIRegistry
-     * Leaving in case we add test coverage
-     *
-     * @param registryOid
-     * @param namePattern   The string of the service name (wildcard % is supported)
-     * @param caseSensitive True if case sensitive, false otherwise.   @return
-     * @param showWsdlURL @throws FindException
-     */
     @Override
-    public WsdlPortInfo[] findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean showWsdlURL) throws FindException {
-        WsdlPortInfo[] siList = new WsdlPortInfo[3];
-
-        siList[0] = new WsdlPortInfoImpl("Google Service", "http://api.google.com/GoogleSearch.wsdl");
-        siList[1] = new WsdlPortInfoImpl("Delayed Quote Service", "http://services.xmethods.net/soap/urn:xmethods-delayed-quotes.wsdl");
-        siList[2] = new WsdlPortInfoImpl("Stock Quote Service", "http://paris/wsdl/StockQuote_WSDL.wsdl");
-
-        return siList;
+    public JobId<WsdlPortInfo[]> findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL) throws FindException {
+        return null;
     }
 
     @Override
-    public UDDINamedEntity[] findBusinessesFromUDDIRegistry(long uddiRegistryOid, String namePattern, boolean caseSensitive) throws FindException {
-        return new UDDINamedEntity[0];
+    public JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException {
+        return null;
     }
 
     @Override
