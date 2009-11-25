@@ -188,6 +188,8 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
                                     }
                                 }
                             });
+                }else{
+                    deleteMultipleEntities(abstractTreeNodes);
                 }
 
             } else if (keyCode == KeyEvent.VK_ENTER && !hasMultipleSelection) {
