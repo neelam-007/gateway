@@ -29,7 +29,7 @@ public class ServerCertificateAttributesAssertionTest {
     @Test
     @BugNumber(6455)
     public void testMissingDnSubcomponents() throws Exception {
-        X509Certificate cert = new TestCertificateGenerator().subject("cn=blah, o=foo, dc=deeceeone, dc=deeceetwo").generate();
+        X509Certificate cert = new TestCertificateGenerator().subject("cn=blah, o=foo, dc=deeceeone, dc=deeceetwo, L=vancouver, ST=bc, ou=marketing, C=canada, STREET=123 mystreet").generate();
 
         CertificateAttributesAssertion ass = new CertificateAttributesAssertion();
         ServerCertificateAttributesAssertion sass = new ServerCertificateAttributesAssertion(ass, null);
@@ -40,14 +40,41 @@ public class ServerCertificateAttributesAssertionTest {
         Object subject = context.getVariable("certificate.subject");
         Object cn = context.getVariable("certificate.subject.dn.cn");
         Object o = context.getVariable("certificate.subject.dn.o");
-        assertEquals("cn=blah, o=foo, dc=deeceeone, dc=deeceetwo", subject.toString().toLowerCase());
+        assertEquals("cn=blah, o=foo, dc=deeceeone, dc=deeceetwo, l=vancouver, st=bc, ou=marketing, c=canada, street=123 mystreet", subject.toString().toLowerCase());
         assertEquals("blah", ((Object[])cn)[0]);
         assertEquals("foo", ((Object[])o)[0]);
-        assertEquals("", expand(context, "${certificate.subject.dn.c}"));
+        assertEquals("", expand(context, "${certificate.subject.dn.emailaddress}"));
         assertEquals("blah", expand(context, "${certificate.subject.dn.cn}"));
         assertEquals("deeceeone", expand(context, "${certificate.subject.dn.dc[0]}"));
         assertEquals("deeceetwo", expand(context, "${certificate.subject.dn.dc[1]}"));
         assertEquals("deeceeone**(ZERF)**deeceetwo", expand(context, "${certificate.subject.dn.dc|**(ZERF)**}"));
+        assertEquals("bc", expand(context, "${certificate.subject.dn.st}"));
+        assertEquals("marketing", expand(context, "${certificate.subject.dn.ou}"));
+        assertEquals("canada", expand(context, "${certificate.subject.dn.c}"));
+        assertEquals("123 mystreet", expand(context, "${certificate.subject.dn.street}"));
+    }
+
+    @Test
+    @BugNumber(8016)
+    public void testBackwardCompatWithOldSubattributes() throws Exception {
+        X509Certificate cert = new TestCertificateGenerator().subject("cn=blah, o=foo, dc=deeceeone, dc=deeceetwo, L=vancouver, ST=bc, ou=marketing, C=canada, STREET=123 mystreet").generate();
+
+        CertificateAttributesAssertion ass = new CertificateAttributesAssertion();
+        ServerCertificateAttributesAssertion sass = new ServerCertificateAttributesAssertion(ass, null);
+
+        PolicyEnforcementContext context = pec(cert);
+        sass.checkRequest(context);
+
+        assertEquals("", expand(context, "${certificate.subject.emailaddress}"));
+        assertEquals("blah", expand(context, "${certificate.subject.cn}"));
+        assertEquals("deeceeone", expand(context, "${certificate.subject.dc[0]}"));
+        assertEquals("deeceetwo", expand(context, "${certificate.subject.dc[1]}"));
+        assertEquals("deeceeone**(ZERF)**deeceetwo", expand(context, "${certificate.subject.dc|**(ZERF)**}"));
+        assertEquals("bc", expand(context, "${certificate.subject.st}"));
+        assertEquals("marketing", expand(context, "${certificate.subject.ou}"));
+        assertEquals("canada", expand(context, "${certificate.subject.c}"));
+        assertEquals("123 mystreet", expand(context, "${certificate.subject.street}"));
+
     }
 
     private String expand(PolicyEnforcementContext context, String str) {

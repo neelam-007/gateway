@@ -3,6 +3,7 @@ package com.l7tech.security.cert;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.common.io.CertUtils;
 
 import javax.security.auth.x500.X500Principal;
@@ -160,15 +161,23 @@ public enum CertificateAttribute {
     /**
      * An array of values for the Issuer DN parts corresponding the requested attribute name subcomponent(s).
      */
-    ISSUER_DN("issuer.dn", true, true, "issuerEmail") {
+    ISSUER_DN("issuer.dn", true, true, ArrayUtils.concat(prefixLegacyNames("issuer"), new String[] {"issuerEmail"})) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return getValuesFromsX500Principal(certificate.getIssuerX500Principal(), this.toString());
         }
         @Override
         String getNewName(String legacyName) {
-            return "issuerEmail".equals(legacyName) ? "issuer.dn.email" : ISSUER_DN.toString();
-        }},
+            if ("issuerEmail".equals(legacyName))
+                return "issuer.dn.email";
+            final int isslen = "issuer.".length();
+            if (legacyName.startsWith("issuer.") && legacyName.length() > isslen) {
+                String suffix = legacyName.substring(isslen);
+                return "issuer.dn." + suffix;
+            }
+            return ISSUER_DN.toString();
+        }
+    },
 
     /**
      * EMail address (if any) for the Issuer Alternative Name (rfc288) (e.g. "example@ca.oasis-open.org")
@@ -230,14 +239,20 @@ public enum CertificateAttribute {
      * An array of values for the Subject DN parts corresponding to the attrNameWithKey parameter
      * given to the extractValue method.
      */
-    SUBJECT_DN("subject.dn", true, true, "subjectEmail") {
+    SUBJECT_DN("subject.dn", true, true, ArrayUtils.concat(prefixLegacyNames("subject"), new String[] {"subjectEmail"})) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return getValuesFromsX500Principal(certificate.getSubjectX500Principal(), this.toString());
         }
         @Override
         String getNewName(String legacyName) {
-            return "subjectEmail".equals(legacyName) ? "subject.dn.email" : SUBJECT_DN.toString();
+            if ("subjectEmail".equals(legacyName)) return "subject.dn.email";
+            final int subjlen = "subject.".length();
+            if (legacyName.startsWith("subject.") && legacyName.length() > subjlen) {
+                String suffix = legacyName.substring(subjlen);
+                return "subject.dn." + suffix;
+            }
+            return SUBJECT_DN.toString();
         }},
 
     /**
@@ -733,6 +748,27 @@ public enum CertificateAttribute {
         }
     }
 
+    private static String[] prefixLegacyNames(String prefix) {
+        // Suffixes to support directly on subject and issuer for backward compat with 4.6.6 documentation.
+        // Supported attr names are those mentioned in RFC 1779 with the addition of "dc".
+        final String[] legacyAttrs = {
+                "cn",
+                "l",
+                "st",
+                "o",
+                "ou",
+                "c",
+                "street",
+                "dc"
+        };
+
+        List<String> ret = new ArrayList<String>();
+        for (String legacyName : legacyAttrs) {
+            ret.add(prefix + "." + legacyName);
+        }
+        return ret.toArray(new String[ret.size()]);
+    }
+
     // - PUBLIC
 
     /**
@@ -752,7 +788,9 @@ public enum CertificateAttribute {
             for(String name : values.keySet()) {
                 if (name.startsWith(newName)) {
                     hasValue = true;
-                    legacyValues.put( legacyName + name.substring(newName.length()), values.get(name));
+                    final String fullName = legacyName + name.substring(newName.length());
+                    final Collection<Object> value = values.get(name);
+                    legacyValues.put(fullName, value);
                 }
             }
             if (! hasValue)
