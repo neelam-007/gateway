@@ -242,6 +242,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
                 allOids.add(header.getOid());
             }
             textArea.setText(builder.toString());
+            textArea.setCaretPosition(0);
             final JScrollPane jScrollPane = new JScrollPane();
             jScrollPane.setViewportView(textArea);
             jScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
