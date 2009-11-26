@@ -118,7 +118,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
 
         if ( nonce == null || nonce.length() == 0 ) {
             // New session
-            String newNonce = sessions.generate( request, assertion.getNonceTimeout(), assertion.getMaxNonceCount() );
+            String newNonce = sessions.generate(assertion.getNonceTimeout(), assertion.getMaxNonceCount() );
             auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_GENERATED, newNonce);
             return myChallengeParams( newNonce );
         } else {
@@ -128,7 +128,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
                 final String username = requestAuthParams.get(HttpDigest.PARAM_USERNAME);
                 auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_EXPIRED, nonce, username == null ? "<unknown>" : username);
                 sessions.invalidate( nonce );
-                nonce = sessions.generate( request, assertion.getNonceTimeout(), assertion.getMaxNonceCount() );
+                nonce = sessions.generate(assertion.getNonceTimeout(), assertion.getMaxNonceCount() );
                 auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_GENERATED, nonce);
             }
             return myChallengeParams( nonce );

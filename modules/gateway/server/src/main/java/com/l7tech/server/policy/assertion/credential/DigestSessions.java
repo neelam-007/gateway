@@ -10,15 +10,15 @@ import com.l7tech.message.Message;
 import com.l7tech.util.Background;
 import com.l7tech.util.HexUtils;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TimerTask;
+import java.util.*;
+import java.security.SecureRandom;
 
 /**
  * @author alex
  */
 public class DigestSessions {
+    private static final Random random = new SecureRandom();
+
     public static DigestSessions getInstance() {
         if ( _instance == null ) _instance = new DigestSessions();
         return _instance;
@@ -46,19 +46,15 @@ public class DigestSessions {
 
     /**
      * Generate a unique token. The token is generated according to the
-     * following pattern. NOnceToken = Base64 ( MD5 ( client-IP ":"
-     * time-stamp ":" private-key ) ).
+     * following pattern. NonceToken = Base64 ( 64 random bytes ).
      *
-     * @param request HTTP Servlet request
      */
-    public String generate( Message request, int timeout, int maxUses ) {
+    public String generate(int timeout, int maxUses) {
         long currentTime = System.currentTimeMillis();
 
-        String nonceValue = request.getTcpKnob().getRemoteAddress() + ":" +
-            currentTime + ":" + NONCEKEY;
-
-        byte[] buffer = HexUtils.getMd5Digest(nonceValue.getBytes());
-        nonceValue = HexUtils.encodeMd5Digest(buffer);
+        byte[] nonceBytes = new byte[64];
+        random.nextBytes(nonceBytes);
+        String nonceValue = HexUtils.encodeBase64(nonceBytes, true);
 
         // Updating the value in the nonce hashtable
         synchronized( _nonceInfos ) {
@@ -123,7 +119,6 @@ public class DigestSessions {
         }
     }
 
-    private static final String NONCEKEY = "Layer7-SSG-DigestNonceKey";
     private static DigestSessions _instance;
     private Map _nonceInfos = new HashMap();
 }
