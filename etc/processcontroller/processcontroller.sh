@@ -35,6 +35,18 @@ function fail() {
   exit ${1}
 }
 
+# this puts the necessary "id" that supports -u first in the path on Solaris, and is a noop on other OSes
+OLDPATH=$PATH
+PATH="/usr/xpg4/bin:$PATH"
+if [ "$(id -u)" != "$(id -u ${PC_USER})" ] ; then
+    if [ "$1" = "run" ] || [ "$(id -u)" != "0" ] ; then
+        echo "Please run as the user: ${PC_USER}"
+        exit 13
+    else
+        RUNASUSER="su "${PC_USER}""
+    fi
+fi
+
 PC_JAVAOPT="-Djava.security.egd=file:/dev/./urandom"
 
 cd "${SSPC_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSPC_HOME}"
@@ -61,7 +73,7 @@ if [ -z "${PC_USER}" ] ; then
     "${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig
 else
     export JAVA_HOME SSPC_HOME PC_JAR
-    runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig'
+    ${RUNASUSER} -c '"${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig'
 fi
 
 if [ ${?} -ne 0 ]; then
@@ -74,7 +86,7 @@ if [ -z "${PC_USER}" ] ; then
   "${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -jar ${PC_JAR} &>/dev/null <&- &
 else
   export JAVA_HOME SSPC_HOME PC_JAR PC_PIDTEMP
-  runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -jar ${PC_JAR} &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"'
+  ${RUNASUSER} -c '"${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -jar ${PC_JAR} &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"'
 fi
 
 if [ ${?} -eq 0 ] ; then

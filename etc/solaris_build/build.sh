@@ -77,7 +77,8 @@ du -a ./export/home/gateway | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_O
 du -a ./export/home/layer7  | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 layer7/"   >> ../pkgbuild/Prototype
 # main gateway software
 du -a ./opt/SecureSpan/Gateway | grep -v "node/default/var" | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 layer7/"   >> ../pkgbuild/Prototype
-du -a ./opt/SecureSpan/Controller | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 layer7/"   >> ../pkgbuild/Prototype
+du -a ./opt/SecureSpan/Controller | grep -v "etc" | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 layer7/"   >> ../pkgbuild/Prototype
+du -a ./opt/SecureSpan/Controller/etc | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 gateway/"   >> ../pkgbuild/Prototype
 du -a ./opt/SecureSpan/Gateway/node/default/var             | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/gateway gateway/" >> ../pkgbuild/Prototype
 
 echo Done

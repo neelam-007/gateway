@@ -3173,6 +3173,16 @@
             </tarfileset>
             <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" mode="644" prefix="${install.target.pc}">
                 <include name="**/*"/>
+                <exclude name="bin/*.sh"/>
+                <exclude name="etc"/>
+                <exclude name="etc/*"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.pc}">
+                <include name="bin/*.sh"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.pc}" username="layer7" group="gateway" filemode="555" dirmode="775" prefix="${install.target.pc}">
+                <include name="etc"/>
+                <include name="etc/*"/>
             </tarfileset>
         </tar>
 
