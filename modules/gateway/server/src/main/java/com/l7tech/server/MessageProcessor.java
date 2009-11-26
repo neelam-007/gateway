@@ -778,14 +778,18 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 isSoap = context.getRequest().isSoap(preferDom);
                 hasSecurity = isSoap && context.getRequest().getSoapKnob().isSecurityHeaderPresent();
             } catch (SAXException e) {
-                auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT_WITH_DETAIL, new String[]{e.getMessage()}, e);
+                auditor.logAndAudit(MessageProcessingMessages.INVALID_REQUEST_WITH_DETAIL, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                 context.setMalformedRequest();
                 assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
                 return false;
             } catch (MessageNotSoapException e) {
-                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, e);
+                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, ExceptionUtils.getDebugException(e));
             } catch (NoSuchPartException e) {
-                auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT_WITH_DETAIL, new String[]{e.getMessage()}, e);
+                auditor.logAndAudit(MessageProcessingMessages.INVALID_REQUEST_WITH_DETAIL, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+                assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                return false;
+            } catch (InvalidDocumentFormatException e) {
+                auditor.logAndAudit(MessageProcessingMessages.INVALID_REQUEST_WITH_DETAIL, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                 assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
                 return false;
             } catch (IOException ioe) {

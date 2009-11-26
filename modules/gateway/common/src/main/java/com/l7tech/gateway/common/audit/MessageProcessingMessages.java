@@ -32,7 +32,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M WSS_PROCESSING_COMPLETE     = m(3019, Level.FINEST, "WSS processing of request complete");
     public static final M LICENSE_NOT_ENABLED         = m(3020, Level.WARNING, "Message processor not enabled by license: {0}");
     public static final M METHOD_NOT_ALLOWED          = m(3021, Level.INFO, "HTTP method {0} not allowed for service {1}");
-    public static final M REQUEST_INVALID_XML_FORMAT_WITH_DETAIL  = m(3022, Level.INFO, "Request XML is not well-formed [{0}]");
+    public static final M INVALID_REQUEST_WITH_DETAIL = m(3022, Level.INFO, "Invalid request: {0}");
     public static final M MULTIPART_NOT_ALLOWED       = m(3023, Level.INFO, "Service does not accept multipart data");
     public static final M METHOD_NOT_ALLOWED_FAULT    = m(3024, Level.INFO, "HTTP method {0} not allowed");
     public static final M ERROR_WSS_SIGNATURE         = m(3025, Level.INFO, "Error in WSS signature processing: {0}");
