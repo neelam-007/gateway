@@ -192,6 +192,9 @@ public class UDDIHelper {
         return infoCollection.toArray(new WsdlPortInfo[infoCollection.size()]);
     }
 
+    /**
+     * If the search was interuppted the returned array will empty, never null
+     */
     public WsdlPortInfo[] getWsdlByServiceName(final UDDIClient uddiClient,
                                                final String namePattern,
                                                final boolean caseSensitive,
@@ -210,6 +213,9 @@ public class UDDIHelper {
 
             Collection<WsdlPortInfo> foundWsdlPortInfos =
                     uddiClient.listServiceWsdls(namePattern, caseSensitive, head, resultBatchSize, getWsdlURL);
+            //this will happen if search was interrupted
+            if(foundWsdlPortInfos == null) return wsdlPortInfos.toArray(new WsdlPortInfo[wsdlPortInfos.size()]);
+
             for(WsdlPortInfo wsdlPortInfo: foundWsdlPortInfos){
                 final String wsdl = wsdlPortInfo.getWsdlUrl();
                 if(wsdl == null) continue;

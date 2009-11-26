@@ -897,6 +897,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         Collection<WsdlPortInfo> services = new ArrayList<WsdlPortInfo>();
         moreAvailable = false;
 
+        if(Thread.currentThread().isInterrupted()) {
+            logger.log(Level.FINEST, "UDDI search was cancelled");
+            return null;
+        }
+
         try {
             String authToken = getAuthToken();
             Name[] names = buildNames( servicePattern );
@@ -920,6 +925,10 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             findService.setCategoryBag(categoryBag);
 
             logger.log(Level.FINEST, "Searching BusinessServices");
+            if(Thread.currentThread().isInterrupted()) {
+                logger.log(Level.FINEST, "UDDI search was cancelled");
+                return null;
+            }
             final ServiceList serviceList = inquiryPort.findService(findService);
             logger.log(Level.FINEST, "Got BusinessServices");
             if(serviceList.getServiceInfos() == null) return services;
@@ -961,6 +970,10 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 // but since searching by type is not reliable we'll have to get all the
                 // bindings and search though them
 //                findBinding.setMaxRows(50);   - this really seems to slow down ActiveSOA
+                if(Thread.currentThread().isInterrupted()) {
+                    logger.log(Level.FINEST, "UDDI search was cancelled");
+                    return null;
+                }
                 final BindingDetail bd = inquiryPort.findBinding(findBinding);
                 final Set<String> allBindingKeys = new HashSet<String>();
                 final Set<String> allServiceTModelKeys = new HashSet<String>();
@@ -984,6 +997,10 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             //Get every referenced tModel
             logger.log(Level.FINEST, "Retrieving all tModels for all services");
+            if(Thread.currentThread().isInterrupted()) {
+                logger.log(Level.FINEST, "UDDI search was cancelled");
+                return null;
+            }
             final Map<String, TModel> allTModels = getTModelsByBatch(allTModelKeys);
             logger.log(Level.FINEST, "Retrieved all tModels for all services");
 
