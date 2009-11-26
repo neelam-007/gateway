@@ -224,6 +224,24 @@ public class ServerXslTransformation
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
+        } finally {
+            // Get the name of XSLT Message context variable.
+            String xsltMsgVarName = getXsltMessagesContextVariableName();
+
+            // Get the XSLT Message context variable.
+            Object xsltMsgVar;
+            try {
+                xsltMsgVar = context.getVariable(xsltMsgVarName);
+            } catch (NoSuchVariableException e) {
+                xsltMsgVar = null;
+            }
+
+            // Set the XSLT Message context variable
+            if (xsltMsgVar == null) {
+                context.setVariable(xsltMsgVarName, new String[] {""});
+                context.setVariable(xsltMsgVarName + ".first", "");
+                context.setVariable(xsltMsgVarName + ".last", "");
+            }
         }
     }
 
