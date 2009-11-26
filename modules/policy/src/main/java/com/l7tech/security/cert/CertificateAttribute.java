@@ -171,7 +171,7 @@ public enum CertificateAttribute {
             if ("issuerEmail".equals(legacyName))
                 return "issuer.dn.email";
             final int isslen = "issuer.".length();
-            if (legacyName.startsWith("issuer.") && legacyName.length() > isslen) {
+            if (legacyName.startsWith("issuer.") && !legacyName.equals("issuer.dn") && !legacyName.startsWith("issuer.dn.") && legacyName.length() > isslen) {
                 String suffix = legacyName.substring(isslen);
                 return "issuer.dn." + suffix;
             }
@@ -248,7 +248,7 @@ public enum CertificateAttribute {
         String getNewName(String legacyName) {
             if ("subjectEmail".equals(legacyName)) return "subject.dn.email";
             final int subjlen = "subject.".length();
-            if (legacyName.startsWith("subject.") && legacyName.length() > subjlen) {
+            if (legacyName.startsWith("subject.") && !legacyName.equals("subject.dn") && !legacyName.startsWith("subject.dn.") && legacyName.length() > subjlen) {
                 String suffix = legacyName.substring(subjlen);
                 return "subject.dn." + suffix;
             }
