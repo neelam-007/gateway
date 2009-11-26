@@ -519,7 +519,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     public JobId<WsdlPortInfo[]> findWsdlInfosFromUDDIRegistry(final long registryOid,
                                                                     final String namePattern,
                                                                     final boolean caseSensitive,
-                                                                    final boolean getWsdlURL) throws FindException {
+                                                                    final boolean getWsdlURL) {
         return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<WsdlPortInfo[]>(){
             @Override
             public WsdlPortInfo[] call() throws Exception {
@@ -548,7 +548,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     @Override
     public JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(final long registryOid,
                                                                         final String namePattern,
-                                                                        final boolean caseSensitive) throws FindException {
+                                                                        final boolean caseSensitive){
         return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<UDDINamedEntity[]>(){
             @Override
             public UDDINamedEntity[] call() throws Exception {
@@ -573,8 +573,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
              ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
              ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
              ExceptionUtils.causedBy( e, ConnectException.class ) ||
-             ExceptionUtils.causedBy( e, NoRouteToHostException.class)  ||
-             ExceptionUtils.causedBy( e, SocketTimeoutException.class )) {
+             ExceptionUtils.causedBy( e, SocketTimeoutException.class ) ||
+             ExceptionUtils.causedBy( e, SocketException.class )) {
             msg = msg + ". Caused by '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e )) + "'";
             logger.log(Level.WARNING, msg , ExceptionUtils.getDebugException( e ));
         } else {

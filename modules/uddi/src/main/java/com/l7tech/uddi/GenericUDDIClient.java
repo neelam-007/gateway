@@ -9,11 +9,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.URL;
-import java.net.ConnectException;
-import java.net.NoRouteToHostException;
-import java.net.UnknownHostException;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
 import java.security.SecureRandom;
@@ -2402,7 +2398,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     private boolean isNetworkException( final Exception exception ) {
         boolean network = ExceptionUtils.causedBy( exception, ConnectException.class ) ||
-               ExceptionUtils.causedBy( exception, NoRouteToHostException.class ) ||
+               ExceptionUtils.causedBy( exception, SocketException.class ) ||
                ExceptionUtils.causedBy( exception, UnknownHostException.class ) ||
                ExceptionUtils.causedBy( exception, SocketTimeoutException.class );
 

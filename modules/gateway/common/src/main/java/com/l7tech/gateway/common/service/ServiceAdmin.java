@@ -159,12 +159,11 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      *         Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
      *         and {@link #getJobResult(JobId)} to pick up the result in the form of a WsdlPortInfo[] that contains
      *         the search results for all services whose name matches the namePattern
-     * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
     @Secured(types = EntityType.UDDI_REGISTRY, stereotype = FIND_ENTITIES)
     JobId<WsdlPortInfo[]>
-    findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL) throws FindException;
+    findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL);
 
     /**
      * Get all bindingTemplates for a BusinessService as an array of WsdlPortInfo's
@@ -195,11 +194,10 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      *         Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
      *         and {@link #getJobResult(JobId)} to pick up the result in the form of a UDDINamedEntity[] that contains
      *         the search results, for all business whose name matches the namePattern
-     * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly = true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
-    JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException;
+    JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive);
 
     /**
      * Find all WS-Policy attachments from the UDDI registry that match the given name pattern.

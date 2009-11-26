@@ -237,12 +237,12 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public JobId<WsdlPortInfo[]> findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL) throws FindException {
+    public JobId<WsdlPortInfo[]> findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL) {
         return null;
     }
 
     @Override
-    public JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) throws FindException {
+    public JobId<UDDINamedEntity[]> findBusinessesFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive) {
         return null;
     }
 

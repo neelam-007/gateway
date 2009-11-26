@@ -378,8 +378,8 @@ public class SearchUddiDialog extends JDialog {
                     //nothing to do, dialog was cancelled
                     logger.log(Level.FINEST, "Search of UDDI was cancelled");
                 } catch (InvocationTargetException e2) {
-                    logger.log(Level.WARNING, errorMessage, e2);
-                    JOptionPane.showMessageDialog(SearchUddiDialog.this, e2.getMessage(), "Error Searching UDDI Registry", JOptionPane.ERROR_MESSAGE);
+                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e2), ExceptionUtils.getDebugException(e2));
+                    JOptionPane.showMessageDialog(SearchUddiDialog.this, ExceptionUtils.getMessage(e2), "Error Searching UDDI Registry", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -474,9 +474,16 @@ public class SearchUddiDialog extends JDialog {
                     if (status == null)
                         throw new IllegalStateException("Server could not find our uddi serach job ID");
                     if (status.startsWith("i")) {
-                        result = serviceAdmin.getJobResult(jobId).result;
-                        if (result == null)
-                            throw new RuntimeException("Server returned a null job result");
+                        final AsyncAdminMethods.JobResult<UDDINamedEntity[]> jobResult = serviceAdmin.getJobResult(jobId);
+                        result = jobResult.result;
+                        if (result == null){
+                            final String errorMessage = jobResult.throwableMessage;
+                            if(errorMessage != null){
+                                throw new RuntimeException(errorMessage);
+                            }else{
+                                throw new RuntimeException("Unknown problem searching UDDI. Please check Gateway logs");
+                            }
+                        }
                     }
                     delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
                     Thread.sleep((long)delay);
@@ -510,9 +517,16 @@ public class SearchUddiDialog extends JDialog {
                     if (status == null)
                         throw new IllegalStateException("Server could not find our uddi serach job ID");
                     if (status.startsWith("i")) {
-                        result = serviceAdmin.getJobResult(jobId).result;
-                        if (result == null)
-                            throw new RuntimeException("Server returned a null job result");
+                        final AsyncAdminMethods.JobResult<WsdlPortInfo[]> jobResult = serviceAdmin.getJobResult(jobId);
+                        result = jobResult.result;
+                        if (result == null){
+                            final String errorMessage = jobResult.throwableMessage;
+                            if(errorMessage != null){
+                                throw new RuntimeException(errorMessage);
+                            }else{
+                                throw new RuntimeException("Unknown problem searching UDDI. Please check Gateway logs");    
+                            }
+                        }
                     }
                     delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
                     Thread.sleep((long)delay);
