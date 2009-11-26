@@ -740,7 +740,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 }
 
                 //Find the TModels referenced by this bindingTemplate
-                List<TModel> resolvedTModels = new ArrayList<TModel>();
+                final List<TModel> resolvedTModels = new ArrayList<TModel>();
                 for(String tModelKey: tModelKeys){
                     final TModel model = tModelKeyToObject.get(tModelKey);
                     if(model != null) resolvedTModels.add(model);
@@ -1004,55 +1004,42 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             final Map<String, TModel> allTModels = getTModelsByBatch(allTModelKeys);
             logger.log(Level.FINEST, "Retrieved all tModels for all services");
 
-            //process note that all UDDI searches have been performed
+            //process the search results. Note: all UDDI searches have been performed
             for(Map.Entry<String, Set<String>> entry: serviceToTModelKeys.entrySet()){
+                //we only want a single WSDL URL per BusinessService found
                 final String serviceKey = entry.getKey();
                 if(serviceKey == null) throw new NullPointerException("serviceKey cannot be null");
 
                 WsdlPortInfoImpl wsdlPortInfo = null;
-                //Does it have a valid wsdl:binding tModel with a WSDL url?
-                Set<String> tModelKeys = entry.getValue();
-                for(String tModelKey: tModelKeys){
-                    final TModel tModel = allTModels.get(tModelKey);
-                    if(tModel == null) //happens when old references exist
-                        continue;
-                    
-                    final String wsdlUrl = extractWsdlURL(tModel);
-                    if(wsdlUrl != null){
-                        wsdlPortInfo = new WsdlPortInfoImpl();
-                        wsdlPortInfo.setBusinessEntityKey(serviceKeyToInfo.get(serviceKey).getBusinessKey());
-                        wsdlPortInfo.setBusinessServiceKey(serviceKey);
-                        final String serviceName = get(serviceKeyToInfo.get(serviceKey).getName(), "service name", false).getValue();
-                        wsdlPortInfo.setBusinessServiceName(serviceName);
-                        wsdlPortInfo.setWsdlUrl(wsdlUrl);
-                        break;//inner for only
+                if (SyspropUtil.getBoolean("com.l7tech.uddi.GenericUDDIClient.uddiSearch.preferWsdlUrlFromBindingTemplate", false)) {
+                    wsdlPortInfo = getWsdlUrlFromBindingTemplate(Collections.unmodifiableMap(serviceKeyToInfo),
+                            Collections.unmodifiableMap(bindingKeyToObject), Collections.unmodifiableMap(serviceToBindingKeys), serviceKey);
+                    if (wsdlPortInfo == null){
+                        logger.log(Level.FINE, "No WSDL URL was found in BindingTemplate for CentraSite 7.1 UDDI Registry. serviceKey: " + serviceKey);
                     }
                 }
-                //try the tModelInstanceInfo hack for centrasite
-                //not a single tmodel had the WSDL url!
-                for(String bindingKey: serviceToBindingKeys.get(serviceKey)){
-                    final BindingTemplate bt = bindingKeyToObject.get(bindingKey);
-                    AccessPoint accessPoint = bt.getAccessPoint();
-                    if (bt.getTModelInstanceDetails() == null ||
-                        accessPoint==null ) {
-                        continue;
-                    }
-                    List<TModelInstanceInfo> infos = bt.getTModelInstanceDetails().getTModelInstanceInfo();
-                    for (TModelInstanceInfo tmii : infos) {
-                        // bug 5330 - workaround for Centrasite problem with fetching wsdl
-                        String tmiiWsdlUrl = extractOverviewUrl(tmii);
-                        if (tmiiWsdlUrl != null) {
+
+                if (wsdlPortInfo == null) {
+                    //Does it have a valid wsdl:binding tModel with a WSDL url?
+                    final Set<String> tModelKeys = entry.getValue();
+                    for (String tModelKey : tModelKeys) {
+                        final TModel tModel = allTModels.get(tModelKey);
+                        if (tModel == null) //happens when old references exist
+                            continue;
+
+                        final String wsdlUrl = extractWsdlURLFromBindingTModel(tModel);
+                        if (wsdlUrl != null) {
                             wsdlPortInfo = new WsdlPortInfoImpl();
                             wsdlPortInfo.setBusinessEntityKey(serviceKeyToInfo.get(serviceKey).getBusinessKey());
                             wsdlPortInfo.setBusinessServiceKey(serviceKey);
                             final String serviceName = get(serviceKeyToInfo.get(serviceKey).getName(), "service name", false).getValue();
                             wsdlPortInfo.setBusinessServiceName(serviceName);
-                            wsdlPortInfo.setWsdlUrl(tmiiWsdlUrl);
-                            break;
+                            wsdlPortInfo.setWsdlUrl(wsdlUrl);
+                            break;//inner for only
                         }
                     }
-
                 }
+
                 if(wsdlPortInfo != null){
                     services.add(wsdlPortInfo);
                 }else{
@@ -1068,11 +1055,51 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     /**
-     * Get the WSDL url from a tModel
+     *  try the tModelInstanceInfo hack for centrasite - get the WSDL from the bindingTemplate
+     * @param serviceKeyToInfo
+     * @param bindingKeyToObject
+     * @param serviceToBindingKeys
+     * @param serviceKey
+     * @return not null if a WSDL url is found, otherwise null
+     * @throws UDDIException
+     */
+    private WsdlPortInfoImpl getWsdlUrlFromBindingTemplate(final Map<String, ServiceInfo> serviceKeyToInfo,
+                                                           final Map<String, BindingTemplate> bindingKeyToObject,
+                                                           final Map<String, Set<String>> serviceToBindingKeys,
+                                                           final String serviceKey) throws UDDIException {
+        WsdlPortInfoImpl wsdlPortInfo = null;
+        
+        for(String bindingKey: serviceToBindingKeys.get(serviceKey)){
+            final BindingTemplate bt = bindingKeyToObject.get(bindingKey);
+            AccessPoint accessPoint = bt.getAccessPoint();
+            if (bt.getTModelInstanceDetails() == null ||
+                accessPoint==null ) {
+                continue;
+            }
+            List<TModelInstanceInfo> infos = bt.getTModelInstanceDetails().getTModelInstanceInfo();
+            for (TModelInstanceInfo tmii : infos) {
+                // bug 5330 - workaround for Centrasite problem with fetching wsdl
+                String tmiiWsdlUrl = extractOverviewUrl(tmii);
+                if (tmiiWsdlUrl != null) {
+                    wsdlPortInfo = new WsdlPortInfoImpl();
+                    wsdlPortInfo.setBusinessEntityKey(serviceKeyToInfo.get(serviceKey).getBusinessKey());
+                    wsdlPortInfo.setBusinessServiceKey(serviceKey);
+                    final String serviceName = get(serviceKeyToInfo.get(serviceKey).getName(), "service name", false).getValue();
+                    wsdlPortInfo.setBusinessServiceName(serviceName);
+                    wsdlPortInfo.setWsdlUrl(tmiiWsdlUrl);
+                    break;
+                }
+            }
+        }
+        return wsdlPortInfo;
+    }
+
+    /**
+     * Get the WSDL url from a tModel, if the tModel representing a wsdl:binding
      * @param tModel TModel to search inside of
      * @return String WSDL url. Null if not found
      */
-    private String extractWsdlURL(final TModel tModel){
+    private String extractWsdlURLFromBindingTModel(final TModel tModel){
 
         UDDIUtilities.TMODEL_TYPE type = UDDIUtilities.getTModelType(tModel, false);
         if(type == null) return null;
