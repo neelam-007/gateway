@@ -64,7 +64,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     private JLabel passwordLabel;
     private JLabel metricsPublishFrequencyLabel;
     private JButton resetUrlButton;
-    private JButton testUDDIConnectionButton;
+    private JButton testUDDIRegistryButton;
 
     private UDDIRegistry uddiRegistry;
     private boolean subscriptionServiceAvailable;
@@ -184,25 +184,27 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             }
         });
 
-        testUDDIConnectionButton.addActionListener(new ActionListener() {
+        testUDDIRegistryButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 final String validate = inputValidator.validate();
+                final String testRegistryTitle = "Test UDDI Registry Settings";
                 if(validate != null){
-                    DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this,  validate, "Test UDDI Connection", JOptionPane.ERROR_MESSAGE, null);
+                    DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this,  validate, testRegistryTitle, JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
                 viewToModel();
                 UDDIRegistryAdmin uddiRegistryAdmin = getUDDIRegistryAdmin();
                 try {
                     uddiRegistryAdmin.testUDDIRegistryAuthentication(uddiRegistry);
-                    DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this, "Authentication successful!",
-                            "Test Authentication", JOptionPane.INFORMATION_MESSAGE, null);
+
+                    DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this, "Connected successfully to UDDI Registry!",
+                            testRegistryTitle, JOptionPane.INFORMATION_MESSAGE, null);
 
                 } catch (UDDIException e1) {
                     DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this,
                             "Could not connect to UDDI Registry: " + e1.getMessage(),
-                            "Test Failed", JOptionPane.ERROR_MESSAGE, null);                    
+                            testRegistryTitle, JOptionPane.ERROR_MESSAGE, null);                    
                 }
             }
         });

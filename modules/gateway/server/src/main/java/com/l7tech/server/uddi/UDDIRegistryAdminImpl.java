@@ -31,7 +31,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     final private UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager;
     final private UDDICoordinator uddiCoordinator;
     final private ServiceCache serviceCache;
-    final private ServiceManager sericeManager;
+    private static final String UDDI_ORG_SPECIFICATION_V3_POLICY = "uddi:uddi.org:specification:v3_policy";
 
     public UDDIRegistryAdminImpl(final UDDIRegistryManager uddiRegistryManager,
                                  final UDDIHelper uddiHelper,
@@ -40,8 +40,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                  final ServiceCache serviceCache,
                                  final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
                                  final UDDIPublishStatusManager uddiPublishStatusManager,
-                                 final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager,
-                                 final ServiceManager sericeManager) {
+                                 final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiHelper = uddiHelper;
         this.uddiServiceControlManager = uddiServiceControlManager;
@@ -50,7 +49,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
         this.uddiServiceControlMonitorRuntimeManager = uddiServiceControlMonitorRuntimeManager;
-        this.sericeManager = sericeManager;
     }
 
     @Override
@@ -117,16 +115,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
     @Override
     public void testUDDIRegistryAuthentication(final UDDIRegistry uddiRegistry) throws UDDIException {
-        final boolean loginSupplied = uddiRegistry.getRegistryAccountUserName() != null && !uddiRegistry.getRegistryAccountUserName().trim().isEmpty();
-        final boolean passwordSupplied = uddiRegistry.getRegistryAccountPassword() != null && !uddiRegistry.getRegistryAccountPassword().trim().isEmpty();
-
-        if(!loginSupplied || !passwordSupplied){
-            throw new UDDIException("A username and password is required to test UDDI authentication");
-        }
+        if(uddiRegistry == null) throw new NullPointerException("uddiRegistry cannot be null");
 
         final UDDIClient uddiClient = getUDDIClient(uddiRegistry);        
         try {
-            uddiClient.authenticate();
+            uddiClient.getOperationalInfo(UDDI_ORG_SPECIFICATION_V3_POLICY);
         } catch (UDDIException e) {
             //the original exception may not be serializable
             throw new UDDIException(ExceptionUtils.getMessage(e));

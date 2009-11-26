@@ -66,9 +66,15 @@ public interface UDDIRegistryAdmin {
     void deleteUDDIRegistry(long oid) throws DeleteException, FindException, UDDIException, UDDIRegistryNotEnabledException;
 
     /**
-     * Test if it is possible to authenticate with the supplied UDDIRegistry
+     * Test if it is possible to connect to the UDDI Registry with the settings contained in the supplied UDDIRegistry
      *
-     * @param uddiRegistry UDDIRegistry to test. May not exist as an entity yet.
+     * Username / password are not required in the UDDIRegistry, we will work with the information supplied.
+     *
+     * Test should validate the existence of a well known UDDI v3 key such as: uddi:uddi.org:specification:v3_policy
+     *
+     * Note: this test will only succeed on a UDDI v3 Registry
+     *
+     * @param uddiRegistry UDDIRegistry to test. May not exist as an entity yet. Required.
      * @throws UDDIException if it's not possible to authenticate
      */
     @Transactional(readOnly=true)

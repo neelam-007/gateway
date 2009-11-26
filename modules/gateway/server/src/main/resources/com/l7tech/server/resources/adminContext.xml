@@ -353,7 +353,6 @@
         <constructor-arg ref="uddiProxiedServiceInfoManager"/>
         <constructor-arg ref="uddiPublishStatusManager" />
         <constructor-arg ref="uddiServiceControlMonitorRuntimeManager" />
-        <constructor-arg ref="serviceManager" />
     </bean>
 
 </beans>
