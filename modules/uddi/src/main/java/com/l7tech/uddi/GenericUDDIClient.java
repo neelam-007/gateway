@@ -865,27 +865,23 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         final Set<String> keysToSearch = new HashSet<String>();
         final int batchSize = SyspropUtil.getInteger(TMODEL_DOWNLOAD_BATCH_SIZE, 50);
         for (int i = 0; i < allTModelKeys.size(); i++) {
-            if (i % batchSize == 0 || i == allTModelKeys.size() - 1) {//want to avoid truncated results, go with 50
-                if (i != 0) {
-                    detail = new GetTModelDetail();
-                    detail.setAuthInfo(getAuthToken());
-                    detail.getTModelKey().addAll(keysToSearch);
-                    //collect the last element
-                    if(i == allTModelKeys.size() - 1) detail.getTModelKey().add(allTModelKeys.get(i));
-                    logger.log(Level.FINEST, "Retrieving " + keysToSearch.size() + " tModels");
-                    final TModelDetail modelDetail = getInquirePort().getTModelDetail(detail);
-                    if (modelDetail.isTruncated() != null && modelDetail.isTruncated()) {
-                        logger.info("UDDI results for downloaded tModels was truncated. Batch size is currently " +
-                                batchSize + " to decrease modify the " + TMODEL_DOWNLOAD_BATCH_SIZE + " system property");
-                    }
-                    for (TModel tm : modelDetail.getTModel()) {
-                        allTModels.put(tm.getTModelKey(), tm);
-                        logger.log(Level.FINEST, "Adding tModelKey: " + tm.getTModelKey() + " object: " + tm);
-                    }
-                    keysToSearch.clear();
-                }
-            }
             keysToSearch.add(allTModelKeys.get(i));
+            if ((i % batchSize == 0 && i != 0) || i == allTModelKeys.size() - 1) {//want to avoid truncated results, go with 50
+                detail = new GetTModelDetail();
+                detail.setAuthInfo(getAuthToken());
+                detail.getTModelKey().addAll(keysToSearch);
+                logger.log(Level.FINEST, "Retrieving " + keysToSearch.size() + " tModels");
+                final TModelDetail modelDetail = getInquirePort().getTModelDetail(detail);
+                if (modelDetail.isTruncated() != null && modelDetail.isTruncated()) {
+                    logger.info("UDDI results for downloaded tModels was truncated. Batch size is currently " +
+                            batchSize + " to decrease modify the " + TMODEL_DOWNLOAD_BATCH_SIZE + " system property");
+                }
+                for (TModel tm : modelDetail.getTModel()) {
+                    allTModels.put(tm.getTModelKey(), tm);
+                    logger.log(Level.FINEST, "Adding tModelKey: " + tm.getTModelKey() + " object: " + tm);
+                }
+                keysToSearch.clear();
+            }
         }
         return allTModels;
     }
@@ -2531,6 +2527,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         } else {
             if (!caseSensitive) {
                 qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
+                qualifiers.add("approximateMatch");
             } else {
                 return null;
             }

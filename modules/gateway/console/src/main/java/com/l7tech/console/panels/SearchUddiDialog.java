@@ -53,6 +53,7 @@ public class SearchUddiDialog extends JDialog {
     private JLabel searchTitleLabel;
     private JCheckBox showSelectWsdlPortDialogCheckBox;
     private JCheckBox retrieveWSDLURLCheckBox;
+    private JCheckBox allowWildcardsCheckBox;
 
     private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
 
@@ -330,7 +331,10 @@ public class SearchUddiDialog extends JDialog {
                 
                 final String searchString;
                 if(serviceNameSearchPattern.getText().length() > 0) {
-                    String escapedStr = escapeString(serviceNameSearchPattern.getText());
+                    String escapedStr = (!allowWildcardsCheckBox.isSelected())?
+                            escapeString(serviceNameSearchPattern.getText()):
+                            serviceNameSearchPattern.getText();
+                    
                     if((serviceNameFilterOptionComboBox.getSelectedItem()).equals(CONTAINS)) {
                         searchString = "%" + escapedStr + "%";
                     } else {
@@ -384,6 +388,7 @@ public class SearchUddiDialog extends JDialog {
             }
         });
 
+        allowWildcardsCheckBox.setSelected(true);
         pack();
         Utilities.centerOnScreen(this);
     }

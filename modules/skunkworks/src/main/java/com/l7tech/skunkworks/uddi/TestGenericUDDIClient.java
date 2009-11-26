@@ -359,6 +359,39 @@ public class TestGenericUDDIClient {
         }
     }
 
+    @Test
+    public void testSearchCaseSensitive() throws Exception, DispositionReportFaultMessage {
+
+//        final Collection<WsdlPortInfo> infoCollection = uddiClient.listServiceWsdls("PlayerstatsService", false, 0, 1000, false);
+//        Assert.assertFalse("Results should be found", infoCollection.isEmpty());
+
+        UDDIPolicyTool uddiSupport = new UDDIPolicyTool();
+
+        FindService findService = new FindService();
+        Name name = new Name();
+        name.setValue("PlayerstatsService");
+        findService.getName().add(name);
+        FindQualifiers findQualifiers = new FindQualifiers();
+        findQualifiers.getFindQualifier().add("caseInsensitiveMatch");
+        findQualifiers.getFindQualifier().add("approximateMatch");
+
+        findService.setFindQualifiers(findQualifiers);
+
+        findService.setAuthInfo(uddiSupport.authToken());
+        final ServiceList service = uddiSupport.getInquirePort().findService(findService);
+        Assert.assertFalse("Service should have results", service.getServiceInfos().getServiceInfo().isEmpty());
+
+
+    }
+
+    @Test
+    public void testClientCaseInsensitiveSearch() throws Exception{
+        final Collection<WsdlPortInfo> infoCollection = uddiClient.listServiceWsdls("PlayerstatsService", false, 0, 1000, true);
+        Assert.assertFalse("Results should be found", infoCollection.isEmpty());
+
+    }
+
+
     private static void initializeLogging() {
         final LogManager logManager = LogManager.getLogManager();
 
@@ -393,10 +426,10 @@ public class TestGenericUDDIClient {
 //                        "7layer",
 //                        PolicyAttachmentVersion.v1_2/*not important here*/, null){};
 
-        return new GenericUDDIClient("http://10.7.2.200:53307/UddiRegistry/inquiry",
-                        "http://10.7.2.200:53307/UddiRegistry/publish",
+        return new GenericUDDIClient("http://activesoa:53307/UddiRegistry/inquiry",
+                        "http://activesoa:53307/UddiRegistry/publish",
                         null,
-                        "http://10.7.2.200:53307/UddiRegistry/security",
+                        "http://activesoa:53307/UddiRegistry/security",
                         "administrator",
                         "7layer",
                         PolicyAttachmentVersion.v1_2/*not important here*/, null){};
