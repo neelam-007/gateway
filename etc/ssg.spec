@@ -128,9 +128,9 @@ fi
 
 # If user layer7 already exists ensure group membership is ok, if it doesn't exist add it
 if grep -q ^layer7: /etc/passwd; then
-  usermod -g layer7 -G '' layer7
+  usermod -g layer7 -G 'gateway' layer7
 else
-  useradd -g layer7 -G '' layer7
+  useradd -g layer7 -G 'gateway' layer7
 fi
 
 # Chown any files that have been left behind by a previous installation
