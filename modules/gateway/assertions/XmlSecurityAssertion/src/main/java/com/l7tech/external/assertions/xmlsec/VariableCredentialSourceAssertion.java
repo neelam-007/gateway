@@ -1,10 +1,10 @@
 package com.l7tech.external.assertions.xmlsec;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.validator.ValidatorFlag;
+import com.l7tech.util.Functions;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * An assertion that can gather arbitrary context variables as credentials, if they are X509Certificates
@@ -71,6 +71,12 @@ public class VariableCredentialSourceAssertion extends MessageTargetableAssertio
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, VariableCredentialSourceValidator.class.getName());
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, VariableCredentialSourceAssertion>() {
+            @Override
+            public Set<ValidatorFlag> call(VariableCredentialSourceAssertion assertion) {
+                return assertion == null ? EnumSet.noneOf(ValidatorFlag.class) : EnumSet.of(ValidatorFlag.GATHERS_X509_CREDENTIALS);
+            }
+        });
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
