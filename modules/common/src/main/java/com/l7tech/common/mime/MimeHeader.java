@@ -130,6 +130,7 @@ public class MimeHeader implements HttpHeader {
         }
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -163,6 +164,7 @@ public class MimeHeader implements HttpHeader {
     }
 
     /** @return the ENTIRE header string, including name and trailing CRLF, ie "Content-Type: text/xml; charset=utf-8\r\n" */
+    @Override
     public String toString() {
         BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
         try {
@@ -175,6 +177,7 @@ public class MimeHeader implements HttpHeader {
         }
     }
 
+    @Override
     public String getFullValue() {
         if (fullValue != null)
             return fullValue;
@@ -240,7 +243,6 @@ public class MimeHeader implements HttpHeader {
             String name = entry.getKey();
             String value = entry.getValue();
             os.write(SEMICOLON);
-            os.write(' ');
             writeParam(os, name, value);
         }
     }
