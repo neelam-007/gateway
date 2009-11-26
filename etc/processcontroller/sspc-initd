@@ -35,15 +35,8 @@ start() {
         RETVAL=$?
         echo
         [ $RETVAL -eq 0 ] && touch /var/lock/subsys/ssg
-        [ -f /bin/rpm ] && RPM=/bin/rpm
-        [ -z ${RPM} -a -f /usr/bin/rpm ] && RPM=/usr/bin/rpm
-        if [ -n ${RPM} ] ; then
-            ${RPM} -q ssg-appliance >/dev/null
-            if [ $? -eq 0 ] ; then
-                HOST_TYPE=APPLIANCE
-            else
-                HOST_TYPE=SOFTWARE
-            fi
+        if [ -d /opt/SecureSpan/Appliance ] ; then
+            HOST_TYPE=APPLIANCE
         else
             HOST_TYPE=SOFTWARE
         fi

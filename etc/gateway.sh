@@ -29,8 +29,7 @@ RUNASUSER="bash"
 export SSGNODE SSGUSER
 
 # appliance check
-RPM=/bin/rpm
-[ -x ${RPM} ] && ${RPM} -q ssg-appliance 2>&1 >/dev/null && IS_APPLIANCE=yes
+[ -d /opt/SecureSpan/Appliance ] && IS_APPLIANCE=yes
 
 # Source profile for standard environment
 cd `dirname $0`
