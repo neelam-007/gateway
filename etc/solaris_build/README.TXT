@@ -1,7 +1,7 @@
 Instructions to build & install package:
 1. Linux side
 	a. prepare a standard linux tarball, output file is ssg-bNNNN.tar.gz (please note that it should be a tarball from an obfuscated build, and "NNNN" is the build number)
-    b. prepare a tarball for solaris ./build.sh tar (build/solaris_build.tar.gz)
+    b. prepare a tarball for solaris ./build.sh package.solaris.tar (build/solaris_build.tar.gz)
 	c. copy both tarballs to the solaris build system (if you can't scp at a build machine login session then scp at a solaris package machine login session)
 		cd UneasyRooster/build/
 		scp ssg-bNNNN.tar.gz <user>@<solaris_build_machine>:
@@ -39,7 +39,7 @@ drwxr-xr-x   6 jay      other        512 May 31 16:25 solaris_build
 	2. unpacks the main tarball 
 	3. unpacks the overlay tarball, replacing the startup scripts.
 	4. Then build runs and creates a package:
-		 solaris_build/L7TECHssg.pkg
+		 solaris_build/L7TECHssg-version.pkg
 	5. copy this file to repository
 	
 Theory of operation:
