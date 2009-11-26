@@ -15,6 +15,7 @@ import com.l7tech.util.Pair;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.server.ServerConfig;
 import org.apache.xmlbeans.XmlObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -381,6 +382,9 @@ public class SamlAssertionValidate {
                 return;
             }
 
+            notBefore = adjustNotBefore(notBefore);
+            notOnOrAfter = adjustNotAfter(notOnOrAfter);
+
             Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
             now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
             if (now.before(notBefore)) {
@@ -431,6 +435,24 @@ public class SamlAssertionValidate {
             logger.finer(result.toString());
             validationResults.add(result);
         }
+    }
+
+    static Calendar adjustNotAfter(Calendar notOnOrAfter) {
+        int afterOffsetMinutes = ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_samlValidateAfterOffsetMinutes, 0, 30000L);
+        if (afterOffsetMinutes != 0) {
+            notOnOrAfter = (Calendar)notOnOrAfter.clone();
+            notOnOrAfter.add(Calendar.MINUTE, afterOffsetMinutes);
+        }
+        return notOnOrAfter;
+    }
+
+    static Calendar adjustNotBefore(Calendar notBefore) {
+        int beforeOffsetMinutes = ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_samlValidateBeforeOffsetMinutes, 0, 30000L);
+        if (beforeOffsetMinutes != 0) {
+            notBefore = (Calendar)notBefore.clone();
+            notBefore.add(Calendar.MINUTE, -beforeOffsetMinutes);
+        }
+        return notBefore;
     }
 
     /**

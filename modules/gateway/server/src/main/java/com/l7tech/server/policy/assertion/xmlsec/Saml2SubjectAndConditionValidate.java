@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.server.ServerConfig;
 import x0Assertion.oasisNamesTcSAML2.*;
 
 import java.util.*;
@@ -161,6 +162,8 @@ class Saml2SubjectAndConditionValidate {
                     validationResults.add(new SamlAssertionValidate.Error("No Validity Period conditions have been presented, cannot validate Conditions", null));
                 }
                 else {
+                    notBefore = SamlAssertionValidate.adjustNotBefore(notBefore);
+                    notOnOrAfter = SamlAssertionValidate.adjustNotAfter(notOnOrAfter);
                     if (now.before(notBefore)) {
                         logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
                         validationResults.add(new SamlAssertionValidate.Error("SAML ticket does not become valid until: {0}", null, notBefore.getTime().toString()));

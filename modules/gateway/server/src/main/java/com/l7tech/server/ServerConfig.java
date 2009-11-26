@@ -39,6 +39,9 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
     //- PUBLIC
 
+    /** If testmode property set to true, all properties are considered mutable, not just the ones with .mutable = true. */
+    public static final String PROP_TEST_MODE = "com.l7tech.server.serverconfig.testmode";
+
     public static final long DEFAULT_CACHE_AGE = 30000;
 
     public static final String PARAM_SERVER_ID = "serverId";
@@ -310,6 +313,9 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT = "jdbcQuery.maxRecords.defaultValue";
     public static final String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE = "jdbcConnection.pooling.minPoolSize.defaultValue";
     public static final String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE = "jdbcConnection.pooling.maxPoolSize.defaultValue";
+
+    public static final String PARAM_samlValidateBeforeOffsetMinutes = "samlValidateBeforeOffsetMinutes";
+    public static final String PARAM_samlValidateAfterOffsetMinutes = "samlValidateAfterOffsetMinutes";
 
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
@@ -812,6 +818,14 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         return val;
     }
 
+    /**
+     * Get a serverconfig property converted to an int.
+     *
+     * @param propName the property name. required
+     * @param emergencyDefault  the default to use if a value can't be found, or if the value isn't a valid int
+     * @param maxAge maximum number of millisconds a value may be cached for
+     * @return the requested value (possibly a default)
+     */
     public int getIntPropertyCached(String propName, int emergencyDefault, long maxAge) {
         String strval = getPropertyCached(propName, maxAge);
         int val;
@@ -837,6 +851,14 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         return val;
     }
 
+    /**
+     * Get a serverconfig property converted to a long.
+     *
+     * @param propName the property name. required
+     * @param emergencyDefault  the default to use if a value can't be found, or if the value isn't a valid long
+     * @param maxAge maximum number of millisconds a value may be cached for
+     * @return the requested value (possibly a default)
+     */
     public long getLongPropertyCached(String propName, long emergencyDefault, long maxAge) {
         String strval = getPropertyCached(propName, maxAge);
         long val;
@@ -891,7 +913,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      * @return true if the specified property is marked as mutable
      */
     boolean isMutable(String propName) {
-        return "true".equals(_properties.getProperty(propName + ".mutable"));
+        return SyspropUtil.getBoolean(PROP_TEST_MODE, false) || "true".equals(_properties.getProperty(propName + ".mutable"));
     }
 
     /**

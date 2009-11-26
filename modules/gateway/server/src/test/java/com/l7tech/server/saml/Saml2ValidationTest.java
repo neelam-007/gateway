@@ -1,9 +1,5 @@
 package com.l7tech.server.saml;
 
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.MockProcessorResult;
@@ -11,11 +7,15 @@ import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.policy.assertion.xmlsec.SamlAssertionValidate;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import org.w3c.dom.Document;
+import org.junit.Test;
+import org.junit.Before;
+import static org.junit.Assert.*;
 
 import java.util.*;
 
@@ -25,26 +25,19 @@ import java.util.*;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class Saml2ValidationTest extends TestCase {
+public class Saml2ValidationTest {
 
-    /**
-     *
-     */
-    public static Test suite() {
-        TestSuite suite = new TestSuite(Saml2ValidationTest.class);
-        return suite;
-    }
-
-    /**
-     *
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(Saml2ValidationTest.suite());
+    @Before
+    public void restoreTimeSkewSettings() {
+        System.setProperty(ServerConfig.PROP_TEST_MODE, "true");
+        ServerConfig.getInstance().putProperty(ServerConfig.PARAM_samlValidateBeforeOffsetMinutes, "0");
+        ServerConfig.getInstance().putProperty(ServerConfig.PARAM_samlValidateAfterOffsetMinutes, "0");
     }
 
     /**
      * TEST that the assertion expiry time is validated.
      */
+    @Test
     public void testExpiryValidation() throws Exception {
         // create doc
         Document assertionDocument = XmlUtil.stringToDocument(ASSERTION_STR_EXPIRED);
@@ -81,8 +74,50 @@ public class Saml2ValidationTest extends TestCase {
     }
 
     /**
+     * TEST that the assertion expiry time is validated.
+     */
+    @Test
+    public void testExpiryValidationWithGracePeriod() throws Exception {
+        ServerConfig.getInstance().putProperty(ServerConfig.PARAM_samlValidateAfterOffsetMinutes, "15000000");
+
+        // create doc
+        Document assertionDocument = XmlUtil.stringToDocument(ASSERTION_STR_EXPIRED);
+        System.out.println("Testing expired assertion: \n" + XmlUtil.nodeToFormattedString(assertionDocument));
+        SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
+
+        // create validation template
+        RequireWssSaml templateSaml = new RequireWssSaml();
+        templateSaml.setVersion(2);
+        templateSaml.setCheckAssertionValidity(true);
+        templateSaml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});
+        templateSaml.setRequireHolderOfKeyWithMessageSignature(true);
+        templateSaml.setNameFormats( SamlConstants.ALL_NAMEIDENTIFIERS_SAML2);
+
+        // validate
+        SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
+        List results = new ArrayList();
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null);
+
+        // check for error message
+        String expectedErrorStart = "SAML Constraint Error: SAML ticket has expired as of:";
+        String expectedErrorEnd = "";
+        boolean foundError = false;
+        for (Iterator iterator = results.iterator(); iterator.hasNext();) {
+            String errorStr = iterator.next().toString();
+            System.out.println(errorStr);
+            if (errorStr.startsWith(expectedErrorStart) &&
+                errorStr.endsWith(expectedErrorEnd))
+                foundError = true;
+        }
+
+        if (foundError)
+            fail("Ticket should not have been considered expired, since we cranked up the validateAfterOffsetMinutes to 20 years or so.");
+    }
+
+    /**
      * TEST that the audience restriction is validated.
      */
+    @Test
     public void testAudienceRestrictionValidation() throws Exception {
         // create doc
         Document assertionDocument = XmlUtil.stringToDocument(ASSERTION_STR_AUDIENCE_RESTR);
@@ -120,6 +155,7 @@ public class Saml2ValidationTest extends TestCase {
     /**
      * TEST that assertions with no statements are permitted
      */
+    @Test
     public void testSubjectOnly() throws Exception {
         // create doc
         Document assertionDocument = XmlUtil.stringToDocument(ASSERTION_STR_SUBJECT_ONLY);
@@ -154,6 +190,7 @@ public class Saml2ValidationTest extends TestCase {
     /**
      * TEST that assertions with repeated OneTimeUse conditions are rejected
      */
+    @Test
     public void testMultipleOneTimeOnly() throws Exception {
         // create doc
         Document assertionDocument = XmlUtil.stringToDocument(ASSERTION_STR_MULTIPLE_ONE_TIME_CONDS);
@@ -189,6 +226,7 @@ public class Saml2ValidationTest extends TestCase {
     /**
      * TEST authentication statement validation
      */
+    @Test
     public void testAuthenticationStatementValidation() throws Exception {
         // create doc
         Document assertionDocument = XmlUtil.stringToDocument(ASSERTION_STR_AUTHN);
@@ -252,6 +290,7 @@ public class Saml2ValidationTest extends TestCase {
     /**
      * TEST attribute statement validation
      */
+    @Test
     public void testAttributeStatementValidation() throws Exception {
         // create doc
         Document assertionDocument = XmlUtil.stringToDocument(ASSERTION_STR_ATTR);
@@ -290,6 +329,7 @@ public class Saml2ValidationTest extends TestCase {
     /**
      * TEST authorization statement validation
      */
+    @Test
     public void testAuthorizationDecisionStatementValidation() throws Exception {
         // create doc
         Document assertionDocument = XmlUtil.stringToDocument(ASSERTION_STR_AUTHORIZATION);
