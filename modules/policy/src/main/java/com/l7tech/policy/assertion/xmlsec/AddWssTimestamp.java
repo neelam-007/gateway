@@ -205,8 +205,8 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
         @Override
         public String getAssertionName( final AddWssTimestamp assertion, final boolean decorate) {
             final String qualifier = (assertion.isSignatureRequired()) ? "Signed " : null;
-            return (decorate && qualifier != null) ?
-                    AssertionUtils.decorateName(assertion, "Add " + qualifier + "Timestamp") : assertionName;
+            final String name = qualifier == null? assertionName : "Add " + qualifier + "Timestamp";
+            return decorate? AssertionUtils.decorateName(assertion, name) : assertionName;
         }
     };
 
