@@ -34,7 +34,7 @@ public class ContextVariableNamingDialog extends JDialog {
 
         setContentPane(contentPane);
         setModal(true);
-        getRootPane().setDefaultButton(cancelButton);
+        getRootPane().setDefaultButton(okButton);
         pack();
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
