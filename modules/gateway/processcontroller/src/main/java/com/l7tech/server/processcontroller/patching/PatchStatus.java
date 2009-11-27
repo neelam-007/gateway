@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.*;
 import java.text.SimpleDateFormat;
+import java.text.DateFormat;
 
 /**
  * Properties that define a patch'es status.
@@ -52,7 +53,7 @@ public class PatchStatus {
             @Override
             public String displayValue(String value) {
                 try {
-                    return ", last modified on " + (new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")).format(new Date(Long.parseLong(value)));
+                    return ", last modified on " + dateFormat.format(new Date(Long.parseLong(value)));
                 } catch (NumberFormatException e) {
                     return ", last modified on " + value;
                 }
@@ -204,6 +205,8 @@ public class PatchStatus {
     // - PRIVATE
 
     private static final Logger logger = Logger.getLogger(PatchStatus.class.getName());
+
+    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
     private Properties properties = new Properties();
     private static final String FORMAT_DELIMITER = ":";
