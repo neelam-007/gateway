@@ -716,7 +716,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
         if (ret < 1) {
             int def = 1048576;
-            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + " is undefined or invalid. Please ensure the SecureSpan " +
+            String errorMsg = "The property " + PARAM_ATTACHMENT_DISK_THRESHOLD + " is undefined or invalid. Please ensure the SecureSpan " +
                     "Gateway is properly configured.  (Will use default of " + def + ")";
             logger.severe(errorMsg);
             return def;
