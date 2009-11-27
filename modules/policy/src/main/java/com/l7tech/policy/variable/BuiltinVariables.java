@@ -99,11 +99,7 @@ public class BuiltinVariables {
     }
 
     private static final VariableMetadata[] VARS = {
-        new VariableMetadata("request.tcp.remoteAddress", false, false, null, false),
-        new VariableMetadata("request.tcp.remoteip", false, false, "request.tcp.remoteAddress", false),
-        new VariableMetadata("request.tcp.remoteHost", false, false, null, false),
         new VariableMetadata("request.clientid", false, false, null, false),
-        new VariableMetadata("request.tcp.localPort", false, false, null, false, DataType.INTEGER),
         new VariableMetadata("request.http.method", false, false, null, false),
         new VariableMetadata("request.http.uri", false, false, null, false),
         new VariableMetadata(PREFIX_REQUEST_URL, true, false, null, false),

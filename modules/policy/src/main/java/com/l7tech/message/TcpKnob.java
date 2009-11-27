@@ -11,7 +11,33 @@ package com.l7tech.message;
  * response (back side)
  */
 public interface TcpKnob extends MessageKnob {
+    /**
+     * @return  remote IPv4 or IPv6 address in conventional (dotted or colon) notation, or null if not known.
+     */
     String getRemoteAddress();
+
+    /**
+     * @return the remote hostname, or else IP address, or else null.
+     */
     String getRemoteHost();
+
+    /**
+     * @return the remote TCP port, or 0 if not known.
+     */
+    int getRemotePort();
+
+    /**
+     * @return the local side of the connection's IPv4 or IPv6 address in conventional notation, or null if not known.
+     */
+    String getLocalAddress();
+
+    /**
+     * @return the local side of the connection's hostname, or else IP address, or else null.
+     */
+    String getLocalHost();
+
+    /**
+     * @return the local TCP port, or 0 if not known.
+     */
     int getLocalPort();
 }

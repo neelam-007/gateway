@@ -58,10 +58,12 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         }
     }
 
+    @Override
     public HttpCookie[] getCookies() {
         return CookieUtils.fromServletCookies(request.getCookies(), false);
     }
 
+    @Override
     public HttpMethod getMethod() {
         return method;
     }
@@ -71,10 +73,12 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         return request.getMethod();
     }
 
+    @Override
     public String getRequestUri() {
         return request.getRequestURI();
     }
 
+    @Override
     public String getParameter(String name) throws IOException {
         if (queryParams == null || requestBodyParams == null) {
             collectParameters();
@@ -114,7 +118,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
         // Check size
         int len = request.getContentLength();
-        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Length = {0} bytes)", Integer.valueOf(len)));
+        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Length = {0} bytes)", len));
         if (len == -1) {
             nobody();
             return;
@@ -158,6 +162,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         allParams = queryParams;
     }
 
+    @Override
     public String getQueryString() {
         return request.getQueryString();
     }
@@ -165,16 +170,19 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     /**
      * @return this request's parameters
      */
+    @Override
     public Map<String, String[]> getParameterMap() throws IOException {
         if (allParams == null) collectParameters();
         return allParams;
     }
 
+    @Override
     public String[] getParameterValues(String s) throws IOException {
         if (allParams == null) collectParameters();
         return allParams.get(s);
     }
 
+    @Override
     public Enumeration<String> getParameterNames() throws IOException {
         if (allParams == null) collectParameters();
         return new IteratorEnumeration<String>(allParams.keySet().iterator());
@@ -183,6 +191,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     /**
      * @return the Map&lt;String, String[]&gt; of parameters found in the URL query string.
      * @since SecureSpan 3.7
+     * @throws java.io.IOException if unable to read parameters
      */
     public Map<String, String[]> getQueryParameterMap() throws IOException {
         if (queryParams == null) collectParameters();
@@ -192,24 +201,29 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     /**
      * @return the Map&lt;String, String[]&gt; of parameters found in the request message body.
      * @since SecureSpan 3.7
+     * @throws java.io.IOException if unable to read parameters
      */
     public Map<String, String[]> getRequestBodyParameterMap() throws IOException {
         if (requestBodyParams == null) collectParameters();
         return requestBodyParams;
     }
 
+    @Override
     public String getRequestUrl() {
         return request.getRequestURL().toString(); // NPE here if servlet is bogus
     }
 
+    @Override
     public URL getRequestURL() {
         return url;
     }
 
+    @Override
     public long getDateHeader(String name) throws ParseException {
         return request.getDateHeader(name);
     }
 
+    @Override
     public int getIntHeader(String name) {
         try {
             return request.getIntHeader(name);
@@ -218,10 +232,12 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         }
     }
 
+    @Override
     public String getHeaderFirstValue(String name) {
         return request.getHeader(name);
     }
 
+    @Override
     public String getHeaderSingleValue(String name) throws IOException {
         Enumeration en = request.getHeaders(name);
         if (en.hasMoreElements()) {
@@ -233,26 +249,29 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         return null;
     }
 
+    @Override
     public String[] getHeaderNames() {
         Enumeration names = request.getHeaderNames();
-        List<String> out = new ArrayList();
+        List<String> out = new ArrayList<String>();
         while (names.hasMoreElements()) {
             String name = (String)names.nextElement();
             out.add(name);
         }
-        return out.toArray(new String[0]);
+        return out.toArray(new String[out.size()]);
     }
 
+    @Override
     public String[] getHeaderValues(String name) {
         Enumeration values = request.getHeaders(name);
-        List<String> out = new ArrayList();
+        List<String> out = new ArrayList<String>();
         while (values.hasMoreElements()) {
             String value = (String)values.nextElement();
             out.add(value);
         }
-        return out.toArray(new String[0]);
+        return out.toArray(new String[out.size()]);
     }
 
+    @Override
     public X509Certificate[] getClientCertificate() throws IOException {
         Object param = request.getAttribute(SERVLET_REQUEST_ATTR_X509CERTIFICATE);
         if (param == null)
@@ -264,22 +283,42 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         throw new IOException("Request X509Certificate was unsupported type " + param.getClass());
     }
 
+    @Override
     public Object getConnectionIdentifier() {
         return request.getAttribute(SERVLET_REQUEST_ATTR_CONNECTION_ID);
     }
 
+    @Override
     public boolean isSecure() {
         return request.isSecure();
     }
 
+    @Override
     public String getRemoteAddress() {
         return request.getRemoteAddr();
     }
 
+    @Override
     public String getRemoteHost() {
         return request.getRemoteHost();
     }
 
+    @Override
+    public int getRemotePort() {
+        return request.getRemotePort();
+    }
+
+    @Override
+    public String getLocalAddress() {
+        return request.getLocalAddr();
+    }
+
+    @Override
+    public String getLocalHost() {
+        return request.getLocalName();
+    }
+
+    @Override
     public int getLocalPort() {
         return request.getServerPort();
     }
@@ -290,6 +329,8 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     }
 
     private static Pattern SOAP_1_2_ACTION_PATTERN = Pattern.compile(";\\s*action=([^;]+)(?:;|$)");
+
+    @Override
     public String getSoapAction() throws IOException {
         String soapAction = getHeaderSingleValue(SoapUtil.SOAPACTION);
         if(soapAction == null || soapAction.trim().length() == 0) {

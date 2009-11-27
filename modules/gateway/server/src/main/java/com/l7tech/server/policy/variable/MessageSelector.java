@@ -16,14 +16,13 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Functions;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * Extracts values by name from {@link Message}s.
@@ -49,12 +48,33 @@ class MessageSelector implements ExpandVariables.Selector {
     private static final String WSS_SIGN_CERT_VALUES_PREFIX = WSS_PREFIX + "signingcertificates.value.";
 
     // NOTE: Variable names must be lower case
+    private static final String TCP_REMOTE_ADDRESS = "tcp.remoteaddress";
+    private static final String TCP_REMOTE_IP = "tcp.remoteip";
+    private static final String TCP_REMOTE_HOST = "tcp.remotehost";
+    private static final String TCP_REMOTE_PORT = "tcp.remoteport";
+    private static final String TCP_LOCAL_ADDRESS = "tcp.localaddress";
+    private static final String TCP_LOCAL_IP = "tcp.localip";
+    private static final String TCP_LOCAL_HOST = "tcp.localhost";
+    private static final String TCP_LOCAL_PORT = "tcp.localport";
+
+    // NOTE: Variable names must be lower case
     private static final String AUTH_USER_PASSWORD = "password";
     private static final String AUTH_USER_USERNAME = "username";
     private static final String AUTH_USER_USER = "authenticateduser";
     private static final String AUTH_USER_USERS = "authenticatedusers";
     private static final String AUTH_USER_DN = "authenticateddn";
     private static final String AUTH_USER_DNS = "authenticateddns";
+
+    private static final Map<String, Functions.Unary<Object, TcpKnob>> TCP_FIELDS = Collections.unmodifiableMap(new HashMap<String, Functions.Unary<Object, TcpKnob>>() {{
+        put(TCP_REMOTE_ADDRESS, Functions.propertyTransform(TcpKnob.class, "remoteAddress"));
+        put(TCP_REMOTE_IP, Functions.propertyTransform(TcpKnob.class, "remoteAddress"));
+        put(TCP_REMOTE_HOST, Functions.propertyTransform(TcpKnob.class, "remoteHost"));
+        put(TCP_REMOTE_PORT, Functions.propertyTransform(TcpKnob.class, "remotePort"));
+        put(TCP_LOCAL_ADDRESS, Functions.propertyTransform(TcpKnob.class, "localAddress"));
+        put(TCP_LOCAL_IP, Functions.propertyTransform(TcpKnob.class, "localAddress"));
+        put(TCP_LOCAL_HOST, Functions.propertyTransform(TcpKnob.class, "localHost"));
+        put(TCP_LOCAL_PORT, Functions.propertyTransform(TcpKnob.class, "localPort"));
+    }});
 
     @Override
     public Class getContextObjectClass() {
@@ -109,9 +129,14 @@ class MessageSelector implements ExpandVariables.Selector {
         } else if (lname.startsWith(AUTH_USER_DN)) {
             selector = select(new AuthenticatedUserGetter(AUTH_USER_DN, false, AuthenticatedUserGetter.USER_TO_DN, message));
         } else {
-            String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
-            if (strict) throw new IllegalArgumentException(msg);
-            return null;
+            final Functions.Unary<Object,TcpKnob> tcpFieldGetter = TCP_FIELDS.get(lname);
+            if (tcpFieldGetter != null) {
+                selector = new TcpKnobMessageAttributeSelector(tcpFieldGetter);
+            } else {
+                String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
         }
 
         return selector.select(message, name, handler, strict);
@@ -124,6 +149,7 @@ class MessageSelector implements ExpandVariables.Selector {
                 "mainpart",
                 "originalmainpart",
                 "wss",
+                "tcp",
                 SIZE_NAME,
                 CONTENT_TYPE,
                 AUTH_USER_PASSWORD,
@@ -430,6 +456,22 @@ class MessageSelector implements ExpandVariables.Selector {
                 if (strict) throw new IllegalArgumentException(msg);
                 return null;
             }
+        }
+    }
+
+    private static class TcpKnobMessageAttributeSelector implements MessageAttributeSelector {
+        private final Functions.Unary<Object, TcpKnob> tcpFieldGetter;
+
+        public TcpKnobMessageAttributeSelector(Functions.Unary<Object, TcpKnob> tcpFieldGetter) {
+            this.tcpFieldGetter = tcpFieldGetter;
+        }
+
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            TcpKnob tcpknob = context.getKnob(TcpKnob.class);
+            if (tcpknob == null)
+                return null;
+            return new Selection(tcpFieldGetter.call(tcpknob));
         }
     }
 }

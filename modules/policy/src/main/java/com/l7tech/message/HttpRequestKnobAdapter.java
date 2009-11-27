@@ -15,7 +15,7 @@ import java.util.Enumeration;
 import java.util.Map;
 
 /** @author alex */
-public class HttpRequestKnobAdapter implements HttpRequestKnob {
+public class HttpRequestKnobAdapter extends TcpKnobAdapter implements HttpRequestKnob {
     private final String soapAction;
 
     public HttpRequestKnobAdapter() {
@@ -26,30 +26,41 @@ public class HttpRequestKnobAdapter implements HttpRequestKnob {
         this.soapAction = soapAction;
     }
 
+    @Override
     public String getHeaderSingleValue(String name) throws IOException {
         return getHeaderFirstValue(name);
     }
 
+    @Override
     public String getSoapAction() {
         return soapAction;
     }
 
+    @Override
     public HttpCookie[] getCookies() {return new HttpCookie[0];}
 
+    @Override
     public HttpMethod getMethod() {return HttpMethod.POST;}
 
+    @Override
     public String getMethodAsString() { return getMethod().name(); }
 
+    @Override
     public String getRequestUri() {return null;}
 
+    @Override
     public String getRequestUrl() {return null;}
 
+    @Override
     public URL getRequestURL() {return null;}
 
+    @Override
     public long getDateHeader(String name) throws ParseException {return 0;}
 
+    @Override
     public int getIntHeader(String name){return -1;}
 
+    @Override
     public String getHeaderFirstValue(String name) {
         if (name.equals(SoapUtil.SOAPACTION)) {
             return soapAction;
@@ -57,29 +68,33 @@ public class HttpRequestKnobAdapter implements HttpRequestKnob {
         return null;
     }
 
+    @Override
     public String[] getHeaderNames() {return new String[0];}
 
+    @Override
     public String[] getHeaderValues(String name) {return new String[0];}
 
+    @Override
     public X509Certificate[] getClientCertificate() throws IOException {return new X509Certificate[0];}
 
+    @Override
     public boolean isSecure() {return false;}
 
+    @Override
     public String getParameter(String name) {return null;}
 
+    @Override
     public Map getParameterMap() {return null;}
 
+    @Override
     public String[] getParameterValues(String s) {return new String[0];}
 
+    @Override
     public Enumeration getParameterNames() {return null;}
 
+    @Override
     public String getQueryString() {return null;}
 
-    public String getRemoteAddress() {return null;}
-
-    public String getRemoteHost() {return null;}
-
-    public int getLocalPort() {return 0;}
-
+    @Override
     public Object getConnectionIdentifier() {return new Object();}
 }

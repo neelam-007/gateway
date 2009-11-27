@@ -40,7 +40,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
     //- PUBLIC
 
-    /**
+    /*
      * Bean constructor
      */
     public MessageProcessingFtplet(final FtpServerManager ftpServerManager,
@@ -120,7 +120,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private final StashManagerFactory stashManagerFactory;
     private final EventChannel messageProcessingEventChannel;
 
-    /**
+    /*
      * Process a file upload 
      */
     private FtpletEnum handleUploadStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput, boolean unique) throws FtpException, IOException {
@@ -199,6 +199,9 @@ class MessageProcessingFtplet extends DefaultFtplet {
      *
      * <p>NOTE: This will NOT WORK for explicit FTP, which is currently fine
      * since that is not enabled.</p>
+     * @param dataConnectionFactory connection factory to check whether data connection is secure
+     * @param ftpSession ftp session to check whether control connection is secure
+     * @return whether the connection is secure
      */
     private boolean isSecure(DataConnectionFactory dataConnectionFactory, FtpSession ftpSession) {
         boolean secure = false;
@@ -222,8 +225,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
         return secure;
     }
 
-    /**
-     * Store to message processor 
+    /*
+     * Store to message processor
      */
     private int onStore(final DataConnection dataConnection,
                         final FtpSession ftpSession,
@@ -322,7 +325,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
         return uri;
     }
 
-    /**
+    /*
      * Create an FtpKnob for the given info. 
      */
     private FtpRequestKnob buildFtpKnob(final InetAddress serverAddress, final int port, final InetAddress clientAddress, final String file, final String path, final boolean secure, final boolean unique, final User user) {
@@ -339,6 +342,22 @@ class MessageProcessingFtplet extends DefaultFtplet {
             public String getRemoteHost() {
                 return clientAddress.getHostAddress();
             }
+
+            @Override
+            public int getRemotePort() {
+                return 0;
+            }
+
+            @Override
+            public String getLocalAddress() {
+                return serverAddress.getHostAddress();
+            }
+
+            @Override
+            public String getLocalHost() {
+                return serverAddress.getHostAddress();
+            }
+
             @Override
             public String getFile() {
                 return file;
@@ -387,7 +406,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
         };
     }
 
-    /**
+    /*
      * Convert OutputStream to InputStream.
      */
     private InputStream getDataInputStream(final DataConnection dataConnection,

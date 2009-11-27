@@ -32,6 +32,7 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
     public static Test suite() {
         TestSuite testSuite = new TestSuite(ServerFtpCredentialAssertionTest.class);
         return new TestSetup(testSuite) {
+            @Override
             protected void setUp() throws Exception {
                 applicationContext = new ClassPathXmlApplicationContext(new String[]{
                         "com/l7tech/external/assertions/ftpcredential/server/ftpCredentialAssertionTestApplicationContext.xml"
@@ -52,6 +53,7 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
         // add knob
         if (addFtpKnob) {
             request.attachFtpKnob(new FtpRequestKnob(){
+                @Override
                 public PasswordAuthentication getCredentials() {
                     PasswordAuthentication passwordAuthentication = null;
 
@@ -61,31 +63,55 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
 
                     return passwordAuthentication;
                 }
+                @Override
                 public String getFile() {
                     return null;
                 }
+                @Override
                 public String getPath() {
                     return null;
                 }
+                @Override
                 public String getRequestUri() {
                     return null;
                 }
+                @Override
                 public String getRequestUrl() {
                     return null;
                 }
+                @Override
                 public boolean isSecure() {
                     return false;
                 }
+                @Override
                 public boolean isUnique() {
                     return false;
                 }
+                @Override
                 public int getLocalPort() {
                     return 0;
                 }
+                @Override
                 public String getRemoteAddress() {
                     return null;
                 }
+                @Override
                 public String getRemoteHost() {
+                    return null;
+                }
+
+                @Override
+                public int getRemotePort() {
+                    return 0;
+                }
+
+                @Override
+                public String getLocalAddress() {
+                    return null;
+                }
+
+                @Override
+                public String getLocalHost() {
                     return null;
                 }
             });

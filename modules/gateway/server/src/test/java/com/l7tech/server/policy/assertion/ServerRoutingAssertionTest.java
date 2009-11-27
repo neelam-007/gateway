@@ -10,6 +10,7 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
 import com.l7tech.message.TcpKnob;
+import com.l7tech.message.TcpKnobAdapter;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -349,10 +350,12 @@ public class ServerRoutingAssertionTest {
             super(new HttpRoutingAssertion(), null, null);
         }
 
+        @Override
         public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
             return AssertionStatus.NOT_APPLICABLE;
         }
 
+        @Override
         public void doAttachSamlSenderVouches(Message message, LoginCredentials svInputCredentials, SignerInfo signerInfo) throws SAXException, IOException, SignatureException, CertificateException {
             super.doAttachSamlSenderVouches(message, svInputCredentials, signerInfo);
         }
@@ -382,15 +385,18 @@ public class ServerRoutingAssertionTest {
     @Test
     public void testAttachSaml() throws Exception {
         final Message mess = makeMessage();
-        mess.attachKnob(TcpKnob.class, new TcpKnob() {
+        mess.attachKnob(TcpKnob.class, new TcpKnobAdapter() {
+            @Override
             public String getRemoteAddress() {
                 return "127.0.0.1";
             }
 
+            @Override
             public String getRemoteHost() {
                 return "127.0.0.1";
             }
 
+            @Override
             public int getLocalPort() {
                 return 8080;
             }

@@ -12,9 +12,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.identity.ldap.LdapUser;
-import com.l7tech.message.AbstractHttpResponseKnob;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
@@ -216,6 +214,52 @@ public class ExpandVariablesTest {
         Assert.assertTrue("Multivalued header values", Arrays.equals(new String[] {"foo", "bar"}, magic));
     }
 
+    @BugNumber(8056)
+    @Test
+    public void testMessageVariableTcpKnobVariables() throws Exception {
+        Message foo = new Message();
+        foo.attachKnob(TcpKnob.class, new TcpKnob() {
+            @Override
+            public String getRemoteAddress() {
+                return "1.1.1.1";
+            }
+
+            @Override
+            public String getRemoteHost() {
+                return "remotehost13.example.com";
+            }
+
+            @Override
+            public int getRemotePort() {
+                return 31337;
+            }
+
+            @Override
+            public String getLocalAddress() {
+                return "1.1.1.2";
+            }
+
+            @Override
+            public String getLocalHost() {
+                return "serverhost4242.example.com";
+            }
+
+            @Override
+            public int getLocalPort() {
+                return 33138;
+            }
+        });
+
+        assertEquals("1.1.1.1", ExpandVariables.process("${foo.tcp.remoteAddress}", makeVars(foo), audit));
+        assertEquals("1.1.1.1", ExpandVariables.process("${foo.tcp.remoteIP}", makeVars(foo), audit));
+        assertEquals("remotehost13.example.com", ExpandVariables.process("${foo.tcp.remoteHost}", makeVars(foo), audit));
+        assertEquals("31337", ExpandVariables.process("${foo.tcp.remotePort}", makeVars(foo), audit));
+        assertEquals("1.1.1.2", ExpandVariables.process("${foo.tcp.localAddress}", makeVars(foo), audit));
+        assertEquals("1.1.1.2", ExpandVariables.process("${foo.tcp.localIP}", makeVars(foo), audit));
+        assertEquals("serverhost4242.example.com", ExpandVariables.process("${foo.tcp.localHost}", makeVars(foo), audit));
+        assertEquals("33138", ExpandVariables.process("${foo.tcp.localPort}", makeVars(foo), audit));
+    }
+
     @Test
     public void testEvaluateMultivaluedExpressionLookup() throws Exception {
         final String expr="${elements[1]}";
@@ -259,7 +303,7 @@ public class ExpandVariablesTest {
 
     @Test
     public void testRequestHttpParamCasePreservation() throws Exception {
-        final Enumeration<String> en = makeTinyRequest().getHttpRequestKnob().getParameterNames();
+        @SuppressWarnings({"unchecked"}) final Enumeration<String> en = makeTinyRequest().getHttpRequestKnob().getParameterNames();
         String badname = null;
         while (en.hasMoreElements()) {
             String val = en.nextElement();
@@ -448,7 +492,7 @@ public class ExpandVariablesTest {
         ExpandVariables.process("${dontexist}", vars, audit, true);
     }
 
-    /**
+    /*
      * Comprehensive test coverage for ExpandVariables.processNoFormat()
      * Ensures that no empty strings are returned as index 0
      * Tests that any preceeding text, even if a single space, is preserved
@@ -458,7 +502,6 @@ public class ExpandVariablesTest {
      * when variables of type Message used
      * when multi valued variables backed by an Object [] and List are used
      * when a mix of text, single valued variables, variables of type Message and mulit valued variables are used
-     * @throws Exception
      */
     @BugNumber(7688)
     @Test
@@ -588,7 +631,7 @@ public class ExpandVariablesTest {
         return foo;
     }
 
-    private static class HttpRequestKnobAdapter implements HttpRequestKnob {
+    private static class HttpRequestKnobAdapter extends TcpKnobAdapter implements HttpRequestKnob {
         private final String uri;
         private final MimeHeaders headers;
         private final Map<String, String[]> params;
