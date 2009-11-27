@@ -22,10 +22,15 @@ public class UDDIProxiedService extends PersistentEntityImp {
     public UDDIProxiedService() {
     }
 
-    public UDDIProxiedService(String uddiServiceKey, String uddiServiceName, String wsdlServiceName) {
+    public UDDIProxiedService(String uddiServiceKey, String uddiServiceName, String wsdlServiceName, String wsdlServiceNamespace) {
         this.uddiServiceKey = uddiServiceKey;
         this.uddiServiceName = uddiServiceName;
         this.wsdlServiceName = wsdlServiceName;
+        if(wsdlServiceNamespace == null){
+            this.wsdlServiceNamespace = NULL_NAMESPACE;
+        }else{
+            this.wsdlServiceNamespace = wsdlServiceNamespace;
+        }
     }
 
 
@@ -76,6 +81,15 @@ public class UDDIProxiedService extends PersistentEntityImp {
         this.wsdlServiceName = wsdlServiceName;
     }
 
+    @Column(name = "wsdl_service_namespace", updatable = false)
+    public String getWsdlServiceNamespace() {
+        return wsdlServiceNamespace;
+    }
+
+    public void setWsdlServiceNamespace(String wsdlServiceNamespace) {
+        this.wsdlServiceNamespace = wsdlServiceNamespace;
+    }
+
     @ManyToOne(optional=false)
     @JoinColumn(name="uddi_proxied_service_info_oid", nullable=false)
     public UDDIProxiedServiceInfo getUddiProxiedServiceInfo() {
@@ -124,6 +138,17 @@ public class UDDIProxiedService extends PersistentEntityImp {
      * wsdlServiceName represents the original unmodified unique wsdl:service name from the Gateway's WSDL
      */
     private String wsdlServiceName;
+
+    /**
+     * Namespace of the service if any is defined. See NULL_NAMESPACE which represents a null namespace
+     */
+    private String wsdlServiceNamespace;
+
+    /**
+     * We cannot allow null values for wsdlServiceNamespace as the unique key in the database allows multiple null
+     * values and it will renender the unique key useless
+     */
+    private static final String NULL_NAMESPACE = "NULL_NAMESPACE";
 
     /**
      * Parent which contains general information about the WSDL and BusinessEntity this individual service

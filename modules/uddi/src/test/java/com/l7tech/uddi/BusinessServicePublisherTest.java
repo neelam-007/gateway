@@ -37,16 +37,6 @@ public class BusinessServicePublisherTest {
 
         UDDIClient uddiClient = new TestUddiClient(true);
 
-        //before
-//        for(Pair<BusinessService, Map<String, TModel>> serviceToModels: serviceToDependentModels){
-//            BusinessService businessService = serviceToModels.left;
-//            JAXB.marshal(businessService, System.out);
-//            Collection<TModel> allTModels = serviceToModels.right.values();
-//            for(TModel tModel: allTModels){
-//                JAXB.marshal(tModel, System.out);
-//            }
-//        }
-
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
         final Pair<Set<String>, Set<UDDIBusinessService>> pair =
@@ -68,6 +58,57 @@ public class BusinessServicePublisherTest {
         Assert.assertEquals("Invalid service key of service to delete found", "service key", deletePair.left.iterator().next());
         Assert.assertEquals("Incorrect number of services published", 1, deletePair.right.size());
 
+    }
+
+    @Test
+    public void testImportServiceLocalNameClash() throws Exception{
+        final Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader( "com/l7tech/uddi/SpaceOrderofBattleServiceLocalNameClash_Parent.wsdl" ));
+        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+        final String gatewayURL = "http://localhost:8080/3828382";
+
+        final int serviceOid = 3828382;
+        final String businessKey = "uddi:uddi_business_key";
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+
+        UDDIClient uddiClient = new TestUddiClient(true);
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        final Pair<Set<String>, Set<UDDIBusinessService>> pair =
+                servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey,
+                        Collections.<String>emptySet(), false, null);
+
+        Assert.assertNotNull("pair should not be null", pair);
+        Assert.assertTrue("No services to delete should be found", pair.left.isEmpty());
+        Assert.assertEquals("Incorrect number of services published", 2, pair.right.size());
+
+        final Set<String> stringSet = new HashSet<String>();
+        stringSet.addAll(Arrays.asList("service key"));
+        final Pair<Set<String>, Set<UDDIBusinessService>> deletePair =
+                servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey,
+                        stringSet, false, null);
+
+        Assert.assertNotNull("pair should not be null", deletePair);
+        Assert.assertEquals("One service to delete should be found", 1, deletePair.left.size());
+        Assert.assertEquals("Invalid service key of service to delete found", "service key", deletePair.left.iterator().next());
+        Assert.assertEquals("Incorrect number of services published", 2, deletePair.right.size());
+
+        Set<String> namespaces = new HashSet<String>();
+        final String parentNs = "http://SOB.IPD.LMCO.SERVICES/";
+        namespaces.add(parentNs);
+        final String childNs = "http://SOB.IPD.LMCO/ExternalWSDL";
+        namespaces.add(childNs);
+        boolean foundParentNs = false;
+        boolean foundChildNs = false;
+        for(UDDIBusinessService service: deletePair.right){
+            Assert.assertNotNull(service.getWsdlServiceNamespace());
+            if(service.getWsdlServiceNamespace().equals(parentNs)) foundParentNs = true;
+            if(service.getWsdlServiceNamespace().equals(childNs)) foundChildNs = true;
+        }
+
+        Assert.assertTrue("Parent namespace not found", foundParentNs);
+        Assert.assertTrue("Child namespace not found", foundChildNs);
     }
 
     /**
@@ -183,7 +224,7 @@ public class BusinessServicePublisherTest {
         Assert.assertEquals("Invalid key value found", "pretend service key", containsRef.getKeyValue());
 
     }
-                    //todo [Donal] update tests for namespaces
+
     private void testBindingTemplate(String gatewayWsdlUrl, String gatewayURL, String serviceKey, Pair<BindingTemplate, List<TModel>> bindingAndModels) {
         Map<String, TModel> keyToModel = new HashMap<String, TModel>();
         for (TModel model : bindingAndModels.right) {

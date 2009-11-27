@@ -390,8 +390,9 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     //create required new UDDIProxiedServices
                     Set<UDDIBusinessService> newlyCreatedServices = deletedAndNewServices.right;
                     for (UDDIBusinessService bs : newlyCreatedServices) {
-                        final UDDIProxiedService proxiedService =
-                                new UDDIProxiedService(bs.getServiceKey(), bs.getServiceName(), bs.getWsdlServiceName());
+                        final UDDIProxiedService proxiedService = new UDDIProxiedService(
+                                bs.getServiceKey(), bs.getServiceName(), bs.getWsdlServiceName(), bs.getWsdlServiceNamespace());
+                        
                         proxiedService.setUddiProxiedServiceInfo(uddiProxiedServiceInfo);
                         uddiProxiedServiceInfo.getProxiedServices().add(proxiedService);
                     }

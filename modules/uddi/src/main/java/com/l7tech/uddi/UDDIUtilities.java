@@ -461,11 +461,29 @@ public class UDDIUtilities {
      * @param tModel TModel to search it's categoryBag for a namespace keyedReference
      * @return String namespace found, never the empty string, or null if not found
      */
-    public static String extractNamespace(final TModel tModel) {
+    static String extractNamespace(final TModel tModel) {
 
         final CategoryBag categoryBag = tModel.getCategoryBag();
         if (categoryBag == null) return null;//should never happen, not concerned here
 
+        return getNameSpace(categoryBag);
+    }
+
+    /**
+     * Extract the namespace from the supplied TModel, if it has one defined.
+     *
+     * @param businessService BusinessService to search it's categoryBag for a namespace keyedReference
+     * @return String namespace found, never the empty string, or null if not found
+     */
+    static String extractNamespace(final BusinessService businessService) {
+
+        final CategoryBag categoryBag = businessService.getCategoryBag();
+        if (categoryBag == null) return null;
+
+        return getNameSpace(categoryBag);
+    }
+
+    private static String getNameSpace(final CategoryBag categoryBag) {
         for (KeyedReference kr : categoryBag.getKeyedReference()) {
             if (kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE)) {
                 if(kr.getKeyValue() != null && !kr.getKeyValue().trim().isEmpty()){

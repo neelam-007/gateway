@@ -964,8 +964,9 @@ CREATE TABLE uddi_proxied_service (
   uddi_service_key varchar(255) NOT NULL,
   uddi_service_name varchar(255) NOT NULL,
   wsdl_service_name varchar(255) NOT NULL,
+  wsdl_service_namespace varchar(255) NOT NULL,
   PRIMARY KEY (objectid),
-  UNIQUE KEY (uddi_proxied_service_info_oid, wsdl_service_name),
+  UNIQUE KEY (uddi_proxied_service_info_oid, wsdl_service_name, wsdl_service_namespace),
   UNIQUE (uddi_service_key),
   FOREIGN KEY (uddi_proxied_service_info_oid) REFERENCES uddi_proxied_service_info (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;

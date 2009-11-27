@@ -428,7 +428,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     }
                 }
                 if(wsdlNameToUse == null) return null;
-                uddiBs = new UDDIBusinessService(bs.getName().get(0).getValue(), bs.getServiceKey(), wsdlNameToUse);
+                uddiBs = new UDDIBusinessService(bs.getName().get(0).getValue(), bs.getServiceKey(), wsdlNameToUse, UDDIUtilities.extractNamespace(bs));
             }else{
                 uddiBs = null;
             }
