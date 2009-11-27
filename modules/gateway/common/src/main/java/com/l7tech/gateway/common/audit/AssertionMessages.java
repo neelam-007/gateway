@@ -684,6 +684,13 @@ public class AssertionMessages extends Messages {
     public static final M XACML_PDP_REQUEST_NOT_ENCAPSULATED  = m(8931, Level.WARNING, "XACML request is not SOAP encapsulated");
     public static final M XACML_PDP_REQUEST_NAMESPACE_UNKNOWN = m(8932, Level.WARNING, "XACML request namespace is not recognized: {0}"); 
 
+    public static final M MTOM_ENCODE_ERROR         = m(8960, Level.WARNING, "Error encoding MTOM message: {0}");
+    public static final M MTOM_ENCODE_NONE          = m(8961, Level.INFO, "Not encoding MTOM message, no elements found to encode.");
+    public static final M MTOM_ENCODE_INVALID_XPATH = m(8962, Level.WARNING, "Invalid XPath expression for MTOM encoding ''{0}''");
+    public static final M MTOM_ENCODE_XPATH_FAILED  = m(8963, Level.WARNING, "XPath expression did not match.");
+    public static final M MTOM_DECODE_ERROR         = m(8964, Level.WARNING, "Error decoding MTOM message: {0}");
+    public static final M MTOM_VALIDATE_ERROR       = m(8965, Level.WARNING, "Error validating MTOM message: {0}");
+
     public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");
     public static final M MCM_TOO_MANY_MAPPINGS  = m(9003, Level.WARNING, "Message context mapping dropped {0}.");
