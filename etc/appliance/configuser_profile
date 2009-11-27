@@ -507,10 +507,10 @@ doPatchManagementMenu() {
         echo ""
         echo "What would you like to do?"
         echo ""
-        echo " 1) Register/Upload and verify a new patch"
-        echo " 2) Install a registered and verified patch"
-        echo " 3) Unregister a patch"
-        echo " 4) List all registered patches and their status"
+        echo " 1) Upload a patch to the Gateway"
+        echo " 2) Install a patch onto the Gateway"
+        echo " 3) Delete a patch from the Gateway"
+        echo " 4) List the patches uploaded to the Gateway"
         echo " X) Exit menu"
         echo ""
         echo -n "Please make a selection: "
@@ -545,22 +545,23 @@ doPatchManagementMenu() {
     done
 }
 
-registerPatch() {
+uploadPatch() {
     whichone=$1
-    if [ -e $whichone ] ; then
-        echo "You have chosen to register the patch named "
+    if [ -e "$whichone" ] ; then
+        echo "You have chosen to upload the patch named "
         confirmedMessage "\"$whichone\""
         echo ""
-        echo "Please wait while the patch is registered ..."
+        echo "Please wait while the patch is uploaded ..."
         ($PATCHTOOL upload $whichone)
         ERR=$?
+        clear;
         if [ $ERR -ne 0 ] ; then
             echo ""
-            confirmedMessage "There was an error while registering the patch"
+            confirmedMessage "There was an error while uploading the patch"
             return 0
         else
             echo ""
-            confirmedMessage "The patch was registered successfully."
+            confirmedMessage "The patch was uploaded successfully."
             return 0
         fi
     else
@@ -577,6 +578,7 @@ installPatch() {
     echo "Please wait while the patch is installed ..."
     ($PATCHTOOL install $patchinfo)
     ERR=$?
+    clear;
     if [ $ERR -ne 0 ] ; then
         echo ""
         confirmedMessage "There was an error while installing the patch"
@@ -591,18 +593,19 @@ installPatch() {
 deletePatch() {
     patchinfo=$1
     echo ""
-    echo "You have chosen to unregister the following patch"
+    echo "You have chosen to delete the following patch"
     confirmedMessage "\" $patchinfo\""
-    echo "Please wait while the patch is unregistered ..."
+    echo "Please wait while the patch is deleted ..."
     ($PATCHTOOL delete $patchinfo)
     ERR=$?
+    clear;
     if [ $ERR -ne 0 ] ; then
         echo ""
-        confirmedMessage "There was an error while unregistering the patch"
+        confirmedMessage "There was an error while deleting the patch"
         return 0
     else
         echo ""
-        confirmedMessage "The patch was successfully unregistered."
+        confirmedMessage "The patch was successfully deleted."
         return 0
     fi
 }
@@ -616,21 +619,18 @@ doPatchUpload() {
         LEN=${#DROPBOXPATCHES[*]}
 
         echo ""
+        echo "This option uploads a patch supplied by Layer 7 and registers it with the Gateway."
+        echo "Integrity checks are performed to ensure the patch is intact."
+        echo ""
+        echo "NOTE: You must upload a patch before you can install it."
+        echo "      All patches from Layer 7 have an \"L7P\" extension."
+        echo ""
+        echo "If the patch you want to upload is not listed below,"
+        echo "use the \"S\" option to locate it."
+        
         if [ $LEN -eq 0 ] ; then
-
+            echo ""
             echo "No patches were found in the ssgconfig directory."
-            echo ""
-            echo "You can still specify the full path to a patch file"
-            echo "using the \"S\" option below."
-            echo ""
-            echo "NOTE: patches supplied by Layer 7 have an L7P extension."
-        else
-            echo "Specify the patch you would like to register from the following list."
-            echo ""
-            echo "You can also specify the full path to a patch file."
-            echo "using the \"S\" option below."
-            echo ""
-            echo "NOTE: patches supplied by Layer 7 have an L7P extension."
         fi
 
         echo ""
@@ -642,16 +642,16 @@ doPatchUpload() {
             echo "$index) `basename $patchname`"
         done
 
-        echo "S) Specify a patch not listed here"
+        echo "S) Specify a patch not listed"
         echo "X) Exit menu"
         echo ""
         echo -n "Please make a selection: "
         read choice
         case $choice in
             s|S)
-                echo -n "Please enter the path to the patch you wish to register: "
+                echo -n "Please enter the path to the patch you wish to upload: "
                 read whichone
-                registerPatch "$whichone"
+                uploadPatch "$whichone"
                 echo ""
                 clear;;
             x|X)
@@ -667,7 +667,7 @@ doPatchUpload() {
                     if [ $realindex -ge 0 ] && [ $realindex -lt $LEN ] ; then
                         clear
                         whichone=${DROPBOXPATCHES[$realindex]}
-                        registerPatch "$whichone"
+                        uploadPatch "$whichone"
                     else
                         confirmedMessage "That is not a valid selection";
                     fi
@@ -694,11 +694,16 @@ IFS='
             LEN=${#REGISTEREDPATCHES[*]}
         fi
 
+        clear;
+        echo ""
+        echo "This option installs a patch that has been uploaded."
+        echo ""
+        
         if [ $LEN -eq 0 ] ; then
             echo ""
             echo "No patches are available for installation."
             echo ""
-            echo "Please use the patch management menu to register and verify a"
+            echo "Please use the patch management menu to upload a"
             echo "patch before it can be installed."
             confirmedMessage ""
             isPatchInstallMenuValid="y"
@@ -760,13 +765,15 @@ IFS='
     IFS=$old
     LEN=${#REGISTEREDPATCHES[*]}
     if [ $LEN -eq 0 ] ; then
+        clear;
         echo ""
-        echo "There are no patches that can be unregistered."
+        echo "There are no patches that can be deleted."
         echo ""
         echo "Only patches that are currently uploaded but not yet"
-        echo "installed can be unregistered."
+        echo "installed can be deleted."
         confirmedMessage ""
     else
+        clear;
         declare -a patch_ids
         for (( i = 0 ; i < $LEN ; i++))
         do
@@ -808,6 +815,7 @@ IFS='
     REGISTEREDPATCHES=(`$PATCHTOOL list`)
     IFS=$old
     LEN=${#REGISTEREDPATCHES[*]}
+    clear;
     for (( i = 0 ; i < $LEN ; i++))
     do
         patchinfo=${REGISTEREDPATCHES[$i]}
