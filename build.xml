@@ -3176,6 +3176,10 @@
                 <exclude name="bin/*.sh"/>
                 <exclude name="etc"/>
                 <exclude name="etc/*"/>
+                <exclude name="var/logs"/>
+                <exclude name="var/logs/*"/>
+                <exclude name="var/patches"/>
+                <exclude name="var/patches/*"/>
             </tarfileset>
             <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.pc}">
                 <include name="bin/*.sh"/>
@@ -3183,6 +3187,12 @@
             <tarfileset dir="${install.src.pc}" username="layer7" group="gateway" filemode="555" dirmode="775" prefix="${install.target.pc}">
                 <include name="etc"/>
                 <include name="etc/*"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.pc}" username="layer7" group="gateway" filemode="664" dirmode="775" prefix="${install.target.pc}">
+                <include name="var/logs"/>
+                <include name="var/logs/*"/>
+                <include name="var/patches"/>
+                <include name="var/patches/*"/>
             </tarfileset>
         </tar>
 
