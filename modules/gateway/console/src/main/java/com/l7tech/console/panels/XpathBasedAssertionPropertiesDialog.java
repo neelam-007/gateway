@@ -372,6 +372,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                             try {
                                 long oid = Registry.getDefault().getServiceManager().saveSampleMessage(sm);
                                 populateSampleMessages(currentOperation == null ? null : currentOperation.getName(), oid);
+                                sampleMessagesCombo.repaint();
+                                refreshDialog();
                             } catch (SaveException ex) {
                                 throw new RuntimeException("Couldn't save SampleMessage", ex);
                             }
@@ -397,6 +399,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                             }
                             sampleMessagesCombo.repaint();
                             displayMessage(smd.getMessage().getXml());
+                            refreshDialog();
                         }
                     }
                 });
@@ -448,6 +451,15 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         speedIndicator = new SpeedIndicator(0);
         speedIndicatorPanel.setLayout(new BorderLayout());
         speedIndicatorPanel.add(speedIndicator, BorderLayout.CENTER);
+    }
+
+    /**
+     * Resize the dialog due to some components getting extended.
+     */
+    private void refreshDialog() {
+        if (getSize().width < mainPanel.getMinimumSize().width) {
+            setSize(mainPanel.getMinimumSize().width, getSize().height);
+        }
     }
 
     private boolean checkForTarari() {
