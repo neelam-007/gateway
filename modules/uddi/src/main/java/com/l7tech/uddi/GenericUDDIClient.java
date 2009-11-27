@@ -612,6 +612,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         moreAvailable = false;
 
         try {
+            if(Thread.currentThread().isInterrupted()) {
+                logger.log(Level.FINEST, "UDDI search was cancelled");
+                return null;
+            }
+
             String authToken = getAuthToken();
             Name[] names = buildNames( businessName );
             UDDIInquiryPortType inquiryPort = getInquirePort();
@@ -625,6 +630,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             findBusiness.setFindQualifiers(buildFindQualifiers(businessName, caseSensitive));
             if (names != null)
                 findBusiness.getName().addAll(Arrays.asList(names));
+
+            if(Thread.currentThread().isInterrupted()) {
+                logger.log(Level.FINEST, "UDDI search was cancelled");
+                return null;
+            }
 
             BusinessList businessList = inquiryPort.findBusiness(findBusiness);
 

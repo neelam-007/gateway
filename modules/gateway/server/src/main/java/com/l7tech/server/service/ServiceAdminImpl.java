@@ -742,6 +742,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
+    public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
+        asyncSupport.cancelJob(jobId, interruptIfRunning);
+    }
+
+    @Override
     public void destroy() throws Exception {
         if (validatorExecutor != null) validatorExecutor.shutdown();
     }

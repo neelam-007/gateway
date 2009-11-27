@@ -128,6 +128,24 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
         return "active:pending:";
     }
 
+    @Override
+    public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
+        if(jobId == null) throw new NullPointerException("jobId cannot be null");
+        
+        mustNotBeClosed();
+        final JobEntry entry = jobs.get(jobId);
+        if(entry == null) return;
+
+        //this also covers if the job has already been cancelled
+        if(entry.future.isDone()) return;
+
+        final boolean cancelled = entry.future.cancel(interruptIfRunning);
+        if(cancelled){
+            logger.log(Level.FINE, "Asynchronous job " + jobId+" is cancelled");
+        }
+        //else it either completed or was cancelled, either way it has moved out of the waiting or 'running with no cancel' attempt states
+    }
+
     public synchronized <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId)
             throws UnknownJobException, JobStillActiveException {
         mustNotBeClosed();

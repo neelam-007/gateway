@@ -76,6 +76,18 @@ public interface AsyncAdminMethods {
     <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException;
 
     /**
+     * Cancel the asynchronous job. Default behaviour is that the job is cancelled if it has not yet started.
+     *
+     * Once this method has been called, subsequent calls will have no affect. In particular if the first call
+     * specified false for interruptIfRunning and then subsequently called with interruptIfRunning is true for the
+     * same job id, the job will never be cancelled again.
+n     *
+     * @param jobId the ID of the job to cancel. Required. Invalid job ids are ignored
+     * @param interruptIfRunning if true the job will be interrupted if it is running
+     */
+    <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning);
+
+    /**
      * An asynchronous completion token representing a long-running job being performed on the server.
      */
     public static final class JobId<OUT extends Serializable> implements Serializable {

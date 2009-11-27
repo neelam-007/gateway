@@ -347,4 +347,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return asyncSupport.getJobResult(jobId);
     }
 
+    @Override
+    public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
+        asyncSupport.cancelJob(jobId, interruptIfRunning);
+    }
 }

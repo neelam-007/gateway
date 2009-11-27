@@ -379,8 +379,8 @@ public class SearchUddiDialog extends JDialog {
                             processBusinessSearchResults(registryName, businessResult);
                     }
                 } catch (InterruptedException e2) {
-                    //nothing to do, dialog was cancelled
-                    logger.log(Level.FINEST, "Search of UDDI was cancelled");
+                    //Should be handled inside of either callable
+                    logger.log(Level.FINE, "Search of UDDI was cancelled");
                 } catch (InvocationTargetException e2) {
                     logger.log(Level.WARNING, ExceptionUtils.getMessage(e2), ExceptionUtils.getDebugException(e2));
                     JOptionPane.showMessageDialog(SearchUddiDialog.this, ExceptionUtils.getMessage(e2), "Error Searching UDDI Registry", JOptionPane.ERROR_MESSAGE);
@@ -467,33 +467,38 @@ public class SearchUddiDialog extends JDialog {
                 if (serviceAdmin == null) throw new RuntimeException("Service Admin reference not found");
                 final String regName = (String) uddiRegistryComboBox.getSelectedItem();
                 final UDDIRegistry uddiRegistry = allRegistries.get(regName);
-                final AsyncAdminMethods.JobId<UDDINamedEntity[]> jobId;
+                final AsyncAdminMethods.JobId<UDDINamedEntity[]> jobId =
+                        serviceAdmin.findBusinessesFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected());
 
-                jobId = serviceAdmin.findBusinessesFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected());
-
-                UDDINamedEntity [] result = null;
-                double delay = DELAY_INITIAL;
-                Thread.sleep((long)delay);
-                while (result == null) {
-                    String status = serviceAdmin.getJobStatus(jobId);
-                    if (status == null)
-                        throw new IllegalStateException("Server could not find our uddi serach job ID");
-                    if (status.startsWith("i")) {
-                        final AsyncAdminMethods.JobResult<UDDINamedEntity[]> jobResult = serviceAdmin.getJobResult(jobId);
-                        result = jobResult.result;
-                        if (result == null){
-                            final String errorMessage = jobResult.throwableMessage;
-                            if(errorMessage != null){
-                                throw new RuntimeException(errorMessage);
-                            }else{
-                                throw new RuntimeException("Unknown problem searching UDDI. Please check Gateway logs");
+                try {
+                    UDDINamedEntity [] result = null;
+                    double delay = DELAY_INITIAL;
+                    Thread.sleep((long)delay);
+                    while (result == null) {
+                        String status = serviceAdmin.getJobStatus(jobId);
+                        if (status == null)
+                            throw new IllegalStateException("Server could not find our uddi serach job ID");
+                        if (status.startsWith("i")) {
+                            final AsyncAdminMethods.JobResult<UDDINamedEntity[]> jobResult = serviceAdmin.getJobResult(jobId);
+                            result = jobResult.result;
+                            if (result == null){
+                                final String errorMessage = jobResult.throwableMessage;
+                                if(errorMessage != null){
+                                    throw new RuntimeException(errorMessage);
+                                }else{
+                                    throw new RuntimeException("Unknown problem searching UDDI. Please check Gateway logs");
+                                }
                             }
                         }
+                        delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
+                        Thread.sleep((long)delay);
                     }
-                    delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
-                    Thread.sleep((long)delay);
-                }
-                return result;
+                    return result;
+                } catch (InterruptedException e) {
+                    logger.log(Level.FINE, "UDDI search is canccelled. Attemping to stop search on Gateway");
+                    if(jobId != null) Registry.getDefault().getServiceManager().cancelJob(jobId, true);
+                    throw e;
+                } 
             }
         };
     }
@@ -511,32 +516,39 @@ public class SearchUddiDialog extends JDialog {
                 if (serviceAdmin == null) throw new RuntimeException("Service Admin reference not found");
                 final String regName = (String) uddiRegistryComboBox.getSelectedItem();
                 final UDDIRegistry uddiRegistry = allRegistries.get(regName);
-                final AsyncAdminMethods.JobId<WsdlPortInfo[]> jobId;
-                jobId = serviceAdmin.findWsdlInfosFromUDDIRegistry(uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected(), retrieveWSDLURLCheckBox.isSelected());
-                
-                WsdlPortInfo [] result = null;
-                double delay = DELAY_INITIAL;
-                Thread.sleep((long)delay);
-                while (result == null) {
-                    String status = serviceAdmin.getJobStatus(jobId);
-                    if (status == null)
-                        throw new IllegalStateException("Server could not find our uddi serach job ID");
-                    if (status.startsWith("i")) {
-                        final AsyncAdminMethods.JobResult<WsdlPortInfo[]> jobResult = serviceAdmin.getJobResult(jobId);
-                        result = jobResult.result;
-                        if (result == null){
-                            final String errorMessage = jobResult.throwableMessage;
-                            if(errorMessage != null){
-                                throw new RuntimeException(errorMessage);
-                            }else{
-                                throw new RuntimeException("Unknown problem searching UDDI. Please check Gateway logs");    
+                final AsyncAdminMethods.JobId<WsdlPortInfo[]> jobId =
+                        serviceAdmin.findWsdlInfosFromUDDIRegistry(
+                                uddiRegistry.getOid(), searchString, caseSensitiveCheckBox.isSelected(), retrieveWSDLURLCheckBox.isSelected());
+
+                try {
+                    WsdlPortInfo [] result = null;
+                    double delay = DELAY_INITIAL;
+                    Thread.sleep((long)delay);
+                    while (result == null) {
+                        String status = serviceAdmin.getJobStatus(jobId);
+                        if (status == null)
+                            throw new IllegalStateException("Server could not find our uddi serach job ID");
+                        if (status.startsWith("i")) {
+                            final AsyncAdminMethods.JobResult<WsdlPortInfo[]> jobResult = serviceAdmin.getJobResult(jobId);
+                            result = jobResult.result;
+                            if (result == null){
+                                final String errorMessage = jobResult.throwableMessage;
+                                if(errorMessage != null){
+                                    throw new RuntimeException(errorMessage);
+                                }else{
+                                    throw new RuntimeException("Unknown problem searching UDDI. Please check Gateway logs");
+                                }
                             }
                         }
+                        delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
+                        Thread.sleep((long)delay);
                     }
-                    delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
-                    Thread.sleep((long)delay);
+                    return result;
+                } catch (InterruptedException e) {
+                    logger.log(Level.FINE, "UDDI search is canccelled. Attemping to stop search on Gateway");
+                    if(jobId != null) Registry.getDefault().getServiceManager().cancelJob(jobId, true);
+                    throw e;
                 }
-                return result;
             }
         };
     }
