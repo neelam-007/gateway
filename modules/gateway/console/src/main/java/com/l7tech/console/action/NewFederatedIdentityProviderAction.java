@@ -19,6 +19,7 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -219,8 +220,9 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                                         }
                                     }
                                 }
-                            } catch(Exception e) {
-                                String msg = "An error occurred while importing the users and groups.";
+                            } catch (Exception e) {
+                                String msg = "An error occurred while importing the users and groups: " + ExceptionUtils.getMessage(e);
+                                logger.log(Level.WARNING, msg, e);
                                 JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
                                                           msg,
                                                           "Error Importing Users/Groups",
