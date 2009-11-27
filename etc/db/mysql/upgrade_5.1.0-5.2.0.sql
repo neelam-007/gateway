@@ -97,8 +97,10 @@ CREATE TABLE uddi_registry_subscription (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
--- Table structure for Gateway WSDL info published to UDDI
---                    //todo rename, see entity
+-- Table structure for Gateway WSDLs published to UDDI. Known as 'Proxied Business Services'
+-- Entity UDDIProxiedService
+-- the general_keyword value is used to identify all services which originated from the same published service's wsdl
+--
 DROP TABLE IF EXISTS uddi_proxied_service_info;
 CREATE TABLE uddi_proxied_service_info (
   objectid bigint(20) NOT NULL,
@@ -126,8 +128,8 @@ CREATE TABLE uddi_proxied_service_info (
 --
 -- Child of uddi_proxied_service_info, represents the publishing of a specific wsdl:service from the Gateway's WSDL
 --
-DROP TABLE IF EXISTS uddi_published_service;
-CREATE TABLE uddi_published_service (
+DROP TABLE IF EXISTS uddi_proxied_service;
+CREATE TABLE uddi_proxied_service (
   objectid bigint(20) NOT NULL,
   version integer NOT NULL,
   uddi_proxied_service_info_oid bigint(20) NOT NULL,

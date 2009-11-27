@@ -16,13 +16,13 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
  */
 @Entity
 @Proxy(lazy=false)
-@Table(name="uddi_published_service")
-public class UDDIPublishedService extends PersistentEntityImp {
+@Table(name="uddi_proxied_service")
+public class UDDIProxiedService extends PersistentEntityImp {
 
-    public UDDIPublishedService() {
+    public UDDIProxiedService() {
     }
 
-    public UDDIPublishedService(String uddiServiceKey, String uddiServiceName, String wsdlServiceName, String wsdlServiceNamespace) {
+    public UDDIProxiedService(String uddiServiceKey, String uddiServiceName, String wsdlServiceName, String wsdlServiceNamespace) {
         this.uddiServiceKey = uddiServiceKey;
         this.uddiServiceName = uddiServiceName;
         this.wsdlServiceName = wsdlServiceName;
@@ -41,7 +41,7 @@ public class UDDIPublishedService extends PersistentEntityImp {
      * @param original UDDIProxiedService last known version of 'this' UDDIProxiedService used to compare what has
      * changed in 'this'
      */
-    public void throwIfFinalPropertyModified(final UDDIPublishedService original){
+    public void throwIfFinalPropertyModified(final UDDIProxiedService original){
         UDDIProxiedServiceInfo.testProperty("service key", this.getUddiServiceKey(), original.getUddiServiceKey());
         UDDIProxiedServiceInfo.testProperty("service name", this.getUddiServiceName(), original.getUddiServiceName());
         UDDIProxiedServiceInfo.testProperty("wsdl service name", this.getWsdlServiceName(), original.getWsdlServiceName());
@@ -103,10 +103,10 @@ public class UDDIPublishedService extends PersistentEntityImp {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof UDDIPublishedService)) return false;
+        if (!(o instanceof UDDIProxiedService)) return false;
         if (!super.equals(o)) return false;
 
-        UDDIPublishedService that = (UDDIPublishedService) o;
+        UDDIProxiedService that = (UDDIProxiedService) o;
 
         if (!uddiServiceKey.equals(that.uddiServiceKey)) return false;
         if (!uddiServiceName.equals(that.uddiServiceName)) return false;
