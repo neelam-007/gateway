@@ -36,13 +36,18 @@ public class PatchCli {
 
         logger.info("Running PatchCli patch client with arguments: " + Arrays.toString(args));
 
+        String programName = null;
         PatchAction patchAction = null;
         try {
-            patchAction = PatchAction.fromArgs(args);
+            if (args == null || args.length == 0)
+                throw new IllegalArgumentException("No arguments specified.");
+            List<String> argList = new ArrayList<String>(Arrays.asList(args));
+            programName = PatchCli.extactProgramName(argList);
+            patchAction = PatchAction.fromArgs(argList);
         } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             System.out.println("Error: " + ExceptionUtils.getMessage(e) + "\n");
-            printUsage();
+            printUsage(programName);
             System.exit(SYNTAX_ERROR);
         }
 
@@ -207,12 +212,9 @@ public class PatchCli {
             return hidden;
         }
 
-        public static PatchAction fromArgs(String[] args) {
-            if (args == null || args.length == 0)
-                throw new IllegalArgumentException("No arguments specified.");
+        public static PatchAction fromArgs(List<String> argList) {
 
-            List<String> argList = new ArrayList<String>(Arrays.asList(args));
-            String target = getTarget(args);
+            String target = getTarget(argList);
             if (target != null) {
                 argList.remove(0);
             } else {
@@ -220,7 +222,7 @@ public class PatchCli {
                 logger.log(Level.INFO, "Using default target: " + target);
             }
 
-            if (argList.isEmpty())
+            if (argList == null || argList.isEmpty())
                 throw new IllegalArgumentException("No action specified.");
 
             PatchAction patchAction;
@@ -268,9 +270,9 @@ public class PatchCli {
             return args.get(1);
         }
 
-        private static String getTarget(String[] args) {
-            if (args == null || args.length == 0) return null;
-            String firstArg = args[0];
+        private static String getTarget(List<String> argList) {
+            if (argList == null || argList.size()== 0) return null;
+            String firstArg = argList.get(0);
 
             try {
                 PatchAction.valueOf(firstArg.toUpperCase());
@@ -295,8 +297,19 @@ public class PatchCli {
         }
     }
 
-    private static void printUsage() {
-        System.out.println("Usage: " + PatchCli.class.getSimpleName() + " [target] <action>");
+    private static String extactProgramName(List<String> argList) {
+        if (argList != null && argList.size() >= 2 && "-scriptname".equals(argList.get(0))) {
+            String name = argList.get(1);
+            argList.remove(0);
+            argList.remove(0);
+            return name;
+        } else {
+            return null;
+        }
+    }
+
+    private static void printUsage(String programName) {
+        System.out.println("Usage: " + (programName != null ? programName : PatchCli.class.getSimpleName()) + " [target] <action>");
         System.out.println("\n\t[target]: [patch API endpoint URL | Process Controller home directory]");
         System.out.println("\n\tIf not specified, the [target] defaults to:");
         System.out.println("\t\t\"" + DEFAULT_PATCH_API_ENDPOINT + "\" on appliances.");

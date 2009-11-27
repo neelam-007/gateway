@@ -2,6 +2,7 @@
 #
 # Patch command line launcher script
 
+THIS_SCRIPT=`basename $0`
 if [ -z "${JAVA_HOME}" -a -d /opt/SecureSpan/JDK ] ; then
   JAVA_HOME="/opt/SecureSpan/JDK"
 fi
@@ -26,4 +27,4 @@ function fail() {
 [ -r "${PC_JAR}" ] || fail 2 "Missing or unreadable file: ${PC_JAR}"
 [ -x "${JAVA_HOME}/bin/java" ] || fail 2 "Invalid JAVA_HOME: ${JAVA_HOME}"
 
-"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" "${JAVA_OPTS}" com.l7tech.server.processcontroller.patching.client.PatchCli "${@}"
+"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" "${JAVA_OPTS}" com.l7tech.server.processcontroller.patching.client.PatchCli -scriptname ${THIS_SCRIPT} "${@}"
