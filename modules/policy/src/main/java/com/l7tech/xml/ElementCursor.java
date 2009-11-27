@@ -420,6 +420,46 @@ public abstract class ElementCursor {
     }
 
     /**
+     * Visit this element and all descendent elements.
+     *
+     * @param visitor Visitor whose {@link Visitor#visit} method will immediately be invoked
+     *                on the current element and every descendent element.  Required.
+     * @throws InvalidDocumentFormatException if the visitor throws this exception.
+     */
+    public void visitElements( final Visitor visitor ) throws InvalidDocumentFormatException {
+        visitElements( visitor, false );
+    }
+
+    /**
+     *
+     */
+    private void visitElements( final Visitor visitor,  boolean visitSiblings ) throws InvalidDocumentFormatException {
+        visitor.visit( this );
+
+        // visit children
+        pushPosition();
+        try {
+            if (moveToFirstChildElement()) {
+                visitElements( visitor, true );
+            }
+        } finally {
+            popPosition(false);
+        }
+
+        // visit siblings
+        if ( visitSiblings ) {
+            pushPosition();
+            try {
+                if (moveToNextSiblingElement()) {
+                    visitElements( visitor, true );
+                }
+            } finally {
+                popPosition(false);
+            }
+        }
+    }
+
+    /**
      * Canonicalize this element and all child data per Exclusive XML Canonicalization Version 1.0.  This is
      * needed for XML signatures.
      *

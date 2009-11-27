@@ -10,11 +10,11 @@ import com.l7tech.message.TarariMessageContextFactory;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.test.SystemPropertyPrerequisite;
 import com.l7tech.test.SystemPropertySwitchedRunner;
+import com.l7tech.util.InvalidDocumentFormatException;
 import org.xml.sax.SAXException;
 import org.junit.runner.RunWith;
 import org.junit.Test;
 import org.junit.Assert;
-import org.junit.Ignore;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -31,12 +31,14 @@ public class ElementCursorTest {
     }
 
     private static class DomElementCursorFactory implements ElementCursorFactory {
+        @Override
         public ElementCursor newElementCursor(String xml) throws SAXException {
             return new DomElementCursor( XmlUtil.stringToDocument(xml));
         }
     }
 
     private static class TarariElementCursorFactory implements ElementCursorFactory {
+        @Override
         public ElementCursor newElementCursor(String xml) throws SAXException {
             try {
                 final TarariMessageContextFactory mcf = TarariLoader.getMessageContextFactory();
@@ -68,6 +70,7 @@ public class ElementCursorTest {
     private void testAll(ElementCursorFactory f) throws Exception {
         testSimple(f);
         testMixed(f);
+        testVisitor(f);
     }
 
     private void assertEmptyStack( ElementCursor c) {
@@ -152,5 +155,29 @@ public class ElementCursorTest {
         c = f.newElementCursor(MIXED);
         c.moveToDocumentElement();
         Assert.assertTrue(c.containsMixedModeContent(true, false));
+    }
+
+    private void testVisitor(ElementCursorFactory f) throws Exception {
+        ElementCursor c = f.newElementCursor(SIMPLE);
+
+        final int[] count = new int[1];
+        c.moveToDocumentElement();
+        c.visitChildElements( new ElementCursor.Visitor(){
+            @Override
+            public void visit( final ElementCursor ec ) throws InvalidDocumentFormatException {
+                count[0]++;
+            }
+        } );
+        Assert.assertEquals( "Child node count", 2, count[0] );
+
+        final int[] count2 = new int[1];
+        c.moveToDocumentElement();
+        c.visitElements( new ElementCursor.Visitor(){
+            @Override
+            public void visit( final ElementCursor ec ) throws InvalidDocumentFormatException {
+                count2[0]++;
+            }
+        } );
+        Assert.assertEquals( "Element node count", 17, count2[0] );
     }
 }
