@@ -339,10 +339,10 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 //Get existing services
                 final Set<String> serviceKeys = new HashSet<String>();
-                final Set<UDDIProxiedService> allProxiedServices = uddiProxiedServiceInfo.getProxiedServices();
+                final Set<UDDIPublishedService> allPublishedServices = uddiProxiedServiceInfo.getProxiedServices();
                 switch (uddiProxiedServiceInfo.getPublishType()) {
                     case PROXY:
-                        for (UDDIProxiedService ps : allProxiedServices) {
+                        for (UDDIPublishedService ps : allPublishedServices) {
                             serviceKeys.add(ps.getUddiServiceKey());
                         }
                         break;
@@ -375,11 +375,11 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     //now manage db entities
                     Set<String> deleteSet = deletedAndNewServices.left;
                     //update all child entities
-                    Set<UDDIProxiedService> removeSet = new HashSet<UDDIProxiedService>();
+                    Set<UDDIPublishedService> removeSet = new HashSet<UDDIPublishedService>();
                     for (String deleteServiceKey : deleteSet) {
-                        for (UDDIProxiedService proxiedService : allProxiedServices) {
-                            if (proxiedService.getUddiServiceKey().equals(deleteServiceKey)) {
-                                removeSet.add(proxiedService);
+                        for (UDDIPublishedService publishedService : allPublishedServices) {
+                            if (publishedService.getUddiServiceKey().equals(deleteServiceKey)) {
+                                removeSet.add(publishedService);
                                 logger.log(Level.FINE, "Deleting UDDIProxiedService for serviceKey: " + deleteServiceKey);
                             }
                         }
@@ -390,11 +390,11 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     //create required new UDDIProxiedServices
                     Set<UDDIBusinessService> newlyCreatedServices = deletedAndNewServices.right;
                     for (UDDIBusinessService bs : newlyCreatedServices) {
-                        final UDDIProxiedService proxiedService = new UDDIProxiedService(
+                        final UDDIPublishedService publishedService = new UDDIPublishedService(
                                 bs.getServiceKey(), bs.getServiceName(), bs.getWsdlServiceName(), bs.getWsdlServiceNamespace());
                         
-                        proxiedService.setUddiProxiedServiceInfo(uddiProxiedServiceInfo);
-                        uddiProxiedServiceInfo.getProxiedServices().add(proxiedService);
+                        publishedService.setUddiProxiedServiceInfo(uddiProxiedServiceInfo);
+                        uddiProxiedServiceInfo.getProxiedServices().add(publishedService);
                     }
                 }
 
@@ -756,12 +756,12 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             "Deleting published Gateway WSDL from Published Service id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")s in UDDI Registry id #(" + uddiRegistry.getOid() + ")");
                 }
 
-                final Set<UDDIProxiedService> proxiedServices = uddiProxiedServiceInfo.getProxiedServices();
+                final Set<UDDIPublishedService> publishedServices = uddiProxiedServiceInfo.getProxiedServices();
                 final Set<String> keysToDelete = new HashSet<String>();
                 switch (uddiProxiedServiceInfo.getPublishType()) {
                     case PROXY:
-                        for (UDDIProxiedService proxiedService : proxiedServices) {
-                            keysToDelete.add(proxiedService.getUddiServiceKey());
+                        for (UDDIPublishedService publishedService : publishedServices) {
+                            keysToDelete.add(publishedService.getUddiServiceKey());
                         }
                         break;
                     case OVERWRITE:

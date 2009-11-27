@@ -1665,8 +1665,6 @@
 
     <bean id="uddiProxiedServiceInfoManager" class="com.l7tech.server.uddi.UDDIProxiedServiceInfoManagerImpl" parent="hibernateBean" />
 
-    <bean id="uddiProxiedServiceManager" class="com.l7tech.server.uddi.UDDIProxiedServiceManagerImpl" parent="hibernateBean" />
-
     <bean id="uddiPublishStatusManager" class="com.l7tech.server.uddi.UDDIPublishStatusManagerImpl" parent="hibernateBean" />
 
     <bean id="uddiServiceControlManager" class="com.l7tech.server.uddi.UDDIServiceControlManagerImpl" parent="hibernateBean" />

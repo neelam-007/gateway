@@ -288,9 +288,9 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                 try {
                     UDDIClient uddiClient = urr.getUDDIClient();
                     UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(service.getOid());
-                    Set<UDDIProxiedService> proxiedServices = serviceInfo.getProxiedServices();
+                    Set<UDDIPublishedService> publishedServices = serviceInfo.getProxiedServices();
                     Set<String> serviceKeys = new HashSet<String>();
-                    for(UDDIProxiedService ps: proxiedServices){
+                    for(UDDIPublishedService ps: publishedServices){
                         serviceKeys.add(ps.getUddiServiceKey());
                     }
                     List<BusinessService> services = uddiClient.getBusinessServices( serviceKeys, false);
@@ -484,9 +484,9 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         final Map<Pair<Long,String>,UDDIBusinessServiceStatus> registryServiceMap = new HashMap<Pair<Long,String>,UDDIBusinessServiceStatus>();
         for ( UDDIProxiedServiceInfo proxiedServiceInfo : proxiedServices ) {
             if ( proxiedServiceInfo.getProxiedServices() != null ) {
-                for ( UDDIProxiedService proxiedService : proxiedServiceInfo.getProxiedServices() ) {
-                    if ( proxiedService.getUddiServiceKey() != null ) {
-                        registryServiceMap.put( new Pair<Long,String>( proxiedServiceInfo.getUddiRegistryOid(), proxiedService.getUddiServiceKey() ), null );
+                for ( UDDIPublishedService publishedService : proxiedServiceInfo.getProxiedServices() ) {
+                    if ( publishedService.getUddiServiceKey() != null ) {
+                        registryServiceMap.put( new Pair<Long,String>( proxiedServiceInfo.getUddiRegistryOid(), publishedService.getUddiServiceKey() ), null );
                     }
                 }
             }
@@ -520,10 +520,10 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                         proxiedServiceInfo.isPublishWsPolicyFull(),
                         proxiedServiceInfo.isPublishWsPolicyInlined() );
 
-                for ( UDDIProxiedService proxiedService : proxiedServiceInfo.getProxiedServices() ) {
-                    if ( proxiedService.getUddiServiceKey() != null ) {
-                        final String serviceKey = proxiedService.getUddiServiceKey();
-                        final String serviceName = proxiedService.getUddiServiceName();
+                for ( UDDIPublishedService publishedService : proxiedServiceInfo.getProxiedServices() ) {
+                    if ( publishedService.getUddiServiceKey() != null ) {
+                        final String serviceKey = publishedService.getUddiServiceKey();
+                        final String serviceName = publishedService.getUddiServiceName();
 
                         updateUDDIBusinessServiceStatus(
                                 registryServiceMap,

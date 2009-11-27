@@ -17,6 +17,7 @@ import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.Pair;
+import com.l7tech.util.IOUtils;
 
 import java.util.*;
 import java.util.logging.LogManager;
@@ -251,6 +252,60 @@ public class TestGenericUDDIClient {
         UDDIProxiedServiceInfo uddiProxiedServiceInfo = uddiRegistryAdmin.findProxiedServiceInfoForPublishedService(serviceToPublish.getOid());
         if(uddiProxiedServiceInfo == null) throw new IllegalStateException("UDDIProxiedServiceInfo not found");
         uddiRegistryAdmin.updatePublishedGatewayWsdl(uddiProxiedServiceInfo.getOid());
+
+        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+    }
+
+    /**
+     * Tests a more complicated UDDI interaction. First a wsdl with an import containing a service with the same
+     * local name is published to UDDI.
+     *
+     * Second, the WSDL is updated such that the child WSDL changes - ensure UDDI is updated correctly.
+     *
+     * Does not currently work due to bug 8134
+     */
+    @Test
+    public void testWsdlImportUDDIPublishAndUpdate()
+            throws Exception {
+
+        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+
+        SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
+        UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
+
+        Collection<UDDIRegistry> uddiRegistries = uddiRegistryAdmin.findAllUDDIRegistries();
+        com.l7tech.gateway.common.uddi.UDDIRegistry activeSoa = null;
+        for(com.l7tech.gateway.common.uddi.UDDIRegistry uddiRegistry: uddiRegistries){
+            if(UDDIRegistry.UDDIRegistryType.findType(uddiRegistry.getUddiRegistryType()) == UDDIRegistry.UDDIRegistryType.CENTRASITE_ACTIVE_SOA &&
+                    uddiRegistry.isEnabled()){
+                activeSoa = uddiRegistry;
+                break;
+            }
+        }
+
+        if(activeSoa == null) throw new IllegalStateException("Gateway does not have any ActiveSOA UDDI registries configured");
+
+        ServiceAdmin serviceAdmin = ssgAdminSession.getServiceAdmin();
+        final String serviceOid = "31784972";
+        PublishedService serviceToPublish = new PublishedService();
+        serviceToPublish.setName("Test Name");
+        Assert.assertNotNull("Service with id not found: " + serviceOid, serviceToPublish);
+
+        final String businessKey = "uddi:207ff1cc-25c5-544c-415c-5d98ea91060c";//this exists in my local uddi registry
+
+        final byte[] bytes = IOUtils.slurpFile(new File(this.getClass().getResource("SpaceOrderofBattle_Parent_NoImport.wsdl").getPath()));
+        String s = new String(bytes);
+        System.out.println(s);
+        serviceToPublish.setWsdlXml(s);
+        serviceToPublish.parsedWsdl();
+
+        Long oid = serviceAdmin.savePublishedService(serviceToPublish);
+        serviceToPublish = serviceAdmin.findServiceByID(oid.toString());
+        serviceAdmin.deletePublishedService(serviceToPublish.getOidAsLong().toString());
+
+
+
+//        uddiRegistryAdmin.publishGatewayWsdl(Long.valueOf(serviceOid), activeSoa.getOid(), businessKey, "Skunkworks Organization", false);
 
         System.clearProperty("com.l7tech.console.suppressVersionCheck");
     }

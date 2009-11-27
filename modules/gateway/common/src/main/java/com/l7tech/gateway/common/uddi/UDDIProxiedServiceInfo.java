@@ -201,12 +201,12 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     @Fetch(FetchMode.SUBSELECT)
     @Cascade({org.hibernate.annotations.CascadeType.DELETE_ORPHAN, org.hibernate.annotations.CascadeType.ALL})
     @OnDelete(action= OnDeleteAction.CASCADE)
-    public Set<UDDIProxiedService> getProxiedServices() {
-        return proxiedServices;
+    public Set<UDDIPublishedService> getProxiedServices() {
+        return publishedServices;
     }
 
-    public void setProxiedServices(Set<UDDIProxiedService> proxiedServices) {
-        this.proxiedServices = proxiedServices;
+    public void setProxiedServices(Set<UDDIPublishedService> publishedServices) {
+        this.publishedServices = publishedServices;
     }
 
     @Column(name = "publish_type")
@@ -313,7 +313,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
      */
     private boolean metricsEnabled;
 
-    private Set<UDDIProxiedService> proxiedServices = new HashSet<UDDIProxiedService>();
+    private Set<UDDIPublishedService> publishedServices = new HashSet<UDDIPublishedService>();
 
     private PublishType publishType;
 
