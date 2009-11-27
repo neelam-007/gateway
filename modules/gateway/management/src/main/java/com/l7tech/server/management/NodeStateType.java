@@ -20,6 +20,9 @@ public enum NodeStateType {
     /** It couldn't be started--try again after awhile */
     WONT_START,
 
+    /** Running, but not managed by the PC */
+    NOT_PC_MANAGED,
+
     /** The node was started and is apparently fully operational. */
     RUNNING,
 

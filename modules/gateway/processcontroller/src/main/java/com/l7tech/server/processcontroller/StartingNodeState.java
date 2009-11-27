@@ -83,7 +83,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
             } else if (e instanceof SOAPFaultException) {
                 SOAPFaultException sfe = (SOAPFaultException)e;
                 if (NodeApi.NODE_NOT_CONFIGURED_FOR_PC.equals(sfe.getFault().getFaultString())) {
-                    logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will try again later");
+                    logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will continue pinging it.");
 
                     outputDoneSignal.set(true);
                     final Pair<byte[], byte[]> byteses = finishOutput();

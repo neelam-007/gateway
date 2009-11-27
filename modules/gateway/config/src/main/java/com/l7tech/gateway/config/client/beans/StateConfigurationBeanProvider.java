@@ -95,6 +95,7 @@ public class StateConfigurationBeanProvider extends NodeConfigurationBeanProvide
                 case STOPPED:
                     code = CODE_STOPPED;
                     break;
+                case NOT_PC_MANAGED:
                 case UNKNOWN:
                 default:
                     code = 0;

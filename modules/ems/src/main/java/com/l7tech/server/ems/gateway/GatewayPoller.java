@@ -381,6 +381,7 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                             case CRASHED:
                                 status = JSONConstants.SsgNodeOnlineState.DOWN;
                                 break;
+                            case NOT_PC_MANAGED:
                             case STARTING:
                             case RUNNING:
                                 checkGatewayDirectly = true;

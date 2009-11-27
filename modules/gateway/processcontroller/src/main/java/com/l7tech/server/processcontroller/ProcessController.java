@@ -238,6 +238,9 @@ public class ProcessController implements InitializingBean {
                 case WONT_START:
                     logger.info("Node is not running.");
                     break waiting;
+                case NOT_PC_MANAGED:
+                    logger.info("Node not managed by the Process Controller.");
+                    break waiting;
                 case UNKNOWN:
                 case STARTING:
                     throw new IllegalStateException("Unexpected state for " + nodeName + " after shutdown: " + state.type);
@@ -384,8 +387,12 @@ public class ProcessController implements InitializingBean {
 
         for (NodeConfig _node : nodeConfigs) {
             final PCNodeConfig node = (PCNodeConfig)_node;
-            final NodeState state = nodeStates.get(node.getName());
-            final NodeStateType stateType = state == null ? UNKNOWN : state.type;
+            NodeState state = nodeStates.get(node.getName());
+            if (state == null) {
+                state = new SimpleNodeState(node, NodeStateType.UNKNOWN);
+                nodeStates.put(node.getName(), state);
+            }
+            final NodeStateType stateType = state.type;
             switch (stateType) {
                 case UNKNOWN:
                     handleUnknownState(node);
@@ -402,6 +409,9 @@ public class ProcessController implements InitializingBean {
                         logger.fine(node.getName() + " wouldn't start; waiting " + UNSTARTABLE_NODE_RETRY_INTERVAL + "ms before attempting to restart");
                         break;
                     }
+                case NOT_PC_MANAGED:
+                    handleNotPCManagedState(node);
+                    break;
                 case RUNNING:
                     handleRunningState(node, (RunningNodeState)state);
                     break;
@@ -621,8 +631,8 @@ public class ProcessController implements InitializingBean {
             if (daemon && e instanceof SOAPFaultException) {
                 SOAPFaultException sfe = (SOAPFaultException)e;
                 if (NodeApi.NODE_NOT_CONFIGURED_FOR_PC.equals(sfe.getFault().getFaultString())) {
-                    logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will try again later");
-                    nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
+                    logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will continue pinging it.");
+                    nodeStates.put(node.getName(), new SimpleNodeState(node, NOT_PC_MANAGED));
                     return;
                 }
             }
@@ -648,6 +658,27 @@ public class ProcessController implements InitializingBean {
         }
     }
 
+    private void handleNotPCManagedState(PCNodeConfig node) {
+        final HasApi api = getNodeApi(node);
+        try {
+            NodeApi nodeApi = api.getApi(false);
+            if ( nodeApi != null ) {
+                nodeApi.ping();
+            }
+        } catch (Exception e) {
+            if (daemon && e instanceof SOAPFaultException) {
+                SOAPFaultException sfe = (SOAPFaultException)e;
+                if (NodeApi.NODE_NOT_CONFIGURED_FOR_PC.equals(sfe.getFault().getFaultString())) {
+                    logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will continue pinging it.");
+                    nodeStates.put(node.getName(), new SimpleNodeState(node, NodeStateType.NOT_PC_MANAGED));
+                    return;
+                }
+            }
+        }
+
+        nodeStates.put(node.getName(), new SimpleNodeState(node, NodeStateType.UNKNOWN));
+    }
+
     private ProcessBuilder getProcessBuilder(PCNodeConfig node) {
         // TODO what if the node's config changes in any meaningful way?
         ProcessBuilder processBuilder = processBuilders.get(node.getName());
@@ -659,6 +690,7 @@ public class ProcessController implements InitializingBean {
         // TODO use info from the host profile
         switch(osType) {
             case RHEL:
+            case SOLARIS:
                 final File nodesDir = configService.getNodeBaseDirectory();
                 if (!(nodesDir.exists() && nodesDir.isDirectory())) throw new IllegalStateException("Couldn't find node directory " + nodesDir.getAbsolutePath());
 

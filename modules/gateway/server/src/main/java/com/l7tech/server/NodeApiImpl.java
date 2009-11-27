@@ -61,10 +61,6 @@ public class NodeApiImpl implements NodeApi {
         if (serverConfig == null || ssgConnectorManager == null || shutdowner == null) throw new NullPointerException("A required component is missing");
     }
 
-    private boolean isProcessControllerPresent() {
-        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_PROCESS_CONTROLLER_PRESENT, false, 30000);
-    }
-
     public void shutdown() {
         checkRequest();
         logger.warning("Node Shutdown requested");
@@ -72,7 +68,6 @@ public class NodeApiImpl implements NodeApi {
     }
 
     private void checkRequest() {
-        //if (!isProcessControllerPresent()) throw new IllegalStateException(NODE_NOT_CONFIGURED_FOR_PC);
         final HttpServletRequest hsr = (HttpServletRequest)wscontext.getMessageContext().get(MessageContext.SERVLET_REQUEST);
         if (hsr == null) throw new IllegalStateException("Request received outside of expected servlet context");
         try {
@@ -82,9 +77,7 @@ public class NodeApiImpl implements NodeApi {
                 throw new IllegalStateException("Request denied for non-local address.");
             }
         } catch (ListenerException e) {
-            // TODO come up with a friendlier way to throw a SOAP fault here
-            // if (!isProcessControllerPresent()) throw new IllegalStateException(NODE_NOT_CONFIGURED_FOR_PC);
-            throw new IllegalStateException(e);
+            throw new IllegalStateException(NODE_NOT_CONFIGURED_FOR_PC);
         } catch (UnknownHostException uhe) {
             throw new IllegalStateException("Request denied for non-local address.", uhe);
         }

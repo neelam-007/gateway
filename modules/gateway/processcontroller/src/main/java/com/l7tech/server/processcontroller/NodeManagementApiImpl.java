@@ -232,6 +232,9 @@ public class NodeManagementApiImpl implements NodeManagementApi {
             case STARTING:
                 return tempState; // Good enough
 
+            case NOT_PC_MANAGED:
+                throw new StartupException(nodeName, "Not starting node not managed by the PC.");
+
             case WONT_START:
                 throw new StartupException(nodeName, "Node couldn't be started last time it was attempted; the PC will retry soon");
 
