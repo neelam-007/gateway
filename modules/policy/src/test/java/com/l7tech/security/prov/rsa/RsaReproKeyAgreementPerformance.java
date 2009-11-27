@@ -5,7 +5,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 
 import javax.crypto.KeyAgreement;
-import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.interfaces.DHPublicKey;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -64,7 +63,7 @@ public class RsaReproKeyAgreementPerformance {
                 final String type = serviceDesc.left;
                 final String algorithm = serviceDesc.right;
                 final Provider.Service service = provider.getService( type, algorithm );
-                if ( service != null ) { // may be null in some modes
+                if ( Boolean.getBoolean("blacklistServices") && service != null ) { // may be null in some modes
                     logger.info( "Removing service '"+type+"."+algorithm+"'." );
                     method.invoke( provider, service );
                 }
