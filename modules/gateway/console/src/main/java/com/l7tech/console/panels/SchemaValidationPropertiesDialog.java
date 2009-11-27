@@ -35,6 +35,7 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ValidationUtils;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.WsdlSchemaAnalizer;
 import org.dom4j.DocumentException;
@@ -259,7 +260,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         readUrlButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final OkCancelDialog dlg = new OkCancelDialog(SchemaValidationPropertiesDialog.this,
+                final OkCancelDialog dlg = new OkCancelDialog<String>(SchemaValidationPropertiesDialog.this,
                                                         resources.getString("urlDialog.title"),
                                                         true,
                                                         new UrlPanel(resources.getString("urlDialog.prompt"), null));
@@ -760,16 +761,14 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             return false;
         }
 
-        try {
-            new URL(url);
-        } catch (MalformedURLException e) {
+        if ( !ValidationUtils.isValidUrl(url.trim()) ) {
             displayError(resources.getString("error.badurl"), null);
             return false;
         }
 
         // Checks pass, commit it
         SingleUrlResourceInfo suri = new SingleUrlResourceInfo();
-        suri.setUrl(url);
+        suri.setUrl(url.trim());
         schemaValidationAssertion.setResourceInfo(suri);
         return true;
     }

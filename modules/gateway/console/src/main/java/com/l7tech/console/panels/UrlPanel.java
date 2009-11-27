@@ -4,6 +4,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ValidationUtils;
 import com.l7tech.gui.widgets.TextEntryPanel;
 import com.l7tech.policy.variable.Syntax;
 
@@ -65,6 +66,8 @@ public class UrlPanel extends TextEntryPanel {
             URL url = new URL(model);
             if (url.getHost() == null || url.getHost().length() == 0) {
                 return "no host";
+            } else if ( model.contains( " " ) ) {
+                return "' ' must be url encoded";
             } else {
                 return null;
             }

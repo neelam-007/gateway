@@ -109,7 +109,7 @@ public class ValidationUtils {
             try {
                 URL test = new URL(urlText);
                 String host = test.getHost();
-                ok = host!=null && host.length()>0;
+                ok = host!=null && host.length()>0 && urlText.indexOf(' ') < 0;
             } catch (MalformedURLException e) {
                 // so is invalid
             }

@@ -54,9 +54,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     private static final Map<SSLSocketFactory, Protocol> protoBySockFac = Collections.synchronizedMap(new WeakHashMap<SSLSocketFactory, Protocol>());
 
     /**
-     * TODO remove this once all clients use 5.1 if there are no issues
+     * This property was true in 5.1, switched to false in 5.2, URLs should be encoded by the caller (see bug 7598).
      */
-    private static final boolean encodePath = SyspropUtil.getBoolean(CommonsHttpClient.class.getName() + ".encodePath", true);
+    private static final boolean encodePath = SyspropUtil.getBoolean(CommonsHttpClient.class.getName() + ".encodePath", false);
 
     static {
         DefaultHttpParams.setHttpParamsFactory(new CachingHttpParamsFactory(new DefaultHttpParamsFactory()));

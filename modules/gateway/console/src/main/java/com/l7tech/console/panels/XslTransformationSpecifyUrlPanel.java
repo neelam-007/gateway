@@ -7,10 +7,9 @@ package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.SingleUrlResourceInfo;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
-import java.net.URL;
-import java.net.MalformedURLException;
 import java.awt.*;
 
 /**
@@ -36,11 +35,8 @@ class XslTransformationSpecifyUrlPanel extends JPanel {
 
     String check() {
         String url = urlField.getText();
-        if (url != null && url.trim().length() > 0) {
-            try {
-                new URL(url.trim());
-                return null;
-            } catch (MalformedURLException e) {
+        if (url != null && !url.trim().isEmpty() ) {
+            if ( !ValidationUtils.isValidUrl(url.trim()) ) {
                 return xslTransformationPropertiesDialog.getResources().getString("error.badurl");
             }
         }
@@ -49,7 +45,7 @@ class XslTransformationSpecifyUrlPanel extends JPanel {
 
     void updateModel(XslTransformation assertion) {
         SingleUrlResourceInfo ri = new SingleUrlResourceInfo();
-        ri.setUrl(urlField.getText());
+        ri.setUrl(urlField.getText().trim());
         assertion.setResourceInfo(ri);
     }
 }
