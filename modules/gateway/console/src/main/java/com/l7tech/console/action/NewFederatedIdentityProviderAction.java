@@ -181,6 +181,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                                     for(FederatedUser user : iProvider.getImportedUsers().values()) {
                                         String oldOid = user.getId();
                                         user.setOid(FederatedUser.DEFAULT_OID);
+                                        preenFields(user);
                                         String newOid = getIdentityAdmin().saveUser(header.getOid(), user, null);
                                         user.setOid(Long.parseLong(newOid));
 
@@ -239,6 +240,12 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
         }
 
     };
+
+    // Ensure the specified user has all the necessary fields to be saved (Bug #7869)
+    private void preenFields(FederatedUser user) {
+        if (user.getLogin() == null)
+            user.setLogin("");        
+    }
 
     private EntityListener listener = new EntityListenerAdapter() {
         /**
