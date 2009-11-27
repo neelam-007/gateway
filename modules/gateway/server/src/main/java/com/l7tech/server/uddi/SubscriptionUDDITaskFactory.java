@@ -680,13 +680,9 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                         logger.info( "WSDL is not updated for business service '"+serviceKey+"' for registry "+describe(uddiRegistry)+"." );
                                     }
                                 } catch ( IOException ioe ) {
-                                    if(ioe instanceof GenericHttpException) {
-                                        context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ExceptionUtils.getDebugException(ioe), "Cause '" + ExceptionUtils.getMessage(ioe) + "'", ps.displayName() + " (#" + ps.getOid() + ")");
-                                    }else{
-                                        context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ioe, ps.displayName() + " (#"+ps.getOid()+")" );
-                                    }
+                                    context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ExceptionUtils.getDebugException(ioe), "Cause '" + ExceptionUtils.getMessage(ioe) + "'", ps.displayName() + " (#" + ps.getOid() + ")");
                                 } catch ( WSDLException we ) {
-                                    context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, we, ps.displayName() + " (#"+ps.getOid()+")" );
+                                    context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ExceptionUtils.getDebugException(we), "Cause '" + ExceptionUtils.getMessage(we) + "'", ps.displayName() + " (#" + ps.getOid() + ")");
                                 }
                             }
 
