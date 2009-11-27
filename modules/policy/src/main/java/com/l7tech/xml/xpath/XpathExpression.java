@@ -50,10 +50,9 @@ public class XpathExpression extends CompilableXpath implements Serializable {
      * @param namespaces the namespaces map, may be null, it will result
      *                   in internal namespace map have zero elements.
      */
-    public XpathExpression(String expression, Map namespaces) {
+    public XpathExpression(String expression, Map<String, String> namespaces) {
         this.expression = expression;
         if (namespaces != null) {
-            //noinspection unchecked
             this.namespaces.putAll(namespaces);
         }
     }
@@ -92,7 +91,6 @@ public class XpathExpression extends CompilableXpath implements Serializable {
     public void setNamespaces(Map<String,String> namespaces) {
         if (namespaces != null) {
             this.namespaces.clear();
-            //noinspection unchecked
             this.namespaces.putAll(namespaces);
         }
     }
