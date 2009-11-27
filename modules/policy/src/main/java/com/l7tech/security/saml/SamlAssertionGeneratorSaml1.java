@@ -205,8 +205,14 @@ class SamlAssertionGeneratorSaml1 {
             }
         }
 
+        final String confMeth = subjectStatement.getConfirmationMethod();
+        if (confMeth == null) {
+            // No subject confirmation
+            return;
+        }
+
         SubjectConfirmationType subjectConfirmation = subjectStatementType.addNewSubjectConfirmation();
-        subjectConfirmation.addConfirmationMethod(subjectStatement.getConfirmationMethod());
+        subjectConfirmation.addConfirmationMethod(confMeth);
 
         final Object keyInfo = subjectStatement.getKeyInfo();
         if (keyInfo == null || !(keyInfo instanceof X509Certificate)) {
