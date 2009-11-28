@@ -71,10 +71,10 @@ public class SelectWsdlDialog extends JDialog {
      * <p>Note that this should NOT be used as the base URI for the WSDL unless
      * it is an http (or https) url.</p>
      *
-     * @return The Wsdl.
+     * @return The Wsdl URL.
      */
     public String getWsdlUrl() {
-        return wsdlLocationPanel.getWsdlUrl();
+        return wsdlLocationPanel.getWsdlUrl(true);
     }
 
     /**
