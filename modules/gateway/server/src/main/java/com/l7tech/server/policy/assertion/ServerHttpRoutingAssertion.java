@@ -25,6 +25,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
@@ -593,14 +594,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             boolean routedResponseDestinationIsContextVariable = false;
             if (assertion.getResponseMsgDest() != null) {
                 routedResponseDestinationIsContextVariable = true;
-                routedResponseDestination = new Message();
+                routedResponseDestination = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getResponseMsgDest()), false );
                 routedResponseDestination.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
                     @Override
                     public void addCookie(HttpCookie cookie) {
                         // TODO what to do with the cookie?
                     }
                 });
-                context.setVariable(assertion.getResponseMsgDest(), routedResponseDestination);
             }
 
             boolean readOk = readResponse(context, routedResponse, routedResponseDestination);
@@ -686,6 +686,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(ioe));
             logger.log(Level.FINEST, "Problem routing: " + ioe.getMessage(), ioe);
         } catch (NoSuchPartException e) {
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(e));
+            logger.log(Level.FINEST, "Problem routing: " + e.getMessage(), e);
+        } catch (NoSuchVariableException e) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(e));
             logger.log(Level.FINEST, "Problem routing: " + e.getMessage(), e);
         } finally {

@@ -246,6 +246,23 @@ public interface PolicyEnforcementContext extends Closeable {
 
     Message getTargetMessage( MessageTargetable targetable) throws NoSuchVariableException;
 
+    /**
+     * Get a target message, create one if not found.
+     *
+     * <p>If a variable with the name exists but is not a message variable then
+     * this method will throw if <code>allowNonMessagevar</code> is <code>false</code>.</p>
+     *
+     * <p>NOTE: When non message variables are used, the caller MUST NOT initialize the
+     * message with a new stash manager (see {@link Message#initialize(com.l7tech.common.mime.StashManager, com.l7tech.common.mime.ContentTypeHeader, java.io.InputStream) Message#initialize}).</p>
+     *
+     * @param targetable The target message
+     * @param allowNonMessagevar True to allow non-message variables
+     * @return The message (never null)
+     * @throws NoSuchVariableException If the variable is not found or is not a Message and a Message is required
+     * @throws VariableNotSettableException If the variable does not exist and cannot be created
+     */
+    Message getOrCreateTargetMessage( MessageTargetable targetable, boolean allowNonMessagevar ) throws NoSuchVariableException, VariableNotSettableException;
+
     Message getTargetMessage( MessageTargetable targetable, boolean allowNonMessageVar) throws NoSuchVariableException;
 
     /**

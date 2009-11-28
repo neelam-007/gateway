@@ -12,6 +12,7 @@ import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
@@ -250,30 +251,26 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             ByteArrayInputStream bais = new ByteArrayInputStream(messageBytes);
 
             ContentTypeHeader cth = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+            Message message;
             if(assertion.getOutputMessageTarget() == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
-                Message m = new Message(stashManagerFactory.createStashManager(),
-                        cth,
-                        bais);
-                context.setVariable(assertion.getOutputMessageVariableName(), m);
+                message = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getOutputMessageVariableName()), false );
             } else if (assertion.getOutputMessageTarget() == XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST) {
-                context.getRequest().initialize(stashManagerFactory.createStashManager(),
-                        cth,
-                        bais);
+                message = context.getRequest();
             } else {
-                context.getResponse().initialize(stashManagerFactory.createStashManager(),
-                        cth,
-                        bais);
+                message = context.getResponse();
             }
+            message.initialize( stashManagerFactory.createStashManager(), cth, bais );
 
             return status;
-        } catch(NoSuchPartException nspe) {
-            return AssertionStatus.FAILED;
         } catch(InvalidRequestException e) {
             auditor.logAndAudit(AssertionMessages.XACML_PDP_INVALID_REQUEST, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         } catch (InvalidPolicyException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
+        } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.FAILED;
         }
     }
 

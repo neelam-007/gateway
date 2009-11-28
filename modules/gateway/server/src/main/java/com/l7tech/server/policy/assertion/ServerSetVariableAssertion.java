@@ -8,11 +8,14 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SetVariableAssertion;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.gateway.common.audit.CommonMessages;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -33,24 +36,27 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
         varsUsed = Syntax.getReferencedNames(assertion.expression());
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        final Map vars = context.getVariableMap(varsUsed, auditor);
+        final Map<String,Object> vars = context.getVariableMap(varsUsed, auditor);
         final String strValue = ExpandVariables.process(assertion.expression(), vars, auditor);
 
-        Object value = null;
         final DataType dataType = assertion.getDataType();
         if (dataType == DataType.STRING) {
-            value = strValue;
+            context.setVariable(assertion.getVariableToSet(), strValue);
         } else if (dataType == DataType.MESSAGE) {
             final ContentTypeHeader contentType = ContentTypeHeader.parseValue(assertion.getContentType());
-            final Message message = new Message();
-            message.initialize(contentType, strValue.getBytes(contentType.getEncoding()));
-            value = message;
+            try {
+                final Message message = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getVariableToSet()), false );
+                message.initialize(contentType, strValue.getBytes(contentType.getEncoding()));
+            } catch (NoSuchVariableException e) {
+                auditor.logAndAudit( CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE, assertion.getVariableToSet() );
+                return AssertionStatus.FALSIFIED;
+            }
         } else {
             throw new RuntimeException("Not implemented yet for data type " + dataType.getName() + " (variable name=\"" + assertion.getVariableToSet() + "\").");
         }
 
-        context.setVariable(assertion.getVariableToSet(), value);
         return AssertionStatus.NONE;
     }
 }

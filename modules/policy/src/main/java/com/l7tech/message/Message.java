@@ -67,13 +67,13 @@ public final class Message {
      *             This <b>must not include</b> any outer headers (HTTP or otherwise) that may have
      *             accompanied the body of this Message.  To attach the outer headers to the message,
      *             see {@link #attachKnob} and {@link com.l7tech.message.HttpHeadersKnob}.
-     * @throws NoSuchPartException if the message is multipart/related but contains no initial boundary
-     * @throws IOException if there is a problem reading the initial boundary from a multipart/related body
+     * @throws IOException if there is a problem reading the initial boundary from a multipart/related body, or
+     *                     if the message is multipart/related but contains no initial boundary.
      */
     public Message(StashManager sm,
                    ContentTypeHeader outerContentType,
                    InputStream body)
-            throws NoSuchPartException, IOException
+            throws IOException
     {
         initialize(sm, outerContentType, body);
     }

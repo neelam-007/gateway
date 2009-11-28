@@ -1,6 +1,7 @@
 package com.l7tech.server.message;
 
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -8,6 +9,7 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.message.Message;
 
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
@@ -63,6 +65,42 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
     @Override
     public ArrayList<String> getIncrementedCounters() {
         return context.getIncrementedCounters();
+    }
+
+    @Override
+    public Message getTargetMessage( final MessageTargetable targetable ) throws NoSuchVariableException {
+        switch(targetable.getTarget()) {
+            case REQUEST:
+                return getRequest();
+            case RESPONSE:
+                return getResponse();
+            default:
+                return context.getTargetMessage( targetable );
+        }
+    }
+
+    @Override
+    public Message getTargetMessage( final MessageTargetable targetable, final boolean allowNonMessageVar ) throws NoSuchVariableException {
+        switch(targetable.getTarget()) {
+            case REQUEST:
+                return getRequest();
+            case RESPONSE:
+                return getResponse();
+            default:
+                return context.getTargetMessage( targetable, allowNonMessageVar );
+        }
+    }
+
+    @Override
+    public Message getOrCreateTargetMessage( final MessageTargetable targetable, final boolean allowNonMessagevar ) throws NoSuchVariableException, VariableNotSettableException {
+        switch(targetable.getTarget()) {
+            case REQUEST:
+                return getRequest();
+            case RESPONSE:
+                return getResponse();
+            default:
+                return context.getOrCreateTargetMessage( targetable, allowNonMessagevar );
+        }
     }
 
     @Override

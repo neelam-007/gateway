@@ -4,8 +4,8 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.external.assertions.mtom.MtomDecodeAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -81,35 +81,34 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
 
     private AssertionStatus reconstitute( final PolicyEnforcementContext context,
                                           final Message message ) {
-        AssertionStatus status;
+        AssertionStatus status = AssertionStatus.UNDEFINED;
 
-        final Message outputMessage;
+        Message outputMessage = null;
         if ( assertion.getOutputTarget() == null ) {
             outputMessage = message;
-        } else if ( assertion.getOutputTarget().getTarget()==TargetMessageType.OTHER ) {
-            outputMessage = new Message();
-            context.setVariable(assertion.getOutputTarget().getOtherTargetMessageVariable(), outputMessage);
-            context.runOnClose( new Runnable() {
-                @Override
-                public void run() {
-                    outputMessage.close();
-                }
-            } );
-        } else if ( assertion.getOutputTarget().getTarget()==TargetMessageType.REQUEST ) {
-            outputMessage = context.getRequest();
         } else {
-            outputMessage = context.getResponse();            
+            try {
+                outputMessage = context.getOrCreateTargetMessage( assertion.getOutputTarget(), false );
+            } catch (NoSuchVariableException nsve) {
+                status = AssertionStatus.FAILED;
+                auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(nsve));
+            } catch (VariableNotSettableException vnse) {
+                status = AssertionStatus.FAILED;
+                auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(vnse));
+            }
         }
 
-        try {
-            XOPUtils.reconstitute( message, outputMessage, assertion.isRemovePackaging(), stashManagerFactory );
-            status = AssertionStatus.NONE;
-        } catch ( Exception e) {
-            status = AssertionStatus.FALSIFIED;
-            auditor.logAndAudit(
-                    MTOM_DECODE_ERROR,
-                    new String[]{"Error decoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
-                    e );
+        if ( outputMessage != null ) {
+            try {
+                XOPUtils.reconstitute( message, outputMessage, assertion.isRemovePackaging(), stashManagerFactory );
+                status = AssertionStatus.NONE;
+            } catch ( Exception e) {
+                status = AssertionStatus.FALSIFIED;
+                auditor.logAndAudit(
+                        MTOM_DECODE_ERROR,
+                        new String[]{"Error decoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
+                        e );
+            }
         }
         
         return status;

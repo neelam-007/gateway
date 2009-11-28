@@ -535,6 +535,54 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     @Override
+    public Message getOrCreateTargetMessage( final MessageTargetable targetable, final boolean allowNonMessageVar ) throws NoSuchVariableException, VariableNotSettableException {
+        Message message = null;
+
+        String varName = null;
+        switch(targetable.getTarget()) {
+            case REQUEST:
+                message = getRequest();
+                break;
+            case RESPONSE:
+                message = getResponse();
+                break;
+            case OTHER:
+                varName = targetable.getOtherTargetMessageVariable();
+                break;
+        }
+
+        if ( message == null ) {
+            if ( varName == null ) {
+                throw new NoSuchVariableException("<NULL>");
+            }
+
+            boolean variableExists = false;
+            try {
+                variableExists = getVariable( varName ) != null;
+            } catch ( NoSuchVariableException nsve ) {
+                // doesn't exist
+            }
+
+            if ( variableExists ) {
+                message = getTargetMessage( targetable, allowNonMessageVar );
+            } else {
+                message = new Message();
+                setVariable( varName, message );
+
+                final Message toclose = message;
+                runOnClose( new Runnable(){
+                    @Override
+                    public void run() {
+                        toclose.close();
+                    }
+                } );
+            }
+        }
+
+        return message;
+    }
+
+    @Override
     public Message getTargetMessage(final MessageTargetable targetable, boolean allowNonMessageVar) throws NoSuchVariableException {
         switch(targetable.getTarget()) {
             case REQUEST:

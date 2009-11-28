@@ -366,6 +366,11 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
+    public Message getOrCreateTargetMessage( final MessageTargetable targetable, final boolean allowNonMessagevar ) throws NoSuchVariableException, VariableNotSettableException {
+        return delegate.getOrCreateTargetMessage( targetable, allowNonMessagevar );
+    }
+
+    @Override
     public Message getTargetMessage( final MessageTargetable targetable, final boolean allowNonMessageVar ) throws NoSuchVariableException {
         return delegate.getTargetMessage( targetable, allowNonMessageVar );
     }

@@ -30,6 +30,16 @@ public class MessageTargetableSupport implements MessageTargetable, UsesVariable
     }
 
     /**
+     * Create a instance targetting the given message variable.
+     *
+     * @param otherTargetMessageVariable The variable target
+     */
+    public MessageTargetableSupport( final String otherTargetMessageVariable ) {
+        this.target = TargetMessageType.OTHER;
+        this.otherTargetMessageVariable = otherTargetMessageVariable;
+    }
+
+    /**
      * Create a instance targetting the given message target.
      *
      * @param messageTargetable The target message to use

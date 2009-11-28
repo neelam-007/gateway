@@ -13,6 +13,7 @@ import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAsserti
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.CONTEXT_VARIABLE;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
@@ -147,20 +148,26 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             return AssertionStatus.FAILED;
         }
 
-        switch(assertion.getOutputMessageDestination()) {
-            case DEFAULT_REQUEST:
-                context.getRequest().initialize(xacmlRequestDocument);
-                break;
-            case DEFAULT_RESPONSE:
-                context.getResponse().initialize(xacmlRequestDocument);
-                break;
-            case CONTEXT_VARIABLE:
-                Message message = new Message(xacmlRequestDocument);
-                context.setVariable(assertion.getOutputMessageVariableName(), message);
-                break;
-            default:
-                // todo: only happen if enum changes, move to enum
-                throw new IllegalStateException("Unsupported message output destination found");
+        try {
+            Message message;
+            switch(assertion.getOutputMessageDestination()) {
+                case DEFAULT_REQUEST:
+                    message = context.getRequest();
+                    break;
+                case DEFAULT_RESPONSE:
+                    message = context.getResponse();
+                    break;
+                case CONTEXT_VARIABLE:
+                    message = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getOutputMessageVariableName()), false );
+                    break;
+                default:
+                    // todo: only happen if enum changes, move to enum
+                    throw new IllegalStateException("Unsupported message output destination found");
+            }
+            message.initialize(xacmlRequestDocument);
+        } catch (NoSuchVariableException e) {
+            auditor.logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, "Error creating output message " + assertion.getOutputMessageVariableName());
+            return AssertionStatus.FAILED;
         }
 
         return AssertionStatus.NONE;

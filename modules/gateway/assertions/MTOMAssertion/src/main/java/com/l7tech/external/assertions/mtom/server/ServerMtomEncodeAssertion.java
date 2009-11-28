@@ -5,6 +5,8 @@ import com.l7tech.external.assertions.mtom.MtomEncodeAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -102,41 +104,40 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
 
             if ( status == AssertionStatus.UNDEFINED ) {
                 if ( assertion.isAlwaysEncode() || !elements.isEmpty() ) {
-                    final Message outputMessage;
+                    Message outputMessage = null;
                     if ( assertion.getOutputTarget() == null ) {
                         outputMessage = message;
-                    } else if ( assertion.getOutputTarget().getTarget()==TargetMessageType.OTHER ) {
-                        outputMessage = new Message();
-                        context.setVariable(assertion.getOutputTarget().getOtherTargetMessageVariable(), outputMessage);
-                        context.runOnClose( new Runnable() {
-                            @Override
-                            public void run() {
-                                outputMessage.close();
-                            }
-                        } );
-                    } else if ( assertion.getOutputTarget().getTarget()==TargetMessageType.REQUEST ) {
-                        outputMessage = context.getRequest();
                     } else {
-                        outputMessage = context.getResponse();
+                        try {
+                            outputMessage = context.getOrCreateTargetMessage( assertion.getOutputTarget(), false );
+                        } catch (NoSuchVariableException nsve) {
+                            status = AssertionStatus.FAILED;
+                            auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(nsve));
+                        } catch (VariableNotSettableException vnse) {
+                            auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(vnse));
+                            status = AssertionStatus.FAILED;
+                        }
                     }
 
-                    try {
-                        XOPUtils.extract(
-                                message,
-                                outputMessage,
-                                elements,
-                                assertion.getOptimizationThreshold(),
-                                assertion.isAlwaysEncode(),
-                                stashManagerFactory );
+                    if ( outputMessage != null ) {
+                        try {
+                            XOPUtils.extract(
+                                    message,
+                                    outputMessage,
+                                    elements,
+                                    assertion.getOptimizationThreshold(),
+                                    assertion.isAlwaysEncode(),
+                                    stashManagerFactory );
 
-                        status = AssertionStatus.NONE;
-                    } catch ( Exception e) {
-                        auditor.logAndAudit(
-                                MTOM_ENCODE_ERROR,
-                                new String[]{"Error encoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
-                                e );
+                            status = AssertionStatus.NONE;
+                        } catch ( Exception e) {
+                            auditor.logAndAudit(
+                                    MTOM_ENCODE_ERROR,
+                                    new String[]{"Error encoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
+                                    e );
 
-                        status = AssertionStatus.FALSIFIED;
+                            status = AssertionStatus.FAILED;
+                        }
                     }
                 } else {
                     auditor.logAndAudit( MTOM_ENCODE_NONE );

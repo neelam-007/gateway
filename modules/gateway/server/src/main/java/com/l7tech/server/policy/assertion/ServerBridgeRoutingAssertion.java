@@ -234,14 +234,13 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         // The response will need to be re-initialized
                         bridgeResponse = context.getResponse(); // TODO see if it is unsafe to reuse this
                     } else {
-                        bridgeResponse = new Message();
+                        bridgeResponse = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getResponseMsgDest()), false );
                         bridgeResponse.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
                             @Override
                             public void addCookie(HttpCookie cookie) {
                                 // TODO what to do with the cookie?
                             }
                         });
-                        context.setVariable(assertion.getResponseMsgDest(), bridgeResponse);
                     }
 
                     HeaderHolder hh = new HeaderHolder();
@@ -314,6 +313,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                             new String[]{ExceptionUtils.getMessage(e)},
                             e.getCause() != null ? e : null );
                 } catch ( PolicyLockedException e) {
+                    thrown = e;
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING, null, e);
+                } catch (NoSuchVariableException e) {
                     thrown = e;
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING, null, e);
                 }
