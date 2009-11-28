@@ -384,7 +384,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                             client.deleteTModel( tModelKey );
 
                             businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.NONE );
-                            businessService.setUddiPolicyTModelKey( null );
+                            businessService.setUddiMetricsTModelKey( null );
                             factory.uddiBusinessServiceStatusManager.update( businessService );
                         }
                     }
