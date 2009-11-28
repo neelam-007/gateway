@@ -4,10 +4,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityWithPolicyNode;
-import com.l7tech.console.tree.ServicesAndPoliciesTree;
-import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -69,9 +66,30 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
     }
 
     /**
-     * @return String the message to show to the user when the user is asked to confirm this action
+     * Generate a message to show to the user when the user is asked to confirm this action.
+     * @return a string probably containing multiple lines.  Each line has a max length, 80.
      */
-    public abstract String getUserConfirmationMessage();
+    public String getUserConfirmationMessage() {
+        String nodeEntityType;
+        if (node instanceof ServiceNodeAlias) nodeEntityType = "service alias";
+        else if (node instanceof ServiceNode) nodeEntityType = "service";
+        else if (node instanceof PolicyEntityNodeAlias) nodeEntityType = "policy alias";
+        else if (node instanceof PolicyEntityNode) nodeEntityType = "policy";
+        else nodeEntityType = node.getClass().getSimpleName();
+
+        StringBuilder sb = new StringBuilder("Are you sure you want to delete the '").append(node.getName()).append("' ").append(nodeEntityType).append("?");
+        if (sb.length() <= 80) return sb.toString();
+
+        sb = new StringBuilder("Are you sure you want to delete the " + nodeEntityType + ",\n");
+        String nodeName = "'" + node.getName() + "'";
+        while (nodeName.length() > 80) {
+            sb.append(nodeName.substring(0, 80)).append("\n");
+            nodeName = nodeName.substring(80);
+        }
+        sb.append(nodeName).append("?");
+
+        return sb.toString();
+    }
 
     /**
      * @return String the title to show with the message from getUserConfirmationMessage() 

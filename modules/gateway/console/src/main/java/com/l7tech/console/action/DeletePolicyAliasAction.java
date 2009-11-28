@@ -101,11 +101,6 @@ public class DeletePolicyAliasAction extends DeleteEntityNodeAction<PolicyEntity
         return false;
     }
 
-    public String getUserConfirmationMessage() {
-        final String nodeName = node.getName().length() > 43 ? node.getName().substring(0, 40) +  "..." : node.getName();
-        return "Are you sure you want to delete the '" + nodeName + "' policy alias?";
-    }
-
     public String getUserConfirmationTitle() {
         return "Delete Policy Alias";
     }

@@ -54,12 +54,6 @@ public final class DeleteServiceAction extends DeleteEntityNodeAction<ServiceNod
     }
 
     @Override
-    public String getUserConfirmationMessage() {
-        final String nodeName = node.getName().length() > 43 ? node.getName().substring(0, 40) +  "..." : node.getName();
-        return "Are you sure you want to delete the '" + nodeName + "' service?";
-    }
-
-    @Override
     public String getUserConfirmationTitle() {
         return "Delete Service";
     }

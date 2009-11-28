@@ -95,7 +95,18 @@ public class DeleteFolderAction extends SecureAction {
     }
 
     public String getUserConfirmationMessage() {
-        return "Are you sure you want to delete the " + folderToDelete.getName() + " folder?";
+        StringBuilder sb = new StringBuilder("Are you sure you want to delete the '").append(folderToDelete.getName()).append("' folder?");
+        if (sb.length() <= 80) return sb.toString();
+
+        sb = new StringBuilder("Are you sure you want to delete the folder,\n");
+        String nodeName = "'" + folderToDelete.getName() + "'";
+        while (nodeName.length() > 80) {
+            sb.append(nodeName.substring(0, 80)).append("\n");
+            nodeName = nodeName.substring(80);
+        }
+        sb.append(nodeName).append("?");
+
+        return sb.toString();
     }
 
     public String getUserConfirmationTitle() {
