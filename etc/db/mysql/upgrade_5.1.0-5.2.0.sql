@@ -28,6 +28,13 @@ INSERT INTO cluster_properties
     values (-500200, 0, "upgrade.task.500200", "com.l7tech.server.upgrade.Upgrade51To52CanonicalizeDNs");
 
 --
+-- Upgrade task for cluster properties
+--
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-500201, 0, "upgrade.task.500201", "com.l7tech.server.upgrade.Upgrade51To52AddClusterProperties");
+
+--
 -- Create Table structure for JDBC Connections
 --
 DROP TABLE IF EXISTS jdbc_connection;

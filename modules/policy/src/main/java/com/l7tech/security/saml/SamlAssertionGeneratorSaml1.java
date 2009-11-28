@@ -71,7 +71,8 @@ class SamlAssertionGeneratorSaml1 {
             if (clientAddress != null) {
                 final SubjectLocalityType subjectLocality = authStatement.addNewSubjectLocality();
                 subjectLocality.setIPAddress(clientAddress.getHostAddress());
-                subjectLocality.setDNSAddress(clientAddress.getCanonicalHostName());
+                if ( options.isClientAddressDNS() )
+                    subjectLocality.setDNSAddress(clientAddress.getCanonicalHostName());
             }
             subjectStatementAbstractType = authStatement;
         } else if (subjectStatement instanceof AuthorizationStatement) {
@@ -142,7 +143,8 @@ class SamlAssertionGeneratorSaml1 {
                 if (clientAddress != null) {
                     final SubjectLocalityType subjectLocality = authStatement.addNewSubjectLocality();
                     subjectLocality.setIPAddress(clientAddress.getHostAddress());
-                    subjectLocality.setDNSAddress(clientAddress.getCanonicalHostName());
+                    if ( options.isClientAddressDNS() )
+                        subjectLocality.setDNSAddress(clientAddress.getCanonicalHostName());
                 }
                 subjectStatementAbstractType = authStatement;
             } else if (subjectStatement instanceof AuthorizationStatement) {

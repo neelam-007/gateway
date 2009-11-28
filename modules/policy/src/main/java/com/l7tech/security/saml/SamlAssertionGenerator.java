@@ -39,6 +39,7 @@ import java.util.TimeZone;
  */
 public class SamlAssertionGenerator {
     public static final String BEFORE_OFFSET_SYSTEM_PROPERTY = "saml.before.minute.offset.l7tech.com";
+    public static final String SUBJECT_ENABLE_DNS_SYSTEM_PROPERTY = "com.l7tech.security.saml.enableDNS";
 
     static final TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
     private static final SecureRandom random = new SecureRandom();
@@ -46,10 +47,12 @@ public class SamlAssertionGenerator {
     private final SamlAssertionGeneratorSaml1 sag1;
     private final SamlAssertionGeneratorSaml2 sag2;
     private static final IndentConfig nullIndentConfig = new IndentConfig() {
+        @Override
         public boolean doIndentation() {
             return false;
         }
 
+        @Override
         public int getUnit() {
             return 0;
         }
@@ -231,6 +234,7 @@ public class SamlAssertionGenerator {
         context.setAlgorithmFactory(new WssProcessorAlgorithmFactory(null));
         context.setEntityResolver( XmlUtil.getXss4jEntityResolver());
         context.setIDResolver(new IDResolver() {
+            @Override
             public Element resolveID(Document document, String s) {
                 if (id.equals(s))
                     return assertionDoc.getDocumentElement();
@@ -362,6 +366,14 @@ public class SamlAssertionGenerator {
             this.clientAddress = clientAddress;
         }
 
+        public boolean isClientAddressDNS() {
+            return clientAddressDNS;
+        }
+
+        public void setClientAddressDNS( final boolean clientAddressDNS ) {
+            this.clientAddressDNS = clientAddressDNS;
+        }
+
         public void setId(String id) {
             this.id = id;
         }
@@ -422,6 +434,7 @@ public class SamlAssertionGenerator {
         private boolean proofOfPosessionRequired = true;
         private int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
         private InetAddress clientAddress;
+        private boolean clientAddressDNS = SyspropUtil.getBoolean( SUBJECT_ENABLE_DNS_SYSTEM_PROPERTY, false );
         private boolean signAssertion = true;
         private SignerInfo attestingEntity;
         private String id = null;

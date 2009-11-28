@@ -19,7 +19,6 @@ import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.upgrade.FatalUpgradeException;
 import com.l7tech.server.upgrade.NonfatalUpgradeException;
 import com.l7tech.server.upgrade.UpgradeTask;
-import com.l7tech.server.LifecycleException;
 import com.l7tech.server.RuntimeLifecycleException;
 import org.hibernate.TransactionException;
 import org.hibernate.SessionFactory;
@@ -64,7 +63,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                               "com.l7tech.server.upgrade.Upgrade44To45SwitchPolicyIncludesToGuids",
                               "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies",
                               "com.l7tech.server.upgrade.Upgrade465To50UpgradeKeystores",
-                              "com.l7tech.server.upgrade.Upgrade51To52CanonicalizeDNs");
+                              "com.l7tech.server.upgrade.Upgrade51To52CanonicalizeDNs",
+                              "com.l7tech.server.upgrade.Upgrade51To52AddClusterProperties");
             p(Starting.class, "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions");
             p(Started.class,  "com.l7tech.server.upgrade.Upgrade35To36AddRoles",
                               "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions",
@@ -109,6 +109,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
 
         final String myVersion = BuildInfo.getFormalProductVersion();
         session.doWork(new Work() {
+            @Override
             public void execute(Connection connection) throws SQLException {
                 Statement st =  null;
                 ResultSet rs = null;
