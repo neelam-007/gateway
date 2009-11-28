@@ -270,6 +270,44 @@ public class TestGenericUDDIClient {
     }
 
     /**
+     * Test that a service under uddi control cannot have it's wsdl xml changed
+     * @throws Exception
+     */
+    @Test
+    public void testUpdatePublishedServiceUnderUDDIControl() throws Exception {
+        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+
+        InputStream inputStream = this.getClass().getResourceAsStream("Warehouse.wsdl"); //completely change the wsdl - a different namespace!
+        Document dom = XmlUtil.parse(inputStream);
+
+        SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
+        final PublishedService service = ssgAdminSession.getServiceAdmin().findServiceByID("1540099");
+
+        service.setWsdlXml(XmlUtil.nodeToString(dom));
+
+        ssgAdminSession.getServiceAdmin().savePublishedService(service);
+
+        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+    }
+
+    /**
+     * Test that a service under uddi control can propeties other than it's wsdl xml changed successfully
+     * @throws Exception
+     */
+    @Test
+    public void testUpdatePublishedServiceUnderUDDIControlOk() throws Exception {
+        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+
+        SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
+        final PublishedService service = ssgAdminSession.getServiceAdmin().findServiceByID("1540099");
+        service.setRoutingUri("testroutinguri");
+
+        ssgAdminSession.getServiceAdmin().savePublishedService(service);
+
+        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+    }
+
+    /**
      * Test that the deleteTModel successfully determines when a tModel is safe to delete
      *
      * Test is for stepping through, Asserts not used here

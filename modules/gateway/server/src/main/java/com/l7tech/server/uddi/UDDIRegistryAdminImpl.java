@@ -8,7 +8,6 @@ import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.service.ServiceManager;
 import com.l7tech.wsdl.Wsdl;
 
 import javax.wsdl.WSDLException;

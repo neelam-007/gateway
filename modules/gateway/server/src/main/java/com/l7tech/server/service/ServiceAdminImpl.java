@@ -5,6 +5,7 @@ import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.EntityType.SERVICE;
@@ -19,8 +20,7 @@ import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.sla.CounterIDManager;
-import com.l7tech.server.uddi.UDDITemplateManager;
-import com.l7tech.server.uddi.UDDIHelper;
+import com.l7tech.server.uddi.*;
 import com.l7tech.uddi.*;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
@@ -37,6 +37,7 @@ import org.springframework.beans.factory.DisposableBean;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.*;
@@ -80,6 +81,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private final ExecutorService validatorExecutor;
 
     private final UDDIRegistryAdmin uddiRegistryAdmin;
+    private final UDDIServiceControlManager uddiServiceControlManager;
 
     private CollectionUpdateProducer<ServiceHeader, FindException> publishedServicesUpdateProducer =
             new CollectionUpdateProducer<ServiceHeader, FindException>(5 * 60 * 1000, 100, new ServiceHeaderDifferentiator()) {
@@ -103,7 +105,9 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             UDDITemplateManager uddiTemplateManager,
                             PolicyVersionManager policyVersionManager,
                             ServerConfig serverConfig,
-                            ServiceTemplateManager serviceTemplateManager, UDDIRegistryAdmin uddiRegistryAdmin)
+                            ServiceTemplateManager serviceTemplateManager,
+                            UDDIRegistryAdmin uddiRegistryAdmin,
+                            UDDIServiceControlManager uddiServiceControlManager)
     {
         this.licenseManager = licenseManager;
         this.uddiHelper = uddiHelper;
@@ -120,6 +124,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.policyVersionManager = policyVersionManager;
         this.serviceTemplateManager = serviceTemplateManager;
         this.uddiRegistryAdmin = uddiRegistryAdmin;
+        this.uddiServiceControlManager = uddiServiceControlManager;
 
         int maxConcurrency = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 18);
         BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
@@ -315,6 +320,26 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                 // UPDATING EXISTING SERVICE
                 oid = service.getOid();
                 logger.fine("Updating PublishedService: " + oid);
+
+                //check if it's under UDDI Control
+                final UDDIServiceControl uddiServiceControl = uddiServiceControlManager.findByPublishedServiceOid(service.getOid());
+                if (uddiServiceControl != null && uddiServiceControl.isUnderUddiControl()) {
+                    final PublishedService original = serviceManager.findByPrimaryKey(service.getOid());
+                    if(original != null){
+                        //check the WSDL
+                        try {
+                            final String updatedHash = service.parsedWsdl().getHash();
+                            final String originalHash = original.parsedWsdl().getHash();
+                            if (!updatedHash.equals(originalHash)) {
+                                throw new UpdateException("Cannot change the WSDL XML for a Published Service when it's WSDL is under UDDI control");
+                            }
+                        } catch (WSDLException e) {
+                            throw new UpdateException("Error parsing WSDL: " + ExceptionUtils.getMessage(e));
+                        } catch (IOException e) {
+                            throw new UpdateException("Error computng WSDL hash: " + ExceptionUtils.getMessage(e));
+                        }
+                    }
+                }
 
                 if (policy != null) {
                     // Saving an existing published service must never change its policy xml (or folder) as a side-effect. (Bug #6405)

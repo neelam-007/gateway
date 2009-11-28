@@ -686,7 +686,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             final String businessServiceWsdlLocalName = getServiceWsdlLocalName(categoryBag);
 
-            //todo [Donal] namespaces - we will also need to extract the namespace and work with it if present
             if(businessServiceWsdlLocalName == null) {
                 throw new UDDIException("BusinessService does not contain a " + WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME +
                         " keyedReference in it's categoryBag. Cannot determine it's wsdl local name. serviceKey: " + serviceKey);
