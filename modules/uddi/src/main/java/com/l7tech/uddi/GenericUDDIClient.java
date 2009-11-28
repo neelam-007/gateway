@@ -684,7 +684,25 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 throw new UDDIException("BusinessService does not contain a categoryBag. Cannot determine it's wsdl local name. serviceKey: " + serviceKey);
             }
 
+            //Get the name of the owning BusinessEntity. This removes the burdon of doing this from the UDDIRegistryAdmin
+            //method to save a UDDIServiceControl
+            final String businessKey = businessService.getBusinessKey();
+            final GetBusinessDetail businessDetail = new GetBusinessDetail();
+            businessDetail.setAuthInfo(authToken);
+            businessDetail.getBusinessKey().add(businessKey);
+            final BusinessDetail detail = inquiryPort.getBusinessDetail(businessDetail);
+            if(detail.getBusinessEntity().isEmpty()){
+                //this should never happen as the above getBusinessDetail should thrown if it finds an invalid business key
+                throw new UDDIException("No BusinessEntity found with businessKey: " + businessKey+" for serviceKey: " + serviceKey);
+            }
+
+            final BusinessEntity businessEntity = detail.getBusinessEntity().iterator().next();
+            final String businessEntityName = get(businessEntity.getName(), "business entity name", false).getValue();
             final String businessServiceWsdlLocalName = getServiceWsdlLocalName(categoryBag);
+
+
+            final UDDIOperationalInfo operationalInfo = getOperationalInfo(businessService.getServiceKey());
+            final long lastUddiMonitoredTimeStamp = operationalInfo.getModifiedIncludingChildrenTime();//safe to use, will be created time initially
 
             if(businessServiceWsdlLocalName == null) {
                 throw new UDDIException("BusinessService does not contain a " + WsdlToUDDIModelConverter.UDDI_XML_LOCALNAME +
@@ -807,6 +825,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
                 final WsdlPortInfoImpl wsdlPortInfo = new WsdlPortInfoImpl();
                 wsdlPortInfo.setBusinessEntityKey(businessService.getBusinessKey());
+                wsdlPortInfo.setBusinessEntityName(businessEntityName);
                 wsdlPortInfo.setBusinessServiceKey(businessService.getServiceKey());
                 final String businessServiceName = get(businessService.getName(), "BusinessService Name", false).getValue();
                 wsdlPortInfo.setBusinessServiceName(businessServiceName);
@@ -817,6 +836,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 wsdlPortInfo.setWsdlPortBindingNamespace(UDDIUtilities.extractNamespace(bindingTModel));//it is ok if this is null
                 wsdlPortInfo.setAccessPointURL(accessPointURL);
                 wsdlPortInfo.setWsdlUrl(wsdlUrl);
+                wsdlPortInfo.setLastUddiMonitoredTimeStamp(lastUddiMonitoredTimeStamp);
 
                 //check everything required is found, otherwise don't add it to collection
                 final String validateMsg = wsdlPortInfo.validate();

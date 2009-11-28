@@ -592,7 +592,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 uddiServiceControl.setPublishWsPolicyInlined( false );
             }
             try {
-                uddiRegistryAdmin.saveUDDIServiceControlOnly( uddiServiceControl );
+                uddiRegistryAdmin.saveUDDIServiceControlOnly( uddiServiceControl, null);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Error saving UDDIServiceControl '" + ExceptionUtils.getMessage(e) + "'.", e);
                 DialogDisplayer.showMessageDialog(this, "Error saving UDDI settings: " + ExceptionUtils.getMessage(e)

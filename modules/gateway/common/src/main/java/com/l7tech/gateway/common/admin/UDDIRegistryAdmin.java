@@ -218,6 +218,8 @@ public interface UDDIRegistryAdmin {
      * Save / Update UDDIServiceControl without changes to related UDDI.
      *
      * @param uddiServiceControl the updated UDDIServiceControl
+     * @param lastModifiedServiceTimeStamp Long last time the BusinessService or any of it's children were modified
+     * in Uddi. Only required when the entity is being saved for the first time. Otherwise it is ignored
      * @return the unique object ID that was updated or created.
      * @throws UpdateException if the UDDIServiceControl cannot be updated
      * @throws SaveException   if the UDDIServiceControl cannot be saved
@@ -226,7 +228,7 @@ public interface UDDIRegistryAdmin {
      *                         if the UDDI Registry is not enabled
      */
     @Secured(types = {EntityType.UDDI_SERVICE_CONTROL}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
-    long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl)
+    long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl, Long lastModifiedServiceTimeStamp)
             throws UpdateException, SaveException, FindException, UDDIRegistryNotEnabledException;
 
     /**

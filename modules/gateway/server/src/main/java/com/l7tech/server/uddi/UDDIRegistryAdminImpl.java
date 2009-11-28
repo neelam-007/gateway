@@ -232,9 +232,13 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public long saveUDDIServiceControlOnly( final UDDIServiceControl uddiServiceControl )
+    public long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl, final Long lastModifiedServiceTimeStamp)
             throws UpdateException, SaveException, FindException, UDDIRegistryNotEnabledException {
         if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ){
+            if(lastModifiedServiceTimeStamp == null || lastModifiedServiceTimeStamp < 0){
+                throw new SaveException("lastModifiedServiceTimeStamp is required when saving a UDDIServiceControl. Cannot be null or negative");    
+            }
+
             final PublishedService service = serviceCache.getCachedService(uddiServiceControl.getPublishedServiceOid());
 
             final Wsdl wsdl;
@@ -265,21 +269,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             if(uddiRegistry == null) throw new FindException("Cannot find UDDIRegistry");
             throwIfGatewayNotEnabled(uddiRegistry);
 
-            final UDDIClient uddiClient = getUDDIClient(uddiRegistry);
-            final long lastUddiMonitoredTimeStamp;
-            try {
-                final String businessName = uddiClient.getBusinessEntityName(uddiServiceControl.getUddiBusinessKey());
-                uddiServiceControl.setUddiBusinessName(businessName);
-                final UDDIOperationalInfo operationalInfo = uddiClient.getOperationalInfo(uddiServiceControl.getUddiServiceKey());
-                lastUddiMonitoredTimeStamp = operationalInfo.getModifiedIncludingChildrenTime();//safe to use, will be created time initially
-            } catch (UDDIException e) {
-                final String msg = "Cannot find BusinessEntity with businessKey: " + uddiServiceControl.getUddiBusinessKey();
-                logger.log(Level.WARNING, msg, e);
-                throw new SaveException(msg);
-            }
             long oid = uddiServiceControlManager.save(uddiServiceControl);
             //Create the monitor runtime record for this service control as it has just been created
-            final UDDIServiceControlMonitorRuntime monitorRuntime = new UDDIServiceControlMonitorRuntime(oid, lastUddiMonitoredTimeStamp);
+            final UDDIServiceControlMonitorRuntime monitorRuntime = new UDDIServiceControlMonitorRuntime(oid, lastModifiedServiceTimeStamp);
             uddiServiceControlMonitorRuntimeManager.save(monitorRuntime);
             if(uddiServiceControl.isUnderUddiControl()){
                 logger.log(Level.FINE, "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL");
@@ -288,8 +280,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             return oid;
         }else{
             UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());
-            final boolean wsdlRefreshRequired = !original.isUnderUddiControl() && uddiServiceControl.isUnderUddiControl();
             if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
+            final boolean wsdlRefreshRequired = !original.isUnderUddiControl() && uddiServiceControl.isUnderUddiControl();
             uddiServiceControl.throwIfFinalPropertyModified(original);
             //make sure the wsdl under uddi control is not being set when it is not allowed
             if(uddiServiceControl.isHasHadEndpointRemoved() && uddiServiceControl.isUnderUddiControl()){

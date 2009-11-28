@@ -23,6 +23,8 @@ public interface WsdlPortInfo {//todo [Donal] rename this class
 
     String getBusinessEntityKey();
 
+    String getBusinessEntityName();
+
     long getUddiRegistryOid();
 
     String getWsdlServiceName();
@@ -47,4 +49,10 @@ public interface WsdlPortInfo {//todo [Donal] rename this class
     boolean isLikelyGatewayWsdl();
 
     String getAccessPointURL();
+
+    /**
+     * Get the last time any element of the BusinessService this WsdlPortInfo belongs to was modified
+     * @return
+     */
+    long getLastUddiMonitoredTimeStamp();
 }

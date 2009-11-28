@@ -21,11 +21,13 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     private String businessServiceName;
     private String businessServiceKey;
     private String businessEntityKey;
+    private String businessEntityName;
     private String wsdlServiceName;
     private long uddiRegistryOid;
     private boolean gatewayWsdl;
     private boolean likelyGatewayWsdl;
     private String accessPointURL;
+    private long lastUddiMonitoredTimeStamp;
 
     public WsdlPortInfoImpl() {
     }
@@ -157,11 +159,29 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     }
 
     @Override
+    public String getBusinessEntityName() {
+        return businessEntityName;
+    }
+
+    public void setBusinessEntityName(String businessEntityName) {
+        this.businessEntityName = businessEntityName;
+    }
+
+    @Override
     public String getAccessPointURL() {
         return accessPointURL;
     }
 
     public void setAccessPointURL(String accessPointURL) {
         this.accessPointURL = accessPointURL;
+    }
+
+    @Override
+    public long getLastUddiMonitoredTimeStamp() {
+        return lastUddiMonitoredTimeStamp;
+    }
+
+    public void setLastUddiMonitoredTimeStamp(long lastUddiMonitoredTimeStamp) {
+        this.lastUddiMonitoredTimeStamp = lastUddiMonitoredTimeStamp;
     }
 }

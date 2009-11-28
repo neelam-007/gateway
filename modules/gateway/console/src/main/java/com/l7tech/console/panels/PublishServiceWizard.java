@@ -205,7 +205,8 @@ public class PublishServiceWizard extends Wizard {
                     wsdlPortInfo.getAccessPointURL() != null &&
                     wsdlPortInfo.getWsdlPortBinding() != null &&
                     wsdlPortInfo.getWsdlPortName() != null &&
-                    wsdlPortInfo.getWsdlServiceName() != null;
+                    wsdlPortInfo.getWsdlServiceName() != null &&
+                    wsdlPortInfo.getBusinessEntityName() != null;
 
             final PublishedService newService = saBundle.getService();
             if(serviceControlRequired){
@@ -222,12 +223,13 @@ public class PublishServiceWizard extends Wizard {
             //record this
             if(serviceControlRequired){
                 UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
-                        wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
+                        wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(),
+                        wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
                         wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
                         wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getWsdlPortBindingNamespace(), true);
 
                 try {
-                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
+                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, wsdlPortInfo.getLastUddiMonitoredTimeStamp());
                 } catch (Exception e) {
                     final String msg = "Error: " + ExceptionUtils.getMessage(e);
                     logger.log(Level.WARNING, msg, e);

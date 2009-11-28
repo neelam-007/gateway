@@ -398,10 +398,12 @@ public class ServicePropertiesDialog extends JDialog {
                             final boolean needsToBeSaved;
                             final boolean needToDelete;
                             long oldOid = -1L;
+                            Long lastModifiedTimeStamp = null;
                             if(!existingOk){
                                 needToDelete = uddiServiceControl != null;//do this before variable is reset on next line
                                 if(needToDelete) oldOid = uddiServiceControl.getOid();
                                 uddiServiceControl = getNewUDDIServiceControl(wsdlPortInfo);
+                                lastModifiedTimeStamp = wsdlPortInfo.getLastUddiMonitoredTimeStamp();
                                 needsToBeSaved = true;
                             }else{
                                 //repopulate the existing UDDIServiceControl
@@ -413,7 +415,7 @@ public class ServicePropertiesDialog extends JDialog {
                                 try {
                                     if(needToDelete) Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(oldOid);
 
-                                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
+                                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, lastModifiedTimeStamp);
                                     //download it again as it gets populated with info on save
                                     uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(uddiServiceControl.getPublishedServiceOid());
                                 } catch (DeleteException e1) {
@@ -527,8 +529,10 @@ public class ServicePropertiesDialog extends JDialog {
 
     private UDDIServiceControl getNewUDDIServiceControl(WsdlPortInfo wsdlPortInfo) {
         return new UDDIServiceControl(subject.getOid(), wsdlPortInfo.getUddiRegistryOid(),
-                wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(), wsdlPortInfo.getWsdlServiceName(),
-                wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getWsdlPortBindingNamespace(), wsdlUnderUDDIControlCheckBox.isSelected());
+                wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(), wsdlPortInfo.getBusinessServiceKey(),
+                wsdlPortInfo.getBusinessServiceName(), wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(),
+                wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getWsdlPortBindingNamespace(),
+                wsdlUnderUDDIControlCheckBox.isSelected());
     }
 
     /**
@@ -801,7 +805,7 @@ public class ServicePropertiesDialog extends JDialog {
                     uddiServiceControl.setUpdateWsdlOnChange( updateWsdlOnChange );
                     uddiServiceControl.setDisableServiceOnChange( disableServiceOnChange );
 
-                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl);
+                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, null);
                 }
             }
 

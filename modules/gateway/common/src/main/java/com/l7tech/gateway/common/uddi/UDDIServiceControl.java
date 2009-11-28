@@ -16,7 +16,7 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_service_control")
-public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rename to the UDDIRelatedService - as it may not be under UDDI Control - rename associated managers also
+public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rename to the UDDIOriginalService - as it may not be under UDDI Control - rename associated managers also
 
     public static final String ATTR_SERVICE_OID = "publishedServiceOid";
 
@@ -25,6 +25,7 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
     public UDDIServiceControl(long publishedServiceOid,
                               long uddiRegistryOid,
                               String uddiBusinessKey,
+                              String uddiBusinessName,
                               String uddiServiceKey,
                               String uddiServiceName,
                               String wsdlServiceName,
@@ -36,6 +37,7 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
         this.publishedServiceOid = publishedServiceOid;
         this.uddiRegistryOid = uddiRegistryOid;
         this.uddiBusinessKey = uddiBusinessKey;
+        this.uddiBusinessName = uddiBusinessName;
         this.uddiServiceKey = uddiServiceKey;
         this.uddiServiceName = uddiServiceName;
         this.wsdlServiceName = wsdlServiceName;
@@ -86,11 +88,14 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
     public boolean setUddiModifiableProperties(WsdlPortInfo portInfo){
         boolean modified = false;
 
-        if(!this.getUddiBusinessName().equals(portInfo.getBusinessServiceName())) modified = true;
-        this.setUddiBusinessName(portInfo.getBusinessServiceName());
+        if(!this.getUddiBusinessName().equals(portInfo.getBusinessEntityName())) modified = true;
+        this.setUddiBusinessName(portInfo.getBusinessEntityName());
 
-        if(!this.getUddiServiceName().equals(portInfo.getWsdlServiceName())) modified = true;
-        this.setUddiServiceName(portInfo.getWsdlServiceName());
+        if(!this.getUddiServiceName().equals(portInfo.getBusinessServiceName())) modified = true;
+        this.setUddiServiceName(portInfo.getBusinessServiceName());
+
+        if(!this.getWsdlServiceName().equals(portInfo.getWsdlServiceName())) modified = true;
+        this.setWsdlServiceName(portInfo.getWsdlServiceName());
 
         if(!this.getWsdlPortName().equals(portInfo.getWsdlPortName())) modified = true;
         this.setWsdlPortName(portInfo.getWsdlPortName());
