@@ -136,6 +136,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField proxyPortField;
     private JTextField proxyUsernameField;
     private JPasswordField proxyPasswordField;
+    private JCheckBox useKeepalivesCheckBox;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -702,6 +703,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         assertion.setHttpMethod(overrideRequestMethodRadioButton.isSelected() ? (HttpMethod)requestMethodComboBox.getSelectedItem() : null);
 
+        assertion.setUseKeepAlives(useKeepalivesCheckBox.isSelected());
+
         final boolean proxy = rbProxySpecified.isSelected();
         if (proxy) {
             assertion.setProxyHost(proxyHostField.getText());
@@ -816,6 +819,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         if (bra)
             overrideRequestMethodRadioButton.setEnabled(false);
         updateRequestMethodComboBoxEnableState();
+
+        useKeepalivesCheckBox.setSelected(assertion.isUseKeepAlives());
 
         String host = assertion.getProxyHost();
         if (host == null || host.trim().length() < 1) {

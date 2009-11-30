@@ -96,6 +96,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected long nonDefaultKeystoreId;
     protected String keyId;
     private HttpMethod httpMethod;
+    private boolean useKeepAlives = true;
     private String proxyHost = null;
     private int proxyPort = -1;
     private String proxyUsername = "";
@@ -155,6 +156,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setProxyPort(source.getProxyPort());
         this.setProxyUsername(source.getProxyUsername());
         this.setProxyPassword(source.getProxyPassword());
+        this.setUseKeepAlives(source.isUseKeepAlives());
     }
 
     @Override
@@ -551,6 +553,14 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     public void setProxyPassword(String proxyPassword) {
         this.proxyPassword = proxyPassword;
+    }
+
+    public boolean isUseKeepAlives() {
+        return useKeepAlives;
+    }
+
+    public void setUseKeepAlives(boolean useKeepAlives) {
+        this.useKeepAlives = useKeepAlives;
     }
 
     final static String baseName = "Route via HTTP(S)";

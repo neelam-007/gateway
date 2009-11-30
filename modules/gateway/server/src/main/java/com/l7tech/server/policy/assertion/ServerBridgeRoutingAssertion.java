@@ -503,7 +503,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpUseExpectContinue")) ) {
                     params.setUseExpectContinue(true);
                 }
-                if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpNoKeepAlive")) ) {
+                if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpNoKeepAlive")) || !assertion.isUseKeepAlives() ) {
                     params.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
                 }
                 if ( "1.0".equals(ServerConfig.getInstance().getPropertyCached("ioHttpVersion")) ) {
