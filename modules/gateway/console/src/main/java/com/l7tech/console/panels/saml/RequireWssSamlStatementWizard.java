@@ -31,7 +31,7 @@ public class RequireWssSamlStatementWizard extends Wizard {
             throw new IllegalArgumentException();
         }
         wizardInput = assertion;
-        setTitle("SAML Constraints Wizard");
+        setTitle("SAML Token Profile Wizard");
 
 
         getButtonHelp().addActionListener(new ActionListener() {
