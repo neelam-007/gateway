@@ -248,7 +248,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     }
 
     /**
-     * Gets the URL of the protected service from this service's WSDL.
+     * Get the URL of the protected service from this service's WSDL or configured default value.
      *
      * @return the protected service URL. May be null.
      * @throws WSDLException         if the WSDL could not be parsed

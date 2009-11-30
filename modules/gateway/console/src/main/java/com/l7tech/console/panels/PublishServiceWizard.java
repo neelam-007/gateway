@@ -26,7 +26,6 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.uddi.WsdlPortInfo;
 
 import javax.swing.*;
@@ -41,6 +40,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * The wizard that drives the use case of publishing SOAP services.
@@ -83,10 +84,13 @@ public class PublishServiceWizard extends Wizard {
                 return ((HttpRoutingAssertion)routingAssertion).getProtectedServiceUrl(); 
             } else {
                 try {
-                    Wsdl wsdl = service.parsedWsdl();
-                    if (wsdl != null) return wsdl.getServiceURI();
+                    URL url = service.serviceUrl();
+                    if ( url != null )
+                        return url.toExternalForm();
                 } catch (WSDLException e) {
                     logger.log(Level.WARNING, "Unable to parse WSDL", e);
+                } catch (MalformedURLException e) {
+                    logger.log(Level.WARNING, "Error accessing service URL", e);
                 }
             }
             return null;
@@ -108,10 +112,19 @@ public class PublishServiceWizard extends Wizard {
             this.wsdlPortInfo = wsdlPortInfo;
         }
 
+        public boolean isServiceControlRequired() {
+            return  wsdlPortInfo != null &&
+                    wsdlPortInfo.getWsdlUrl().equals(service.getWsdlUrl()) &&
+                    wsdlPortInfo.getAccessPointURL() != null &&
+                    wsdlPortInfo.getWsdlPortBinding() != null &&
+                    wsdlPortInfo.getWsdlPortName() != null &&
+                    wsdlPortInfo.getWsdlServiceName() != null;
+        }
+
         private boolean sharedPolicy = false;
         private RoutingAssertion routingAssertion;
         private PublishedService service = new PublishedService();
-        private Collection<ServiceDocument> serviceDocuments = new ArrayList();
+        private Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
         private CompositeAssertion assertions = new AllAssertion();
         /**
          * If the service was created from UDDI, then this will be non null;
@@ -143,18 +156,22 @@ public class PublishServiceWizard extends Wizard {
         setTitle("Publish SOAP Web Service Wizard");
         wizardInput = saBundle;
         addWizardListener(new WizardListener() {
+            @Override
             public void wizardSelectionChanged(WizardEvent e) {
                 // dont care
             }
+            @Override
             public void wizardFinished(WizardEvent e) {
                 completedBundle = false;
                 completeTask();
             }
+            @Override
             public void wizardCanceled(WizardEvent e) {
                 // dont care
             }
         });
         getButtonHelp().addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(PublishServiceWizard.this);
             }
@@ -200,18 +217,8 @@ public class PublishServiceWizard extends Wizard {
             saBundle.service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
 
             final WsdlPortInfo wsdlPortInfo = saBundle.getWsdlPortInfo();
-            final boolean serviceControlRequired = wsdlPortInfo != null &&
-                    wsdlPortInfo.getWsdlUrl().equals(saBundle.getService().getWsdlUrl()) &&
-                    wsdlPortInfo.getAccessPointURL() != null &&
-                    wsdlPortInfo.getWsdlPortBinding() != null &&
-                    wsdlPortInfo.getWsdlPortName() != null &&
-                    wsdlPortInfo.getWsdlServiceName() != null &&
-                    wsdlPortInfo.getBusinessEntityName() != null;
-
             final PublishedService newService = saBundle.getService();
-            if(serviceControlRequired){
-                newService.setDefaultRoutingUrl(wsdlPortInfo.getAccessPointURL());
-            }
+            newService.setDefaultRoutingUrl( saBundle.isServiceControlRequired() ? wsdlPortInfo.getAccessPointURL() : null);
 
             long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(newService, saBundle.getServiceDocuments());
             saBundle.service.setOid(oid);
@@ -221,7 +228,7 @@ public class PublishServiceWizard extends Wizard {
 
             //was the service created from UDDI, if the WSDL url still matches what was saved, then
             //record this
-            if(serviceControlRequired){
+            if( saBundle.isServiceControlRequired() ){
                 UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
                         wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(),
                         wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),

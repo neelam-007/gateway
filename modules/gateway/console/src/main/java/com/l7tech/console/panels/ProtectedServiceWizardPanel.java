@@ -4,7 +4,6 @@ import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.ContextMenuTextField;
 
@@ -12,12 +11,13 @@ import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.border.EmptyBorder;
-import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 /**
@@ -28,7 +28,6 @@ import java.net.URL;
  * @version 1.0
  */
 public class ProtectedServiceWizardPanel extends WizardStepPanel {
-    private PublishedService service = new PublishedService();
 
     /** Creates new form ServicePanel */
     public ProtectedServiceWizardPanel() {
@@ -141,9 +140,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
     }
 
     private boolean isDataValid() {
-        if (isAnonymous())
-            return true;
-        return (getIdentityTextField().getText().length() > 0);
+        return isAnonymous() || ( getIdentityTextField().getText().length() > 0 );
     }
 
     @Override
@@ -242,12 +239,14 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
             service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(sa.getServiceDocuments()) );
             service.setWsdlUrl(publishedService.getWsdlUrl());
             service.setWsdlXml(publishedService.getWsdlXml());
+            service.setDefaultRoutingUrl( sa.isServiceControlRequired() ? sa.getWsdlPortInfo().getAccessPointURL() : null);
             String text = getServiceUrlTextField().getText();
             if (text == null || "".equals(text)) {
                 getServiceUrlTextField().setText(sa.getServiceURI());
             }
 
         } catch (MalformedURLException e) {
+            logger.log( Level.WARNING, "Error updating service from settings.", e );
         }
 
     }
@@ -346,16 +345,16 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
 
         Utilities.equalizeComponentSizes(
-          new JComponent[]{realmLabel,
-                           identityLabel,
-                           passwordLabel});
+                realmLabel,
+                identityLabel,
+                passwordLabel);
 
 
         Utilities.equalizeComponentWidth(
-          new JComponent[]{getIdentityPasswordField(),
-                           getRealmTextField(),
-                           getIdentityTextField(),
-                           getAuthenticationMethodComboBox()});
+                getIdentityPasswordField(),
+                getRealmTextField(),
+                getIdentityTextField(),
+                getAuthenticationMethodComboBox());
 
         return credentialsPanel;
     }
@@ -368,7 +367,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         boolean isValid = isDataValid();
         if (wasValid == null || !Boolean.valueOf(isValid).equals(wasValid))
             notifyListeners();
-        wasValid = Boolean.valueOf(isValid);
+        wasValid = isValid;
     }
 
     private JTextField getIdentityTextField() {
@@ -423,15 +422,12 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
     private void doDefaultUrl() {
         try {
-            Wsdl wsdl = service.parsedWsdl();
-            if (wsdl != null) {
-                getServiceUrlTextField().setText(wsdl.getServiceURI());
-            } else {
-                System.out.println("NO WSDL?");
-            }
-        } catch (WSDLException e1) {
+            URL url = service.serviceUrl();
+            if ( url != null )
+                getServiceUrlTextField().setText(url.toExternalForm());
+        } catch (Exception e1) {
             //todo: errormanger?
-        }
+        } 
         getServiceUrlTextField().setEditable(false);
         getButtonChangeUrl().setText("Change");
     }
@@ -454,7 +450,8 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         return buttonChangeUrl;
     }
 
-    private Boolean wasValid = null;
+    private static final Logger logger = Logger.getLogger(ProtectedServiceWizardPanel.class.getName());
+
     private JPanel credentialsPanel;
     private JComboBox authenticationMethodComboBox;
     private JTextField identityTextField;
@@ -468,4 +465,8 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
     private JTextField serviceUrlTextField;
     private JButton buttonChangeUrl;
     private JPanel mainPanel;
+
+    private Boolean wasValid = null;
+    private PublishedService service = new PublishedService();
+
 }

@@ -10,8 +10,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.*;
 import javax.swing.*;
-import javax.wsdl.Port;
 import javax.wsdl.Binding;
+import javax.wsdl.WSDLException;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap12.SOAP12Binding;
 import javax.wsdl.extensions.soap.SOAPBinding;
@@ -25,6 +25,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.uddi.WsdlPortInfo;
+import com.l7tech.util.ExceptionUtils;
 
 /**
  * Service panel is the first stage for the Publish Service wizard.
@@ -114,26 +115,20 @@ public class ServicePanel extends WizardStepPanel {
             publishedService.setName(service.getName());
             publishedService.setWsdlUrl(service.getWsdlUrl());
             publishedService.setWsdlXml(service.getWsdlXml());
+            publishedService.setDefaultRoutingUrl( sa.isServiceControlRequired() ? wsdlPortInfo.getAccessPointURL() : null);
 
             sa.getServiceDocuments().clear();
             sa.getServiceDocuments().addAll(serviceDocuments);
 
             if (sa.getRoutingAssertion() == null) {
-                Port port = wsdl.getSoapPort();
-                // bugzilla #3539 no more bogus routing assertions
-                // sa.setRoutingAssertion(new HttpRoutingAssertion());
-                if (port != null) {
-                    String uri = wsdl.getUriFromPort(port);
-                    if (uri != null) {
-                        if (isHTTPURL(uri)) {
-                             sa.setRoutingAssertion(new HttpRoutingAssertion(uri));
-                        } else {
-                            String tmp = Wsdl.extractBaseURI(publishedService.getWsdlUrl()) + uri;
-                            if (isHTTPURL(uri)) {
-                                 sa.setRoutingAssertion(new HttpRoutingAssertion(tmp));
-                            }
-                        }
-                    }
+                try {
+                    URL url = publishedService.serviceUrl();
+                    if ( url != null )
+                        sa.setRoutingAssertion( new HttpRoutingAssertion( url.toExternalForm() ) );
+                } catch ( WSDLException we ) {
+                    logger.warning( "Error determining URL for routing assertion '"+ ExceptionUtils.getMessage( we )+"'." );
+                } catch ( MalformedURLException mue ) {
+                    logger.warning( "Error determining URL for routing assertion '"+ ExceptionUtils.getMessage( mue )+"'." );
                 }
                 if (sa.getAssertion() != null && sa.getAssertion().getChildren().isEmpty() && sa.getRoutingAssertion() != null) {
                     sa.getAssertion().addChild(sa.getRoutingAssertion());
@@ -142,17 +137,6 @@ public class ServicePanel extends WizardStepPanel {
         } catch (Exception e) {
             logger.log(Level.INFO, "Error storing settings.", e); // this used to do e.printStackTrace() this is slightly better.
         }
-    }
-
-    private boolean isHTTPURL(String in) {
-        if (in.length() > 4 && in.substring(0, 4).compareToIgnoreCase("http") == 0) {
-            try {
-                new URL(in);
-                return true;
-            } catch (MalformedURLException e) {
-                return false;
-            }
-        } else return false;
     }
 
     /**

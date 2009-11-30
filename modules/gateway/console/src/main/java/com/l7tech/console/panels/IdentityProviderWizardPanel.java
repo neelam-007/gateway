@@ -7,7 +7,6 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedSingleColumnTableModel;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.policy.assertion.Assertion;
@@ -55,6 +54,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         populateIdentityTables();
     }
 
+    @Override
     public String getDescription() {
         if (isSoap) {
             return "Specify Web Service access security and permissions.";
@@ -78,17 +78,17 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
      */
     private void initComponents() {
         providersComboBox = new JComboBox();
-        identitiesjPanel = new JPanel();
-        identitiesOutScrollPane = new JScrollPane();
+        final JPanel identitiesjPanel = new JPanel();
+        final JScrollPane identitiesOutScrollPane = new JScrollPane();
         identitiesOutTable = new JTable();
-        usersLabelPanel = new JPanel();
+        final JPanel usersLabelPanel = new JPanel();
         buttonAdd = new JButton();
         buttonAddAll = new JButton();
         buttonRemove = new JButton();
         buttonRemoveAll = new JButton();
-        identitiesInScrollPane = new JScrollPane();
+        final JScrollPane identitiesInScrollPane = new JScrollPane();
         identitiesInTable = new JTable();
-        buttonPanel = new JPanel();
+        final JPanel buttonPanel = new JPanel();
 
         ToolTipManager.sharedInstance().registerComponent(identitiesInTable);
         ToolTipManager.sharedInstance().registerComponent(identitiesOutTable);
@@ -102,6 +102,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         providersComboBox.setModel(getProvidersComboBoxModel());
         providersComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
             public Component getListCellRendererComponent(JList list,
                                                           Object value,
                                                           int index,
@@ -121,6 +122,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             /**
              * Invoked when an action occurs.
              */
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Object newSelectedItem = providersComboBox.getSelectedItem();
                 if (newSelectedItem != oldSelectedItem)
@@ -156,6 +158,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             /**
              * Invoked when an action occurs.
              */
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int[] rows = identitiesOutTable.getSelectedRows();
                 Object[] toAdd = new Object[rows.length];
@@ -182,6 +185,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             /**
              * Invoked when an action occurs.
              */
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Object[] listOut = getIdentitiesOutTableModel().getDataSet();
 
@@ -203,6 +207,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             /**
              * Invoked when an action occurs.
              */
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int[] rows = identitiesInTable.getSelectedRows();
                 Object[] toRemove = new Object[rows.length];
@@ -229,6 +234,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             /**
              * Invoked when an action occurs.
              */
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Object[] listIn = getIdentitiesInTableModel().getDataSet();
                 getIdentitiesOutTableModel().addRows(listIn);
@@ -265,7 +271,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             new Insets(0, 0, 8, 0), 0, 0));
 
 
-        authButtonGroup = new ButtonGroup();
+        final ButtonGroup authButtonGroup = new ButtonGroup();
         getAnonRadio().setSelected(true);
         authButtonGroup.add(getAnonRadio());
         add(getAnonRadio(),
@@ -389,9 +395,8 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         try {
             final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
             EntityHeader[] headers = admin.findAllIdentityProviderConfig();
-            for ( int i = 0; i < headers.length; i++ ) {
-                EntityHeader header = headers[i];
-                providersComboBoxModel.addElement(admin.findIdentityProviderConfigByID(header.getOid()));
+            for ( EntityHeader header : headers ) {
+                providersComboBoxModel.addElement( admin.findIdentityProviderConfigByID( header.getOid() ) );
             }
         } catch (Exception e) {
             e.printStackTrace();  //todo: fix this with better, general exception management
@@ -408,6 +413,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             return identitiesInTableModel;
 
         identitiesInTableModel = new SortedSingleColumnTableModel(new Comparator() {
+            @Override
             public int compare(Object o1, Object o2) {
                 Principal e1 = (Principal)o1;
                 Principal e2 = (Principal)o2;
@@ -416,6 +422,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             }
         }) {
 
+            @Override
             public boolean isCellEditable(int row, int col) {
                 return false;
             }
@@ -433,6 +440,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             return identitiesOutTableModel;
 
         identitiesOutTableModel = new SortedSingleColumnTableModel(new Comparator() {
+            @Override
             public int compare(Object o1, Object o2) {
                 Principal e1 = (Principal)o1;
                 Principal e2 = (Principal)o2;
@@ -441,6 +449,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             }
         }) {
 
+            @Override
             public boolean isCellEditable(int row, int col) {
                 return false;
             }
@@ -457,26 +466,25 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @SuppressWarnings({ "unchecked" })
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof PublishServiceWizard.ServiceAndAssertion) {
             PublishServiceWizard.ServiceAndAssertion
               collect = (PublishServiceWizard.ServiceAndAssertion)settings;
-            if (isSharedPolicy()) {
-                applySharedPolicySettings(collect);
-            } else {
-                applyIndividualPolicySettings(collect);
-            }
+            applySharedPolicySettings(collect);
         } else if (settings instanceof ArrayList) {
-            populateAssertions((ArrayList)settings);
+            populateAssertions((ArrayList<Assertion>)settings);
         }
     }
 
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         readSettings(settings);
     }
 
-    private void populateAssertions(ArrayList allAssertions) {
-        java.util.List identityAssertions = new ArrayList();
+    private void populateAssertions(ArrayList<Assertion> allAssertions) {
+        java.util.List<Assertion> identityAssertions = new ArrayList<Assertion>();
         if (sslCheckBox.isSelected()) {
             allAssertions.add(new SslAssertion());
         }
@@ -510,13 +518,13 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
     /**
      * Provides the wizard with the current data as shared policy
-     * 
+     *
      * @param pa the object representing wizard panel state
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
     private void applySharedPolicySettings(PublishServiceWizard.ServiceAndAssertion pa) {
-        java.util.ArrayList assertionList = new ArrayList();
+        java.util.ArrayList<Assertion> assertionList = new ArrayList<Assertion>();
         populateAssertions(assertionList);
         pa.setSharedPolicy(true);
         if (!assertionList.isEmpty()) {
@@ -527,54 +535,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
     }
 
     /**
-     * Provides the wizard with the current data as individual policies
-     * 
-     * @param pa the object representing wizard panel state
-     * @throws IllegalArgumentException if the the data provided
-     *                                  by the wizard are not valid.
-     */
-    private void applyIndividualPolicySettings(PublishServiceWizard.ServiceAndAssertion pa) {
-        pa.setSharedPolicy(false);
-        java.util.List allAssertions = new ArrayList();
-
-
-        Iterator it = getIdentitiesInTableModel().getDataIterator();
-        while (it.hasNext()) {
-
-            java.util.List identityAssertion = new ArrayList();
-
-
-            if (sslCheckBox.isSelected()) {
-                identityAssertion.add(new SslAssertion());
-            }
-
-            // crenedtials location, safe
-            Object o = credentialsLocationComboBox.getSelectedItem();
-            if (o != null && !isAnonymous()) {
-                Assertion ca = (Assertion)credentialsLocationMap.get(o);
-                if (ca != null && !(ca instanceof TrueAssertion)) // trueassertion is anonymous
-                    identityAssertion.add(ca);
-            }
-
-            Principal p = (Principal)it.next();
-            if (p instanceof User) {
-                User u = (User)p;
-                identityAssertion.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName()));
-            } else if (p instanceof Group) {
-                Group g = (Group)p;
-                MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getId());
-                identityAssertion.add(ma);
-            }
-            allAssertions.add(new AllAssertion(identityAssertion));
-        }
-        pa.setAssertion(new OneOrMoreAssertion(allAssertions));
-
-    }
-
-
-    /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Access Control";
     }
@@ -582,11 +545,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
     private boolean isAnonymous() {
         return getAnonRadio().isSelected();
     }
-
-    private boolean isSharedPolicy() {
-        return true;
-    }
-
 
     private void equalizeButtons() {
         JButton buttons[] = new JButton[]{
@@ -609,6 +567,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
           /* This is the only method defined by ListCellRenderer.  We just
            * reconfigure the Jlabel each time we're called.
            */
+          @Override
           public Component
             getTableCellRendererComponent(JTable table,
                                           Object value,
@@ -674,21 +633,14 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
     private SortedSingleColumnTableModel identitiesInTableModel;
     private SortedSingleColumnTableModel identitiesOutTableModel;
 
-    private JScrollPane identitiesOutScrollPane;
-
     private JButton buttonAddAll;
-    private JPanel identitiesjPanel;
     private JButton buttonRemove;
     private JButton buttonRemoveAll;
     private JComboBox providersComboBox;
-    private JScrollPane identitiesInScrollPane;
     private JButton buttonAdd;
     private JComboBox credentialsLocationComboBox;
-    private JPanel buttonPanel;
-    private JPanel usersLabelPanel;
     private JRadioButton anonRadio;
     private JRadioButton authRadio;
-    private ButtonGroup authButtonGroup;
 
     private JCheckBox sslCheckBox;
 
@@ -696,6 +648,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         if (anonRadio == null) {
             anonRadio = new JRadioButton("Allow Anonymous Access");
             anonRadio.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     populateIdentityTables();
                 }
@@ -708,6 +661,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         if (authRadio == null) {
             authRadio = new JRadioButton("Require Users to Authenticate:");
             authRadio.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     populateIdentityTables();
                 }
