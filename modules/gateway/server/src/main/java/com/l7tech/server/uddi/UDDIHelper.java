@@ -11,6 +11,7 @@ import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Pair;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -73,6 +74,22 @@ public class UDDIHelper {
 
         this.defaultResultBatchSize = resultBatchSize;
         this.defaultResultRowsMax = resultRowsMax;
+    }
+
+    /**
+     * For a cluster, this should return a pair for each configured http(s) listener configured on the cluster.
+     *
+     * The left side is the external URL which can be used to consume a service. The right side is the WSDL URL from
+     * which the WSDL for the published service can be downloaded
+     *
+     * All URL's returned are specific to the published service with the serviceOid supplied.
+     *
+     * @param serviceOid long oid of the published service to generated external URLs for
+     * @return Collection<Pair<String, String>> Collection of Pairs where each pair is a distinct end point URL for the
+     * service. There should only ever be one http pair and one https pair
+     */
+    public Collection<Pair<String, String>> getAllExternalEndpointAndWsdlUrls(long serviceOid){
+        return Collections.emptyList();
     }
 
     /**
