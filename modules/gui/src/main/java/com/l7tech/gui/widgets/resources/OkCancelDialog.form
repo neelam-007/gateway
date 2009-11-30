@@ -31,7 +31,7 @@
               </grid>
             </constraints>
             <properties>
-              <text value="Ok"/>
+              <text value="OK"/>
             </properties>
           </component>
           <component id="c4512" class="javax.swing.JButton" binding="cancelButton">
