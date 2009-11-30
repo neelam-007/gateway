@@ -956,7 +956,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         boolean publishInline = inlinePolicyIncludesCheckBox.isEnabled() && inlinePolicyIncludesCheckBox.isSelected();
 
         return
-                uddiProxyServiceInfo.isPublishWsPolicyEnabled() != publishPolicyCheckBox.isSelected() ||
+                uddiProxyServiceInfo.isPublishWsPolicyEnabled() != isProxyPublishWsPolicyEnabled() ||
                 uddiProxyServiceInfo.isPublishWsPolicyFull() != publishFull ||
                 uddiProxyServiceInfo.isPublishWsPolicyInlined() != publishInline;
     }
