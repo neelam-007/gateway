@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.ratelimit.console;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
 
@@ -47,6 +48,13 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         cancelButton.addActionListener(this);
 
         maxRequestsPerSecondField.setDocument(new NumberField(5, 90000));
+        maxRequestsPerSecondField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableOrDisableOkButton();
+            }
+        }));
+
         concurrencyLimitField.setDocument(new NumberField(5, 90000));
         concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.PresetInfo.DEFAULT_CONCURRENCY_LIMIT));
 
@@ -137,6 +145,11 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
             DialogDisplayer.showMessageDialog(this, err, "Error", JOptionPane.ERROR_MESSAGE, null);
 
         return null == err;
+    }
+
+    private void enableOrDisableOkButton() {
+        String maxRequests = maxRequestsPerSecondField.getText();
+        okButton.setEnabled(maxRequests != null && !maxRequests.trim().isEmpty());
     }
 
     @Override

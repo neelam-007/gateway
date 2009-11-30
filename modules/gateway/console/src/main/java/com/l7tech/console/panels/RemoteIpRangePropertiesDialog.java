@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.policy.assertion.RemoteIpRange;
+import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
 import javax.swing.text.DefaultFormatterFactory;
@@ -149,7 +150,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
     }
 
     private void bark(String woof) {
-        JOptionPane.showMessageDialog(this, woof, resources.getString("window.title"), JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(this, woof, subject.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString(), JOptionPane.ERROR_MESSAGE);
     }
 
     private void setInitialValues() {
