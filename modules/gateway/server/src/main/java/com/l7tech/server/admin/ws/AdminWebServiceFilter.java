@@ -15,6 +15,7 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -103,13 +104,13 @@ public class AdminWebServiceFilter implements Filter {
         stashManagerFactory = getBean(applicationContext, "stashManagerFactory", "stashManagerFactory", StashManagerFactory.class);
         adminLogin = getBean(applicationContext, "adminLogin", "adminLogin", AdminLogin.class);
 
-        final AllAssertion policy = new AllAssertion(Arrays.asList(
-            new OneOrMoreAssertion(Arrays.asList(
-                new AllAssertion(Arrays.asList(
+        final AllAssertion policy = new AllAssertion(Arrays.<Assertion>asList(
+            new OneOrMoreAssertion(Arrays.<Assertion>asList(
+                new AllAssertion(Arrays.<Assertion>asList(
                     new SslAssertion(false),
                     new HttpBasic())),
                 new SslAssertion(true), // With client cert
-                new AllAssertion(Arrays.asList(
+                new AllAssertion(Arrays.<Assertion>asList(
                     new RequireWssX509Cert(),
                     new RequireWssSignedElement())),
                 new SecureConversation()))));

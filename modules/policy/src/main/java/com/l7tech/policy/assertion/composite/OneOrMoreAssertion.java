@@ -5,6 +5,7 @@ package com.l7tech.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.Assertion;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public final class OneOrMoreAssertion extends CompositeAssertion {
     public OneOrMoreAssertion() {
     }
 
-    public OneOrMoreAssertion(List children) {
+    public OneOrMoreAssertion(List<? extends Assertion> children) {
         super(children);
     }
 

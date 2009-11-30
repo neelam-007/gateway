@@ -25,6 +25,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 
@@ -77,7 +78,7 @@ public class CreatePolicyAction extends SecureAction {
                 try {
                     //if the editor didn't already create some policy content, create a default here
                     if (!(policy.getType() == PolicyType.INTERNAL)) {
-                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new AuditDetailAssertion("Policy Fragment: " + policy.getName()))));
+                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Policy Fragment: " + policy.getName()))));
                         policy.setXml( xml );
                     }
                     policy.setFolder(((RootNode)root).getFolder());

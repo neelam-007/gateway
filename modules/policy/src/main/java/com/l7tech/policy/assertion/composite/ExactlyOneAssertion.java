@@ -5,6 +5,7 @@ package com.l7tech.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.Assertion;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_ICON;
 
@@ -21,7 +22,7 @@ public final class ExactlyOneAssertion extends CompositeAssertion implements Ser
         super();
     }
 
-    public ExactlyOneAssertion( List children ) {
+    public ExactlyOneAssertion( List<? extends Assertion> children ) {
         super( children );
     }
 

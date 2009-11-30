@@ -10,10 +10,9 @@ import java.util.*;
 
 /**
  * @author alex
- * @noinspection ForLoopReplaceableByForEach,unchecked
  */
 public abstract class CompositeAssertion extends Assertion implements Cloneable, Serializable {
-    protected List children = new ArrayList();
+    protected List<Assertion> children = new ArrayList<Assertion>();
 
     public CompositeAssertion() {
         super();
@@ -24,7 +23,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * The children will be copied, and each of their parents reset to point to us.
      * @param children the children to adopt.  May be empty but never null.
      */
-    public CompositeAssertion( List children ) {
+    public CompositeAssertion( List<? extends Assertion> children ) {
         super();
         setChildren(children);
     }
@@ -40,7 +39,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         return n;
     }
 
-    public Iterator children() {
+    public Iterator<Assertion> children() {
         return Collections.unmodifiableList( children ).iterator();
     }
 
@@ -48,7 +47,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * Return the list of children. Never null
      * @return List of child assertions
      */
-    public List getChildren() {
+    public List<Assertion> getChildren() {
         return children;
     }
 
@@ -84,17 +83,16 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         super.treeChanged();
     }
 
-    public void setChildren(List children) {
+    public void setChildren(List<? extends Assertion> children) {
         this.children = reparentedChildren(this, children);
         super.treeChanged();
     }
 
     @Override
     public void treeChanged() {
-        for (Iterator i = children.iterator(); i.hasNext();) {
-            Assertion kid = (Assertion)i.next();
-            if (kid.getParent() != this)
-                setParent(kid, this);
+        for ( Assertion kid : children ) {
+            if ( kid.getParent() != this )
+                setParent( kid, this );
         }
         super.treeChanged();
     }
@@ -102,11 +100,10 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     @Override
     protected int renumber(int newStartingOrdinal) {
         int n = super.renumber(newStartingOrdinal);
-        for (Iterator i = children.iterator(); i.hasNext();) {
-            Assertion kid = (Assertion)i.next();
-            if (kid.getParent() != this)
-                setParent(kid, this);
-            n = renumber(kid, n);
+        for ( Assertion kid : children ) {
+            if ( kid.getParent() != this )
+                setParent( kid, this );
+            n = renumber( kid, n );
         }
         return n;
     }
@@ -115,10 +112,9 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     public Assertion getAssertionWithOrdinal(int ordinal) {
         if (getOrdinal() == ordinal)
             return this;
-        for (Iterator i = children.iterator(); i.hasNext();) {
-            Assertion kid = (Assertion)i.next();
-            Assertion kidResult = kid.getAssertionWithOrdinal(ordinal);
-            if (kidResult != null)
+        for ( Assertion kid : children ) {
+            Assertion kidResult = kid.getAssertionWithOrdinal( ordinal );
+            if ( kidResult != null )
                 return kidResult;
         }
         return null;
@@ -138,11 +134,11 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * Disable all children if this assertion is a composite assertion and disabled.
      */
     public void disableDescendant() {
-        for (Object child: children) {
+        for (Assertion child: children) {
             // If it has been diabled, then just skip it and check the next child.
-            if (! ((Assertion)child).isEnabled()) continue;  
+            if (!child.isEnabled()) continue;
 
-            ((Assertion)child).setEnabled(false);
+            child.setEnabled(false);
 
             // If the child is someones' parent, then disable its descendant too.
             if (child instanceof CompositeAssertion) ((CompositeAssertion)child).disableDescendant();
@@ -155,12 +151,12 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * @param children      The children to copy and reparent.
      * @return              The copied and reparented list.
      */
-    private List copyAndReparentChildren(CompositeAssertion newParent, List children) {
-        List newKids = new LinkedList();
-        for (Iterator i = children.iterator(); i.hasNext(); ) {
-            Assertion child = ((Assertion)i.next()).getCopy();
-            setParent(child, newParent);
-            newKids.add(child);
+    private List<Assertion> copyAndReparentChildren(CompositeAssertion newParent, List<Assertion> children) {
+        List<Assertion> newKids = new LinkedList<Assertion>();
+        for ( final Assertion aChildren : children ) {
+            Assertion child = aChildren.getCopy();
+            setParent( child, newParent );
+            newKids.add( child );
         }
         return newKids;
     }
@@ -172,26 +168,21 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * @param children A list of child nodes whose Parent fields will be set to newParent.
      * @return A new list, but pointing at those same children.
      */
-    private List reparentedChildren(CompositeAssertion newParent, List children) {
-        List newKids = new LinkedList();
-        for (Iterator i = children.iterator(); i.hasNext(); ) {
-            Object next = i.next();
-            if (!(next instanceof Assertion))
-                throw new ClassCastException("CompositeAssertion contains a child of non-Assertion type " + next.getClass());
-            Assertion child = (Assertion)next;
-            setParent(child, newParent);
-            newKids.add(child);
+    private List<Assertion> reparentedChildren(CompositeAssertion newParent, List<? extends Assertion> children) {
+        List<Assertion> newKids = new LinkedList<Assertion>();
+        for ( Assertion child : children ) {
+            setParent( child, newParent );
+            newKids.add( child );
         }
         return newKids;
     }
 
     void simplify() {
-        List newKids = new ArrayList();
-        for (Iterator i = children.iterator(); i.hasNext();) {
-            Assertion assertion = (Assertion)i.next();
-            assertion = simplify(assertion, true);
-            if (assertion != null)
-                newKids.add(assertion);
+        List<Assertion> newKids = new ArrayList<Assertion>();
+        for ( Assertion assertion : children ) {
+            assertion = simplify( assertion, true );
+            if ( assertion != null )
+                newKids.add( assertion );
         }
         setChildren(newKids);
     }
@@ -203,9 +194,8 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
             b.append("  ");
         b.append(super.toString());
         b.append(":\n");
-        for (Iterator i = children.iterator(); i.hasNext();) {
-            Assertion a = (Assertion) i.next();
-            b.append(a.toIndentedString(indentLevel + 1));
+        for ( Assertion a : children ) {
+            b.append( a.toIndentedString( indentLevel + 1 ) );
         }
         return b.toString();
     }

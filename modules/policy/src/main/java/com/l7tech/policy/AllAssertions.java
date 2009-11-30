@@ -52,9 +52,9 @@ public class AllAssertions {
         new HttpNegotiate(),
         new WssBasic(),
         new WssDigest(),
-        new AllAssertion(Collections.singletonList(new FalseAssertion())),
-        new ExactlyOneAssertion(Collections.singletonList(new FalseAssertion())),
-        new OneOrMoreAssertion(Collections.singletonList(new FalseAssertion())),
+        new AllAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
+        new ExactlyOneAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
+        new OneOrMoreAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
         new SslAssertion(),
         new HttpRoutingAssertion(),
         new BridgeRoutingAssertion(),
@@ -115,9 +115,9 @@ public class AllAssertions {
         new HttpNegotiate(),
         new WssBasic(),
         new WssDigest(),
-        new AllAssertion(Collections.singletonList(new FalseAssertion())),    // Empty composites are not valid
-        new ExactlyOneAssertion(Collections.singletonList(new FalseAssertion())), // Empty composites are not valid
-        new OneOrMoreAssertion(Collections.singletonList(new FalseAssertion())), // Empty composites are not valid
+        new AllAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),    // Empty composites are not valid
+        new ExactlyOneAssertion(Collections.<Assertion>singletonList(new FalseAssertion())), // Empty composites are not valid
+        new OneOrMoreAssertion(Collections.<Assertion>singletonList(new FalseAssertion())), // Empty composites are not valid
         new FalseAssertion(),
         new SslAssertion(),
         new HttpRoutingAssertion(),

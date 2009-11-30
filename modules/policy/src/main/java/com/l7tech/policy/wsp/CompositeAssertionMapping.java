@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.policy.wsp;
@@ -42,7 +40,7 @@ class CompositeAssertionMapping implements TypeMapping {
         for (Assertion kid : kids) {
             if (kid == null)
                 throw new InvalidPolicyTreeException("Unable to serialize a null assertion");
-            Class<? extends Object> kidClass = kid.getClass();
+            Class<?> kidClass = kid.getClass();
             TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(kidClass, wspWriter);
             if (tm == null)
                 tm = (TypeMapping)kid.meta().get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
@@ -54,13 +52,13 @@ class CompositeAssertionMapping implements TypeMapping {
 
     protected void populateObject(CompositeAssertion cass, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         // gather children
-        List<Object> convertedKids = new LinkedList<Object>();
+        List<Assertion> convertedKids = new LinkedList<Assertion>();
         List<Element> kids = TypeMappingUtils.getChildElements(source);
         for (Element kid : kids) {
             TypedReference tr = WspConstants.typeMappingObject.thaw(kid, visitor);
-            if (tr.target == null)
-                throw new InvalidPolicyStreamException("CompositeAssertion " + cass + " has null child");
-            convertedKids.add(tr.target);
+            if (!(tr.target instanceof Assertion))
+                throw new InvalidPolicyStreamException("CompositeAssertion " + cass + " has null or invalid child");
+            convertedKids.add((Assertion)tr.target);
         }
         cass.setChildren(convertedKids);
     }

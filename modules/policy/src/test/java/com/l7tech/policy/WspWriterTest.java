@@ -354,7 +354,7 @@ public class WspWriterTest extends TestCase {
 
         Map bindings = new HashMap();
         bindings.put(bindingInfo.getBindingName(), bindingInfo);
-        Assertion policy = new AllAssertion(Arrays.asList(
+        Assertion policy = new AllAssertion(Arrays.<Assertion>asList(
             new RequestSwAAssertion(bindings)
         ));
         return policy;
@@ -410,7 +410,7 @@ public class WspWriterTest extends TestCase {
         XslTransformation xsl2 = new XslTransformation();
         xsl2.setResourceInfo(new StaticResourceInfo("<static xsl/>"));
         HttpRoutingAssertion http = new HttpRoutingAssertion();
-        AllAssertion all = new AllAssertion(Arrays.asList(
+        AllAssertion all = new AllAssertion(Arrays.<Assertion>asList(
             sv,
             xsl2,
             xsl1,
@@ -427,7 +427,7 @@ public class WspWriterTest extends TestCase {
     }
 
     public void testWrite50Policy() throws Exception {
-        AllAssertion all = new AllAssertion(Arrays.asList(
+        AllAssertion all = new AllAssertion(Arrays.<Assertion>asList(
             new RequireWssSignedElement(),
             new RequireWssEncryptedElement(),
             new WssSignElement(),

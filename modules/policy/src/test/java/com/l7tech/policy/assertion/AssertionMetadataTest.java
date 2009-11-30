@@ -95,7 +95,7 @@ public class AssertionMetadataTest extends TestCase {
     public void testDyanmicWsp() throws Exception {
         WspWriter.getPolicyXml(new UncustomizedMetadataAssertion());
 
-        Assertion root = new AllAssertion(Arrays.asList(new OneOrMoreAssertion(Arrays.asList(new UncustomizedMetadataAssertion()))));
+        Assertion root = new AllAssertion(Arrays.<Assertion>asList(new OneOrMoreAssertion(Arrays.<Assertion>asList(new UncustomizedMetadataAssertion()))));
 
         // Writer should Just Work, since the assertion knows its own external name and will use the default mapping
         String policyXml = WspWriter.getPolicyXml(root);
@@ -118,7 +118,7 @@ public class AssertionMetadataTest extends TestCase {
     private Assertion firstKid(Assertion parent) {
         if (parent instanceof CompositeAssertion) {
             CompositeAssertion comp = (CompositeAssertion)parent;
-            return (Assertion)comp.getChildren().get(0);
+            return comp.getChildren().get(0);
         }
         throw new IllegalArgumentException("not a CompositeAssertion: " + parent.getClass().getName());
     }
