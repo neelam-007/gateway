@@ -8,6 +8,7 @@ import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Config;
+import com.l7tech.util.Triple;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
@@ -478,24 +479,30 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         final Collection<UDDIBusinessServiceStatus> status = uddiBusinessServiceStatusManager.findAll();
 
         // Build key set
-        final Map<Pair<Long,String>,UDDIBusinessServiceStatus> registryServiceMap = new HashMap<Pair<Long,String>,UDDIBusinessServiceStatus>();
+        final Map<Triple<Long,Long,String>,UDDIBusinessServiceStatus> registryServiceMap = new HashMap<Triple<Long,Long,String>,UDDIBusinessServiceStatus>();
         for ( UDDIProxiedServiceInfo proxiedServiceInfo : proxiedServices ) {
             if ( proxiedServiceInfo.getProxiedServices() != null ) {
                 for ( UDDIProxiedService proxiedService : proxiedServiceInfo.getProxiedServices() ) {
                     if ( proxiedService.getUddiServiceKey() != null ) {
-                        registryServiceMap.put( new Pair<Long,String>( proxiedServiceInfo.getUddiRegistryOid(), proxiedService.getUddiServiceKey() ), null );
+                        registryServiceMap.put( new Triple<Long,Long,String>(
+                                proxiedServiceInfo.getUddiRegistryOid(),
+                                proxiedServiceInfo.getPublishedServiceOid(),
+                                proxiedService.getUddiServiceKey() ), null );
                     }
                 }
             }
         }
         for ( UDDIServiceControl origService : origServices ) {
-            registryServiceMap.put( new Pair<Long,String>( origService.getUddiRegistryOid(), origService.getUddiServiceKey() ), null );
+            registryServiceMap.put( new Triple<Long,Long,String>(
+                    origService.getUddiRegistryOid(),
+                    origService.getPublishedServiceOid(),
+                    origService.getUddiServiceKey() ), null );
         }
 
         // Delete stale entries
-        final Set<Pair<Long,String>> registryServiceKeys = registryServiceMap.keySet();
+        final Set<Triple<Long,Long,String>> registryServiceKeys = registryServiceMap.keySet();
         for ( UDDIBusinessServiceStatus serviceStatus : status ) {
-            Pair<Long,String> key = new Pair<Long,String>( serviceStatus.getUddiRegistryOid(), serviceStatus.getUddiServiceKey() );
+            Triple<Long,Long,String> key = new Triple<Long,Long,String>( serviceStatus.getUddiRegistryOid(), serviceStatus.getPublishedServiceOid(), serviceStatus.getUddiServiceKey() );
             if ( !registryServiceKeys.contains(key) ) {
                 logger.info( "Deleting business service status for " + key + "." );
                 uddiBusinessServiceStatusManager.delete( serviceStatus );
@@ -565,7 +572,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         }
     }
 
-    private void updateUDDIBusinessServiceStatus( final Map<Pair<Long,String>,UDDIBusinessServiceStatus> registryServiceMap,
+    private void updateUDDIBusinessServiceStatus( final Map<Triple<Long,Long,String>,UDDIBusinessServiceStatus> registryServiceMap,
                                                   final Map<Long,WsPolicyUDDIEvent> wsPolicyEventMap,
                                                   final long publishedServiceOid,
                                                   final long uddiRegistryOid,
@@ -574,7 +581,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                                                   final boolean metricsEnabled,
                                                   final boolean publishWsPolicyEnabled,
                                                   final String publishWsPolicyUrl ) throws SaveException, UpdateException {
-        final Pair<Long,String> key = new Pair<Long,String>( uddiRegistryOid, serviceKey );
+        final Triple<Long,Long,String> key = new Triple<Long,Long,String>( uddiRegistryOid, publishedServiceOid, serviceKey );
 
         boolean updated = false;
 
@@ -636,7 +643,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         boolean updated = false;
 
         if ( publishWsPolicyEnabled && wsPolicyUrl != null && !wsPolicyUrl.isEmpty() ) {
-            if ( (!(serviceStatus.getUddiPolicyStatus() == UDDIBusinessServiceStatus.Status.PUBLISHED && 
+            if ( (!(serviceStatus.getUddiPolicyStatus() == UDDIBusinessServiceStatus.Status.PUBLISHED &&
                     wsPolicyUrl.equals(serviceStatus.getUddiPolicyUrl())) ||
                   !(serviceStatus.getUddiPolicyStatus() != UDDIBusinessServiceStatus.Status.PUBLISH &&
                     wsPolicyUrl.equals(serviceStatus.getUddiPolicyPublishUrl() ) ) ) ) {
