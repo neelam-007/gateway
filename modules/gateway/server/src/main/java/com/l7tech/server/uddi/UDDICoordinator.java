@@ -643,9 +643,9 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         boolean updated = false;
 
         if ( publishWsPolicyEnabled && wsPolicyUrl != null && !wsPolicyUrl.isEmpty() ) {
-            if ( (!(serviceStatus.getUddiPolicyStatus() == UDDIBusinessServiceStatus.Status.PUBLISHED &&
+            if ( !((serviceStatus.getUddiPolicyStatus() == UDDIBusinessServiceStatus.Status.PUBLISHED &&
                     wsPolicyUrl.equals(serviceStatus.getUddiPolicyUrl())) ||
-                  !(serviceStatus.getUddiPolicyStatus() != UDDIBusinessServiceStatus.Status.PUBLISH &&
+                   (serviceStatus.getUddiPolicyStatus() != UDDIBusinessServiceStatus.Status.PUBLISH &&
                     wsPolicyUrl.equals(serviceStatus.getUddiPolicyPublishUrl() ) ) ) ) {
                 updated = true;
                 serviceStatus.setUddiPolicyStatus( UDDIBusinessServiceStatus.Status.PUBLISH );
