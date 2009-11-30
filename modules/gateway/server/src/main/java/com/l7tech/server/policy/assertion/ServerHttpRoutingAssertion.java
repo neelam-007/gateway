@@ -757,7 +757,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             final String ctype = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_TYPE);
             ContentTypeHeader outerContentType = ctype != null ? ContentTypeHeader.parseValue(ctype) : null;
             boolean passthroughSoapFault = false;
-            if (status == HttpConstants.STATUS_SERVER_ERROR && context.getService() != null && context.getService().isSoap() &&
+            if (assertion.isPassThroughSoapFaults() && status == HttpConstants.STATUS_SERVER_ERROR &&
+                context.getService() != null && context.getService().isSoap() &&
                 outerContentType != null && outerContentType.isXml()) {
                 passthroughSoapFault = true;
             }

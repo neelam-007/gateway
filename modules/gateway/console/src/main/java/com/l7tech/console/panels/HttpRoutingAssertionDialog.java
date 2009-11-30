@@ -121,6 +121,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JButton editReqPmButton;
     private JButton editResHrButton;
     private JRadioButton failOnErrorRadio;
+    private JCheckBox passThroughCheckBox;
     private JRadioButton neverFailRadio;
     private JRadioButton resMsgDestDefaultRadioButton;
     private JRadioButton resMsgDestVariableRadioButton;
@@ -285,6 +286,15 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         };
         connectTimeoutDefaultCheckBox.addActionListener(enableSpinners);
         readTimeoutDefaultCheckBox.addActionListener(enableSpinners);
+
+        ActionListener enablePassThroughFaults = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                passThroughCheckBox.setEnabled(failOnErrorRadio.isSelected());
+            }
+        };
+        failOnErrorRadio.addActionListener(enablePassThroughFaults);
+        neverFailRadio.addActionListener(enablePassThroughFaults);
 
         ButtonGroup methodGroup = new ButtonGroup();
         methodGroup.add(this.authNoneRadio);
@@ -698,7 +708,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
         assertion.setFollowRedirects(followRedirectCheck.isSelected());
         assertion.setFailOnErrorStatus(failOnErrorRadio.isSelected());
-        
+        assertion.setPassThroughSoapFaults(passThroughCheckBox.isSelected());
+
         assertion.setGzipEncodeDownstream(gzipCheckBox.isSelected());
 
         assertion.setHttpMethod(overrideRequestMethodRadioButton.isSelected() ? (HttpMethod)requestMethodComboBox.getSelectedItem() : null);
@@ -796,9 +807,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         followRedirectCheck.setSelected(assertion.isFollowRedirects());
         if (assertion.isFailOnErrorStatus()) {
             failOnErrorRadio.setSelected(true);
+            passThroughCheckBox.setEnabled(true);
         } else {
             neverFailRadio.setSelected(true);
+            passThroughCheckBox.setEnabled(false);
         }
+        passThroughCheckBox.setSelected(assertion.isPassThroughSoapFaults());
 
         if (assertion.isGzipEncodeDownstream()) {
             gzipCheckBox.setSelected(true);

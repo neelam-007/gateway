@@ -3,7 +3,7 @@
   <grid id="83deb" binding="mainPanel" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="52" y="32" width="576" height="670"/>
+      <xy x="52" y="32" width="615" height="670"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -170,7 +170,7 @@
                       </component>
                     </children>
                   </grid>
-                  <grid id="39de1" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="39de1" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -188,10 +188,18 @@
                       </component>
                       <component id="9db2f" class="javax.swing.JRadioButton" binding="neverFailRadio">
                         <constraints>
-                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <text value="Never fail as long as target returns an answer"/>
+                        </properties>
+                      </component>
+                      <component id="a9085" class="javax.swing.JCheckBox" binding="passThroughCheckBox">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="3" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="Pass through SOAP faults with error status 500"/>
                         </properties>
                       </component>
                     </children>

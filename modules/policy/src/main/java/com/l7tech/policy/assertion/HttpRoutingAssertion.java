@@ -85,6 +85,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected HttpPassthroughRuleSet requestParamRules = new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{});
     protected boolean followRedirects = false;
     protected boolean failOnErrorStatus = true;
+    protected boolean passThroughSoapFaults = true;
     protected boolean gzipEncodeDownstream;
 
     protected boolean krbDelegatedAuthentication;
@@ -217,6 +218,14 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     public void setFailOnErrorStatus(boolean failOnErrorStatus) {
         this.failOnErrorStatus = failOnErrorStatus;
+    }
+
+    public boolean isPassThroughSoapFaults() {
+        return passThroughSoapFaults;
+    }
+
+    public void setPassThroughSoapFaults(boolean passThroughSoapFaults) {
+        this.passThroughSoapFaults = passThroughSoapFaults;
     }
 
     /**
