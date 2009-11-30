@@ -69,8 +69,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public WsdlPortInfo[] findWsdlInfosForSingleBusinessService(long registryOid, String serviceKey, boolean getFirstOnly) throws FindException {
-        return new WsdlPortInfo[0];
+    public JobId<WsdlPortInfo[]> findWsdlInfosForSingleBusinessService(long registryOid, String serviceKey, boolean getFirstOnly) throws FindException {
+        return null;
     }
 
     /**

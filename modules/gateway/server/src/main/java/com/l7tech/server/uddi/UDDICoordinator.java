@@ -188,9 +188,6 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                         }
                         timer.schedule( new PublishedServiceWsdlUpdatedTimerTask(this, service.getOid()), 0 );
                         return;
-                    }else if(publishedServiceUpdate && EntityInvalidationEvent.DELETE == op){
-                        //TODO [Donal] need to be able to clean up UDDI with entity missing - with just it's id
-                        //perhaps turn off cascade delete
                     }
                 }
             } else if ( UDDIProxiedServiceInfo.class.equals(entityInvalidationEvent.getEntityClass()) ) {

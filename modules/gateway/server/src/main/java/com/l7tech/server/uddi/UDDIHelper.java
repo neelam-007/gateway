@@ -12,10 +12,7 @@ import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.SyspropUtil;
 
-import java.util.Properties;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.lang.reflect.Proxy;
@@ -157,6 +154,9 @@ public class UDDIHelper {
         return gateway;
     }
 
+    /**
+     * If the search was interuppted the returned array may be empty, never null
+     */
     public UDDINamedEntity[] getMatchingBusinesses( final UDDIClient uddiClient,
                                                     final String namePattern,
                                                     final boolean caseSensitive ) throws UDDIException {
@@ -170,6 +170,9 @@ public class UDDIHelper {
 
             Collection<UDDINamedEntity> businesses =
                     uddiClient.listBusinessEntities(namePattern, caseSensitive, head, resultBatchSize);
+
+            //this will happen if search was interrupted
+            if(businesses == null) return uddiNamedEntities.toArray(new UDDINamedEntity[uddiNamedEntities.size()]);
 
             uddiNamedEntities.addAll(businesses);
 
@@ -187,13 +190,19 @@ public class UDDIHelper {
         return uddiNamedEntities.toArray(new UDDINamedEntity[uddiNamedEntities.size()]);
     }
 
+    /**
+     * If the search was interuppted the returned array will empty, never null
+     */
     public WsdlPortInfo[] getWsdlInfoForServiceKey(final UDDIClient uddiClient, final String serviceKey, final boolean getFirstOnly) throws UDDIException {
         final Collection<WsdlPortInfo> infoCollection = uddiClient.listWsdlPortsForService(serviceKey, getFirstOnly);
+        //this will happen if search was interrupted
+        if(infoCollection == null) return new WsdlPortInfo[]{};
+
         return infoCollection.toArray(new WsdlPortInfo[infoCollection.size()]);
     }
 
     /**
-     * If the search was interuppted the returned array will empty, never null
+     * If the search was interuppted the returned array may be empty, never null
      */
     public WsdlPortInfo[] getWsdlByServiceName(final UDDIClient uddiClient,
                                                final String namePattern,

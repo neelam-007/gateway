@@ -81,25 +81,27 @@ public interface UDDIClient extends Closeable {
     /**
      * List services with their WSDL URLs.
      *
-     * @param serviceName The service name to match (pattern)
+     * @param serviceName   The service name to match (pattern)
      * @param caseSensitive True for a case sensitive search
-     * @param offset The offset into the search results (use when paging)
-     * @param maxRows The maximum number of rows to return (can be used for paging)
-     * @param getWsdlInfo boolean. If true then WSDL info will be returned. Option for when the UDDI performance is very poor.
+     * @param offset        The offset into the search results (use when paging)
+     * @param maxRows       The maximum number of rows to return (can be used for paging)
+     * @param getWsdlInfo   boolean. If true then WSDL info will be returned. Option for when the UDDI performance is very poor.
      * @return The collection of WsdlPortInfo. Only the businessServiceName, businessServiceKey and businessEntityKey
-     * properties are guaranteed to be non null. If getWsdlInfo is true, then the wsdlUrl property will be non null
+     *         properties are guaranteed to be non null. If getWsdlInfo is true, then the wsdlUrl property will be non null.
+     *         Null if the Thread was interrupted
      * @throws UDDIException if an error occurs
      */
     Collection<WsdlPortInfo> listServiceWsdls(String serviceName, boolean caseSensitive, int offset, int maxRows, boolean getWsdlInfo) throws UDDIException;
 
     /**
      * List all wsdl:ports modelled by a BusinessService in UDDI
-     *
+     * <p/>
      * Only valid bindingTemplates will be contained in the results. Non valid bindingTemplates are omitted
      *
-     * @param serviceKey String serviceKey of the BusinessService to list wsdl:port info for
+     * @param serviceKey   String serviceKey of the BusinessService to list wsdl:port info for
      * @param getFirstOnly if true, the first found valid wsdl:port will be returned. Useful when only a WSDL URL is required
-     * @return The collection of WsdlPortInfo. All properties are guaranteed to be non null. Never null, can be empty
+     * @return The collection of WsdlPortInfo. All properties are guaranteed to be non null. Can be empty.
+     *         Null if the Thread was interrupted
      * @throws UDDIException if an error occurs
      */
     Collection<WsdlPortInfo> listWsdlPortsForService(String serviceKey, boolean getFirstOnly) throws UDDIException;
@@ -111,7 +113,7 @@ public interface UDDIClient extends Closeable {
      * @param caseSensitive True for a case sensitive search
      * @param offset The offset into the search results (use when paging)
      * @param maxRows The maximum number of rows to return (can be used for paging)
-     * @return The collection of keys/names/urls
+     * @return The collection of keys/names/urls. Null if the search was cnacelled
      * @throws UDDIException if an error occurs
      */
     Collection<UDDINamedEntity> listBusinessEntities(String businessName, boolean caseSensitive, int offset, int maxRows) throws UDDIException;

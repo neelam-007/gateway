@@ -211,35 +211,48 @@ public class SearchUddiDialog extends JDialog {
                             final String regName = (String) uddiRegistryComboBox.getSelectedItem();
                             final UDDIRegistry uddiRegistry = allRegistries.get(regName);
                             final SelectWsdlPortDialog portDialog;
+
+                            final JProgressBar bar = new JProgressBar();
+                            bar.setIndeterminate(true);
+                            final CancelableOperationDialog cancelDlg =
+                                    new CancelableOperationDialog(SearchUddiDialog.this, "Searching UDDI", "Please wait, Searching UDDI...", bar);
                             try {
-                                portDialog = new SelectWsdlPortDialog(SearchUddiDialog.this, uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey());
+                                final Callable<WsdlPortInfo[]> wsdlInfoCallable = getWsdlPortSearchCallable(uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey(), false);
+                                final WsdlPortInfo [] wsdlPortsFound = Utilities.doWithDelayedCancelDialog(wsdlInfoCallable, cancelDlg, DELAY_INITIAL);
+                                portDialog = new SelectWsdlPortDialog(SearchUddiDialog.this, wsdlPortsFound);
+
+                                final WsdlPortInfo [] wsdlPortInfo = new WsdlPortInfo[1];
+                                portDialog.addSelectionListener(new SelectWsdlPortDialog.ItemSelectedListener() {
+                                    @Override
+                                    public void itemSelected(Object item) {
+                                        if(item == null) return;
+                                        if(!(item instanceof WsdlPortInfo)) return;
+                                        wsdlPortInfo[0] = (WsdlPortInfo) item;
+                                    }
+                                });
+                                portDialog.setSize(700, 500);
+                                portDialog.setModal(true);
+                                DialogDisplayer.display(portDialog, new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if(wsdlPortInfo[0] == null) return;
+                                        final boolean canDispose = validateWsdlSelection(SearchUddiDialog.this, wsdlPortInfo[0]);
+                                        if(canDispose){
+                                            fireItemSelectedEvent(wsdlPortInfo[0]);
+                                            dispose();
+                                        }
+                                    }
+                                });
+                                
                             } catch (FindException e1) {
                                 showErrorMessage("Cannot find wsdl:port information", "Cannot display all applicable wsdl:port for the BusinessService: " + ExceptionUtils.getMessage(e1), e1);
-                                return;
+                            } catch (InvocationTargetException e1) {
+                                logger.log(Level.WARNING, ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1));
+                                JOptionPane.showMessageDialog(SearchUddiDialog.this, ExceptionUtils.getMessage(e1), "Error Searching UDDI Registry", JOptionPane.ERROR_MESSAGE);
+                            } catch (InterruptedException e1) {
+                                //Should be handled inside of either callable
+                                logger.log(Level.FINE, "Search of UDDI was cancelled");
                             }
-
-                            final WsdlPortInfo [] wsdlPortInfo = new WsdlPortInfo[1];
-                            portDialog.addSelectionListener(new SelectWsdlPortDialog.ItemSelectedListener() {
-                                @Override
-                                public void itemSelected(Object item) {
-                                    if(item == null) return;
-                                    if(!(item instanceof WsdlPortInfo)) return;
-                                    wsdlPortInfo[0] = (WsdlPortInfo) item;
-                                }
-                            });
-                            portDialog.setSize(700, 500);
-                            portDialog.setModal(true);
-                            DialogDisplayer.display(portDialog, new Runnable() {
-                                @Override
-                                public void run() {
-                                    if(wsdlPortInfo[0] == null) return;
-                                    final boolean canDispose = validateWsdlSelection(SearchUddiDialog.this, wsdlPortInfo[0]);
-                                    if(canDispose){
-                                        fireItemSelectedEvent(wsdlPortInfo[0]);
-                                        dispose();
-                                    }
-                                }
-                            });
                         }else{
                             if(!retrieveWSDLURLCheckBox.isSelected()){
                                 //we need to get the WSDL from UDDI
@@ -247,19 +260,30 @@ public class SearchUddiDialog extends JDialog {
                                 final UDDIRegistry uddiRegistry = allRegistries.get(regName);
 
                                 try {
-                                    final WsdlPortInfo[] allApplicableWsdlInfos =
-                                            Registry.getDefault().getServiceManager().findWsdlInfosForSingleBusinessService(uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey(), true);
-                                    if(allApplicableWsdlInfos == null || allApplicableWsdlInfos.length == 0){
+                                    final JProgressBar bar = new JProgressBar();
+                                    bar.setIndeterminate(true);
+                                    final CancelableOperationDialog cancelDlg =
+                                            new CancelableOperationDialog(SearchUddiDialog.this, "Searching UDDI", "Please wait, Searching UDDI for WSDL URL...", bar);
+
+                                    final Callable<WsdlPortInfo[]> wsdlInfoCallable = getWsdlPortSearchCallable(uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey(), true);
+                                    final WsdlPortInfo[] allApplicableWsdlInfos = Utilities.doWithDelayedCancelDialog(wsdlInfoCallable, cancelDlg, DELAY_INITIAL);
+                                    if (allApplicableWsdlInfos == null || allApplicableWsdlInfos.length == 0) {
                                         throw new FindException("No WSDL URL could be found for BusinessService");
                                     }
                                     final boolean canDispose = validateWsdlSelection(SearchUddiDialog.this, allApplicableWsdlInfos[0]);
-                                    if(canDispose){
+                                    if (canDispose) {
                                         fireItemSelectedEvent(allApplicableWsdlInfos[0]);
                                         dispose();
                                     }
-                                    
+
                                 } catch (FindException e1) {
                                     showErrorMessage("Error getting WSDL", "Cannot get WSDL from UDDI for BusinessService: " + ExceptionUtils.getMessage(e1), e1);
+                                } catch (InvocationTargetException e1) {
+                                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1));
+                                    JOptionPane.showMessageDialog(SearchUddiDialog.this, ExceptionUtils.getMessage(e1), "Error Searching UDDI Registry for WSDL URL", JOptionPane.ERROR_MESSAGE);
+                                } catch (InterruptedException e1) {
+                                    //Should be handled inside of either callable
+                                    logger.log(Level.FINE, "Search of UDDI for WSDL URL was cancelled");
                                 }
                             }else{
                                 //this will show any required warnings to the user
@@ -545,7 +569,59 @@ public class SearchUddiDialog extends JDialog {
                     }
                     return result;
                 } catch (InterruptedException e) {
-                    logger.log(Level.FINE, "UDDI search is canccelled. Attemping to stop search on Gateway");
+                    logger.log(Level.FINE, "UDDI search is cancelled. Attemping to stop search on Gateway");
+                    if(jobId != null) Registry.getDefault().getServiceManager().cancelJob(jobId, true);
+                    throw e;
+                }
+            }
+        };
+    }
+
+    /**
+     * This callable does not return null.
+     * @param registryOid long oid of the uddi registry to search. Do not get this from the UI as it may have changed
+     * @param serviceKey String serviceKey of the BusinessService to search for applicable wsdl:ports
+     * @param getFirstOnly
+     * @return Callable WsdlPortInfo[] which can be run async to search UDDI
+     */
+    private Callable<WsdlPortInfo[]> getWsdlPortSearchCallable(final long registryOid,
+                                                               final String serviceKey,
+                                                               final boolean getFirstOnly) {
+        return new Callable<WsdlPortInfo[]>() {
+            @Override
+            public WsdlPortInfo[] call() throws Exception {
+                final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
+                if (serviceAdmin == null) throw new RuntimeException("Service Admin reference not found");
+
+                final AsyncAdminMethods.JobId<WsdlPortInfo[]> jobId =
+                        serviceAdmin.findWsdlInfosForSingleBusinessService(registryOid, serviceKey, getFirstOnly);
+
+                try {
+                    WsdlPortInfo [] result = null;
+                    double delay = DELAY_INITIAL;
+                    Thread.sleep((long)delay);
+                    while (result == null) {
+                        String status = serviceAdmin.getJobStatus(jobId);
+                        if (status == null)
+                            throw new IllegalStateException("Server could not find our uddi serach job ID");
+                        if (status.startsWith("i")) {
+                            final AsyncAdminMethods.JobResult<WsdlPortInfo[]> jobResult = serviceAdmin.getJobResult(jobId);
+                            result = jobResult.result;
+                            if (result == null){
+                                final String errorMessage = jobResult.throwableMessage;
+                                if(errorMessage != null){
+                                    throw new RuntimeException(errorMessage);
+                                }else{
+                                    throw new RuntimeException("Unknown problem searching UDDI. Please check Gateway logs");
+                                }
+                            }
+                        }
+                        delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
+                        Thread.sleep((long)delay);
+                    }
+                    return result;
+                } catch (InterruptedException e) {
+                    logger.log(Level.FINE, "UDDI search is cancelled. Attemping to stop search on Gateway");
                     if(jobId != null) Registry.getDefault().getServiceManager().cancelJob(jobId, true);
                     throw e;
                 }

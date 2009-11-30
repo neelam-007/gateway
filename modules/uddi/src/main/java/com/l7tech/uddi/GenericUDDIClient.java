@@ -661,6 +661,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public Collection<WsdlPortInfo> listWsdlPortsForService(final String serviceKey, boolean getFirstOnly) throws UDDIException {
         final Collection<WsdlPortInfo> returnColl = new ArrayList<WsdlPortInfo>();
 
+        if(Thread.currentThread().isInterrupted()) {
+            logger.log(Level.FINEST, "UDDI search was cancelled");
+            return null;
+        }
+
         final String authToken = getAuthToken();
         final UDDIInquiryPortType inquiryPort = getInquirePort();
 
@@ -669,6 +674,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         getServiceDetail.getServiceKey().add(serviceKey);
 
         try {
+            if(Thread.currentThread().isInterrupted()) {
+                logger.log(Level.FINEST, "UDDI search was cancelled");
+                return null;
+            }
+            
             final ServiceDetail serviceDetail = inquiryPort.getServiceDetail(getServiceDetail);
             if(serviceDetail.getBusinessService().isEmpty())
                 throw new UDDIException("No BusinessService found for serviceKey: " + serviceKey);//should never happen according to spec, exception should already have been thrown
@@ -690,6 +700,12 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             final GetBusinessDetail businessDetail = new GetBusinessDetail();
             businessDetail.setAuthInfo(authToken);
             businessDetail.getBusinessKey().add(businessKey);
+
+            if(Thread.currentThread().isInterrupted()) {
+                logger.log(Level.FINEST, "UDDI search was cancelled");
+                return null;
+            }
+
             final BusinessDetail detail = inquiryPort.getBusinessDetail(businessDetail);
             if(detail.getBusinessEntity().isEmpty()){
                 //this should never happen as the above getBusinessDetail should thrown if it finds an invalid business key
@@ -700,6 +716,10 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             final String businessEntityName = get(businessEntity.getName(), "business entity name", false).getValue();
             final String businessServiceWsdlLocalName = getServiceWsdlLocalName(categoryBag);
 
+            if(Thread.currentThread().isInterrupted()) {
+                logger.log(Level.FINEST, "UDDI search was cancelled");
+                return null;
+            }
 
             final UDDIOperationalInfo operationalInfo = getOperationalInfo(businessService.getServiceKey());
             final long lastUddiMonitoredTimeStamp = operationalInfo.getModifiedIncludingChildrenTime();//safe to use, will be created time initially
@@ -717,6 +737,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             getBindingDetail.setAuthInfo(authToken);
             getBindingDetail.getBindingKey().addAll(bindingKeys);//todo perhaps make batch configurable like for tModels
 
+            if(Thread.currentThread().isInterrupted()) {
+                logger.log(Level.FINEST, "UDDI search was cancelled");
+                return null;
+            }
+            
             final BindingDetail bindingDetail = inquiryPort.getBindingDetail(getBindingDetail);
             if(bindingDetail.getBindingTemplate().isEmpty()){
                 //this should never happen, as we just asked for these BindingTemplates by their keys, and if the keys don't exist a UDDIException should have been thrown
@@ -747,6 +772,12 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
             //process
             for(Map.Entry<String, Set<String>> entry: bindingKeyToRefTModels.entrySet()){
+
+                if(Thread.currentThread().isInterrupted()) {
+                    logger.log(Level.FINEST, "UDDI search was cancelled");
+                    return null;
+                }
+
                 final String bindingKey = entry.getKey();
 
                 final BindingTemplate bindingTemplate = bindingKeyToObject.get(bindingKey);

@@ -519,44 +519,51 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public WsdlPortInfo[] findWsdlInfosForSingleBusinessService(long registryOid, final String serviceKey, boolean getFirstOnly) throws FindException {
-        try {
-            final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
-            if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
-            final WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlInfoForServiceKey(getUDDIClient(uddiRegistry), serviceKey, getFirstOnly);
-            for(WsdlPortInfo wsdlPortInfo: wsdlPortInfoInfo){
-                wsdlPortInfo.setUddiRegistryOid(registryOid);
-            }
-            //noinspection unchecked
-            Arrays.sort(wsdlPortInfoInfo, new ResolvingComparator(new Resolver<WsdlPortInfo,String>(){
-                @Override
-                public String resolve(WsdlPortInfo key) {
-                    return key.getBusinessServiceKey() + "" + key.getWsdlPortName();
-                }
-            }, false));
-            return wsdlPortInfoInfo;
-        } catch (UDDIException e) {
-            throw buildFindException(e);
-        }
-    }
-
-    @Override
-    public JobId<WsdlPortInfo[]> findWsdlInfosFromUDDIRegistry(final long registryOid,
-                                                                    final String namePattern,
-                                                                    final boolean caseSensitive,
-                                                                    final boolean getWsdlURL) {
-        return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<WsdlPortInfo[]>(){
+    public JobId<WsdlPortInfo[]> findWsdlInfosForSingleBusinessService(final long registryOid,
+                                                                       final String serviceKey,
+                                                                       final boolean getFirstOnly) throws FindException {
+        return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<WsdlPortInfo[]>() {
             @Override
             public WsdlPortInfo[] call() throws Exception {
                 try {
                     final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
-                    if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
-                    WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive, getWsdlURL);
-                    for(WsdlPortInfo wsdlPortInfo: wsdlPortInfoInfo){
+                    if (uddiRegistry == null) throw new FindException("Invalid registry " + registryOid);
+                    final WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlInfoForServiceKey(getUDDIClient(uddiRegistry), serviceKey, getFirstOnly);
+                    for (WsdlPortInfo wsdlPortInfo : wsdlPortInfoInfo) {
                         wsdlPortInfo.setUddiRegistryOid(registryOid);
                     }
                     //noinspection unchecked
-                    Arrays.sort(wsdlPortInfoInfo, new ResolvingComparator(new Resolver<WsdlPortInfo,String>(){
+                    Arrays.sort(wsdlPortInfoInfo, new ResolvingComparator(new Resolver<WsdlPortInfo, String>() {
+                        @Override
+                        public String resolve(WsdlPortInfo key) {
+                            return key.getBusinessServiceKey() + "" + key.getWsdlPortName();
+                        }
+                    }, false));
+                    return wsdlPortInfoInfo;
+                } catch (UDDIException e) {
+                    throw buildFindException(e);
+                }
+            }
+        })), WsdlPortInfo[].class);
+    }
+
+    @Override
+    public JobId<WsdlPortInfo[]> findWsdlInfosFromUDDIRegistry(final long registryOid,
+                                                               final String namePattern,
+                                                               final boolean caseSensitive,
+                                                               final boolean getWsdlURL) {
+        return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<WsdlPortInfo[]>() {
+            @Override
+            public WsdlPortInfo[] call() throws Exception {
+                try {
+                    final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
+                    if (uddiRegistry == null) throw new FindException("Invalid registry " + registryOid);
+                    WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive, getWsdlURL);
+                    for (WsdlPortInfo wsdlPortInfo : wsdlPortInfoInfo) {
+                        wsdlPortInfo.setUddiRegistryOid(registryOid);
+                    }
+                    //noinspection unchecked
+                    Arrays.sort(wsdlPortInfoInfo, new ResolvingComparator(new Resolver<WsdlPortInfo, String>() {
                         @Override
                         public String resolve(WsdlPortInfo key) {
                             return key.getBusinessServiceName();

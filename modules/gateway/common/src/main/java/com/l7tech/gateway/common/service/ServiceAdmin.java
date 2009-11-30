@@ -166,7 +166,7 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
     findWsdlInfosFromUDDIRegistry(long registryOid, String namePattern, boolean caseSensitive, boolean getWsdlURL);
 
     /**
-     * Get all bindingTemplates for a BusinessService as an array of WsdlPortInfo's
+     * Asynchronously get all bindingTemplates for a BusinessService as an array of WsdlPortInfo's
      *
      * Only valid bindingTemplates from the BusinessService will be included in the results. For each valid
      * bindingTemplate there will be one WsdlPortInfo in the returned array.
@@ -181,7 +181,7 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      */
     @Transactional(readOnly = true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
-    WsdlPortInfo[]
+    JobId<WsdlPortInfo[]>
     findWsdlInfosForSingleBusinessService(long registryOid, String serviceKey, boolean getFirstOnly) throws FindException;
 
     /**

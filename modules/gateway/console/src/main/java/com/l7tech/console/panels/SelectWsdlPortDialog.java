@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.table.WsdlPortTable;
-import com.l7tech.console.util.Registry;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.objectmodel.FindException;
 
@@ -23,22 +22,17 @@ public class SelectWsdlPortDialog extends JDialog {
     private JButton buttonCancel;
     private JScrollPane viewPort;
     private WsdlPortTable wsdlPortTable;
-    private final long uddiRegistryOid;
-    private final String serviceKey;
 
     public SelectWsdlPortDialog(final JDialog parent,
-                                final long uddiRegistryOid,
-                                final String serviceKey) throws FindException {
+                                final WsdlPortInfo[] allApplicableWsdlInfos) throws FindException {
         super(parent, "Select wsdl:port");
-        this.uddiRegistryOid = uddiRegistryOid;
-        this.serviceKey = serviceKey;
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
-        initialize();
+        initialize(allApplicableWsdlInfos);
     }
 
-    private void initialize() throws FindException {
+    private void initialize(final WsdlPortInfo[] allApplicableWsdlInfos) throws FindException {
         if (getOwner() == null)
             Utilities.setAlwaysOnTop(this, true);
 
@@ -70,8 +64,8 @@ public class SelectWsdlPortDialog extends JDialog {
         viewPort.setViewportView(wsdlPortTable);
 
         //get all application wsdl infos
-        final WsdlPortInfo[] allApplicableWsdlInfos =
-                Registry.getDefault().getServiceManager().findWsdlInfosForSingleBusinessService(uddiRegistryOid, serviceKey, false);
+//        final WsdlPortInfo[] allApplicableWsdlInfos =
+//                Registry.getDefault().getServiceManager().findWsdlInfosForSingleBusinessService(uddiRegistryOid, serviceKey, false);
         final Vector data = new Vector();
         for(WsdlPortInfo wsdlPortInfo: allApplicableWsdlInfos){
             data.add(wsdlPortInfo);
@@ -129,7 +123,7 @@ public class SelectWsdlPortDialog extends JDialog {
     }
 
     public static void main(String[] args) throws FindException {
-        SelectWsdlPortDialog dialog = new SelectWsdlPortDialog(null, -1, "");
+        SelectWsdlPortDialog dialog = new SelectWsdlPortDialog(null, null);
         dialog.pack();
         dialog.setVisible(true);
         System.exit(0);
