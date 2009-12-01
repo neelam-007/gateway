@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.uddi.WsdlPortInfo;
 
 import javax.swing.*;
@@ -114,7 +115,7 @@ public class PublishServiceWizard extends Wizard {
 
         public boolean isServiceControlRequired() {
             return  wsdlPortInfo != null &&
-                    wsdlPortInfo.getWsdlUrl().equals(service.getWsdlUrl()) &&
+                    ResourceUtils.isSameResource(wsdlPortInfo.getWsdlUrl(),service.getWsdlUrl()) &&
                     wsdlPortInfo.getAccessPointURL() != null &&
                     wsdlPortInfo.getWsdlPortBinding() != null &&
                     wsdlPortInfo.getWsdlPortName() != null &&

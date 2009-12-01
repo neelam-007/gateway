@@ -6,6 +6,8 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.audit.SystemMessages;
@@ -23,7 +25,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.GenericHttpException;
+import com.l7tech.common.http.GenericHttpRequestParams;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Date;
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.io.IOException;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
@@ -633,7 +636,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 // Fetch wsdl
                                 final SimpleHttpClient httpClient = new SimpleHttpClient(factory.httpClientFactory.createHttpClient(), 10*1024*1024);
                                 try {
-                                    final RemoteEntityResolver resolver = new RemoteEntityResolver( httpClient );
+                                    final RemoteEntityResolver resolver = new RemoteEntityResolver( httpClient, ps.getWsdlUrl() );
                                     final DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
                                     final Map<String,String> contents = processor.processDocument( wsdlUrlStr, new DocumentReferenceProcessor.ResourceResolver(){
                                         @Override
@@ -664,7 +667,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
                                         if ( serviceControl.isUpdateWsdlOnChange() ) {
                                             //if we need to extract a url from the wsdl see UDDIUtilities.extractEndPointFromWsdl
-                                            ps.setWsdlUrl( wsdlUrlStr );
+                                            ps.setWsdlUrl( resolver.addAuthentication( wsdlUrlStr ) );
                                             ps.setWsdlXml( contents.get(wsdlUrlStr) );
                                             for (ServiceDocument serviceDocument : existingServiceDocuments) {
                                                 factory.serviceDocumentManager.delete(serviceDocument);
@@ -751,9 +754,17 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private static final class RemoteEntityResolver implements EntityResolver {
         final WsdlEntityResolver catalogResolver = new WsdlEntityResolver(true);
         final SimpleHttpClient client;
+        final Pair<String,Integer> authAddr;
+        final PasswordAuthentication auth;
 
-        RemoteEntityResolver( final SimpleHttpClient client ) {
+        RemoteEntityResolver( final SimpleHttpClient client, final String authUrl ) {
             this.client = client;
+            this.auth = ResourceUtils.getPasswordAuthentication( authUrl );
+            if ( this.auth != null ) {
+                this.authAddr = getAddr( authUrl );
+            } else {
+                this.authAddr = null;
+            }
         }
 
         @Override
@@ -772,12 +783,29 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             return inputSource;
         }
 
+        public String addAuthentication( final String resourceUrl ) {
+            String authUrl = resourceUrl;
+
+            if ( authAddr != null && authAddr.equals( getAddr(resourceUrl) )) {
+                authUrl = ResourceUtils.addPasswordAuthentication( authUrl, auth );
+            }
+
+            return authUrl;
+        }
+
         private String fetchResourceFromUrl( final String resourceUrl ) throws IOException {
             String resource = null;
 
-            if ( resourceUrl.toLowerCase().startsWith("http:") ||
-                 resourceUrl.toLowerCase().startsWith("https:") ) {
-                SimpleHttpClient.SimpleHttpResponse response = client.get( resourceUrl );
+            final boolean isHttp = resourceUrl.toLowerCase().startsWith("http:");
+            final boolean isHttps = resourceUrl.toLowerCase().startsWith("https:");
+            if ( isHttp || isHttps ) {
+                URL url = new URL( resourceUrl );
+                GenericHttpRequestParams params = new GenericHttpRequestParams( url );
+                if ( authAddr != null && authAddr.equals( getAddr(resourceUrl) )) {
+                    params.setPasswordAuthentication( auth );
+                    params.setPreemptiveAuthentication( true );
+                }
+                SimpleHttpClient.SimpleHttpResponse response = client.get( params );
                 if ( response.getStatus() == HttpConstants.STATUS_OK ) {
                     resource = response.getString();
                 } else {
@@ -791,5 +819,30 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
             return resource;
         }
+        
+        private Pair<String, Integer> getAddr( final String authUrl ) {
+            Pair<String, Integer> addr = null;
+
+            try {
+                URL url = new URL( authUrl );
+                String host = url.getHost();
+                int port = url.getPort();
+                if ( port == -1 ) {
+                    if ( authUrl.toLowerCase().startsWith("http:") ) {
+                        port = 80;
+                    } else if ( authUrl.toLowerCase().startsWith("https:") ) {
+                        port = 443;
+                    }
+                }
+
+                if ( host != null && port > -1  ) {
+                    addr = new Pair<String, Integer>( host.toLowerCase(), port );
+                }
+            } catch (MalformedURLException e) {
+                // no creds
+            }
+
+            return addr;
+        }        
     }
 }

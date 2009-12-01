@@ -12,7 +12,13 @@ import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipFile;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import java.util.regex.MatchResult;
 import java.net.Socket;
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 
 /**
  * Utility class for working with resources.
@@ -180,10 +186,90 @@ public final class ResourceUtils {
         }
     }
 
+    /**
+     * Check if the given URLs address the same resource.
+     *
+     * <p>Currently this checks for equal URLs which does a basic equality check
+     * using resolved host names, ignoring user info and including default port
+     * numbers.</p>
+     *
+     * @param url1 The URL of the first resource (required)
+     * @param url2 The URL of the second resource (required)
+     * @return true if the URLs are the same resource
+     */
+    public static boolean isSameResource( final String url1, final String url2 ) {
+        boolean same;
+
+        try {
+            same = new URL(url1).equals( new URL(url2) );
+        } catch (MalformedURLException e) {
+            same = false;
+        }
+
+        return same;
+    }
+
+    /**
+     * Get the password authentication from the given url (if any)
+     *
+     * @param authUrl The URL to extract authentication information from (required)
+     * @return The PasswordAuthentication or null if not found
+     */
+    public static PasswordAuthentication getPasswordAuthentication( final String authUrl ) {
+        PasswordAuthentication auth = null;
+
+        try {
+            URL url = new URL( authUrl );
+            String userInfo = url.getUserInfo();
+            if ( userInfo != null && userInfo.indexOf(':') > -1 ) {
+                String login = userInfo.substring(0, userInfo.indexOf(':'));
+                String passwd = userInfo.substring(userInfo.indexOf(':')+1, userInfo.length());
+                auth = new PasswordAuthentication( login, passwd.toCharArray() );
+            }
+        } catch (MalformedURLException e) {
+            // no creds
+        }
+
+        return auth;
+    }
+
+    /**
+     * Add password authentication to the given URL.
+     *
+     * @param url The url to process (required)
+     * @param auth The authentication information (may be null)
+     * @return The url with authentication information
+     */
+    public static String addPasswordAuthentication( final String url,
+                                                    final PasswordAuthentication auth ) {
+        String urlWithAuth = url;
+
+        if ( auth != null ) {
+            Pattern pattern = Pattern.compile( REGEX_HTTP_URL );
+            Matcher matcher = pattern.matcher( url );
+            if ( matcher.find() ) {
+                MatchResult result = matcher.toMatchResult();
+                StringBuilder resultBuilder = new StringBuilder();
+                resultBuilder.append( url.substring( 0, result.start(1) ));
+                resultBuilder.append( auth.getUserName() );
+                resultBuilder.append( ':' );
+                resultBuilder.append( auth.getPassword() );
+                resultBuilder.append( '@' );
+                resultBuilder.append( url.substring( result.end(1), url.length() ));
+                urlWithAuth = resultBuilder.toString();
+            }
+        }
+
+        return urlWithAuth;
+    }
+
     //- PRIVATE
 
     /**
      * The logger for the class
      */
     private static final Logger logger = Logger.getLogger(ResourceUtils.class.getName());
+
+    private static final String REGEX_HTTP_URL = "^[hH][tT][tT][pP][sS]?://([\\p{Graph} ]{1,255}@|)[a-zA-Z0-9\\._-]{1,255}[/:]";
+
 }
