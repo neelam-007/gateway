@@ -1447,7 +1447,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
-    public String getBindingKeyForService( final String uddiServiceKey ) throws UDDIException {
+    public String getBindingKeyForService( final String uddiServiceKey, final Collection<String> schemePreference ) throws UDDIException {
         validateKey(uddiServiceKey);
 
         String bindingKey = null;
@@ -1468,21 +1468,32 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     if ( bindingTemplates != null ) {
                         List<BindingTemplate> bindingTemplateList = bindingTemplates.getBindingTemplate();
                         if ( bindingTemplateList != null ) {
-                            for ( BindingTemplate bindingTemplate : bindingTemplateList ) {
-                                if ( bindingTemplate.getAccessPoint() != null &&
-                                     USE_TYPE_END_POINT.equalsIgnoreCase(bindingTemplate.getAccessPoint().getUseType()) ) {
-                                    bindingKey = bindingTemplate.getBindingKey();
-                                    break;
-                                }
+                            final Collection<String> schemes = new ArrayList<String>();
+                            if ( schemePreference != null && !schemePreference.isEmpty() ) {
+                                schemes.addAll( schemePreference );
+                            } else {
+                                schemes.add( null );
                             }
 
-                            if ( bindingKey == null ) {
-                                // fall back to "http" useType.
+                            for ( final String scheme : schemes ) {
                                 for ( BindingTemplate bindingTemplate : bindingTemplateList ) {
                                     if ( bindingTemplate.getAccessPoint() != null &&
-                                         USE_TYPE_HTTP.equalsIgnoreCase(bindingTemplate.getAccessPoint().getUseType()) ) {
+                                         (scheme==null || bindingTemplate.getAccessPoint().getValue().toLowerCase().startsWith( scheme+":" )) &&
+                                         USE_TYPE_END_POINT.equalsIgnoreCase(bindingTemplate.getAccessPoint().getUseType()) ) {
                                         bindingKey = bindingTemplate.getBindingKey();
                                         break;
+                                    }
+                                }
+
+                                if ( bindingKey == null ) {
+                                    // fall back to "http" useType.
+                                    for ( BindingTemplate bindingTemplate : bindingTemplateList ) {
+                                        if ( bindingTemplate.getAccessPoint() != null &&
+                                             (scheme==null || bindingTemplate.getAccessPoint().getValue().toLowerCase().startsWith( scheme+":" )) &&
+                                             USE_TYPE_HTTP.equalsIgnoreCase(bindingTemplate.getAccessPoint().getUseType()) ) {
+                                            bindingKey = bindingTemplate.getBindingKey();
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -2087,22 +2098,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         return uddiResults;
     }
 
-    @Override
-    public boolean validateTModelExists(String tModelKey) throws UDDIException {
-        GetTModelDetail detail = new GetTModelDetail();
-        detail.setAuthInfo(getAuthToken());
-        detail.getTModelKey().add(tModelKey);
-        final TModelDetail modelDetail;
-        try {
-            modelDetail = getInquirePort().getTModelDetail(detail);
-        } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error validating tModelKey: " + tModelKey, drfm);
-        } catch (RuntimeException e) {
-            throw buildErrorException("Error validating tModelKey: " + tModelKey, e);
-        }
-        return !modelDetail.getTModel().isEmpty();
-    }
-
     /**
      * 
      */
@@ -2314,7 +2309,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     private static final String WSDL_TYPES_SERVICE = "service";
     //private static final String WSDL_TYPES_PORT = "port"; // don't use port since some UDDIs don't have this v3 feature (CentraSite)
     //private static final String WSDL_TYPES_BINDING = "binding";
-    private static final String OVERVIEW_URL_TYPE_WSDL = "wsdlInterface";
+    //private static final String OVERVIEW_URL_TYPE_WSDL = "wsdlInterface";
     private static final String FINDQUALIFIER_APPROXIMATE = "approximateMatch";
     private static final String FINDQUALIFIER_CASEINSENSITIVE = "caseInsensitiveMatch";
     private static final String USE_TYPE_END_POINT = "endPoint";

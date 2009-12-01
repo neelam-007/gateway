@@ -139,10 +139,11 @@ public interface UDDIClient extends Closeable {
      * Get a binding key for the given service.
      * 
      * @param uddiServiceKey The key for the service
+     * @param schemePreference Schemes in preference order or null/empty for any
      * @return The binding key or null
      * @throws UDDIException if an error occurs
      */
-    String getBindingKeyForService( String uddiServiceKey ) throws UDDIException;
+    String getBindingKeyForService( String uddiServiceKey, Collection<String> schemePreference ) throws UDDIException;
 
     /**
      * Publish policy to UDDI.
@@ -415,14 +416,6 @@ public interface UDDIClient extends Closeable {
     UDDISubscriptionResults pollSubscription( long startTime, long endTime, String subscriptionKey ) throws UDDIException;
 
     /**
-     * Validate that a tModel exists
-     *
-     * @param tModelKey String tModelKey to validate represents a real tModel
-     * @return true if the tModel exists, false otherwise
-     */
-    boolean validateTModelExists( String tModelKey) throws UDDIException;
-
-    /**
      * Represents a UDDI KeyedReference.
      */
     static final class UDDIKeyedReference extends Triple<String,String,String> {
@@ -486,6 +479,7 @@ public interface UDDIClient extends Closeable {
             return keyedReferences;
         }
 
+        @SuppressWarnings({ "RedundantIfStatement" })
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

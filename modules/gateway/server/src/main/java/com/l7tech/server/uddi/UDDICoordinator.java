@@ -294,7 +294,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                     List<BusinessService> services = uddiClient.getBusinessServices( serviceKeys, false);
                     if ( services.size() == 1 ) {
                         String serviceKey = services.get( 0 ).getServiceKey();
-                        bindingKey = uddiClient.getBindingKeyForService( serviceKey );
+                        bindingKey = uddiClient.getBindingKeyForService( serviceKey, Arrays.asList( "http", "https" ));
                     } else {
                         logger.warning( "Could not find unique business service for notification listener service." );
                     }

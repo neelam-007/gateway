@@ -442,16 +442,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     final UDDIClient uddiClient = uddiFactory.uddiHelper.newUDDIClient(uddiRegistry);
                     final String virtualKey = uddiFactory.config.getProperty("uddi.activesoa.virtual.service.tmodelkey", "uddi:9de0173b-5117-11de-8cf9-da0192ff3739");
 
-                    final boolean isValid;
                     try {
-                        isValid = uddiClient.validateTModelExists(virtualKey);
-                    } catch (UDDIException e) {
-                        logger.log(Level.INFO, "No virtual keyed reference will be added as no tModel can be found for tModelKey: " + virtualKey);
+                        uddiClient.getOperationalInfo( virtualKey );
+                    } catch (UDDIInvalidKeyException e) {
+                        logger.log(Level.INFO, "No virtual keyed reference will be added as no tModel can be found for tModelKey '" + virtualKey + "'.");
                         return null;
-                    }
-
-                    if(!isValid){
-                        logger.log(Level.INFO, "No virtual keyed reference will be added as no tModel can be found for tModelKey: " + virtualKey);
+                    } catch (UDDINetworkException e) {
+                        logger.log(Level.WARNING, "No virtual keyed reference will be added, network error checking for tModelKey '" + virtualKey + "', '"+ExceptionUtils.getMessage( e )+"'.", ExceptionUtils.getDebugException( e ));
+                        return null;
+                     } catch (UDDIException e) {
+                        logger.log(Level.WARNING, "No virtual keyed reference will be added, error checking for tModelKey '" + virtualKey + "', '"+ExceptionUtils.getMessage( e )+"'.", ExceptionUtils.getDebugException( e ));
                         return null;
                     }
 

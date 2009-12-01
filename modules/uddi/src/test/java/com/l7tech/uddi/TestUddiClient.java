@@ -260,7 +260,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
-    public String getBindingKeyForService( final String uddiServiceKey ) {
+    public String getBindingKeyForService( final String uddiServiceKey, final Collection<String> schemePreferences ) {
         return null; 
     }
 
@@ -291,10 +291,5 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     @Override
     public UDDISubscriptionResults pollSubscription( final long startTime, final long endTime, final String subscriptionKey ) throws UDDIException {
         return null;
-    }
-
-    @Override
-    public boolean validateTModelExists(String tModelKey) throws UDDIException {
-        return false;
     }
 }
