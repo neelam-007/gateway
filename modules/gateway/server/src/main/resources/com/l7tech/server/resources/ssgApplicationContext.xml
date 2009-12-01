@@ -1306,6 +1306,7 @@
                     <constructor-arg ref="serverConfig"/>
                 </bean>
                 <ref bean="pcApiConnectorListener"/>
+                <ref bean="uddiHelper"/>
             </set>
         </constructor-arg>
     </bean>
