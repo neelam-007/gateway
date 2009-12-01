@@ -43,7 +43,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M RESPONSE_IO_ERROR           = m(3030, Level.WARNING, "Response sent by the backend service generated an IOException: {0}.");
     public static final M CERT_KEY_USAGE              = m(3031, Level.WARNING, "Certificate key usage or extended key usage disallowed by key usage enforcement policy for activity: {0}");
     public static final M ERROR_WSS_PROCESSING_INFO   = m(3032, Level.INFO, "Error in WSS processing of request: {0}");
-    public static final M MESSAGE_NO_SIG_CONFIRMATION = m(3033, Level.WARNING, "No suitable decoration was found for adding signature confirmations.");
+    public static final M MESSAGE_NO_SIG_CONFIRMATION = m(3033, Level.INFO, "No suitable decoration was found for adding signature confirmations.");
     public static final M ERROR_WSS_RESPONSE          = m(3034, Level.WARNING, "Error in WSS processing of response: {0}");
     public static final M RUNNING_PRE_SERVICE_POLICY  = m(3035, Level.FINEST, "Processing pre-service server policies");
     public static final M ERROR_PRE_SERVICE           = m(3036, Level.WARNING, "Error processing pre-service policy: {0}");
