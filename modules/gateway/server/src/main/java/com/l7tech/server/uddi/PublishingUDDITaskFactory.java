@@ -764,43 +764,64 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             "Deleting published Gateway WSDL from Published Service id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")s in UDDI Registry id #(" + uddiRegistry.getOid() + ")");
                 }
 
-                final Set<UDDIProxiedService> proxiedServices = uddiProxiedServiceInfo.getProxiedServices();
-                final Set<String> keysToDelete = new HashSet<String>();
                 switch (uddiProxiedServiceInfo.getPublishType()) {
                     case PROXY:
-                        for (UDDIProxiedService proxiedService : proxiedServices) {
-                            keysToDelete.add(proxiedService.getUddiServiceKey());
+                        UDDIClient uddiClient = null;
+                        try {
+                            uddiClient = factory.uddiHelper.newUDDIClient(uddiRegistry);
+                            final Set<UDDIProxiedService> proxiedServices = uddiProxiedServiceInfo.getProxiedServices();
+                            for (UDDIProxiedService proxiedService : proxiedServices) {
+                                try {
+                                    uddiClient.deleteBusinessServicesByKey(proxiedService.getUddiServiceKey());
+                                } catch (UDDIException e) {
+                                    if (e instanceof UDDIInvalidKeyException) {
+                                        logger.log(Level.FINE, "Invalid serviceKey found #(" + proxiedService.getUddiServiceKey() + "). Cannot delete from from UDDI Registry");
+                                        //move onto the next
+                                    } else {
+                                        throw e;
+                                    }
+                                }
+                            }
+                            logger.log(Level.FINE, "Successfully deleted published Gateway WSDL from UDDI Registry");
+                        } catch (UDDIException e) {
+                            context.logAndAudit(SystemMessages.UDDI_REMOVE_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
+                            PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
+                            return;
+                        } finally {
+                            ResourceUtils.closeQuietly(uddiClient);
                         }
                         break;
                     case OVERWRITE:
-                        if (serviceWasOverwritten)
-                            keysToDelete.add(serviceControl.getUddiServiceKey());//serviceControl cannot be null
+                        final PublishedService publishedService =
+                                factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        
+                        final Wsdl wsdl;
+                        try {
+                            wsdl = publishedService.parsedWsdl();
+                        } catch (WSDLException e) {
+                            logger.log(Level.WARNING, "Unable to parse WSDL for service " + publishedService.getName() + "(#" + publishedService.getOid() + "). Any previously published information will be delete from UDDI", ExceptionUtils.getDebugException(e));
+
+                            uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
+                            factory.uddiPublishStatusManager.update(uddiPublishStatus);
+                            return;
+                        }
+
+                        BusinessServicePublisher publisher = null;
+                        try {
+                            publisher = new BusinessServicePublisher(wsdl, publishedService.getOid(), factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
+                            publisher.deleteGatewayBindingTemplates(serviceControl.getUddiServiceKey(), uddiProxiedServiceInfo.getPublishedHostname());
+                            logger.log(Level.FINE, "Successfully deleted overwritten endpoints from UDDI Registry");
+                        } catch (UDDIException e) {
+                            context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
+                                    ExceptionUtils.getDebugException(e),
+                                    serviceControl.getUddiServiceKey());
+                            PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
+                            return;
+                        }  finally {
+                           ResourceUtils.closeQuietly( publisher );
+                        }
                         break;
                     //no default, see illegal state above
-                }
-
-                UDDIClient uddiClient = null;
-                try {
-                    uddiClient = factory.uddiHelper.newUDDIClient(uddiRegistry);
-                    for (String serviceKey : keysToDelete) {
-                        try {
-                            uddiClient.deleteBusinessServicesByKey(serviceKey);
-                        } catch (UDDIException e) {
-                            if (e instanceof UDDIInvalidKeyException) {
-                                logger.log(Level.FINE, "Invalid serviceKey found #(" + serviceKey + "). Cannot delete from from UDDI Registry");
-                                //move onto the next
-                            } else {
-                                throw e;
-                            }
-                        }
-                    }
-                    logger.log(Level.FINE, "Successfully deleted published Gateway WSDL from UDDI Registry");
-                } catch (UDDIException e) {
-                    context.logAndAudit(SystemMessages.UDDI_REMOVE_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
-                    PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
-                    return;
-                } finally {
-                    ResourceUtils.closeQuietly( uddiClient );
                 }
 
                 factory.uddiProxiedServiceInfoManager.delete(uddiProxiedServiceInfo.getOid());//cascade delete
@@ -808,8 +829,6 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     //delete the service control
                     factory.uddiServiceControlManager.delete(serviceControl);
                 }
-                logger.log(Level.FINE, "Proxied BusinessService successfully deleted from UDDI");
-
             } catch (ObjectModelException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, "Database error when deleting proxy services.");
                 throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback

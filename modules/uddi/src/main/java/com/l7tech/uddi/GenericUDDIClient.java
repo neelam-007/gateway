@@ -189,7 +189,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public Collection<TModel> getTModels(Set<String> tModelKeys) throws UDDIException {
         if(tModelKeys == null) throw new NullPointerException("tModelKeys cannot be null");
         if(tModelKeys.isEmpty()){
-            logger.log(Level.INFO, "tModelKeys is empty. Nothing at do");
+            logger.log(Level.FINE, "tModelKeys is empty. No tModels will be downloaded");
             return Collections.emptyList();
         }
 
@@ -282,7 +282,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public void deleteTModel(Set<String> tModelKeys) throws UDDIException {
         if(tModelKeys == null) throw new IllegalArgumentException("tModelKeys cannot be null or empty");
         if(tModelKeys.isEmpty()){
-            logger.log(Level.FINE, "tModelKeys is empty. Nothing at do");
+            logger.log(Level.FINE, "tModelKeys is empty. No tModels are required to be deleted.");
             return;
         }
 
@@ -315,7 +315,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public void deleteBindingTemplateFromSingleService(final Set<String> bindingKeys) throws UDDIException {
         if(bindingKeys == null) throw new IllegalArgumentException("bindingKeys cannot be null or empty");
         if(bindingKeys.isEmpty()){
-            logger.log(Level.FINE, "bindingKeys is empty. Nothing at do");
+            logger.log(Level.FINE, "bindingKeys is empty. No bindingTemplates are required to be deleted.");
             return;
         }
         
@@ -449,7 +449,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public List<BusinessService> getBusinessServices(final Set<String> serviceKeys, boolean allowInvalidKeys) throws UDDIException {
         if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
         if(serviceKeys.isEmpty()){
-            logger.log(Level.FINE, "serviceKeys is empty. Nothing at do");
+            logger.log(Level.FINE, "serviceKeys is empty. No BusinessServices will be downloaded.");
             return Collections.emptyList();
         }
 
@@ -490,7 +490,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public void deleteUDDIBusinessServices(Collection<UDDIBusinessService> businessServices) throws UDDIException {
         if(businessServices == null) throw new NullPointerException("businessServices cannot be null or empty");
         if(businessServices.isEmpty()){
-            logger.log(Level.FINE, "businessServices is empty. Nothing at do");
+            logger.log(Level.FINE, "businessServices is empty. No BusinessServices are required to be deleted");
             return;
         }
 
@@ -512,7 +512,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public void deleteBusinessServicesByKey(Collection<String> serviceKeys) throws UDDIException {
         if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
         if(serviceKeys.isEmpty()){
-            logger.log(Level.FINE, "serviceKeys is empty. Nothing at do");
+            logger.log(Level.FINE, "serviceKeys is empty. No BusinessServices are required to be deleted");
             return;
         }
 

@@ -668,7 +668,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private boolean doDeleteOverwrittenService() {
         final boolean [] choice = new boolean[1];
         DialogDisplayer.showConfirmDialog(this,
-                                                   "Remove overwritten BusinessService from UDDI Registry?",
+                                                   "Remove gateway bindingTemplates from overwritten BusinessService in UDDI Registry?",
                                                    "Confirm Removal from UDDI",
                                                    JOptionPane.YES_NO_OPTION,
                                                    JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
@@ -680,7 +680,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                             try {
                                 uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to remove overwritten BusinessService from from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+                                        "Task to remove gateway bindingTemplates from overwritten BusinessService in UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
 
                             } catch (Exception ex) {
                                 logger.log(Level.WARNING, "Problem deleting overwritten BusinessService UDDI: " + ex.getMessage());
