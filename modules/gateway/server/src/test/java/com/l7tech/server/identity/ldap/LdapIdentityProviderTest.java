@@ -225,8 +225,8 @@ public class LdapIdentityProviderTest {
         Assert.assertTrue( "ugroup membership", ldapGroupManager.getUserHeaders(ugroup).containsAll( expectedUsers ));
 
         Assert.assertTrue( "group membership nested", ldapGroupManager.getUserHeaders(group2).containsAll( expectedUsers ));
-        //Assert.assertTrue( "posix group membership nested", ldapGroupManager.getUserHeaders(pgroup4).containsAll( expectedUsers )); // TODO bug 7872
-        //Assert.assertTrue( "ugroup membership nested", ldapGroupManager.getUserHeaders(ugroup2).containsAll( expectedUsers ));      // TODO bug 7872
+        Assert.assertTrue( "posix group membership nested", ldapGroupManager.getUserHeaders(pgroup4).containsAll( expectedUsers ));
+        Assert.assertTrue( "ugroup membership nested", ldapGroupManager.getUserHeaders(ugroup2).containsAll( expectedUsers ));
 
         expectedUsers.add( idh( ldapIdentityProvider, "cn=test2, ou=users, ou=system", "test2", EntityType.USER ) );
         expectedUsers.add( idh( ldapIdentityProvider, "cn=test3, ou=users, ou=system", "test3", EntityType.USER ) );
@@ -258,21 +258,21 @@ public class LdapIdentityProviderTest {
         EntityHeaderSet<IdentityHeader> expectedGroups = new EntityHeaderSet<IdentityHeader>();
         expectedGroups.add( idh( ldapIdentityProvider, "ou=users, ou=system", "users", EntityType.GROUP ) );
         expectedGroups.add( idh( ldapIdentityProvider, "ou=system", "system", EntityType.GROUP ) );
-        //expectedGroups.add( idh( ldapIdentityProvider, "cn=sougroup2, ou=groups2, ou=system", "sougroup1", EntityType.GROUP ) );  // TODO bug 7875
+        expectedGroups.add( idh( ldapIdentityProvider, "cn=sougroup2, ou=groups2, ou=system", "sougroup1", EntityType.GROUP ) );
 
         Assert.assertTrue( "Group listing user2", ldapGroupManager.getGroupHeaders( user2 ).containsAll( expectedGroups ));
 
         expectedGroups.add( idh( ldapIdentityProvider, "cn=pgroup1, ou=users, ou=system", "pgroup1", EntityType.GROUP ) );
-        //expectedGroups.add( idh( ldapIdentityProvider, "cn=pgroup2, ou=users, ou=system", "pgroup2", EntityType.GROUP ) ); // TODO bug 7875
-        //expectedGroups.add( idh( ldapIdentityProvider, "cn=pgroup3, ou=users, ou=system", "pgroup3", EntityType.GROUP ) );  // TODO bug 7875
-        //expectedGroups.add( idh( ldapIdentityProvider, "cn=pgroup4, ou=users, ou=system", "pgroup4", EntityType.GROUP ) ); // TODO bug 7875
+        expectedGroups.add( idh( ldapIdentityProvider, "cn=pgroup2, ou=users, ou=system", "pgroup2", EntityType.GROUP ) );
+        expectedGroups.add( idh( ldapIdentityProvider, "cn=pgroup3, ou=users, ou=system", "pgroup3", EntityType.GROUP ) );
+        expectedGroups.add( idh( ldapIdentityProvider, "cn=pgroup4, ou=users, ou=system", "pgroup4", EntityType.GROUP ) );
         expectedGroups.add( idh( ldapIdentityProvider, "cn=group1, ou=users, ou=system", "group1", EntityType.GROUP ) );
         expectedGroups.add( idh( ldapIdentityProvider, "cn=group2, ou=users, ou=system", "group2", EntityType.GROUP ) );
         expectedGroups.add( idh( ldapIdentityProvider, "cn=ugroup1, ou=users, ou=system", "ugroup1", EntityType.GROUP ) );
-        //expectedGroups.add( idh( ldapIdentityProvider, "cn=ugroup2, ou=users, ou=system", "ugroup2", EntityType.GROUP ) ); // TODO bug 7875
+        expectedGroups.add( idh( ldapIdentityProvider, "cn=ugroup2, ou=users, ou=system", "ugroup2", EntityType.GROUP ) );
         expectedGroups.add( idh( ldapIdentityProvider, "cn=sougroup1, ou=groups1, ou=system", "sougroup1", EntityType.GROUP ) );
         expectedGroups.add( idh( ldapIdentityProvider, "ou=groups1, ou=system", "groups1", EntityType.GROUP ) );
-        //expectedGroups.add( idh( ldapIdentityProvider, "ou=groups2, ou=system", "groups2", EntityType.GROUP ) );   // TODO bug 7875
+        expectedGroups.add( idh( ldapIdentityProvider, "ou=groups2, ou=system", "groups2", EntityType.GROUP ) );
 
         Assert.assertTrue( "Group listing user1", ldapGroupManager.getGroupHeaders( user1 ).containsAll( expectedGroups ));
     }
@@ -309,6 +309,9 @@ public class LdapIdentityProviderTest {
         LdapGroup pgroup = ldapGroupManager.findByName("pgroup1");
         Assert.assertNotNull( "Test posix group found", pgroup );
 
+        LdapGroup pgroup2 = ldapGroupManager.findByName("pgroup2");
+        Assert.assertNotNull( "Test posix group2 found", pgroup2 );
+
         LdapGroup pgroup4 = ldapGroupManager.findByName("pgroup4");
         Assert.assertNotNull( "Test posix group4 found", pgroup4 );
 
@@ -334,6 +337,9 @@ public class LdapIdentityProviderTest {
         Assert.assertTrue( "Member of group", ldapGroupManager.isMember( user1, pgroup ));
         Assert.assertFalse( "Not member of group", ldapGroupManager.isMember( user2, pgroup ));
 
+        Assert.assertTrue( "Member of group", ldapGroupManager.isMember( user1, pgroup2 ));
+        Assert.assertFalse( "Not member of group2", ldapGroupManager.isMember( user2, pgroup2 ));
+
         Assert.assertFalse( "Not Member of group", ldapGroupManager.isMember( user1, pgroup4 ));  // Not member due to nesting limit
         Assert.assertFalse( "Not member of group2", ldapGroupManager.isMember( user2, pgroup4 ));
 
@@ -351,8 +357,9 @@ public class LdapIdentityProviderTest {
         Assert.assertTrue( "ugroup membership", ldapGroupManager.getUserHeaders(ugroup).containsAll( expectedUsers ));
 
         Assert.assertTrue( "group membership nested", ldapGroupManager.getUserHeaders(group2).containsAll( expectedUsers ));
-        //Assert.assertTrue( "posix group membership nested", ldapGroupManager.getUserHeaders(pgroup4).containsAll( expectedUsers )); // TODO bug 7872
-        //Assert.assertTrue( "ugroup membership nested", ldapGroupManager.getUserHeaders(ugroup2).containsAll( expectedUsers ));      // TODO bug 7872
+        Assert.assertTrue( "posix group membership nested", ldapGroupManager.getUserHeaders(pgroup2).containsAll( expectedUsers ));
+        Assert.assertFalse( "posix group membership nested", ldapGroupManager.getUserHeaders(pgroup4).containsAll( expectedUsers ));  // Due to nesting limit
+        Assert.assertTrue( "ugroup membership nested", ldapGroupManager.getUserHeaders(ugroup2).containsAll( expectedUsers ));
 
         expectedUsers.add( idh( ldapIdentityProvider, "cn=test2, ou=users, ou=system", "test2", EntityType.USER ) );
         expectedUsers.add( idh( ldapIdentityProvider, "cn=test3, ou=users, ou=system", "test3", EntityType.USER ) );
