@@ -290,6 +290,11 @@ ALTER TABLE audit_main CHANGE COLUMN signature signature VARCHAR(1024);
 ALTER TABLE published_service ADD COLUMN default_routing_url varchar(4096);
 
 --
+-- Update the descriptions of "Manage XXX Service" roles
+--
+UPDATE rbac_role SET description = 'Users assigned to the {0} role have the ability to read, update and delete the {1} service.' WHERE entity_type = 'SERVICE';
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;
