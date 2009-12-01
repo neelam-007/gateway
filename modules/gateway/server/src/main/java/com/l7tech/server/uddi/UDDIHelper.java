@@ -347,6 +347,27 @@ public class UDDIHelper implements SsgConnectorActivationListener {
         }
     }
 
+    //- PROTECTED
+
+    /**
+     * Get the hostname from the clusterHost cluster property.
+     *
+     * <p>If it's not set, then the SSG's host name will be returned</p>
+     *
+     * @return String cluster hostname or hostname if the cluster property "clusterHost" is not set
+     * @throws com.l7tech.objectmodel.FindException if the hostname cannot be found
+     */
+    String getExternalHostName() {
+        final String hostName;
+        final String clusterHost = serverConfig.getProperty("clusterHost");
+        if(clusterHost == null || clusterHost.trim().isEmpty()){
+            hostName = serverConfig.getHostname();
+        }else{
+            hostName = clusterHost;
+        }
+        return hostName;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( UDDIHelper.class.getName() );
@@ -389,25 +410,6 @@ public class UDDIHelper implements SsgConnectorActivationListener {
         } else {
             return "http://" + getExternalHostName() + getPrefixedExternalPort() + relativeUri;
         }
-    }
-
-    /**
-     * Get the hostname from the clusterHost cluster property.
-     *
-     * <p>If it's not set, then the SSG's host name will be returned</p>
-     *
-     * @return String cluster hostname or hostname if the cluster property "clusterHost" is not set
-     * @throws com.l7tech.objectmodel.FindException if the hostname cannot be found
-     */
-    private String getExternalHostName() {
-        final String hostName;
-        final String clusterHost = serverConfig.getProperty("clusterHost");
-        if(clusterHost == null || clusterHost.trim().isEmpty()){
-            hostName = serverConfig.getHostname();
-        }else{
-            hostName = clusterHost;
-        }
-        return hostName;
     }
 
     private String getExternalPort() {

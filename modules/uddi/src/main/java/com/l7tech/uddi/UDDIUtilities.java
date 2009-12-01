@@ -10,6 +10,7 @@ import javax.wsdl.Port;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap12.SOAP12Address;
 import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.xml.namespace.QName;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,243 +33,7 @@ public class UDDIUtilities {
         WSDL_PORT_TYPE, WSDL_BINDING
     }
 
-
-    /**
-     * Update fake tModelKey references with real key references
-     *
-     * @param businessService  BusinessService which contains fake tModelKey references from it's TModelInstanceInfo s
-     * @param dependentTModels all TModels contained in this Map should contain real tModelKeys assiged from the UDDI
-     *                         to which the BusnessService will ultimetely be published to
-     */
-    static void updateBusinessServiceReferences(final BusinessService businessService,
-                                                final Map<String, TModel> dependentTModels) {
-
-        //the business service itself has no references to update
-        BindingTemplates bindingTemplates = businessService.getBindingTemplates();
-        List<BindingTemplate> allTemplates = bindingTemplates.getBindingTemplate();
-        for (BindingTemplate bindingTemplate : allTemplates) {
-            TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
-            List<TModelInstanceInfo> tModelInstanceInfos = tModelInstanceDetails.getTModelInstanceInfo();
-            for (TModelInstanceInfo tModelInstanceInfo : tModelInstanceInfos) {
-                //it's possible we have bindingTemplates which already exist. if the referenced tModelKey
-                //does not reference a placeholder, then do not process
-                if (!tModelInstanceInfo.getTModelKey().endsWith(WsdlToUDDIModelConverter.BINDING_TMODEL_IDENTIFIER) &&
-                        !tModelInstanceInfo.getTModelKey().endsWith(WsdlToUDDIModelConverter.PORT_TMODEL_IDENTIFIER))
-                    continue;
-
-                final TModel tModel = dependentTModels.get(tModelInstanceInfo.getTModelKey());
-                tModelInstanceInfo.setTModelKey(tModel.getTModelKey());
-            }
-        }
-    }
-
-    /**
-     * TModels which represent wsdl:binding elements, have a dependency on the TModel which represent
-     * wsdl:portType.
-     * <p/>
-     * Update all binding TModels with the correct tModelKey of their dependent portType tModel.
-     *
-     * @param bindingTModels   List of TModels to udpate. Each tModel must represent a binding tModel
-     * @param dependentTModels The Map of all TModels for WSDL being published. This contains the wsdl:portType which
-     *                         must have valid keys by the time this method is called
-     */
-    static void updateBindingTModelReferences(final List<TModel> bindingTModels,
-                                              final Map<String, TModel> dependentTModels) {
-        for (TModel tModel : bindingTModels) {
-            if (getTModelType(tModel, true) != TMODEL_TYPE.WSDL_BINDING) continue;
-
-            final CategoryBag categoryBag = tModel.getCategoryBag();
-            List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
-            //find the portType keyedReference
-            for (KeyedReference keyedReference : keyedReferences) {
-                if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_PORTTYPEREFERENCE))
-                    continue;
-                final TModel publishedTModel = dependentTModels.get(keyedReference.getKeyValue());
-                keyedReference.setKeyValue(publishedTModel.getTModelKey());
-                break;
-            }
-        }
-    }
-
-    static Pair<TModel, TModel> getPortTypeAndBindingTModels(final List<TModelInstanceInfo> originalInfos,
-                                                             final Map<String, TModel> tModelKeyToTModel) throws UDDIException {
-        //Go through each TModelInstanceInfo and copy any which look like they may represent
-        // wsdl:binding and wsdl:portType elements
-        final List<TModelInstanceInfo> copyAllTModelInstanceInfo = new ArrayList<TModelInstanceInfo>();
-        for (TModelInstanceInfo origTModelInstanceInfo : originalInfos) {
-            //Each TModelInstanceInfo can have 0..1 InstanceDetails an 0..* descriptions
-            final TModelInstanceInfo copyTModelInstanceInfo = new TModelInstanceInfo();
-            copyTModelInstanceInfo.setTModelKey(origTModelInstanceInfo.getTModelKey());//this is required
-
-            if (origTModelInstanceInfo.getInstanceDetails() != null) {//this may represent a wsdl:binding
-                //InstanceDetails can have:
-                // 0..* descriptions - will copy
-                // choice of InstanceParams OR 0..* OverviewDocs and 0..1 InstanceParams - only care about first option -
-                // as the WSDL to UDDI technical note requires a mandatory instanceParam - which is the wsdl:binding localName
-                final InstanceDetails origInstanceDetails = origTModelInstanceInfo.getInstanceDetails();
-                if (origInstanceDetails.getInstanceParms() == null || origInstanceDetails.getInstanceParms().trim().isEmpty()) {
-                    logger.log(Level.INFO, "Ignoring TModelInstanceInfo '" + origTModelInstanceInfo.getTModelKey() +
-                            "' as it contains an instanceDetails which a null or empty instanceParams element");
-                    continue;
-                }
-
-                final InstanceDetails copyInstanceDetails = new InstanceDetails();
-                copyInstanceDetails.setInstanceParms(origInstanceDetails.getInstanceParms());//string value
-                for (Description origDesc : origInstanceDetails.getDescription()) {
-                    final Description copyDesc = new Description();
-                    copyDesc.setLang(origDesc.getLang());
-                    copyDesc.setValue(origDesc.getValue());
-                    copyInstanceDetails.getDescription().add(copyDesc);
-                }
-                copyTModelInstanceInfo.setInstanceDetails(copyInstanceDetails);
-            }
-
-            copyAllTModelInstanceInfo.add(copyTModelInstanceInfo);
-        }
-
-        //now we have every candidate TModelInstanceInfo from the found bindingTemplate
-        //need to ensure it contains a wsdl:binding and wsdl:portType tModelKey references
-        //once we have found this, we know which tModels we need to copy
-        TModel bindingTModel = null;
-        TModel portTypeTModel = null;
-        for (TModelInstanceInfo tModelInstanceInfo : copyAllTModelInstanceInfo) {
-            final TModel tModel = tModelKeyToTModel.get(tModelInstanceInfo.getTModelKey());
-            if (tModel == null)
-                throw new UDDIException("tModel with tModelKey " + tModelInstanceInfo.getTModelKey()
-                        + " referenced from the tModelInstanceInfo was not referenced from BusinessService");
-
-            //what type of tModel is it?
-            final UDDIUtilities.TMODEL_TYPE type = UDDIUtilities.getTModelType(tModel, false);
-            if (type == null) continue;
-            switch (type) {
-                case WSDL_BINDING:
-                    bindingTModel = tModel;
-                    break;
-                case WSDL_PORT_TYPE:
-                    portTypeTModel = tModel;
-                    break;
-            }
-        }
-
-        if (bindingTModel == null || portTypeTModel == null) {
-            final String msg = "Could not find a valid wsdl:binding and wsdl:portype tModel references from the bindingTemplate's tModelInstanceDetails element";
-            logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg);
-        }
-
-        return new Pair<TModel, TModel>(portTypeTModel, bindingTModel);
-    }
-
-    /**
-     * Update the tModel references in the bindingTemplate to the real references contained in the actual
-     * tModels in the dependentTModels map
-     * <p/>
-     * This should only be used for BindingTemplates created by SSG code and should not be supplied a BindingTemplate
-     * which came from the Wsdl class after a WSDL was parsed.
-     *
-     * @param bindingTemplate  The BindingTemplate must contain only the standard 2 tModelInstanceInfo's in its
-     *                         tModelInstanceDetails element.
-     * @param dependentTModels tModels the BindingTemplate to update depends on
-     * @throws UDDIException any problems getting data from UDDI
-     */
-    static void updateBindingTemplateTModelReferences(final BindingTemplate bindingTemplate,
-                                                      final Map<String, TModel> dependentTModels) throws UDDIException {
-
-        final List<TModelInstanceInfo> tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo();
-        if (tModelInstanceDetails.isEmpty()) return;//nothing to do
-
-        for (TModelInstanceInfo tii : tModelInstanceDetails) {
-            final TModel tModel = dependentTModels.get(tii.getTModelKey());
-            if (tModel == null)//this is a coding error
-                throw new IllegalStateException("No tModel found for key: " + tii.getTModelKey());
-            tii.setTModelKey(tModel.getTModelKey());
-        }
-    }
-
-    /**
-     * Work out what wsdl element the tModel represents. Either wsdl:portType or wsdl:binding
-     *
-     * @param tModel          the TModel to get the type for
-     * @param throwIfNotFound if true and the type of the tModel is not known, a runtime exception will be thrown
-     * @return TMODEL_TYPE the type of TModel
-     */
-    static TMODEL_TYPE getTModelType(final TModel tModel, boolean throwIfNotFound) {
-        final CategoryBag categoryBag = tModel.getCategoryBag();
-        List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
-        for (KeyedReference keyedReference : keyedReferences) {
-            if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)) continue;
-            final String keyValue = keyedReference.getKeyValue();
-            if (keyValue.equals("portType")) return TMODEL_TYPE.WSDL_PORT_TYPE;
-            if (keyValue.equals("binding")) return TMODEL_TYPE.WSDL_BINDING;
-            throw new IllegalStateException("Type of TModel does not follow UDDI Technical Note: '" + keyValue + "'");
-        }
-        if (throwIfNotFound)
-            throw new IllegalStateException("TModel did not contain a KeyedReference of type " + WsdlToUDDIModelConverter.UDDI_WSDL_TYPES);
-        return null;
-    }
-
-    /**
-     * From the WSDL, extract out a BindingTemplate based on the wsdlPortName and wsdlPortBinding
-     * <p/>
-     * The URLs are required in the dependent tModels which will also be created.
-     * <p/>
-     * None of the UDDI Objects contain real keys
-     *
-     * @param wsdl                        Wsdl for a published service
-     * @param wsdlPortName                a wsdl:port name is unique in a WSDL document
-     * @param wsdlPortBinding             a wsdl:binding name is unique in a WSDL document
-     * @param protectedServiceExternalURL SSG's external consumption URL for a published service
-     * @param protectedServiceWsdlURL     SSG's external proxied WSDL URL for a published service
-     * @return Pair of BindingTemplate to it's dependent tModels
-     * @throws PortNotFoundException if the wsdl:port implementation cannot be found
-     * @throws WsdlToUDDIModelConverter.MissingWsdlReferenceException
-     *                               if the Wsdl does not have a complete graph to wsdl:portType
-     * @throws WsdlToUDDIModelConverter.NonSoapBindingFoundException
-     *                               if no soap:bindings are found in the Wsdl (nothing to do)
-     */
-    static Pair<BindingTemplate, Map<String, TModel>> createBindingTemplateFromWsdl(final Wsdl wsdl,
-                                                                                    final String wsdlPortName,
-                                                                                    final String wsdlPortBinding,
-                                                                                    final String protectedServiceExternalURL,
-                                                                                    final String protectedServiceWsdlURL)
-            throws PortNotFoundException, WsdlToUDDIModelConverter.MissingWsdlReferenceException, WsdlToUDDIModelConverter.NonSoapBindingFoundException {
-
-        Port foundPort = null;
-        Port candidatePort = null;
-        outer:
-        for (Service wsdlService : wsdl.getServices()) {
-            Map<String, Port> ports = wsdlService.getPorts();
-            for (Map.Entry<String, Port> entry : ports.entrySet()) {
-                if (entry.getKey().equalsIgnoreCase(wsdlPortName)) {
-                    foundPort = entry.getValue();
-                    break outer;
-                }
-                if (entry.getValue().getBinding().getQName().getLocalPart().equalsIgnoreCase(wsdlPortBinding)) {
-                    candidatePort = entry.getValue();
-                    if (foundPort != null) break outer;
-                }
-            }
-        }
-
-        final Port wsdlPort = (foundPort != null) ? foundPort : candidatePort;
-        if (wsdlPort == null)
-            throw new PortNotFoundException("Cannot find any wsdl:port by the name of '" + wsdlPortName +
-                    " or any port which implements the binding '" + wsdlPortBinding);
-
-        final WsdlToUDDIModelConverter modelConverter =
-                new WsdlToUDDIModelConverter(wsdl);
-
-        final Map<String, TModel> keysToModels = new HashMap<String, TModel>();
-        final BindingTemplate template = modelConverter.createUddiBindingTemplate(keysToModels, wsdlPort,
-                protectedServiceExternalURL, protectedServiceWsdlURL);
-        return new Pair<BindingTemplate, Map<String, TModel>>(template, keysToModels);
-    }
-
-    static class PortNotFoundException extends Exception {
-        public PortNotFoundException(String message) {
-            super(message);
-        }
-    }
+    //- PUBLIC
 
     /**
      * Get a UDDIBindingImplementionInfo which contains information from UDDI on the UDDI information found
@@ -294,7 +59,7 @@ public class UDDIUtilities {
      *         the binding supplied
      * @throws UDDIException any problems searching UDDI
      */
-    public static UDDIBindingImplementionInfo getUDDIBindingImplInfo(final UDDIClient uddiClient,  //TODO [Donal] change to a UDDIClientConfig - just create an instance of JaxWsUDDIClient
+    public static UDDIBindingImplementionInfo getUDDIBindingImplInfo(final UDDIClient uddiClient,
                                                                      final String serviceKey,
                                                                      final String wsdlPortName,
                                                                      final String wsdlBinding,
@@ -457,46 +222,6 @@ public class UDDIUtilities {
     }
 
     /**
-     * Extract the namespace from the supplied TModel, if it has one defined.
-     *
-     * @param tModel TModel to search it's categoryBag for a namespace keyedReference
-     * @return String namespace found, never the empty string, or null if not found
-     */
-    static String extractNamespace(final TModel tModel) {
-
-        final CategoryBag categoryBag = tModel.getCategoryBag();
-        if (categoryBag == null) return null;//should never happen, not concerned here
-
-        return getNameSpace(categoryBag);
-    }
-
-    /**
-     * Extract the namespace from the supplied TModel, if it has one defined.
-     *
-     * @param businessService BusinessService to search it's categoryBag for a namespace keyedReference
-     * @return String namespace found, never the empty string, or null if not found
-     */
-    static String extractNamespace(final BusinessService businessService) {
-
-        final CategoryBag categoryBag = businessService.getCategoryBag();
-        if (categoryBag == null) return null;
-
-        return getNameSpace(categoryBag);
-    }
-
-    private static String getNameSpace(final CategoryBag categoryBag) {
-        for (KeyedReference kr : categoryBag.getKeyedReference()) {
-            if (kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE)) {
-                if(kr.getKeyValue() != null && !kr.getKeyValue().trim().isEmpty()){
-                    return kr.getKeyValue();
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Get the WSDL URL from the supplied tModel. The WSDL URL should exist as an overviewDoc. The overviewURL
      * contained within an overviewDoc will be the first found which has a useType of 'wsdlInterface'. If none
      * are found, then the first found will be returned which has no useType defined. Other useTypes e.g. 'text'
@@ -533,12 +258,10 @@ public class UDDIUtilities {
             return entry.getValue();
         }
 
-
         logger.log(Level.FINE, "tModel does not contain an overviewDoc with either an empty useType or a value of '" + WsdlToUDDIModelConverter.WSDL_INTERFACE + "'" +
                 " tModelKey: " + tModel.getTModelKey());
 
         return null;
-
     }
 
     public static class UDDIBindingImplementionInfo {
@@ -734,6 +457,315 @@ public class UDDIUtilities {
         public WsdlEndPointNotFoundException(String message) {
             super(message);
         }
+    }
+
+    //- PROTECTED
+
+    /**
+     * allEndpointPairs must not be null or empty, and all left sides must be unique.
+     * @param allEndpointPairs Pair<String, String> collection of gateway external url to wsdl pairs
+     */
+    static void validateAllEndpointPairs(final Collection<Pair<String, String>> allEndpointPairs){
+        if (allEndpointPairs == null) throw new NullPointerException("allEndpointPairs cannot be null");
+
+        if (allEndpointPairs.isEmpty()) throw new IllegalArgumentException("allEndpointPairs cannot be empty");
+
+        //validate no two endpoints are the same
+        Set<String> gatewayUrls = new HashSet<String>();
+
+        for (Pair<String, String> anEndpointPair : allEndpointPairs) {
+            if (anEndpointPair.left == null || anEndpointPair.left.trim().isEmpty())
+                throw new IllegalArgumentException("The value of any pair's left value must not be null or empty");
+            if (anEndpointPair.right == null || anEndpointPair.right.trim().isEmpty())
+                throw new IllegalArgumentException("The value of any pair's left value must not be null or empty");
+
+            if(gatewayUrls.contains(anEndpointPair.left)) throw new IllegalArgumentException("All external gateway URLs must be unique");
+            gatewayUrls.add(anEndpointPair.left);
+        }
+    }
+
+    /**
+     * Update fake tModelKey references with real key references
+     *
+     * @param businessService  BusinessService which contains fake tModelKey references from it's TModelInstanceInfo s
+     * @param dependentTModels all TModels contained in this Map should contain real tModelKeys assiged from the UDDI
+     *                         to which the BusnessService will ultimetely be published to
+     */
+    static void updateBusinessServiceReferences(final BusinessService businessService,
+                                                final Map<String, TModel> dependentTModels) {
+
+        //the business service itself has no references to update
+        BindingTemplates bindingTemplates = businessService.getBindingTemplates();
+        List<BindingTemplate> allTemplates = bindingTemplates.getBindingTemplate();
+        for (BindingTemplate bindingTemplate : allTemplates) {
+            TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
+            List<TModelInstanceInfo> tModelInstanceInfos = tModelInstanceDetails.getTModelInstanceInfo();
+            for (TModelInstanceInfo tModelInstanceInfo : tModelInstanceInfos) {
+                //it's possible we have bindingTemplates which already exist. if the referenced tModelKey
+                //does not reference a placeholder, then do not process
+                if (!tModelInstanceInfo.getTModelKey().endsWith(WsdlToUDDIModelConverter.BINDING_TMODEL_IDENTIFIER) &&
+                        !tModelInstanceInfo.getTModelKey().endsWith(WsdlToUDDIModelConverter.PORT_TMODEL_IDENTIFIER))
+                    continue;
+
+                final TModel tModel = dependentTModels.get(tModelInstanceInfo.getTModelKey());
+                tModelInstanceInfo.setTModelKey(tModel.getTModelKey());
+            }
+        }
+    }
+
+    /**
+     * TModels which represent wsdl:binding elements, have a dependency on the TModel which represent
+     * wsdl:portType.
+     * <p/>
+     * Update all binding TModels with the correct tModelKey of their dependent portType tModel.
+     *
+     * @param bindingTModels   List of TModels to udpate. Each tModel must represent a binding tModel
+     * @param dependentTModels The Map of all TModels for WSDL being published. This contains the wsdl:portType which
+     *                         must have valid keys by the time this method is called
+     */
+    static void updateBindingTModelReferences(final List<TModel> bindingTModels,
+                                              final Map<String, TModel> dependentTModels) {
+        for (TModel tModel : bindingTModels) {
+            if (getTModelType(tModel, true) != TMODEL_TYPE.WSDL_BINDING) continue;
+
+            final CategoryBag categoryBag = tModel.getCategoryBag();
+            List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
+            //find the portType keyedReference
+            for (KeyedReference keyedReference : keyedReferences) {
+                if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_PORTTYPEREFERENCE))
+                    continue;
+                final TModel publishedTModel = dependentTModels.get(keyedReference.getKeyValue());
+                keyedReference.setKeyValue(publishedTModel.getTModelKey());
+                break;
+            }
+        }
+    }
+
+    static Pair<TModel, TModel> getPortTypeAndBindingTModels(final List<TModelInstanceInfo> originalInfos,
+                                                             final Map<String, TModel> tModelKeyToTModel) throws UDDIException {
+        //Go through each TModelInstanceInfo and copy any which look like they may represent
+        // wsdl:binding and wsdl:portType elements
+        final List<TModelInstanceInfo> copyAllTModelInstanceInfo = new ArrayList<TModelInstanceInfo>();
+        for (TModelInstanceInfo origTModelInstanceInfo : originalInfos) {
+            //Each TModelInstanceInfo can have 0..1 InstanceDetails an 0..* descriptions
+            final TModelInstanceInfo copyTModelInstanceInfo = new TModelInstanceInfo();
+            copyTModelInstanceInfo.setTModelKey(origTModelInstanceInfo.getTModelKey());//this is required
+
+            if (origTModelInstanceInfo.getInstanceDetails() != null) {//this may represent a wsdl:binding
+                //InstanceDetails can have:
+                // 0..* descriptions - will copy
+                // choice of InstanceParams OR 0..* OverviewDocs and 0..1 InstanceParams - only care about first option -
+                // as the WSDL to UDDI technical note requires a mandatory instanceParam - which is the wsdl:binding localName
+                final InstanceDetails origInstanceDetails = origTModelInstanceInfo.getInstanceDetails();
+                if (origInstanceDetails.getInstanceParms() == null || origInstanceDetails.getInstanceParms().trim().isEmpty()) {
+                    logger.log(Level.INFO, "Ignoring TModelInstanceInfo '" + origTModelInstanceInfo.getTModelKey() +
+                            "' as it contains an instanceDetails which a null or empty instanceParams element");
+                    continue;
+                }
+
+                final InstanceDetails copyInstanceDetails = new InstanceDetails();
+                copyInstanceDetails.setInstanceParms(origInstanceDetails.getInstanceParms());//string value
+                for (Description origDesc : origInstanceDetails.getDescription()) {
+                    final Description copyDesc = new Description();
+                    copyDesc.setLang(origDesc.getLang());
+                    copyDesc.setValue(origDesc.getValue());
+                    copyInstanceDetails.getDescription().add(copyDesc);
+                }
+                copyTModelInstanceInfo.setInstanceDetails(copyInstanceDetails);
+            }
+
+            copyAllTModelInstanceInfo.add(copyTModelInstanceInfo);
+        }
+
+        //now we have every candidate TModelInstanceInfo from the found bindingTemplate
+        //need to ensure it contains a wsdl:binding and wsdl:portType tModelKey references
+        //once we have found this, we know which tModels we need to copy
+        TModel bindingTModel = null;
+        TModel portTypeTModel = null;
+        for (TModelInstanceInfo tModelInstanceInfo : copyAllTModelInstanceInfo) {
+            final TModel tModel = tModelKeyToTModel.get(tModelInstanceInfo.getTModelKey());
+            if (tModel == null)
+                throw new UDDIException("tModel with tModelKey " + tModelInstanceInfo.getTModelKey()
+                        + " referenced from the tModelInstanceInfo was not referenced from BusinessService");
+
+            //what type of tModel is it?
+            final UDDIUtilities.TMODEL_TYPE type = UDDIUtilities.getTModelType(tModel, false);
+            if (type == null) continue;
+            switch (type) {
+                case WSDL_BINDING:
+                    bindingTModel = tModel;
+                    break;
+                case WSDL_PORT_TYPE:
+                    portTypeTModel = tModel;
+                    break;
+            }
+        }
+
+        if (bindingTModel == null || portTypeTModel == null) {
+            final String msg = "Could not find a valid wsdl:binding and wsdl:portype tModel references from the bindingTemplate's tModelInstanceDetails element";
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg);
+        }
+
+        return new Pair<TModel, TModel>(portTypeTModel, bindingTModel);
+    }
+
+    /**
+     * Update the tModel references in the bindingTemplate to the real references contained in the actual
+     * tModels in the dependentTModels map
+     * <p/>
+     * This should only be used for BindingTemplates created by SSG code and should not be supplied a BindingTemplate
+     * which came from the Wsdl class after a WSDL was parsed.
+     *
+     * @param bindingTemplate  The BindingTemplate must contain only the standard 2 tModelInstanceInfo's in its
+     *                         tModelInstanceDetails element.
+     * @param dependentTModels tModels the BindingTemplate to update depends on
+     * @throws UDDIException any problems getting data from UDDI
+     */
+    static void updateBindingTemplateTModelReferences(final BindingTemplate bindingTemplate,
+                                                      final Map<String, TModel> dependentTModels) throws UDDIException {
+
+        final List<TModelInstanceInfo> tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo();
+        if (tModelInstanceDetails.isEmpty()) return;//nothing to do
+
+        for (TModelInstanceInfo tii : tModelInstanceDetails) {
+            final TModel tModel = dependentTModels.get(tii.getTModelKey());
+            if (tModel == null)//this is a coding error
+                throw new IllegalStateException("No tModel found for key: " + tii.getTModelKey());
+            tii.setTModelKey(tModel.getTModelKey());
+        }
+    }
+
+    /**
+     * Work out what wsdl element the tModel represents. Either wsdl:portType or wsdl:binding
+     *
+     * @param tModel          the TModel to get the type for
+     * @param throwIfNotFound if true and the type of the tModel is not known, a runtime exception will be thrown
+     * @return TMODEL_TYPE the type of TModel
+     */
+    static TMODEL_TYPE getTModelType(final TModel tModel, boolean throwIfNotFound) {
+        final CategoryBag categoryBag = tModel.getCategoryBag();
+        List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
+        for (KeyedReference keyedReference : keyedReferences) {
+            if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)) continue;
+            final String keyValue = keyedReference.getKeyValue();
+            if (keyValue.equals("portType")) return TMODEL_TYPE.WSDL_PORT_TYPE;
+            if (keyValue.equals("binding")) return TMODEL_TYPE.WSDL_BINDING;
+            throw new IllegalStateException("Type of TModel does not follow UDDI Technical Note: '" + keyValue + "'");
+        }
+        if (throwIfNotFound)
+            throw new IllegalStateException("TModel did not contain a KeyedReference of type " + WsdlToUDDIModelConverter.UDDI_WSDL_TYPES);
+        return null;
+    }
+
+    /**
+     * From the WSDL, extract out a BindingTemplate based on the wsdlPortName and wsdlPortBinding
+     * <p/>
+     * The URLs are required in the dependent tModels which will also be created.
+     * <p/>
+     * None of the UDDI Objects contain real keys
+     *
+     * @param wsdl             Wsdl for a published service
+     * @param wsdlPortName     a wsdl:port name is unique in a WSDL document
+     * @param wsdlPortBinding  a wsdl:binding name is unique in a WSDL document
+     * @param wsdlPortBindingNamespace
+     * @param allEndpointPairs
+     * @return Pair of BindingTemplate to it's dependent tModels
+     * @throws PortNotFoundException if the wsdl:port implementation cannot be found
+     * @throws WsdlToUDDIModelConverter.MissingWsdlReferenceException
+     *                               if the Wsdl does not have a complete graph to wsdl:portType
+     * @throws WsdlToUDDIModelConverter.NonSoapBindingFoundException
+     *                               if no soap:bindings are found in the Wsdl (nothing to do)
+     */
+    static Pair<List<BindingTemplate>, Map<String, TModel>> createBindingTemplateFromWsdl(
+            final Wsdl wsdl,
+            final String wsdlPortName,
+            final String wsdlPortBinding,
+            final String wsdlPortBindingNamespace,
+            final Collection<Pair<String, String>> allEndpointPairs)
+            throws PortNotFoundException, WsdlToUDDIModelConverter.MissingWsdlReferenceException, WsdlToUDDIModelConverter.NonSoapBindingFoundException {
+
+        Port foundPort = null;
+        Port candidatePort = null;
+        outer:
+        for (Service wsdlService : wsdl.getServices()) {
+            Map<String, Port> ports = wsdlService.getPorts();
+            for (Map.Entry<String, Port> entry : ports.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(wsdlPortName)) {
+                    foundPort = entry.getValue();
+                    break outer;
+                }
+
+                final QName qName = entry.getValue().getBinding().getQName();
+                if (qName.getLocalPart().equalsIgnoreCase(wsdlPortBinding)) {
+                    //check namespace if applicable
+                    if(wsdlPortBindingNamespace != null && !wsdlPortBindingNamespace.isEmpty()){
+                        if(!qName.getNamespaceURI().equalsIgnoreCase(wsdlPortBindingNamespace)) continue;    
+                    }
+                    candidatePort = entry.getValue();
+                }
+            }
+        }
+
+        final Port wsdlPort = (foundPort != null) ? foundPort : candidatePort;
+        if (wsdlPort == null)
+            throw new PortNotFoundException("Cannot find any wsdl:port by the name of '" + wsdlPortName +
+                    " or any port which implements the binding '" + wsdlPortBinding);
+
+        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl);
+
+        final Map<String, TModel> keysToModels = new HashMap<String, TModel>();
+        final List<BindingTemplate> bindingTemplates = modelConverter.createUddiBindingTemplate(keysToModels, wsdlPort,
+                allEndpointPairs);
+        return new Pair<List<BindingTemplate>, Map<String, TModel>>(bindingTemplates, keysToModels);
+    }
+
+    static class PortNotFoundException extends Exception {
+        public PortNotFoundException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Extract the namespace from the supplied TModel, if it has one defined.
+     *
+     * @param tModel TModel to search it's categoryBag for a namespace keyedReference
+     * @return String namespace found, never the empty string, or null if not found
+     */
+    static String extractNamespace(final TModel tModel) {
+
+        final CategoryBag categoryBag = tModel.getCategoryBag();
+        if (categoryBag == null) return null;//should never happen, not concerned here
+
+        return getNameSpace(categoryBag);
+    }
+
+    /**
+     * Extract the namespace from the supplied TModel, if it has one defined.
+     *
+     * @param businessService BusinessService to search it's categoryBag for a namespace keyedReference
+     * @return String namespace found, never the empty string, or null if not found
+     */
+    static String extractNamespace(final BusinessService businessService) {
+
+        final CategoryBag categoryBag = businessService.getCategoryBag();
+        if (categoryBag == null) return null;
+
+        return getNameSpace(categoryBag);
+    }
+
+    //- PRIVATE
+
+    private static String getNameSpace(final CategoryBag categoryBag) {
+        for (KeyedReference kr : categoryBag.getKeyedReference()) {
+            if (kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_XML_NAMESPACE)) {
+                if(kr.getKeyValue() != null && !kr.getKeyValue().trim().isEmpty()){
+                    return kr.getKeyValue();
+                }
+            }
+        }
+
+        return null;
     }
 }
 

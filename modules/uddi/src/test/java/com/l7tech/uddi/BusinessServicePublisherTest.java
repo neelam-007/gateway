@@ -142,7 +142,7 @@ public class BusinessServicePublisherTest {
         final Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader( "com/l7tech/uddi/SpaceOrderofBattleServiceLocalNameClash_Parent.wsdl" ));
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        final Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
 
 
         final int serviceOid = 3828382;
@@ -201,6 +201,7 @@ public class BusinessServicePublisherTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
+        final Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
 
@@ -209,10 +210,11 @@ public class BusinessServicePublisherTest {
         UDDIClient uddiClient = new TestUddiClient();
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
-        Pair<BindingTemplate, List<TModel>> bindingAndModels = servicePublisher.publishEndPointToExistingService("serviceKey", "YessoTestWebServicesPort", "YessoTestWebServicesPortBinding", gatewayURL, gatewayWsdlUrl, false);
+        Pair<List<BindingTemplate>, List<TModel>> bindingAndModels =
+                servicePublisher.publishEndPointToExistingService("serviceKey", "YessoTestWebServicesPort", "YessoTestWebServicesPortBinding", null, Arrays.asList(endpointPair), false);
 
 
-        testBindingTemplate(gatewayWsdlUrl, gatewayURL, "serviceKey", bindingAndModels);
+        testBindingTemplate(gatewayWsdlUrl, gatewayURL, "serviceKey", new Pair<BindingTemplate, List<TModel>>(bindingAndModels.left.get(0), bindingAndModels.right));
     }
 
     /**

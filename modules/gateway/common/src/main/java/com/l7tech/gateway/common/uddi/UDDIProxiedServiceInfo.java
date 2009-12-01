@@ -19,7 +19,6 @@ import java.util.HashSet;
  * to UDDI. This stores the common information. The actual wsdl:service information is stored in
  * UDDIProxiedService
  *
- *      //TODO [Donal] RENAME THIS CLASS AND EVERYTHING RELATED TO BE 'UDDIPublishInfo'
  * @author darmstrong
  */
 @Entity
@@ -55,6 +54,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
                                                                 final String uddiBusinessKey,
                                                                 final String uddiBusinessName,
                                                                 final String wsdlHash,
+                                                                final String publishedHostname,
                                                                 final boolean removeOtherBindings) {
 
         final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
@@ -64,6 +64,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         info.setUddiBusinessName(uddiBusinessName);
         info.setPublishType(PublishType.ENDPOINT);
         info.setWsdlHash(wsdlHash);
+        info.setPublishedHostname(publishedHostname);
         info.setRemoveOtherBindings(removeOtherBindings);
         return info;
     }
@@ -73,7 +74,9 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
                                                                     final String uddiBusinessKey,
                                                                     final String uddiBusinessName,
                                                                     final String wsdlHash,
-                                                                    final boolean updateProxyOnLocalChange) {
+                                                                    final String publishedHostname,
+                                                                    final boolean updateProxyOnLocalChange
+    ) {
 
         final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
         info.setPublishedServiceOid(publishedServiceOid);
@@ -82,6 +85,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         info.setUddiBusinessName(uddiBusinessName);
         info.setPublishType(PublishType.PROXY);
         info.setWsdlHash(wsdlHash);
+        info.setPublishedHostname(publishedHostname);
         info.setUpdateProxyOnLocalChange(updateProxyOnLocalChange);
         return info;
     }
@@ -91,6 +95,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
                                                                              final String uddiBusinessKey,
                                                                              final String uddiBusinessName,
                                                                              final String wsdlHash,
+                                                                             final String publishedHostname,
                                                                              final boolean updateProxyOnLocalChange) {
 
         final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
@@ -100,6 +105,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         info.setUddiBusinessName(uddiBusinessName);
         info.setPublishType(PublishType.OVERWRITE);
         info.setWsdlHash(wsdlHash);
+        info.setPublishedHostname(publishedHostname);
         info.setUpdateProxyOnLocalChange(updateProxyOnLocalChange);
         return info;
     }
@@ -219,13 +225,13 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.publishType = publishType;
     }
 
-    @Column(name = "proxy_binding_template_key")
-    public String getProxyBindingKey() {
-        return proxyBindingKey;
+    @Column(name = "published_hostname", updatable = false)
+    public String getPublishedHostname() {
+        return publishedHostname;
     }
 
-    public void setProxyBindingKey(String proxyBindingKey) {
-        this.proxyBindingKey = proxyBindingKey;
+    public void setPublishedHostname(String publishedHostname) {
+        this.publishedHostname = publishedHostname;
     }
 
     @Column(name = "publish_wspolicy_enabled")
@@ -318,10 +324,13 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     private PublishType publishType;
 
     /**
-     * If this entity represents the fact that an endpoint was added to a service,
-     * then this is the bindingKey of the added bindingTemplate
+     * This field is the hostname which was used when publishing information to UDDI. This is used when publishing
+     * bindingTemplates. To find if a business service contains binding templates published by the ssg, the hostname
+     * of the bindingTemplates accesspoint in combination with the oid of the published service are compared.
+     * The bindingKey is no longer persisted as we can publish more than one bindingTemplate for a service, http and
+     * https. 
      */
-    private String proxyBindingKey;
+    private String publishedHostname;
 
     private boolean publishWsPolicyEnabled;
 

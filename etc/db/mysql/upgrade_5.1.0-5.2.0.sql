@@ -117,7 +117,7 @@ CREATE TABLE uddi_proxied_service_info (
   uddi_business_key varchar(255) NOT NULL,
   uddi_business_name varchar(255) NOT NULL,
   update_proxy_on_local_change tinyint(1) NOT NULL DEFAULT 0,
-  proxy_binding_template_key varchar(255),
+  published_hostname varchar(255),
   remove_other_bindings tinyint(1) NOT NULL DEFAULT 0,
   created_from_existing tinyint(1) NOT NULL DEFAULT 0,
   metrics_enabled tinyint(1) NOT NULL DEFAULT 0,

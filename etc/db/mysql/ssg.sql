@@ -928,7 +928,7 @@ CREATE TABLE uddi_registry_subscription (
 -- Table structure for Gateway WSDLs published to UDDI. Known as 'Proxied Business Services'
 -- Entity UDDIProxiedService
 -- the general_keyword value is used to identify all services which originated from the same published service's wsdl
---                    //todo rename, see entity
+--
 DROP TABLE IF EXISTS uddi_proxied_service_info;
 CREATE TABLE uddi_proxied_service_info (
   objectid bigint(20) NOT NULL,
@@ -938,7 +938,7 @@ CREATE TABLE uddi_proxied_service_info (
   uddi_business_key varchar(255) NOT NULL,
   uddi_business_name varchar(255) NOT NULL,
   update_proxy_on_local_change tinyint(1) NOT NULL DEFAULT 0,
-  proxy_binding_template_key varchar(255),
+  published_hostname varchar(255),
   remove_other_bindings tinyint(1) NOT NULL DEFAULT 0,
   created_from_existing tinyint(1) NOT NULL DEFAULT 0,
   metrics_enabled tinyint(1) NOT NULL DEFAULT 0,

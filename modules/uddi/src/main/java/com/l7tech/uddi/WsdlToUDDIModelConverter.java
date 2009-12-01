@@ -54,6 +54,7 @@ public class WsdlToUDDIModelConverter {
 
     private Map<String, String> serviceNameToWsdlServiceNameMap;
     private List<Pair<BusinessService, Map<String, TModel>>> servicesAndDependentTModels;
+    public static final String USE_TYPE_END_POINT = "endPoint";
 
     /**
      * When we convert a Published Service's WSDL into a Wsdl object, it does not complain about missing references
@@ -125,22 +126,8 @@ public class WsdlToUDDIModelConverter {
      *          don't exist or reference wsdl:portType elements which dont exist.
      */
     public void convertWsdlToUDDIModel(final Collection<Pair<String, String>> allEndpointPairs) throws MissingWsdlReferenceException {
-        if (allEndpointPairs == null) throw new NullPointerException("allEndpointPairs cannot be null");
 
-        if (allEndpointPairs.isEmpty()) throw new IllegalArgumentException("allEndpointPairs cannot be empty");
-
-        //validate no two endpoints are the same
-        Set<String> gatewayUrls = new HashSet<String>();
-        
-        for (Pair<String, String> anEndpointPair : allEndpointPairs) {
-            if (anEndpointPair.left == null || anEndpointPair.left.trim().isEmpty())
-                throw new IllegalArgumentException("The value of any pair's left value must not be null or empty");
-            if (anEndpointPair.right == null || anEndpointPair.right.trim().isEmpty())
-                throw new IllegalArgumentException("The value of any pair's left value must not be null or empty");
-
-            if(gatewayUrls.contains(anEndpointPair.left)) throw new IllegalArgumentException("All external gateway URLs must be unique");
-            gatewayUrls.add(anEndpointPair.left);
-        }
+        UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
 
         serviceNameToWsdlServiceNameMap = new HashMap<String, String>();
         servicesAndDependentTModels = new ArrayList<Pair<BusinessService, Map<String, TModel>>>();
@@ -185,11 +172,9 @@ public class WsdlToUDDIModelConverter {
         for (Map.Entry<String, Port> entry : ports.entrySet()) {
             final Port wsdlPort = entry.getValue();
             try {
-                for(Pair<String, String> anEndpointPair: allEndpointPairs){
-                    final BindingTemplate bindingTemplate =
-                            createUddiBindingTemplate(serviceToTModels.right, wsdlPort, anEndpointPair.left, anEndpointPair.right);
-                    bindingTemplates.getBindingTemplate().add(bindingTemplate);
-                }
+                final List<BindingTemplate> allNewTemplates =
+                        createUddiBindingTemplate(serviceToTModels.right, wsdlPort, allEndpointPairs);
+                bindingTemplates.getBindingTemplate().addAll(allNewTemplates);
             } catch (MissingWsdlReferenceException e) {
                 //already logged, we ignore the bindingTemplate as it is invalid
                 logger.log(Level.INFO, "Ignored bindingTemplate as the wsdl:port contains invalid references");
@@ -243,10 +228,9 @@ public class WsdlToUDDIModelConverter {
         this.serviceOid = -1;
     }
 
-    BindingTemplate createUddiBindingTemplate(final Map<String, TModel> serviceToTModels,
-                                              final Port wsdlPort,
-                                              final String gatewayURL,
-                                              final String gatewayWsdlUrl)
+    List<BindingTemplate> createUddiBindingTemplate(final Map<String, TModel> serviceToTModels,
+                                                    final Port wsdlPort,
+                                                    final Collection<Pair<String, String>> allEndpointPairs)
             throws MissingWsdlReferenceException, NonSoapBindingFoundException {
 
         List<ExtensibilityElement> elements = wsdlPort.getExtensibilityElements();
@@ -261,11 +245,23 @@ public class WsdlToUDDIModelConverter {
         //We will only convert wsdl:ports which implement a soap biding
         if (!soapFound) throw new NonSoapBindingFoundException("No soap:address found in wsdl");
 
+        List<BindingTemplate> allTemplates = new ArrayList<BindingTemplate>();
+        for(Pair<String, String> anEndpointPair: allEndpointPairs){
+            allTemplates.add(getBindingTemplateForEndpoint(serviceToTModels, wsdlPort, anEndpointPair.left, anEndpointPair.right));
+        }
+
+        return Collections.unmodifiableList(allTemplates);
+    }
+
+    private BindingTemplate getBindingTemplateForEndpoint(final Map<String, TModel> serviceToTModels,
+                                                          final Port wsdlPort,
+                                                          final String gatewayURL,
+                                                          final String gatewayWsdlUrl) throws MissingWsdlReferenceException {
         final BindingTemplate bindingTemplate = new BindingTemplate();
 
         //Using a WSDL implies a SOAP request
         final AccessPoint accessPoint = new AccessPoint();
-        accessPoint.setUseType("endPoint");
+        accessPoint.setUseType(USE_TYPE_END_POINT);
         accessPoint.setValue(gatewayURL);
         bindingTemplate.setAccessPoint(accessPoint);
 

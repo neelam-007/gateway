@@ -43,43 +43,112 @@ public class BusinessServicePublisher {
         this( wsdl, serviceOid, buildUDDIClient(uddiCfg));
     }
 
-    public String publishBindingTemplate(final String serviceKey,
-                                         final String wsdlPortName,
-                                         final String wsdlPortBinding,
-                                         final String protectedServiceExternalURL,
-                                         final String protectedServiceWsdlURL,
-                                         final boolean removeOthers) throws UDDIException {
+    /**
+     * Publish a set of bindingTemplates to a BusinessService in UDDI. Each bindingTemplate published will represent
+     * the same published service. There is more than one bindingTemplate published if the cluster defines a https
+     * endpoint in addition to a http endpoint. Note: that as many endpoints will be created as supplied in allEndpointPairs
+     * <p/>
+     * See UDDIUtilities.validateAllEndpointPairs(allEndpointPairs) for validation of allEndpointPairs
+     *
+     * @param serviceKey               String serviceKey of the owning BusinessService
+     * @param wsdlPortName             String wsdl:port local name of the wsdl:port to publish as a bindingTemplate to UDDI
+     * @param wsdlPortBinding          String wsdl:binding local name of the wsdl:binding to publish as a bindingTemplate to UDDI.
+     *                                 if no wsdl:port by the name of wsdlPortName is found in the gateway's WSDL, then the first implementing wsdl:port
+     *                                 of this binding local name, and namespace if defined, will be published to UDDI.
+     * @param wsdlPortBindingNamespace String namespace of the above wsdl:binding. Can be null. Cannot be the empty string
+     * @param publishedHostname        String external hostname of the publishing cluster. Cannot be null or empty
+     * @param allEndpointPairs         Collection<Pair<String, String>>. Required. All endpoints to publish bindingTemplates for
+     * @param removeOthers             boolean, if true all other endpoints will be removed
+     * @throws UDDIException any problems searching / updating UDDI
+     */
+    public void publishBindingTemplate(
+            final String serviceKey,
+            final String wsdlPortName,
+            final String wsdlPortBinding,
+            final String wsdlPortBindingNamespace,
+            final String publishedHostname,
+            final Collection<Pair<String, String>> allEndpointPairs,
+            final boolean removeOthers) throws UDDIException {
+        if(serviceKey == null || serviceKey.trim().isEmpty()) throw new IllegalArgumentException("serviceKey cannot be null or empty");
+        if(wsdlPortName == null || wsdlPortName.trim().isEmpty()) throw new IllegalArgumentException("wsdlPortName cannot be null or empty");
+        if(wsdlPortBinding == null || wsdlPortBinding.trim().isEmpty()) throw new IllegalArgumentException("wsdlPortBinding cannot be null or empty");
+        if(wsdlPortBindingNamespace == null || wsdlPortBindingNamespace.trim().isEmpty()) throw new IllegalArgumentException("wsdlPortBindingNamespace cannot be null or empty");
+        if(publishedHostname == null || publishedHostname.trim().isEmpty()) throw new IllegalArgumentException("publishedHostname cannot be null or empty");
 
-        Pair<BindingTemplate, List<TModel>> templateToModels = publishEndPointToExistingService(serviceKey,
-                wsdlPortName, wsdlPortBinding, protectedServiceExternalURL, protectedServiceWsdlURL, removeOthers);
+        UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
 
-        return templateToModels.left.getBindingKey();
+        //Delete any existing bindings for the given publishedHostname and serviceOid
+        deleteGatewayBindingTemplates(serviceKey, publishedHostname);
+
+        publishEndPointToExistingService(serviceKey, wsdlPortName, wsdlPortBinding, wsdlPortBindingNamespace, allEndpointPairs, removeOthers);
+    }
+
+    /**
+     * Delete all gateway endpoints contained by a BusinessService
+     * <p/>
+     * A gateway endpoint is defined as any bindingTemplate in UDDI which contains an accessPoint with an endPoint value
+     * containing both the supplied publishedHostname and the serviceOid of a published service
+     *
+     * @param serviceKey String serviceKey of a BusinessService from which to delete gateway bindingTemplates. Required
+     * @param publishedHostname String external hostname of the cluster
+     * @throws UDDIException any problems searching / updating UDDI
+     */
+    public void deleteGatewayBindingTemplates(final String serviceKey, final String publishedHostname) throws UDDIException {
+        if(serviceKey == null || serviceKey.trim().isEmpty()) throw new IllegalArgumentException("serviceKey cannot be null or empty");
+        if(publishedHostname == null || publishedHostname.trim().isEmpty()) throw new IllegalArgumentException("publishedHostname cannot be null or empty");        
+
+        final BusinessService bs = jaxWsUDDIClient.getBusinessService(serviceKey);
+        final BindingTemplates bindingTemplates = bs.getBindingTemplates();
+        if (bindingTemplates != null && !bindingTemplates.getBindingTemplate().isEmpty()) {
+            for (BindingTemplate bt : bindingTemplates.getBindingTemplate()) {
+                final AccessPoint accessPoint = bt.getAccessPoint();
+                if (!accessPoint.getUseType().equalsIgnoreCase(WsdlToUDDIModelConverter.USE_TYPE_END_POINT)) continue;
+
+                final String endPoint = accessPoint.getValue();
+                if (endPoint.indexOf(publishedHostname) != -1 && endPoint.indexOf(Long.toString(serviceOid)) != -1) {
+                    uddiClient.deleteBindingTemplate(bt.getBindingKey());
+                }
+            }
+        }
     }
 
     /**
      * Should only be called once for a WSDL. Will do the house cleaning required to publish a proxied wsdl:service
      * to UDDI, which represents an 'overwritten' service
+     * <p/>
+     * This will overwrite a single BusinessService in UDDI with the contents of a single wsdl:service from the
+     * gateways WSDL.
      *
-     * @param serviceKey
-     * @param wsdlPortName
-     * @param businessKey
+     * @param serviceKey  String serviceKey of a BusinessService to overwrite. Required.
+     * @param businessKey Stirng businessKey which owns the BusinessService identified by serviceKey. Required
+     * @param allEndpointPairs Collection<Pair<String, String>>. Required. All endpoints to publish bindingTemplates for
+     * @return Pair Left side: Set of serviceKeys which should be deleted. Right side: set of services published
+     *         as a result of this publish / update operation
+     * @throws UDDIException any problems searching / updating UDDI
      */
-    public Pair<Set<String>, Set<UDDIBusinessService>> overwriteServiceInUDDI(final String serviceKey,
-                                       final String wsdlPortName,   //todo why is this not used? investigate then fix or remove
-                                       final String businessKey,
-                                       final Collection<Pair<String, String>> allEndpointPairs) throws UDDIException {
-        
+    public Pair<Set<String>, Set<UDDIBusinessService>> overwriteServiceInUDDI(
+            final String serviceKey,
+            final String businessKey,
+            final Collection<Pair<String, String>> allEndpointPairs) throws UDDIException {
+        if (serviceKey == null || serviceKey.trim().isEmpty())
+            throw new IllegalArgumentException("serviceKey cannot be null or empty");
+        if (businessKey == null || businessKey.trim().isEmpty())
+            throw new IllegalArgumentException("businessKey cannot be null or empty");
+
+        UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
+
         final UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
         final Set<String> serviceKeys = new HashSet<String>();
         serviceKeys.add(serviceKey);
         final List<Pair<BusinessService, Map<String, TModel>>> uddiServicesToDependentTModelsPairs = serviceDownloader.getBusinessServiceModels(serviceKeys);
 
-        if(uddiServicesToDependentTModelsPairs.isEmpty()) throw new UDDIException("No BusinessService found for serviceKey: " + serviceKey);
+        if (uddiServicesToDependentTModelsPairs.isEmpty())
+            throw new UDDIException("No BusinessService found for serviceKey: " + serviceKey);
         final Pair<BusinessService, Map<String, TModel>> serviceToDependentTModels = uddiServicesToDependentTModelsPairs.iterator().next();
 
         BusinessService overwriteService = serviceToDependentTModels.left;//not final as we will update it's reference
         final BindingTemplates templates = overwriteService.getBindingTemplates();
-        if(templates == null){
+        if (templates == null) {
             //we can work with this, we don't care as were going to be uploading our own bindingTemplates
             //this happens if all bindings are removed between when we got our record of the service and us
             //initiating this overwrite action
@@ -92,8 +161,8 @@ public class BusinessServicePublisher {
         final Pair<Set<String>, Set<String>> deleteAndKeep = getBindingsToDeleteAndKeep(overwriteService.getBindingTemplates().getBindingTemplate(), allDependentTModels);
         final Set<String> deleteSet = deleteAndKeep.left;
 
-        for(String bindingKey: deleteSet){
-            uddiClient.deleteBindingTemplate(bindingKey);    
+        for (String bindingKey : deleteSet) {
+            uddiClient.deleteBindingTemplate(bindingKey);
         }
         //Redownload the service
         overwriteService = jaxWsUDDIClient.getBusinessService(overwriteService.getServiceKey());
@@ -101,7 +170,7 @@ public class BusinessServicePublisher {
         //add all kept bind
 
         //extract the service's local name from it's keyed references - it must exist to be valid
-        if(overwriteService.getCategoryBag() == null){
+        if (overwriteService.getCategoryBag() == null) {
             throw new UDDIException("Invalid BusinessService. It does not contain a CategoryBag. serviceKey: " + overwriteService.getServiceKey());
         }
 
@@ -168,6 +237,11 @@ public class BusinessServicePublisher {
             final UDDIRegistrySpecificMetaData registrySpecificMetaData,
             final Collection<Pair<String, String>> allEndpointPairs) throws UDDIException {
 
+        if(businessKey == null || businessKey.trim().isEmpty()) throw new IllegalArgumentException("businessKey cannot be null or empty");
+        if(publishedServiceKeys == null) throw new NullPointerException("publishedServiceKeys cannot be null");
+
+        UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
+        
         final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
         try {
             modelConverter.convertWsdlToUDDIModel(allEndpointPairs);
@@ -215,17 +289,19 @@ public class BusinessServicePublisher {
         }
     }
 
-    Pair<BindingTemplate, List<TModel>> publishEndPointToExistingService(final String serviceKey,
-                                                                         final String wsdlPortName,
-                                                                         final String wsdlPortBinding,
-                                                                         final String protectedServiceExternalURL,
-                                                                         final String protectedServiceWsdlURL,
-                                                                         final boolean removeOthers)
+    Pair<List<BindingTemplate>, List<TModel>> publishEndPointToExistingService(
+            final String serviceKey,
+            final String wsdlPortName,
+            final String wsdlPortBinding,
+            final String wsdlPortBindingNamespace,
+            final Collection<Pair<String, String>> allEndpointPairs,
+            final boolean removeOthers)
             throws UDDIException {
 
-        final Pair<BindingTemplate, Map<String, TModel>> bindingToModels;
+        UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
+        final Pair<List<BindingTemplate>, Map<String, TModel>> bindingToModels;
         try {
-            bindingToModels = UDDIUtilities.createBindingTemplateFromWsdl(wsdl, wsdlPortName, wsdlPortBinding, protectedServiceExternalURL, protectedServiceWsdlURL);
+            bindingToModels = UDDIUtilities.createBindingTemplateFromWsdl(wsdl, wsdlPortName, wsdlPortBinding, wsdlPortBindingNamespace, allEndpointPairs);
         } catch (UDDIUtilities.PortNotFoundException e) {
             throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
         } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
@@ -257,7 +333,8 @@ public class BusinessServicePublisher {
         try {
             //publish the wsdl:portType tmodels first so we can update the binding tmodel references to them
             for (Map.Entry<String, TModel> entry : tModelsToPublish.entrySet()) {
-                if (UDDIUtilities.getTModelType(entry.getValue(), true) != UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE) continue;
+                if (UDDIUtilities.getTModelType(entry.getValue(), true) != UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE)
+                    continue;
                 jaxWsUDDIClient.publishTModel(entry.getValue());
             }
 
@@ -270,14 +347,16 @@ public class BusinessServicePublisher {
             UDDIUtilities.updateBindingTModelReferences(allBindingTModels, bindingToModels.right);
 
             //now publish the binding tmodels after they have been updated
-            for(TModel bindingModel: allBindingTModels){
+            for (TModel bindingModel : allBindingTModels) {
                 jaxWsUDDIClient.publishTModel(bindingModel);
             }
 
-            bindingToModels.left.setServiceKey(businessService.getServiceKey());
+            for (BindingTemplate bt : bindingToModels.left) {
+                bt.setServiceKey(businessService.getServiceKey());
 
-            UDDIUtilities.updateBindingTemplateTModelReferences(bindingToModels.left, bindingToModels.right);
-            jaxWsUDDIClient.publishBindingTemplate(bindingToModels.left);
+                UDDIUtilities.updateBindingTemplateTModelReferences(bt, bindingToModels.right);
+                jaxWsUDDIClient.publishBindingTemplate(bt);
+            }
 
             //remove other bindings?
             if (removeOthers) {
@@ -287,7 +366,7 @@ public class BusinessServicePublisher {
 
             List<TModel> models = new ArrayList<TModel>();
             models.addAll(bindingToModels.right.values());
-            return new Pair<BindingTemplate, List<TModel>>(bindingToModels.left, models);
+            return new Pair<List<BindingTemplate>, List<TModel>>(Collections.unmodifiableList(bindingToModels.left), Collections.unmodifiableList(models));
 
         } catch (UDDIException e) {
             logger.log(Level.WARNING, "Problem publishing to UDDI: " + ExceptionUtils.getMessage(e));
@@ -297,9 +376,11 @@ public class BusinessServicePublisher {
                     handleTModelRollback(tModelKey);
                 }
             }
-            final String bindingKey = bindingToModels.left.getBindingKey();
-            if (bindingKey != null && !bindingKey.trim().isEmpty()) {
-                handleBindingTemplateRollback(bindingKey);
+            for (BindingTemplate bt : bindingToModels.left) {
+                final String bindingKey = bt.getBindingKey();
+                if (bindingKey != null && !bindingKey.trim().isEmpty()) {
+                    handleBindingTemplateRollback(bindingKey);
+                }
             }
             throw e;
         }

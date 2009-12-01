@@ -343,7 +343,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
         final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getEndPointPublishInfo(service.getOid(),
                 uddiRegistry.getOid(), serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(),
-                wsdlHash, removeOthers);
+                wsdlHash, uddiHelper.getExternalHostName(), removeOthers);
 
         final long oid = uddiProxiedServiceInfoManager.save(serviceInfo);
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
@@ -366,7 +366,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIProxiedServiceInfo uddiProxiedServiceInfo =
                 UDDIProxiedServiceInfo.getOverwriteProxyServicePublishInfo(publishedService.getOid(),
                         serviceControl.getUddiRegistryOid(), serviceControl.getUddiBusinessKey(),
-                        serviceControl.getUddiBusinessName(), wsdlHash, updateWhenGatewayWsdlChanges);
+                        serviceControl.getUddiBusinessName(), wsdlHash, uddiHelper.getExternalHostName(), updateWhenGatewayWsdlChanges);
 
         final long oid = uddiProxiedServiceInfoManager.save(uddiProxiedServiceInfo);
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
@@ -399,7 +399,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
         final UDDIProxiedServiceInfo uddiProxiedServiceInfo = UDDIProxiedServiceInfo.getProxyServicePublishInfo(service.getOid(),
                 uddiRegistry.getOid(), uddiBusinessKey, uddiBusinessName,
-                wsdlHash, updateWhenGatewayWsdlChanges);
+                wsdlHash, uddiHelper.getExternalHostName(), updateWhenGatewayWsdlChanges);
 
         final long oid = uddiProxiedServiceInfoManager.save(uddiProxiedServiceInfo);
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
