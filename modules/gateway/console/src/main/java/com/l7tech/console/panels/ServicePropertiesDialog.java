@@ -799,6 +799,7 @@ public class ServicePropertiesDialog extends JDialog {
 
                 if( wsdlUnderUDDIControlCheckBox.isSelected() != uddiServiceControl.isUnderUddiControl() ||
                     enableMonitoring != uddiServiceControl.isMonitoringEnabled() ||
+                    updateWsdlOnChange != uddiServiceControl.isUpdateWsdlOnChange() ||
                     disableServiceOnChange != uddiServiceControl.isDisableServiceOnChange() ){
                     uddiServiceControl.setUnderUddiControl( wsdlUnderUDDIControlCheckBox.isSelected() );
                     uddiServiceControl.setMonitoringEnabled( enableMonitoring );
