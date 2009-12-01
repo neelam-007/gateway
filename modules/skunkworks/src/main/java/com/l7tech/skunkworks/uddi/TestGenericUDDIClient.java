@@ -72,9 +72,11 @@ public class TestGenericUDDIClient {
         final String gatewayWsdlUrl = "http://localhost:8080/" + serviceOid + "?wsdl";
         final String gatewayURL = "http://localhost:8080/" + serviceOid;
 
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+
         final String businessKey = "uddi:c4f2cbdd-beab-11de-8126-f78857d54072";//this exists in my local uddi registry
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
 
         final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
 

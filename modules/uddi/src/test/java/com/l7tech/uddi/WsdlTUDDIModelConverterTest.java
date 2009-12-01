@@ -32,18 +32,19 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
 
         final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
 
         Assert.assertEquals("Incorrect number of services found", 2, serviceToDependentModels.size());
-        List<String> allTModelKeys = new ArrayList<String>();
+        Set<String> allTModelKeys = new HashSet<String>();
         for(Pair<BusinessService, Map<String, TModel>> serviceToModels: serviceToDependentModels){
             for(TModel m: serviceToModels.right.values()){
-                allTModelKeys.add(m.getTModelKey());
+                allTModelKeys.add(m.toString());
             }
         }
         //2 services. Each service has two wsdl:ports. Each wsdlPort requires 2 tModels = 2 * 2 * 2 = 8
@@ -51,6 +52,71 @@ public class WsdlTUDDIModelConverterTest {
 
     }
 
+    /**
+     * Same test as above, but with 2 endpoints
+     * @throws Exception
+     */
+    @Test
+    public void testUniqueTModelPerServiceTwoEndpoints() throws Exception{
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader( "com/l7tech/uddi/Warehouse.wsdl" ));
+
+        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+        final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+
+        final String gatewayURHttps = "https://localhost:8080/3828382";
+        Pair<String, String> endpointPairHttps = new Pair<String, String>(gatewayURHttps, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair, endpointPairHttps));
+
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
+
+        Assert.assertEquals("Incorrect number of services found", 1, serviceToDependentModels.size());
+        Set<String> allTModelKeys = new HashSet<String>();
+        for(Pair<BusinessService, Map<String, TModel>> serviceToModels: serviceToDependentModels){
+            for(TModel m: serviceToModels.right.values()){
+                allTModelKeys.add(m.toString());
+            }
+        }
+        //1 service. Each service has two wsdl:ports, and each wsdl:port should be represented twice, 1 per endpoint.
+        //Each wsdlPort requires 2 tModels = 1 * 2 * 2 * 2 (endpoints) =
+        Assert.assertEquals("Incorrect number of unique tModels found", 8, allTModelKeys.size());
+    }
+
+    /**
+     * Same test as above, but with 2 endpoints
+     * @throws Exception
+     */
+    @Test
+    public void testUniqueTModelPerServiceTwoEndpointsTwoServices() throws Exception{
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader( "com/l7tech/uddi/WarehouseTwoServices.wsdl" ));
+
+        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+        final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+
+        final String gatewayURHttps = "https://localhost:8080/3828382";
+        Pair<String, String> endpointPairHttps = new Pair<String, String>(gatewayURHttps, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair, endpointPairHttps));
+
+        final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
+
+        Assert.assertEquals("Incorrect number of services found", 2, serviceToDependentModels.size());
+        Set<String> allTModelKeys = new HashSet<String>();
+        for(Pair<BusinessService, Map<String, TModel>> serviceToModels: serviceToDependentModels){
+            for(TModel m: serviceToModels.right.values()){
+                allTModelKeys.add(m.toString());
+            }
+        }
+        //1 service. Each service has two wsdl:ports, and each wsdl:port should be represented twice, 1 per endpoint.
+        //Each wsdlPort requires 2 tModels = 1 * 2 * 2 * 2 (endpoints) =
+        Assert.assertEquals("Incorrect number of unique tModels found", 16, allTModelKeys.size());
+    }
     /**
      * Tests that the Warehouse wsdl converts successfully and that the correct number of wsdl's and dependent
      * tmodels are found
@@ -62,11 +128,12 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         final String businessKey = "uddi:uddi_business_key";
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
 
         final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
         Assert.assertNotNull(serviceToDependentModels);
@@ -86,11 +153,13 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+
         final String targetNameSpace = wsdl.getTargetNamespace();
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
 
         final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
 
@@ -164,11 +233,11 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        final String targetNameSpace = wsdl.getTargetNamespace();
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
 
         final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
         Assert.assertEquals("Incorrect number of Business Services found", 1, serviceToDependentModels.size());
@@ -185,11 +254,11 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        final String targetNameSpace = wsdl.getTargetNamespace();
-
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
 
         final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
         Assert.assertEquals("Incorrect number of Business Services found", 1, serviceToDependentModels.size());
@@ -203,10 +272,11 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
         final List<Pair<BusinessService, Map<String, TModel>>> models = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
     }
 
@@ -222,10 +292,11 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, "uddi:uddi_business_key", serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key", serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
         final List<Pair<BusinessService, Map<String, TModel>>> serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
         Assert.assertEquals("Incorrect number of BusinessServices found", 1, serviceToDependentModels.size());
     }

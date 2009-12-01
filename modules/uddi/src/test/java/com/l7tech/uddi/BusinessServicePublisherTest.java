@@ -11,7 +11,6 @@ import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.util.Pair;
 import com.l7tech.test.BugNumber;
 
-import javax.xml.bind.JAXB;
 import java.util.*;
 
 public class BusinessServicePublisherTest {
@@ -29,19 +28,20 @@ public class BusinessServicePublisherTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         final String businessKey = "uddi:uddi_business_key";
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
 
         UDDIClient uddiClient = new TestUddiClient(true);
 
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
         final Pair<Set<String>, Set<UDDIBusinessService>> pair =
-                servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey,
-                        Collections.<String>emptySet(), false, null);
+                servicePublisher.publishServicesToUDDIRegistry(businessKey,
+                        Collections.<String>emptySet(), false, null, Arrays.asList(endpointPair));
 
         Assert.assertNotNull("pair should not be null", pair);
         Assert.assertTrue("No services to delete should be found", pair.left.isEmpty());
@@ -50,8 +50,7 @@ public class BusinessServicePublisherTest {
         final Set<String> stringSet = new HashSet<String>();
         stringSet.addAll(Arrays.asList("service key"));
         final Pair<Set<String>, Set<UDDIBusinessService>> deletePair =
-                servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey,
-                        stringSet, false, null);
+                servicePublisher.publishServicesToUDDIRegistry(businessKey ,stringSet, false, null, Arrays.asList(endpointPair));
 
         Assert.assertNotNull("pair should not be null", deletePair);
         Assert.assertEquals("One service to delete should be found", 1, deletePair.left.size());
@@ -60,24 +59,104 @@ public class BusinessServicePublisherTest {
 
     }
 
+    /**
+     * Same tests as above, just with two endpoints, makes no difference at a high level - the same number of services
+     * are published
+     * 
+     * @throws Exception
+     */
     @Test
-    public void testImportServiceLocalNameClash() throws Exception{
-        final Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader( "com/l7tech/uddi/SpaceOrderofBattleServiceLocalNameClash_Parent.wsdl" ));
+    public void testBusinessServicePublisherTwoEndPoints() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/Warehouse.wsdl"));
+
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+
+        final String gatewayURHttps = "https://localhost:8080/3828382";
+        Pair<String, String> endpointPairHttps = new Pair<String, String>(gatewayWsdlUrl, gatewayURHttps);
 
         final int serviceOid = 3828382;
         final String businessKey = "uddi:uddi_business_key";
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, gatewayWsdlUrl, gatewayURL, businessKey, serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel();
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair, endpointPairHttps));
 
         UDDIClient uddiClient = new TestUddiClient(true);
 
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
         final Pair<Set<String>, Set<UDDIBusinessService>> pair =
-                servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey,
-                        Collections.<String>emptySet(), false, null);
+                servicePublisher.publishServicesToUDDIRegistry(businessKey,
+                        Collections.<String>emptySet(), false, null, Arrays.asList(endpointPair));
+
+        Assert.assertNotNull("pair should not be null", pair);
+        Assert.assertTrue("No services to delete should be found", pair.left.isEmpty());
+        Assert.assertEquals("Incorrect number of services published", 1, pair.right.size());
+
+        final Set<String> stringSet = new HashSet<String>();
+        stringSet.addAll(Arrays.asList("service key"));
+        final Pair<Set<String>, Set<UDDIBusinessService>> deletePair =
+                servicePublisher.publishServicesToUDDIRegistry(businessKey ,stringSet, false, null, Arrays.asList(endpointPair));
+
+        Assert.assertNotNull("pair should not be null", deletePair);
+        Assert.assertEquals("One service to delete should be found", 1, deletePair.left.size());
+        Assert.assertEquals("Invalid service key of service to delete found", "service key", deletePair.left.iterator().next());
+        Assert.assertEquals("Incorrect number of services published", 1, deletePair.right.size());
+    }
+
+    /**
+     * Same tests as above, just with two endpoints, makes no difference at a high level - the same number of services
+     * are published
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testBusinessServicePublisherTwoEndPointsPlayerStats() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/PlayerStats.wsdl"));
+
+        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+        final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+
+        final String gatewayURHttps = "https://localhost:8080/3828382";
+        Pair<String, String> endpointPairHttps = new Pair<String, String>(gatewayURHttps, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+        final String businessKey = "uddi:uddi_business_key";
+
+        UDDIClient uddiClient = new TestUddiClient(true);
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        final Pair<Set<String>, Set<UDDIBusinessService>> pair =
+                servicePublisher.publishServicesToUDDIRegistry(businessKey,
+                        Collections.<String>emptySet(), false, null, Arrays.asList(endpointPair, endpointPairHttps));
+
+        Assert.assertNotNull("pair should not be null", pair);
+        Assert.assertTrue("No services to delete should be found", pair.left.isEmpty());
+        Assert.assertEquals("Incorrect number of services published", 1, pair.right.size());
+    }
+
+    @Test
+    public void testImportServiceLocalNameClash() throws Exception{
+        final Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader( "com/l7tech/uddi/SpaceOrderofBattleServiceLocalNameClash_Parent.wsdl" ));
+        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+        final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+
+
+        final int serviceOid = 3828382;
+        final String businessKey = "uddi:uddi_business_key";
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
+
+        UDDIClient uddiClient = new TestUddiClient(true);
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        final Pair<Set<String>, Set<UDDIBusinessService>> pair =
+                servicePublisher.publishServicesToUDDIRegistry(businessKey,
+                        Collections.<String>emptySet(), false, null, Arrays.asList(endpointPair));
 
         Assert.assertNotNull("pair should not be null", pair);
         Assert.assertTrue("No services to delete should be found", pair.left.isEmpty());
@@ -86,8 +165,7 @@ public class BusinessServicePublisherTest {
         final Set<String> stringSet = new HashSet<String>();
         stringSet.addAll(Arrays.asList("service key"));
         final Pair<Set<String>, Set<UDDIBusinessService>> deletePair =
-                servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, businessKey,
-                        stringSet, false, null);
+                servicePublisher.publishServicesToUDDIRegistry(businessKey, stringSet, false, null, Arrays.asList(endpointPair));
 
         Assert.assertNotNull("pair should not be null", deletePair);
         Assert.assertEquals("One service to delete should be found", 1, deletePair.left.size());
@@ -149,6 +227,7 @@ public class BusinessServicePublisherTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
 
@@ -186,8 +265,8 @@ public class BusinessServicePublisherTest {
         };
 
         final Pair<Set<String>, Set<UDDIBusinessService>> pair =
-                servicePublisher.publishServicesToUDDIRegistry(gatewayURL, gatewayWsdlUrl, "business key",
-                        Collections.<String>emptySet(), false, metaData);
+                servicePublisher.publishServicesToUDDIRegistry("business key",
+                        Collections.<String>emptySet(), false, metaData, Arrays.asList(endpointPair));
 
         List<BusinessService> publishedServices = uddiClient.getPublishedServices();
         BusinessService testService = publishedServices.get(0);

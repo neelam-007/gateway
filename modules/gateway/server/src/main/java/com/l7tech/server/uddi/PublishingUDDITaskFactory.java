@@ -321,12 +321,6 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     serviceWasOverwritten = false;
                 }
 
-                final String protectedServiceExternalURL =
-                        factory.uddiHelper.getExternalUrlForService(publishedService.getOid());
-                //protected service gateway external wsdl url
-                final String protectedServiceWsdlURL =
-                        factory.uddiHelper.getExternalWsdlUrlForService(publishedService.getOid());
-
                 final Wsdl wsdl;
                 try {
                     wsdl = publishedService.parsedWsdl();
@@ -360,11 +354,14 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 final UDDIRegistrySpecificMetaData registrySpecificMetaData =
                         PublishingUDDITaskFactory.getRegistrySpecificMetaData(uddiRegistry, serviceControl, factory);
 
+                final Collection<Pair<String, String>> allEndpointPairs =
+                        factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
+
                 final Pair<Set<String>, Set<UDDIBusinessService>> deletedAndNewServices;
                 try {
                     deletedAndNewServices = businessServicePublisher.publishServicesToUDDIRegistry(
-                            protectedServiceExternalURL, protectedServiceWsdlURL, uddiProxiedServiceInfo.getUddiBusinessKey(),
-                            serviceKeys, serviceWasOverwritten, registrySpecificMetaData);
+                            uddiProxiedServiceInfo.getUddiBusinessKey(),
+                            serviceKeys, serviceWasOverwritten, registrySpecificMetaData, allEndpointPairs);
                 } catch (UDDIException e) {
                     PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
@@ -549,12 +546,6 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 logger.log(Level.INFO, "Overwriting BusinessService with Gateway WSDL from Published Service id #(" + publishedService.getOid() + ") to UDDI registry id #(" + uddiRegistry.getOid() + ")");
 
-                final String protectedServiceExternalURL =
-                        factory.uddiHelper.getExternalUrlForService(publishedService.getOid());
-                //protected service gateway external wsdl url
-                final String protectedServiceWsdlURL =
-                        factory.uddiHelper.getExternalWsdlUrlForService(publishedService.getOid());
-
                 final Wsdl wsdl;
                 try {
                     wsdl = publishedService.parsedWsdl();
@@ -570,9 +561,12 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         uddiProxiedServiceInfo.getPublishedServiceOid(),
                         factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
 
+                final Collection<Pair<String, String>> allEndpointPairs =
+                        factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
+
                 try {
                     businessServicePublisher.overwriteServiceInUDDI(serviceControl.getUddiServiceKey(),
-                            serviceControl.getWsdlPortName(), protectedServiceExternalURL, protectedServiceWsdlURL, serviceControl.getUddiBusinessKey());
+                            serviceControl.getWsdlPortName(), serviceControl.getUddiBusinessKey(), allEndpointPairs);
 
                 } catch (UDDIException e) {
                     PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);

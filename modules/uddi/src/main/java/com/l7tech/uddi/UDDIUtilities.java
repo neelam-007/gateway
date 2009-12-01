@@ -256,10 +256,11 @@ public class UDDIUtilities {
                     " or any port which implements the binding '" + wsdlPortBinding);
 
         final WsdlToUDDIModelConverter modelConverter =
-                new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL, protectedServiceExternalURL);
+                new WsdlToUDDIModelConverter(wsdl);
 
         final Map<String, TModel> keysToModels = new HashMap<String, TModel>();
-        final BindingTemplate template = modelConverter.createUddiBindingTemplate(keysToModels, wsdlPort);
+        final BindingTemplate template = modelConverter.createUddiBindingTemplate(keysToModels, wsdlPort,
+                protectedServiceExternalURL, protectedServiceWsdlURL);
         return new Pair<BindingTemplate, Map<String, TModel>>(template, keysToModels);
     }
 

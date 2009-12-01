@@ -62,15 +62,12 @@ public class BusinessServicePublisher {
      *
      * @param serviceKey
      * @param wsdlPortName
-     * @param protectedServiceExternalURL
-     * @param protectedServiceWsdlURL
      * @param businessKey
      */
     public Pair<Set<String>, Set<UDDIBusinessService>> overwriteServiceInUDDI(final String serviceKey,
                                        final String wsdlPortName,   //todo why is this not used? investigate then fix or remove
-                                       final String protectedServiceExternalURL,
-                                       final String protectedServiceWsdlURL,
-                                       final String businessKey) throws UDDIException {
+                                       final String businessKey,
+                                       final Collection<Pair<String, String>> allEndpointPairs) throws UDDIException {
         
         final UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
         final Set<String> serviceKeys = new HashSet<String>();
@@ -113,10 +110,9 @@ public class BusinessServicePublisher {
         //we must find both the service name and the correct namespace in the Gateway's WSDL, otherwise we are mis configured
 
         //Now work with the WSDL, the information we will publish comes from the Gateway's WSDL
-        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
-                protectedServiceExternalURL, businessKey, serviceOid);
+        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
         try {
-            modelConverter.convertWsdlToUDDIModel();
+            modelConverter.convertWsdlToUDDIModel(allEndpointPairs);
         } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
             throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid + ") into UDDI object model.", e);
         }
@@ -147,35 +143,34 @@ public class BusinessServicePublisher {
      * <p/>
      * This handles both an initial publish and a subsequent publish. For updates, existing serviceKeys are reused
      * where they represent the same wsdl:service from the wsdl
-     *
+     * <p/>
      * If isOverWriteUpdate is true, then publishedServiceKeys must contain at least 1 key.
      *
-     * @param protectedServiceExternalURL String url which will be come the value of 'endPoint' in the accessPoint element
-     *                                    of a bindingTemplate
-     * @param protectedServiceWsdlURL     String url the overview url where the wsdl can be downloaded from the gateway from
-     *                                    which will be included in every tModel published
      * @param businessKey                 String business key of the BusinessEntity in UDDi which owns all services published
      * @param publishedServiceKeys        Set String of known service keys. Can be empty, but not null
      * @param isOverwriteUpdate           boolean if true, then we aer updating an overwritten service. In this case we need
      *                                    to make sure we only publish a single service from the WSDL. The first serviceKey found in publishedServiceKeys is then
      *                                    assumed to be the serviceKey of the overwritten service.
      * @param registrySpecificMetaData    if not null, the registry specific meta data will be added appropriately to each uddi piece of infomation published
+     * @param allEndpointPairs            Collection<Pair<String, String>> all endpoints which should be published to UDDI
+     *                                    as distinct endpoints for each service published. This means that a single wsdl:port may have more than one
+     *                                    bindingTemplate in UDDI. The left side of each pair is String url which will become the value of the'endPoint'
+     *                                    in the accessPoint element of a bindingTemplate. The right hand side of each pair is String url the overview url
+     *                                    where the wsdl can be downloaded from the gateway from which will be included in every tModel published
      * @return Pair Left side: Set of serviceKeys which should be deleted. Right side: set of services published
      *         as a result of this publish / update operation
      * @throws UDDIException any problems searching / updating UDDI or with data model
      */
     public Pair<Set<String>, Set<UDDIBusinessService>> publishServicesToUDDIRegistry(
-            final String protectedServiceExternalURL,
-            final String protectedServiceWsdlURL,
             final String businessKey,
             final Set<String> publishedServiceKeys,
             final boolean isOverwriteUpdate,
-            final UDDIRegistrySpecificMetaData registrySpecificMetaData) throws UDDIException {
+            final UDDIRegistrySpecificMetaData registrySpecificMetaData,
+            final Collection<Pair<String, String>> allEndpointPairs) throws UDDIException {
 
-        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, protectedServiceWsdlURL,
-                protectedServiceExternalURL, businessKey, serviceOid);
+        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
         try {
-            modelConverter.convertWsdlToUDDIModel();
+            modelConverter.convertWsdlToUDDIModel(allEndpointPairs);
         } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
             throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid + ") into UDDI object model.", e);
         }
