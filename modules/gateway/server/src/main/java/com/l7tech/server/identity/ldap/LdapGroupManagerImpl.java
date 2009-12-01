@@ -351,11 +351,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                 } else if ( MemberStrategy.MEMBERS_ARE_DN.equals(memberStrategy) ) {
                                     subgroup = findByPrimaryKey(memberString);
                                 } else if( MemberStrategy.MEMBERS_ARE_NVPAIR.equals(memberStrategy) ) {
-                                    String memberName = memberString;
-                                    int index = memberName.indexOf( '=' );
-                                    if ( index > 0 ) {
-                                        memberName = memberName.substring( index+1 );
-                                    }
+                                    String memberName = groupNameFromNVPair( memberString );
                                     subgroup = findByName(memberName);
                                 }
 
@@ -378,6 +374,15 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         }
 
         return false;
+    }
+
+    private String groupNameFromNVPair( final String memberString ) {
+        String memberName = memberString;
+        int index = memberName.indexOf( '=' );
+        if ( index > 0 ) {
+            memberName = memberName.substring( index+1 );
+        }
+        return memberName;
     }
 
     /**
@@ -667,11 +672,13 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
      */
     @Override
     public EntityHeaderSet<IdentityHeader> getUserHeaders( final LdapGroup group ) throws FindException {
-        return getUserHeaders( group, 1 );
+        return getUserHeaders( group, 1, new HashSet<String>(), new HashSet<String>() );
     }
 
     private EntityHeaderSet<IdentityHeader> getUserHeaders( final LdapGroup group,
-                                                            final int depth ) throws FindException {
+                                                            final int depth,
+                                                            final Set<String> processedGroupNames,
+                                                            final Set<String> processedGroupIds ) throws FindException {
         final LdapIdentityProvider identityProvider = getIdentityProvider();
         final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
         final GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
@@ -709,8 +716,17 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                             if (u != null) {
                                                 IdentityHeader h = new IdentityHeader(getProviderOid(), u.getDn(), EntityType.USER, u.getLogin(), null, u.getName(), null);
                                                 headers.add(h);
+                                            } else if ( groupNestingProcessNextDepth(depth) && !processedGroupNames.contains(memberlogin) ) {
+                                                try {
+                                                    LdapGroup subgroup = findByName(memberlogin);
+                                                    Set<IdentityHeader> subgroupmembers = getUserHeaders(subgroup, depth + 1, processedGroupNames, processedGroupIds);
+                                                    headers.addAll(subgroupmembers);
+                                                    processedGroupNames.add( subgroup.getName() );
+                                                    processedGroupIds.add( subgroup.getDn() );
+                                                } catch (FindException e) {
+                                                    logger.log( Level.WARNING, "Error checking for nested group '"+memberlogin+"'.", e );
+                                                }
                                             }
-                                            //TODO [steve] should process nested groups for MEMBERS_ARE_LOGIN here
                                         }
                                     }
                                 }
@@ -740,18 +756,19 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                                     // GROUPS WITHIN GROUPS
                                                     // fla note: the member hint might actually refer to another group
                                                     // insted of a user
-                                                    LdapGroup subgroup;
-                                                    try {
-                                                        subgroup = findByPrimaryKey(memberhint);
-                                                    } catch (FindException e) {
-                                                        // nothing on purpose
-                                                        logger.finest("seems like " + memberhint +
-                                                                " is not a group dn" + e.getMessage());
-                                                        subgroup = null;
-                                                    }
-                                                    if (subgroup == null) {
+                                                    LdapGroup subgroup = null;
+                                                    if ( !processedGroupIds.contains(memberhint)  ) {
                                                         try {
-                                                            subgroup = findByName(memberhint); //TODO [steve] need to handle NV_PAIR for groups?
+                                                            subgroup = findByPrimaryKey(memberhint);
+                                                        } catch (FindException e) {
+                                                            // nothing on purpose
+                                                            logger.finest("seems like " + memberhint +
+                                                                    " is not a group dn" + e.getMessage());
+                                                        }
+                                                    }
+                                                    if (subgroup == null && !processedGroupNames.contains(memberhint)) {
+                                                        try {
+                                                            subgroup = findByName(memberhint);
                                                         } catch (FindException e) {
                                                             // nothing on purpose
                                                             logger.finest("seems like " + memberhint +
@@ -760,11 +777,11 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                                         }
                                                     }
                                                     if (subgroup != null) {
-                                                        // todo, prevent explosion
-                                                        // (what if some asshole has circular reference of groups?)
-                                                        // note. i dont think this is possible
-                                                        Set<IdentityHeader> subgroupmembers = getUserHeaders(subgroup, depth + 1);
+                                                        Set<IdentityHeader> subgroupmembers = getUserHeaders(subgroup, depth + 1, processedGroupNames, processedGroupIds);
                                                         headers.addAll(subgroupmembers);
+                                                        processedGroupNames.add( subgroup.getName() );
+                                                        processedGroupIds.add( subgroup.getDn() );
+                                                        done = true;
                                                     }
                                                 }
                                             } catch (FindException e) {
@@ -773,7 +790,20 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                             }
                                             // if that dont work, try search assuming nv pair
                                             if (!done) {
-                                                nvSearchForUser(searchContext, memberhint, headers);
+                                                if ( !nvSearchForUser(searchContext, memberhint, headers) && groupNestingProcessNextDepth(depth) ) {
+                                                    String groupName = groupNameFromNVPair( memberhint );
+                                                    if ( !processedGroupNames.contains(groupName) ) {
+                                                        try {
+                                                            LdapGroup subgroup = findByName(groupName);
+                                                            Set<IdentityHeader> subgroupmembers = getUserHeaders(subgroup, depth + 1, processedGroupNames, processedGroupIds);
+                                                            headers.addAll(subgroupmembers);
+                                                            processedGroupNames.add( subgroup.getName() );
+                                                            processedGroupIds.add( subgroup.getDn() );
+                                                        } catch (FindException e) {
+                                                            logger.log( Level.WARNING, "Error checking for nested group '"+groupName+"'.", e );
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -918,13 +948,13 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         }
     }
 
-    private void nvSearchForUser( final DirContext context,
-                                  final String nvhint,
-                                  final Set<IdentityHeader> memberHeaders ) throws NamingException {
+    private boolean nvSearchForUser( final DirContext context,
+                                     final String nvhint,
+                                     final Set<IdentityHeader> memberHeaders ) throws NamingException {
         final LdapIdentityProvider identityProvider = getIdentityProvider();
         final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
         final long maxSize = ldapRuntimeConfig.getMaxSearchResultSize();
-        if (memberHeaders.size() >= maxSize) return;
+        if (memberHeaders.size() >= maxSize) return true;
 
         LdapSearchFilter filter = new LdapSearchFilter();
         filter.or();
@@ -937,6 +967,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         }
         filter.end();
 
+        final boolean[] foundUser = new boolean[1];
         try {
             ldapTemplate.search( context, filter.buildFilter(), maxSize, null, new LdapUtils.LdapListener(){
                 @Override
@@ -946,7 +977,10 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                         logger.info("User " + sr.getNameInNamespace() + " is not valid according to the template and will not " +
                                     "be considered as a member");
                     } else if (!memberHeaders.contains(newheader)) {
+                        foundUser[0] = true;
                         memberHeaders.add(newheader);
+                    } else {
+                        foundUser[0] = true;
                     }
                     return true;
                 }
@@ -955,6 +989,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
             // this gets thrown by oid for some weird groups
             logger.log(Level.FINE, ldapIdentityProviderConfig.getName() + "directory cannot search on" + nvhint, e);
         }
+
+        return foundUser[0];
     }
 
     private String[] getReturningAttributes() {
