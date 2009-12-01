@@ -6,6 +6,8 @@
 package com.l7tech.console.beaneditor;
 
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.BeanUtils;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
@@ -18,6 +20,9 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * The generic BeanEditor that uses introspection to discover the properties
@@ -27,6 +32,9 @@ import java.util.ResourceBundle;
  * @version Feb 17, 2004
  */
 public class BeanEditor extends JPanel {
+    private static final Logger logger = Logger.getLogger(BeanEditor.class.getName());
+
+    protected Object originalBean;
     protected Object bean;
     protected JTable propertyTable;
     protected BeanInfoTableModel beanModel;
@@ -91,14 +99,15 @@ public class BeanEditor extends JPanel {
         Utilities.dispose(Utilities.getRootPaneContainerAncestor(this));
     }
 
-    public BeanEditor(Object bean, Class stopClass, Options options) {
-        this.bean = bean;
+    public BeanEditor(Object originalBean, Class stopClass, Options options) {
+        this.originalBean = originalBean;
+        this.bean = copyBean(originalBean);
         this.stopClass = stopClass;
         this.options = options;
         initResources();
         setLayout(new BorderLayout());
         add(getTitlePanel(), BorderLayout.NORTH);
-        beanModel = new BeanInfoTableModel(bean, stopClass, options.excludeProperties);
+        beanModel = new BeanInfoTableModel(this.bean, stopClass, options.excludeProperties);
         propertyTable = new JTable(beanModel);
         propertyTable.getTableHeader().setReorderingAllowed(false);
         propertyTable.getTableHeader().setResizingAllowed(true);
@@ -120,6 +129,37 @@ public class BeanEditor extends JPanel {
         add(ps, BorderLayout.CENTER);
         JPanel buttonPanel = getButtonPanel();
         add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    private Object copyBean(Object bean) {
+        try {
+            if (bean instanceof Cloneable)
+                return Object.class.getMethod("clone").invoke(bean);
+        } catch (InvocationTargetException e) {
+            logger.log(Level.WARNING, "Unable to clone Cloneable instance of class " + bean.getClass(), e);
+            /* FALLTHROUGH and try bean property copy */
+        } catch (NoSuchMethodException e) {
+            logger.log(Level.WARNING, "Unable to clone Cloneable instance of class " + bean.getClass(), e);
+            /* FALLTHROUGH and try bean property copy */
+        } catch (IllegalAccessException e) {
+            logger.log(Level.WARNING, "Unable to clone Cloneable instance of class " + bean.getClass(), e);
+            /* FALLTHROUGH and try bean property copy */
+        }
+
+        try {
+            Object copy = bean.getClass().newInstance();
+            BeanUtils.copyProperties(bean, copy);
+            return copy;
+        } catch (InstantiationException e) {
+            logger.log(Level.WARNING, "Unable to invoke no-arg constructor for class " + bean.getClass(), e);
+            return null;
+        } catch (IllegalAccessException e) {
+            logger.log(Level.WARNING, "Unable to invoke no-arg constructor for class " + bean.getClass(), e);
+            return null;
+        } catch (InvocationTargetException e) {
+            logger.log(Level.WARNING, "Unable to copy properties for class " + bean.getClass(), e);
+            return null;
+        }
     }
 
     /**
@@ -182,10 +222,17 @@ public class BeanEditor extends JPanel {
         okButton.setText(resources.getString("okButton.label"));
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                try {
+                    BeanUtils.copyProperties(bean, originalBean);
+                } catch (InvocationTargetException e) {
+                    logger.log(Level.WARNING, "Unable to copy properties for bean: " + ExceptionUtils.getMessage(e), e);
+                } catch (IllegalAccessException e) {
+                    logger.log(Level.WARNING, "Unable to copy properties for bean: " + ExceptionUtils.getMessage(e), e);
+                }
                 PropertyChangeListener[] listeners = beanListeners.getPropertyChangeListeners();
                 for (int i = 0; i < listeners.length; i++) {
                     PropertyChangeListener listener = listeners[i];
-                    ((BeanListener)listener).onEditAccepted(BeanEditor.this, bean);
+                    ((BeanListener)listener).onEditAccepted(BeanEditor.this, originalBean);
                 }
             }
         });
@@ -198,7 +245,7 @@ public class BeanEditor extends JPanel {
                 PropertyChangeListener[] listeners = beanListeners.getPropertyChangeListeners();
                 for (int i = 0; i < listeners.length; i++) {
                     PropertyChangeListener listener = listeners[i];
-                    ((BeanListener)listener).onEditCancelled(BeanEditor.this, bean);
+                    ((BeanListener)listener).onEditCancelled(BeanEditor.this, originalBean);
                 }
             }
         });
