@@ -22,7 +22,6 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -362,21 +361,13 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 validateResMsgDest();
             }
         });
-        TextComponentPauseListenerManager.registerPauseListener(
-                resMsgDestVariableTextField,
-                new PauseListener() {
-                    @Override
-                    public void textEntryPaused(JTextComponent component, long msecs) {
-                        validateResMsgDest();
-                    }
-
-                    @Override
-                    public void textEntryResumed(JTextComponent component) {
-                        clearResMsgDestVariableStatus();
-                    }
-                },
-                500);
-        clearResMsgDestVariableStatus();
+        resMsgDestVariableTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                validateResMsgDest();
+            }
+        }));
+        validateResMsgDest();
         final String resMsgDest = assertion.getResponseMsgDest();
         if (resMsgDest == null) {
             resMsgDestDefaultRadioButton.doClick();
@@ -943,7 +934,18 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         }
 
+        refreshDialog();
+
         return ok;
+    }
+   
+    /**
+     * Resize the dialog due to some components getting extended.
+     */
+    private void refreshDialog() {
+        if (getSize().width < mainPanel.getMinimumSize().width) {
+            setSize(mainPanel.getMinimumSize().width, getSize().height);
+        }
     }
 
     public boolean isConfirmed() {
