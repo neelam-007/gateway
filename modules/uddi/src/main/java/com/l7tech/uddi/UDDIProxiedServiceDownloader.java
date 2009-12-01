@@ -13,22 +13,15 @@ import java.util.*;
  *
  * @author darmstrong
  */
-public class UDDIProxiedServiceDownloader {//TODO [Donal] rename to be UDDIBusinessService downloaded, as that's what it does
+class UDDIProxiedServiceDownloader {//TODO [Donal] rename to be UDDIBusinessService downloaded, as that's what it does
 
     private final UDDIClient uddiClient;
     private final JaxWsUDDIClient jaxWsUDDIClient;
 
-    public UDDIProxiedServiceDownloader( final UDDIClientConfig uddiCfg ) {
-        this( buildUDDIClient(uddiCfg) );
-    }
-
-    protected UDDIProxiedServiceDownloader(final UDDIClient uddiClient ) {
+    UDDIProxiedServiceDownloader( final UDDIClient uddiClient,
+                                  final JaxWsUDDIClient jaxClient ) {
         this.uddiClient = uddiClient;
-        if(uddiClient instanceof JaxWsUDDIClient){
-            jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
-        }else{
-            throw new IllegalStateException( "JaxWsUDDIClient is required." );
-        }
+        this.jaxWsUDDIClient = jaxClient;
     }
 
     /**
@@ -39,7 +32,7 @@ public class UDDIProxiedServiceDownloader {//TODO [Donal] rename to be UDDIBusin
      * dependant apon. Never null. Neither left or right are ever null either.
      * @throws UDDIException any problems searching the UDDI Registry
      */
-    public List<Pair<BusinessService, Map<String, TModel>>> getBusinessServiceModels(Set<String> serviceKeys) throws UDDIException {
+    List<Pair<BusinessService, Map<String, TModel>>> getBusinessServiceModels(Set<String> serviceKeys) throws UDDIException {
 
         final List<Pair<BusinessService, Map<String, TModel>>> servicesToDependentTModels =
                 new ArrayList<Pair<BusinessService, Map<String, TModel>>>();
@@ -75,18 +68,5 @@ public class UDDIProxiedServiceDownloader {//TODO [Donal] rename to be UDDIBusin
         }
 
         return servicesToDependentTModels;
-    }
-
-    private static UDDIClient buildUDDIClient( final UDDIClientConfig uddiCfg ) {
-        if(uddiCfg == null) throw new NullPointerException("uddiCfg cannot be null");
-
-        UDDIClient uddiClient = UDDIClientFactory.getInstance().newUDDIClient( uddiCfg );
-        if(!(uddiClient instanceof JaxWsUDDIClient)){
-            uddiClient = new GenericUDDIClient(uddiCfg.getInquiryUrl(), uddiCfg.getPublishUrl(), uddiCfg.getSubscriptionUrl(),
-                    uddiCfg.getSecurityUrl(), uddiCfg.getLogin(), uddiCfg.getPassword(),
-                    UDDIClientFactory.getDefaultPolicyAttachmentVersion(), uddiCfg.getTlsConfig());
-        }
-
-        return uddiClient;
     }
 }

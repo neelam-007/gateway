@@ -8,6 +8,7 @@ import com.l7tech.uddi.UDDIInvalidKeyException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ResourceUtils;
 
 import java.util.logging.Logger;
 import java.util.Collection;
@@ -87,74 +88,79 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
                     final Collection<UDDIBusinessServiceStatus> toDelete =
                             factory.uddiBusinessServiceStatusManager.findByRegistryAndWsPolicyPublishStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
 
-                    final UDDIClient client = factory.uddiHelper.newUDDIClient( uddiRegistry );
+                    UDDIClient client = null;
+                    try {
+                        client = factory.uddiHelper.newUDDIClient( uddiRegistry );
 
-                    if ( !toPublish.isEmpty() || !toDelete.isEmpty() ) {
-                        // authenticate early to avoid error for every service
-                        client.authenticate();
-                    }
-
-                    for ( UDDIBusinessServiceStatus businessService : toPublish ) {
-                        final String policyUrl = businessService.getUddiPolicyPublishUrl();
-                        final String name = getWsPolicyName(template, businessService.getUddiServiceName());
-                        final String desc = getWsPolicyDescription(template, businessService.getUddiServiceName());
-                        String tModelKey;
-
-                        try {
-                            tModelKey = client.publishPolicy(
-                                    businessService.getUddiPolicyTModelKey(),
-                                    name,
-                                    desc,
-                                    policyUrl );
-                        } catch ( UDDIInvalidKeyException uike) {
-                            // original policy was deleted, so publish a new one
-                            tModelKey = client.publishPolicy(
-                                    null,
-                                    name,
-                                    desc,
-                                    policyUrl );
+                        if ( !toPublish.isEmpty() || !toDelete.isEmpty() ) {
+                            // authenticate early to avoid error for every service
+                            client.authenticate();
                         }
 
-                        client.referencePolicy( 
-                                businessService.getUddiServiceKey(),
-                                null,
-                                tModelKey,
-                                null,
-                                desc,
-                                Boolean.FALSE );
-
-                        businessService.setUddiPolicyStatus( UDDIBusinessServiceStatus.Status.PUBLISHED );
-                        businessService.setUddiPolicyUrl( policyUrl );
-                        businessService.setUddiPolicyPublishUrl( null );
-                        businessService.setUddiPolicyTModelKey( tModelKey );
-                        factory.uddiBusinessServiceStatusManager.update( businessService );
-                    }
-
-                    for ( UDDIBusinessServiceStatus businessService : toDelete ) {
-                        if ( businessService.getUddiPolicyTModelKey()==null ) {
-                            // then it was a remote reference
-                            client.removePolicyReference(
-                                    businessService.getUddiServiceKey(),
-                                    null,
-                                    businessService.getUddiPolicyUrl() );
-                        } else {
-                            // it was a local reference, delete reference and TModel
-                            client.removePolicyReference(
-                                    businessService.getUddiServiceKey(),
-                                    businessService.getUddiPolicyTModelKey(),
-                                    null );
+                        for ( UDDIBusinessServiceStatus businessService : toPublish ) {
+                            final String policyUrl = businessService.getUddiPolicyPublishUrl();
+                            final String name = getWsPolicyName(template, businessService.getUddiServiceName());
+                            final String desc = getWsPolicyDescription(template, businessService.getUddiServiceName());
+                            String tModelKey;
 
                             try {
-                                client.deleteTModel( businessService.getUddiPolicyTModelKey() );
+                                tModelKey = client.publishPolicy(
+                                        businessService.getUddiPolicyTModelKey(),
+                                        name,
+                                        desc,
+                                        policyUrl );
                             } catch ( UDDIInvalidKeyException uike) {
-                                logger.fine( "WS-Policy TModel not found for delete '"+businessService.getUddiPolicyTModelKey()+"'." );
+                                // original policy was deleted, so publish a new one
+                                tModelKey = client.publishPolicy(
+                                        null,
+                                        name,
+                                        desc,
+                                        policyUrl );
                             }
+
+                            client.referencePolicy(
+                                    businessService.getUddiServiceKey(),
+                                    null,
+                                    tModelKey,
+                                    null,
+                                    desc,
+                                    Boolean.FALSE );
+
+                            businessService.setUddiPolicyStatus( UDDIBusinessServiceStatus.Status.PUBLISHED );
+                            businessService.setUddiPolicyUrl( policyUrl );
+                            businessService.setUddiPolicyPublishUrl( null );
+                            businessService.setUddiPolicyTModelKey( tModelKey );
+                            factory.uddiBusinessServiceStatusManager.update( businessService );
                         }
 
-                        businessService.setUddiPolicyStatus( UDDIBusinessServiceStatus.Status.NONE );
-                        businessService.setUddiPolicyUrl( null );
-                        businessService.setUddiPolicyTModelKey( null );
-                        factory.uddiBusinessServiceStatusManager.update( businessService );
+                        for ( UDDIBusinessServiceStatus businessService : toDelete ) {
+                            if ( businessService.getUddiPolicyTModelKey()==null ) {
+                                // then it was a remote reference
+                                client.removePolicyReference(
+                                        businessService.getUddiServiceKey(),
+                                        null,
+                                        businessService.getUddiPolicyUrl() );
+                            } else {
+                                // it was a local reference, delete reference and TModel
+                                client.removePolicyReference(
+                                        businessService.getUddiServiceKey(),
+                                        businessService.getUddiPolicyTModelKey(),
+                                        null );
+
+                                try {
+                                    client.deleteTModel( businessService.getUddiPolicyTModelKey() );
+                                } catch ( UDDIInvalidKeyException uike) {
+                                    logger.fine( "WS-Policy TModel not found for delete '"+businessService.getUddiPolicyTModelKey()+"'." );
+                                }
+                            }
+
+                            businessService.setUddiPolicyStatus( UDDIBusinessServiceStatus.Status.NONE );
+                            businessService.setUddiPolicyUrl( null );
+                            businessService.setUddiPolicyTModelKey( null );
+                            factory.uddiBusinessServiceStatusManager.update( businessService );
+                        }
+                    } finally {
+                        ResourceUtils.closeQuietly( client );
                     }
                 } else {
                     logger.info( "Ignoring ws-policy event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );

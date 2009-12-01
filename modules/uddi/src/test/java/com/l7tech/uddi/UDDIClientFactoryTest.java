@@ -38,50 +38,6 @@ public class UDDIClientFactoryTest {
     }
 
     @Test
-    public void testCreateClientWithUDDIRegistryInfo() {
-        UDDIRegistryInfo info = new UDDIRegistryInfo(){
-            @Override
-            public String getName() {
-                return "test";
-            }
-
-            @Override
-            public String getInquiry() {
-                return "inquiry";
-            }
-
-            @Override
-            public String getPublication() {
-                return "publish";
-            }
-
-            @Override
-            public String getSecurityPolicy() {
-                return "security";
-            }
-
-            @Override
-            public String getSubscription() {
-                return "subscription";
-            }
-
-            @Override
-            public boolean isSupportsMetrics() {
-                return false;
-            }
-        };
-
-        UDDIClient client = UDDIClientFactory.getInstance().newUDDIClient(
-                "http://127.0.0.1/uddi/",
-                info,
-                "username",
-                "password",
-                null,
-                null );
-        assertNotNull("Client not null", client);
-    }
-
-    @Test
     public void testDefaultWsPolicyAttachmentVersion() {
         assertEquals( "WS Policy Attachment Version",
                 PolicyAttachmentVersion.v1_2,

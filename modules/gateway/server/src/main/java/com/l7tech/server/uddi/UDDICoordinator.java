@@ -9,6 +9,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Config;
 import com.l7tech.util.Triple;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
@@ -283,8 +284,9 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         if ( urr != null && urr.registry.isEnabled() ) {
             PublishedService service = getServiceForHandlingUDDINotifications( registryOid );
             if ( service != null ) {
+                UDDIClient uddiClient = null;
                 try {
-                    UDDIClient uddiClient = urr.getUDDIClient();
+                    uddiClient = urr.getUDDIClient();
                     UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(service.getOid());
                     Set<UDDIProxiedService> proxiedServices = serviceInfo.getProxiedServices();
                     Set<String> serviceKeys = new HashSet<String>();
@@ -306,6 +308,8 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                     logger.log( Level.WARNING,
                             "Could not get binding key for service from registry '"+urr.getDescription()+"': " + ExceptionUtils.getMessage(e),
                             ExceptionUtils.getDebugException( e ));
+                } finally {
+                    ResourceUtils.closeQuietly( uddiClient );
                 }
             }
         }
@@ -709,6 +713,13 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             this.timerTasks = buildTasks( coordinator, registry );
         }
 
+        /**
+         * Get a new UDDIClient.
+         *
+         * <p>The caller is responsible for closing the client.</p>
+         *
+         * @return The UDDIClient
+         */
         UDDIClient getUDDIClient() {
             return uddiHelper.newUDDIClient( registry );
         }

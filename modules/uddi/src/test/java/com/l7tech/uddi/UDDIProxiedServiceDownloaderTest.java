@@ -47,9 +47,9 @@ public class UDDIProxiedServiceDownloaderTest {
                 allTModelKeys.add(s);
             }
         }
-        UDDIClient uddiClient = new TestUddiClient(allServices);
+        TestUddiClient uddiClient = new TestUddiClient(allServices);
 
-        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient, uddiClient);
         Set<String> serviceKeys = new HashSet<String>();
         for(BusinessService bs: allServices){
             serviceKeys.add(bs.getServiceKey());

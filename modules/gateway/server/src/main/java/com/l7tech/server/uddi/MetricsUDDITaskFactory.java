@@ -12,6 +12,7 @@ import com.l7tech.server.wsdm.Aggregator;
 import com.l7tech.server.wsdm.MetricsRequestContext;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -129,43 +130,48 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
 
                     final Map<Long,MetricsRequestContext> metricsMap = new HashMap<Long,MetricsRequestContext>();
 
-                    final UDDIClient client = factory.uddiHelper.newUDDIClient( uddiRegistry );
+                    UDDIClient client = null;
+                    try {
+                        client = factory.uddiHelper.newUDDIClient( uddiRegistry );
 
-                    if ( !toPublish.isEmpty() || !toUpdate.isEmpty() ) {
-                        // authenticate early to avoid error for every service 
-                        client.authenticate();
-                    }
+                        if ( !toPublish.isEmpty() || !toUpdate.isEmpty() ) {
+                            // authenticate early to avoid error for every service
+                            client.authenticate();
+                        }
 
-                    for ( UDDIBusinessServiceStatus businessService : toPublish ) {
-                        String metricsTModelKey = publishMetrics(
-                                context,
-                                template,
-                                client,
-                                businessService,
-                                endTime,
-                                metricsMap );
+                        for ( UDDIBusinessServiceStatus businessService : toPublish ) {
+                            String metricsTModelKey = publishMetrics(
+                                    context,
+                                    template,
+                                    client,
+                                    businessService,
+                                    endTime,
+                                    metricsMap );
 
-                        if ( metricsTModelKey != null ) {
-                            if ( publishMetricsReference( template, client, businessService, metricsTModelKey ) ) {
-                                businessService.setUddiMetricsTModelKey( metricsTModelKey );
-                                businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.PUBLISHED );
-                                try {
-                                    factory.uddiBusinessServiceStatusManager.update( businessService );
-                                } catch (UpdateException e) {
-                                    logger.log( Level.WARNING, "Error updating UDDIBusinessServiceStatus", e );
+                            if ( metricsTModelKey != null ) {
+                                if ( publishMetricsReference( template, client, businessService, metricsTModelKey ) ) {
+                                    businessService.setUddiMetricsTModelKey( metricsTModelKey );
+                                    businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.PUBLISHED );
+                                    try {
+                                        factory.uddiBusinessServiceStatusManager.update( businessService );
+                                    } catch (UpdateException e) {
+                                        logger.log( Level.WARNING, "Error updating UDDIBusinessServiceStatus", e );
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    for ( UDDIBusinessServiceStatus businessService : toUpdate ) {
-                        publishMetrics(
-                                context,
-                                template,
-                                client,
-                                businessService,
-                                endTime,
-                                metricsMap );
+                        for ( UDDIBusinessServiceStatus businessService : toUpdate ) {
+                            publishMetrics(
+                                    context,
+                                    template,
+                                    client,
+                                    businessService,
+                                    endTime,
+                                    metricsMap );
+                        }
+                    } finally {
+                        ResourceUtils.closeQuietly( client );
                     }
                 } else {
                     logger.info( "Ignoring metrics event for UDDI registry (#"+registryOid+"), registry not found or is disabled." );
@@ -374,18 +380,23 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                         final Collection<UDDIBusinessServiceStatus> toDelete =
                                 factory.uddiBusinessServiceStatusManager.findByRegistryAndMetricsStatus( registryOid, UDDIBusinessServiceStatus.Status.DELETE );
 
-                        final UDDIClient client = factory.uddiHelper.newUDDIClient( uddiRegistry );
+                        UDDIClient client = null;
+                        try {
+                            client = factory.uddiHelper.newUDDIClient( uddiRegistry );
 
-                        for ( UDDIBusinessServiceStatus businessService : toDelete ) {
-                            final String serviceKey = businessService.getUddiServiceKey();
-                            final String tModelKey = businessService.getUddiMetricsTModelKey();
+                            for ( UDDIBusinessServiceStatus businessService : toDelete ) {
+                                final String serviceKey = businessService.getUddiServiceKey();
+                                final String tModelKey = businessService.getUddiMetricsTModelKey();
 
-                            client.removeKeyedReference( serviceKey, referenceKey, null, tModelKey );
-                            client.deleteTModel( tModelKey );
+                                client.removeKeyedReference( serviceKey, referenceKey, null, tModelKey );
+                                client.deleteTModel( tModelKey );
 
-                            businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.NONE );
-                            businessService.setUddiMetricsTModelKey( null );
-                            factory.uddiBusinessServiceStatusManager.update( businessService );
+                                businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.NONE );
+                                businessService.setUddiMetricsTModelKey( null );
+                                factory.uddiBusinessServiceStatusManager.update( businessService );
+                            }
+                        } finally {
+                            ResourceUtils.closeQuietly( client );
                         }
                     }
                 } else {

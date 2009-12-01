@@ -12,6 +12,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Config;
+import com.l7tech.util.ResourceUtils;
 
 import javax.wsdl.WSDLException;
 import java.util.logging.Logger;
@@ -183,16 +184,17 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     return;
                 }
 
-                final BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(
-                        wsdl,
-                        publishedService.getOid(),
-                        factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
-
                 final Collection<Pair<String, String>> allEndpointPairs =
                         factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
                 
                 final String publishedHostname = uddiProxiedServiceInfo.getPublishedHostname();
+                BusinessServicePublisher businessServicePublisher = null;
                 try {
+                    businessServicePublisher = new BusinessServicePublisher(
+                        wsdl,
+                        publishedService.getOid(),
+                        factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
+
                     //provides best effort commit / rollback for all UDDI interactions
                     businessServicePublisher.publishBindingTemplate(
                             serviceControl.getUddiServiceKey(),
@@ -208,6 +210,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, e, ExceptionUtils.getMessage(e));
                     return;
+                } finally {
+                    ResourceUtils.closeQuietly( businessServicePublisher );
                 }
 
                 uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISHED);
@@ -337,11 +341,6 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     //no default, see above Illegal state
                 }
 
-                final BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(
-                        wsdl,
-                        uddiProxiedServiceInfo.getPublishedServiceOid(),
-                        factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
-
                 final UDDIRegistrySpecificMetaData registrySpecificMetaData =
                         PublishingUDDITaskFactory.getRegistrySpecificMetaData(uddiRegistry, serviceControl, factory);
 
@@ -349,7 +348,13 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
 
                 final Pair<Set<String>, Set<UDDIBusinessService>> deletedAndNewServices;
+                BusinessServicePublisher businessServicePublisher = null;
                 try {
+                    businessServicePublisher = new BusinessServicePublisher(
+                            wsdl,
+                            uddiProxiedServiceInfo.getPublishedServiceOid(),
+                            factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
+
                     deletedAndNewServices = businessServicePublisher.publishServicesToUDDIRegistry(
                             uddiProxiedServiceInfo.getUddiBusinessKey(),
                             serviceKeys, serviceWasOverwritten, registrySpecificMetaData, allEndpointPairs);
@@ -357,6 +362,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
                     return;
+                } finally {
+                    ResourceUtils.closeQuietly( businessServicePublisher );
                 }
 
                 if (uddiProxiedServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY) {
@@ -427,10 +434,11 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     final Collection<UDDIClient.UDDIKeyedReference> returnColl = new ArrayList<UDDIClient.UDDIKeyedReference>();
 
                     //download the tmodel key for active soa
-                    final UDDIClient uddiClient = uddiFactory.uddiHelper.newUDDIClient(uddiRegistry);
                     final String virtualKey = uddiFactory.config.getProperty("uddi.activesoa.virtual.service.tmodelkey", "uddi:9de0173b-5117-11de-8cf9-da0192ff3739");
 
+                    UDDIClient uddiClient = null;
                     try {
+                        uddiClient = uddiFactory.uddiHelper.newUDDIClient(uddiRegistry);
                         uddiClient.getOperationalInfo( virtualKey );
                     } catch (UDDIInvalidKeyException e) {
                         logger.log(Level.INFO, "No virtual keyed reference will be added as no tModel can be found for tModelKey '" + virtualKey + "'.");
@@ -441,6 +449,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                      } catch (UDDIException e) {
                         logger.log(Level.WARNING, "No virtual keyed reference will be added, error checking for tModelKey '" + virtualKey + "', '"+ExceptionUtils.getMessage( e )+"'.", ExceptionUtils.getDebugException( e ));
                         return null;
+                    } finally {
+                        ResourceUtils.closeQuietly( uddiClient );
                     }
 
                     final UDDIClient.UDDIKeyedReference kr =
@@ -547,15 +557,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     return;
                 }
 
-                final BusinessServicePublisher businessServicePublisher = new BusinessServicePublisher(
+                BusinessServicePublisher businessServicePublisher = null;
+                try {
+                    businessServicePublisher = new BusinessServicePublisher(
                         wsdl,
                         uddiProxiedServiceInfo.getPublishedServiceOid(),
                         factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
 
-                final Collection<Pair<String, String>> allEndpointPairs =
-                        factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
+                    final Collection<Pair<String, String>> allEndpointPairs =
+                            factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
 
-                try {
                     businessServicePublisher.overwriteServiceInUDDI(serviceControl.getUddiServiceKey(),
                             serviceControl.getUddiBusinessKey(), allEndpointPairs);
 
@@ -563,6 +574,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
                     return;
+                } finally {
+                    ResourceUtils.closeQuietly( businessServicePublisher );
                 }
 
                 uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISHED);
@@ -651,10 +664,9 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 //Only try and delete from UDDI if information was successfully published
-                final BusinessServicePublisher publisher =
-                        new BusinessServicePublisher(wsdl, publishedService.getOid(), factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
-
+                BusinessServicePublisher publisher = null;
                 try {
+                    publisher = new BusinessServicePublisher(wsdl, publishedService.getOid(), factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
                     publisher.deleteGatewayBindingTemplates(serviceControl.getUddiServiceKey(), uddiProxiedServiceInfo.getPublishedHostname());
                     logger.log(Level.FINE, "Endpoints successfully deleted");
                 } catch (UDDIException e) {
@@ -663,6 +675,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             serviceControl.getUddiServiceKey());
                     PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     return;
+                } finally {
+                    ResourceUtils.closeQuietly( publisher );
                 }
 
                 factory.uddiProxiedServiceInfoManager.delete(uddiProxiedServiceInfo);
@@ -765,9 +779,9 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     //no default, see illegal state above
                 }
 
-                final UDDIClient uddiClient = factory.uddiHelper.newUDDIClient(uddiRegistry);
-
+                UDDIClient uddiClient = null;
                 try {
+                    uddiClient = factory.uddiHelper.newUDDIClient(uddiRegistry);
                     for (String serviceKey : keysToDelete) {
                         try {
                             uddiClient.deleteBusinessServicesByKey(serviceKey);
@@ -785,6 +799,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     context.logAndAudit(SystemMessages.UDDI_REMOVE_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
                     PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     return;
+                } finally {
+                    ResourceUtils.closeQuietly( uddiClient );
                 }
 
                 factory.uddiProxiedServiceInfoManager.delete(uddiProxiedServiceInfo.getOid());//cascade delete

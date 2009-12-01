@@ -496,17 +496,18 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     @Override
     public UDDINamedEntity[] findPoliciesFromUDDIRegistry( final long registryOid, final String namePattern ) throws FindException {
-        try {
-            final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
-            if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
+        final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
+        if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
 
-            Collection<UDDINamedEntity> policies = getUDDIClient(uddiRegistry).listPolicies( namePattern, null );
-            UDDINamedEntity[] uddiNamedEntities = policies.toArray( new UDDINamedEntity[policies.size()] );
-            sort( uddiNamedEntities );
-            return uddiNamedEntities;
-        } catch (UDDIException e) {
-            throw buildFindException(e);
-        }
+        return doWithUDDIClient( uddiRegistry, new Functions.UnaryThrows<UDDINamedEntity[],UDDIClient,UDDIException>(){
+            @Override
+            public UDDINamedEntity[] call( final UDDIClient uddiClient ) throws UDDIException {
+                Collection<UDDINamedEntity> policies = uddiClient.listPolicies( namePattern, null );
+                UDDINamedEntity[] uddiNamedEntities = policies.toArray( new UDDINamedEntity[policies.size()] );
+                sort( uddiNamedEntities );
+                return uddiNamedEntities;
+            }
+        });
     }
 
     private void sort( final UDDINamedEntity[] uddiNamedEntities ) {
@@ -525,24 +526,25 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<WsdlPortInfo[]>() {
             @Override
             public WsdlPortInfo[] call() throws Exception {
-                try {
-                    final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
-                    if (uddiRegistry == null) throw new FindException("Invalid registry " + registryOid);
-                    final WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlInfoForServiceKey(getUDDIClient(uddiRegistry), serviceKey, getFirstOnly);
-                    for (WsdlPortInfo wsdlPortInfo : wsdlPortInfoInfo) {
-                        wsdlPortInfo.setUddiRegistryOid(registryOid);
-                    }
-                    //noinspection unchecked
-                    Arrays.sort(wsdlPortInfoInfo, new ResolvingComparator(new Resolver<WsdlPortInfo, String>() {
-                        @Override
-                        public String resolve(WsdlPortInfo key) {
-                            return key.getBusinessServiceKey() + "" + key.getWsdlPortName();
+                final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
+                if (uddiRegistry == null) throw new FindException("Invalid registry " + registryOid);
+
+                return doWithUDDIClient( uddiRegistry, new Functions.UnaryThrows<WsdlPortInfo[],UDDIClient,UDDIException>(){
+                    @Override
+                    public WsdlPortInfo[] call( final UDDIClient uddiClient ) throws UDDIException {
+                        final WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlInfoForServiceKey(uddiClient, serviceKey, getFirstOnly);
+                        for (WsdlPortInfo wsdlPortInfo : wsdlPortInfoInfo) {
+                            wsdlPortInfo.setUddiRegistryOid(registryOid);
                         }
-                    }, false));
-                    return wsdlPortInfoInfo;
-                } catch (UDDIException e) {
-                    throw buildFindException(e);
-                }
+                        Arrays.sort(wsdlPortInfoInfo, new ResolvingComparator<WsdlPortInfo,String>(new Resolver<WsdlPortInfo, String>() {
+                            @Override
+                            public String resolve(WsdlPortInfo key) {
+                                return key.getBusinessServiceKey() + "" + key.getWsdlPortName();
+                            }
+                        }, false));
+                        return wsdlPortInfoInfo;
+                    }
+                } );
             }
         })), WsdlPortInfo[].class);
     }
@@ -555,24 +557,25 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<WsdlPortInfo[]>() {
             @Override
             public WsdlPortInfo[] call() throws Exception {
-                try {
-                    final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
-                    if (uddiRegistry == null) throw new FindException("Invalid registry " + registryOid);
-                    WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlByServiceName(getUDDIClient(uddiRegistry), namePattern, caseSensitive, getWsdlURL);
-                    for (WsdlPortInfo wsdlPortInfo : wsdlPortInfoInfo) {
-                        wsdlPortInfo.setUddiRegistryOid(registryOid);
-                    }
-                    //noinspection unchecked
-                    Arrays.sort(wsdlPortInfoInfo, new ResolvingComparator(new Resolver<WsdlPortInfo, String>() {
-                        @Override
-                        public String resolve(WsdlPortInfo key) {
-                            return key.getBusinessServiceName();
+                final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
+                if (uddiRegistry == null) throw new FindException("Invalid registry " + registryOid);
+
+                return doWithUDDIClient( uddiRegistry, new Functions.UnaryThrows<WsdlPortInfo[],UDDIClient,UDDIException>(){
+                    @Override
+                    public WsdlPortInfo[] call( final UDDIClient uddiClient ) throws UDDIException {
+                        WsdlPortInfo[] wsdlPortInfoInfo = uddiHelper.getWsdlByServiceName(uddiClient, namePattern, caseSensitive, getWsdlURL);
+                        for (WsdlPortInfo wsdlPortInfo : wsdlPortInfoInfo) {
+                            wsdlPortInfo.setUddiRegistryOid(registryOid);
                         }
-                    }, false));
-                    return wsdlPortInfoInfo;
-                } catch (UDDIException e) {
-                    throw buildFindException(e);
-                }
+                        Arrays.sort(wsdlPortInfoInfo, new ResolvingComparator<WsdlPortInfo, String>(new Resolver<WsdlPortInfo, String>() {
+                            @Override
+                            public String resolve(WsdlPortInfo key) {
+                                return key.getBusinessServiceName();
+                            }
+                        }, false));
+                        return wsdlPortInfoInfo;
+                    }
+                });
             }
         })), WsdlPortInfo[].class);
     }
@@ -584,17 +587,17 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<UDDINamedEntity[]>(){
             @Override
             public UDDINamedEntity[] call() throws Exception {
-                try {
-                    final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
-                    if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
+                final UDDIRegistry uddiRegistry = uddiRegistryAdmin.findByPrimaryKey(registryOid);
+                if ( uddiRegistry == null ) throw new FindException("Invalid registry " + registryOid);
 
-                    UDDINamedEntity [] uddiNamedEntities = uddiHelper.getMatchingBusinesses(getUDDIClient(uddiRegistry), namePattern, caseSensitive);
-                    sort( uddiNamedEntities );
-                    return uddiNamedEntities;
-                } catch (UDDIException e) {
-                    throw buildFindException(e);
-                }
-
+                return doWithUDDIClient( uddiRegistry, new Functions.UnaryThrows<UDDINamedEntity[],UDDIClient,UDDIException>(){
+                    @Override
+                    public UDDINamedEntity[] call( final UDDIClient uddiClient ) throws UDDIException {
+                        UDDINamedEntity [] uddiNamedEntities = uddiHelper.getMatchingBusinesses(uddiClient, namePattern, caseSensitive);
+                        sort( uddiNamedEntities );
+                        return uddiNamedEntities;
+                    }
+                });
             }
         })), UDDINamedEntity[].class);
     }
@@ -615,8 +618,17 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         return new FindException(msg);
     }
 
-    private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
-        return uddiHelper.newUDDIClient( uddiRegistry );
+    private <T> T doWithUDDIClient( final UDDIRegistry uddiRegistry,
+                                    final Functions.UnaryThrows<T,UDDIClient,UDDIException> callback ) throws FindException {
+        UDDIClient client = null;
+        try {
+            client = uddiHelper.newUDDIClient( uddiRegistry );
+            return callback.call( client );
+        } catch ( UDDIException e ) {
+            throw buildFindException(e);
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
     }
 
     @Override

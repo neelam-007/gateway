@@ -10,6 +10,8 @@ import com.l7tech.wsdl.Wsdl;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
@@ -21,7 +23,7 @@ import java.util.logging.Logger;
  *
  * @author darmstrong
  */
-public class BusinessServicePublisher {
+public class BusinessServicePublisher implements Closeable {
     private static final Logger logger = Logger.getLogger(BusinessServicePublisher.class.getName());
 
     private Wsdl wsdl;
@@ -137,7 +139,7 @@ public class BusinessServicePublisher {
 
         UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
 
-        final UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+        final UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient, jaxWsUDDIClient);
         final Set<String> serviceKeys = new HashSet<String>();
         serviceKeys.add(serviceKey);
         final List<Pair<BusinessService, Map<String, TModel>>> uddiServicesToDependentTModelsPairs = serviceDownloader.getBusinessServiceModels(serviceKeys);
@@ -262,6 +264,11 @@ public class BusinessServicePublisher {
         final Map<String, String> serviceToWsdlServiceName = modelConverter.getServiceNameToWsdlServiceNameMap();
 
         return publishToUDDI(publishedServiceKeys, wsdlServiceNameToDependentTModels, serviceToWsdlServiceName, isOverwriteUpdate, registrySpecificMetaData);
+    }
+
+    @Override
+    public void close() throws IOException {
+        uddiClient.close();
     }
 
     //- PROTECTED
@@ -520,7 +527,7 @@ public class BusinessServicePublisher {
             final Map<String, String> serviceToWsdlServiceName,
             final boolean isOverwriteUpdate,
             final UDDIRegistrySpecificMetaData registrySpecificMetaData) throws UDDIException {
-        final UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+        final UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient, jaxWsUDDIClient);
         //Get the info on all published business services from UDDI
         //Now we know every single tModel reference each existing Business Service contains
         final List<Pair<BusinessService, Map<String, TModel>>>

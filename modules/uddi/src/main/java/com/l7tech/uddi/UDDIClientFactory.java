@@ -1,7 +1,6 @@
 package com.l7tech.uddi;
 
 import java.util.logging.Logger;
-import java.net.URI;
 import java.lang.reflect.Constructor;
 
 import com.l7tech.util.SyspropUtil;
@@ -32,47 +31,6 @@ public class UDDIClientFactory {
      */
     public static UDDIClientFactory getInstance() {
         return instance;
-    }
-
-    /**
-     * Create a new UDDIClient for the specified registry type.
-     *
-     * @param url The URL for the inquiry web service or base url for all services
-     * @param uddiRegistryInfo The type of registry (if null defaults will be used)
-     * @param login The login to use (may be null)
-     * @param password The password to use (may be null, required if a login is specified)
-     * @param attachmentVersion The policy attachment version to use (if null the default version is used)
-     * @return The UDDIClient
-     */
-    public UDDIClient newUDDIClient(final String url,
-                                    final UDDIRegistryInfo uddiRegistryInfo,
-                                    final String login,
-                                    final String password,
-                                    final PolicyAttachmentVersion attachmentVersion,
-                                    final UDDIClientTLSConfig tlsConfig ) {
-        String inquiryUrl = url;
-        String publishUrl = url;
-        String subscriptionUrl = null;
-        String securityUrl = url;
-
-        if ( uddiRegistryInfo != null ) {
-            String baseUrl = calculateBaseUrl(url, uddiRegistryInfo.getInquiry());
-            inquiryUrl = buildUrl(baseUrl, uddiRegistryInfo.getInquiry());
-            publishUrl = buildUrl(baseUrl, uddiRegistryInfo.getPublication());
-            if ( uddiRegistryInfo.getSubscription() != null ) {
-                subscriptionUrl = buildUrl(baseUrl, uddiRegistryInfo.getSubscription());
-            }
-            securityUrl = buildUrl(baseUrl, uddiRegistryInfo.getSecurityPolicy());
-        }
-        return newUDDIClient(
-                inquiryUrl,
-                publishUrl,
-                subscriptionUrl,
-                securityUrl,
-                login,
-                password,
-                attachmentVersion,
-                tlsConfig );
     }
 
     /**
@@ -165,21 +123,4 @@ public class UDDIClientFactory {
         logger.config("Using UDDIClient implementation '"+clientClass+"'.");
     }
 
-    private String calculateBaseUrl(String url, String suffix) {
-        String base = url;
-
-        if ( base.endsWith(suffix) ) {
-            base = base.substring(0, base.length()-suffix.length());
-        }
-
-        if ( !base.endsWith("/") ) {
-            base += "/";
-        }
-
-        return base;
-    }
-
-    private String buildUrl(String url, String suffix) {
-        return URI.create(url).resolve(suffix).toString();
-    }
 }

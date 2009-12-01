@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.wsdl.Wsdl;
 
@@ -116,12 +117,15 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     public void testUDDIRegistryAuthentication(final UDDIRegistry uddiRegistry) throws UDDIException {
         if(uddiRegistry == null) throw new NullPointerException("uddiRegistry cannot be null");
 
-        final UDDIClient uddiClient = getUDDIClient(uddiRegistry);        
+        UDDIClient uddiClient = null;
         try {
+            uddiClient = getUDDIClient(uddiRegistry);
             uddiClient.getOperationalInfo(UDDI_ORG_SPECIFICATION_V3_POLICY);
         } catch (UDDIException e) {
             //the original exception may not be serializable
             throw new UDDIException(ExceptionUtils.getMessage(e));
+        } finally {
+            ResourceUtils.closeQuietly( uddiClient );
         }
     }
 
