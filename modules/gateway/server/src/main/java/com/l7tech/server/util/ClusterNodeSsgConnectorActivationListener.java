@@ -18,11 +18,16 @@ public class ClusterNodeSsgConnectorActivationListener implements SsgConnectorAc
         this.serverConfig = serverConfig;
     }
 
+    @Override
     public void notifyActivated( final SsgConnector ssgConnector ) {
         if ( ssgConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION) ) {
             logger.log( Level.CONFIG, "Cluster port {0} activated.", Integer.toString(ssgConnector.getPort()));
             serverConfig.putProperty( ServerConfig.PARAM_CLUSTER_PORT, Integer.toString(ssgConnector.getPort()) );            
         }
+    }
+
+    @Override
+    public void notifyDeactivated( final SsgConnector connector ) {
     }
 
     //- PRIVATE

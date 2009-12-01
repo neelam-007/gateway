@@ -13,4 +13,11 @@ public interface SsgConnectorActivationListener {
      * @param connector The activated connector
      */
     void notifyActivated( SsgConnector connector );
+
+    /**
+     * Notification of deactivation of an endpoint.
+     *
+     * @param connector The deactivated connector
+     */
+    void notifyDeactivated( SsgConnector connector );
 }

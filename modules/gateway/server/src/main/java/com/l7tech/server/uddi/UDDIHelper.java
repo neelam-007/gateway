@@ -4,7 +4,9 @@ import com.l7tech.uddi.WsdlPortInfoImpl;
 import com.l7tech.uddi.*;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.io.SingleCertX509KeyManager;
@@ -34,7 +36,7 @@ import javax.net.ssl.HostnameVerifier;
 /**
  * UDDI utility methods.
  */
-public class UDDIHelper {
+public class UDDIHelper implements SsgConnectorActivationListener {
 
     //- PUBLIC
 
@@ -88,8 +90,35 @@ public class UDDIHelper {
      * @return Collection<Pair<String, String>> Collection of Pairs where each pair is a distinct end point URL for the
      * service. There should only ever be one http pair and one https pair
      */
-    public Collection<Pair<String, String>> getAllExternalEndpointAndWsdlUrls(long serviceOid){
-        return Collections.emptyList();
+    public Collection<Pair<String, String>> getAllExternalEndpointAndWsdlUrls( long serviceOid ){
+        final Collection<Pair<String,String>> endpointsAndWsdlUrls = new ArrayList<Pair<String,String>>();
+
+        final Map<Long,String> connectorProtocols;
+        synchronized (activeConnectorProtocols) {
+            connectorProtocols = new HashMap<Long,String>( activeConnectorProtocols );
+        }
+
+        final Pair<String,String> httpPair = new Pair<String,String>(
+                doGetExternalUrlForService( serviceOid, false ),
+                doGetExternalWsdlUrlForService( serviceOid, false ) );
+
+        if ( connectorProtocols.values().contains("HTTP") ) {
+            endpointsAndWsdlUrls.add( httpPair );
+        }
+
+        if ( connectorProtocols.values().contains("HTTPS") ) {
+            endpointsAndWsdlUrls.add( new Pair<String,String>(
+                doGetExternalUrlForService( serviceOid, true),
+                doGetExternalWsdlUrlForService( serviceOid, false )
+            ) );
+        }
+
+        if ( endpointsAndWsdlUrls.isEmpty() ) {
+            // Configure HTTP if nothing is available
+            endpointsAndWsdlUrls.add( httpPair );
+        }
+
+        return endpointsAndWsdlUrls;
     }
 
     /**
@@ -99,8 +128,7 @@ public class UDDIHelper {
      * @return The URL
      */
     public String getExternalWsdlUrlForService( final long serviceOid )  {
-        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceOid;
-        return buildCompleteGatewayUrl(SecureSpanConstants.WSDL_PROXY_FILE) + "?" + query;
+        return doGetExternalWsdlUrlForService( serviceOid, false );
     }
 
     /**
@@ -109,7 +137,7 @@ public class UDDIHelper {
      * @return String base WSDL URL
      */
     public String getBaseWsdlUrl(){
-        return buildCompleteGatewayUrl(SecureSpanConstants.WSDL_PROXY_FILE);
+        return buildCompleteGatewayUrl(SecureSpanConstants.WSDL_PROXY_FILE, false);
     }
 
     /**
@@ -138,7 +166,7 @@ public class UDDIHelper {
     }
 
     public String getExternalUrlForService( final long serviceOid ) {
-        return buildCompleteGatewayUrl(SecureSpanConstants.SERVICE_FILE) + serviceOid;
+        return doGetExternalUrlForService( serviceOid, false );
     }
 
     /**
@@ -303,6 +331,22 @@ public class UDDIHelper {
         return factory.newUDDIClient( newUDDIClientConfig(uddiRegistry) );
     }
 
+    @Override
+    public void notifyActivated( final SsgConnector connector ) {
+        if ( connector.offersEndpoint( SsgConnector.Endpoint.MESSAGE_INPUT ) ) {
+            synchronized( activeConnectorProtocols ) {
+                activeConnectorProtocols.put( connector.getOid(), connector.getScheme() );
+            }
+        }
+    }
+
+    @Override
+    public void notifyDeactivated( final SsgConnector connector ) {
+        synchronized( activeConnectorProtocols ) {
+            activeConnectorProtocols.remove( connector.getOid() );
+        }
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( UDDIHelper.class.getName() );
@@ -320,6 +364,7 @@ public class UDDIHelper {
     private final HostnameVerifier hostnameVerifier;
     private final int defaultResultRowsMax;
     private final int defaultResultBatchSize;
+    private final Map<Long,String> activeConnectorProtocols = new HashMap<Long,String>();
 
     private int getResultRowsMax() {
         return serverConfig.getIntProperty( PROP_RESULT_ROWS_MAX, defaultResultRowsMax );
@@ -329,8 +374,21 @@ public class UDDIHelper {
         return serverConfig.getIntProperty( PROP_RESULT_BATCH_SIZE, defaultResultBatchSize );
     }
 
-    private String buildCompleteGatewayUrl( final String relativeUri ) {
-        return "http://" + getExternalHostName() + getPrefixedExternalPort() + relativeUri;
+    private String doGetExternalUrlForService( final long serviceOid, final boolean secure ) {
+        return buildCompleteGatewayUrl(SecureSpanConstants.SERVICE_FILE, secure) + serviceOid;
+    }
+
+    private String doGetExternalWsdlUrlForService( final long serviceOid, final boolean secure )  {
+        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceOid;
+        return buildCompleteGatewayUrl(SecureSpanConstants.WSDL_PROXY_FILE, secure) + "?" + query;
+    }
+
+    private String buildCompleteGatewayUrl( final String relativeUri, final boolean secure ) {
+        if ( secure ) {
+            return "https://" + getExternalHostName() + getPrefixedExternalHttpsPort() + relativeUri;
+        } else {
+            return "http://" + getExternalHostName() + getPrefixedExternalPort() + relativeUri;
+        }
     }
 
     /**
@@ -362,6 +420,14 @@ public class UDDIHelper {
 
     private String getPrefixedExternalPort() {
         String port = serverConfig.getProperty("clusterhttpport", "");
+        if ( port.length() > 0 ) {
+            port = ":" + port;
+        }
+        return port;
+    }
+
+    private String getPrefixedExternalHttpsPort() {
+        String port = serverConfig.getProperty("clusterhttpsport", "");
         if ( port.length() > 0 ) {
             port = ":" + port;
         }

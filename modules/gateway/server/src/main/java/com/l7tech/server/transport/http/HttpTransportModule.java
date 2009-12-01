@@ -627,8 +627,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     @Override
     protected void removeConnector(long oid) {
+        final Pair<SsgConnector, Connector> entry;
         synchronized (connectorCrudLuck) {
-            Pair<SsgConnector, Connector> entry = activeConnectors.remove(oid);
+            entry = activeConnectors.remove(oid);
             if (entry == null) return;
             Connector connector = entry.right;
             logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
@@ -649,8 +650,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                     logger.log(Level.WARNING, "Exception while destroying thread pool for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
                 }
             }
-
         }
+
+        notifyEndpointDeactivation( entry.left );
     }
 
     protected void pauseConnector(long oid) {
@@ -1041,6 +1043,19 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 listener.notifyActivated( connector );
             } catch ( Exception e ) {
                 logger.log( Level.WARNING, "Unexpected error during connector activation notification.", e );    
+            }
+        }
+    }
+
+    /**
+     * Dispatch notifications for endpoint deactivation.
+     */
+    private void notifyEndpointDeactivation( final SsgConnector connector ) {
+        for ( SsgConnectorActivationListener listener : endpointListeners ) {
+            try {
+                listener.notifyDeactivated( connector );
+            } catch ( Exception e ) {
+                logger.log( Level.WARNING, "Unexpected error during connector deactivation notification.", e );
             }
         }
     }

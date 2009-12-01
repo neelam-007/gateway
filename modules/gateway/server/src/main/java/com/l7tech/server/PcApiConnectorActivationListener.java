@@ -49,6 +49,10 @@ public final class PcApiConnectorActivationListener implements SsgConnectorActiv
     }
 
     @Override
+    public void notifyDeactivated( final SsgConnector connector ) {
+    }    
+
+    @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
         if ( event instanceof ReadyForMessages ) {
             if ( !sawApiConnector ) {
