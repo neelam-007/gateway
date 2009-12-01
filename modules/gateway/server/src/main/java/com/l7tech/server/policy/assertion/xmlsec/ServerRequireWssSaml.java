@@ -26,8 +26,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -181,13 +180,42 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
             authContext.addCredentials( LoginCredentials.makeLoginCredentials( samlAssertion, RequireWssSaml.class ) ) ;
 
             // Record attribute values
-            for (Pair<String, String[]> av : collectAttrValues) {
-                context.setVariable("saml.attr." + RequireWssSaml.toContextVariableName(av.left.toLowerCase()), av.right);
+            if (!collectAttrValues.isEmpty()) {
+                setAttributeContextVariables(context, collectAttrValues);
             }
 
             return AssertionStatus.NONE;
         } catch (SAXException e) {
             throw new IOException(e);
+        }
+    }
+
+    void setAttributeContextVariables(PolicyEnforcementContext context, Collection<Pair<String, String[]>> collectAttrValues) {
+        // Collect and collate multivalued attrs
+        Map<String, List<String>> attrvals = collateAttrValues(collectAttrValues);
+
+        // Publish as context variables
+        publishAttrVariables(context, attrvals);
+    }
+
+    private static Map<String, List<String>> collateAttrValues(Collection<Pair<String, String[]>> collectAttrValues) {
+        Map<String, List<String>> attrvals = new LinkedHashMap<String, List<String>>();
+        for (Pair<String, String[]> av : collectAttrValues) {
+            final String varname = "saml.attr." + RequireWssSaml.toContextVariableName(av.left.toLowerCase());
+            List<String> list = attrvals.get(varname);
+            if (list == null)
+                list = new ArrayList<String>();
+            list.addAll(Arrays.asList(av.right));
+            attrvals.put(varname, list);
+        }
+        return attrvals;
+    }
+
+    private static void publishAttrVariables(PolicyEnforcementContext context, Map<String, List<String>> attrvals) {
+        for (Map.Entry<String, List<String>> entry : attrvals.entrySet()) {
+            final String name = entry.getKey();
+            final List<String> vals = entry.getValue();
+            context.setVariable(name, vals.toArray(new String[entry.getValue().size()]));
         }
     }
 

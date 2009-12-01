@@ -64,8 +64,8 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
         SamlAttributeStatement.Attribute[] expectedAttributes = attribueStatementRequirements.getAttributes();
 
         for (SamlAttributeStatement.Attribute expectedAttribute : expectedAttributes) {
-            AttributeType attr = findAttribute(expectedAttribute, receivedAttributes, validationResults);
-            if (attr == null) {
+            List<AttributeType> attrs = findAttribute(expectedAttribute, receivedAttributes, validationResults);
+            if (attrs == null || attrs.isEmpty()) {
                 SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No matching Attribute presented. Required {0}", null, expectedAttribute);
                 if (logger.isLoggable(Level.FINER)) logger.finer(result.toString());
                 validationResults.add(result);
@@ -73,14 +73,16 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
             }
 
             if (collectAttrValues != null) {
-                // Record the validated attribute so it can be saved as a context variable later
-                String attrName = attr.getName();
-                List<String> values = new ArrayList<String>();
-                for (XmlObject xo : attr.getAttributeValueArray()) {
-                    String value = toString(xo);
-                    values.add(value);
+                for (AttributeType attr : attrs) {
+                    // Record the validated attribute so it can be saved as a context variable later
+                    String attrName = attr.getName();
+                    List<String> values = new ArrayList<String>();
+                    for (XmlObject xo : attr.getAttributeValueArray()) {
+                        String value = toString(xo);
+                        values.add(value);
+                    }
+                    collectAttrValues.add(new Pair<String, String[]>(attrName, values.toArray(new String[values.size()])));
                 }
-                collectAttrValues.add(new Pair<String, String[]>(attrName, values.toArray(new String[values.size()])));
             }
         }
     }
@@ -101,9 +103,9 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
      *
      * @param expectedAttribute  the attribute expected
      * @param receivedAttributes the presented attributes
-     * @return true if the expected attribute is present, false otherwise
+     * @return all matching attributes, or null if none were found.  If this is non-null, it is guaranteed to contain at least one entry.
      */
-    private AttributeType findAttribute(SamlAttributeStatement.Attribute expectedAttribute, AttributeType[] receivedAttributes, Collection validationResults) {
+    private List<AttributeType> findAttribute(SamlAttributeStatement.Attribute expectedAttribute, AttributeType[] receivedAttributes, Collection validationResults) {
         String expectedName = expectedAttribute.getName();
         String expectedNameFormat = expectedAttribute.getNameFormat();
         if (expectedNameFormat == null || expectedNameFormat.length()==0) {
@@ -119,6 +121,7 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
             return null;
         }
 
+        List<AttributeType> ret = new ArrayList<AttributeType>();
         for (AttributeType receivedAttribute : receivedAttributes) {
             if (expectedName.equals(receivedAttribute.getName())) {
                 String receivedNameFormat = receivedAttribute.getNameFormat();
@@ -134,7 +137,7 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
                     if (logger.isLoggable(Level.FINER)) {
                         logger.log(Level.FINER, "Matched name {0} with no values presented.", new Object[]{ expectedName });
                     }
-                    return receivedAttribute;
+                    ret.add(receivedAttribute);
                 }
 
                 XmlObject[] values = receivedAttribute.getAttributeValueArray();
@@ -145,12 +148,12 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
                             if (logger.isLoggable(Level.FINER)) {
                                 logger.finer(MessageFormat.format("Matched name {0}, any value", expectedName, expectedValue));
                             }
-                            return receivedAttribute;
+                            ret.add(receivedAttribute);
                         } else if (cursor.getTextValue().equals(expectedValue)) {
                             if (logger.isLoggable(Level.FINER)) {
                                 logger.finer(MessageFormat.format("Matched name {0}, value {1} ", expectedName, expectedValue));
                             }
-                            return receivedAttribute;
+                            ret.add(receivedAttribute);
                         }
                     } finally {
                         cursor.dispose();
@@ -158,7 +161,7 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
                 }
             }
         }
-        return null;
+        return ret.isEmpty() ? null : ret;
     }
 
     private boolean isEmpty(String value) {

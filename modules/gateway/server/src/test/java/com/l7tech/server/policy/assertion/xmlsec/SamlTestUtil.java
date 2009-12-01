@@ -23,6 +23,7 @@ import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
+import static org.junit.Assert.*;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -55,11 +56,12 @@ public class SamlTestUtil {
         SamlAssertionGenerator sag = new SamlAssertionGenerator(new SignerInfo(privateKey,
                 new X509Certificate[] { TestDocuments.getDotNetServerCertificate() }));
         AttributeStatement st = new AttributeStatement();
-        String otherformat = version2 ? NameFormat.OTHER.getSaml20Uri() : NameFormat.OTHER.getSaml11Uri();
         st.setAttributes(new Attribute[] {
                 new Attribute("First Attr 32", "urn:me", "test value foo blah blartch"),
                 new Attribute("2 Attribute: it is indeed!", "urn:me", "value for myotherattr blah"),
                 new Attribute("moreattr", "urn:me", "value for moreattr blah"),
+                new Attribute("multivalattr", "urn:mv1", "value one!"),
+                new Attribute("multivalattr", "urn:mv1", "value two!")
         });
         st.setConfirmationMethod(SamlConstants.CONFIRMATION_BEARER);
         st.setNameFormat(version2? NameFormat.OTHER.getSaml20Uri() : NameFormat.OTHER.getSaml11Uri());
@@ -95,6 +97,7 @@ public class SamlTestUtil {
         atts.setAttributes(new SamlAttributeStatement.Attribute[] {
                 new SamlAttributeStatement.Attribute("First Attr 32", "urn:me", "urn:me", null, true, true),
                 new SamlAttributeStatement.Attribute("2 Attribute: it is indeed!", "urn:me", "urn:me", null, true, true),
+                new SamlAttributeStatement.Attribute("multivalattr", "urn:mv1", "urn:mv1", null, true, true),
         });
         ass.setAttributeStatement(atts);
         return ass;
@@ -110,17 +113,26 @@ public class SamlTestUtil {
     public static void checkContextVariableResults(PolicyEnforcementContext context) throws NoSuchVariableException {
         try {
             context.getVariable("saml.attr.moreattr");
-            org.junit.Assert.fail("Attributes that are present in ticket but NOT validated must NOT set context variables");
+            fail("Attributes that are present in ticket but NOT validated must NOT set context variables");
         } catch (NoSuchVariableException e) {
             // Ok
         }
 
         Object attr1 = context.getVariable("saml.attr.first_attr_32");
-        org.junit.Assert.assertTrue("Attributes that are present and validated must set context variables", attr1 instanceof String[]);
-        org.junit.Assert.assertEquals("Attributes that are present and validated must set context variables", ((String[])attr1)[0], "test value foo blah blartch");
+        assertTrue("Attributes that are present and validated must set context variables", attr1 instanceof String[]);
+        assertEquals("Attributes that are present and validated must set context variables", ((String[])attr1)[0], "test value foo blah blartch");
 
         Object attr2 = context.getVariable("saml.attr.n2_attribute__it_is_indeed_");
-        org.junit.Assert.assertTrue("Attributes that are present and validated must set context variables", attr2 instanceof String[]);
-        org.junit.Assert.assertEquals("Attributes that are present and validated must set context variables", ((String[])attr2)[0], "value for myotherattr blah");
+        assertTrue("Attributes that are present and validated must set context variables", attr2 instanceof String[]);
+        assertEquals("Attributes that are present and validated must set context variables", ((String[])attr2)[0], "value for myotherattr blah");
+
+        Object attrmv = context.getVariable("saml.attr.multivalattr");
+        assertTrue("Multivalued attribute must set multivalued array", attrmv instanceof String[]);
+        assertEquals(2, ((String[])attrmv).length);
+        //noinspection ConstantConditions
+        assertEquals("value one!", ((String[])attrmv)[0]);
+        //noinspection ConstantConditions
+        assertEquals("value two!", ((String[])attrmv)[1]);
+
     }
 }

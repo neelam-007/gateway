@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.test.BugNumber;
+import com.l7tech.common.io.XmlUtil;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +29,7 @@ public class ServerRequireWssSamlTest {
         ServerRequireWssSaml sass = new ServerRequireWssSaml<RequireWssSaml>(ass, SamlTestUtil.beanFactory, null);
 
         PolicyEnforcementContext context = SamlTestUtil.createWssProcessedContext(request);
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
 
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
