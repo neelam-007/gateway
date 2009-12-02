@@ -193,13 +193,22 @@ public class SecureConversationKeyDeriver {
     }
 
     private byte[] doHmac(Key key, byte[] seed) throws NoSuchAlgorithmException, InvalidKeyException {
-        if (hmac == null)
-            hmac = Mac.getInstance("HMacSHA1");
+        Mac hmac = SecureConversationKeyDeriver.hmac.get();
         hmac.reset();
         hmac.init(key);
         return hmac.doFinal(seed);
     }
 
-    private Mac hmac;
+    private static final ThreadLocal<Mac> hmac = new ThreadLocal<Mac>() {
+        @Override
+        protected Mac initialValue() {
+            try {
+                return Mac.getInstance("HMacSHA1");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+
     private static final String ALGO_ATTRNAME = "Algorithm";
 }
