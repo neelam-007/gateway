@@ -47,6 +47,34 @@ Press "&lt;" to go to the previous step.
 This step lets you set up the SSG cluster.</prompt>
     </optionGroup>
 
+     <optionGroup id="db-fail" required="false">
+        <description>Configure Database Failover Connection</description>
+        <prompt>
+--------------------------------
+Set Up the SSG Failover Database
+--------------------------------
+At any time type "quit" to quit.
+Press "&lt;" to go to the previous step.
+
+This step lets you create or set up a connection to the SSG failover
+database.</prompt>
+    </optionGroup>
+    
+    <!--
+      Options for Database failover configuration
+    -->
+    <option id="db-fail-host" group="db-fail" type="HOSTNAME" order="120" name="Database Failover Host">
+        <configName>database.failover.host</configName>
+        <description>Database Failover Hostname</description>
+        <prompt>Enter the database failover hostname.</prompt>
+    </option>
+    <option id="db-fail-port" group="db-fail" type="PORT" order="121" name="Database Failover Port">
+        <configName>database.failover.port</configName>
+        <configValue>3306</configValue>
+        <description>Database Failover Port</description>
+        <prompt>Enter the database failover port.</prompt>
+    </option>
+
     <!--
       Options for Database configuration
     -->

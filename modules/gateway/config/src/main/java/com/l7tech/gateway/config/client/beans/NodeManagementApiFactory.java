@@ -164,7 +164,17 @@ public class NodeManagementApiFactory {
             public NodeConfig createNode( final NodeConfig node) throws SaveException {
                 if ( doGetNode(node.getName()) == null ) {
                     try {
-                        NodeConfigurationManager.configureGatewayNode( node.getName(), true, node.getClusterPassphrase(), node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ), null );
+                        DatabaseConfig firstDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE );
+                        DatabaseConfig secondDb = null;
+                        if (firstDb == null) {
+                            //this isn't a standalone db config
+                            firstDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_MASTER);
+                            if (firstDb == null) {
+                                throw new SaveException("A database node must be either standalone or a replication member");
+                            }
+                            secondDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_SLAVE);
+                        }
+                        NodeConfigurationManager.configureGatewayNode( node.getName(), true, node.getClusterPassphrase(), firstDb, secondDb);
                     } catch ( NodeConfigurationManager.NodeConfigurationException nce ) {
                         throw new SaveException( ExceptionUtils.getMessage(nce), nce );
                     } catch ( IOException ioe ) {
@@ -181,7 +191,17 @@ public class NodeManagementApiFactory {
             public void updateNode(final NodeConfig node) throws UpdateException, RestartRequiredException {
                 if ( doGetNode(node.getName()) != null ) {
                     try {
-                        NodeConfigurationManager.configureGatewayNode( node.getName(), true, node.getClusterPassphrase(), node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ), null );
+                        DatabaseConfig firstDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE );
+                        DatabaseConfig secondDb = null;
+                        if (firstDb == null) {
+                            //this isn't a standalone db config
+                            firstDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_MASTER);
+                            if (firstDb == null) {
+                                throw new UpdateException("A database node must be either standalone or a replication member");
+                            }
+                            secondDb = node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_SLAVE);
+                        }
+                        NodeConfigurationManager.configureGatewayNode( node.getName(), true, node.getClusterPassphrase(), firstDb, secondDb );
                     } catch ( NodeConfigurationManager.NodeConfigurationException nce ) {
                         throw new UpdateException( ExceptionUtils.getMessage(nce), nce );
                     } catch ( IOException ioe ) {
