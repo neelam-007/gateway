@@ -497,11 +497,24 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
 
         if (sawExpired || sawNotYetValid || sawDnMismatch || sawBadSignature) {
-            StringBuffer mess = new StringBuffer("The specified private key was imported successfully.  However, at least one certificate in its chain: \n\n");
-            if (sawExpired) mess.append("     * has expired\n");
-            if (sawNotYetValid) mess.append("     * is not yet valid\n");
-            if (sawDnMismatch) mess.append("     * has an issuer DN that does not match its issuer's DN\n");
-            if (sawBadSignature) mess.append("     * has an invalid issuer signature\n");
+            StringBuilder mess = new StringBuilder("<html><center>The specified private key was imported successfully.</center><center>However, at least one certificate in its chain");
+
+            List<String> possibleProblems = new ArrayList<String>();
+            if (sawExpired) possibleProblems.add("has expired");
+            if (sawNotYetValid) possibleProblems.add("is not yet valid");
+            if (sawDnMismatch) possibleProblems.add("has an issuer DN that does not match its issuer's DN");
+            if (sawBadSignature) possibleProblems.add("has an invalid issuer signature");
+
+            if (possibleProblems.size() == 1) {
+                mess.append(" ").append(possibleProblems.get(0)).append(".</center></html>");
+            } else {
+                mess.append(":</center><ul>");
+                for (String problem: possibleProblems) {
+                    mess.append("<li>").append(problem).append("</li>");
+                }
+                mess.append("</ul></html>");
+            }
+
             JOptionPane.showMessageDialog(this, mess.toString(), "Certificate Chain Warning", JOptionPane.WARNING_MESSAGE);
         }
     }
