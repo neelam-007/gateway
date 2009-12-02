@@ -327,6 +327,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                     return true;
                                 }
                             }
+                            if ( member.equals(user.getId()) ) {
+                                return true;
+                            }
                         }
                     } catch(NamingException ne) {
                         logger.log(Level.WARNING, "LDAP attribute read error: " + ne.getMessage(), ExceptionUtils.getDebugException(ne));
@@ -467,11 +470,12 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                 filter.and();
                   filter.objectClass(grpclass);
                   Set<String> names = getDistinctUserNameAttributeNames();
-                  if (names.size()>1) { filter.or(); }
+                  filter.or();
                   for ( String name : names ) {
                       filter.attrEquals( mbmAttrName, name + "=" + user.getName() );
                   }
-                  if (names.size()>1) { filter.end(); }
+                  filter.attrEquals( mbmAttrName, user.getId() );
+                  filter.end();
                 filter.end();
             }
         }
