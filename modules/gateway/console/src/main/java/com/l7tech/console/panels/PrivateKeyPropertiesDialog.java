@@ -538,19 +538,19 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     populateList();
                 } catch (GeneralSecurityException e) {
                     showErrorMessage("Error Assigning Certificate",
-                            "Error Assigning new Cert: " + ExceptionUtils.getMessage(e) + "\n\nMake sure the " +
+                            "Error Assigning new Cert.  Make sure the " +
                             "cert you choose is related to the public " +
                             "key it is being assigned for.",
                             ExceptionUtils.getDebugException(e));
                 } catch (ObjectModelException e) {
                     showErrorMessage("Error Assigning Certificate",
-                            "Error Assigning new Cert: " + ExceptionUtils.getMessage(e) + "\n\nMake sure the " +
+                            "Error Assigning new Cert.  Make sure the " +
                             "cert you choose is related to the public " +
                             "key it is being assigned for.",
                             ExceptionUtils.getDebugException(e));
                 } catch (IOException e) {
                     showErrorMessage("Error Assigning Certificate",
-                            "Error Assigning new Cert: " + ExceptionUtils.getMessage(e) + "\n\nMake sure the " +
+                            "Error Assigning new Cert.  Make sure the " +
                             "cert you choose is related to the public " +
                             "key it is being assigned for.",
                             ExceptionUtils.getDebugException(e));
