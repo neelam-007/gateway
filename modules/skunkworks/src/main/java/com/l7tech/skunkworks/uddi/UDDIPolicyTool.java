@@ -88,6 +88,8 @@ public class UDDIPolicyTool extends UDDISupport {
     private JTextField subscriptionBindingKeyTextField;
     private JButton deleteTModelButton;
     private JButton deleteTModelReferencesButton;
+    private JButton findTModelReferencesButton;
+    private JButton infoTModelButton;
 
     private JFrame window;
 
@@ -251,7 +253,27 @@ public class UDDIPolicyTool extends UDDISupport {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 try {
-                    deleteTModelReferences();
+                    deleteTModelReferences(true);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        findTModelReferencesButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                try {
+                    deleteTModelReferences(false);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        infoTModelButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                try {
+                    fetchInfoTModel();
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -471,24 +493,7 @@ public class UDDIPolicyTool extends UDDISupport {
             System.out.println( "Selected key is: " + businessKey );
 
             try {
-                String authToken = authToken();
-
-                UDDIInquiryPortType inquiryPort = getInquirePort();
-
-                // find info
-                GetOperationalInfo getOperationalInfo = new GetOperationalInfo();
-                getOperationalInfo.setAuthInfo(authToken);
-                getOperationalInfo.getEntityKey().add(businessKey);
-
-                OperationalInfos infos = inquiryPort.getOperationalInfo(getOperationalInfo);
-                if (infos != null) {
-                    List<OperationalInfo> OperationalInfos = infos.getOperationalInfo();
-                    for ( OperationalInfo operationalInfo : OperationalInfos ) {
-                        System.out.println( "Owner: " + operationalInfo.getAuthorizedName() );
-                        System.out.println( "Key: " + operationalInfo.getEntityKey());
-                        System.out.println( "Created: " + operationalInfo.getCreated());
-                    }
-                }
+                fetchInfo( businessKey );
             } catch (DispositionReportFaultMessage drfm) {
                 throw buildFaultException("Error listing policies: ", drfm);
             }
@@ -629,24 +634,7 @@ public class UDDIPolicyTool extends UDDISupport {
             System.out.println( "Selected key is: " + serviceKey );
 
             try {
-                String authToken = authToken();
-
-                UDDIInquiryPortType inquiryPort = getInquirePort();
-
-                // find info
-                GetOperationalInfo getOperationalInfo = new GetOperationalInfo();
-                getOperationalInfo.setAuthInfo(authToken);
-                getOperationalInfo.getEntityKey().add(serviceKey);
-
-                OperationalInfos infos = inquiryPort.getOperationalInfo(getOperationalInfo);
-                if (infos != null) {
-                    List<OperationalInfo> OperationalInfos = infos.getOperationalInfo();
-                    for ( OperationalInfo operationalInfo : OperationalInfos ) {
-                        System.out.println( "Owner: " + operationalInfo.getAuthorizedName() );
-                        System.out.println( "Key: " + operationalInfo.getEntityKey());
-                        System.out.println( "Created: " + operationalInfo.getCreated());
-                    }
-                }
+                fetchInfo( serviceKey );
             } catch (DispositionReportFaultMessage drfm) {
                 throw buildFaultException("Error listing policies: ", drfm);
             }
@@ -797,6 +785,44 @@ public class UDDIPolicyTool extends UDDISupport {
         return desc;
     }
 
+    private void fetchInfoTModel() throws Exception {
+        int row = tModelResultsTable.getSelectedRow();
+        if ( row >= 0 ) {
+            int modelRow = tModelResultsTable.convertRowIndexToModel(row);
+            String tModelKey = (String)((DefaultTableModel)tModelResultsTable.getModel()).getValueAt(modelRow, 0);
+            System.out.println( "Selected key is: " + tModelKey );
+
+            try {
+                fetchInfo( tModelKey );
+            } catch (DispositionReportFaultMessage drfm) {
+                throw buildFaultException("Error fetching policy info: ", drfm);
+            }
+        } else {
+            System.out.println( "No selected row." );
+        }
+    }
+
+    private void fetchInfo( final String tModelKey ) throws Exception {
+        String authToken = authToken();
+
+        UDDIInquiryPortType inquiryPort = getInquirePort();
+
+        // find info
+        GetOperationalInfo getOperationalInfo = new GetOperationalInfo();
+        getOperationalInfo.setAuthInfo(authToken);
+        getOperationalInfo.getEntityKey().add(tModelKey);
+
+        OperationalInfos infos = inquiryPort.getOperationalInfo(getOperationalInfo);
+        if (infos != null) {
+            List<OperationalInfo> OperationalInfos = infos.getOperationalInfo();
+            for ( OperationalInfo operationalInfo : OperationalInfos ) {
+                System.out.println( "Owner: " + operationalInfo.getAuthorizedName() );
+                System.out.println( "Key: " + operationalInfo.getEntityKey());
+                System.out.println( "Created: " + operationalInfo.getCreated());
+            }
+        }
+    }
+
     /**
      * Fetch / log info for currently selected tmodel
      */
@@ -878,7 +904,7 @@ public class UDDIPolicyTool extends UDDISupport {
     /**
      * Delete keyed reference from any service that references the TModel 
      */
-    private void deleteTModelReferences() throws Exception {
+    private void deleteTModelReferences( boolean delete ) throws Exception {
         int row = tModelResultsTable.getSelectedRow();
         if ( row >= 0 ) {
             int modelRow = tModelResultsTable.convertRowIndexToModel(row);
@@ -927,48 +953,50 @@ public class UDDIPolicyTool extends UDDISupport {
                     System.out.println( "Referenced from service : " + service.getName() + " " + service.getKey() );    
                 }
 
-                UDDIPublicationPortType publicationPort = getPublishPort();
-                for (UDDINamedEntity uddiEntity : services) {
-                    String serviceKey = uddiEntity.getKey();
+                if ( delete ) {
+                    UDDIPublicationPortType publicationPort = getPublishPort();
+                    for (UDDINamedEntity uddiEntity : services) {
+                        String serviceKey = uddiEntity.getKey();
 
-                    GetServiceDetail getServiceDetail = new GetServiceDetail();
-                    getServiceDetail.setAuthInfo(authToken);
-                    getServiceDetail.getServiceKey().add(serviceKey);
-                    ServiceDetail serviceDetail = inquiryPort.getServiceDetail(getServiceDetail);
+                        GetServiceDetail getServiceDetail = new GetServiceDetail();
+                        getServiceDetail.setAuthInfo(authToken);
+                        getServiceDetail.getServiceKey().add(serviceKey);
+                        ServiceDetail serviceDetail = inquiryPort.getServiceDetail(getServiceDetail);
 
-                    if (serviceDetail.getBusinessService().size() != 1) {
-                        String msg = "UDDI registry returned either empty serviceDetail or " +
-                                     "more than one business services";
-                        throw new Exception(msg);
-                    }
-
-                    //get the bag for the service
-                    BusinessService toUpdate = get(serviceDetail.getBusinessService(), "service", true);
-                    CategoryBag cbag = toUpdate.getCategoryBag();
-
-                    // find references and remove them
-                    if ( cbag != null ) {
-                        Collection<KeyedReference> updated = new ArrayList<KeyedReference>();
-                        if (cbag.getKeyedReference() != null) {
-                            for (KeyedReference kref : cbag.getKeyedReference()) {
-                                if (kref.getKeyValue().equals(tModelKey)) {
-                                    // then we don't wan't this one
-                                } else {
-                                    updated.add(kref);
-                                }
-                            }
+                        if (serviceDetail.getBusinessService().size() != 1) {
+                            String msg = "UDDI registry returned either empty serviceDetail or " +
+                                         "more than one business services";
+                            throw new Exception(msg);
                         }
 
-                        cbag.getKeyedReference().clear();
-                        cbag.getKeyedReference().addAll(updated);
+                        //get the bag for the service
+                        BusinessService toUpdate = get(serviceDetail.getBusinessService(), "service", true);
+                        CategoryBag cbag = toUpdate.getCategoryBag();
 
-                        // update service in uddi
-                        SaveService saveService = new SaveService();
-                        saveService.setAuthInfo(authToken);
-                        saveService.getBusinessService().add(toUpdate);
-                        publicationPort.saveService(saveService);
+                        // find references and remove them
+                        if ( cbag != null ) {
+                            Collection<KeyedReference> updated = new ArrayList<KeyedReference>();
+                            if (cbag.getKeyedReference() != null) {
+                                for (KeyedReference kref : cbag.getKeyedReference()) {
+                                    if (kref.getKeyValue().equals(tModelKey)) {
+                                        // then we don't wan't this one
+                                    } else {
+                                        updated.add(kref);
+                                    }
+                                }
+                            }
+
+                            cbag.getKeyedReference().clear();
+                            cbag.getKeyedReference().addAll(updated);
+
+                            // update service in uddi
+                            SaveService saveService = new SaveService();
+                            saveService.setAuthInfo(authToken);
+                            saveService.getBusinessService().add(toUpdate);
+                            publicationPort.saveService(saveService);
+                        }
                     }
-                }   
+                }
             } catch (DispositionReportFaultMessage drfm) {
                 throw buildFaultException("Error removing references to TModel: ", drfm);
             }
