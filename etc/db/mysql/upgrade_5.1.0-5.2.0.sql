@@ -290,9 +290,13 @@ ALTER TABLE audit_main CHANGE COLUMN signature signature VARCHAR(1024);
 ALTER TABLE published_service ADD COLUMN default_routing_url varchar(4096);
 
 --
--- Update the descriptions of "Manage XXX Service" roles
+-- Update the descriptions of all dynamic roles such as SERVICE, POLICY, FOLDER(view and manage), and ID PROVIDER.
 --
 UPDATE rbac_role SET description = 'Users assigned to the {0} role have the ability to read, update and delete the {1} service.' WHERE entity_type = 'SERVICE';
+UPDATE rbac_role SET description = 'Users assigned to the {0} role have the ability to read, update and delete the {1} policy.' WHERE entity_type = 'POLICY';
+UPDATE rbac_role SET description = 'Users assigned to the {0} role have the ability to view services and policies within the {1} folder.' WHERE entity_type = 'FOLDER' AND name LIKE 'View%';
+UPDATE rbac_role SET description = 'Users assigned to the {0} role have the ability to view, update and delete services and policies within the {1} folder.' WHERE entity_type = 'FOLDER' AND name LIKE 'Manage%';
+UPDATE rbac_role SET description = 'Users assigned to the {0} role have the ability to read, update and delete the {1} provider, and create, search, update and delete its users and groups.' WHERE entity_type = 'ID_PROVIDER_CONFIG';
 
 --
 -- Reenable FK at very end of script
