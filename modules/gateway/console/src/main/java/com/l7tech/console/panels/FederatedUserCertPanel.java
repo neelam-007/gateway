@@ -66,7 +66,7 @@ public class FederatedUserCertPanel extends UserCertPanel {
     protected boolean isCertOk(TrustedCert tc) throws IOException, CertificateException {
         boolean ok = false;
         FederatedUserPanel fup = (FederatedUserPanel)userPanel;
-        String subjectDNFromCert = tc.getSubjectDn();
+        String subjectDNFromCert = tc.getCertificate().getSubjectDN().toString();
         if (userPanel.getUser().getSubjectDn().length() > 0) {
 
             if (subjectDNFromCert.compareToIgnoreCase(fup.getX509SubjectNameTextField().getText()) != 0) {

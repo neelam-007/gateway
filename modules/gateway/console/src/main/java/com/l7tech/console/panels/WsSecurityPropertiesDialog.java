@@ -154,7 +154,6 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( WsSecurityPropertiesDialog.class.getName() );
-    private static final ResourceBundle bundle = ResourceBundle.getBundle(WsSecurityPropertiesDialog.class.getName());
 
     private JPanel mainPanel;
     private JCheckBox applyWsSecurityCheckBox;
@@ -185,8 +184,8 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 TrustedCert cert = ce.getCert();
                 recipientCertificateOid = cert.getOid();
                 selectedCertificateNameTextField.setText( cert.getName() );
-                selectedCertificateSubjectTextField.setText( cert.getSubjectDn() );
-                selectedCertificateIssuerTextField.setText( cert.getIssuerDn() );
+                selectedCertificateSubjectTextField.setText( cert.getCertificate().getSubjectDN().toString() );
+                selectedCertificateIssuerTextField.setText( cert.getCertificate().getIssuerDN().toString() );
                 selectedCertificateNameTextField.setCaretPosition( 0 );
                 selectedCertificateSubjectTextField.setCaretPosition( 0 );
                 selectedCertificateIssuerTextField.setCaretPosition( 0 );
