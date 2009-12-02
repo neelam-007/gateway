@@ -21,6 +21,8 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.security.cert.X509Certificate;
 
+import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
+
 /**
  * @author jbufu
  */
@@ -92,6 +94,10 @@ public class PatchCli {
     private static final String DEFAULT_PC_HOME = "/opt/SecureSpan/Controller";
     private static final String DEFAULT_PATCH_API_ENDPOINT = "https://localhost:8765/services/patchServiceApi";
 
+    private static final long PATCH_API_CONNECT_TIMEOUT = 30000;
+    private static final long PATCH_API_RECEIVE_TIMEOUT = 600000;
+
+
     private static void initLogging() {
         // configure logging if the logs directory is found, else leave console output
         final File logsDir = new File("/opt/SecureSpan/Controller/var/logs");
@@ -107,7 +113,11 @@ public class PatchCli {
         String target = patchAction.getTarget();
         if (target.toLowerCase().startsWith("http://") || target.toLowerCase().startsWith("https://")) {
             logger.log(Level.INFO, "Using Patch Service API endpoint: " + target);
-            return new CxfUtils.ApiBuilder(patchAction.getTarget())
+            final HTTPClientPolicy clientPolicy = new HTTPClientPolicy();
+            clientPolicy.setConnectionTimeout(PATCH_API_CONNECT_TIMEOUT);
+            clientPolicy.setReceiveTimeout(PATCH_API_RECEIVE_TIMEOUT);
+
+            return new CxfUtils.ApiBuilder(patchAction.getTarget()).clientPolicy(clientPolicy)
                 //.inInterceptor(new LoggingInInterceptor())
                 //.outInterceptor(new LoggingOutInterceptor())
                 //.inFaultInterceptor(new LoggingInInterceptor())
