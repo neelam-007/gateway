@@ -154,7 +154,7 @@
             </constraints>
             <properties>
               <text value="Retrieve WSDL URL in search results"/>
-              <toolTipText value="Not retrieving the WSDL URL in the results improvies search performance on some UDDI Registries. WSDL URL will be downloaded when selection is made"/>
+              <toolTipText value="Not retrieving the WSDL URL in the results improves search performance on some UDDI Registries. WSDL URL will be downloaded when selection is made"/>
             </properties>
           </component>
           <hspacer id="75ab8">
