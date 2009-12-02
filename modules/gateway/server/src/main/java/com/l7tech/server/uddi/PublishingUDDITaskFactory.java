@@ -341,8 +341,9 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     //no default, see above Illegal state
                 }
 
+                final UDDIClient uddiClient = factory.uddiHelper.newUDDIClient(uddiRegistry);
                 final UDDIRegistrySpecificMetaData registrySpecificMetaData =
-                        PublishingUDDITaskFactory.getRegistrySpecificMetaData(uddiRegistry, serviceControl, factory);
+                        PublishingUDDITaskFactory.getRegistrySpecificMetaData(uddiRegistry, serviceControl, factory, uddiClient);
 
                 final Collection<Pair<String, String>> allEndpointPairs =
                         factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
@@ -353,7 +354,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     businessServicePublisher = new BusinessServicePublisher(
                             wsdl,
                             uddiProxiedServiceInfo.getPublishedServiceOid(),
-                            factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
+                            uddiClient);
 
                     deletedAndNewServices = businessServicePublisher.publishServicesToUDDIRegistry(
                             uddiProxiedServiceInfo.getUddiBusinessKey(),
@@ -416,11 +417,13 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
      * @param uddiRegistry
      * @param serviceControl
      * @param uddiFactory
+     * @param uddiClient DO NOT CLOSE IT
      * @return UDDIRegistrySpecificMetaData, not null if there are registry specific meta data requirements, null otherwise
      */
     private static UDDIRegistrySpecificMetaData getRegistrySpecificMetaData(final UDDIRegistry uddiRegistry,
                                                                             final UDDIServiceControl serviceControl,
-                                                                            final PublishingUDDITaskFactory uddiFactory) {
+                                                                            final PublishingUDDITaskFactory uddiFactory,
+                                                                            final UDDIClient uddiClient) {
         final boolean isActiveSOAVirtualService = serviceControl != null &&
                 uddiRegistry.getUddiRegistryType().equals(UDDIRegistry.UDDIRegistryType.CENTRASITE_ACTIVE_SOA.toString()) &&
                 serviceControl.getUddiRegistryOid() == uddiRegistry.getOid();
@@ -436,9 +439,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     //download the tmodel key for active soa
                     final String virtualKey = uddiFactory.config.getProperty("uddi.activesoa.virtual.service.tmodelkey", "uddi:9de0173b-5117-11de-8cf9-da0192ff3739");
 
-                    UDDIClient uddiClient = null;
                     try {
-                        uddiClient = uddiFactory.uddiHelper.newUDDIClient(uddiRegistry);
                         uddiClient.getOperationalInfo( virtualKey );
                     } catch (UDDIInvalidKeyException e) {
                         logger.log(Level.INFO, "No virtual keyed reference will be added as no tModel can be found for tModelKey '" + virtualKey + "'.");
@@ -449,8 +450,6 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                      } catch (UDDIException e) {
                         logger.log(Level.WARNING, "No virtual keyed reference will be added, error checking for tModelKey '" + virtualKey + "', '"+ExceptionUtils.getMessage( e )+"'.", ExceptionUtils.getDebugException( e ));
                         return null;
-                    } finally {
-                        ResourceUtils.closeQuietly( uddiClient );
                     }
 
                     final UDDIClient.UDDIKeyedReference kr =

@@ -1,10 +1,12 @@
 package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.*;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE;
 import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.Wsdl;
 
 import java.util.*;
@@ -42,7 +44,14 @@ public class BusinessServicePublisher implements Closeable {
                                     final long serviceOid,
                                     final UDDIClientConfig uddiCfg) {
 
-        this( wsdl, serviceOid, buildUDDIClient(uddiCfg));
+        this( wsdl, serviceOid, buildUDDIClient(uddiCfg), true);
+    }
+
+    public BusinessServicePublisher(final Wsdl wsdl,
+                                    final long serviceOid,
+                                    final UDDIClient uddiClient) {
+
+        this( wsdl, serviceOid, uddiClient, true);
     }
 
     /**
@@ -88,7 +97,7 @@ public class BusinessServicePublisher implements Closeable {
     /**
      * Delete all gateway endpoints contained by a BusinessService
      * <p/>
-     * A gateway endpoint is defined as any bindingTemplate in UDDI which contains an accessPoint with an endPoint value
+     * A gateway endpoint is defined as any bindingTemplate in UDDI which contains an accessPoint with an endPoint value                                     n
      * containing both the supplied publishedHostname and the serviceOid of a published service
      *
      * @param serviceKey String serviceKey of a BusinessService from which to delete gateway bindingTemplates. Required
@@ -107,7 +116,7 @@ public class BusinessServicePublisher implements Closeable {
                 if (!accessPoint.getUseType().equalsIgnoreCase(WsdlToUDDIModelConverter.USE_TYPE_END_POINT)) continue;
 
                 final String endPoint = accessPoint.getValue();
-                if (endPoint.indexOf(publishedHostname) != -1 && endPoint.indexOf(Long.toString(serviceOid)) != -1) {
+                if (endPoint.indexOf(publishedHostname) != -1 && endPoint.indexOf(SecureSpanConstants.SERVICE_FILE + Long.toString(serviceOid)) != -1) {
                     uddiClient.deleteBindingTemplate(bt.getBindingKey());
                 }
             }
@@ -181,9 +190,9 @@ public class BusinessServicePublisher implements Closeable {
         //we must find both the service name and the correct namespace in the Gateway's WSDL, otherwise we are mis configured
 
         //Now work with the WSDL, the information we will publish comes from the Gateway's WSDL
-        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
+        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
         try {
-            modelConverter.convertWsdlToUDDIModel(allEndpointPairs);
+            modelConverter.convertWsdlToUDDIModel(allEndpointPairs, null, null);
         } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
             throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid + ") into UDDI object model.", e);
         }
@@ -244,9 +253,16 @@ public class BusinessServicePublisher implements Closeable {
 
         UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
         
-        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
+        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
         try {
-            modelConverter.convertWsdlToUDDIModel(allEndpointPairs);
+            final String prependServiceName = SyspropUtil.getString("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "Layer7");
+            final String appendServiceName = SyspropUtil.getString("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", Long.toString(serviceOid));
+            if(!isOverwriteUpdate){
+                modelConverter.convertWsdlToUDDIModel(allEndpointPairs, prependServiceName, appendServiceName);
+            }else{
+                modelConverter.convertWsdlToUDDIModel(allEndpointPairs, null, null);
+            }
+
         } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
             throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid + ") into UDDI object model.", e);
         }
@@ -282,7 +298,8 @@ public class BusinessServicePublisher implements Closeable {
      */
     protected BusinessServicePublisher(final Wsdl wsdl,
                                        final long serviceOid,
-                                       final UDDIClient uddiClient) {
+                                       final UDDIClient uddiClient,
+                                       boolean flagJustIngoreMe) {
         if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
         if(uddiClient == null) throw new NullPointerException("uddiClient cannot be null");
 
@@ -419,7 +436,7 @@ public class BusinessServicePublisher implements Closeable {
             }
         } catch (UDDIException e) {
             logger.log(Level.WARNING, "Exception publishing tModels: " + e.getMessage());
-            handleUDDIRollback(uddiClient, publishedTModels, Collections.<Pair<String, BusinessService>>emptySet(), e);
+            handleUDDIRollback(publishedTModels, Collections.<Pair<String, BusinessService>>emptySet(), e);
             throw e;
         }
         return Collections.unmodifiableList(publishedTModels);
@@ -516,7 +533,7 @@ public class BusinessServicePublisher implements Closeable {
      *
      * @param serviceToWsdlServiceName
      * @param isOverwriteUpdate        if true, if a previously published BusinessService is found, along with
-     *                                 it's serviceKey, any bindings it has will also be reused
+     *                                 it's serviceKey, any bindings it has will also be preserved
      * @param registrySpecificMetaData if not null, the registry specific meta data will be added appropriately to each uddi piece of infomation published
      * @return
      * @throws UDDIException
@@ -702,7 +719,7 @@ public class BusinessServicePublisher implements Closeable {
             addRegistrySpecifcMetaToBusinessService(registrySpecificMetaData, serviceAndModels.left);
 
             final Pair<String, BusinessService> servicePair =
-                    publishBusinessService(uddiClient,
+                    publishBusinessService(
                             serviceAndModels.left,
                             Collections.unmodifiableCollection(dependentTModels.values()),
                             Collections.unmodifiableSet(serviceKeysToNewlyPublishedServices));
@@ -755,10 +772,10 @@ public class BusinessServicePublisher implements Closeable {
      * @return null if a service did not need to be created i.e. an existing one was updated, otherwise a non null pair
      * @throws UDDIException
      */
-    private Pair<String, BusinessService> publishBusinessService(final UDDIClient uddiClient,
-                                                                 final BusinessService businessService,
-                                                                 final Collection<TModel> rollbackTModelsToDelete,
-                                                                 final Set<Pair<String, BusinessService>> allPublishedServicesSoFar)
+    private Pair<String, BusinessService> publishBusinessService(
+            final BusinessService businessService,
+            final Collection<TModel> rollbackTModelsToDelete,
+            final Set<Pair<String, BusinessService>> allPublishedServicesSoFar)
             throws UDDIException {
         try {
             final boolean published = jaxWsUDDIClient.publishBusinessService(businessService);
@@ -767,17 +784,17 @@ public class BusinessServicePublisher implements Closeable {
             }
         } catch (UDDIException e) {
             logger.log(Level.WARNING, "Exception publishing BusinesService: " + e.getMessage());
-            handleUDDIRollback(uddiClient, rollbackTModelsToDelete, allPublishedServicesSoFar, e);
+            handleUDDIRollback(rollbackTModelsToDelete, allPublishedServicesSoFar, e);
             throw e;
         }
 
         return null;
     }
 
-    private void handleUDDIRollback(final UDDIClient uddiClient,
-                                    final Collection<TModel> rollbackTModelsToDelete,
-                                    final Set<Pair<String, BusinessService>> allPublishedServicesSoFar,
-                                    final UDDIException exception) {
+    private void handleUDDIRollback(
+            final Collection<TModel> rollbackTModelsToDelete,
+            final Set<Pair<String, BusinessService>> allPublishedServicesSoFar,
+            final UDDIException exception) {
         //this is just a convenience method. Either rolls back tModels OR BusinessServices
         if(!rollbackTModelsToDelete.isEmpty() && !allPublishedServicesSoFar.isEmpty())
             throw new IllegalArgumentException("Can only roll back either tModels or BusinessServices");

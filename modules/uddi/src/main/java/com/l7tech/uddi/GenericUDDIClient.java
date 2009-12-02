@@ -2099,7 +2099,10 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     /**
-     * 
+     * WARNING: On actviesoa at least, it is not possible to have nested authentication keys for the same user, and
+     * to discard a nested key, without affecting keys granted for the same crentials previously.
+     * This will lead to error which appear to be caused by incorrect credentials, based on the error code returned
+     * from activesoa being the same as when invalid credentials are supplied.
      */
     @Override
     public void close() {
@@ -2241,7 +2244,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
 
         if ( hasResult(faultMessage, 10150) ) {
-            exception = new UDDIAccessControlException("Authentication failed for '" + login + "'.");
+            exception = new UDDIAccessControlException("Authentication failed for '" + login + "'. Detailed Message: " + toString(faultMessage));
         } else if ( hasResult(faultMessage, 10140) ||
                     hasResult(faultMessage, 10120)) {
                 exception = new UDDIAccessControlException("Authorization failed for '" + login + "'.");

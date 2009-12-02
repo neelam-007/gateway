@@ -50,8 +50,6 @@ public class WsdlToUDDIModelConverter {
     protected static final String BINDING_TMODEL_IDENTIFIER = "$Layer7$_Binding_Identifier";
 
     private final Wsdl wsdl;
-    private final long serviceOid;
-
     private Map<String, String> serviceNameToWsdlServiceNameMap;
     private List<Pair<BusinessService, Map<String, TModel>>> servicesAndDependentTModels;
     public static final String USE_TYPE_END_POINT = "endPoint";
@@ -83,17 +81,13 @@ public class WsdlToUDDIModelConverter {
     private final String businessKey;
 
     public WsdlToUDDIModelConverter(final Wsdl wsdl,
-                                    final String businessKey,
-                                    final long serviceOid) {
+                                    final String businessKey ) {
         if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
 
         if(businessKey == null || businessKey.trim().isEmpty()) throw new IllegalArgumentException("businessKey cannot be null or emtpy");
 
-        if(serviceOid < 1) throw new IllegalArgumentException("Invalid serviceOid: " + serviceOid);
-
         this.wsdl = wsdl;
         this.businessKey = businessKey;
-        this.serviceOid = serviceOid;
     }
 
     public Map<String, String> getServiceNameToWsdlServiceNameMap() {
@@ -120,12 +114,15 @@ public class WsdlToUDDIModelConverter {
      *                         collection. The left hand side is the external gateway url for service for the endpoint and the right hand side
      *                         is the WSDL URL for the service. More than one Pair is included if the cluster defines more than one http(s) listener.
      *                         Cannot be null or empty. Each String value is validated to be not null and not empty.
-     * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.MissingWsdlReferenceException
+     * @param prependToServiceName
+     *@param appendToServiceName @throws com.l7tech.uddi.WsdlToUDDIModelConverter.MissingWsdlReferenceException
      *          if the WSDL contains no valid
      *          wsdl:service definitions due to each wsdl:service containing references to bindings which either themselves
      *          don't exist or reference wsdl:portType elements which dont exist.
      */
-    public void convertWsdlToUDDIModel(final Collection<Pair<String, String>> allEndpointPairs) throws MissingWsdlReferenceException {
+    public void convertWsdlToUDDIModel(final Collection<Pair<String, String>> allEndpointPairs,
+                                       final String prependToServiceName,
+                                       final String appendToServiceName) throws MissingWsdlReferenceException {
 
         UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
 
@@ -137,7 +134,7 @@ public class WsdlToUDDIModelConverter {
             final BusinessService businessService = new BusinessService();
             businessService.setBusinessKey(businessKey);
             try {
-                createUddiBusinessService(businessService, wsdlService, allEndpointPairs);
+                createUddiBusinessService(businessService, wsdlService, allEndpointPairs, prependToServiceName, appendToServiceName);
                 serviceNameToWsdlServiceNameMap.put(businessService.getName().get(0).getValue(), wsdlService.getQName().getLocalPart());
             } catch (MissingWsdlReferenceException e) {
                 //already logged, we ignore the bindingTemplate as it is invalid
@@ -158,9 +155,19 @@ public class WsdlToUDDIModelConverter {
 
     private void createUddiBusinessService(final BusinessService businessService,
                                            final Service wsdlService,
-                                           final Collection<Pair<String, String>> allEndpointPairs) throws MissingWsdlReferenceException {
+                                           final Collection<Pair<String, String>> allEndpointPairs,
+                                           final String prependToServiceName,
+                                           final String appendToServiceName) throws MissingWsdlReferenceException {
         final String serviceName = wsdlService.getQName().getLocalPart();
-        final String localName = "Layer7 " + serviceName + " " + serviceOid;//this is ok to modify as the uddi:name of the BusinessService does not map to a wsdl element
+        String serviceLocalName = serviceName;
+        if(prependToServiceName != null && !prependToServiceName.trim().isEmpty()) {
+            serviceLocalName = prependToServiceName + " " + serviceLocalName;
+        }
+        if(appendToServiceName != null && !appendToServiceName.trim().isEmpty()){
+            serviceLocalName = serviceLocalName + " " + appendToServiceName;
+        }
+
+        final String localName = serviceLocalName;//this is ok to modify as the uddi:name of the BusinessService does not map to a wsdl element
         final Map<String, TModel> modelsForService = new HashMap<String, TModel>();
         Pair<BusinessService, Map<String, TModel>> serviceToTModels = new Pair<BusinessService, Map<String, TModel>>(businessService, modelsForService);
 
@@ -225,7 +232,6 @@ public class WsdlToUDDIModelConverter {
 
         this.wsdl = wsdl;
         this.businessKey = null;
-        this.serviceOid = -1;
     }
 
     List<BindingTemplate> createUddiBindingTemplate(final Map<String, TModel> serviceToTModels,

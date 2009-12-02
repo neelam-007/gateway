@@ -271,7 +271,10 @@ public class ServiceUDDISettingsDialog extends JDialog {
         
         // WS-Policy settings
         boolean originalWsPolicyAvailable = uddiServiceControl != null;
-        boolean proxyWsPolicyAvailable = uddiProxyServiceInfo != null && publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED;
+        boolean proxyWsPolicyAvailable = uddiProxyServiceInfo != null &&
+                publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED &&
+                uddiProxyServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.OVERWRITE;
+        
         boolean originalWsPolicyEnabled = uddiServiceControl != null && uddiServiceControl.isPublishWsPolicyEnabled();
         boolean proxyWsPolicyEnabled = uddiProxyServiceInfo != null && uddiProxyServiceInfo.isPublishWsPolicyEnabled(); 
         if ( originalWsPolicyAvailable || proxyWsPolicyAvailable ) {
@@ -289,7 +292,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
         inlinePolicyIncludesCheckBox.setSelected( getPublishInlinedPolicy(publishFullPolicyCheckBox.isSelected(), uddiServiceControl, uddiProxyServiceInfo) );
 
         // Metrics settings
-        boolean proxyMetricsEnabled = uddiProxyServiceInfo != null && uddiProxyServiceInfo.isMetricsEnabled();
+        //ideally whether metrics are enabled for activesoa or not would be determined by whether we know the proxy has been correctly 'virtualized'
+        boolean proxyMetricsEnabled = uddiProxyServiceInfo != null &&
+                uddiProxyServiceInfo.isMetricsEnabled() &&
+                publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED &&
+                uddiProxyServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.OVERWRITE;
         metricsEnabledCheckBox.setSelected( proxyMetricsEnabled );
     }
 
@@ -402,7 +409,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
             inlinePolicyIncludesCheckBox.setEnabled( enablePolicyOptions );
 
             //metrics tab
-            boolean enableMetrics = uddiProxyServiceInfo != null  && isMetricsEnabled(uddiProxyServiceInfo.getUddiRegistryOid());
+            boolean enableMetrics = uddiProxyServiceInfo != null &&
+                    isMetricsEnabled(uddiProxyServiceInfo.getUddiRegistryOid()) &&
+                    uddiProxyServiceInfo != null &&
+                    uddiProxyServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.OVERWRITE;
+            
             metricsEnabledCheckBox.setEnabled( enableMetrics );
         } else {
             //publish tab
@@ -638,7 +649,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                             try {
                                 uddiRegistryAdmin.deleteGatewayEndpointFromUDDI(uddiProxyServiceInfo);
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to remove Gateway endpoint from UDDI successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+                                        "Task to remove Gateway endpoint from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
                             } catch (Exception ex) {
                                 final String msg = "Problem deleting pubished Gateway endpoint from UDDI: " + ExceptionUtils.getMessage(ex);
                                 logger.log(Level.WARNING, msg);

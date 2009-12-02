@@ -38,8 +38,8 @@ public class UDDIUtilitiesTest {
         Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
-        wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key", serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
+        wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key");
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair), "Layer7", Long.toString(serviceOid));
         serviceToDependentModels = wsdlToUDDIModelConverter.getServicesAndDependentTModels();
         referencedModels = serviceToDependentModels.get(0).right;
         singleService = serviceToDependentModels.get(0).left;

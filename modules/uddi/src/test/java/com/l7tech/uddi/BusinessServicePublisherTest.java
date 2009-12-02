@@ -32,8 +32,8 @@ public class BusinessServicePublisherTest {
 
         final int serviceOid = 3828382;
         final String businessKey = "uddi:uddi_business_key";
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair), "Layer7", Long.toString(serviceOid));
 
         UDDIClient uddiClient = new TestUddiClient(true);
 
@@ -78,8 +78,8 @@ public class BusinessServicePublisherTest {
 
         final int serviceOid = 3828382;
         final String businessKey = "uddi:uddi_business_key";
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair, endpointPairHttps));
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair, endpointPairHttps), "Layer7", Long.toString(serviceOid));
 
         UDDIClient uddiClient = new TestUddiClient(true);
 
@@ -147,8 +147,8 @@ public class BusinessServicePublisherTest {
 
         final int serviceOid = 3828382;
         final String businessKey = "uddi:uddi_business_key";
-        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey, serviceOid);
-        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair));
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair), "Layer7", Long.toString(serviceOid));
 
         UDDIClient uddiClient = new TestUddiClient(true);
 
