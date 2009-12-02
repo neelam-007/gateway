@@ -2,12 +2,14 @@ package com.l7tech.server.processcontroller.patching;
 
 import javax.jws.WebService;
 import javax.activation.DataHandler;
+import javax.xml.ws.soap.MTOM;
 import java.util.Collection;
 
 /**
  * PatchService API.
  */
-@WebService
+@WebService(name="PatchServiceApi", targetNamespace="http://ns.l7tech.com/secureSpan/5.0/component/processController/patchServiceApi")
+@MTOM
 public interface PatchServiceApi {
 
     public PatchStatus uploadPatch(DataHandler patchData) throws PatchException;

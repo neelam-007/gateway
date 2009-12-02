@@ -1,9 +1,5 @@
 package com.l7tech.server.processcontroller.patching;
 
-import org.apache.cxf.interceptor.InInterceptors;
-import org.apache.cxf.interceptor.OutFaultInterceptors;
-
-import javax.jws.WebService;
 import javax.annotation.Resource;
 import javax.activation.DataHandler;
 import java.util.Collection;
@@ -24,11 +20,6 @@ import com.l7tech.common.io.ProcResult;
 /**
  * @author jbufu
  */
-@WebService(name="PatchServiceApi",
-            targetNamespace="http://ns.l7tech.com/secureSpan/5.0/component/processController/patchServiceApi",
-            endpointInterface="com.l7tech.server.processcontroller.patching.PatchServiceApi")
-@InInterceptors(interceptors = "org.apache.cxf.interceptor.LoggingInInterceptor")
-@OutFaultInterceptors(interceptors = "org.apache.cxf.interceptor.LoggingOutInterceptor")
 public class PatchServiceApiImpl implements PatchServiceApi {
 
     // - PUBLIC
