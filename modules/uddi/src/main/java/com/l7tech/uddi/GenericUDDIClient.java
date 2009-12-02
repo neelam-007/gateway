@@ -2106,21 +2106,22 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
      */
     @Override
     public void close() {
-        if (authenticated()) {
-            try {
-                UDDISecurityPortType securityPort = getSecurityPort();
-                DiscardAuthToken discardAuthToken = new DiscardAuthToken();
-                discardAuthToken.setAuthInfo(getAuthToken());
-                securityPort.discardAuthToken(discardAuthToken);
-                authToken = null;
-            } catch (DispositionReportFaultMessage drfm) {
-                logger.log(Level.INFO, "Error logging out.", buildFaultException("Error logging out", drfm));
-            } catch (RuntimeException e) {
-                logger.log(Level.INFO, "Error logging out.", e);
-            } catch (UDDIException e) {
-                logger.log(Level.INFO, "Error logging out.", e);
-            }
-        }
+        //todo Uncomment when registry type is configured to decide whether we should explicitly close sessions or not
+//        if (authenticated()) {
+//            try {
+//                UDDISecurityPortType securityPort = getSecurityPort();
+//                DiscardAuthToken discardAuthToken = new DiscardAuthToken();
+//                discardAuthToken.setAuthInfo(getAuthToken());
+//                securityPort.discardAuthToken(discardAuthToken);
+//                authToken = null;
+//            } catch (DispositionReportFaultMessage drfm) {
+//                logger.log(Level.INFO, "Error logging out.", buildFaultException("Error logging out", drfm));
+//            } catch (RuntimeException e) {
+//                logger.log(Level.INFO, "Error logging out.", e);
+//            } catch (UDDIException e) {
+//                logger.log(Level.INFO, "Error logging out.", e);
+//            }
+//        }
     }
 
     //- PROTECTED

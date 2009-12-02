@@ -105,10 +105,10 @@ public class TestGenericUDDIClient {
 
     @Test
     public void updateBindingTemplateToCauseNotification() throws UDDIException{
-        String bindingKey = "uddi:24bef0e1-d91a-11de-bd69-9b7f7fcbd597";
+        String bindingKey = "uddi:32f1a9b0-df88-11de-93c3-edbac1404a1d";
         GenericUDDIClient genericUDDIClient = (GenericUDDIClient) uddiClient;
 
-        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:18e18f07-d91a-11de-bd69-b6433b21cc5a");
+        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:24574012-df88-11de-93c3-bb5676d6aaed");
         BindingTemplate foundTemplate = null;
         for(BindingTemplate bt: businessService.getBindingTemplates().getBindingTemplate()){
             if(bt.getBindingKey().equals(bindingKey)){
@@ -120,7 +120,7 @@ public class TestGenericUDDIClient {
         Assert.assertNotNull(foundTemplate);
 
 //        foundTemplate.getAccessPoint().setValue("http://thehostwedontwanttorouteto.com:1610/SpaceOrderofBattle2.asmx");
-        foundTemplate.getAccessPoint().setValue("http://theThirdtest_Nostacktracebug7939hugh/ACMEWarehouseWS/Service1Bug7939.asmx");
+        foundTemplate.getAccessPoint().setValue("http://soamoa.org:9292/artistRegistry/Donal3");
         genericUDDIClient.publishBusinessService(businessService);
         //genericUDDIClient.publishBindingTemplate(foundTemplate);
     }

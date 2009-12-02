@@ -143,6 +143,9 @@ public abstract class UDDISupport {
                 getAuthToken.setUserID(login);
                 getAuthToken.setCred(password);
                 authToken = securityPort.getAuthToken(getAuthToken).getAuthInfo();
+                System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+                System.out.println("Auth token: " + authToken);
+                System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
             } catch (DispositionReportFaultMessage drfm) {
                 throw buildFaultException("Error getting authentication token: ", drfm);
             } catch (RuntimeException e) {

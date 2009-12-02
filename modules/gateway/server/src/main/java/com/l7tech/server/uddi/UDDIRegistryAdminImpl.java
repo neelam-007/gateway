@@ -16,6 +16,10 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  * @author darmstrong
@@ -278,8 +282,15 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             final UDDIServiceControlMonitorRuntime monitorRuntime = new UDDIServiceControlMonitorRuntime(oid, lastModifiedServiceTimeStamp);
             uddiServiceControlMonitorRuntimeManager.save(monitorRuntime);
             if(uddiServiceControl.isUnderUddiControl()){
-                logger.log(Level.FINE, "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL");
-                uddiCoordinator.notifyEvent(new BusinessServiceUpdateUDDIEvent(uddiRegistry.getOid(), uddiServiceControl.getUddiServiceKey(), false));
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                            logger.log(Level.FINE, "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL");
+                            uddiCoordinator.notifyEvent(new BusinessServiceUpdateUDDIEvent(uddiRegistry.getOid(), uddiServiceControl.getUddiServiceKey(), false, true));
+                        }
+                    }
+                });
             }
             return oid;
         }else{
@@ -294,8 +305,15 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             }
             uddiServiceControlManager.update( uddiServiceControl );
             if(wsdlRefreshRequired){
-                logger.log(Level.FINE, "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL");
-                uddiCoordinator.notifyEvent(new BusinessServiceUpdateUDDIEvent(uddiServiceControl.getUddiRegistryOid(), uddiServiceControl.getUddiServiceKey(), false));
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                            logger.log(Level.FINE, "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL");
+                            uddiCoordinator.notifyEvent(new BusinessServiceUpdateUDDIEvent(uddiServiceControl.getUddiRegistryOid(), uddiServiceControl.getUddiServiceKey(), false, true));
+                        }
+                    }
+                });
             }
             return uddiServiceControl.getOid();
         }
