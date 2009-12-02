@@ -729,12 +729,6 @@ public class CertUtils {
 
             Set<String> rawDNSet = dnToAttributeMap(dn).keySet();
             Set<String> formattedDNSet = new HashSet<String>(dnToAttributeMap(formattedDn).keySet());
-            for ( Map.Entry<String,String> entry : DN_MAP.entrySet() ) {
-                if ( formattedDNSet.contains(entry.getKey()) ) {
-                    formattedDNSet.remove(entry.getKey());
-                    formattedDNSet.add(entry.getValue());
-                }
-            }
 
             valid = rawDNSet.equals(formattedDNSet);
         } catch (IllegalArgumentException iae) {
@@ -759,12 +753,6 @@ public class CertUtils {
 
             Set<String> rawDNSet = dnToAttributeMap(dn).keySet();
             Set<String> formattedDNSet = new HashSet<String>(dnToAttributeMap(formattedDn).keySet());
-            for ( Map.Entry<String,String> entry : DN_MAP.entrySet() ) {
-                if ( formattedDNSet.contains(entry.getKey()) ) {
-                    formattedDNSet.remove(entry.getKey());
-                    formattedDNSet.add(entry.getValue());
-                }
-            }
 
             rawDNSet.removeAll(formattedDNSet);
             if ( !rawDNSet.isEmpty() ) {
@@ -800,6 +788,9 @@ public class CertUtils {
         List<Rdn> rdns = name.getRdns();
         for (Rdn rdn : rdns) {
             String type = rdn.getType().toUpperCase();
+            if ( DN_MAP.containsKey(type) ) {
+                type = DN_MAP.get( type );
+            }
 
             List<String> values = map.get(type);
             if (values == null) {

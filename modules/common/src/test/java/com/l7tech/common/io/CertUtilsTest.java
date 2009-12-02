@@ -186,4 +186,12 @@ public class CertUtilsTest {
         Assert.assertTrue( "Canonical match naming", CertUtils.isEqualDNCanonical( "email=test@test.com+s=ca+dnq=test.com", "EMAILADDRESS=test@test.com+ST=ca+DNQUALIFIER=test.com" ) );
         Assert.assertFalse( "Basic mismatch", CertUtils.isEqualDNCanonical( "cn=a", "cn=b" ) );
     }
+
+    @Test
+    public void testValidDN() {
+        Assert.assertTrue( "Valid DN", CertUtils.isValidDN("CN=bug5722_child, O=OASIS, ST=NJ, DNQ=org, EMAILADDRESS=support@simpson.org") );
+        Assert.assertFalse( "Invalid DN", CertUtils.isValidDN("CN=bug5722_child, O=OASIS, S=NJ, DNQUALIFIER=org, EMAIL=support@simpson.org") );
+        Assert.assertTrue( "Valid DN with explicit known OIDs", CertUtils.isValidDN("cn=bug5722_child,o=oasis,st=nj,2.5.4.46=#13036f7267,1.2.840.113549.1.9.1=#1613737570706f72744073696d70736f6e2e6f7267") );
+        Assert.assertTrue( "Valid DN with explicit unknown OIDs", CertUtils.isValidDN("cn=bug5722_child,2.5.4.46342342=#1613737570706f72744073696d70736f6e2e6f7267") );
+    }
 }
