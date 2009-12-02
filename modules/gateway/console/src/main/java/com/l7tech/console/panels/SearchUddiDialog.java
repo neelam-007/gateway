@@ -406,8 +406,14 @@ public class SearchUddiDialog extends JDialog {
                     //Should be handled inside of either callable
                     logger.log(Level.FINE, "Search of UDDI was cancelled");
                 } catch (InvocationTargetException e2) {
-                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e2), ExceptionUtils.getDebugException(e2));
-                    JOptionPane.showMessageDialog(SearchUddiDialog.this, ExceptionUtils.getMessage(e2), "Error Searching UDDI Registry", JOptionPane.ERROR_MESSAGE);
+                    String message = ExceptionUtils.getMessage(e2);
+                    logger.log(Level.WARNING, message, ExceptionUtils.getDebugException(e2));
+                    JTextField text = new JTextField(message);
+                    text.setHorizontalAlignment(SwingConstants.CENTER);
+                    JScrollPane pane = new JScrollPane(text);
+                    pane.setPreferredSize(new Dimension(250, 45));
+                    pane.setMaximumSize(new Dimension(350, 50));
+                    JOptionPane.showMessageDialog(SearchUddiDialog.this, pane, "Error Searching UDDI Registry", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
