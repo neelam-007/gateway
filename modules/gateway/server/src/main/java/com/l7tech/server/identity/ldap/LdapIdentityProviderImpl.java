@@ -813,7 +813,7 @@ public class LdapIdentityProviderImpl
                             }
                         }
                     } );
-                    atLeastOneUser = foundUserHolder[0];
+                    atLeastOneUser |= foundUserHolder[0];
                 } catch (NamingException e) {
                     offensiveUserMappings.add(userType);
                     logger.log(Level.FINE, "error testing user mapping" + userType.getObjClass(), e);
@@ -845,7 +845,7 @@ public class LdapIdentityProviderImpl
                             }
                         }
                     });
-                    atLeastOneGroup = foundGroupHolder[0];
+                    atLeastOneGroup |= foundGroupHolder[0];
                 } catch (NamingException e) {
                     offensiveGroupMappings.add(groupType);
                     logger.log(Level.FINE, "error testing group mapping" + groupType.getObjClass(), e);
