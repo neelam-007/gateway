@@ -457,6 +457,7 @@ public class SearchUddiDialog extends JDialog {
         // store prefs on successful search
         preferences.putProperty(UDDI_REGISTRY, registryName);
         preferences.putProperty(WSDL_PORT_DIALOG, (showSelectWsdlPortDialogCheckBox.isSelected()) ? "true" : "false");
+        preferences.putProperty(RETRIEVE_WSDL, (retrieveWSDLURLCheckBox.isSelected()) ? "true" : "false");
 
         boolean searchTruncated = false;
         Vector<WsdlPortInfo> urlList = new Vector<WsdlPortInfo>();
