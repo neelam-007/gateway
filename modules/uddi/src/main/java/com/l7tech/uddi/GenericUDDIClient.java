@@ -2292,8 +2292,8 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     protected URL buildUrl(String relativeUrl) {
         URL url = UDDIInquiry.class.getResource(relativeUrl);
 
-        if (logger.isLoggable(Level.FINE))
-            logger.log(Level.FINE, "Using url ''{0}''.", url);
+        if (logger.isLoggable(Level.FINER))
+            logger.log(Level.FINER, "Using url ''{0}''.", url);
 
         return url;
     }

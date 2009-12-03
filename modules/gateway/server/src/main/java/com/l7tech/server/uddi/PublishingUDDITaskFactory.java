@@ -155,7 +155,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 if (uddiRegistry == null)
                     throw new IllegalStateException("UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") not found.");
                 if (!uddiRegistry.isEnabled()) {
-                    logger.log(Level.WARNING, "Canot update UDDI. UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") is disabled");
+                    logger.log(Level.WARNING, "Cannot update UDDI. UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") is disabled");
                     return;
                 }
 
@@ -292,7 +292,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 if (uddiRegistry == null)
                     throw new IllegalStateException("UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") not found.");
                 if (!uddiRegistry.isEnabled()) {
-                    logger.log(Level.WARNING, "Canot update UDDI. UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") is disabled");
+                    logger.log(Level.WARNING, "Cannot update UDDI. UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") is disabled");
                     return;
                 }
 
@@ -527,7 +527,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 if (uddiRegistry == null)
                     throw new IllegalStateException("UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") not found.");
                 if (!uddiRegistry.isEnabled()) {
-                    logger.log(Level.WARNING, "Canot update UDDI. UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") is disabled");
+                    logger.log(Level.WARNING, "Cannot update UDDI. UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") is disabled");
                     return;
                 }
 
@@ -642,7 +642,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 if (uddiRegistry == null)
                     throw new IllegalStateException("UDDI Registry #" + uddiProxiedServiceInfo.getUddiRegistryOid() + "' not found.");
                 if (!uddiRegistry.isEnabled()) {
-                    logger.log(Level.WARNING, "Canot update UDDI. UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") is disabled");
+                    logger.log(Level.WARNING, "Cannot update UDDI. UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") is disabled");
                     return;
                 }
 
@@ -740,7 +740,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 if (uddiRegistry == null)
                     throw new IllegalStateException("UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") not found.");
                 if (!uddiRegistry.isEnabled()) {
-                    logger.log(Level.WARNING, "Canot update UDDI. UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") is disabled");
+                    logger.log(Level.WARNING, "Cannot update UDDI. UDDI Registry #(" + uddiProxiedServiceInfo.getUddiRegistryOid() + ") is disabled");
                     return;
                 }
 

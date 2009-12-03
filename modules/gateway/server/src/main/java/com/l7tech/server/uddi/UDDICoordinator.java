@@ -463,7 +463,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                     status != UDDIPublishStatus.PublishStatus.CANNOT_DELETE &&
                     status != UDDIPublishStatus.PublishStatus.PUBLISHED){
                 final UDDIProxiedServiceInfo info = oidToProxyServiceMap.get(publishStatus.getUddiProxiedServiceInfoOid());
-                logger.log(Level.FINER, "Creating event to update published proxy service info in UDDI. Service #("
+                logger.log(Level.FINE, "Creating event to update published proxy service info in UDDI. Service #("
                         + info.getPublishedServiceOid()+") in status " + status.toString());
                 final UDDIServiceControl serviceControl =
                         uddiServiceControlManager.findByPublishedServiceOid(info.getPublishedServiceOid());
