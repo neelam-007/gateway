@@ -281,7 +281,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         boolean originalWsPolicyAvailable = uddiServiceControl != null;
         boolean proxyWsPolicyAvailable = uddiProxyServiceInfo != null &&
                 publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED &&
-                uddiProxyServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.OVERWRITE;
+                uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY;
         
         boolean originalWsPolicyEnabled = uddiServiceControl != null && uddiServiceControl.isPublishWsPolicyEnabled();
         boolean proxyWsPolicyEnabled = uddiProxyServiceInfo != null && uddiProxyServiceInfo.isPublishWsPolicyEnabled(); 
@@ -304,7 +304,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         boolean proxyMetricsEnabled = uddiProxyServiceInfo != null &&
                 uddiProxyServiceInfo.isMetricsEnabled() &&
                 publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED &&
-                uddiProxyServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.OVERWRITE;
+                uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY;
         metricsEnabledCheckBox.setSelected( proxyMetricsEnabled );
     }
 
@@ -421,7 +421,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     isMetricsEnabled(uddiProxyServiceInfo.getUddiRegistryOid()) &&
                     uddiProxyServiceInfo != null &&
                     publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED &&
-                    uddiProxyServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.OVERWRITE;
+                    uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY;
             
             metricsEnabledCheckBox.setEnabled( enableMetrics );
         } else {
