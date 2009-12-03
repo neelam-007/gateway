@@ -388,6 +388,7 @@ public class ServicePropertiesDialog extends JDialog {
                         public void itemSelected(Object item) {
                             if(!(item instanceof WsdlPortInfo)) return;
                             WsdlPortInfo wsdlPortInfo = (WsdlPortInfo) item;
+                            wsdlPortInfo.setWasWsdlPortSelected(true);
 
                             //if none of the UDDI related final values have changed, then we can reuse the existing UDDIServiceControl
                             final boolean existingOk = uddiServiceControl != null &&
@@ -532,7 +533,7 @@ public class ServicePropertiesDialog extends JDialog {
                 wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(), wsdlPortInfo.getBusinessServiceKey(),
                 wsdlPortInfo.getBusinessServiceName(), wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(),
                 wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getWsdlPortBindingNamespace(),
-                wsdlUnderUDDIControlCheckBox.isSelected());
+                wsdlUnderUDDIControlCheckBox.isSelected() || wsdlPortInfo.isWasWsdlPortSelected());
     }
 
     /**

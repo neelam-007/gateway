@@ -106,6 +106,13 @@ public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rena
         if(!this.getAccessPointUrl().equals(portInfo.getAccessPointURL())) modified = true;
         this.setAccessPointUrl(portInfo.getAccessPointURL());
 
+        if(portInfo.isWasWsdlPortSelected()){
+            if(!this.isUnderUddiControl()){
+                this.setUnderUddiControl(true);
+                modified = true;
+            }
+        }
+
         return modified;
     }
 
