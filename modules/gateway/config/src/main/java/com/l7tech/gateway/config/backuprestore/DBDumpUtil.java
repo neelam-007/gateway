@@ -340,7 +340,8 @@ class DBDumpUtil {
     }
 
     private static String escapeForSQLInsert(String in) {
-        String output = in.replace("\"", "\\\"");
+        String output = in.replace("\\", "\\\\");
+        output = output.replace("\"", "\\\"");
         output = output.replace("\'", "\\\'");
         output = output.replace("\n", "\\n");
         output = output.replace("\r", "\\r");
