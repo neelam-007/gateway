@@ -12,20 +12,85 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.JTableHeader;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.logging.Logger;
-import java.util.Vector;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 
 public class WsdlPortTable extends JTable {
+
+    enum WsdlPortColumn {
+
+        NAME(0, "wsdl:port", 60) {
+            @Override
+            Object getValue(WsdlPortInfo portInfo) {
+                return portInfo.getWsdlPortName();
+            }},
+
+        NAMESPACE(1, "Namespace", 175) {
+            @Override
+            Object getValue(WsdlPortInfo portInfo) {
+                return portInfo.getWsdlPortBindingNamespace();
+            }},
+
+        WSDL_URL(2, "WSDL Location", 175) {
+            @Override
+            Object getValue(WsdlPortInfo portInfo) {
+                return portInfo.getWsdlUrl();
+            }},
+
+        ENDPOINT(3, "Endpoint", 175) {
+            @Override
+            Object getValue(WsdlPortInfo portInfo) {
+                return portInfo.getAccessPointURL();
+            }};
+
+        private static final Map<Integer,WsdlPortColumn> positionToEnum = new HashMap<Integer, WsdlPortColumn>();
+        private static final List<String> colNames = new ArrayList<String>();
+
+        static {
+            for (WsdlPortColumn col : values()) {
+                positionToEnum.put(col.getPosition(), col);
+                colNames.add(col.getColName());
+            }
+        }
+
+        private final int position;
+        private final String colName;
+        private final int preferredWidth;
+
+        abstract Object getValue(WsdlPortInfo portInfo);
+
+        WsdlPortColumn(int position, String colName, int preferredWidth) {
+            this.position = position;
+            this.colName = colName;
+            this.preferredWidth = preferredWidth;
+        }
+
+        public int getPosition() {
+            return position;
+        }
+
+        public String getColName() {
+            return colName;
+        }
+
+        public int getPreferredWidth() {
+            return preferredWidth;
+        }
+
+        public static WsdlPortColumn fromPosition(int position) {
+            return positionToEnum.get(position);
+        }
+    }
+
     private WsdlPortTableSorter tableSorter = null;
 
     public WsdlPortTable() {
         setModel(getWsdlTableModel());
         getTableHeader().setReorderingAllowed(false);
         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        getColumnModel().getColumn(WsdlPortTableSorter.WSDL_PORT_NAME_COLUMN_INDEX).setPreferredWidth(200);
-        getColumnModel().getColumn(WsdlPortTableSorter.WSDL_TABLE_WSDL_COLUMN_INDEX).setPreferredWidth(450);
+        for (WsdlPortColumn col : WsdlPortColumn.values()) {
+            getColumnModel().getColumn(col.getPosition()).setPreferredWidth(col.getPreferredWidth());
+
+        }
 
         addMouseListenerToHeaderInTable();
     }
@@ -49,9 +114,7 @@ public class WsdlPortTable extends JTable {
         if (tableSorter == null) {
             Object[][] rows = new Object[][]{};
 
-            final String[] cols = new String[]{"wsdl:port", "WSDL Location"};
-
-            tableSorter = new WsdlPortTableSorter(new DefaultTableModel(rows, cols) {
+            tableSorter = new WsdlPortTableSorter(new DefaultTableModel(rows, WsdlPortColumn.colNames.toArray()) {
                 @Override
                 public boolean isCellEditable(int row, int col) {
                     // the table cells are not editable
@@ -79,7 +142,7 @@ public class WsdlPortTable extends JTable {
                 int column = tableView.convertColumnIndexToModel(viewColumn);
                 if (e.getClickCount() == 1 && column != -1) {
 
-                    ((WsdlPortTableSorter) tableView.getModel()).sortData(column, true);
+                    ((WsdlPortTableSorter) tableView.getModel()).sortData(WsdlPortColumn.fromPosition(column), true);
                     ((WsdlPortTableSorter) tableView.getModel()).fireTableDataChanged();
                     tableView.getTableHeader().resizeAndRepaint();
                 }
@@ -91,12 +154,9 @@ public class WsdlPortTable extends JTable {
 
     public static class WsdlPortTableSorter extends FilteredDefaultTableModel {
 
-        public static final int WSDL_PORT_NAME_COLUMN_INDEX = 0;
-        public static final int WSDL_TABLE_WSDL_COLUMN_INDEX = 1;
 
-        private final Logger logger = Logger.getLogger(getClass().getName());
         private boolean ascending = true;
-        private int columnToSort = WSDL_PORT_NAME_COLUMN_INDEX;
+        private WsdlPortColumn columnToSort = WsdlPortColumn.NAME;
         private Vector rawdata = new Vector();
         private Object[] sortedData = new Object[0];
 
@@ -152,7 +212,7 @@ public class WsdlPortTable extends JTable {
          *
          * @return int  The column index of the sorted column.
          */
-        public int getSortedColumn() {
+        public WsdlPortColumn getSortedColumn() {
             return columnToSort;
         }
 
@@ -178,7 +238,7 @@ public class WsdlPortTable extends JTable {
          * @param column      The index of the table column to be sorted.
          * @param orderToggle true if the sorting order is toggled, false otherwise.
          */
-        public void sortData(int column, boolean orderToggle) {
+        public void sortData(WsdlPortColumn column, boolean orderToggle) {
 
             if (orderToggle) {
                 ascending = ascending ? false : true;
@@ -205,22 +265,14 @@ public class WsdlPortTable extends JTable {
          * @param col The column index.
          * @return Object  The value at the specified table coordinate.
          */
+        @Override
         public Object getValueAt(int row, int col) {
 
             if (row >= sortedData.length) {
                 throw new IllegalArgumentException("Bad Row");
             }
 
-            switch (col) {
-                case WSDL_PORT_NAME_COLUMN_INDEX:
-                    return ((WsdlPortInfo) sortedData[row]).getWsdlPortName();
-
-                case WSDL_TABLE_WSDL_COLUMN_INDEX:
-                    return ((WsdlPortInfo) sortedData[row]).getWsdlUrl();
-
-                default:
-                    throw new IllegalArgumentException("Bad Column");
-            }
+            return WsdlPortColumn.fromPosition(col).getValue((WsdlPortInfo) sortedData[row]);
         }
 
         /**
@@ -228,15 +280,15 @@ public class WsdlPortTable extends JTable {
          */
         public class ColumnSorter implements Comparator {
             private boolean ascending;
-            private int column;
+            private WsdlPortColumn column;
 
             /**
              * Constructor
              *
-             * @param column    The index of the table column on which the objects are sorted.
+             * @param column    The table column on which the objects are sorted.
              * @param ascending true if the sorting order is ascending, false otherwise.
              */
-            ColumnSorter(int column, boolean ascending) {
+            ColumnSorter(WsdlPortColumn column, boolean ascending) {
                 this.ascending = ascending;
                 this.column = column;
             }
@@ -253,24 +305,8 @@ public class WsdlPortTable extends JTable {
             @Override
             public int compare(Object a, Object b) {
 
-                Object elementA = new Object();
-                Object elementB = new Object();
-
-                switch (column) {
-                    case WSDL_PORT_NAME_COLUMN_INDEX:
-                        elementA = ((WsdlPortInfo) a).getWsdlPortName();
-                        elementB = ((WsdlPortInfo) b).getWsdlPortName();
-                        break;
-
-                    case WSDL_TABLE_WSDL_COLUMN_INDEX:
-                        elementA = ((WsdlPortInfo) a).getWsdlUrl();
-                        elementB = ((WsdlPortInfo) b).getWsdlUrl();
-                        break;
-
-                    default:
-                        logger.warning("Bad Table Column: " + column);
-                        break;
-                }
+                Object elementA = column.getValue((WsdlPortInfo) a);
+                Object elementB = column.getValue((WsdlPortInfo) b);
 
                 // Treat empty strains like nulls
                 if (elementA instanceof String && ((String) elementA).length() == 0) {

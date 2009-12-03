@@ -62,6 +62,7 @@ public class SelectWsdlPortDialog extends JDialog {
 
         wsdlPortTable = new WsdlPortTable();
         viewPort.setViewportView(wsdlPortTable);
+        Utilities.setDoubleClickAction(wsdlPortTable, buttonOK);
 
         //get all application wsdl infos
 //        final WsdlPortInfo[] allApplicableWsdlInfos =
