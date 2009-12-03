@@ -121,6 +121,9 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                     busEvent.getRegistryOid(),
                     busEvent.isDeleted(),
                     busEvent.isForceUpdate());
+        } else if(event instanceof UpdateAllMonitoredServicesUDDIEvent){
+            UpdateAllMonitoredServicesUDDIEvent updateEvent = (UpdateAllMonitoredServicesUDDIEvent) event;
+            task = new UpdateAllMonitoredServicesUDDITask(this, updateEvent.getRegistryOid());
         }
 
         return task;
@@ -479,6 +482,42 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
         private String formatDate( final long time ) {
             return dateFormat.format(new Date(time));            
+        }
+    }
+
+    private static final class UpdateAllMonitoredServicesUDDITask extends UDDITask {
+        private static final Logger logger = Logger.getLogger( UpdateAllMonitoredServicesUDDITask.class.getName() );
+        
+        private final SubscriptionUDDITaskFactory factory;
+        private final long registryOid;
+
+        public UpdateAllMonitoredServicesUDDITask(SubscriptionUDDITaskFactory factory, long registryOid) {
+            this.factory = factory;
+            this.registryOid = registryOid;
+        }
+
+        @Override
+        public void apply(UDDITaskContext context) throws UDDITaskException {
+            try {
+                final UDDIRegistry uddiRegistry = factory.uddiRegistryManager.findByPrimaryKey(registryOid);
+                if(uddiRegistry == null) {
+                    logger.log(Level.FINE, "UDDI Registry with id#(" + registryOid+") not found");
+                    return;
+                }
+                if(!uddiRegistry.isMonitoringEnabled()) {
+                    logger.log(Level.FINE, "UDDI Registry " + describe(uddiRegistry) + " is not configured for monitoring. Not processing batch update");
+                    return;
+                }
+                logger.log(Level.INFO, "Forcing refresh of all published services which are monitoring UDDI Registry " + describe(uddiRegistry));
+
+                final Collection<UDDIServiceControl> allControlsForRegistry = factory.uddiServiceControlManager.findByUDDIRegistryOid(registryOid);
+                for(UDDIServiceControl serviceControl: allControlsForRegistry){
+                    if(!serviceControl.isMonitoringEnabled()) continue;
+                    context.notifyEvent(new BusinessServiceUpdateUDDIEvent(registryOid, serviceControl.getUddiServiceKey(), false, true));
+                }
+            } catch (ObjectModelException e) {
+                context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_TRIGGERING_FAILED, e, Long.toString(registryOid));
+            }
         }
     }
 

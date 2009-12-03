@@ -56,7 +56,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public long saveUDDIRegistry(final UDDIRegistry uddiRegistry) throws SaveException, UpdateException {
+    public long saveUDDIRegistry(final UDDIRegistry uddiRegistry) throws SaveException, UpdateException, FindException {
         if(uddiRegistry.getOid() == PersistentEntity.DEFAULT_OID){
             if(uddiRegistry.getName().trim().isEmpty()){
                 throw new SaveException("Cannot save a UDDI Registry with an emtpy name (or only containing spaces)");
@@ -67,6 +67,21 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             if(uddiRegistry.getName().trim().isEmpty()){
                 throw new UpdateException("Cannot update a UDDI Registry to have an emtpy name (or only containing spaces)");
             }
+            final UDDIRegistry original = uddiRegistryManager.findByPrimaryKey(uddiRegistry.getOid());
+            if(original == null) throw new FindException("Cannot find UDDIRegistry with id#(" + uddiRegistry.getOid()+")");
+
+            if(original.isSubscribeForNotifications() != uddiRegistry.isSubscribeForNotifications()){
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                            logger.log(Level.FINE, "Method of monitoring has changed. Firing events for each published service monitoring UDDI Registry with id#(" + uddiRegistry.getOid()+")");
+                            uddiCoordinator.notifyEvent(new UpdateAllMonitoredServicesUDDIEvent(uddiRegistry.getOid()));
+                        }
+                    }
+                });
+            }
+
             uddiRegistryManager.update(uddiRegistry);
             logger.info("Updated UDDI Registry '" + uddiRegistry.getName()+"' oid = " + uddiRegistry.getOid());
         }
@@ -80,14 +95,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(oid);
         if(uddiRegistry == null) throw new FindException("Could not find UDDI Registry to delete");
 
-        //delete all UDDIProxiedService's which belong to this registry
-//        Collection<UDDIProxiedServiceInfo> allProxiedServices = uddiRegistryManager.findAllByRegistryOid(uddiRegistry.getOid());
-//        for(UDDIProxiedServiceInfo proxiedService: allProxiedServices){
-//            proxiedService.getUddiPublishStatus().setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
-//        }
-
-        //TODO [Donal] implement clean up of UDDI registry
-        //find all entities using this registry and delete
         logger.log(Level.INFO, "Deleting UDDI Registry oid = " + oid);
         uddiRegistryManager.delete(oid);
     }

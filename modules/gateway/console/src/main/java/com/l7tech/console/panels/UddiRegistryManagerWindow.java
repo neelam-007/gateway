@@ -210,6 +210,8 @@ public class UddiRegistryManagerWindow extends JDialog {
                         showErrorMessage("Update Failed", "Failed to update UDDI Registry: " + ExceptionUtils.getMessage(e), e, reedit);
                     } catch (SaveException e) {
                         showErrorMessage("Save Failed", "Failed to save UDDI Registry: " + ExceptionUtils.getMessage(e), e, reedit);
+                    } catch (FindException e) {
+                        showErrorMessage("Save / Update Failed", "Failed to save UDDI Registry: " + ExceptionUtils.getMessage(e), e, reedit);
                     }
                 }
             }

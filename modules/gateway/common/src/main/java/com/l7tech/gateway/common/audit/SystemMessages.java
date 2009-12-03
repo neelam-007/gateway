@@ -134,6 +134,7 @@ public class SystemMessages extends Messages {
     public static final M UDDI_NOTIFICATION_SERVICE_WSDL_ERROR  = m(2292, Level.WARNING, "Error updating service WSDL from UDDI ''{0}''.");
     public static final M UDDI_NOTIFICATION_ENDPOINT_NOT_FOUND  = m(2293, Level.WARNING, "Error finding endpoint for business service ''{0}'', wsdl:port ''{1}'', wsdl:binding ''{2}'' {3} for UDDI registry ''{4}''.");
     public static final M UDDI_NOTIFICATION_ENDPOINT_UPDATED    = m(2294, Level.INFO, "Updated endpoint from UDDI ''{0}'' for business service ''{1}'', wsdl:port ''{2}'' for UDDI registry ''{3}''.");
+    public static final M UDDI_NOTIFICATION_TRIGGERING_FAILED   = m(2295, Level.WARNING, "Error firing monitoring update events for UDDI Registry with id#({0}).");
 
     // MAX -                                      m(2999
 }

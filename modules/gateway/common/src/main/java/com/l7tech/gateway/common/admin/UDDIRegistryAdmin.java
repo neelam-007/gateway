@@ -29,7 +29,7 @@ import java.util.Collection;
 public interface UDDIRegistryAdmin {
 
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype= MethodStereotype.SAVE_OR_UPDATE)
-    long saveUDDIRegistry(UDDIRegistry uddiRegistry) throws SaveException, UpdateException;
+    long saveUDDIRegistry(UDDIRegistry uddiRegistry) throws SaveException, UpdateException, FindException;
 
     /**
      * Download all UDDI Registry records on this cluster.
