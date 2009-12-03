@@ -105,10 +105,10 @@ public class TestGenericUDDIClient {
 
     @Test
     public void updateBindingTemplateToCauseNotification() throws UDDIException{
-        String bindingKey = "uddi:32f1a9b0-df88-11de-93c3-edbac1404a1d";
+        String bindingKey = "uddi:5d8b7445-df8e-11de-93c3-d34a5f7fbdc0";
         GenericUDDIClient genericUDDIClient = (GenericUDDIClient) uddiClient;
 
-        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:24574012-df88-11de-93c3-bb5676d6aaed");
+        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:497293e1-df8e-11de-93c3-bc3fcff3b62f");
         BindingTemplate foundTemplate = null;
         for(BindingTemplate bt: businessService.getBindingTemplates().getBindingTemplate()){
             if(bt.getBindingKey().equals(bindingKey)){
@@ -120,7 +120,7 @@ public class TestGenericUDDIClient {
         Assert.assertNotNull(foundTemplate);
 
 //        foundTemplate.getAccessPoint().setValue("http://thehostwedontwanttorouteto.com:1610/SpaceOrderofBattle2.asmx");
-        foundTemplate.getAccessPoint().setValue("http://soamoa.org:9292/artistRegistry/Donal3");
+        foundTemplate.getAccessPoint().setValue("http://www.webservicexNEW.net/globalweather.asmx.donaltriggered");
         genericUDDIClient.publishBusinessService(businessService);
         //genericUDDIClient.publishBindingTemplate(foundTemplate);
     }

@@ -296,7 +296,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         }else{
             UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());
             if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
-            final boolean wsdlRefreshRequired = !original.isUnderUddiControl() && uddiServiceControl.isUnderUddiControl();
+            final String wsdlRefreshRequiredMessage = isWsdlRefreshRequired(original, uddiServiceControl);
             uddiServiceControl.throwIfFinalPropertyModified(original);
             //make sure the wsdl under uddi control is not being set when it is not allowed
             if(uddiServiceControl.isHasHadEndpointRemoved() && uddiServiceControl.isUnderUddiControl()){
@@ -304,12 +304,12 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                         "WSDL cannot be under UDDI control when the owning business service in UDDI has had its bindingTemplates removed");
             }
             uddiServiceControlManager.update( uddiServiceControl );
-            if(wsdlRefreshRequired){
+            if(wsdlRefreshRequiredMessage != null){
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                     @Override
                     public void afterCompletion(int status) {
                         if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                            logger.log(Level.FINE, "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL");
+                            logger.log(Level.FINE, wsdlRefreshRequiredMessage);
                             uddiCoordinator.notifyEvent(new BusinessServiceUpdateUDDIEvent(uddiServiceControl.getUddiRegistryOid(), uddiServiceControl.getUddiServiceKey(), false, true));
                         }
                     }
@@ -317,6 +317,36 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             }
             return uddiServiceControl.getOid();
         }
+    }
+
+    /**
+     * Note: Mke sure this is called before the updated object is updated, as they will then both be synchronized and
+     * will both be the same object.
+     *
+     * @param original Most recent value from the database
+     * @param updated Incoming potentially updated value from a client
+     * @return String not null if any change in the incoming entity requires a WSDL refresh. Value can be used for
+     * fine logging
+     */
+    private String isWsdlRefreshRequired(final UDDIServiceControl original, final UDDIServiceControl updated){
+
+        if(!original.isUnderUddiControl() && updated.isUnderUddiControl()){
+            return "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL";
+        }
+
+        if(!original.isMonitoringEnabled() && updated.isMonitoringEnabled()){
+            return "UDDI is now being monitored. Creating task to refresh gateway's WSDL";
+        }
+
+        if(!original.isUpdateWsdlOnChange() && updated.isUpdateWsdlOnChange()){
+            return "WSDL is now configured to be updated when UDDI changes. Creating task to refresh gateway's WSDL";
+        }
+
+        if(!original.isDisableServiceOnChange() && updated.isDisableServiceOnChange()){
+            return "Published Service is now configured to be disabled when monitored WSDL changes. Creating task to refresh gateway's WSDL";
+        }
+
+        return null;
     }
 
     @Override

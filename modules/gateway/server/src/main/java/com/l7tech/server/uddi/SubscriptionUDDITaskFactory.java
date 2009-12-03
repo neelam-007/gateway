@@ -698,7 +698,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                                 context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_UPDATE, ps.displayName() + " (#"+ps.getOid()+")" );
                                             }
                                         } else {
-                                            logger.info( "WSDL is not updated for business service '"+serviceKey+"' for registry "+describe(uddiRegistry)+"." );
+                                            logger.info( "WSDL is not updated as it is already up to date for business service '"+serviceKey+"' for registry "+describe(uddiRegistry)+"." );
                                         }
                                     } catch ( IOException ioe ) {
                                         context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ExceptionUtils.getDebugException(ioe), "Cause '" + ExceptionUtils.getMessage(ioe) + "'", ps.displayName() + " (#" + ps.getOid() + ")");
