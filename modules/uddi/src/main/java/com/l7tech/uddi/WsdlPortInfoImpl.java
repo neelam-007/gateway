@@ -28,6 +28,7 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     private boolean likelyGatewayWsdl;
     private String accessPointURL;
     private long lastUddiMonitoredTimeStamp;
+    private boolean wasWsdlPortSelected;
 
     public WsdlPortInfoImpl() {
     }
@@ -183,5 +184,15 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
 
     public void setLastUddiMonitoredTimeStamp(long lastUddiMonitoredTimeStamp) {
         this.lastUddiMonitoredTimeStamp = lastUddiMonitoredTimeStamp;
+    }
+
+    @Override
+    public boolean isWasWsdlPortSelected() {
+        return wasWsdlPortSelected;
+    }
+
+    @Override
+    public void setWasWsdlPortSelected(boolean wasWsdlPortSelected) {
+        this.wasWsdlPortSelected = wasWsdlPortSelected;
     }
 }

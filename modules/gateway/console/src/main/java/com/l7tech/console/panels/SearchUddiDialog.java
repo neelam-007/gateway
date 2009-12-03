@@ -238,6 +238,7 @@ public class SearchUddiDialog extends JDialog {
                                         if(wsdlPortInfo[0] == null) return;
                                         final boolean canDispose = validateWsdlSelection(SearchUddiDialog.this, wsdlPortInfo[0]);
                                         if(canDispose){
+                                            wsdlPortInfo[0].setWasWsdlPortSelected(true);
                                             fireItemSelectedEvent(wsdlPortInfo[0]);
                                             dispose();
                                         }
@@ -272,6 +273,7 @@ public class SearchUddiDialog extends JDialog {
                                     }
                                     final boolean canDispose = validateWsdlSelection(SearchUddiDialog.this, allApplicableWsdlInfos[0]);
                                     if (canDispose) {
+                                        allApplicableWsdlInfos[0].setWasWsdlPortSelected(false);
                                         fireItemSelectedEvent(allApplicableWsdlInfos[0]);
                                         dispose();
                                     }

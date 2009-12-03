@@ -119,7 +119,8 @@ public class PublishServiceWizard extends Wizard {
                     wsdlPortInfo.getAccessPointURL() != null &&
                     wsdlPortInfo.getWsdlPortBinding() != null &&
                     wsdlPortInfo.getWsdlPortName() != null &&
-                    wsdlPortInfo.getWsdlServiceName() != null;
+                    wsdlPortInfo.getWsdlServiceName() != null &&
+                    wsdlPortInfo.isWasWsdlPortSelected();
         }
 
         private boolean sharedPolicy = false;

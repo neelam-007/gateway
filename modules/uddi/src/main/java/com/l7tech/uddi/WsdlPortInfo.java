@@ -55,4 +55,20 @@ public interface WsdlPortInfo {//todo [Donal] rename this class
      * @return
      */
     long getLastUddiMonitoredTimeStamp();
+
+    /**
+     * If true, then we know the user explicitly chose a wsdl:port, if false then the user did not and the contents
+     * of this WsdlPortInfo is most likely simply the first wsdl:port found in UDDI
+     *
+     * If false, then the WSDL should not be placed under UDDI Control.
+     *
+     * @return boolean true when a wsdl:port was known to have been explicitly chosen by a user, false otherwise
+     */
+    boolean isWasWsdlPortSelected();
+
+    /**
+     * Set whether this WsdlPortInfo was known to have been explicitly selected by a user
+     * @param wasSelected true when user made a selection, false when selected automatically
+     */
+    void setWasWsdlPortSelected(boolean wasSelected);
 }
