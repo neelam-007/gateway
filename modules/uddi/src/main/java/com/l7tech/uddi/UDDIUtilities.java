@@ -351,19 +351,19 @@ public class UDDIUtilities {
             for (Port port : stringPortMap.values()) {
                 if (!port.getName().equalsIgnoreCase(wsdlPortName)) {
                     logger.log(Level.FINE, "No wsdl:port name match. Wsdl port name is '" +
-                            port.getName() + "' requested port name is '" + wsdlPortName + "'");
+                            port.getName() + "' requested port name is '" + wsdlPortName + "'. Continuing to search through WSDL for match");
                     continue;
                 }
 
                 final Binding binding = port.getBinding();
                 if (!binding.getQName().getLocalPart().equalsIgnoreCase(wsdlBinding)) {
                     logger.log(Level.FINE, "No wsdl:binding name match. Wsdl binding name is '" +
-                            binding.getQName().getLocalPart() + "' requested binding name is '" + wsdlBinding + "'");
+                            binding.getQName().getLocalPart() + "' requested binding name is '" + wsdlBinding + "'. Continuing to search through WSDL for match");
                     continue;
                 }
                 if (useBindingNamespace && !binding.getQName().getNamespaceURI().equalsIgnoreCase(wsdlBindingNamespace)) {
                     logger.log(Level.FINE, "No wsdl:binding namespace match. Wsdl binding namespace is '" +
-                            binding.getQName().getNamespaceURI() + "' requested binding namespace is '" + wsdlBindingNamespace + "'");
+                            binding.getQName().getNamespaceURI() + "' requested binding namespace is '" + wsdlBindingNamespace + "'. Continuing to search through WSDL for match");
                     continue;
                 }
                 return true;
