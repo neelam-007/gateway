@@ -75,6 +75,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private String selectedBusinessName;
     private String selectedBusinessKey;
     private UDDIPublishStatus publishStatus;
+    private Runnable disposeSettingsDialogCallback;
 
     public ServiceUDDISettingsDialog() {
         initialize();
@@ -165,6 +166,13 @@ public class ServiceUDDISettingsDialog extends JDialog {
         dontPublishRadioButton.addActionListener(enableDisableChangeListener);
         metricsEnabledCheckBox.addActionListener( enableDisableChangeListener );
         publishPolicyCheckBox.addActionListener( enableDisableChangeListener );
+
+        disposeSettingsDialogCallback = new Runnable() {
+            @Override
+            public void run() {
+                ServiceUDDISettingsDialog.this.dispose();
+            }
+        };
 
         //Populate registry drop down
         loadUddiRegistries();
@@ -649,7 +657,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                             try {
                                 uddiRegistryAdmin.deleteGatewayEndpointFromUDDI(uddiProxyServiceInfo);
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to remove Gateway endpoint from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+                                        "Task to remove Gateway endpoint from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
                             } catch (Exception ex) {
                                 final String msg = "Problem deleting pubished Gateway endpoint from UDDI: " + ExceptionUtils.getMessage(ex);
                                 logger.log(Level.WARNING, msg);
@@ -691,7 +699,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                             try {
                                 uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to remove gateway bindingTemplates from overwritten BusinessService in UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+                                        "Task to remove gateway bindingTemplates from overwritten BusinessService in UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
 
                             } catch (Exception ex) {
                                 logger.log(Level.WARNING, "Problem deleting overwritten BusinessService UDDI: " + ex.getMessage());
@@ -733,7 +741,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                             try {
                                 uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to remove Gateway WSDL from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+                                        "Task to remove Gateway WSDL from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
 
                             } catch (Exception ex) {
                                 logger.log(Level.WARNING, "Problem deleting pubished Gateway WSDL from UDDI: " + ex.getMessage());
@@ -763,7 +771,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                                 uddiRegistryAdmin.publishGatewayWsdl(service.getOid(), uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected());
 
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to publish Gateway WSDL to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+                                    "Task to publish Gateway WSDL to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
                             } catch (Exception ex) {
                                 final String msg = "Could not create publish gateway WSDL to UDDI task: " + ExceptionUtils.getMessage(ex);
                                 logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(ex));
@@ -791,7 +799,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                                 uddiRegistryAdmin.overwriteBusinessServiceInUDDI(service.getOid(), updateWhenGatewayWSDLCheckBoxOverwrite.isSelected());
                                 choice[0] = true;
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to overwrite BusinessService in UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+                                        "Task to overwrite BusinessService in UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
 
                             } catch (Exception ex) {
                                 final String msg = "Could not create overwrite BusinessService in UDDI task: " + ExceptionUtils.getMessage(ex);
@@ -832,7 +840,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                                 uddiRegistryAdmin.publishGatewayEndpoint(service.getOid(), removeExistingBindingsCheckBox.isSelected());
 
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to publish Gateway endpoint to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, null);
+                                        "Task to publish Gateway endpoint to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
                             } catch (Exception ex) {
                                 final String msg = "Could not create publish gateway endpoint to UDDI task: " + ExceptionUtils.getMessage(ex);
                                 logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(ex));
