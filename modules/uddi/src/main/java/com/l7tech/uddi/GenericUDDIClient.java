@@ -2239,10 +2239,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     protected UDDIException buildFaultException(final String context,
                                                 final DispositionReportFaultMessage faultMessage) {
         UDDIException exception;
-        String contextMessage = context;
-        if ( !contextMessage.endsWith( ": " )) {
-            contextMessage += ": ";
-        }
+        String spacer = !context.endsWith( ": " ) ? ": " : "";
 
         if ( hasResult(faultMessage, 10150) ) {
             exception = new UDDIAccessControlException("Authentication failed for '" + login + "'. Detailed Message: " + toString(faultMessage));
@@ -2258,10 +2255,10 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         } else if ( hasResult(faultMessage, 10050)) {
                 exception = new UDDIException("UDDI registry does not support a required feature.");
         } else if ( hasResult(faultMessage, 10210)) {
-                exception = new UDDIInvalidKeyException(contextMessage + toString(faultMessage));            
+                exception = new UDDIInvalidKeyException(context + " (UDDI may have been updated, please try again)" + spacer + toString(faultMessage));
         } else {
             // handle general exception
-            exception = new UDDIException(contextMessage + toString(faultMessage));
+            exception = new UDDIException(context + spacer + toString(faultMessage));
         }
 
         return exception;
