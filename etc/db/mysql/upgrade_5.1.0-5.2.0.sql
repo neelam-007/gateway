@@ -19,6 +19,7 @@ UPDATE ssg_version SET current_version = '5.2.0';
 --
 ALTER TABLE client_cert MODIFY COLUMN subject_dn VARCHAR(500), MODIFY COLUMN issuer_dn VARCHAR(500);
 ALTER TABLE trusted_cert MODIFY COLUMN subject_dn VARCHAR(500), MODIFY COLUMN issuer_dn VARCHAR(500);
+ALTER TABLE rbac_role CHANGE COLUMN tag tag varchar(36) default NULL after name;
 
 --
 -- Upgrade task for DN canonicalization
