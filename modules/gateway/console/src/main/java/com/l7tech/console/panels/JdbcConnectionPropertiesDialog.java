@@ -96,7 +96,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         final DocumentListener docListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
-                enableOrDisableOkButton();
+                enableOrDisableButtons();
             }
         });
         connectionNameTextField.getDocument().addDocumentListener(docListener);
@@ -157,7 +157,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         });
 
         modelToView();
-        enableOrDisableOkButton();
+        enableOrDisableButtons();
     }
 
     private void modelToView() {
@@ -225,7 +225,10 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         driverClassComboBox.setSelectedItem(currentDriverClass);
     }
 
-    private void enableOrDisableOkButton() {
+    /**
+     * Check if OK and Test buttons should be enabled or disabled.
+     */
+    private void enableOrDisableButtons() {
         boolean enabled =
             isNonEmptyRequiredTextField(connectionNameTextField.getText()) &&
             isNonEmptyRequiredTextField((String) driverClassComboBox.getEditor().getItem()) &&
@@ -234,6 +237,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             isNonEmptyRequiredTextField(passwordField.getText());
         
         okButton.setEnabled(enabled);
+        testButton.setEnabled(enabled);
     }
 
     private boolean isNonEmptyRequiredTextField(String text) {
