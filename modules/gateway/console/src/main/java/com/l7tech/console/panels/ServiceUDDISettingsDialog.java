@@ -420,6 +420,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
             boolean enableMetrics = uddiProxyServiceInfo != null &&
                     isMetricsEnabled(uddiProxyServiceInfo.getUddiRegistryOid()) &&
                     uddiProxyServiceInfo != null &&
+                    publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED &&
                     uddiProxyServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.OVERWRITE;
             
             metricsEnabledCheckBox.setEnabled( enableMetrics );

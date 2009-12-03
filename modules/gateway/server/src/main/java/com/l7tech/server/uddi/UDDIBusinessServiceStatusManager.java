@@ -16,7 +16,7 @@ public interface UDDIBusinessServiceStatusManager extends EntityManager<UDDIBusi
      *
      * @param registryOid The registry OID (required)
      * @param status The metrics status (optional)
-     * @returns The collection of matching UDDIBusinessServiceStatus (can be empty but not null)
+     * @return The collection of matching UDDIBusinessServiceStatus (can be empty but not null)
      * @throws FindException If an error occurs
      */
     Collection<UDDIBusinessServiceStatus> findByRegistryAndMetricsStatus( long registryOid,
@@ -27,9 +27,19 @@ public interface UDDIBusinessServiceStatusManager extends EntityManager<UDDIBusi
      *
      * @param registryOid The registry OID (required)
      * @param status The ws-policy publishing status (optional)
-     * @returns The collection of matching UDDIBusinessServiceStatus (can be empty but not null)
+     * @return The collection of matching UDDIBusinessServiceStatus (can be empty but not null)
      * @throws FindException If an error occurs
      */
     Collection<UDDIBusinessServiceStatus> findByRegistryAndWsPolicyPublishStatus( long registryOid,
                                                                                   UDDIBusinessServiceStatus.Status status ) throws FindException;
+
+    /**
+     * Find the business services for a published service
+     *
+     * @param publishedServiceOid The published service OID (required)
+     * @return The collection of matching UDDIBusinessServiceStatus (can be empty but not null)
+     * @throws FindException If an error occurs
+     */
+    Collection<UDDIBusinessServiceStatus> findByPublishedService( long publishedServiceOid ) throws FindException;
+
 }

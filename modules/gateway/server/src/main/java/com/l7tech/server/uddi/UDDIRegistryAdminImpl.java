@@ -35,6 +35,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     final private UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager;
     final private UDDICoordinator uddiCoordinator;
     final private ServiceCache serviceCache;
+    final private UDDIBusinessServiceStatusManager businessServiceStatusManager;
+
     private static final String UDDI_ORG_SPECIFICATION_V3_POLICY = "uddi:uddi.org:specification:v3_policy";
 
     public UDDIRegistryAdminImpl(final UDDIRegistryManager uddiRegistryManager,
@@ -44,7 +46,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                  final ServiceCache serviceCache,
                                  final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
                                  final UDDIPublishStatusManager uddiPublishStatusManager,
-                                 final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager) {
+                                 final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager,
+                                 final UDDIBusinessServiceStatusManager businessServiceStatusManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiHelper = uddiHelper;
         this.uddiServiceControlManager = uddiServiceControlManager;
@@ -53,6 +56,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
         this.uddiServiceControlMonitorRuntimeManager = uddiServiceControlMonitorRuntimeManager;
+        this.businessServiceStatusManager = businessServiceStatusManager;
     }
 
     @Override
@@ -507,11 +511,21 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(allServiceIds == null) throw new NullPointerException("allServiceIds cannot be null");
 
         final Collection<ServiceHeader> returnColl = new HashSet<ServiceHeader>();
-        for(Long oid: allServiceIds){
-            if(uddiProxiedServiceInfoManager.findByPublishedServiceOid(oid) != null){
+        for(Long oid: allServiceIds) {
+            if (uddiProxiedServiceInfoManager.findByPublishedServiceOid(oid) != null) {
                 final PublishedService publishedService = serviceCache.getCachedService(oid);
                 final ServiceHeader serviceHeader = new ServiceHeader(publishedService);
                 returnColl.add(serviceHeader);
+            } else {
+                final Collection<UDDIBusinessServiceStatus> serviceStatuses = businessServiceStatusManager.findByPublishedService(oid);
+                for(UDDIBusinessServiceStatus status: serviceStatuses){
+                    if(status.getUddiPolicyStatus() != UDDIBusinessServiceStatus.Status.NONE ||
+                            status.getUddiMetricsReferenceStatus() != UDDIBusinessServiceStatus.Status.NONE){
+                        final PublishedService publishedService = serviceCache.getCachedService(oid);
+                        final ServiceHeader serviceHeader = new ServiceHeader(publishedService);
+                        returnColl.add(serviceHeader);
+                    }
+                }
             }
         }
 

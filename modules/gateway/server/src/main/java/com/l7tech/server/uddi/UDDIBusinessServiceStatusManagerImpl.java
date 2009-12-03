@@ -40,6 +40,13 @@ public class UDDIBusinessServiceStatusManagerImpl extends HibernateEntityManager
     }
 
     @Override
+    public Collection<UDDIBusinessServiceStatus> findByPublishedService(long publishedServiceOid) throws FindException {
+        final Map<String,Object> matchMap = new HashMap<String,Object>();
+        matchMap.put( "publishedServiceOid", publishedServiceOid );
+        return findMatching( Collections.singletonList( matchMap ) );
+    }
+
+    @Override
     public Class<? extends Entity> getImpClass() {
         return UDDIBusinessServiceStatus.class;
     }
