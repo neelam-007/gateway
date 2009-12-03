@@ -215,7 +215,7 @@ public class SearchUddiDialog extends JDialog {
                             final JProgressBar bar = new JProgressBar();
                             bar.setIndeterminate(true);
                             final CancelableOperationDialog cancelDlg =
-                                    new CancelableOperationDialog(SearchUddiDialog.this, "Searching UDDI", "Please wait, Searching UDDI...", bar);
+                                    new CancelableOperationDialog(SearchUddiDialog.this, "Searching UDDI", "Please wait, retrieving BusinessService details from UDDI...", bar);
                             try {
                                 final Callable<WsdlPortInfo[]> wsdlInfoCallable = getWsdlPortSearchCallable(uddiRegistry.getOid(), selectedWsdlInfo.getBusinessServiceKey(), false);
                                 final WsdlPortInfo [] wsdlPortsFound = Utilities.doWithDelayedCancelDialog(wsdlInfoCallable, cancelDlg, DELAY_INITIAL);

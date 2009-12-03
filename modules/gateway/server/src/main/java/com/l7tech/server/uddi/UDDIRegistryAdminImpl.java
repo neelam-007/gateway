@@ -268,7 +268,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             }
             //validate that an end point can be found
             final String endPoint = uddiServiceControl.getAccessPointUrl();
-            //TODO [Donal] Add namespace support for wsdl:service if needed
+            //Namespace support is not needed for wsdl:service based on how we use them.
             final boolean wsdlImplementUddiWsdlPort = UDDIUtilities.validatePortBelongsToWsdl(wsdl, uddiServiceControl.getWsdlServiceName(), null,
                     uddiServiceControl.getWsdlPortName(), uddiServiceControl.getWsdlPortBinding(), uddiServiceControl.getWsdlPortBindingNamespace());
 
@@ -292,6 +292,17 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             //Create the monitor runtime record for this service control as it has just been created
             final UDDIServiceControlMonitorRuntime monitorRuntime = new UDDIServiceControlMonitorRuntime(oid, lastModifiedServiceTimeStamp);
             uddiServiceControlMonitorRuntimeManager.save(monitorRuntime);
+
+            //Has the published service been published to UDDI?
+            final UDDIProxiedServiceInfo info = uddiProxiedServiceInfoManager.findByPublishedServiceOid(uddiServiceControl.getPublishedServiceOid());
+            if(info != null && info.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY){
+                //we have published the gateway wsdl. We need to update UDDI in case extra meta data is required
+                //now that we have the original service (this is really for activesoa to turn a service virtual)
+                final UDDIPublishStatus status = uddiPublishStatusManager.findByProxiedSerivceInfoOid(info.getOid());
+                status.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
+                uddiPublishStatusManager.update(status);
+            }
+
             if(uddiServiceControl.isUnderUddiControl()){
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                     @Override
