@@ -65,7 +65,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="acf09" class="javax.swing.JLabel">
+          <component id="acf09" class="javax.swing.JLabel" binding="uddiRegistryNameLabel">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -74,7 +74,7 @@
               <text value="UDDI Registry &amp;Name:"/>
             </properties>
           </component>
-          <component id="da4c6" class="javax.swing.JLabel">
+          <component id="da4c6" class="javax.swing.JLabel" binding="uddiRegistryTypeLabel">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>

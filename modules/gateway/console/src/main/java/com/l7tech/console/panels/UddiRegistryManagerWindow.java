@@ -185,7 +185,7 @@ public class UddiRegistryManagerWindow extends JDialog {
     }
 
     private void editAndSave(final UDDIRegistry uddiRegistry) {
-        final UddiRegistryPropertiesDialog dlg = new UddiRegistryPropertiesDialog(this, uddiRegistry);
+        final UddiRegistryPropertiesDialog dlg = new UddiRegistryPropertiesDialog(this, uddiRegistry, flags.canUpdateAll());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
