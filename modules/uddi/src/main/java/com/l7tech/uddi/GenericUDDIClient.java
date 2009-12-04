@@ -2243,6 +2243,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
         if ( hasResult(faultMessage, 10150) ) {
             exception = new UDDIAccessControlException("Authentication failed for '" + login + "'. Detailed Message: " + toString(faultMessage));
+            authToken = null;
         } else if ( hasResult(faultMessage, 10140) ||
                     hasResult(faultMessage, 10120)) {
                 exception = new UDDIAccessControlException("Authorization failed for '" + login + "'.");
