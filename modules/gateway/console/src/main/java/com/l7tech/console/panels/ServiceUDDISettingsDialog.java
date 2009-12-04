@@ -192,7 +192,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
             if(uddiProxyServiceInfo != null){
                 try {
                     publishStatus =
-                            Registry.getDefault().getUDDIRegistryAdmin().getPublishStatusForProxy(uddiProxyServiceInfo.getOid());
+                            Registry.getDefault().getUDDIRegistryAdmin().getPublishStatusForProxy(uddiProxyServiceInfo.getOid(), service.getOid());
                 } catch (FindException e) {
                     showErrorMessage("Cannot get publish status", "Cannot find the publish status for information in UDDI", ExceptionUtils.getDebugException(e), true);
                     dispose();
@@ -782,7 +782,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
                             try {
-                                uddiRegistryAdmin.publishGatewayWsdl(service.getOid(), uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected());
+                                uddiRegistryAdmin.publishGatewayWsdl(service, uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected());
 
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
                                     "Task to publish Gateway WSDL to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
@@ -814,7 +814,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                                 if (option == JOptionPane.YES_OPTION) {
                                     UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                                     try {
-                                        uddiRegistryAdmin.overwriteBusinessServiceInUDDI(service.getOid(), updateWhenGatewayWSDLCheckBoxOverwrite.isSelected());
+                                        uddiRegistryAdmin.overwriteBusinessServiceInUDDI(service, updateWhenGatewayWSDLCheckBoxOverwrite.isSelected());
                                         choice[0] = true;
                                         DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
                                                 "Task to overwrite BusinessService in UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
@@ -879,7 +879,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                                     choice[0] = true;
                                     UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                                     try {
-                                        uddiRegistryAdmin.publishGatewayEndpoint(service.getOid(), removeExistingBindingsCheckBox.isSelected());
+                                        uddiRegistryAdmin.publishGatewayEndpoint(service, removeExistingBindingsCheckBox.isSelected());
 
                                         DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
                                                 "Task to publish Gateway endpoint to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);

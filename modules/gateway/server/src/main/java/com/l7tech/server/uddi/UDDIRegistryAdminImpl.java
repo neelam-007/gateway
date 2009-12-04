@@ -154,7 +154,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public UDDIPublishStatus getPublishStatusForProxy(final long uddiProxiedServiceInfoOid) throws FindException {
+    public UDDIPublishStatus getPublishStatusForProxy(final long uddiProxiedServiceInfoOid, long publishedServiceOid) throws FindException {
         final UDDIPublishStatus publishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfoOid);
         if(publishStatus == null)
             throw new FindException("Cannot find the UDDIPublishStatus for UDDIProxiedServiceInfo with id#(" + uddiProxiedServiceInfoOid+")");
@@ -405,21 +405,21 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public void publishGatewayEndpoint(long publishedServiceOid, boolean removeOthers) throws FindException, SaveException, UDDIRegistryNotEnabledException {
-        if(publishedServiceOid < 1) throw new IllegalArgumentException("publishedServiceOid must be >= 1");
+    public void publishGatewayEndpoint(PublishedService publishedService, boolean removeOthers) throws FindException, SaveException, UDDIRegistryNotEnabledException {
+        if(publishedService == null) throw new NullPointerException("publishedServiceOid must not be null");
 
-        final PublishedService service = serviceCache.getCachedService(publishedServiceOid);
-        if(service == null) throw new SaveException("PublishedService with id #(" + publishedServiceOid + ") was not found");
+        final PublishedService service = serviceCache.getCachedService(publishedService.getOid());
+        if(service == null) throw new SaveException("PublishedService with id #(" + publishedService + ") was not found");
 
-        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(publishedServiceOid);
-        if(serviceControl == null) throw new SaveException("PublishedService with id #("+publishedServiceOid+") was not created from UDDI (record may have been deleted)");
+        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(service.getOid());
+        if(serviceControl == null) throw new SaveException("PublishedService with id #("+ publishedService +") was not created from UDDI (record may have been deleted)");
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(serviceControl.getUddiRegistryOid());
         if(uddiRegistry == null) throw new SaveException("UDDIRegistry with id #("+serviceControl.getUddiRegistryOid()+") was not found");
         throwIfGatewayNotEnabled(uddiRegistry);
 
         if(serviceControl.isUnderUddiControl() && removeOthers)
-            throw new SaveException("Published service with id #("+publishedServiceOid+") is not under UDDI control so cannot remove existing bindingTemplates");
+            throw new SaveException("Published service with id #("+ publishedService +") is not under UDDI control so cannot remove existing bindingTemplates");
 
         final String wsdlHash = getWsdlHash(service);
 
@@ -434,10 +434,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public void overwriteBusinessServiceInUDDI(long publishedServiceOid, final boolean updateWhenGatewayWsdlChanges)
+    public void overwriteBusinessServiceInUDDI(PublishedService publishedServiceIn, final boolean updateWhenGatewayWsdlChanges)
             throws SaveException, FindException {
-        final PublishedService publishedService = serviceCache.getCachedService(publishedServiceOid);
-        if(publishedService == null) throw new IllegalArgumentException("No PublishedService found for #(" +publishedServiceOid+")" );
+        final PublishedService publishedService = serviceCache.getCachedService(publishedServiceIn.getOid());
+        if(publishedService == null) throw new IllegalArgumentException("No PublishedService found for #(" + publishedServiceIn +")" );
 
         final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(publishedService.getOid());
         if(serviceControl == null)
@@ -458,14 +458,14 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public void publishGatewayWsdl(final long publishedServiceOid,
+    public void publishGatewayWsdl(final PublishedService publishedService,
                                    final long uddiRegistryOid,
                                    final String uddiBusinessKey,
                                    final String uddiBusinessName,
                                    final boolean updateWhenGatewayWsdlChanges)
             throws FindException, SaveException, UDDIRegistryNotEnabledException {
 
-        if(publishedServiceOid < 1) throw new IllegalArgumentException("publishedServiceOid must be >= 1");
+        if(publishedService == null) throw new NullPointerException("publishedService cannot be null");
         if(uddiRegistryOid < 1) throw new IllegalArgumentException("uddiRegistryOid must be > 1");
         if(uddiBusinessKey == null || uddiBusinessKey.trim().isEmpty()) throw new IllegalArgumentException("uddiBusinessKey cannot be null or empty");
         if(uddiBusinessName == null || uddiBusinessName.trim().isEmpty()) throw new IllegalArgumentException("uddiBusinessName cannot be null or empty");
@@ -474,8 +474,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(uddiRegistry == null) throw new IllegalArgumentException("Cannot find UDDIRegistry with oid: " + uddiRegistryOid);
         throwIfGatewayNotEnabled(uddiRegistry);
 
-        final PublishedService service = serviceCache.getCachedService(publishedServiceOid);
-        if(service == null) throw new SaveException("PublishedService with id #(" + publishedServiceOid + ") was not found");
+        final PublishedService service = serviceCache.getCachedService(publishedService.getOid());
+        if(service == null) throw new SaveException("PublishedService with id #(" + publishedService + ") was not found");
 
         final String wsdlHash = getWsdlHash(service);
 
