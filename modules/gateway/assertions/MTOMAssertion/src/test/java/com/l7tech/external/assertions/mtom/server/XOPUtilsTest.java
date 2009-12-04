@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.mtom.server;
 
 import org.junit.Test;
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
@@ -33,26 +33,26 @@ public class XOPUtilsTest {
                 ContentTypeHeader.parseValue(mtomContentType),
                 new ByteArrayInputStream(HexUtils.decodeBase64( mtom )));
         
-        XOPUtils.reconstitute( message, true, smf );
+        XOPUtils.reconstitute( message, true, LENGTH_LIMIT, smf );
         System.out.println( XmlUtil.nodeToFormattedString( message.getXmlKnob().getDocumentReadOnly() ));
-        Assert.assertEquals( "Incorrect Content-Type", "text/xml", message.getMimeKnob().getOuterContentType().getMainValue() );
-        Assert.assertFalse( "Contains XOP namespace", XmlUtil.nodeToFormattedString( message.getXmlKnob().getDocumentReadOnly() ).contains( XOPUtils.NS_XOP ) );
+        assertEquals( "Incorrect Content-Type", "text/xml", message.getMimeKnob().getOuterContentType().getMainValue() );
+        assertFalse( "Contains XOP namespace", XmlUtil.nodeToFormattedString( message.getXmlKnob().getDocumentReadOnly() ).contains( XOPUtils.NS_XOP ) );
 
         NodeList nl = message.getXmlKnob().getDocumentReadOnly().getElementsByTagNameNS( "*", "delay" );
         XOPUtils.extract( message, Arrays.asList((Element)nl.item( 0 )), 0, true, smf );
         System.out.println( XmlUtil.nodeToFormattedString( message.getXmlKnob().getDocumentReadOnly() ));
-        Assert.assertEquals( "Incorrect Content-Type", "multipart/related", message.getMimeKnob().getOuterContentType().getMainValue() );
-        Assert.assertEquals( "Incorrect Content-Type type", "application/xop+xml", message.getMimeKnob().getOuterContentType().getParam("type") );
-        Assert.assertEquals( "Incorrect Content-Type startinfo", "text/xml", message.getMimeKnob().getOuterContentType().getParam("startinfo") );
+        assertEquals( "Incorrect Content-Type", "multipart/related", message.getMimeKnob().getOuterContentType().getMainValue() );
+        assertEquals( "Incorrect Content-Type type", "application/xop+xml", message.getMimeKnob().getOuterContentType().getParam("type") );
+        assertEquals( "Incorrect Content-Type start-info", "text/xml", message.getMimeKnob().getOuterContentType().getParam("start-info") );
 
-        XOPUtils.reconstitute( message, true, smf );
+        XOPUtils.reconstitute( message, true, LENGTH_LIMIT, smf );
         System.out.println( XmlUtil.nodeToFormattedString( message.getXmlKnob().getDocumentReadOnly() ));
-        Assert.assertEquals( "Incorrect Content-Type", "text/xml", message.getMimeKnob().getOuterContentType().getMainValue() );
-        Assert.assertFalse( "Contains XOP namespace", XmlUtil.nodeToFormattedString( message.getXmlKnob().getDocumentReadOnly() ).contains( XOPUtils.NS_XOP ) );
+        assertEquals( "Incorrect Content-Type", "text/xml", message.getMimeKnob().getOuterContentType().getMainValue() );
+        assertFalse( "Contains XOP namespace", XmlUtil.nodeToFormattedString( message.getXmlKnob().getDocumentReadOnly() ).contains( XOPUtils.NS_XOP ) );
     }
 
     @Test
-    public void testXPODecode() throws Exception {
+    public void testXOPDecode() throws Exception {
         StashManagerFactory smf = buildStashManagerFactory();
         Message message = new Message();
         message.initialize(
@@ -60,21 +60,73 @@ public class XOPUtilsTest {
                 ContentTypeHeader.parseValue(mtomContentType),
                 new ByteArrayInputStream(HexUtils.decodeBase64( mtom )));
 
-        XOPUtils.reconstitute( message, false, smf );
+        XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
 
         System.out.println( message.getMimeKnob().getOuterContentType().getFullValue() );
         IOUtils.copyStream( message.getMimeKnob().getEntireMessageBodyAsInputStream(), System.out );
 
-        Assert.assertEquals( "Incorrect Content-Type", "Multipart/Related", message.getMimeKnob().getOuterContentType().getMainValue() );
-        Assert.assertEquals( "Incorrect Content-Type type", "application/xop+xml", message.getMimeKnob().getOuterContentType().getParam("type") );
-        Assert.assertEquals( "Incorrect Content-Type startinfo", "text/xml", message.getMimeKnob().getOuterContentType().getParam("startinfo") );
-        Assert.assertEquals( "Incorrect Part Content-Type", "application/xop+xml", message.getMimeKnob().getFirstPart().getContentType().getMainValue() );
-        Assert.assertEquals( "Incorrect Part Content-Id", "mainpart", message.getMimeKnob().getFirstPart().getContentId(true) );
+        assertEquals( "Incorrect Content-Type", "Multipart/Related", message.getMimeKnob().getOuterContentType().getMainValue() );
+        assertEquals( "Incorrect Content-Type type", "application/xop+xml", message.getMimeKnob().getOuterContentType().getParam("type") );
+        assertEquals( "Incorrect Content-Type start-info", "text/xml", message.getMimeKnob().getOuterContentType().getParam("start-info") );
+        assertEquals( "Incorrect Part Content-Type", "application/xop+xml", message.getMimeKnob().getFirstPart().getContentType().getMainValue() );
+        assertEquals( "Incorrect Part Content-Id", "mainpart", message.getMimeKnob().getFirstPart().getContentId(true) );
+    }
+
+    @Test(expected=XOPUtils.XOPException.class)
+    public void testXOPDecodeAttachmentTooLarge() throws Exception {
+        StashManagerFactory smf = buildStashManagerFactory();
+        Message message = new Message();
+        message.initialize(
+                smf.createStashManager(),
+                ContentTypeHeader.parseValue(mtomContentType),
+                new ByteArrayInputStream(HexUtils.decodeBase64( mtom )));
+
+        XOPUtils.reconstitute( message, false, 1, smf );
     }
 
     @Test
-    public void testContentTypeHeader() throws Exception {
-        System.out.println( ContentTypeHeader.parseValue( "text/xml;    charset=utf-8" ).getFullValue() );
+    public void testJaxWsXOPDecode() throws Exception {
+        StashManagerFactory smf = buildStashManagerFactory();
+        Message message = new Message();
+        message.initialize(
+                smf.createStashManager(),
+                ContentTypeHeader.parseValue(jaxwsContentType),
+                new ByteArrayInputStream(jaxwsBody.getBytes()));
+
+        XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
+
+        System.out.println( message.getMimeKnob().getOuterContentType().getFullValue() );
+        IOUtils.copyStream( message.getMimeKnob().getEntireMessageBodyAsInputStream(), System.out );
+
+        assertEquals( "Incorrect Content-Type", "multipart/related", message.getMimeKnob().getOuterContentType().getMainValue() );
+        assertEquals( "Incorrect Content-Type type", "application/xop+xml", message.getMimeKnob().getOuterContentType().getParam("type") );
+        assertEquals( "Incorrect Content-Type start-info", "text/xml", message.getMimeKnob().getOuterContentType().getParam("start-info") );
+        assertEquals( "Incorrect Part Content-Type", "application/xop+xml", message.getMimeKnob().getFirstPart().getContentType().getMainValue() );
+        assertEquals( "Incorrect Part Content-Id", "rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com", message.getMimeKnob().getFirstPart().getContentId(true) );
+    }
+
+    @Test(expected=XOPUtils.XOPException.class)
+    public void testInvalidJaxWsXOPDecode() throws Exception {
+        StashManagerFactory smf = buildStashManagerFactory();
+        Message message = new Message();
+        message.initialize(
+                smf.createStashManager(),
+                ContentTypeHeader.parseValue(jaxwsContentType),
+                new ByteArrayInputStream(jaxwsBodyInvalid.getBytes()));
+
+        XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
+    }
+
+    @Test(expected=XOPUtils.XOPException.class)
+    public void testValidateInvalidJaxWs() throws Exception {
+        StashManagerFactory smf = buildStashManagerFactory();
+        Message message = new Message();
+        message.initialize(
+                smf.createStashManager(),
+                ContentTypeHeader.parseValue(jaxwsContentType),
+                new ByteArrayInputStream(jaxwsBodyInvalid.getBytes()));
+
+        XOPUtils.validate( message );
     }
 
     @Test
@@ -98,6 +150,56 @@ public class XOPUtilsTest {
         XOPUtils.validate( message );
     }
 
+    @Test
+    public void testToContentId() throws Exception {
+        assertEquals("Content-ID", "myid", XOPUtils.toContentId( "cid:myid" ));
+        try {
+            XOPUtils.toContentId( "ci:myid" );
+            fail("Should throw due to invalid id");
+        } catch ( XOPUtils.XOPException oe ) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testGetXMLMimeContentType() throws Exception {
+        assertEquals( "content-type", "image/png", XOPUtils.getXMLMimeContentType( XmlUtil.parse( "<m:photo xmlmime:contentType=\"image/png\" xmlns:m=\"http://example.org/stuff\" xmlns:xmlmime=\"http://www.w3.org/2004/11/xmlmime\" xmlns:xop=\"http://www.w3.org/2004/08/xop/include\"><xop:Include href=\"cid:http://example.org/me.png\"/></m:photo>" ).getDocumentElement() ) );
+        assertEquals( "content-type", "image/gif", XOPUtils.getXMLMimeContentType( XmlUtil.parse( "<m:photo xmlmime:contentType=\"image/gif\" xmlns:m=\"http://example.org/stuff\" xmlns:xmlmime=\"http://www.w3.org/2005/05/xmlmime\" xmlns:xop=\"http://www.w3.org/2004/08/xop/include\"><xop:Include href=\"cid:http://example.org/me.png\"/></m:photo>" ).getDocumentElement() ) );
+    }
+
+    @Test
+    public void testGetBase64DataLength() {
+        int[] lengths = new int[]{0,1,2,3,4,12,13,14,15,128,129,130,131,132,133,134,135,1234};
+
+        for ( int length : lengths ) {
+            byte[] data = HexUtils.randomBytes( length );
+            String base64 = HexUtils.encodeBase64( data, true );
+            assertEquals( "Base64 random data", length, XOPUtils.getBase64DataLength( base64 ) );
+        }
+    }
+
+    @Test
+    public void testIsCanonicalBase64() {
+        assertTrue( "Empty canonical", XOPUtils.isCanonicalBase64( "" ) );
+        assertTrue( "Canonical 1", XOPUtils.isCanonicalBase64( HexUtils.encodeBase64( new byte[1] )) );
+        assertTrue( "Canonical 2", XOPUtils.isCanonicalBase64( HexUtils.encodeBase64( new byte[2] )) );
+        assertTrue( "Canonical 3", XOPUtils.isCanonicalBase64( HexUtils.encodeBase64( new byte[3] )) );
+        assertTrue( "Canonical 4", XOPUtils.isCanonicalBase64( HexUtils.encodeBase64( new byte[4] )) );
+        assertTrue( "Canonical 5", XOPUtils.isCanonicalBase64( HexUtils.encodeBase64( new byte[5] )) );
+        assertTrue( "Canonical data", XOPUtils.isCanonicalBase64( "LS1NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogICBj" ));
+        assertTrue( "Padded data 1", XOPUtils.isCanonicalBase64( "LS1NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogICB=" ));
+        assertTrue( "Padded data 2", XOPUtils.isCanonicalBase64( "LS1NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogIC==" ));
+
+        assertFalse( "Leading space", XOPUtils.isCanonicalBase64( " LS1NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogICBj" ));
+        assertFalse( "Trailing space", XOPUtils.isCanonicalBase64( "LS1NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogICBj " ));
+        assertFalse( "Embedded space", XOPUtils.isCanonicalBase64( "LS1NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5 cGU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogICBj" ));
+        assertFalse( "Embedded spaces", XOPUtils.isCanonicalBase64( "LS1NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5    cGU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogICBj" ));
+        assertFalse( "Multiple lines", XOPUtils.isCanonicalBase64( "LS1NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5cG\nU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogICBj" ));
+        assertFalse( "invalid character", XOPUtils.isCanonicalBase64( "LS:NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogICBj" ));
+        assertFalse( "invalid padding", XOPUtils.isCanonicalBase64( "a===" ));
+        assertFalse( "invalid length", XOPUtils.isCanonicalBase64( "LS1NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogICB" ));
+    }
+
     private Iterable<Element> iter( final NodeList elementNodeList ) {
         Collection<Element> elements = new ArrayList<Element>();
 
@@ -117,7 +219,9 @@ public class XOPUtilsTest {
         };
     }
 
-    private static final String mtomContentType = "Multipart/Related;boundary=MIME_boundary; type=\"application/xop+xml\"; start=\"<mainpart>\"; startinfo=\"text/xml\"";
+    private static final int LENGTH_LIMIT = Integer.MAX_VALUE - 2;
+
+    private static final String mtomContentType = "Multipart/Related;boundary=MIME_boundary; type=\"application/xop+xml\"; start=\"<mainpart>\"; start-info=\"text/xml\"";
     private static final String mtom =
             "LS1NSU1FX2JvdW5kYXJ5DQpDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL3hvcCt4bWw7DQogICBj\n" +
             "aGFyc2V0PVVURi04Ow0KICAgdHlwZT0idGV4dC94bWwiDQpDb250ZW50LVRyYW5zZmVyLUVuY29k\n" +
@@ -195,4 +299,43 @@ public class XOPUtilsTest {
             "bnRlbnQtSUQ6IDxwYXJ0LTE+DQoNCjUB0s1oJEorgyjwEc3X/syzbqa1Lkfow2cBPfLjcgmLedVX\n" +
             "6iV3PO0WyJi8yy5xqaiqZzh5qqyl0xfx4RI6E6Lp2hugh3veu0rkNRf0eE+egpgsyo8Sz44DGtcq\n" +
             "j0Xvtxw7R8DzKKw/MF7pTYS2+hDwEBZFMhYM+Xyk9YXK1f5FDQotLU1JTUVfYm91bmRhcnktLQ0K";
+
+    private static final String jaxwsContentType = "multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\"";
+    private static final String jaxwsBody =
+            "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
+            "Content-Id: <rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\r\n" +
+            "Content-Type: application/xop+xml;charset=utf-8;type=\"text/xml\"\r\n" +
+            "Content-Transfer-Encoding: binary\r\n" +
+            "\r\n" +
+            "<?xml version=\"1.0\" ?><S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Body><ns2:echoFile xmlns:ns2=\"http://www.layer7tech.com/services/jaxws/echoservice\"><arg0><data><xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:5b217328-8151-452a-8aa7-03dace49949d@example.jaxws.sun.com\"></xop:Include></data><name>payload.txt</name></arg0></ns2:echoFile></S:Body></S:Envelope>\r\n" +
+            "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
+            "Content-Id: <5b217328-8151-452a-8aa7-03dace49949d@example.jaxws.sun.com>\r\n" +
+            "Content-Type: text/plain\r\n" +
+            "Content-Transfer-Encoding: binary\r\n" +
+            "\r\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "\r\n" +
+            "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a--";
+
+    private static final String jaxwsBodyInvalid =
+            "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
+            "Content-Id: <rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\r\n" +
+            "Content-Type: application/xop+xml;charset=utf-8;type=\"text/xml\"\r\n" +
+            "Content-Transfer-Encoding: binary\r\n" +
+            "\r\n" +
+            "<?xml version=\"1.0\" ?><S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Body><ns2:echoFile xmlns:ns2=\"http://www.layer7tech.com/services/jaxws/echoservice\"><arg0><data>invalidtext<xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:5b217328-8151-452a-8aa7-03dace49949d@example.jaxws.sun.com\"></xop:Include></data><name>payload.txt</name></arg0></ns2:echoFile></S:Body></S:Envelope>\r\n" +
+            "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
+            "Content-Id: <5b217328-8151-452a-8aa7-03dace49949d@example.jaxws.sun.com>\r\n" +
+            "Content-Type: text/plain\r\n" +
+            "Content-Transfer-Encoding: binary\r\n" +
+            "\r\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "\r\n" +
+            "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a--";
 }

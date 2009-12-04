@@ -173,26 +173,36 @@ public class MtomEncodeAssertionPropertiesDialog extends MtomAssertionProperties
     }
 
     private void addXPath() {
-        editXpath( this, getTitle(), null, new Functions.UnaryVoid<XpathExpression>(){
-            @Override
-            public void call( final XpathExpression xpathExpression ) {
-                ((DefaultListModel)optimizationXPathsList.getModel()).addElement( xpathExpression );
-            }
-        } );
+        editXpath(
+                this,
+                getTitle(),
+                ((MessageTargetable) messageSourceComboBox.getSelectedItem()).getTarget(),
+                null,
+                new Functions.UnaryVoid<XpathExpression>(){
+                    @Override
+                    public void call( final XpathExpression xpathExpression ) {
+                        ((DefaultListModel)optimizationXPathsList.getModel()).addElement( xpathExpression );
+                    }
+                } );
     }
 
     private void editXPath() {
         final XpathExpression expression = (XpathExpression) optimizationXPathsList.getSelectedValue();
-        editXpath( this, getTitle(), expression, new Functions.UnaryVoid<XpathExpression>(){
-            @Override
-            public void call( final XpathExpression xpathExpression ) {
-                expression.setExpression( xpathExpression.getExpression() );
-                expression.setNamespaces( xpathExpression.getNamespaces() );
-                ((DefaultListModel)optimizationXPathsList.getModel()).setElementAt(
-                        expression,
-                        optimizationXPathsList.getSelectedIndex() );
-            }
-        }  );
+        editXpath(
+                this,
+                getTitle(),
+                ((MessageTargetable) messageSourceComboBox.getSelectedItem()).getTarget(),
+                expression, 
+                new Functions.UnaryVoid<XpathExpression>(){
+                    @Override
+                    public void call( final XpathExpression xpathExpression ) {
+                        expression.setExpression( xpathExpression.getExpression() );
+                        expression.setNamespaces( xpathExpression.getNamespaces() );
+                        ((DefaultListModel)optimizationXPathsList.getModel()).setElementAt(
+                                expression,
+                                optimizationXPathsList.getSelectedIndex() );
+                    }
+                }  );
     }
 
     private void removeXPath() {
@@ -200,10 +210,14 @@ public class MtomEncodeAssertionPropertiesDialog extends MtomAssertionProperties
     }
 
     private XpathExpression[] toArray( final ListModel model ) {
-        XpathExpression[] expressions = new XpathExpression[ model.getSize() ];
+        XpathExpression[] expressions = null;
 
-        for ( int i=0; i<expressions.length; i++ ) {
-            expressions[i] = (XpathExpression) model.getElementAt( i );            
+        if ( model.getSize() > 0 ) {
+            expressions = new XpathExpression[ model.getSize() ];
+
+            for ( int i=0; i<expressions.length; i++ ) {
+                expressions[i] = (XpathExpression) model.getElementAt( i );
+            }
         }
 
         return expressions;

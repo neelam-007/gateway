@@ -2,13 +2,14 @@ package com.l7tech.external.assertions.mtom.server;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.HexUtils;
@@ -16,12 +17,16 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.xml.ElementCursor;
 
 import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
@@ -36,6 +41,8 @@ import java.util.Collections;
 import java.util.UUID;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.nio.charset.Charset;
 
@@ -125,8 +132,17 @@ public class XOPUtils {
                 @Override
                 public void visit( final ElementCursor elementCursor ) throws InvalidDocumentFormatException {
                     if ( NS_XOP.equals( elementCursor.getNamespaceUri() ) ) {
-                        if ( !XOP_ELEMENT_INCLUDE.equals( elementCursor.getLocalName() ) ) {
-                            throw new InvalidDocumentFormatException("Unknown XOP element: " + elementCursor.getLocalName());
+                        elementCursor.pushPosition();
+                        try {
+                            if ( !XOP_ELEMENT_INCLUDE.equals( elementCursor.getLocalName() ) ) {
+                                throw new InvalidDocumentFormatException("Unknown XOP element: " + elementCursor.getLocalName());
+                            } else if ( elementCursor.moveToNextSiblingElement() ||
+                                        (elementCursor.moveToParentElement() &&
+                                         !elementCursor.getTextValue().isEmpty()) ) {
+                                throw new InvalidDocumentFormatException("XOP Include is invalid (text or element siblings)");
+                            }
+                        } finally {
+                            elementCursor.popPosition();
                         }
 
                         try {
@@ -234,15 +250,24 @@ public class XOPUtils {
             throw new XOPException( "Message is not XML, content type is '"+originalContentType.getMainValue()+"'" );
         }
 
-        Document document = sourceMessage.getXmlKnob().getDocumentReadOnly();
-        Map<String, Pair<byte[],String>> parts = new HashMap<String,Pair<byte[],String>>();
-        for ( Element element : base64BinaryElements ) {
-            String base64Text = DomUtils.getTextValue( element ); //TODO [steve] Validate nothing but text children and BASE64 (must be no spaces)
-            if ( getBase64DataLength(base64Text) > threshold ) {
+        final Document document;
+        try {
+            document = XmlUtil.parse( sourceMessage.getMimeKnob().getFirstPart().getInputStream( false ) );
+        } catch (NoSuchPartException e) {
+            throw new IOException( "MIME first part cannot be read." );
+        }
+
+        final Map<String, Pair<byte[],String>> parts = new HashMap<String,Pair<byte[],String>>();
+        for ( Element sourceDomElement : base64BinaryElements ) {
+            if ( DomUtils.hasChildNodesOfType( sourceDomElement, Node.ELEMENT_NODE ) ) continue;
+            
+            String base64Text = DomUtils.getTextValue( sourceDomElement );
+            if ( getBase64DataLength(base64Text) > threshold && isCanonicalBase64(base64Text) ) {
+                Element element = getTargetElement( document, sourceDomElement );
+                if ( element == null ) continue;
                 DomUtils.removeAllChildren( element );
 
-                //TODO [steve] Don't modify elements passed in (copy the DOM, or modify on write)
-                Element partIncludeElement = element.getOwnerDocument().createElementNS( NS_XOP, XOP_ELEMENT_INCLUDE );
+                Element partIncludeElement = document.createElementNS( NS_XOP, XOP_ELEMENT_INCLUDE );
                 partIncludeElement.setAttributeNS( XMLConstants.XMLNS_ATTRIBUTE_NS_URI, XMLConstants.XMLNS_ATTRIBUTE, NS_XOP );
                 String contentId = UUID.randomUUID().toString() + DOMAIN_SUFFIX;
                 partIncludeElement.setAttribute( XOP_ATTRIBUTE_HREF, CID_PREFIX+contentId );
@@ -321,6 +346,7 @@ public class XOPUtils {
      *
      * @param message The message to convert.
      * @param removePackaging True to remove the MIME XOP wrapper
+     * @param maxAttachmentSize the maximum attachment size to process
      * @param stashManagerFactory The stash manager factory to use
      * @throws IOException if an error occurs reading the given message
      * @throws SAXException if an error occurs parsing the given message
@@ -328,8 +354,9 @@ public class XOPUtils {
      */
     public static void reconstitute( final Message message,
                                      final boolean removePackaging,
+                                     final int maxAttachmentSize,
                                      final StashManagerFactory stashManagerFactory ) throws IOException, SAXException, XOPException {
-        reconstitute( message, message, removePackaging, stashManagerFactory );
+        reconstitute( message, message, removePackaging, maxAttachmentSize, stashManagerFactory );
     }
 
     /**
@@ -340,6 +367,7 @@ public class XOPUtils {
      * @param sourceMessage The message to read.
      * @param targetMessage The message to update.
      * @param removePackaging True to remove the MIME XOP wrapper
+     * @param maxAttachmentSize the maximum attachment size to process
      * @param stashManagerFactory The stash manager factory to use
      * @throws IOException if an error occurs reading the given message
      * @throws SAXException if an error occurs parsing the given message
@@ -348,6 +376,7 @@ public class XOPUtils {
     public static void reconstitute( final Message sourceMessage,
                                      final Message targetMessage,
                                      final boolean removePackaging,
+                                     final int maxAttachmentSize,
                                      final StashManagerFactory stashManagerFactory ) throws IOException, SAXException, XOPException {
         final MimeKnob mimeKnob = sourceMessage.getMimeKnob();
         final ContentTypeHeader originalContentType = mimeKnob.getOuterContentType();
@@ -368,10 +397,9 @@ public class XOPUtils {
         } catch (NoSuchPartException e) {
             throw new IOException( "MIME first part cannot be read." );
         }
-        NodeList includeNodeList = document.getElementsByTagNameNS( NS_XOP, XOP_ELEMENT_INCLUDE );  //TODO [steve] Validate XOP Include is an only child (be lax and allow empty text nodes)
+        List<Element> includes = findIncludes( document.getDocumentElement() );
         Map<Element,PartInfo> includeMap = new HashMap<Element,PartInfo>();
-        for ( int i=0; i<includeNodeList.getLength(); i++ ) {
-            Element includeElement = (Element) includeNodeList.item( i );
+        for (  Element includeElement : includes ) {
             String contentIdUrl = includeElement.getAttribute( XOP_ATTRIBUTE_HREF );
             try {
                 PartInfo partInfo = mimeKnob.getPartByContentId( toContentId(contentIdUrl) );
@@ -389,7 +417,15 @@ public class XOPUtils {
             InputStream in = null;
             try {
                 in = attachment.getInputStream( false );
-                base64BinaryContent = HexUtils.encodeBase64( IOUtils.slurpStream( in, 1024*1024 ), true ); //TODO [steve] Attachement size limit here? (xml max bytes as approximation?)
+                base64BinaryContent = HexUtils.encodeBase64(
+                        IOUtils.slurpStream( new ByteLimitInputStream(in, 32, maxAttachmentSize )), 
+                        true );
+            } catch (IOException ioe) {
+                if ( ExceptionUtils.getMessage(ioe).equals("Unable to read stream: the specified maximum data size limit would be exceeded") ) {
+                    throw new XOPException( "Attachment size lmiit exceeded for '" + attachment.getContentId(true ) + "'.");
+                } else {
+                    throw ioe;
+                }
             } catch (NoSuchPartException e) {
                 throw new XOPException( "Error reading content for MIME part '"+attachment.getContentId( true )+"'", e );
             } finally {
@@ -439,7 +475,6 @@ public class XOPUtils {
         }
     }
 
-
     public static class XOPException extends Exception {
         public XOPException( final String message ) {
             super( message );
@@ -448,6 +483,58 @@ public class XOPUtils {
         public XOPException( final String message, final Throwable cause ) {
             super( message, cause );
         }
+    }
+
+    //- PACKAGE
+
+    static String toContentId( final String contentIdUrl ) throws XOPException {
+        String contentId = null;
+
+        if ( contentIdUrl != null ) {
+            if ( contentIdUrl.toLowerCase().startsWith( CID_PREFIX ) ) {
+                contentId = contentIdUrl.substring( CID_PREFIX.length() );
+            }
+        }
+
+        if ( contentId == null )
+            throw new XOPException( "Include missing or invalid Content-ID URL '"+contentIdUrl+"'" );
+
+        return contentId;
+    }
+
+    static String getXMLMimeContentType( final Element element ) {
+        String contentType = null;
+
+        for ( String ns : XMLMIME_NAMESPACES ) {
+            if ( element.hasAttributeNS( ns, XMLMIME_ATTR_CONTENT_TYPE )) {
+                contentType = element.getAttributeNS( ns, XMLMIME_ATTR_CONTENT_TYPE );
+                if ( !contentType.isEmpty() ) {
+                    break;
+                }
+            }
+        }
+
+        return contentType;
+    }
+
+    static int getBase64DataLength( final String text ) {
+        int size = (text.length()/4)*3;
+        if ( text.endsWith( "==" )) size -= 2;
+        else if ( text.endsWith( "=" )) size--;
+        return size;
+    }
+
+    static boolean isCanonicalBase64( final String text ) {
+        boolean canonical = text.length() % 4 == 0;
+
+        if ( canonical ) {
+            int length = text.length();
+            if ( text.endsWith( "==" )) length -= 2;
+            else if ( text.endsWith( "=" )) length--;
+            canonical = ValidationUtils.isValidCharacters( text.substring( 0, length ), BASE64_ALPHABET );           
+        }
+
+        return canonical;
     }
 
     //- PRIVATE
@@ -461,7 +548,7 @@ public class XOPUtils {
     private static final String CONTENT_TYPE_PARAM_BOUNDARY = MimeUtil.MULTIPART_BOUNDARY;
     private static final String CONTENT_TYPE_PARAM_CHARSET = "charset";
     private static final String CONTENT_TYPE_PARAM_START = "start";
-    private static final String CONTENT_TYPE_PARAM_INFO = "startinfo";
+    private static final String CONTENT_TYPE_PARAM_INFO = "start-info";
     private static final String CONTENT_TYPE_PARAM_TYPE = MimeUtil.MULTIPART_TYPE;
     private static final String CHARSET_UTF8_ID = "UTF-8";
     private static final Charset CHARSET_UTF8 = Charset.forName( CHARSET_UTF8_ID );
@@ -471,20 +558,127 @@ public class XOPUtils {
     private static final byte[] DASHDASH = MimeUtil.MULTIPART_BOUNDARY_PREFIX.getBytes(CHARSET_UTF8);
     private static final byte[] HEADER_SEPARATOR = ": ".getBytes(CHARSET_UTF8);
     private static final String[] XMLMIME_NAMESPACES = new String[]{ NS_XMLMIME_2, NS_XMLMIME_1 };
+    private static final String BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; // "=" handled as special case
 
-    private static String toContentId( final String contentIdUrl ) throws XOPException {
-        String contentId = null;
+    /**
+     * Get the element equivalent to the template in the copied target document.
+     */
+    private static Element getTargetElement( final Document target, final Element template ) {
+        Element element = null;
 
-        if ( contentIdUrl != null ) {
-            if ( contentIdUrl.toLowerCase().startsWith( CID_PREFIX ) ) {
-                contentId = contentIdUrl.substring( CID_PREFIX.length() );
+        final List<Pair<Integer,QName>> positionAndNameList = new ArrayList<Pair<Integer,QName>>();
+        Element templateDocEle = template.getOwnerDocument().getDocumentElement();
+        Node node = template;
+        while ( !node.isSameNode( templateDocEle ) ) {
+            int position = 0;
+            Node sibling = node.getPreviousSibling();
+            while( sibling!=null ){ position++; sibling=sibling.getPreviousSibling(); }
+            positionAndNameList.add( new Pair<Integer,QName>( position, new QName(node.getNamespaceURI(), node.getLocalName() )) );
+            node = node.getParentNode();
+        }
+
+        Collections.reverse( positionAndNameList );
+
+        Node targetNode = target.getDocumentElement();
+        for ( Pair<Integer,QName> step : positionAndNameList ) {
+            targetNode = targetNode.getFirstChild();
+            for ( int i=0; i<step.left && targetNode != null; i++ ) {
+                targetNode = targetNode.getNextSibling();
+            }
+
+            if ( targetNode == null ||
+                 !isNamespaceMatch( targetNode.getNamespaceURI(), step.right.getNamespaceURI() ) ||
+                 !targetNode.getLocalName().equals( step.right.getLocalPart() )) {
+                targetNode = null;
+                break;
             }
         }
 
-        if ( contentId == null )
-            throw new XOPException( "Include missing or invalid Content-ID URL '"+contentIdUrl+"'" );
+        if ( targetNode!=null && targetNode.getNodeType() == Node.ELEMENT_NODE ) { 
+            element = (Element) targetNode;
+        }
 
-        return contentId;
+        return element;
+    }
+
+    private static boolean isNamespaceMatch( final String namespace1,
+                                             final String namespace2 ) {
+        return (namespace1==null && namespace2==null) || (namespace1 != null && namespace1.equals( namespace2 ));
+    }
+
+    private static List<Element> findIncludes( final Element element ) throws XOPException {
+        final List<Element> elements = new ArrayList<Element>();
+
+        final boolean[] valid = new boolean[]{true};
+        XmlUtil.visitChildElements( element, new Functions.UnaryVoid<Element>(){
+            @Override
+            public void call( final Element element ) {
+                if ( valid[0] ) {
+                    if ( NS_XOP.equals( element.getNamespaceURI() ) &&
+                         XOP_ELEMENT_INCLUDE.equals( element.getLocalName() ) ) {
+                        if ( !validIncludeSiblings( element ) ) {
+                            valid[0] = false;
+                        } else {
+                            elements.add( element );
+                        }
+                    } else {
+                        XmlUtil.visitChildElements( element, this );
+                    }
+                }
+            }
+        } );
+
+        if ( !valid[0] ) {
+            throw new XOPException("XOP Include is invalid (text or element siblings)");
+        }
+
+        return elements;
+    }
+
+    private static boolean validIncludeSiblings( final Element element ){
+        boolean valid = true;
+
+        Node sibling = element.getPreviousSibling();
+        while( sibling != null ) {
+            if ( !validIncludeSibling( sibling ) ) {
+                valid = false;
+                break;
+            }
+            sibling = sibling.getPreviousSibling();
+        }
+
+        if ( valid ) {
+            sibling = element.getNextSibling();
+            while( sibling != null ) {
+                if ( !validIncludeSibling( sibling ) ) {
+                    valid = false;
+                    break;
+                }
+                sibling = sibling.getNextSibling();
+            }
+        }
+
+        return valid;
+    }
+
+    /**
+     * Technically empty text nodes and comments are not permitted, but we'll allow it. 
+     */
+    private static boolean validIncludeSibling( final Node node ) {
+        boolean valid = false;
+
+        switch ( node.getNodeType() ) {
+            case Node.CDATA_SECTION_NODE:
+            case Node.TEXT_NODE:
+                String contents = node.getNodeValue();
+                valid = contents==null || contents.trim().isEmpty();
+                break;
+            case Node.COMMENT_NODE:
+                valid = true;
+                break;
+        }
+
+        return valid;
     }
 
     /**
@@ -559,27 +753,5 @@ public class XOPUtils {
         os.write( MimeUtil.CRLF, 0, MimeUtil.CRLF.length );
 
         return new ByteArrayInputStream( os.toByteArray() );
-    }
-
-    public static String getXMLMimeContentType( final Element element ) {
-        String contentType = null;
-
-        for ( String ns : XMLMIME_NAMESPACES ) {
-            if ( element.hasAttributeNS( ns, XMLMIME_ATTR_CONTENT_TYPE )) {
-                contentType = element.getAttributeNS( ns, XMLMIME_ATTR_CONTENT_TYPE );
-                if ( !contentType.isEmpty() ) {
-                    break;
-                }
-            }
-        }
-
-        return contentType;
-    }
-
-    private static int getBase64DataLength( final String text ) {
-        int size = (text.length()/4)*3;
-        if ( text.endsWith( "==" )) size -= 2;
-        else if ( text.endsWith( "=" )) size--;
-        return size;
     }
 }

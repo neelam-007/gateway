@@ -145,51 +145,53 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
         AssertionStatus status = AssertionStatus.NONE;
 
         final MtomValidateAssertion.ValidationRule[] rules = assertion.getValidationRules();
-        outer:
-        for ( int i=0 ; i<rules.length; i++ ) {
-            final MtomValidateAssertion.ValidationRule rule = rules[i];
-            final CompiledXpath compiledXpath = compiledXpaths[i];
+        if ( rules != null ) {
+            outer:
+            for ( int i=0 ; i<rules.length; i++ ) {
+                final MtomValidateAssertion.ValidationRule rule = rules[i];
+                final CompiledXpath compiledXpath = compiledXpaths[i];
 
-            try {
-                cursor.moveToRoot();
-                final XpathResult result = cursor.getXpathResult( compiledXpath );
-                if ( result.matches() ) {
-                    final XpathResultNodeSet nodeSet = result.getNodeSet();
-                    if ( nodeSet != null ) {
-                        final XpathResultIterator iterator = nodeSet.getIterator();
-                        int elementCount = 0;
+                try {
+                    cursor.moveToRoot();
+                    final XpathResult result = cursor.getXpathResult( compiledXpath );
+                    if ( result.matches() ) {
+                        final XpathResultNodeSet nodeSet = result.getNodeSet();
+                        if ( nodeSet != null ) {
+                            final XpathResultIterator iterator = nodeSet.getIterator();
+                            int elementCount = 0;
 
-                        while ( iterator.hasNext() ) {
-                            ElementCursor elementCursor = iterator.nextElementAsCursor();
-                            if ( elementCursor != null ) {
-                                elementCount++;
-                                long size = XOPUtils.getSize( message, elementCursor );
-                                if ( size > rule.getSize() ) {
-                                    status = getBadMessageStatus();
-                                    auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Size exceeded" );
-                                    break outer;
+                            while ( iterator.hasNext() ) {
+                                ElementCursor elementCursor = iterator.nextElementAsCursor();
+                                if ( elementCursor != null ) {
+                                    elementCount++;
+                                    long size = XOPUtils.getSize( message, elementCursor );
+                                    if ( size > rule.getSize() ) {
+                                        status = getBadMessageStatus();
+                                        auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Size exceeded" );
+                                        break outer;
+                                    }
                                 }
                             }
-                        }
 
-                        if ( elementCount > rule.getCount() ) {
-                            status = getBadMessageStatus();
-                            auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Count exceeded" );
-                            break;
+                            if ( elementCount > rule.getCount() ) {
+                                status = getBadMessageStatus();
+                                auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Count exceeded" );
+                                break;
+                            }
                         }
                     }
+                } catch (XPathExpressionException e) {
+                    status = AssertionStatus.FAILED;
+                    auditor.logAndAudit(
+                            MTOM_VALIDATE_ERROR,
+                            new String[]{"Error matching elements to validate '"+ ExceptionUtils.getMessage(e)+"'"},
+                            ExceptionUtils.getDebugException(e) );
+                    break;
+                } catch (XOPUtils.XOPException e) {
+                    status = AssertionStatus.FALSIFIED;
+                    auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Error checking rules: " + ExceptionUtils.getMessage(e) );
                 }
-            } catch (XPathExpressionException e) {
-                status = AssertionStatus.FAILED;
-                auditor.logAndAudit(
-                        MTOM_VALIDATE_ERROR,
-                        new String[]{"Error matching elements to validate '"+ ExceptionUtils.getMessage(e)+"'"},
-                        ExceptionUtils.getDebugException(e) );
-                break;
-            } catch (XOPUtils.XOPException e) {
-                status = AssertionStatus.FALSIFIED;
-                auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Error checking rules: " + ExceptionUtils.getMessage(e) );
-            } 
+            }
         }
 
         return status;

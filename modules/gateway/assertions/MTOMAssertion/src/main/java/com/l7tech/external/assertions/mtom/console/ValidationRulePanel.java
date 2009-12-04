@@ -8,6 +8,7 @@ import static com.l7tech.external.assertions.mtom.console.MtomAssertionPropertie
 import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.policy.assertion.TargetMessageType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,8 +30,9 @@ class ValidationRulePanel extends ValidatedPanel<MtomValidateAssertion.Validatio
 
     //- PACKAGE
 
-    ValidationRulePanel( final MtomValidateAssertion.ValidationRule rule ) {
+    ValidationRulePanel( final MtomValidateAssertion.ValidationRule rule, final TargetMessageType target ) {
         this.rule = rule;
+        this.target = target;
         if ( rule.getXpathExpression() != null ) {
             expression = new XpathExpression();
             expression.setExpression( rule.getXpathExpression().getExpression() );
@@ -101,13 +103,15 @@ class ValidationRulePanel extends ValidatedPanel<MtomValidateAssertion.Validatio
     private JButton editButton;
     private JLabel statusLabel;
 
-    private MtomValidateAssertion.ValidationRule rule;
+    private final MtomValidateAssertion.ValidationRule rule;
+    private final TargetMessageType target;
     private XpathExpression expression;
 
     private void doEditXPath() {
         editXpath(
                 SwingUtilities.getWindowAncestor(this),
                 bundle.getString( "dialog.title" ),
+                target,
                 expression,
                 new Functions.UnaryVoid<XpathExpression>(){
             @Override

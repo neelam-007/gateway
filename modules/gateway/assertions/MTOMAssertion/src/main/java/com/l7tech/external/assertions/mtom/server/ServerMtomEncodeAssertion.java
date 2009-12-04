@@ -4,7 +4,6 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.external.assertions.mtom.MtomEncodeAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -103,44 +102,45 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
             }
 
             if ( status == AssertionStatus.UNDEFINED ) {
-                if ( assertion.isAlwaysEncode() || !elements.isEmpty() ) {
-                    Message outputMessage = null;
-                    if ( assertion.getOutputTarget() == null ) {
-                        outputMessage = message;
-                    } else {
-                        try {
-                            outputMessage = context.getOrCreateTargetMessage( assertion.getOutputTarget(), false );
-                        } catch (NoSuchVariableException nsve) {
-                            status = AssertionStatus.FAILED;
-                            auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(nsve));
-                        } catch (VariableNotSettableException vnse) {
-                            auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(vnse));
-                            status = AssertionStatus.FAILED;
-                        }
-                    }
-
-                    if ( outputMessage != null ) {
-                        try {
-                            XOPUtils.extract(
-                                    message,
-                                    outputMessage,
-                                    elements,
-                                    assertion.getOptimizationThreshold(),
-                                    assertion.isAlwaysEncode(),
-                                    stashManagerFactory );
-
-                            status = AssertionStatus.NONE;
-                        } catch ( Exception e) {
-                            auditor.logAndAudit(
-                                    MTOM_ENCODE_ERROR,
-                                    new String[]{"Error encoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
-                                    e );
-
-                            status = AssertionStatus.FAILED;
-                        }
-                    }
-                } else {
+                if ( !assertion.isAlwaysEncode() && elements.isEmpty() ) {
+                    // even if not encoding, we may  still need to copy the source message to ouput message
                     auditor.logAndAudit( MTOM_ENCODE_NONE );
+                }
+
+                Message outputMessage = null;
+                if ( assertion.getOutputTarget() == null ) {
+                    outputMessage = message;
+                } else {
+                    try {
+                        outputMessage = context.getOrCreateTargetMessage( assertion.getOutputTarget(), false );
+                    } catch (NoSuchVariableException nsve) {
+                        status = AssertionStatus.FAILED;
+                        auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(nsve));
+                    } catch (VariableNotSettableException vnse) {
+                        auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(vnse));
+                        status = AssertionStatus.FAILED;
+                    }
+                }
+
+                if ( outputMessage != null ) {
+                    try {
+                        XOPUtils.extract(
+                                message,
+                                outputMessage,
+                                elements,
+                                assertion.getOptimizationThreshold(),
+                                assertion.isAlwaysEncode(),
+                                stashManagerFactory );
+
+                        status = AssertionStatus.NONE;
+                    } catch ( Exception e) {
+                        auditor.logAndAudit(
+                                MTOM_ENCODE_ERROR,
+                                new String[]{"Error encoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
+                                e );
+
+                        status = AssertionStatus.FAILED;
+                    }
                 }
             }
         } else {
@@ -164,7 +164,7 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
     private final CompiledXpath[] compiledXpaths;
 
     private CompiledXpath[] compileXpaths( final XpathExpression[] xpathExpressions ) {
-        CompiledXpath[] xpaths = null;
+        CompiledXpath[] xpaths;
 
         if ( xpathExpressions != null ) {
             xpaths = new CompiledXpath[ xpathExpressions.length ];
@@ -178,6 +178,8 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
                 xpaths = null;
                 auditor.logAndAudit( MTOM_ENCODE_INVALID_XPATH, xpathExpression.getExpression() );
             }
+        } else {
+            xpaths = new CompiledXpath[0];
         }
 
         return xpaths;

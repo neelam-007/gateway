@@ -195,20 +195,13 @@ public class GatewayFeatureSets {
             srv(SERVICE_EMS, "Ability to be managed remotely by an Enterprise Manager Server",
                 "Includes the ability to view and modify Trusted EMS registrations and EMS user mappings, both in the SSM and using the bootstrap web page."));
 
-        GatewayFeatureSet mtom =
-        fsr("set:mtom", "MTOM assertions",
-            mass("assertion:MtomEncode"),
-            mass("assertion:MtomDecode"),
-            mass("assertion:MtomValidate"));
-
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
             srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
             ass(WssDigest.class),
             mass("assertion:CacheLookup"),
-            mass("assertion:CacheStorage"),
-            mtom);
+            mass("assertion:CacheStorage"));
 
         GatewayFeatureSet wssp =
         fsr("set:wssp", "WS-SecurityPolicy assertion",

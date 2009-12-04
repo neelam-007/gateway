@@ -10,6 +10,7 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.util.Functions;
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.policy.assertion.TargetMessageType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,13 +32,18 @@ public class MtomValidateAssertionPropertiesDialog extends AssertionPropertiesOk
         super(MtomValidateAssertion.class, parent, bundle.getString("dialog.title"), true);
         initComponents();
         setData(assertion);
+        target = assertion.getTarget();
     }
 
     @Override
     public MtomValidateAssertion getData( final MtomValidateAssertion assertion ) throws ValidationException {
         assertion.setRequireEncoded( requireEncodedCheckBox.isSelected() );
-        assertion.setValidationRules( validationRuleTableModel.getRows().toArray(
-                new MtomValidateAssertion.ValidationRule[validationRuleTableModel.getRowCount()]));
+        if ( validationRuleTableModel.getRowCount()==0 ) {
+            assertion.setValidationRules( null );
+        } else {
+            assertion.setValidationRules( validationRuleTableModel.getRows().toArray(
+                    new MtomValidateAssertion.ValidationRule[validationRuleTableModel.getRowCount()]));
+        }
         return assertion;
     }
 
@@ -124,7 +130,9 @@ public class MtomValidateAssertionPropertiesDialog extends AssertionPropertiesOk
     private JButton addButton;
     private JButton editButton;
     private JButton removeButton;
+
     private SimpleTableModel<MtomValidateAssertion.ValidationRule> validationRuleTableModel;
+    private TargetMessageType target;
 
     private void enableAndDisableControls() {
         getOkButton().setEnabled( !isReadOnly() );
@@ -173,7 +181,7 @@ public class MtomValidateAssertionPropertiesDialog extends AssertionPropertiesOk
                         this,
                         getTitle() + " - " + bundle.getString( "dialog.rule.label" ),
                         true,
-                        new ValidationRulePanel( rule ) );
+                        new ValidationRulePanel( rule, target ) );
 
         dialog.pack();
         Utilities.centerOnParentWindow( dialog );

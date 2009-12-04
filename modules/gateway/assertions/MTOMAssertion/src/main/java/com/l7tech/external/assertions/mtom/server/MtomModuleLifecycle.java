@@ -13,6 +13,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.gateway.common.LicenseManager;
@@ -68,6 +69,8 @@ public class MtomModuleLifecycle implements ApplicationListener {
             handleLicenceEvent();
         } else if ( event instanceof AssertionModuleRegistrationEvent ) {
             if (!initialized()) handleLicenceEvent();
+        } else if ( event instanceof Started ) {
+            if (!initialized()) handleLicenceEvent();
         }
     }
 
@@ -106,7 +109,7 @@ public class MtomModuleLifecycle implements ApplicationListener {
 
     private boolean isLicensed() {
         LicenseManager licMan = (LicenseManager) spring.getBean("licenseManager");
-        return licMan.isFeatureEnabled("assertion:MtomDecode");
+        return licMan.isFeatureEnabled("set:modularAssertions");
     }
 
     private void registerGlobalPolicy() {

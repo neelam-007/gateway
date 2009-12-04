@@ -13,6 +13,7 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.message.Message;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Config;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
@@ -39,6 +40,7 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
 
         this.auditor = new Auditor(this, context, logger);
         this.stashManagerFactory = (StashManagerFactory) context.getBean( "stashManagerFactory", StashManagerFactory.class );
+        this.config = (Config) context.getBean( "serverConfig", Config.class );
     }
 
     //- PROTECTED
@@ -76,7 +78,11 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ServerMtomDecodeAssertion.class.getName());
+
+    private static final int DEFAULT_ATTACHMENT_MAX = 1024 * 1024;
+
     private final Auditor auditor;
+    private final Config config;
     private final StashManagerFactory stashManagerFactory;
 
     private AssertionStatus reconstitute( final PolicyEnforcementContext context,
@@ -99,8 +105,9 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
         }
 
         if ( outputMessage != null ) {
+            int attachmentMaxSize = config.getIntProperty( "ioXmlPartMaxBytes", DEFAULT_ATTACHMENT_MAX );
             try {
-                XOPUtils.reconstitute( message, outputMessage, assertion.isRemovePackaging(), stashManagerFactory );
+                XOPUtils.reconstitute( message, outputMessage, assertion.isRemovePackaging(), attachmentMaxSize, stashManagerFactory );
                 status = AssertionStatus.NONE;
             } catch ( Exception e) {
                 status = AssertionStatus.FALSIFIED;

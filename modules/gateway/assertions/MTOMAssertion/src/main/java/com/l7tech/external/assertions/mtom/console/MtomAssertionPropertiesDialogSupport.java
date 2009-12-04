@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.annotation.ProcessesResponse;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.DataType;
@@ -115,9 +116,11 @@ public abstract class MtomAssertionPropertiesDialogSupport<T extends Assertion> 
 
     protected static void editXpath( final Window parent,
                                      final String titlePrefix,
+                                     final TargetMessageType targetMessageType,
                                      final XpathExpression xpathExpression,
                                      final Functions.UnaryVoid<XpathExpression> callback ) {
-        final XpathBasedAssertion holder = new XpathBasedAssertion(){};
+        final XpathBasedAssertion holder = targetMessageType==TargetMessageType.RESPONSE ?
+                new ResponseXpathBasedAssertion() : new XpathBasedAssertion(){};
         holder.setXpathExpression( xpathExpression != null ? xpathExpression : XpathExpression.soapBodyXpathValue() );
         final XpathBasedAssertionPropertiesDialog ape = new XpathBasedAssertionPropertiesDialog(parent, holder);
         JDialog dlg = ape.getDialog();
@@ -143,4 +146,6 @@ public abstract class MtomAssertionPropertiesDialogSupport<T extends Assertion> 
         return expression;    
     }
 
+    @ProcessesResponse
+    private static final class ResponseXpathBasedAssertion extends XpathBasedAssertion {}
 }

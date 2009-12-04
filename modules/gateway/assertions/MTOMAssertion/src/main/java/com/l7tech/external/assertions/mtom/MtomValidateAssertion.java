@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.annotation.ProcessesMultipart;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.BeanTypeMapping;
@@ -16,6 +17,7 @@ import java.util.Arrays;
 /**
  *
  */
+@ProcessesMultipart
 public class MtomValidateAssertion extends MessageTargetableAssertion implements UsesVariables {
 
     //- PUBLIC
@@ -48,7 +50,7 @@ public class MtomValidateAssertion extends MessageTargetableAssertion implements
         meta.put(PALETTE_FOLDERS, new String[] { "xml" });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlelement.gif");
         meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/xmlelement.gif");
-        meta.put(FEATURE_SET_NAME, "(fromClass)"); 
+        meta.put(FEATURE_SET_NAME, "set:modularAssertions"); 
         meta.put(PROPERTIES_EDITOR_CLASSNAME,
                 "com.l7tech.external.assertions.mtom.console.MtomValidateAssertionPropertiesDialog");
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( Arrays.<TypeMapping>asList(

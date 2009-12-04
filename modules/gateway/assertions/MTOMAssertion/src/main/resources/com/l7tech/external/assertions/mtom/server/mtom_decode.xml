@@ -5,12 +5,24 @@
 <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
     <wsp:All wsp:Usage="Required">
         <wsp:OneOrMore wsp:Usage="Required">
-            <wsp:All wsp:Usage="Required">
-                <L7p:MTOMDecodeAssertion>
-                    <L7p:RemovePackaging booleanValue="false"/>
-                    <L7p:ProcessSecuredOnly booleanValue="true"/>
-                </L7p:MTOMDecodeAssertion>
-            </wsp:All>
+            <L7p:ComparisonAssertion>
+                <L7p:CaseSensitive booleanValue="false"/>
+                <L7p:Expression1 stringValue="${gateway.mtom.decodeSecuredMessages}"/>
+                <L7p:Operator operatorNull="null"/>
+                <L7p:Predicates predicates="included">
+                    <L7p:item dataType="included">
+                        <L7p:Type variableDataType="boolean"/>
+                    </L7p:item>
+                    <L7p:item binary="included">
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:RightValue stringValue="false"/>
+                    </L7p:item>
+                </L7p:Predicates>
+            </L7p:ComparisonAssertion>
+            <L7p:MTOMDecodeAssertion>
+                <L7p:RemovePackaging booleanValue="false"/>
+                <L7p:ProcessSecuredOnly booleanValue="true"/>
+            </L7p:MTOMDecodeAssertion>
             <L7p:TrueAssertion/>
         </wsp:OneOrMore>
     </wsp:All>
