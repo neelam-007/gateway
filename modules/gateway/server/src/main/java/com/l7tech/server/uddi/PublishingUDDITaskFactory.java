@@ -56,7 +56,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     if (publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH ||
                             publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED) {
                         final PublishedService service = serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
-                        task = new UpdatePublishUDDITask(this, service);
+                        task = new PublishGatewayWsdlUddiTask(this, service);
                     } else if (publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE ||
                             publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED) {
                         task = new DeletePublishUDDITask(this, publishUDDIEvent.getUddiProxiedServiceInfo().getOid());
@@ -93,7 +93,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         if (publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH ||
                                 publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED) {
                             final PublishedService service = serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
-                            task = new UpdatePublishUDDITask(this, service);
+                            task = new PublishGatewayWsdlUddiTask(this, service);
                         } else if (publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE ||
                                 publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED) {
                             task = new DeletePublishUDDITask(this, publishUDDIEvent.getUddiProxiedServiceInfo().getOid());
@@ -256,15 +256,15 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
     }
 
     /**
-     * Publish to UDDI for the first time or update information already published
+     * Publish the gateway WSDL to UDDI for the first time or update information already published
      */
-    private static final class UpdatePublishUDDITask extends UDDITask {//todo [Donal] rename
-        private static final Logger logger = Logger.getLogger(UpdatePublishUDDITask.class.getName());
+    private static final class PublishGatewayWsdlUddiTask extends UDDITask {
+        private static final Logger logger = Logger.getLogger(PublishGatewayWsdlUddiTask.class.getName());
 
         private final PublishingUDDITaskFactory factory;
         private final PublishedService publishedService;
 
-        public UpdatePublishUDDITask(final PublishingUDDITaskFactory factory,
+        public PublishGatewayWsdlUddiTask(final PublishingUDDITaskFactory factory,
                                      final PublishedService publishedService) {
             this.factory = factory;
             this.publishedService = publishedService;
@@ -506,7 +506,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
      * For udpates the normal udpate task should be used
      */
     private static final class OverwriteServicePublishUDDITask extends UDDITask {
-        private static final Logger logger = Logger.getLogger(UpdatePublishUDDITask.class.getName());
+        private static final Logger logger = Logger.getLogger(PublishGatewayWsdlUddiTask.class.getName());
 
         private final PublishingUDDITaskFactory factory;
         private final PublishedService publishedService;
