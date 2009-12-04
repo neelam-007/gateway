@@ -434,7 +434,12 @@ public abstract class ElementCursor {
      *
      */
     private void visitElements( final Visitor visitor,  boolean visitSiblings ) throws InvalidDocumentFormatException {
-        visitor.visit( this );
+        pushPosition();
+        try {
+            visitor.visit(this);
+        } finally {
+            popPosition(false);
+        }
 
         // visit children
         pushPosition();
