@@ -2259,7 +2259,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         } else if ( hasResult(faultMessage, 10210)) {
                 exception = new UDDIInvalidKeyException(context + " (UDDI may have been updated, please try again)" + spacer + toString(faultMessage));
         } else if ( hasResult(faultMessage, 10500)) {
-                exception = new UDDIInvalidKeyException(context + " (Multiple updates to same UDDI entity may have happened, please try again)" + spacer + toString(faultMessage));
+                exception = new UDDIException(context + " (Multiple updates to same UDDI entity may have happened, please try again)" + spacer + toString(faultMessage));
         }else {
             // handle general exception
             exception = new UDDIException(context + spacer + toString(faultMessage));
