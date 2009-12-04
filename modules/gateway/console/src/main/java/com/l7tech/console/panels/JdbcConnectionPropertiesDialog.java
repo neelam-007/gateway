@@ -172,6 +172,10 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private void viewToModel() {
+        viewToModel(connection);
+    }
+
+    private void viewToModel(JdbcConnection connection) {
         connection.setName(connectionNameTextField.getText().trim());
         connection.setDriverClass(((String) driverClassComboBox.getSelectedItem()).trim());
         connection.setJdbcUrl(jdbcUrlTextField.getText().trim());
@@ -429,9 +433,10 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) return;
 
-        viewToModel();
+        JdbcConnection connForTest = new JdbcConnection();
+        viewToModel(connForTest);
 
-        String warningMessage = admin.testJdbcConnection(connection);
+        String warningMessage = admin.testJdbcConnection(connForTest);
         String message = warningMessage == null?
             resources.getString("message.testing.jdbc.conn.passed") : MessageFormat.format(resources.getString("message.testing.jdbc.conn.failed"), warningMessage);
 
