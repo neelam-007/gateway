@@ -372,13 +372,15 @@ public class ServiceUDDISettingsDialog extends JDialog {
         final boolean uddiControl = uddiServiceControl != null && !uddiServiceControl.isUnderUddiControl();
 
         publishProxiedWsdlRadioButton.setEnabled(publishType != PROXY);
-        enableDisablePublishGatewayWsdlControls(publishProxiedWsdlRadioButton.isSelected());
+        enableDisablePublishGatewayWsdlControls(publishProxiedWsdlRadioButton.isSelected() && publishType != PROXY);
+        updateWhenGatewayWSDLCheckBox.setEnabled(publishProxiedWsdlRadioButton.isSelected());
 
         publishGatewayEndpointAsRadioButton.setEnabled(uddiControl && publishType != ENDPOINT);
-        enableDisablePublishEndpointControls(publishGatewayEndpointAsRadioButton.isSelected());
+        enableDisablePublishEndpointControls(publishGatewayEndpointAsRadioButton.isSelected() && publishType != ENDPOINT);
 
         overwriteExistingBusinessServiceWithRadioButton.setEnabled(uddiControl && publishType != OVERWRITE);
-        enableDisablePublishOverwriteControls(overwriteExistingBusinessServiceWithRadioButton.isSelected());
+        enableDisablePublishOverwriteControls(overwriteExistingBusinessServiceWithRadioButton.isSelected() && publishType != OVERWRITE);
+        updateWhenGatewayWSDLCheckBoxOverwrite.setEnabled(overwriteExistingBusinessServiceWithRadioButton.isSelected());
     }
 
     private void enableAndDisableComponents() {
@@ -405,8 +407,11 @@ public class ServiceUDDISettingsDialog extends JDialog {
             metricsEnabledCheckBox.setEnabled( enableMetrics );
         } else {
             //publish tab
+            publishProxiedWsdlRadioButton.setEnabled(false);
             enableDisablePublishGatewayWsdlControls(false);
+            publishGatewayEndpointAsRadioButton.setEnabled(false);
             enableDisablePublishEndpointControls(false);
+            overwriteExistingBusinessServiceWithRadioButton.setEnabled(false);
             enableDisablePublishOverwriteControls(false);
             dontPublishRadioButton.setEnabled(false);
 
