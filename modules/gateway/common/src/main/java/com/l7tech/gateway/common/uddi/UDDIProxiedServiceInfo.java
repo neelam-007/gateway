@@ -12,6 +12,7 @@ import org.hibernate.annotations.*;
 import java.util.Set;
 import java.util.HashSet;
 
+//todo UDDIProxiedServiceInfo contains both runtime and configuration data. Need to be refactored.
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  *

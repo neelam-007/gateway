@@ -76,8 +76,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 case OVERWRITE:
                     final PublishedService ps = serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
                     final UDDIServiceControl serviceControl = publishUDDIEvent.getServiceControl();
-                    if (serviceControl == null)
-                        throw new IllegalStateException("No UDDIServiceControl found in PublishUDDIEvent");
+                    if (serviceControl == null){
+                        try {
+                            final UDDIPublishStatus status = uddiPublishStatusManager.findByProxiedSerivceInfoOid(uddiProxiedServiceInfo.getOid());
+                            status.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
+                            uddiPublishStatusManager.update(status);
+                        } catch (ObjectModelException e) {
+                            logger.log(Level.WARNING, "Could not update status for UDDIProxiedServiceInfo id#(" + uddiProxiedServiceInfo.getOid()+")");
+                        }
+                        return null;
+                    }
 
                     if (!serviceControl.isHasBeenOverwritten()) {
                         task = new OverwriteServicePublishUDDITask(this, ps);
@@ -130,8 +138,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             UDDIPublishStatus uddiPublishStatus = null;
             try {
                 //only work with the most up to date values from the database
-                final UDDIProxiedServiceInfo uddiProxiedServiceInfo =
-                        factory.uddiProxiedServiceInfoManager.findByPrimaryKey(uddiProxiedServiceInfoOid);
+                UDDIProxiedServiceInfo uddiProxiedServiceInfo = factory.uddiProxiedServiceInfoManager.findByPrimaryKey(uddiProxiedServiceInfoOid);
                 if (uddiProxiedServiceInfo == null) return;
 
                 uddiPublishStatus =
@@ -162,7 +169,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 final PublishedService publishedService =
                         factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
 
-                final UDDIServiceControl serviceControl =
+                UDDIServiceControl serviceControl =
                         factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
                 if (serviceControl == null)
                     throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")");
@@ -216,16 +223,24 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISHED);
                 factory.uddiPublishStatusManager.update(uddiPublishStatus);
-                uddiProxiedServiceInfo.setPublishedHostname(publishedHostname);
-                factory.uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
-                if (uddiProxiedServiceInfo.isRemoveOtherBindings()) {
-                    if (!serviceControl.isHasHadEndpointRemoved()) {
-                        if (serviceControl.isUnderUddiControl()) {
-                            serviceControl.setUnderUddiControl(false);//if this is actually done a coding error happened
-                            logger.log(Level.WARNING, "Set UDDIServiceControl isUnderUDDIControl to be false");
+
+                //reread in case it was modified via UI during the time taken to publish
+                uddiProxiedServiceInfo = factory.uddiProxiedServiceInfoManager.findByPrimaryKey(uddiProxiedServiceInfoOid);
+
+                if(uddiProxiedServiceInfo != null){
+                    uddiProxiedServiceInfo.setPublishedHostname(publishedHostname);
+                    factory.uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
+                    if (uddiProxiedServiceInfo.isRemoveOtherBindings()) {
+                        //reread the UDDIServiceControl as it may have been updated via the UI during the time it takes to publish
+                        serviceControl = factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                        if (serviceControl != null && !serviceControl.isHasHadEndpointRemoved()) {
+                            if (serviceControl.isUnderUddiControl()) {
+                                serviceControl.setUnderUddiControl(false);//if this is actually done a coding error happened
+                                logger.log(Level.WARNING, "Set UDDIServiceControl isUnderUDDIControl to be false");
+                            }
+                            serviceControl.setHasHadEndpointRemoved(true);
+                            factory.uddiServiceControlManager.update(serviceControl);
                         }
-                        serviceControl.setHasHadEndpointRemoved(true);
-                        factory.uddiServiceControlManager.update(serviceControl);
                     }
                 }
             } catch (ObjectModelException e) {
@@ -260,7 +275,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
             UDDIPublishStatus uddiPublishStatus = null;
             try {
                 //Get the most up to date version of the UDDIProxiedServiceInfo - the queue can be stale - will cause loop with eventual hibernate errors
-                final UDDIProxiedServiceInfo uddiProxiedServiceInfo =
+                UDDIProxiedServiceInfo uddiProxiedServiceInfo =
                         factory.uddiProxiedServiceInfoManager.findByPublishedServiceOid(publishedService.getOid());
                 if (uddiProxiedServiceInfo == null) return;
 
@@ -305,7 +320,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     if (serviceControl == null) {
                         //this means that our service control was deleted, it contains the information we need
                         context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, "Our record of which UDDI BusinessService was overwriten is gone. Deleting UDDIProxiedServiceInfo");
-                        factory.uddiProxiedServiceInfoManager.delete(uddiProxiedServiceInfo);
+                        factory.uddiProxiedServiceInfoManager.delete(uddiProxiedServiceInfo.getOid());
                         return;
                     }
                     if (!serviceControl.isHasBeenOverwritten()) {
@@ -367,36 +382,41 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     ResourceUtils.closeQuietly( businessServicePublisher );
                 }
 
-                if (uddiProxiedServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY) {
-                    //now manage db entities
-                    Set<String> deleteSet = deletedAndNewServices.left;
-                    //update all child entities
-                    Set<UDDIProxiedService> removeSet = new HashSet<UDDIProxiedService>();
-                    for (String deleteServiceKey : deleteSet) {
-                        for (UDDIProxiedService proxiedService : allProxiedServices) {
-                            if (proxiedService.getUddiServiceKey().equals(deleteServiceKey)) {
-                                removeSet.add(proxiedService);
-                                logger.log(Level.FINE, "Deleting UDDIProxiedService for serviceKey: " + deleteServiceKey);
+                //reread in case it was modified via UI during the time taken to publish
+                uddiProxiedServiceInfo = factory.uddiProxiedServiceInfoManager.findByPublishedServiceOid(publishedService.getOid());
+
+                if(uddiProxiedServiceInfo != null){
+                    if (uddiProxiedServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY) {
+                        //now manage db entities
+                        Set<String> deleteSet = deletedAndNewServices.left;
+                        //update all child entities
+                        Set<UDDIProxiedService> removeSet = new HashSet<UDDIProxiedService>();
+                        for (String deleteServiceKey : deleteSet) {
+                            for (UDDIProxiedService proxiedService : allProxiedServices) {
+                                if (proxiedService.getUddiServiceKey().equals(deleteServiceKey)) {
+                                    removeSet.add(proxiedService);
+                                    logger.log(Level.FINE, "Deleting UDDIProxiedService for serviceKey: " + deleteServiceKey);
+                                }
                             }
+                        }
+
+                        uddiProxiedServiceInfo.getProxiedServices().removeAll(removeSet);
+
+                        //create required new UDDIProxiedServices
+                        Set<UDDIBusinessService> newlyCreatedServices = deletedAndNewServices.right;
+                        for (UDDIBusinessService bs : newlyCreatedServices) {
+                            final UDDIProxiedService proxiedService = new UDDIProxiedService(
+                                    bs.getServiceKey(), bs.getServiceName(), bs.getWsdlServiceName(), bs.getWsdlServiceNamespace());
+
+                            proxiedService.setUddiProxiedServiceInfo(uddiProxiedServiceInfo);
+                            uddiProxiedServiceInfo.getProxiedServices().add(proxiedService);
                         }
                     }
 
-                    uddiProxiedServiceInfo.getProxiedServices().removeAll(removeSet);
-
-                    //create required new UDDIProxiedServices
-                    Set<UDDIBusinessService> newlyCreatedServices = deletedAndNewServices.right;
-                    for (UDDIBusinessService bs : newlyCreatedServices) {
-                        final UDDIProxiedService proxiedService = new UDDIProxiedService(
-                                bs.getServiceKey(), bs.getServiceName(), bs.getWsdlServiceName(), bs.getWsdlServiceNamespace());
-                        
-                        proxiedService.setUddiProxiedServiceInfo(uddiProxiedServiceInfo);
-                        uddiProxiedServiceInfo.getProxiedServices().add(proxiedService);
-                    }
+                    uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISHED);
+                    factory.uddiPublishStatusManager.update(uddiPublishStatus);
+                    factory.uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
                 }
-
-                uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISHED);
-                factory.uddiPublishStatusManager.update(uddiPublishStatus);
-                factory.uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
             } catch (ObjectModelException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, "Database error when publishing proxy services.");
                 throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
@@ -534,7 +554,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 final PublishedService publishedService =
                         factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
 
-                final UDDIServiceControl serviceControl =
+                UDDIServiceControl serviceControl =
                         factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
                 if (serviceControl == null)//UDDIServiceControl delete logic does not allow this
                     throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")");
@@ -579,9 +599,14 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISHED);
                 factory.uddiPublishStatusManager.update(uddiPublishStatus);
-                serviceControl.setHasBeenOverwritten(true);
-                serviceControl.setUnderUddiControl(false);//can no longer be under UDDI control
-                factory.uddiServiceControlManager.update(serviceControl);
+                //reread the UDDIServiceControl as it may have been updated via the UI in the time it took to publish
+                serviceControl =
+                        factory.uddiServiceControlManager.findByPublishedServiceOid(uddiProxiedServiceInfo.getPublishedServiceOid());
+                if(serviceControl != null){
+                    serviceControl.setHasBeenOverwritten(true);
+                    serviceControl.setUnderUddiControl(false);//can no longer be under UDDI control
+                    factory.uddiServiceControlManager.update(serviceControl);
+                }
             } catch (ObjectModelException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, "Database error when publishing proxy services.");
                 throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
@@ -678,7 +703,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     ResourceUtils.closeQuietly( publisher );
                 }
 
-                factory.uddiProxiedServiceInfoManager.delete(uddiProxiedServiceInfo);
+                factory.uddiProxiedServiceInfoManager.delete(uddiProxiedServiceInfo.getOid());
             } catch (ObjectModelException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_FAILED, e, "Database error when deleting proxy endpoint.");
                 throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback
@@ -744,21 +769,21 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     return;
                 }
 
-                final boolean serviceWasOverwritten;
+//                final boolean serviceWasOverwritten;
                 if (uddiProxiedServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE) {
                     if (serviceControl == null) {
                         //this means that our service control was deleted, it contains the information we need
                         context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, "Our record of which UDDI BusinessService was overwriten is gone. Deleting UDDIProxiedServiceInfo");
-                        factory.uddiProxiedServiceInfoManager.delete(uddiProxiedServiceInfo);
+                        factory.uddiProxiedServiceInfoManager.delete(uddiProxiedServiceInfo.getOid());
                         return;
                     }
                     if (!serviceControl.isHasBeenOverwritten()) {
                         throw new IllegalStateException("If we have an overwritten service, then we cannot update it unless it has been overwritten in UDDI");
                     }
-                    serviceWasOverwritten = true;
+//                    serviceWasOverwritten = true;
                     logger.log(Level.INFO, "Deleting overwritten BusinessService with serviceKey #(" + serviceControl.getUddiServiceKey() + ") in UDDI Registry id #(" + uddiRegistry.getOid() + ")");
                 } else {
-                    serviceWasOverwritten = false;
+//                    serviceWasOverwritten = false;
                     logger.log(Level.INFO,
                             "Deleting published Gateway WSDL from Published Service id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")s in UDDI Registry id #(" + uddiRegistry.getOid() + ")");
                 }
@@ -824,10 +849,10 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 factory.uddiProxiedServiceInfoManager.delete(uddiProxiedServiceInfo.getOid());//cascade delete
-                if (serviceWasOverwritten) {
-                    //delete the service control
-                    factory.uddiServiceControlManager.delete(serviceControl);
-                }
+//                if (serviceWasOverwritten) {
+//                    //delete the service control
+//                    factory.uddiServiceControlManager.delete(serviceControl);
+//                }
             } catch (ObjectModelException e) {
                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, "Database error when deleting proxy services.");
                 throw new UDDITaskException(ExceptionUtils.getMessage(e), e);//make db changes rollback

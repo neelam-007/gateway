@@ -223,8 +223,8 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
         Utilities.setEscKeyStrokeDisposes(this);
 
-        pack();
         modelToView();
+        pack();        
         enableAndDisableComponents();
     }
 

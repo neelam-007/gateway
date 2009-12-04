@@ -9,7 +9,7 @@ import javax.persistence.Version;
 import javax.persistence.Column;
 
 import org.hibernate.annotations.Proxy;
-
+//todo this entity holds both runtime and configuration data. Needs to be split to avoid hibernate stale object exceptions
 /**
  * Represents the UDDI location from which a published service was created.
  */

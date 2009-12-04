@@ -318,6 +318,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         }else{
             UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());
             if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
+
             final String wsdlRefreshRequiredMessage = isWsdlRefreshRequired(original, uddiServiceControl);
             uddiServiceControl.throwIfFinalPropertyModified(original);
             //make sure the wsdl under uddi control is not being set when it is not allowed
@@ -325,6 +326,13 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                 throw new UpdateException("Cannot save UDDIServiceControl. Incorrect state. " +
                         "WSDL cannot be under UDDI control when the owning business service in UDDI has had its bindingTemplates removed");
             }
+
+            final UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(original.getPublishedServiceOid());
+            //this exception is for admin api users only, UI stops this from happening
+            if(serviceInfo != null && uddiServiceControl.isUnderUddiControl() && serviceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY){
+                throw new UpdateException("Cannot save UDDIServiceControl with isUnderUDDIControl = true, when either a bindingTemplate has been added to the original or if it has been overwritten");
+            }
+
             uddiServiceControlManager.update( uddiServiceControl );
             if(wsdlRefreshRequiredMessage != null){
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {

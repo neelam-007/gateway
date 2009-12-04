@@ -364,7 +364,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             }
         } catch (DispositionReportFaultMessage drfm) {
             final String msg = getExceptionMessage("Exception getting BusinessService with key: " + owningServiceKey+" " +
-                    "to check if any bindingTemplate elements remain", drfm);
+                    "to check if any bindingTemplate elements remain.", drfm);
             logger.log(Level.WARNING, msg);
             return;
         }
@@ -2476,7 +2476,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
     private String getExceptionMessage(String prefix, DispositionReportFaultMessage drfm){
         final String errorInfo = getFirstFaultMessage(drfm);
-        return prefix + ((errorInfo != null)? errorInfo: drfm.getMessage());
+        return prefix + " " + ((errorInfo != null) ? errorInfo : drfm.getMessage());
     }
 
     /**

@@ -3,6 +3,7 @@ package com.l7tech.server.uddi;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
@@ -593,7 +594,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                         + serviceKey + " from UDDIRegistry #(" + uddiRegistry.getOid() + ")");
                             }
 
-                            for(final UDDIServiceControl serviceControl: allApplicableServiceControls) {
+                            for(UDDIServiceControl serviceControl: allApplicableServiceControls) {
                                 if ( (!serviceControl.isUnderUddiControl() || !serviceControl.isMonitoringEnabled()) && !forceUpdate ) continue;
 
                                 final PublishedService ps =
@@ -644,7 +645,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     factory.serviceManager.update(ps);
                                     logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value");
                                     //remove the UDDIServiceControl object as it no longer applies
-                                    factory.uddiServiceControlManager.delete(serviceControl);
+                                    factory.uddiServiceControlManager.delete(serviceControl.getOid());
                                     continue;
                                 }
 
@@ -652,6 +653,12 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 //we do this regardless of configuration. UDDI is the authorative source of info for the endPoint
                                 boolean serviceUpdated = false;
                                 boolean serviceControlUpdated = false;
+                                //update serviceControl in case it has been updated
+                                serviceControl = factory.uddiServiceControlManager.findByPublishedServiceOid(serviceControl.getPublishedServiceOid());
+                                if(serviceControl == null){
+                                    continue;
+                                }
+
                                 final String endPoint = getUpdatedEndPoint(bindingImplInfo, serviceControl, context, uddiRegistry);
                                 if ( endPoint != null && (serviceControl.getAccessPointUrl()==null || !serviceControl.getAccessPointUrl().equals( endPoint ))) {
                                     //now we can update our records
@@ -672,6 +679,10 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 if(!bindingImplInfo.getImplementingWsdlPort().equals(serviceControl.getWsdlPortName())){
                                     serviceControlUpdated = true;
                                     serviceControl.setWsdlPortName(bindingImplInfo.getImplementingWsdlPort());
+                                }
+
+                                if (serviceControlUpdated) {
+                                    factory.uddiServiceControlManager.update(serviceControl);
                                 }
 
                                 //if we didn't accept the endpoint above, we can still update our wsdl, which makes all available
@@ -753,10 +764,6 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 UDDIServiceControlMonitorRuntime monitorRuntimeToUpdate = factory.uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControl.getOid());
                                 monitorRuntimeToUpdate.setLastUDDIModifiedTimeStamp(uddiModifiedTime);
                                 factory.uddiServiceControlMonitorRuntimeManager.update(monitorRuntimeToUpdate);
-
-                                if (serviceControlUpdated) {
-                                    factory.uddiServiceControlManager.update(serviceControl);
-                                }
                             }
                         } finally {
                             ResourceUtils.closeQuietly( uddiClient );
@@ -798,17 +805,37 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 }
             }
 
-            if(endPointValid && !serviceControl.getAccessPointUrl().equals(endPoint)){
+            if(!endPointValid){
+                logger.log(Level.INFO, "Found invalid URL from UDDI. Ignoring");
+                return null;
+            }
+            
+            if(!serviceControl.getAccessPointUrl().equals(endPoint)){
                 //check if it's a gateway endpoint
                 if(factory.uddiHelper.isGatewayUrl(endPoint)){
                     final String msg = "endPoint found which would route back to the gateway: " + endPoint+" for serviceKey: " + serviceControl.getUddiServiceKey();
                     context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, msg);
-                    throw new UDDITaskException("Problem with endPoint found for serviceKey: " + serviceControl.getUddiServiceKey()+
+                    //take out of UDDI Control
+                    UDDIHandledTaskException handledTaskException = new UDDIHandledTaskException(
+                            "Problem with endPoint found for serviceKey: " + serviceControl.getUddiServiceKey()+
                             " for a bindingTemplate representing the wsdl:port '"+serviceControl.getWsdlPortName()+"'" +
-                            " from UDDIRegistry #(" + uddiRegistry.getOid()+"): " + msg);
+                            " from UDDIRegistry #(" + uddiRegistry.getOid()+"): " + msg) {
+
+                        @Override
+                        public void handleTaskError() {
+                            try {
+                                context.logAndAudit(SystemMessages.UDDI_ORIGINAL_SERVICE_INVALIDATED, serviceControl.getUddiServiceKey(), Long.toString(serviceControl.getUddiRegistryOid()));
+                                logger.log(Level.WARNING, "Deleting UDDIServiceControl as the original service in UDDI can no longer be monitored");
+                                factory.uddiServiceControlManager.delete(serviceControl.getOid());
+                            } catch (DeleteException e) {
+                                e.printStackTrace();
+                            } catch (FindException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    };
+                    throw handledTaskException;
                 }
-            }else if(!endPointValid){
-                logger.log(Level.INFO, "Found invalid URL from UDDI. Ignoring");
             }
 
             return endPoint;

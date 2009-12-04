@@ -119,7 +119,7 @@ public class SystemMessages extends Messages {
     public static final M UDDI_METRICS_CLEANUP_FAILED           = m(2277, Level.WARNING, "Error removing metrics ''{0}''.");
     public static final M UDDI_PUBLISH_UNEXPECTED_ERROR         = m(2278, Level.WARNING, "Unexpected error while publishing ''{0}''.");
     public static final M UDDI_PUBLISH_ENDPOINT_ROLLBACK_FAILED = m(2279, Level.WARNING, "Error rolling back publishing endpoint ''{0}'' ''{1}''.");
-    public static final M UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING  = m(2280, Level.WARNING, "Could not delete binding templates for from Service with serviceKey ''{0}''.");
+    public static final M UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING  = m(2280, Level.WARNING, "Could not delete binding templates from Service with serviceKey ''{0}''.");
     public static final M UDDI_PUBLISH_REMOVE_ENDPOINT_FAILED   = m(2281, Level.WARNING, "Error removing endpoint ''{0}''.");
     public static final M UDDI_PUBLISH_SERVICE_FAILED           = m(2282, Level.WARNING, "Error publishing service ''{0}''.");
     public static final M UDDI_PUBLISH_SERVICE_ROLLBACK_FAILED  = m(2283, Level.WARNING, "Error rolling back publishing service ''{0}''.");
@@ -135,6 +135,7 @@ public class SystemMessages extends Messages {
     public static final M UDDI_NOTIFICATION_ENDPOINT_NOT_FOUND  = m(2293, Level.WARNING, "Error finding endpoint for business service ''{0}'', wsdl:port ''{1}'', wsdl:binding ''{2}'' {3} for UDDI registry ''{4}''.");
     public static final M UDDI_NOTIFICATION_ENDPOINT_UPDATED    = m(2294, Level.INFO, "Updated endpoint from UDDI ''{0}'' for business service ''{1}'', wsdl:port ''{2}'' for UDDI registry ''{3}''.");
     public static final M UDDI_NOTIFICATION_TRIGGERING_FAILED   = m(2295, Level.WARNING, "Error firing monitoring update events for UDDI Registry with id#({0}).");
+    public static final M UDDI_ORIGINAL_SERVICE_INVALIDATED     = m(2296, Level.WARNING, "Original Business Service in UDDI can no longer be monitored. serviceKey: {0} UDDI Registry with id#({1}).");
 
     // MAX -                                      m(2999
 }

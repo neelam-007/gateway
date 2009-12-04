@@ -108,6 +108,7 @@ public class ServicePropertiesDialog extends JDialog {
     private String ssgURL;
     private final boolean canUpdate;
     private UDDIServiceControl uddiServiceControl;
+    private UDDIProxiedServiceInfo uddiProxiedServiceInfo;
 
     public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean hasUpdatePermission) {
         super(owner, true);
@@ -466,7 +467,7 @@ public class ServicePropertiesDialog extends JDialog {
         wsdlUnderUDDIControlCheckBox.addActionListener( enableDisableChangeListener );
         monitoringEnabledCheckBox.addActionListener( enableDisableChangeListener );
 
-        Utilities.setEscAction(this, new AbstractAction() {//todo why is this not working?
+        Utilities.setEscAction(this, new AbstractAction() {//todo why is this not consistently working?
             @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
@@ -482,6 +483,7 @@ public class ServicePropertiesDialog extends JDialog {
 
         try {
             uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(subject.getOid());
+            uddiProxiedServiceInfo = Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(subject.getOid());
         } catch (FindException e) {
             uddiServiceControl = null;
         }
@@ -515,9 +517,12 @@ public class ServicePropertiesDialog extends JDialog {
             clearButton.setEnabled(canUpdate);
             selectButton.setEnabled(false);            
 
-            if(uddiServiceControl.isHasBeenOverwritten() || uddiServiceControl.isHasHadEndpointRemoved()){
+            final boolean serviceCannotBeUnderUDDIControl = uddiProxiedServiceInfo != null &&
+                    uddiProxiedServiceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY;
+
+            if (serviceCannotBeUnderUDDIControl || uddiServiceControl.isHasBeenOverwritten() || uddiServiceControl.isHasHadEndpointRemoved()) {
                 wsdlUnderUDDIControlCheckBox.setEnabled(false);
-            } else{
+            } else {
                 wsdlUnderUDDIControlCheckBox.setEnabled(canUpdate);
             }
 
@@ -537,7 +542,7 @@ public class ServicePropertiesDialog extends JDialog {
     }
 
     /**
-     * Model to View - for UDDI dialog initially
+     * Model to View - for UDDI tab initially
      */
     private void modelToView(){
 
