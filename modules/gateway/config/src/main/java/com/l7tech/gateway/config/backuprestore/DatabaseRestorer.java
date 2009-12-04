@@ -10,7 +10,6 @@ import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.ClusterPassphraseManager;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 
 import java.io.*;
 import java.sql.*;
@@ -418,7 +417,7 @@ class DatabaseRestorer {
                         if (isMigrate && doesAffectsTables(tmp, omitTablesList)) {
                             logger.finest("SQL statement: '" + tmp + "' was not executed.");
                         } else {
-                            stmt.executeUpdate(tmp.substring(0, tmp.length() - 1));
+                            stmt.executeUpdate(fixUnescapedBackslash(tmp.substring(0, tmp.length() - 1)));
                             //if its a migrate, we need to know if we modified cluster properties table
                             if(isMigrate && !didUpdateClusterProperties){
                                 didUpdateClusterProperties = isClusterPropertyStatement(tmp);
@@ -460,6 +459,33 @@ class DatabaseRestorer {
         }
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Done", verbose, printStream);
         return didUpdateClusterProperties;
+    }
+
+    /** bug 8183:
+     * Pre 5.2 DBDumpUtil escaped newlines (0x0a and 0x0d) and simple and double quotes, but not literal backslash characters;
+     * in 5.2 and later backslashes are also escaped.
+     * Backslashes not escaping the above known characters must be assumed to be literals, therefore need to be escaped before being passed to mysql.
+     */
+    static String fixUnescapedBackslash(String s) {
+        if (s == null || s.length() < 1 ) return s;
+        
+        if (s.length() == 1) return "\\".equals(s) ? "\\\\" : s;
+
+        StringBuilder result = new StringBuilder();
+        boolean escape = false;
+        char prev, current;
+        for(int i=0; i<s.length(); i++) {
+            current = s.charAt(i);
+            if( escape && current != 'n' && current != 'r' && current != '\'' && current != '\"' && current != '\\') {
+                result.append('\\');
+            }
+            result.append(current);
+            prev = current;
+            escape = ! escape && '\\' == prev;
+        }
+        if (escape)
+            result.append("\\");
+        return result.toString();
     }
 
     private boolean isClusterPropertyStatement(final String sqlStatement) {

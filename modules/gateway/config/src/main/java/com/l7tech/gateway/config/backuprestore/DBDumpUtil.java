@@ -13,8 +13,6 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
 import java.util.List;
-import java.net.NetworkInterface;
-import java.net.InetAddress;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -72,6 +70,7 @@ class DBDumpUtil {
 
         Functions.BinaryThrows<Boolean, String, ResultSet, Exception> checkForClusterPropTable =
                 new Functions.BinaryThrows<Boolean, String, ResultSet, Exception>(){
+            @Override
             public Boolean call(final String tableName, final ResultSet resultSet) throws Exception {
                 if (tableName.equals("cluster_properties")) { // dont include license in image
                     final String tmp = resultSet.getString(3);
