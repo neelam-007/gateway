@@ -9,9 +9,7 @@ import org.apache.commons.lang.StringUtils;
 import java.io.IOException;
 import java.net.InterfaceAddress;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -33,10 +31,13 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private static final String NETBEANNAME = "Network Interface Configuration";
 
     private static final String HOSTNAME_PROMPT = "Enter the fully qualified hostname for this SSG: ";
+    private static final String DEFAULT_GATEWAY_PROMPT = "Enter IP Address of the default gateway: ";
+    private static final String DEFAULT_GATEWAY_INTERFACE_PROMPT = "Select the Interface you wish to use as the gateway device: ";
     private static final String MISSING_IP_ADDRESS_MSG = "Missing IP Address";
     private static final String MISSING_NETMASK_MSG = "Missing Netmask.";
     private static final String MISSING_GATEWAY_MSG = "Missing Gateway.";
     private static final String CONFIGURE_MORE_INTERFACES_PROMPT = "Would you like to configure another interface?";
+    private static final String CONFIGURE_GATEWAY_PROMPT = "Would you like to configure a default gateway and interface?";
     private static final String NEW_INTERFACE_NAME_PROMPT = "Please enter the name of the new interface (ex: eth5): ";
     private static final String CONFIGURE_NAMESERVERS_PROMPT = "Would you like to configure the nameservers for this interface?";
     private static final String INVALID_SOMETHING = "\"{0}\" is not a valid {1}";
@@ -61,6 +62,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         try {
             doNetConfigPrompts();
+            doDefaultGatewayPrompt();
             doHostnamePrompt();
             storeInput();
 
@@ -78,6 +80,59 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (doRepeatConfiguration()) {
             printText(getEolChar());
             doNetConfigPrompts();
+        }
+    }
+
+    private void doDefaultGatewayPrompt() throws IOException, WizardNavigationException {
+        boolean shouldDoIt = getConfirmationFromUser(CONFIGURE_GATEWAY_PROMPT, "no");
+
+        if (shouldDoIt) {
+            boolean isValid;
+            List<String> errors;
+
+            String gatewayIP;
+            do {
+                gatewayIP = getData(
+                        new String[] {DEFAULT_GATEWAY_PROMPT},
+                        "",
+                        (String[]) null,
+                        null
+                );
+                errors = validateIpAddress(gatewayIP);
+                isValid = errors.isEmpty();
+                if (!isValid) printText(errors);
+            } while (!isValid);
+
+            //get the gateway device
+            List<NetworkingConfigurationBean.NetworkConfig> allNetworkConfigs = getInterfaces();
+
+            List<String> promptList = new ArrayList<String>();
+
+            int x = 1;
+            for (NetworkingConfigurationBean.NetworkConfig networkConfig : allNetworkConfigs) {
+                String indexStr = String.valueOf(x++);
+                String prompt = indexStr + ") " + networkConfig.describe();
+                promptList.add(prompt + getEolChar());
+            }
+
+            promptList.add("Please make a selection [1] : ");
+
+            printText(DEFAULT_GATEWAY_INTERFACE_PROMPT + getEolChar());
+
+            String[] allowedEntries = new String[x-1];
+            int allowedSize = x-1;
+            for (int index=0; index < allowedSize; ++index) {
+                allowedEntries[index] = String.valueOf(index+1);
+            }
+
+            String whichChoice = getData(promptList.toArray(new String[promptList.size()]), "1", allowedEntries,null);
+
+            int choiceNum = Integer.parseInt(whichChoice);
+
+            String theDevice = allNetworkConfigs.get(choiceNum -1).getInterfaceName();
+
+            netBean.setDefaultGatewayIp(gatewayIP);
+            netBean.setGatewayDevice(theDevice);
         }
     }
 
@@ -134,14 +189,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private List<String> validateGateway(String gateway) {
         List<String> errors = new ArrayList<String>();
 
-        String message = null;
-        if (StringUtils.isEmpty(gateway))
-            message = MISSING_GATEWAY_MSG;
-        else if (!isValidIpAddress(gateway))
-            message = MessageFormat.format(INVALID_SOMETHING, gateway , "gateway address");
-
-        if (message != null)
-            errors.add("*** " + message + " ***" + getEolChar());
+        if (!StringUtils.isEmpty(gateway) && (!isValidIpAddress(gateway)) )
+            errors.add("*** " + MessageFormat.format(INVALID_SOMETHING, gateway , "gateway address") + " ***" + getEolChar());
 
         return errors;
     }
@@ -306,17 +355,18 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private String getGateway(NetworkingConfigurationBean.NetworkConfig whichConfig) throws IOException, WizardNavigationException {
 
         String interfaceName = whichConfig.getInterfaceName();
-        String gateway = whichConfig.getGateway();
+        String gateway;
+//        String gateway = whichConfig.getGateway();
 
-        String prompt = "Enter the default gateway for interface \"" + interfaceName + "\"";
-        if (StringUtils.isNotEmpty(gateway)) prompt += " [" + gateway + "] ";
+        String prompt = "Enter the default gateway for interface \"" + interfaceName + "\" (optional)";
+//        if (StringUtils.isNotEmpty(gateway)) prompt += " [" + gateway + "] ";
         prompt += ": ";
 
         boolean isValid;
         List<String> errors;
 
         do {
-            gateway = getData(new String[] {prompt}, gateway, (String[]) null,null);
+            gateway = getData(new String[] {prompt}, "", (String[]) null,null);
             errors = validateGateway(gateway);
 
             isValid = errors.isEmpty();

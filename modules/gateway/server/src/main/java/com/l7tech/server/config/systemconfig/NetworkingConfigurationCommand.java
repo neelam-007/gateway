@@ -10,6 +10,8 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * User: megery
  * Date: May 23, 2006
@@ -63,6 +65,13 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
         }
 
 
+        success = printHostname(configDir);
+        success = printDefaultGatewayInfo(configDir);
+        return success;
+    }
+
+    private boolean printHostname(File configDir) {
+        boolean success = true;
         PrintWriter hostnameWriter = null;
         File hostnameFile = new File(configDir, "hostname");
         try {
@@ -83,4 +92,38 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
         }
         return success;
     }
+
+    private boolean printDefaultGatewayInfo(File configDir) {
+        boolean success = true;
+        String gateway = netBean.getDefaultGatewayIp();
+        String gatewaydev = netBean.getGatewayDevice();
+
+        if (StringUtils.isNotEmpty(gateway) || StringUtils.isNotEmpty(gatewaydev)) {
+            PrintWriter gatewayWriter = null;
+
+            File gatewayFile = new File(configDir, "default_gateway");
+            try {
+                if (gatewayFile.createNewFile())
+                    logger.info("created file \"" + gatewayFile.getAbsolutePath() + "\"");
+                else
+                    logger.info("editing file \"" + gatewayFile.getAbsolutePath() + "\"");
+
+                gatewayWriter = new PrintWriter(new FileOutputStream(gatewayFile));
+                if (StringUtils.isNotEmpty(gateway))
+                    gatewayWriter.println("gateway=" + gateway);
+
+                if (StringUtils.isNotEmpty(gatewaydev))
+                    gatewayWriter.println("gatewaydev=" + gatewaydev);
+
+            } catch (IOException e) {
+                logger.severe("Error while creating file " + gatewayFile.getAbsoluteFile() + "\"" + e.getMessage() + "\"");
+                success = false;
+            } finally{
+                if (gatewayWriter != null)
+                    gatewayWriter.close();
+            }
+        }
+        return success;
+    }
+
 }

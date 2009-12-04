@@ -18,6 +18,7 @@ my @dhcpInterfaces;
 my @staticNameservers;
 
 my %hostnameInfo = ();
+my %gatewayInfo = ();
 my $foundNtp = undef;
 my @ntpServerToUse;
 my $timezone = undef;
@@ -30,7 +31,8 @@ my $inputFh = new FileHandle;
 my %inputFiles = (
     "HOSTNAMEFILE" => "/opt/SecureSpan/Appliance/config/configfiles/hostname",
     "NTPFILE" => "/opt/SecureSpan/Appliance/config/configfiles/ntpconfig",
-    "TIMEZONEFILE" => "/opt/SecureSpan/Appliance/config/configfiles/timezone"
+    "TIMEZONEFILE" => "/opt/SecureSpan/Appliance/config/configfiles/timezone",
+    "DEFAULTGATEWAYFILE" => "/opt/SecureSpan/Appliance/config/configfiles/default_gateway"
 );
 
 my $outputFh = new FileHandle;
@@ -86,6 +88,30 @@ if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
 	$inputFh->close();
 } else {
 	$logFile->print("$timestamp: $inputFiles{'HOSTNAMEFILE'} not found. The hostname will not be changed.\n");
+}
+
+#default gateway
+if ($inputFh->open("<$inputFiles{'DEFAULTGATEWAYFILE'}")) {
+	my $fileContent = do { local( $/ ) ; <$inputFh> } ;
+    %gatewayInfo = $fileContent =~ /^(\w+)=(.+)$/mg ;
+    push (@filesToDelete, $inputFiles{'DEFAULTGATEWAYFILE'});
+	my $gatewayIp= $gatewayInfo{'gateway'};
+	if ($gatewayIp ne "") {
+	   $logFile->print("$timestamp: Gateway IP found: $gatewayIp\n");
+	} else {
+	   $logFile->print("$timestamp: no gateway IP found. Gateway will not be set\n");
+	   %gatewayInfo = undef;
+	}
+	my $gatewayDevice= $gatewayInfo{'gatewaydev'};
+	if ($gatewayIp ne "") {
+	   $logFile->print("$timestamp: gateway device found: $gatewayDevice\n");
+	} else {
+	   $logFile->print("$timestamp: no gateway device found. Gateway device will not be set\n");
+	   %gatewayInfo = undef;
+	}
+	$inputFh->close();
+} else {
+	$logFile->print("$timestamp: $inputFiles{'DEFAULTGATEWAYFILE'} not found. The gateway will not be changed.\n");
 }
 
 #timezone
@@ -150,7 +176,7 @@ if (! @dhcpInterfaces) {
 	$logFile->print("$timestamp: DHCP interfaces are being configured, skipping $outputFiles{'RESOLVCONF'} configuration\n");
 }
 
-#enable networking and setup hostname
+#enable networking and setup hostname, default network gateway, and gateway device
 if (defined($hostnameInfo{'hostname'}) && $hostnameInfo{'hostname'} ne "") {
 	if ($outputFh->open(">$outputFiles{'NETFILE'}")) {
        my ($hostname, $domain) = ($hostnameInfo{'hostname'}, $hostnameInfo{'domain'});
@@ -160,13 +186,20 @@ if (defined($hostnameInfo{'hostname'}) && $hostnameInfo{'hostname'} ne "") {
 
 	   $outputFh->print("NETWORKING=yes\n");
 	   $outputFh->print("HOSTNAME=$hostname\n");
+
+	   my ($gateway, $gatewaydev) = ($gatewayInfo{'gateway'}, $gatewayInfo{'gatewaydev'});
+       $outputFh->print("GATEWAY=$gateway\n") if (defined($gateway) && $gateway ne "");
+       $outputFh->print("GATEWAYDEV=$gatewaydev\n") if (defined($gatewaydev) && $gatewaydev ne "");
+
 	   $outputFh->close();
 
 	   system("hostname $hostnameInfo{'hostname'}");
 
 	   $logFile->print("$timestamp: Wrote $outputFiles{'NETFILE'} with:\n");
 	   $logFile->print("\tNETWORKING=yes\n");
-	   $logFile->print("\tHOSTNAME=$hostname\n");
+	   $logFile->print("\tHOSTNAME=$hostname\n") if (defined($hostname));
+	   $logFile->print("\tGATEWAY=$gateway\n") if (defined($gateway));
+	   $logFile->print("\tGATEWAYDEV=$gatewaydev\n") if (defined($gatewaydev));
 
        for my $whichInterface(@dhcpInterfaces){
             if ($outputFh->open(">>/etc/sysconfig/network-scripts/ifcfg-$whichInterface")) {

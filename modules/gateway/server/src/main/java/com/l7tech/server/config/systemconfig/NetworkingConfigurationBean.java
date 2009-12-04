@@ -27,6 +27,8 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
     private String hostname;
     private String domain = "";
+    private String defaultGatewayIp;
+    private String gatewayDevice;
 
     private List<NetworkConfig> networkingConfigs;
 
@@ -62,6 +64,12 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 }
                 explanations.add("");
             }
+        }
+        if (StringUtils.isNotEmpty(getDefaultGatewayIp())) {
+            explanations.add("Set Default Gateway IP = " + getDefaultGatewayIp());
+        }
+        if (StringUtils.isNotBlank(getGatewayDevice())) {
+            explanations.add("Set Gateway Device = " + getGatewayDevice());
         }
     }
 
@@ -99,6 +107,22 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         return domain;
     }
 
+    public String getDefaultGatewayIp() {
+        return defaultGatewayIp;
+    }
+
+    public void setDefaultGatewayIp(String defaultGatewayIp) {
+        this.defaultGatewayIp = defaultGatewayIp;
+    }
+
+    public String getGatewayDevice() {
+        return gatewayDevice;
+    }
+
+    public void setGatewayDevice(String gatewayDevice) {
+        this.gatewayDevice = gatewayDevice;
+    }
+    
     public static class NetworkConfig {
         private String interfaceName;
         private String bootProto;
@@ -189,7 +213,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
             if (STATIC_BOOT_PROTO.equals(bootProto)) {
                 sb.append("--ip=").append(getIpAddresses().get(0)).append(eol);
                 sb.append("--netmask=").append(netMask).append(eol);
-                sb.append("--gateway=").append(gateway).append(eol);
+                if (!"".equals(gateway) && null != gateway) sb.append("--gateway=").append(gateway).append(eol);
                 if (nameservers != null) {
                     for (String ns : nameservers) {
                         sb.append("--nameserver=").append(ns).append(eol);
