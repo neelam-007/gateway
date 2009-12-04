@@ -98,7 +98,7 @@ public interface UDDIRegistryAdmin {
      * @throws com.l7tech.objectmodel.SaveException if the UDDIProxiedService cannot be saved
      * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.UDDIRegistryNotEnabledException if the registry is not enabled
      */
-    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.SAVE_OR_UPDATE)//todo why doesn't save only work?
+    @Secured(types = EntityType.UDDI_PROXIED_SERVICE_INFO, stereotype = MethodStereotype.SAVE_OR_UPDATE)//todo why doesn't save only work?
     void publishGatewayWsdl(long publishedServiceOid, long uddiRegistryOid, String uddiBusinessKey, String uddiBusinessName,
                             boolean updateWhenGatewayWsdlChanges)
             throws FindException, PublishProxiedServiceException, VersionException, UpdateException, SaveException, UDDIRegistryNotEnabledException;
@@ -120,7 +120,7 @@ public interface UDDIRegistryAdmin {
      * @param publishedServiceOid long oid of the published service
      * @param removeOthers boolean if true, then all other bindingTemplates will be removed from the BusinessService
      */
-    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
+    @Secured(types = EntityType.UDDI_PROXIED_SERVICE_INFO, stereotype = MethodStereotype.SAVE_OR_UPDATE)
     void publishGatewayEndpoint(long publishedServiceOid, boolean removeOthers) throws FindException, SaveException, UDDIRegistryNotEnabledException;
 
     /**
@@ -137,7 +137,7 @@ public interface UDDIRegistryAdmin {
      * @throws UpdateException
      * @throws VersionException
      */
-    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
+    @Secured(types = EntityType.UDDI_PROXIED_SERVICE_INFO, stereotype = MethodStereotype.SAVE_OR_UPDATE)
     void updatePublishedGatewayWsdl(long uddiProxiedServiceInfoOid)
             throws FindException, UDDIRegistryNotEnabledException, PublishProxiedServiceException, UpdateException, VersionException;
 
@@ -154,7 +154,7 @@ public interface UDDIRegistryAdmin {
      * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.UDDIRegistryNotEnabledException if the registry is not enabled
      * @throws com.l7tech.objectmodel.DeleteException
      */
-    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.DELETE_ENTITY)
+    @Secured(types = EntityType.UDDI_PROXIED_SERVICE_INFO, stereotype = MethodStereotype.DELETE_ENTITY)
     void deleteGatewayWsdlFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
             throws FindException, UDDIRegistryNotEnabledException, UpdateException, DeleteException;
 
@@ -163,7 +163,7 @@ public interface UDDIRegistryAdmin {
      *
      * @param uddiProxiedServiceInfo UDDIProxiedServiceInfo which contains the information on the bindingTemplate
      */
-    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.DELETE_ENTITY)
+    @Secured(types = EntityType.UDDI_PROXIED_SERVICE_INFO, stereotype = MethodStereotype.DELETE_ENTITY)
     void deleteGatewayEndpointFromUDDI(final UDDIProxiedServiceInfo uddiProxiedServiceInfo) throws FindException, UDDIRegistryNotEnabledException, UpdateException, DeleteException;
 
     /**
@@ -174,7 +174,7 @@ public interface UDDIRegistryAdmin {
      * @throws com.l7tech.objectmodel.FindException any problems finding the entity
      * @throws com.l7tech.objectmodel.UpdateException any problems updating the database
      */
-    @Secured(types = {EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
+    @Secured(types = EntityType.UDDI_PROXIED_SERVICE_INFO, stereotype = MethodStereotype.SAVE_OR_UPDATE)
     void updateProxiedServiceOnly(final UDDIProxiedServiceInfo uddiProxiedServiceInfo)
             throws UpdateException, FindException;
 
@@ -183,24 +183,25 @@ public interface UDDIRegistryAdmin {
      *
      * @param publishedServiceOid the service to get the UDDIProxiedService for
      * @return UDDIProxiedService or null if the service does not have one
-     * @throws com.l7tech.objectmodel.FindException Any problem finding the proxied service
+     * @throws com.l7tech.objectmodel.FindException
+     *          Any problem finding the proxied service
      */
-    @Transactional(readOnly=true)
-    @Secured(types={EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype= MethodStereotype.FIND_ENTITY)
+    @Transactional(readOnly = true)
+    @Secured(types = EntityType.UDDI_PROXIED_SERVICE_INFO, stereotype = MethodStereotype.FIND_ENTITY)
     UDDIProxiedServiceInfo findProxiedServiceInfoForPublishedService(long publishedServiceOid) throws FindException;
 
     /**
      * Get the UDDIPublishStatus for the UDDIProxiedServiceInfo. Allows the UI to display
      * the most current state of the UDDI publish / delete interaction to the user.
-     *
+     * <p/>
      * This entity cannot be saved back by the user. There are no admin methods to do this and should not be
      *
      * @param uddiProxiedServiceInfo long oid of the UDDIProxiedServiceInfo to get publish status information for
      * @return UDDIPublishStatus representing the publish status
      * @throws FindException any problems searching the database
      */
-    @Transactional(readOnly=true)
-    @Secured(types={EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype= MethodStereotype.FIND_ENTITY)
+    @Transactional(readOnly = true)
+    @Secured(types = EntityType.UDDI_PROXIED_SERVICE_INFO, stereotype = MethodStereotype.FIND_ENTITY)
     UDDIPublishStatus getPublishStatusForProxy(long uddiProxiedServiceInfo) throws FindException;
 
     /**
@@ -208,10 +209,10 @@ public interface UDDIRegistryAdmin {
      *
      * @param registryOid the UDDIRegistry to search
      * @return Collection<UDDIProxiedService> of all proxied services published to the UDDI Registry
-     * @throws FindException if any problems reading from the database or the UDDIRegistry cannot be found 
+     * @throws FindException if any problems reading from the database or the UDDIRegistry cannot be found
      */
-    @Transactional(readOnly=true)
-    @Secured(types={EntityType.UDDI_PROXIED_SERVICE_INFO}, stereotype= MethodStereotype.FIND_ENTITIES)
+    @Transactional(readOnly = true)
+    @Secured(types = EntityType.UDDI_PROXIED_SERVICE_INFO, stereotype = MethodStereotype.FIND_ENTITIES)
     Collection<UDDIProxiedServiceInfo> getAllProxiedServicesForRegistry(long registryOid) throws FindException;
 
     /**
@@ -227,7 +228,7 @@ public interface UDDIRegistryAdmin {
      * @throws UDDIRegistryAdmin.UDDIRegistryNotEnabledException
      *                         if the UDDI Registry is not enabled
      */
-    @Secured(types = {EntityType.UDDI_SERVICE_CONTROL}, stereotype = MethodStereotype.SAVE_OR_UPDATE)
+    @Secured(types = EntityType.UDDI_SERVICE_CONTROL, stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 0)
     long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl, Long lastModifiedServiceTimeStamp)
             throws UpdateException, SaveException, FindException, UDDIRegistryNotEnabledException;
 
@@ -242,7 +243,7 @@ public interface UDDIRegistryAdmin {
      * @throws DeleteException any problems deleting from the database
      * @throws UpdateException any problems updating the database
      */
-    @Secured(types = {EntityType.UDDI_SERVICE_CONTROL}, stereotype = MethodStereotype.DELETE_BY_ID)
+    @Secured(types = EntityType.UDDI_SERVICE_CONTROL, stereotype = MethodStereotype.DELETE_BY_ID)
     void deleteUDDIServiceControl(final long uddiServiceControlOid) throws FindException, DeleteException, UpdateException;
 
     /**
@@ -253,7 +254,7 @@ public interface UDDIRegistryAdmin {
      * @throws com.l7tech.objectmodel.FindException Any problem finding the service control
      */
     @Transactional(readOnly=true)
-    @Secured(types={EntityType.UDDI_SERVICE_CONTROL}, stereotype= MethodStereotype.FIND_ENTITY)
+    @Secured(types=EntityType.UDDI_SERVICE_CONTROL, stereotype= MethodStereotype.FIND_ENTITY)
     UDDIServiceControl getUDDIServiceControl(long serviceOid) throws FindException;
 
     /**
@@ -274,8 +275,8 @@ public interface UDDIRegistryAdmin {
      * @return Collection ServiceHeader of all services which have data in UDDI. Can be empty, never null
      * @throws FindException any db problems
      */
-    @Transactional(readOnly=true)
-    @Secured(types={EntityType.SERVICE}, stereotype= MethodStereotype.FIND_ENTITIES)
+    @Transactional(readOnly = true)
+    @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.FIND_ENTITIES)
     Collection<ServiceHeader> getServicesPublishedToUDDI(Collection<Long> allServiceIds) throws FindException;
 
     static class PublishProxiedServiceException extends Exception{

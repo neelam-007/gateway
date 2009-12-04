@@ -461,6 +461,9 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
         } else if (args.length > 1 && relevantArg >= 0 && relevantArg < args.length) {
             return args[relevantArg];
         } else {
+            if(relevantArg == -1){
+                logger.log(Level.FINE, "Unable to determine relevant argument from method invocation. Hint: Was relevantArg specified in the @secured annotation?");
+            }
             return null;
         }
     }

@@ -303,7 +303,6 @@ public class ServiceManagerImp
         newRole.addAttributePermission(UPDATE, UDDI_SERVICE_CONTROL, UDDIServiceControl.ATTR_SERVICE_OID, service.getId());
         newRole.addAttributePermission(DELETE, UDDI_SERVICE_CONTROL, UDDIServiceControl.ATTR_SERVICE_OID, service.getId());
 
-
         if (currentUser != null) {
             // See if we should give the current user admin permission for this service
             boolean omnipotent;
