@@ -95,15 +95,6 @@ public class UDDIPublishStatus extends PersistentEntityImp {
         this.publishStatus = publishStatus;
     }
 
-    @Column(name = "last_status_change")
-    public long getLastStatusChange() {
-        return lastStatusChange;
-    }
-
-    public void setLastStatusChange(long lastStatusChange) {
-        this.lastStatusChange = lastStatusChange;
-    }
-
     /**
      * When the status is PUBLISH_FAILED we will track how many attempts have been made
      * When we reach the maximum amount of attempts, we will stop trying and change the status to CANNOT_PUBLISH
@@ -121,6 +112,5 @@ public class UDDIPublishStatus extends PersistentEntityImp {
 
     private long uddiProxiedServiceInfoOid;
     private PublishStatus publishStatus;
-    private long lastStatusChange;
     private int failCount;
 }
