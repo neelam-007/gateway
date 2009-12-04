@@ -337,7 +337,7 @@ public class BusinessServicePublisher implements Closeable {
         //Get the service
         final Set<String> serviceKeys = new HashSet<String>();
         serviceKeys.add(serviceKey);
-        final List<BusinessService> foundServices = uddiClient.getBusinessServices(serviceKeys, false);
+        final List<BusinessService> foundServices = jaxWsUDDIClient.getBusinessServices(serviceKeys, false);
         if (foundServices.isEmpty())
             throw new UDDIException("Could not find BusinessService with serviceKey: " + serviceKey);
         final BusinessService businessService = foundServices.get(0);

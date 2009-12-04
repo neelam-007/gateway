@@ -17,6 +17,18 @@ import java.util.Collection;
  * @author darmstrong
  */
 interface JaxWsUDDIClient {
+
+    /**
+     * Find all BusinessServices with the supplied keys
+     *
+     * @param serviceKeys Set String of serviceKeys to find. Cannot be null.
+     * @param allowInvalidKeys if true then an invalid key will not caus a UDDIException to be thrown. This does not
+     * stop other UDDIExceptions from being thrown.
+     * @return List of BusinessServices which were found. Not guaranteed to be the same size as the serviceKeys set
+     * @throws UDDIException if problem searching UDDI
+     */                      
+    List<BusinessService> getBusinessServices(final Set<String> serviceKeys, final boolean allowInvalidKeys) throws UDDIException;
+    
     /**
      * Publish a Business Service to UDDI. The Business Service may already exist. This is known not by searching
      * UDDI but my whether or not the BusinessService has it's serviceKey property set. Null means it has not

@@ -3,6 +3,7 @@ package com.l7tech.server.uddi;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIClient;
 import com.l7tech.uddi.UDDINetworkException;
+import com.l7tech.uddi.UDDIBusinessService;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ExceptionUtils;
@@ -10,7 +11,6 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Config;
 import com.l7tech.util.Triple;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.UDDISystemEvent;
@@ -293,7 +293,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                     for(UDDIProxiedService ps: proxiedServices){
                         serviceKeys.add(ps.getUddiServiceKey());
                     }
-                    List<BusinessService> services = uddiClient.getBusinessServices( serviceKeys, false);
+                    List<UDDIBusinessService> services = uddiClient.getUDDIBusinessServices( serviceKeys, false);
                     if ( services.size() == 1 ) {
                         String serviceKey = services.get( 0 ).getServiceKey();
                         bindingKey = uddiClient.getBindingKeyForService( serviceKey, Arrays.asList( "http", "https" ));

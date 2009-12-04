@@ -487,6 +487,23 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
+    public List<UDDIBusinessService> getUDDIBusinessServices(Set<String> serviceKeys, boolean allowInvalidKeys) throws UDDIException {
+        List<BusinessService> retrievedServices = getBusinessServices(serviceKeys, allowInvalidKeys);
+        final List<UDDIBusinessService> businessServices = new ArrayList<UDDIBusinessService>();
+        for(BusinessService bs: retrievedServices){
+            final String namespace = UDDIUtilities.extractNamespace(bs);
+            final String uddiServiceName = get(bs.getName(), "businesss service name", false).getValue();
+            final String wsdlLocalName = UDDIUtilities.extractWsdlLocalName(bs);
+            if(wsdlLocalName == null || wsdlLocalName.trim().isEmpty()) {
+                logger.log(Level.FINE, "BusinessService with serviceKey: " + bs.getServiceKey() + "does not have a keyedReference for the wsdl:service localname. Ignoring");
+            }else{
+                businessServices.add(new UDDIBusinessService(uddiServiceName, bs.getServiceKey(), wsdlLocalName, namespace));
+            }
+        }
+        return businessServices;
+    }
+
+    @Override
     public void deleteUDDIBusinessServices(Collection<UDDIBusinessService> businessServices) throws UDDIException {
         if(businessServices == null) throw new NullPointerException("businessServices cannot be null or empty");
         if(businessServices.isEmpty()){

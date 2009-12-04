@@ -183,6 +183,11 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
 
     }
 
+    @Override
+    public List<UDDIBusinessService> getUDDIBusinessServices(Set<String> serviceKeys, boolean allowInvalidKeys) throws UDDIException {
+        return null;
+    }
+
     // Not really interested in these for Bondo testing
 
     @Override

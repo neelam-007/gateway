@@ -16,8 +16,8 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_service_control")
-public class UDDIServiceControl extends PersistentEntityImp {//TODO [Donal] rename to the UDDIOriginalService - as it may not be under UDDI Control - rename associated managers also
-
+public class UDDIServiceControl extends PersistentEntityImp {
+//TODO rename to the UDDIOriginalService - as it may not be under UDDI Control - rename associated managers also. Not done for Bondo as too large a changeset
     public static final String ATTR_SERVICE_OID = "publishedServiceOid";
 
     //- PUBLIC

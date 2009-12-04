@@ -13,7 +13,8 @@ import java.util.*;
  *
  * @author darmstrong
  */
-class UDDIProxiedServiceDownloader {//TODO [Donal] rename to be UDDIBusinessService downloaded, as that's what it does
+class UDDIProxiedServiceDownloader {
+    //TODO rename to be UDDIBusinessServiceDownloade, as that's what it does
 
     private final UDDIClient uddiClient;
     private final JaxWsUDDIClient jaxWsUDDIClient;
@@ -37,7 +38,7 @@ class UDDIProxiedServiceDownloader {//TODO [Donal] rename to be UDDIBusinessServ
         final List<Pair<BusinessService, Map<String, TModel>>> servicesToDependentTModels =
                 new ArrayList<Pair<BusinessService, Map<String, TModel>>>();
 
-        List<BusinessService> businessServices = uddiClient.getBusinessServices(serviceKeys, true);
+        List<BusinessService> businessServices = jaxWsUDDIClient.getBusinessServices(serviceKeys, true);
 
         for(final BusinessService businessService: businessServices){
             final Map<String, TModel> tModelKeyToModel = new HashMap<String, TModel>();

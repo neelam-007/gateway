@@ -219,7 +219,6 @@ public interface UDDIClient extends Closeable {
 
     /**
      * Delete a BusinessService from the UDDI Registry.
-     * TODO [Donal] update callers to not have to delete tModels, do it here
      * Any dependent tModels representing wsdl:portType and wsdl:binding are not deleted. This should be done after
      * the call to deletedBusinessService. Some UDDI Registries will throw an exception when
      * an attempt is made to delete a tModel which has been previously deleted (CentraSite Gov v7)
@@ -265,8 +264,8 @@ public interface UDDIClient extends Closeable {
      * stop other UDDIExceptions from being thrown.
      * @return List of BusinessServices which were found. Not guaranteed to be the same size as the serviceKeys set
      * @throws UDDIException if problem searching UDDI
-     */                      //TODO [Donal] - change return type to UDDIBusinessService
-    List<BusinessService> getBusinessServices(final Set<String> serviceKeys, final boolean allowInvalidKeys) throws UDDIException;
+     */
+    List<UDDIBusinessService> getUDDIBusinessServices(final Set<String> serviceKeys, final boolean allowInvalidKeys) throws UDDIException;
 
     /**
      * Get the UDDIBusinessServices for the serviceKey
