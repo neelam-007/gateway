@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
+import static com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo.PublishType.*;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -290,7 +291,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         boolean originalWsPolicyAvailable = uddiServiceControl != null;
         boolean proxyWsPolicyAvailable = uddiProxyServiceInfo != null &&
                 publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED &&
-                uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY;
+                uddiProxyServiceInfo.getPublishType() == PROXY;
         
         boolean originalWsPolicyEnabled = uddiServiceControl != null && uddiServiceControl.isPublishWsPolicyEnabled();
         boolean proxyWsPolicyEnabled = uddiProxyServiceInfo != null && uddiProxyServiceInfo.isPublishWsPolicyEnabled(); 
@@ -313,7 +314,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         boolean proxyMetricsEnabled = uddiProxyServiceInfo != null &&
                 uddiProxyServiceInfo.isMetricsEnabled() &&
                 publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED &&
-                uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY;
+                uddiProxyServiceInfo.getPublishType() == PROXY;
         metricsEnabledCheckBox.setSelected( proxyMetricsEnabled );
     }
 
@@ -358,58 +359,27 @@ public class ServiceUDDISettingsDialog extends JDialog {
      * @param publishType
      */
     private void clearStatusLabels(UDDIProxiedServiceInfo.PublishType publishType){
-        if(publishType == null || publishType != UDDIProxiedServiceInfo.PublishType.PROXY) publishProxystatusLabel.setText("");
-        if(publishType == null || publishType != UDDIProxiedServiceInfo.PublishType.ENDPOINT) bindingTemplateStatusLabel.setText("");
-        if(publishType == null || publishType != UDDIProxiedServiceInfo.PublishType.OVERWRITE) overwriteStatusLabel.setText("");
+        if(publishType == null || publishType != PROXY) publishProxystatusLabel.setText("");
+        if(publishType == null || publishType != ENDPOINT) bindingTemplateStatusLabel.setText("");
+        if(publishType == null || publishType != OVERWRITE) overwriteStatusLabel.setText("");
     }
     
     /**
      * Enable or disable UI components in the 'Publish' tab only
      */
     private void enableDisablePublishTabComponents(){
+        UDDIProxiedServiceInfo.PublishType publishType = uddiProxyServiceInfo == null ? null : uddiProxyServiceInfo.getPublishType();
+        final boolean uddiControl = uddiServiceControl != null && !uddiServiceControl.isUnderUddiControl();
 
-        //disable everything first
-        enableDisablePublishGatewayWsdlControls(false);
-        enableDisablePublishEndpointControls(false);
-        enableDisablePublishOverwriteControls(false);
+        publishProxiedWsdlRadioButton.setEnabled(publishType != PROXY);
+        enableDisablePublishGatewayWsdlControls(publishProxiedWsdlRadioButton.isSelected());
 
-        if(publishProxiedWsdlRadioButton.isSelected()){
-            final boolean proxyPublished = uddiProxyServiceInfo != null &&
-                    uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY;
-            enableDisablePublishGatewayWsdlControls(!proxyPublished);
-            updateWhenGatewayWSDLCheckBox.setEnabled(true);
-        }else if(publishGatewayEndpointAsRadioButton.isSelected()){
-            final boolean endPointPublished = uddiProxyServiceInfo != null &&
-                    uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.ENDPOINT;
-            enableDisablePublishEndpointControls(!endPointPublished);
-        }else if(overwriteExistingBusinessServiceWithRadioButton.isSelected()){
-            final boolean overwritePublished = uddiProxyServiceInfo != null &&
-                    uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE;
-            enableDisablePublishOverwriteControls(!overwritePublished);
-            updateWhenGatewayWSDLCheckBoxOverwrite.setEnabled(true);
-        } else if(dontPublishRadioButton.isSelected()){
-            //enable all applicable radio buttons
-            if(uddiProxyServiceInfo != null){
-                final UDDIProxiedServiceInfo.PublishType type = uddiProxyServiceInfo.getPublishType();
-                switch(type){
-                    case PROXY:
-                        publishProxiedWsdlRadioButton.setEnabled(true);
-                        break;
-                    case ENDPOINT:
-                        publishGatewayEndpointAsRadioButton.setEnabled(true);
-                        break;
-                    case OVERWRITE:
-                        overwriteExistingBusinessServiceWithRadioButton.setEnabled(true);
-                        break;
-                }
-            }else{
-                publishProxiedWsdlRadioButton.setEnabled(true);
-                final boolean uddiControl = uddiServiceControl != null && !uddiServiceControl.isUnderUddiControl();
-                publishGatewayEndpointAsRadioButton.setEnabled(uddiControl);
-                overwriteExistingBusinessServiceWithRadioButton.setEnabled(uddiControl);
-            }
-        }
-    }    
+        publishGatewayEndpointAsRadioButton.setEnabled(uddiControl && publishType != ENDPOINT);
+        enableDisablePublishEndpointControls(publishGatewayEndpointAsRadioButton.isSelected());
+
+        overwriteExistingBusinessServiceWithRadioButton.setEnabled(uddiControl && publishType != OVERWRITE);
+        enableDisablePublishOverwriteControls(overwriteExistingBusinessServiceWithRadioButton.isSelected());
+    }
 
     private void enableAndDisableComponents() {
         if ( canUpdate ) {
@@ -430,7 +400,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     isMetricsEnabled(uddiProxyServiceInfo.getUddiRegistryOid()) &&
                     uddiProxyServiceInfo != null &&
                     publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED &&
-                    uddiProxyServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY;
+                    uddiProxyServiceInfo.getPublishType() == PROXY;
             
             metricsEnabledCheckBox.setEnabled( enableMetrics );
         } else {
@@ -454,7 +424,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     private void enableDisablePublishGatewayWsdlControls(boolean enable){
         //publish proxy
-        publishProxiedWsdlRadioButton.setEnabled(enable);
         uddiRegistryLabel.setEnabled(enable);
         uddiRegistriesComboBox.setEnabled(enable);
         businessEntityLabel.setEnabled(enable);
@@ -465,7 +434,6 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     private void enableDisablePublishEndpointControls(boolean enable){
         //binding endpoint
-        publishGatewayEndpointAsRadioButton.setEnabled(enable);
         if(uddiServiceControl != null && uddiServiceControl.isUnderUddiControl()){
             removeExistingBindingsCheckBox.setEnabled(false);
         }else{
@@ -475,8 +443,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
     private void enableDisablePublishOverwriteControls(boolean enable){
         //overwrite
-        overwriteExistingBusinessServiceWithRadioButton.setEnabled(enable);
-        updateWhenGatewayWSDLCheckBoxOverwrite.setEnabled(enable); 
+        updateWhenGatewayWSDLCheckBoxOverwrite.setEnabled(enable);
     }
 
     /**
