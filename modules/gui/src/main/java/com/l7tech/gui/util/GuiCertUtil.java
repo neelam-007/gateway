@@ -1,6 +1,7 @@
 package com.l7tech.gui.util;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
@@ -270,7 +271,7 @@ public class GuiCertUtil {
                         InputStream in = null;
                         try {
                             in = new FileInputStream(file);
-                            fileBytes = IOUtils.slurpStream(in, 1024*1024);
+                            fileBytes = IOUtils.slurpStream(new ByteLimitInputStream(in, 1024, 1024*1024));
                         } catch (IOException ioe) {
                             JOptionPane.showMessageDialog(parent, "Error reading file", "Could not read file for import.", JOptionPane.ERROR_MESSAGE);
                             logger.log(Level.WARNING, "Error reading certificate data", ioe);

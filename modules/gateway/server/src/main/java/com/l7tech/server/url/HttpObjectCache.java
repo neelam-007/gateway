@@ -5,6 +5,7 @@ package com.l7tech.server.url;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.IOUtils;
 
@@ -143,7 +144,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
             UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), new UserObjectSource(){
                 @Override
                 public byte[] getBytes() throws IOException {
-                    return IOUtils.slurpStream(sourceResponse.getInputStream(), maxCrlSize);
+                    return IOUtils.slurpStream(new ByteLimitInputStream(sourceResponse.getInputStream(), 1024, maxCrlSize));
                 }
 
                 @Override

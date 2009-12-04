@@ -8,6 +8,7 @@ import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
+import com.l7tech.common.io.ByteLimitInputStream;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -94,7 +95,7 @@ public class SimpleHttpClient implements GenericHttpClient {
             response = request.getResponse();
             byte[] bodyBytes = maxContentLength <= 0 ?
                     IOUtils.slurpStream(response.getInputStream()) :
-                    IOUtils.slurpStream(response.getInputStream(), maxContentLength);
+                    IOUtils.slurpStream(new ByteLimitInputStream(response.getInputStream(), 1024, maxContentLength));
             return new SimpleHttpResponseImpl(response, bodyBytes);
         } catch (IOException e) {
             throw new GenericHttpException(e);

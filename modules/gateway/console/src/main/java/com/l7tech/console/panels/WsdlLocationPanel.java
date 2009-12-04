@@ -4,6 +4,7 @@ import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -757,7 +758,7 @@ public class WsdlLocationPanel extends JPanel {
 
             is.setSystemId(wsdlFile.toURI().toString());
             fin = new FileInputStream(wsdlFile);
-            is.setByteStream(new ByteArrayInputStream(IOUtils.slurpStream(fin, 8000000)));
+            is.setByteStream(new ByteArrayInputStream(IOUtils.slurpStream(new ByteLimitInputStream(fin, 1024, 8000000))));
         }
         catch (IOException ioe) {
             is.setCharacterStream(new IOExceptionThrowingReader(ioe, false));

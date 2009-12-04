@@ -1,6 +1,7 @@
 package com.l7tech.server.util;
 
 import com.l7tech.util.IOUtils;
+import com.l7tech.common.io.ByteLimitInputStream;
 
 import java.net.URL;
 import java.io.InputStream;
@@ -76,7 +77,7 @@ public class ResourceClassLoader extends ClassLoader {
                 throw new ClassNotFoundException("Resource not found for class '" + name + "'.");
 
             InputStream resIn = resUrl.openStream();
-            byte[] classData = IOUtils.slurpStream(resIn, 102400);
+            byte[] classData = IOUtils.slurpStream(new ByteLimitInputStream(resIn, 1024, 102400));
             return defineClass(name, classData, 0, classData.length);
         } catch(IOException ioe) {
             throw new ClassNotFoundException("Error loading resource for class '" + name + "'.", ioe);

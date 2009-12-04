@@ -2,6 +2,7 @@ package com.l7tech.wsdl;
 
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.IOExceptionThrowingReader;
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.ExceptionUtils;
@@ -403,7 +404,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
         if(!Charset.isSupported(encoding)) {
             throw new IOException("Unsupported encoding '"+encoding+"'.");
         }
-        byte[] data = IOUtils.slurpStream(in, MAX_DOCUMENT_SIZE);
+        byte[] data = IOUtils.slurpStream(new ByteLimitInputStream(in, 1024, MAX_DOCUMENT_SIZE));
         return new String(data, encoding);
     }
 
@@ -444,7 +445,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
         if(!Charset.isSupported(encoding)) {
             throw new IOException("Unsupported encoding '"+encoding+"'.");
         }
-        byte[] data = IOUtils.slurpStream(in, MAX_DOCUMENT_SIZE);
+        byte[] data = IOUtils.slurpStream(new ByteLimitInputStream(in, 1024, MAX_DOCUMENT_SIZE));
         return new String(data, encoding);
     }
 
