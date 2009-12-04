@@ -1110,7 +1110,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error listing services: ", drfm);
         } catch (RuntimeException e) {
-            throw new UDDIException("Error listing services.", e);
+            throw new UDDIException("Unexpected UDDI error listing services.", e);
         }
     }
 
@@ -1244,7 +1244,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error listing services", drfm);
         } catch (RuntimeException e) {
-            throw buildErrorException("Error listing services", e);
+            throw buildErrorException("Unexpected UDDI error listing services", e);
         }
     }
 
@@ -2227,6 +2227,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
      * <li>E_busy 10400</li>
      * <li>E_unrecognizedVersion 10040</li>
      * <li>E_unsupported 10050</li>
+     * <li>E_fatalError: (10500)</li>
      * </ul>
      *
      * Note that Systinet can also throw <code>E_invalidKeyPassed</code> on an
@@ -2257,7 +2258,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 exception = new UDDIException("UDDI registry does not support a required feature.");
         } else if ( hasResult(faultMessage, 10210)) {
                 exception = new UDDIInvalidKeyException(context + " (UDDI may have been updated, please try again)" + spacer + toString(faultMessage));
-        } else {
+        } else if ( hasResult(faultMessage, 10500)) {
+                exception = new UDDIInvalidKeyException(context + " (Multiple updates to same UDDI entity may have happened, please try again)" + spacer + toString(faultMessage));
+        }else {
             // handle general exception
             exception = new UDDIException(context + spacer + toString(faultMessage));
         }
