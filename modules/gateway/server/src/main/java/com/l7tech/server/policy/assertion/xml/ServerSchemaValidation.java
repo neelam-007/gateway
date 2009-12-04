@@ -52,7 +52,6 @@ public class ServerSchemaValidation
         extends AbstractServerAssertion<SchemaValidation>
 {
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
-    private static final String SCHEMA_FAILURE_VARIABLE = "schema.failure";
 
     private final Auditor auditor;
     private ResourceGetter<String> resourceGetter;
@@ -244,7 +243,7 @@ public class ServerSchemaValidation
                         auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, mess);
                         messes.add(mess);
                     }
-                    context.setVariable(SCHEMA_FAILURE_VARIABLE, messes.toArray());
+                    context.setVariable(SchemaValidation.SCHEMA_FAILURE_VARIABLE, messes.toArray());
                     return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
                 }
                 // Tarari failure with no message
@@ -291,7 +290,7 @@ public class ServerSchemaValidation
     private void schemaValidationFailed(PolicyEnforcementContext context, String msg, Throwable t) {
         logger.log(Level.INFO, "validation failed: " + msg);
         auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[] {msg}, t);
-        context.setVariable(SCHEMA_FAILURE_VARIABLE, msg);
+        context.setVariable(SchemaValidation.SCHEMA_FAILURE_VARIABLE, msg);
     }
 
     /**

@@ -10,6 +10,8 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -25,7 +27,9 @@ import java.util.List;
  */
 @RequiresXML
 @HardwareAccelerated( type=HardwareAccelerated.Type.SCHEMA )
-public class SchemaValidation extends MessageTargetableAssertion implements UsesResourceInfo, UsesVariables {
+public class SchemaValidation extends MessageTargetableAssertion implements UsesResourceInfo, UsesVariables, SetsVariables {
+    public static final String SCHEMA_FAILURE_VARIABLE = "schema.failure";
+
     public SchemaValidation() {
         clearTarget(); // Backward compatibility; null implies old post-routing heuristic
     }
@@ -53,6 +57,13 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
      */
     public void setApplyToArguments(boolean applyToArguments) {
         this.applyToArguments = applyToArguments;
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return new VariableMetadata[] {
+                new VariableMetadata(SCHEMA_FAILURE_VARIABLE, false, true, SCHEMA_FAILURE_VARIABLE, false, DataType.STRING)
+        };
     }
 
     @Migration(mapName = MigrationMappingSelection.REQUIRED, mapValue = MigrationMappingSelection.NONE, resolver = PropertyResolver.Type.SCHEMA_ENTRY)
