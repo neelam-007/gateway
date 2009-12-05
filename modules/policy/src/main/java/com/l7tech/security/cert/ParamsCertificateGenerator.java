@@ -2,6 +2,7 @@ package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.X509GeneralName;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -16,6 +17,9 @@ import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.interfaces.ECKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
@@ -59,7 +63,7 @@ public class ParamsCertificateGenerator {
     public X509Certificate generateCertificate(PublicKey subjectPublicKey, PrivateKey issuerPrivateKey, X509Certificate issuerCertificate) throws CertificateGeneratorException {
         X500Principal subjectDn = c.getSubjectDn();
         String sigAlg = c.getSignatureAlgorithm() != null ? c.getSignatureAlgorithm()
-                :  getSigAlg("EC".equals(issuerPrivateKey.getAlgorithm()), null);
+                :  getSigAlg(issuerCertificate == null ? subjectPublicKey : issuerCertificate.getPublicKey(), null);
         X500Principal issuerDn = issuerCertificate != null ? issuerCertificate.getSubjectX500Principal() : subjectDn;
         PublicKey issuerPublicKey = issuerCertificate != null ? issuerCertificate.getPublicKey() : subjectPublicKey;
         int daysUntilExpiry = c.getDaysUntilExpiry() > 0 ? c.getDaysUntilExpiry() : 5 * 365; // default: five years
@@ -204,15 +208,16 @@ public class ParamsCertificateGenerator {
      * Find the best sig alg available with the current signature provider for the specified algorithm (EC=true, RSA=false)
      * using the specified provider.
      *
-     * @param usingEcc true if we should attempt to find a working "*withECDSA" signature.  Otherwise we'll try to find
-     *                 a "*withRSA" signature.
+     * @param publicKey the public key that will be used to verify the signature, corresponding to the privateKey that will be used to perform the signature.  Required.
      * @param signatureProvider  a specified Provider to use for the Signature algorithm, or null to use the default.
-     * @return
+     * @return the signature algorithm name, ie "SHA384withECDSA".
      */
-    public static String getSigAlg(boolean usingEcc, Provider signatureProvider) {
+    public static String getSigAlg(PublicKey publicKey, Provider signatureProvider) {
+        boolean usingEcc = (publicKey instanceof ECKey) || "EC".equalsIgnoreCase(publicKey.getAlgorithm());
+
         String strongSigAlg = usingEcc ? "SHA384withECDSA" : "SHA384withRSA";
         String weakSigAlg = usingEcc ? "SHA1withECDSA" : "SHA1withRSA";
-        if (PREFER_SHA1_SIG)
+        if (PREFER_SHA1_SIG || isShortKey(publicKey))
             return weakSigAlg;
 
         String sigAlg = strongSigAlg;
@@ -226,5 +231,20 @@ public class ParamsCertificateGenerator {
             sigAlg = weakSigAlg;
         }
         return sigAlg;
+    }
+
+    private static boolean isShortKey(PublicKey publicKey) {
+        if (publicKey instanceof ECPublicKey) {
+            ECPublicKey ecPublicKey = (ECPublicKey) publicKey;
+            int keySize = ecPublicKey.getParams().getCurve().getField().getFieldSize();
+            return keySize < 384; // Too small for SHA384withECDSA, use SHA1withECDSA instead
+        } else if (publicKey instanceof RSAPublicKey) {
+            RSAPublicKey rsaPublicKey = (RSAPublicKey) publicKey;
+            int keySize = CertUtils.getRsaKeyBits(rsaPublicKey);
+            return keySize < 768; // Too small for SHA384withRSA, use SHA1withRSA instead
+        } else {
+            // Assume it's a small key
+            return true;
+        }
     }
 }

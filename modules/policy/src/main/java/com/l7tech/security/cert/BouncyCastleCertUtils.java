@@ -28,11 +28,6 @@ public class BouncyCastleCertUtils {
         return new ParamsCertificateGenerator(certGenParams).generateCertificate(keyPair.getPublic(), keyPair.getPrivate(), null);
     }
 
-    public static boolean isUsingEcc(PublicKey publicKey) {
-        String publicKeyAlg = publicKey.getAlgorithm();
-        return "EC".equalsIgnoreCase(publicKeyAlg) || "ECDSA".equalsIgnoreCase(publicKeyAlg);
-    }
-
     /**
      * Create a PKCS#10 certification request using the specified DN and key pair.
      *
@@ -58,7 +53,7 @@ public class BouncyCastleCertUtils {
 
         String sigAlg = certGenParams.getSignatureAlgorithm();
         if (sigAlg == null)
-            sigAlg = ParamsCertificateGenerator.getSigAlg(isUsingEcc(publicKey), sigProvider);
+            sigAlg = ParamsCertificateGenerator.getSigAlg(publicKey, sigProvider);
 
         // Generate request
         final PKCS10CertificationRequest certReq = sigProvider == null
