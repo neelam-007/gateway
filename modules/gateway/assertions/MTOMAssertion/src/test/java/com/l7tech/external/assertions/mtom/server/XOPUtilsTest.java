@@ -150,6 +150,23 @@ public class XOPUtilsTest {
         XOPUtils.validate( message );
     }
 
+    @Test(expected=XOPUtils.XOPException.class)
+    public void testXOPEncodeFailDueToXOPInclude() throws Exception {
+        StashManagerFactory smf = buildStashManagerFactory();
+        final String soap =
+                "<soapenv:Envelope\n" +
+                "    xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xmlmime=\"http://www.w3.org/2004/11/xmlmime\">\n" +
+                "    <soapenv:Body xmlns:tns=\"http://tempuri.org/tns\">\n" +
+                "        <tns:Content xmlmime:contentType=\"text/xml\"></tns:Content>\n" +
+                "        <tns:Other><xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:1\"/></tns:Other>" +
+                "    </soapenv:Body>\n" +
+                "</soapenv:Envelope>";
+        final Document document = XmlUtil.parse( soap );
+
+        Message message = new Message(document);
+        XOPUtils.extract( message, iter(document.getElementsByTagNameNS( "http://tempuri.org/tns", "Content" )), 0, true, smf );
+    }
+
     @Test
     public void testToContentId() throws Exception {
         assertEquals("Content-ID", "myid", XOPUtils.toContentId( "cid:myid" ));

@@ -20,7 +20,6 @@
                 </L7p:Predicates>
             </L7p:ComparisonAssertion>
             <L7p:MTOMDecodeAssertion>
-                <L7p:RemovePackaging booleanValue="false"/>
                 <L7p:ProcessSecuredOnly booleanValue="true"/>
             </L7p:MTOMDecodeAssertion>
             <L7p:TrueAssertion/>

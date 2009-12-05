@@ -109,7 +109,7 @@ public class MtomEncodeAssertion extends MessageTargetableAssertion implements U
     private static final String META_INITIALIZED = MtomEncodeAssertion.class.getName() + ".metadataInitialized";
 
     private MessageTargetableSupport outputTarget;
-    private int optimizationThreshold = 4096;
+    private int optimizationThreshold = 0;
     private boolean alwaysEncode = true;
     private boolean failIfNotFound;
     private XpathExpression[] xpathExpressions;

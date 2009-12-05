@@ -257,6 +257,10 @@ public class XOPUtils {
             throw new IOException( "MIME first part cannot be read." );
         }
 
+        if ( alwaysEncode || base64BinaryElements.iterator().hasNext() ) {
+            validateNoXOP( document.getDocumentElement() );
+        }
+
         final Map<String, Pair<byte[],String>> parts = new HashMap<String,Pair<byte[],String>>();
         for ( Element sourceDomElement : base64BinaryElements ) {
             if ( DomUtils.hasChildNodesOfType( sourceDomElement, Node.ELEMENT_NODE ) ) continue;
@@ -604,6 +608,19 @@ public class XOPUtils {
     private static boolean isNamespaceMatch( final String namespace1,
                                              final String namespace2 ) {
         return (namespace1==null && namespace2==null) || (namespace1 != null && namespace1.equals( namespace2 ));
+    }
+
+    private static void validateNoXOP( final Element element ) throws XOPException {
+        boolean foundXOP;
+        try {
+            foundXOP = !findIncludes( element ).isEmpty();
+        } catch ( XOPException xe ) {
+            foundXOP = true;
+        }
+
+        if ( foundXOP ) {
+            throw new XOPException("XOP Include in message");
+        }
     }
 
     private static List<Element> findIncludes( final Element element ) throws XOPException {
