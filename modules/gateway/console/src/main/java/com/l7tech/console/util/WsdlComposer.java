@@ -1149,11 +1149,9 @@ public class WsdlComposer {
                 for (Object o : sourceDef.getNamespaces().keySet()) {
                     String key = (String) o;
                     String namespace = sourceDef.getNamespace(key);
-                    if (workingWsdl.getNamespace(key) != null) {
-                        //noinspection unchecked
-                        key = getNextNsPrefix(workingWsdl.getNamespaces().keySet());
-                    }
-                    workingWsdl.addNamespace(key, namespace);
+                    workingWsdl.addNamespace(
+                        workingWsdl.getNamespace(key) == null ? key : getNextNsPrefix(workingWsdl.getNamespaces().keySet()),
+                        "".equals(namespace) ? null : namespace); // Prefixed namespace bindings may not be empty
                 }
             }
         }
