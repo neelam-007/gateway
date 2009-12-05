@@ -53,7 +53,8 @@ public class JceUtil {
     public static Set<String> getCurveNameSynonyms(String curveName, boolean includeSelf) {
         String[] syns = synonymsByName.get(curveName.toLowerCase());
         Set<String> ret = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-        ret.addAll(Arrays.asList(syns));
+        if (syns != null)
+            ret.addAll(Arrays.asList(syns));
         if (!includeSelf)
             ret.remove(curveName);
         return ret;
