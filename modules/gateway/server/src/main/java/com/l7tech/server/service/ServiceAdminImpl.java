@@ -331,7 +331,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             final String updatedHash = service.parsedWsdl().getHash();
                             final String originalHash = original.parsedWsdl().getHash();
                             if (!updatedHash.equals(originalHash)) {
-                                throw new UpdateException("Cannot change the WSDL XML for a Published Service when it's WSDL is under UDDI control");
+                                logger.log(Level.INFO, "Published Service id(#" + service.getOid()+" is under UDDI control. Incoming WSDL XML is out of date and will be ignored");
+                                service.setWsdlXml(original.getWsdlXml());
                             }
                         } catch (WSDLException e) {
                             throw new UpdateException("Error parsing WSDL: " + ExceptionUtils.getMessage(e));
