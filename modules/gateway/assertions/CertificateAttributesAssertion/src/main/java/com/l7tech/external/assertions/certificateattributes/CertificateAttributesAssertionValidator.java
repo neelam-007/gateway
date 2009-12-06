@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.certificateattributes;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SamlIssuerAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -30,15 +31,8 @@ public class CertificateAttributesAssertionValidator implements AssertionValidat
             Assertion ass = path.getPath()[i];
             if (!ass.isEnabled()) continue;
             if (ass.isCredentialSource()) {
-                if (ass instanceof RequireWssX509Cert || ass instanceof SslAssertion || ass instanceof SecureConversation) {
+                if (PolicyValidator.isX509CredentialSource(ass)) {
                     firstCertCred = i;
-                } else if (ass instanceof RequireWssSaml) {
-                    RequireWssSaml saml = (RequireWssSaml) ass;
-                    final String[] scs = saml.getSubjectConfirmations();
-                    // RequestWssSaml is only a cert-based credential source if it's Holder of Key and has the signature constraint
-                    if (scs.length == 1 && SamlIssuerAssertion.HOK_URIS.contains(scs[0]) && saml.isRequireHolderOfKeyWithMessageSignature()) {
-                        firstCertCred = i;
-                    }
                 }
             } else if (ass instanceof IdentityAssertion) {
                 firstIdentity = i;

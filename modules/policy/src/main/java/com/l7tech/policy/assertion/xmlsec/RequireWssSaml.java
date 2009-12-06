@@ -3,10 +3,13 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.util.Functions;
 
 import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.EnumSet;
 
 /**
  * The <code>RequestWssSaml</code> assertion describes the common SAML constraints
@@ -235,6 +238,19 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssSaml");
         meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.SamlStatementValidator");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssSaml>() {
+            @Override
+            public Set<ValidatorFlag> call(RequireWssSaml saml) {
+                if (saml != null) {
+                    final String[] scs = saml.getSubjectConfirmations();
+                    // RequestWssSaml is only a cert-based credential source if it's Holder of Key and has the signature constraint
+                    if (scs.length == 1 && SamlIssuerAssertion.HOK_URIS.contains(scs[0]) && saml.isRequireHolderOfKeyWithMessageSignature()) {
+                        return EnumSet.of(ValidatorFlag.GATHERS_X509_CREDENTIALS);
+                    }
+                }
+                return EnumSet.noneOf(ValidatorFlag.class);
+            }
+        });
 
         return meta;
     }

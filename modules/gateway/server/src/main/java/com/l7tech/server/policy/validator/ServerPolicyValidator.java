@@ -348,30 +348,6 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         }
     }
 
-    /**
-     * Check if the specified assertion is a credential source assertion configured to gather X.509 credentials.
-     *
-     * @param credSrc the assertion to examine.  Required.
-     * @return  true if the specfied assertion appears to be a credential source assertion configured to gather X.509 credentials.
-     */
-    private boolean isX509CredentialSource(Assertion credSrc) {
-        if (!credSrc.isCredentialSource())
-            return false;
-
-        if (credSrc instanceof RequireWssX509Cert ||
-                credSrc instanceof SecureConversation ||
-                credSrc instanceof SslAssertion) {
-            return true;
-        }
-
-        Functions.Unary<Set<ValidatorFlag>, Assertion> flagfac = credSrc.meta().get(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY);
-        if (flagfac == null)
-            return false;
-
-        Set<ValidatorFlag> flags = flagfac.call(credSrc);
-        return flags != null && flags.contains(ValidatorFlag.GATHERS_X509_CREDENTIALS);
-    }
-
     private boolean checkGlobalSchemaExists(GlobalResourceInfo globalResourceInfo) {
         // look for the presence of the schema
         String sId = globalResourceInfo.getId();

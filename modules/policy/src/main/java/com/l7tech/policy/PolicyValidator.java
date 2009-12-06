@@ -1,17 +1,17 @@
 package com.l7tech.policy;
 
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.util.Functions;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * A class for validating policies.
@@ -166,5 +166,29 @@ public abstract class PolicyValidator {
             }
         }
         return policyValidatorResult;
+    }
+
+    /**
+     * Check if the specified assertion is a credential source assertion configured to gather X.509 credentials.
+     *
+     * @param credSrc the assertion to examine.  Required.
+     * @return  true if the specfied assertion appears to be a credential source assertion configured to gather X.509 credentials.
+     */
+    public static boolean isX509CredentialSource(Assertion credSrc) {
+        if (!credSrc.isCredentialSource())
+            return false;
+
+        if (credSrc instanceof RequireWssX509Cert ||
+                credSrc instanceof SecureConversation ||
+                credSrc instanceof SslAssertion) {
+            return true;
+        }
+
+        Functions.Unary<Set<ValidatorFlag>, Assertion> flagfac = credSrc.meta().get(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY);
+        if (flagfac == null)
+            return false;
+
+        Set<ValidatorFlag> flags = flagfac.call(credSrc);
+        return flags != null && flags.contains(ValidatorFlag.GATHERS_X509_CREDENTIALS);
     }
 }
