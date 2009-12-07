@@ -80,6 +80,10 @@ public class JMSEndpointReference extends ExternalReference {
         super();
     }
 
+    public long getOid() {
+        return oid;
+    }
+
     public String getEndpointName() {
         return endpointName;
     }

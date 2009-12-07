@@ -46,7 +46,7 @@ public abstract class ExternalReference {
      * Parse references from an exported policy's exp:References element.
      * @param refElements an ExporterConstants.EXPORTED_REFERENCES_ELNAME element
      */
-    public static ExternalReference[] parseReferences(Element refElements) throws InvalidDocumentFormatException {
+    public static Collection<ExternalReference> parseReferences(Element refElements) throws InvalidDocumentFormatException {
         // Verify that the passed element is what is expected
         if (!refElements.getLocalName().equals(ExporterConstants.EXPORTED_REFERENCES_ELNAME)) {
             throw new InvalidDocumentFormatException("The passed element must be " +
@@ -86,7 +86,7 @@ public abstract class ExternalReference {
                 }
             }
         }
-        return references.toArray(new ExternalReference[0]);
+        return references;
     }
 
     static String getParamFromEl(Element parent, String param) {

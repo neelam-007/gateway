@@ -16,6 +16,8 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.util.Collection;
+
 /**
  * Test class for the policy exporter.
  * <p/>
@@ -42,9 +44,8 @@ public class PolicyExporterTest extends TestCase {
         Element referencesEl = DomUtils.findOnlyOneChildElementByName(exportedPolicy.getDocumentElement(),
                                                                      ExporterConstants.EXPORTED_POL_NS,
                                                                      ExporterConstants.EXPORTED_REFERENCES_ELNAME);
-        ExternalReference[] refs = ExternalReference.parseReferences(referencesEl);
-        for (int i = 0; i < refs.length; i++) {
-            ExternalReference ref = refs[i];
+        Collection<ExternalReference> refs = ExternalReference.parseReferences(referencesEl);
+        for (ExternalReference ref : refs) {
             System.out.println("Found ref of type " + ref.getClass().getName());
         }
     }
@@ -55,7 +56,7 @@ public class PolicyExporterTest extends TestCase {
         root.addChild(suass);
         JmsRoutingAssertion jrass = new JmsRoutingAssertion();
         jrass.setEndpointName("blah");
-        jrass.setEndpointOid(new Long(25));
+        jrass.setEndpointOid((long) 25);
         jrass.setResponseTimeout(55);
         root.addChild(jrass);
         // todo, plug in a real custom assertion, the WSPWriter cannot handle this garbage

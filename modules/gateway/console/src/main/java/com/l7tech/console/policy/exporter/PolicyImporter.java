@@ -23,9 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Imports a policy document and resolve references if necessary.
@@ -84,7 +82,7 @@ public class PolicyImporter {
                                                                  ExporterConstants.EXPORTED_REFERENCES_ELNAME);
 
         RemoteReferenceResolver resolver = new RemoteReferenceResolver();
-        ExternalReference[] references = null;
+        Collection<ExternalReference> references = new ArrayList<ExternalReference>();
         HashMap<String, Policy> fragments = new HashMap<String, Policy>();
         HashMap<Long, String> fragmentOidToNameMap = new HashMap<Long, String>();
         if (referencesEl != null) {
@@ -140,7 +138,7 @@ public class PolicyImporter {
                 return null;
             }
 
-            if (references == null || !resolver.resolveReferences(references)) {
+            if (!resolver.resolveReferences(references)) {
                 logger.info("The resolution process failed. This policy will not be imported");
                 return null;
             }
@@ -168,7 +166,7 @@ public class PolicyImporter {
 
         if (policy != null) {
             Assertion rootAssertion = resolver.localizePolicy(policy);
-            if(references != null && fragments.size() > 0) {
+            if(fragments.size() > 0) {
                 try {
                     for(ExternalReference reference : references) {
                         if(reference instanceof IncludedPolicyReference) {
