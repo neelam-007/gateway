@@ -101,7 +101,8 @@ public class AllAssertions {
         new WsSecurity(),
         new RemoveElement(),
         new AddWssUsernameToken(),
-            new AuditRecordToXmlAssertion(),
+        new AuditRecordToXmlAssertion(),
+        new ExportVariablesAssertion(),
     };
 
 
@@ -185,5 +186,6 @@ public class AllAssertions {
         new RemoveElement(),
         new AddWssUsernameToken(),
         new AuditRecordToXmlAssertion(),
+        new ExportVariablesAssertion(),
     };
 }

@@ -163,5 +163,8 @@
         <L7p:RemoveElement/>
         <L7p:AddWssUsernameToken/>
         <L7p:AuditRecordToXml/>
+        <L7p:ExportVariables>
+            <L7p:ExportedVars stringArrayValue="included"/>
+        </L7p:ExportVariables>
     </wsp:OneOrMore>
 </wsp:Policy>

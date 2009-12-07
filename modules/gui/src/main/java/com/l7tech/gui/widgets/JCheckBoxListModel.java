@@ -14,6 +14,13 @@ import java.util.List;
  */
 public class  JCheckBoxListModel extends AbstractListModel {
     public static final String CLIENT_PROPERTY_ENTRY_CODE = "JCheckBoxListModel.entryCode";
+
+    /** A predicate that will match checkboxes that are currently checked. */
+    public static final Functions.Unary<Boolean,JCheckBox> MATCH_CHECKED_PREDICATE = Functions.propertyTransform(JCheckBox.class, "selected");
+
+    /** A predicate that will match checkboxes that are currently unchecked. */
+    public static final Functions.Unary<Boolean,JCheckBox> MATCH_UNCHECKED_PREDICATE = Functions.negate(MATCH_CHECKED_PREDICATE);
+
     private final List<JCheckBox> entries;
     private int armedEntry = -1;
 
@@ -119,6 +126,39 @@ public class  JCheckBoxListModel extends AbstractListModel {
         }
         if (highest < Integer.MAX_VALUE)
             fireContentsChanged(this, lowest, highest);
+    }
+
+    /**
+     * Return all entries that satisfy the predicate.
+     *
+     * @param predicate  the predicate to invoke to determine whether an entry should be included in the returned list.  Required.
+     * @return a list of all entries for which the predicate returned true.  May be empty but never null.
+     */
+    public List<JCheckBox> filterEntries(Functions.Unary<Boolean, JCheckBox> predicate) {
+        List<JCheckBox> ret = new ArrayList<JCheckBox>();
+        for (JCheckBox entry : entries) {
+            if (predicate.call(entry))
+                ret.add(entry);
+        }
+        return ret;
+    }
+
+    /**
+     * Return all entries whose checkbox is currently checked.
+     *
+     * @return a list of all entries with checked checkboxes.  May be empty but never null.
+     */
+    public List<JCheckBox> getAllCheckedEntries() {
+        return filterEntries(MATCH_CHECKED_PREDICATE);
+    }
+
+    /**
+     * Return all entries whose checkbox is currently unchecked.
+     *
+     * @return a list of all entries with unchecked checkboxes.  May be empty but never null.
+     */
+    public List<JCheckBox> getAllUncheckedEntries() {
+        return filterEntries(MATCH_UNCHECKED_PREDICATE);
     }
 
     /**

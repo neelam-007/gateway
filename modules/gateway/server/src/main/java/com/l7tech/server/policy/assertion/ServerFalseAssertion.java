@@ -4,8 +4,8 @@
 
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
@@ -15,8 +15,8 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
-public class ServerFalseAssertion extends AbstractServerAssertion<FalseAssertion> {
-    public ServerFalseAssertion( FalseAssertion ass ) {
+public class ServerFalseAssertion<AT extends Assertion> extends AbstractServerAssertion<AT> {
+    public ServerFalseAssertion( AT ass ) {
         super(ass);
     }
 
