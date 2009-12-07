@@ -51,6 +51,16 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
 
     //- PROTECTED
 
+    protected ServerMtomEncodeAssertion( final MtomEncodeAssertion assertion,
+                                         final Auditor auditor,
+                                         final StashManagerFactory stashManagerFactory ){
+        super( assertion, assertion );
+
+        this.auditor = auditor;
+        this.stashManagerFactory = stashManagerFactory;
+        this.compiledXpaths = compileXpaths( assertion.getXpathExpressions() );
+    }
+
     @Override
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                               final Message message,

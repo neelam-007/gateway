@@ -85,6 +85,27 @@ public class XOPUtilsTest {
     }
 
     @Test
+    public void testWcfXOPDecode() throws Exception {
+        StashManagerFactory smf = buildStashManagerFactory();
+        Message message = new Message();
+        message.initialize(
+                smf.createStashManager(),
+                ContentTypeHeader.parseValue(wcfContentType),
+                new ByteArrayInputStream(wcfBody.getBytes()));
+
+        XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
+
+        System.out.println( message.getMimeKnob().getOuterContentType().getFullValue() );
+        IOUtils.copyStream( message.getMimeKnob().getEntireMessageBodyAsInputStream(), System.out );
+
+        assertEquals( "Incorrect Content-Type", "multipart/related", message.getMimeKnob().getOuterContentType().getMainValue() );
+        assertEquals( "Incorrect Content-Type type", "application/xop+xml", message.getMimeKnob().getOuterContentType().getParam("type") );
+        assertEquals( "Incorrect Content-Type start-info", "application/soap+xml", message.getMimeKnob().getOuterContentType().getParam("start-info") );
+        assertEquals( "Incorrect Part Content-Type", "application/xop+xml", message.getMimeKnob().getFirstPart().getContentType().getMainValue() );
+        assertEquals( "Incorrect Part Content-Id", "http://tempuri.org/0", message.getMimeKnob().getFirstPart().getContentId(true) );
+    }
+
+    @Test
     public void testJaxWsXOPDecode() throws Exception {
         StashManagerFactory smf = buildStashManagerFactory();
         Message message = new Message();
@@ -103,6 +124,27 @@ public class XOPUtilsTest {
         assertEquals( "Incorrect Content-Type start-info", "text/xml", message.getMimeKnob().getOuterContentType().getParam("start-info") );
         assertEquals( "Incorrect Part Content-Type", "application/xop+xml", message.getMimeKnob().getFirstPart().getContentType().getMainValue() );
         assertEquals( "Incorrect Part Content-Id", "rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com", message.getMimeKnob().getFirstPart().getContentId(true) );
+    }
+
+    @Test
+    public void testJaxWsSoap12XOPDecode() throws Exception {
+        StashManagerFactory smf = buildStashManagerFactory();
+        Message message = new Message();
+        message.initialize(
+                smf.createStashManager(),
+                ContentTypeHeader.parseValue(jaxwsSoap12ContentType),
+                new ByteArrayInputStream(jaxwsSoap12Body.getBytes()));
+
+        XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
+
+        System.out.println( message.getMimeKnob().getOuterContentType().getFullValue() );
+        IOUtils.copyStream( message.getMimeKnob().getEntireMessageBodyAsInputStream(), System.out );
+
+        assertEquals( "Incorrect Content-Type", "multipart/related", message.getMimeKnob().getOuterContentType().getMainValue() );
+        assertEquals( "Incorrect Content-Type type", "application/xop+xml", message.getMimeKnob().getOuterContentType().getParam("type") );
+        assertEquals( "Incorrect Content-Type start-info", "application/soap+xml", message.getMimeKnob().getOuterContentType().getParam("start-info") );
+        assertEquals( "Incorrect Part Content-Type", "application/xop+xml", message.getMimeKnob().getFirstPart().getContentType().getMainValue() );
+        assertEquals( "Incorrect Part Content-Id", "rootpart*7c154c5b-966a-4aa1-bbea-dcc0565e798b@example.jaxws.sun.com", message.getMimeKnob().getFirstPart().getContentId(true) );
     }
 
     @Test(expected=XOPUtils.XOPException.class)
@@ -317,6 +359,39 @@ public class XOPUtilsTest {
             "6iV3PO0WyJi8yy5xqaiqZzh5qqyl0xfx4RI6E6Lp2hugh3veu0rkNRf0eE+egpgsyo8Sz44DGtcq\n" +
             "j0Xvtxw7R8DzKKw/MF7pTYS2+hDwEBZFMhYM+Xyk9YXK1f5FDQotLU1JTUVfYm91bmRhcnktLQ0K";
 
+    private static final String wcfContentType = "multipart/related; type=\"application/xop+xml\";start=\"<http://tempuri.org/0>\";boundary=\"uuid:4ee070c0-81b0-4ba2-a4da-dbb5579d8741+id=1\";start-info=\"application/soap+xml\"";
+    private static final String wcfBody =
+            "--uuid:4ee070c0-81b0-4ba2-a4da-dbb5579d8741+id=1\r\n" +
+            "Content-ID: <http://tempuri.org/0>\r\n" +
+            "Content-Transfer-Encoding: 8bit\r\n" +
+            "Content-Type: application/xop+xml;charset=utf-8;type=\"application/soap+xml\"\r\n" +
+            "\r\n" +
+            "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:a=\"http://www.w3.org/2005/08/addressing\"><s:Header><a:Action s:mustUnderstand=\"1\">http://Echoservice/IEchoService/echoFile</a:Action><a:MessageID>urn:uuid:57ac72c5-4f51-4408-9a38-cfed84e9e816</a:MessageID><a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo><a:To s:mustUnderstand=\"1\">http://192.168.122.1:8080/EchoService</a:To></s:Header><s:Body><echoFile xmlns=\"http://Echoservice\"><fileData><xop:Include href=\"cid:http%3A%2F%2Ftempuri.org%2F1%2F633956237957031250\" xmlns:xop=\"http://www.w3.org/2004/08/xop/include\"/></fileData></echoFile></s:Body></s:Envelope>\r\n" +
+            "--uuid:4ee070c0-81b0-4ba2-a4da-dbb5579d8741+id=1\r\n" +
+            "Content-ID: <http://tempuri.org/1/633956237957031250>\r\n" +
+            "Content-Transfer-Encoding: binary\r\n" +
+            "Content-Type: application/octet-stream\r\n" +
+            "\r\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\r\n" +
+            "--uuid:4ee070c0-81b0-4ba2-a4da-dbb5579d8741+id=1--";
+
     private static final String jaxwsContentType = "multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\"";
     private static final String jaxwsBody =
             "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
@@ -336,6 +411,26 @@ public class XOPUtilsTest {
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
             "\r\n" +
             "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a--";
+
+    private static final String jaxwsSoap12ContentType = "multipart/related;start=\"<rootpart*7c154c5b-966a-4aa1-bbea-dcc0565e798b@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:7c154c5b-966a-4aa1-bbea-dcc0565e798b\";start-info=\"application/soap+xml\";action=\"\"";
+    private static final String jaxwsSoap12Body =
+            "--uuid:7c154c5b-966a-4aa1-bbea-dcc0565e798b\r\n" +
+            "Content-Id: <rootpart*7c154c5b-966a-4aa1-bbea-dcc0565e798b@example.jaxws.sun.com>\r\n" +
+            "Content-Type: application/xop+xml;charset=utf-8;type=\"application/soap+xml\"\r\n" +
+            "Content-Transfer-Encoding: binary\r\n" +
+            "\r\n" +
+            "<?xml version=\"1.0\" ?><S:Envelope xmlns:S=\"http://www.w3.org/2003/05/soap-envelope\"><S:Body><ns2:echoFile xmlns:ns2=\"http://www.layer7tech.com/services/jaxws/echoservice\"><arg0><data><xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:141e0b80-dc66-4944-b80e-1240d5c549db@example.jaxws.sun.com\"></xop:Include></data><name>payload.txt</name></arg0></ns2:echoFile></S:Body></S:Envelope>\r\n" +
+            "--uuid:7c154c5b-966a-4aa1-bbea-dcc0565e798b\r\n" +
+            "Content-Id: <141e0b80-dc66-4944-b80e-1240d5c549db@example.jaxws.sun.com>\r\n" +
+            "Content-Type: text/plain\r\n" +
+            "Content-Transfer-Encoding: binary\r\n" +
+            "\r\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+            "\r\n" +
+            "--uuid:7c154c5b-966a-4aa1-bbea-dcc0565e798b--";
 
     private static final String jaxwsBodyInvalid =
             "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +

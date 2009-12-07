@@ -20,6 +20,7 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.server.StashManagerFactory;
@@ -33,6 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.io.SequenceInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collection;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.nio.charset.Charset;
+import java.net.URLDecoder;
 
 /**
  * Utility class for working with XOP (XML-binary Optimized Packaging) Messages.
@@ -497,6 +500,13 @@ public class XOPUtils {
         if ( contentIdUrl != null ) {
             if ( contentIdUrl.toLowerCase().startsWith( CID_PREFIX ) ) {
                 contentId = contentIdUrl.substring( CID_PREFIX.length() );
+                if ( URL_DECODE_INCLUDE_HREF ) {
+                    try {
+                        contentId = URLDecoder.decode( contentId, "UTF-8" );
+                    } catch (UnsupportedEncodingException e) {
+                        // don't decode 
+                    }
+                }
             }
         }
 
@@ -563,6 +573,7 @@ public class XOPUtils {
     private static final byte[] HEADER_SEPARATOR = ": ".getBytes(CHARSET_UTF8);
     private static final String[] XMLMIME_NAMESPACES = new String[]{ NS_XMLMIME_2, NS_XMLMIME_1 };
     private static final String BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; // "=" handled as special case
+    private static final boolean URL_DECODE_INCLUDE_HREF = SyspropUtil.getBoolean( "com.l7tech.external.assertions.mtom.urlDecodeIncludeHref", true ); // For WCF compat
 
     /**
      * Get the element equivalent to the template in the copied target document.
@@ -607,7 +618,7 @@ public class XOPUtils {
 
     private static boolean isNamespaceMatch( final String namespace1,
                                              final String namespace2 ) {
-        return (namespace1==null && namespace2==null) || (namespace1 != null && namespace1.equals( namespace2 ));
+        return (namespace1==null && (namespace2==null || namespace2.isEmpty())) || (namespace1 != null && namespace1.equals( namespace2 ));
     }
 
     private static void validateNoXOP( final Element element ) throws XOPException {

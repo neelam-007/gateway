@@ -42,6 +42,14 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
 
     //- PROTECTED
 
+    protected ServerMtomValidateAssertion( final MtomValidateAssertion assertion,
+                                           final Auditor auditor ) {
+        super( assertion, assertion );
+
+        this.auditor = auditor;
+        this.compiledXpaths = compileXpaths( getXpathExpressions(assertion) );
+    }
+
     @Override
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                               final Message message,

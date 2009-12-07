@@ -45,6 +45,17 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
 
     //- PROTECTED
 
+    protected ServerMtomDecodeAssertion( final MtomDecodeAssertion assertion,
+                                         final Auditor auditor,
+                                         final StashManagerFactory stashManagerFactory,
+                                         final Config config ){
+        super( assertion, assertion );
+
+        this.auditor = auditor;
+        this.stashManagerFactory = stashManagerFactory;
+        this.config = config;
+    }
+
     @Override
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                               final Message message,
