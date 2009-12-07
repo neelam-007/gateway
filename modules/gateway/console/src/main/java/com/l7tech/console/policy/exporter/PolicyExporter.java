@@ -201,7 +201,9 @@ public class PolicyExporter {
                     }
                 }
             }
-            ref = new PrivateKeyReference(keyable);
+            if (! keyable.isUsesDefaultKeyStore()) {
+                ref = new PrivateKeyReference(keyable);
+            }
         }
 
         // if an assertion was created and it's not already recorded, add it
