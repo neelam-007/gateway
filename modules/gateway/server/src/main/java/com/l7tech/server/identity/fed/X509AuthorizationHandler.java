@@ -54,7 +54,7 @@ class X509AuthorizationHandler extends FederatedAuthorizationHandler {
             logger.info("Can only authorize credentials that include a certificate");
             return null;
         }
-        String subjectDn = CertUtils.getSubjectDN( requestCert );
+        String subjectDn = requestCert.getSubjectDN().getName();
         String issuerDn = CertUtils.getIssuerDN( requestCert );
 
         if ( !certOidSet.isEmpty() ) {
