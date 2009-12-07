@@ -200,6 +200,7 @@ public class GatewayFeatureSets {
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
             srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
             ass(WssDigest.class),
+            ass(ExportVariablesAssertion.class),
             mass("assertion:CacheLookup"),
             mass("assertion:CacheStorage"));
 
@@ -442,7 +443,6 @@ public class GatewayFeatureSets {
             ass(FalseAssertion.class),
             ass(SetVariableAssertion.class),
             ass(Include.class),
-            ass(ExportVariablesAssertion.class),
             mass("assertion:EchoRouting"),
             mass("assertion:HardcodedResponse"),
             mass("assertion:CertificateAttributes"));
