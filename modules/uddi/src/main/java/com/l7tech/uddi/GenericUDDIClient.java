@@ -1492,13 +1492,13 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                                 schemes.add( null );
                             }
 
-                            for ( final String scheme : schemes ) {
+                            outer: for ( final String scheme : schemes ) {
                                 for ( BindingTemplate bindingTemplate : bindingTemplateList ) {
                                     if ( bindingTemplate.getAccessPoint() != null &&
                                          (scheme==null || bindingTemplate.getAccessPoint().getValue().toLowerCase().startsWith( scheme+":" )) &&
                                          USE_TYPE_END_POINT.equalsIgnoreCase(bindingTemplate.getAccessPoint().getUseType()) ) {
                                         bindingKey = bindingTemplate.getBindingKey();
-                                        break;
+                                        break outer;
                                     }
                                 }
 
@@ -1509,7 +1509,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                                              (scheme==null || bindingTemplate.getAccessPoint().getValue().toLowerCase().startsWith( scheme+":" )) &&
                                              USE_TYPE_HTTP.equalsIgnoreCase(bindingTemplate.getAccessPoint().getUseType()) ) {
                                             bindingKey = bindingTemplate.getBindingKey();
-                                            break;
+                                            break outer;
                                         }
                                     }
                                 }
@@ -1989,6 +1989,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     throw new UDDIException("notifcationInterval is required when bindingKey is present");
                 }
                 subscription.setNotificationInterval( factory.newDuration( notificationInterval ) );
+                logger.log(Level.FINE, "Subscribing with bindingKey: " + bindingKey);
             } else if ( notificationInterval > 0 ) {
                 subscription.setNotificationInterval( factory.newDuration( notificationInterval ) );
             }
@@ -2012,6 +2013,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             throw new UDDIException( "Subscription Key error." );
         }
 
+        logger.log(Level.FINE, "Subscription successful. Subscription key: " + subscriptionKey);
         return subscriptionKey;
     }
 
