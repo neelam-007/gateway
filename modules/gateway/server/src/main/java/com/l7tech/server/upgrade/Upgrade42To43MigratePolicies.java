@@ -28,6 +28,8 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
+ * A database upgrade task that migrates existing service policies from a column in published service to their own
+ * table, referenced by oid from the published service table.
  */
 public class Upgrade42To43MigratePolicies implements UpgradeTask {
     private static final Logger logger = Logger.getLogger(Upgrade42To43MigratePolicies.class.getName());

@@ -19,7 +19,7 @@ import org.springframework.context.ApplicationContext;
 import java.util.logging.Logger;
 
 /**
- * A database upgrade task that adds roles to the database.
+ * A database upgrade task that creates an initial version for all existing policies.
  */
 public class Upgrade42To43AddInitialPolicyVersions implements UpgradeTask {
     protected static final Logger logger = Logger.getLogger(Upgrade42To43AddInitialPolicyVersions.class.getName());
