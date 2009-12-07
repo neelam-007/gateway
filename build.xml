@@ -2429,10 +2429,6 @@
                 <exclude name="com/l7tech/policy/assertion/ext/CustomAuditor.java"/>
                 <exclude name="com/l7tech/policy/assertion/ext/Category.java"/>
                 <exclude name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java"/>
-                <exclude name="com/l7tech/policy/assertion/ext/AssertionEditor.java"/>
-                <exclude name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.java"/>
-                <exclude name="com/l7tech/policy/assertion/ext/CustomAssertionUI.java"/>
-                <exclude name="com/l7tech/policy/assertion/ext/EditListener.java"/>
             </fileset>
         </javadoc>
     </target>
