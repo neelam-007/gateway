@@ -445,7 +445,7 @@ public class LdapIdentityProviderImpl
 
         if ( certsAreEnabled() ) {
             // look for presence of cert in index
-            lookedupCert = findCertBySki( ski );
+            lookedupCert = ldapCertificateCache.findCertBySki( ski );
 
             if ( lookedupCert == null ) {
                 if ( !certIndexEnabled() ) { // then search for cert and add to cache if found
