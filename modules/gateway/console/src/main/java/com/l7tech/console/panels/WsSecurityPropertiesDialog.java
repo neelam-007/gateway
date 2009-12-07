@@ -83,8 +83,8 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             try {
                 TrustedCert certificate = Registry.getDefault().getTrustedCertManager().findCertByPrimaryKey( recipientCertificateOid );
                 selectedCertificateNameTextField.setText( certificate==null ? "<Not Found>" : certificate.getName() );
-                selectedCertificateSubjectTextField.setText( certificate==null ? "<Not Found>" : certificate.getSubjectDn() );
-                selectedCertificateIssuerTextField.setText( certificate==null ? "<Not Found>" : certificate.getIssuerDn() );
+                selectedCertificateSubjectTextField.setText( certificate==null ? "<Not Found>" : certificate.getCertificate().getSubjectDN().toString() );
+                selectedCertificateIssuerTextField.setText( certificate==null ? "<Not Found>" : certificate.getCertificate().getIssuerDN().toString() );
                 selectedCertificateNameTextField.setCaretPosition( 0 );
                 selectedCertificateSubjectTextField.setCaretPosition( 0 );
                 selectedCertificateIssuerTextField.setCaretPosition( 0 );

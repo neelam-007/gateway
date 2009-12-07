@@ -153,6 +153,8 @@ public abstract class X509Entity extends PersistentEntityImp {
     }
 
     /**
+     * The Subject DN in canonical format (not for display use)
+     *
      * @return the subjectDn from the cert, or null.
      */
     @Column(name="subject_dn", length=255)
@@ -178,6 +180,11 @@ public abstract class X509Entity extends PersistentEntityImp {
         return certBase64;
     }
 
+    /**
+     * The Issuer DN in canonical format (not for display use)
+     *
+     * @return The issuer DN or null
+     */
     @Column(name="issuer_dn")
     public String getIssuerDn() {
         return issuerDn;
@@ -238,6 +245,7 @@ public abstract class X509Entity extends PersistentEntityImp {
         this.readOnly = true;
     }
 
+    @SuppressWarnings({ "RedundantIfStatement" })
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
