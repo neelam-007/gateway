@@ -45,7 +45,6 @@ import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.*;
@@ -634,7 +633,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             Connector connector = entry.right;
             logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
             embedded.removeConnector(connector);
-            closeAllSockets(oid);
             try {
                 connector.destroy();
             } catch (Exception e) {
@@ -662,7 +660,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             Connector connector = entry.right;
             logger.info("Pausing " + connector.getScheme() + " connector on port " + connector.getPort());
             embedded.removeConnector(connector);
-            closeAllSockets(oid);
             try {
                 connector.destroy();
             } catch (Exception e) {
@@ -733,80 +730,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     @Override
     public ApplicationContext getApplicationContext() {
         return super.getApplicationContext();
-    }
-
-    private final Map<Long, Map<Socket, Object>> socketsByConnector = new HashMap<Long, Map<Socket, Object>>();
-
-    private void onSocketOpened(long connectorOid, Socket accepted) {
-        synchronized (socketsByConnector) {
-            Map<Socket, Object> sockets = socketsByConnector.get(connectorOid);
-            if (sockets == null) {
-                sockets = new WeakHashMap<Socket, Object>();
-                socketsByConnector.put(connectorOid, sockets);
-            }
-            sockets.put(accepted, Boolean.TRUE);
-        }
-    }
-
-    private void onSocketClosed(long connectorOid, Socket closed) {
-        synchronized (socketsByConnector) {
-            Map<Socket, Object> sockets = socketsByConnector.get(connectorOid);
-            if (sockets == null)
-                return;
-            sockets.remove(closed);
-            if (sockets.isEmpty())
-                socketsByConnector.remove(connectorOid);
-        }
-    }
-
-    private void closeAllSockets(final long connectorOid) {
-        final Map<Socket, Object> sockets;
-        synchronized (socketsByConnector) {
-            sockets = socketsByConnector.remove(connectorOid);
-        }
-        if (sockets == null || sockets.isEmpty())
-            return;
-        final Collection<Socket> ks = new ArrayList<Socket>(sockets.keySet());
-        for (Socket socket : ks) {
-            if (socket == null)
-                continue;
-            forceClosed(socket, connectorOid);
-        }
-    }
-
-    private static void forceClosed(Socket socket, long connectorOid) {
-        if (!socket.isClosed()) {
-            try {
-                logger.log(Level.INFO, "Force closing client connection for connector OID " + connectorOid);
-                socket.close();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Error closing client socket: " + ExceptionUtils.getMessage(e), e);
-            }
-        }
-    }
-
-    /**
-     * Report that a client connection has just been opened.
-     *
-     * @param transportModuleId  the ID of the HttpTransportModule instance that owns the connector.  Required
-     * @param connectorOid       the OID of the SsgConnector whose listen socket produced the connection.  Required
-     * @param accepted           the just-accepted client connection socket.  Required
-     */
-    public static void onSocketOpened(long transportModuleId, long connectorOid, Socket accepted) {
-        HttpTransportModule module = getInstance(transportModuleId);
-        if (module != null) module.onSocketOpened(connectorOid, accepted);
-    }
-
-    /**
-     * Report that a client connection has just been closed.
-     *
-     * @param transportModuleId  the ID of the HttpTransportModule instance that owns the connector.  Required
-     * @param connectorOid       the OID of the SsgConnector whose listen socket produced the connection.  Required
-     * @param closed             the just-closed client connection socket.  Required
-     */
-    public static void onSocketClosed(long transportModuleId, long connectorOid, Socket closed) {
-        HttpTransportModule module = getInstance(transportModuleId);
-        if (module != null) module.onSocketClosed(connectorOid, closed);
     }
 
     private void addHttpConnector(SsgConnector ssgConn, int port, Map<String, Object> attrs) throws ListenerException {

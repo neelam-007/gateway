@@ -89,8 +89,6 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
     }
 
     public static Socket wrapSocket(final long transportModuleId, final long connectorOid, final Socket accepted) {
-        HttpTransportModule.onSocketOpened(transportModuleId, connectorOid, accepted);
-
         final Socket wrapped;
 
         if (accepted instanceof SSLSocket) {
@@ -239,7 +237,6 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
         }
 
         public void onClose() {
-            HttpTransportModule.onSocketClosed(transportModuleId, connectorOid, accepted);
         }
     }
 
