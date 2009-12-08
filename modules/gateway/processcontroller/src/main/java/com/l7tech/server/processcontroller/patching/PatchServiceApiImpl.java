@@ -110,10 +110,11 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             logger.log(Level.INFO, "Patch " + patchId + " is installed.");
         } else {
             byte[] errOut = result.getOutput();
+            String errMsg = errOut == null ? "" : new String(errOut);
             status1.setField(PatchStatus.Field.STATE, PatchStatus.State.ERROR.name());
-            status1.setField(PatchStatus.Field.STATUS_MSG, errOut != null ? new String(errOut) : "");
+            status1.setField(PatchStatus.Field.STATUS_MSG, errMsg);
             status2 = packageManager.setPackageStatus(status1);
-            logger.log(Level.WARNING, "Error installing " + patchId + " : " + new String(errOut));
+            logger.log(Level.WARNING, "Error installing " + patchId + " : " + errMsg);
         }
 
         return status2;
