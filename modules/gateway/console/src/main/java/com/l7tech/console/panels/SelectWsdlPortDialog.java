@@ -9,7 +9,6 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Vector;
 
 /**
  * Dialog to select a wsdl:port from the list of valid bindingTemplates for a BusinessService in UDDI
@@ -60,18 +59,13 @@ public class SelectWsdlPortDialog extends JDialog {
 
         Utilities.setEscKeyStrokeDisposes(this);
 
-        wsdlPortTable = new WsdlPortTable();
+        wsdlPortTable = new WsdlPortTable(allApplicableWsdlInfos);
         viewPort.setViewportView(wsdlPortTable);
         Utilities.setDoubleClickAction(wsdlPortTable, buttonOK);
 
         //get all application wsdl infos
 //        final WsdlPortInfo[] allApplicableWsdlInfos =
 //                Registry.getDefault().getServiceManager().findWsdlInfosForSingleBusinessService(uddiRegistryOid, serviceKey, false);
-        final Vector data = new Vector();
-        for(WsdlPortInfo wsdlPortInfo: allApplicableWsdlInfos){
-            data.add(wsdlPortInfo);
-        }
-        wsdlPortTable.getTableSorter().setData(data);
 
         pack();
         Utilities.centerOnScreen(this);

@@ -7,38 +7,38 @@ package com.l7tech.console.table;
 import com.l7tech.uddi.WsdlPortInfo;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumnModel;
-import javax.swing.table.JTableHeader;
+import javax.swing.table.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 public class WsdlPortTable extends JTable {
 
     enum WsdlPortColumn {
 
-        NAME(0, "wsdl:port", 60) {
+        NAME(0, "wsdl:port", MAX_COLUMN_SIZE) {
             @Override
-            Object getValue(WsdlPortInfo portInfo) {
+            String getValue(WsdlPortInfo portInfo) {
                 return portInfo.getWsdlPortName();
             }},
 
-        NAMESPACE(1, "Namespace", 175) {
+        NAMESPACE(1, "Namespace", MAX_COLUMN_SIZE) {
             @Override
-            Object getValue(WsdlPortInfo portInfo) {
+            String getValue(WsdlPortInfo portInfo) {
                 return portInfo.getWsdlPortBindingNamespace();
             }},
 
-        WSDL_URL(2, "WSDL Location", 175) {
+        WSDL_URL(2, "WSDL Location", MAX_COLUMN_SIZE) {
             @Override
-            Object getValue(WsdlPortInfo portInfo) {
+            String getValue(WsdlPortInfo portInfo) {
                 return portInfo.getWsdlUrl();
             }},
 
-        ENDPOINT(3, "Endpoint", 175) {
+        ENDPOINT(3, "Endpoint", MAX_COLUMN_SIZE) {
             @Override
-            Object getValue(WsdlPortInfo portInfo) {
+            String getValue(WsdlPortInfo portInfo) {
                 return portInfo.getAccessPointURL();
             }};
 
@@ -54,14 +54,14 @@ public class WsdlPortTable extends JTable {
 
         private final int position;
         private final String colName;
-        private final int preferredWidth;
+        private final int maxWidth;
 
-        abstract Object getValue(WsdlPortInfo portInfo);
+        abstract String getValue(WsdlPortInfo portInfo);
 
         WsdlPortColumn(int position, String colName, int preferredWidth) {
             this.position = position;
             this.colName = colName;
-            this.preferredWidth = preferredWidth;
+            this.maxWidth = preferredWidth;
         }
 
         public int getPosition() {
@@ -72,8 +72,13 @@ public class WsdlPortTable extends JTable {
             return colName;
         }
 
-        public int getPreferredWidth() {
-            return preferredWidth;
+        public int getMaxWidth() {
+            return maxWidth;
+        }
+
+        public int getValueLength(WsdlPortInfo portInfo) {
+            String value = getValue(portInfo);
+            return value == null || value.isEmpty() ? 0 : value.length();
         }
 
         public static WsdlPortColumn fromPosition(int position) {
@@ -81,18 +86,58 @@ public class WsdlPortTable extends JTable {
         }
     }
 
+    private static final int MAX_COLUMN_SIZE = 175;
+    private WsdlPortColumn displayFullColumn = WsdlPortColumn.NAME;
+    private int displayFullColumnExtraSpace = 10;
+    private final Map<WsdlPortColumn, Integer> preferredSizes = new HashMap<WsdlPortColumn, Integer>();
+    private final int totalScalingColumnsSize;
+
     private WsdlPortTableSorter tableSorter = null;
 
-    public WsdlPortTable() {
+    public WsdlPortTable(WsdlPortInfo[] data) {
         setModel(getWsdlTableModel());
         getTableHeader().setReorderingAllowed(false);
         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        for (WsdlPortColumn col : WsdlPortColumn.values()) {
-            getColumnModel().getColumn(col.getPosition()).setPreferredWidth(col.getPreferredWidth());
 
+        getTableSorter().setData(data);
+
+        // calculate preferred sizes
+        final TableCellRenderer renderer = getTableHeader().getDefaultRenderer();
+        int maxPreferredSize, preferredSize, totalRemainingSize = 0;
+        for (WsdlPortColumn col : WsdlPortColumn.values()) {
+            maxPreferredSize = 0;
+            for (WsdlPortInfo dataRow : data) {
+                preferredSize = renderer.getTableCellRendererComponent(this, col.getValue(dataRow), false, false, 0, col.getPosition() ).getPreferredSize().width;
+                if (maxPreferredSize < preferredSize)
+                    maxPreferredSize = preferredSize;
+            }
+            preferredSizes.put(col, maxPreferredSize);
+            if (col != displayFullColumn)
+                totalRemainingSize += maxPreferredSize;
         }
+        totalScalingColumnsSize = totalRemainingSize;
 
         addMouseListenerToHeaderInTable();
+    }
+
+    @Override
+    public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+        final Component prepareRenderer = super.prepareRenderer(renderer, row, column);
+        if (getTableHeader().getResizingColumn() != null) return prepareRenderer;
+        
+        final TableColumn tableColumn = getColumnModel().getColumn(column);
+
+        int preferredWidth;
+        if (WsdlPortColumn.fromPosition(column) == displayFullColumn) {
+            preferredWidth = preferredSizes.get(displayFullColumn) + displayFullColumnExtraSpace;
+            tableColumn.setMinWidth(preferredWidth);
+        } else {
+            double ratio = (double)(getTableHeader().getWidth() - preferredSizes.get(displayFullColumn) - displayFullColumnExtraSpace) / totalScalingColumnsSize;
+            preferredWidth = (int)Math.round(ratio * preferredSizes.get(WsdlPortColumn.fromPosition(column)));
+        }
+
+        tableColumn.setPreferredWidth(Math.min(preferredWidth, WsdlPortColumn.fromPosition(column).getMaxWidth()));
+        return prepareRenderer;
     }
 
     /**
@@ -141,9 +186,9 @@ public class WsdlPortTable extends JTable {
                 int viewColumn = columnModel.getColumnIndexAtX(e.getX());
                 int column = tableView.convertColumnIndexToModel(viewColumn);
                 if (e.getClickCount() == 1 && column != -1) {
-
-                    ((WsdlPortTableSorter) tableView.getModel()).sortData(WsdlPortColumn.fromPosition(column), true);
-                    ((WsdlPortTableSorter) tableView.getModel()).fireTableDataChanged();
+                    WsdlPortTableSorter tableModel = (WsdlPortTableSorter) tableView.getModel();
+                    tableModel.sortData(WsdlPortColumn.fromPosition(column), true);
+                    tableModel.fireTableDataChanged();
                     tableView.getTableHeader().resizeAndRepaint();
                 }
             }
@@ -154,11 +199,10 @@ public class WsdlPortTable extends JTable {
 
     public static class WsdlPortTableSorter extends FilteredDefaultTableModel {
 
-
         private boolean ascending = true;
         private WsdlPortColumn columnToSort = WsdlPortColumn.NAME;
-        private Vector rawdata = new Vector();
-        private Object[] sortedData = new Object[0];
+        private WsdlPortInfo[] rawdata = new WsdlPortInfo[0];
+        private WsdlPortInfo[] sortedData = new WsdlPortInfo[0];
 
         /**
          * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
@@ -170,41 +214,21 @@ public class WsdlPortTable extends JTable {
         }
 
         /**
-         * Return all data in the model
-         *
-         * @return The data in the model
-         */
-        public Vector getAllData() {
-            return rawdata;
-        }
-
-        /**
          * Set the data object.
          *
          * @param data The list of the WSDLs found in the UDDI Registry.
          */
-        public void setData(Vector data) {
-            this.rawdata = data;
+        public void setData(WsdlPortInfo[] data) {
+            this.rawdata = Arrays.copyOf(data, data.length);
             sortData(columnToSort, false);
         }
 
         public void clearData() {
             // an empty list in the rawdata
-            this.rawdata = new Vector();
-
-            sortedData = rawdata.toArray();
-            getRealModel().setRowCount(sortedData.length);
+            this.rawdata = new WsdlPortInfo[0];
+            this.sortedData = new WsdlPortInfo[0];
+            getRealModel().setRowCount(0);
             fireTableDataChanged();
-        }
-
-        /**
-         * Add a row to the table model
-         *
-         * @param rowData The new row to be stored.
-         */
-        public void addRow(Object rowData) {
-            this.rawdata.add(rowData);
-            sortData(columnToSort, false);
         }
 
         /**
@@ -241,7 +265,7 @@ public class WsdlPortTable extends JTable {
         public void sortData(WsdlPortColumn column, boolean orderToggle) {
 
             if (orderToggle) {
-                ascending = ascending ? false : true;
+                ascending = !ascending;
             }
 
             // always sort in ascending order if the user select a new column
@@ -251,7 +275,7 @@ public class WsdlPortTable extends JTable {
             // save the column index
             columnToSort = column;
 
-            Object[] sorted = rawdata.toArray();
+            WsdlPortInfo[] sorted = Arrays.copyOf(rawdata, rawdata.length);
             Arrays.sort(sorted, new WsdlPortTableSorter.ColumnSorter(columnToSort, ascending));
             sortedData = sorted;
             getRealModel().setRowCount(sortedData.length);
@@ -272,14 +296,14 @@ public class WsdlPortTable extends JTable {
                 throw new IllegalArgumentException("Bad Row");
             }
 
-            return WsdlPortColumn.fromPosition(col).getValue((WsdlPortInfo) sortedData[row]);
+            return WsdlPortColumn.fromPosition(col).getValue(sortedData[row]);
         }
 
         /**
          * A class for determining the order of two objects by comparing their values.
          */
-        public class ColumnSorter implements Comparator {
-            private boolean ascending;
+        public class ColumnSorter implements Comparator<WsdlPortInfo> {
+            private int ascending;
             private WsdlPortColumn column;
 
             /**
@@ -289,51 +313,31 @@ public class WsdlPortTable extends JTable {
              * @param ascending true if the sorting order is ascending, false otherwise.
              */
             ColumnSorter(WsdlPortColumn column, boolean ascending) {
-                this.ascending = ascending;
+                this.ascending = ascending ? 1 : -1;
                 this.column = column;
             }
 
             /**
-             * Compare the order of the two objects. A negative integer, zero, or a positive integer
-             * as the the specified String is greater than, equal to, or less than this String,
-             * ignoring case considerations.
+             * Compares its two arguments for order.  Returns a negative integer,
+             * zero, or a positive integer as the first argument is less than, equal
+             * to, or greater than the second.
              *
              * @param a One of the two objects to be compared.
              * @param b The other one of the two objects to be compared.
              * @return -1 if a > b, 0 if a = b, and 1 if a < b.
              */
             @Override
-            public int compare(Object a, Object b) {
+            public int compare(WsdlPortInfo a, WsdlPortInfo b) {
+                int elementAlength = column.getValueLength(a);
+                int elementBlength = column.getValueLength(b);
 
-                Object elementA = column.getValue((WsdlPortInfo) a);
-                Object elementB = column.getValue((WsdlPortInfo) b);
+                // Sort nulls and empty strings so they appear last, regardless of sort order
+                return elementAlength == 0 && elementBlength == 0 ? 0:
+                       elementAlength == 0 ? 1 :
+                       elementBlength == 0  ? -1 :
+                       ascending * column.getValue(a).compareToIgnoreCase(column.getValue(b));
 
-                // Treat empty strains like nulls
-                if (elementA instanceof String && ((String) elementA).length() == 0) {
-                    elementA = null;
-                }
-                if (elementB instanceof String && ((String) elementB).length() == 0) {
-                    elementB = null;
-                }
-
-                // Sort nulls so they appear last, regardless
-                // of sort order
-                if (elementA == null && elementB == null) {
-                    return 0;
-                } else if (elementA == null) {
-                    return 1;
-                } else if (elementB == null) {
-                    return -1;
-                } else {
-                    if (ascending) {
-                        return ((String) elementA).compareToIgnoreCase((String) elementB);
-                    } else {
-                        return ((String) elementB).compareToIgnoreCase((String) elementA);
-                    }
-                }
             }
         }
-
     }
-
 }
