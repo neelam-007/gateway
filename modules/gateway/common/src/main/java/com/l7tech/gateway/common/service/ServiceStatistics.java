@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.service;
 
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServiceStatistics implements Serializable {
 
@@ -13,9 +14,9 @@ public class ServiceStatistics implements Serializable {
                              int authorizedRequestCount,
                              int completedRequestCount) {
         _serviceOid = serviceOid;
-        _attemptedRequestCount = attemptedRequestCount;
-        _authorizedRequestCount = authorizedRequestCount;
-        _completedRequestCount = completedRequestCount;
+        _attemptedRequestCount.set(attemptedRequestCount);
+        _authorizedRequestCount.set(authorizedRequestCount);
+        _completedRequestCount.set(completedRequestCount);
     }
 
     public long getServiceOid() {
@@ -31,55 +32,58 @@ public class ServiceStatistics implements Serializable {
     }
 
     public int getAttemptedRequestCount() {
-        return _attemptedRequestCount;
+        return _attemptedRequestCount.get();
     }
 
-    public synchronized void attemptedRequest() {
-        _attemptedRequestCount++;
+    public void attemptedRequest() {
+        _attemptedRequestCount.incrementAndGet();
     }
 
     public int getAuthorizedRequestCount() {
-        return _authorizedRequestCount;
+        return _authorizedRequestCount.get();
     }
 
-    public synchronized void authorizedRequest() {
-        _authorizedRequestCount++;
+    public void authorizedRequest() {
+        _authorizedRequestCount.incrementAndGet();
     }
 
     public int getCompletedRequestCount() {
-        return _completedRequestCount;
+        return _completedRequestCount.get();
     }
 
-    public synchronized void completedRequest() {
-        _completedRequestCount++;
+    public void completedRequest() {
+        _completedRequestCount.incrementAndGet();
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ServiceStatistics)) return false;
 
         final ServiceStatistics serviceStatistics = (ServiceStatistics) o;
 
-        if (_attemptedRequestCount != serviceStatistics._attemptedRequestCount) return false;
-        if (_authorizedRequestCount != serviceStatistics._authorizedRequestCount) return false;
-        if (_completedRequestCount != serviceStatistics._completedRequestCount) return false;
+        if (_attemptedRequestCount.get() != serviceStatistics._attemptedRequestCount.get()) return false;
+        if (_authorizedRequestCount.get() != serviceStatistics._authorizedRequestCount.get()) return false;
+        if (_completedRequestCount.get() != serviceStatistics._completedRequestCount.get()) return false;
         if (_serviceOid != serviceStatistics._serviceOid) return false;
 
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = (int) (_serviceOid ^ (_serviceOid >>> 32));
-        result = 29 * result + _attemptedRequestCount;
-        result = 29 * result + _authorizedRequestCount;
-        result = 29 * result + _completedRequestCount;
+        result = 29 * result + _attemptedRequestCount.get();
+        result = 29 * result + _authorizedRequestCount.get();
+        result = 29 * result + _completedRequestCount.get();
         return result;
     }
 
     private long _serviceOid = PublishedService.DEFAULT_OID;
     private String _serviceName = "";
-    private int _attemptedRequestCount = 0;
-    private int _authorizedRequestCount = 0;
-    private int _completedRequestCount = 0;
+    private final AtomicInteger _attemptedRequestCount = new AtomicInteger(0);
+    private final AtomicInteger _authorizedRequestCount = new AtomicInteger(0);
+    private final AtomicInteger _completedRequestCount = new AtomicInteger(0);
 }
