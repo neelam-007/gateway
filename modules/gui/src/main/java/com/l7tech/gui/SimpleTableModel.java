@@ -117,7 +117,7 @@ public class SimpleTableModel<RT> extends AbstractTableModel {
     }
 
     public void removeRowAt( final int modelRowIndex ) {
-        if ( modelRowIndex > -1 & modelRowIndex < rows.size() ) {
+        if ( modelRowIndex > -1 && modelRowIndex < rows.size() ) {
             rows.remove( modelRowIndex );
             fireTableRowsDeleted( modelRowIndex, modelRowIndex );
         }
