@@ -135,17 +135,25 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
 
                         for ( UDDIBusinessServiceStatus businessService : toDelete ) {
                             if ( businessService.getUddiPolicyTModelKey()==null ) {
-                                // then it was a remote reference
-                                client.removePolicyReference(
-                                        businessService.getUddiServiceKey(),
-                                        null,
-                                        businessService.getUddiPolicyUrl() );
+                                try {
+                                    // then it was a remote reference
+                                    client.removePolicyReference(
+                                            businessService.getUddiServiceKey(),
+                                            null,
+                                            businessService.getUddiPolicyUrl() );
+                                } catch ( UDDIInvalidKeyException uike) {
+                                    logger.fine( "Service not found when removing policy reference '"+businessService.getUddiServiceKey()+"'." );
+                                }
                             } else {
                                 // it was a local reference, delete reference and TModel
-                                client.removePolicyReference(
-                                        businessService.getUddiServiceKey(),
-                                        businessService.getUddiPolicyTModelKey(),
-                                        null );
+                                try {
+                                    client.removePolicyReference(
+                                            businessService.getUddiServiceKey(),
+                                            businessService.getUddiPolicyTModelKey(),
+                                            null );
+                                } catch ( UDDIInvalidKeyException uike) {
+                                    logger.fine( "Service not found when removing policy reference '"+businessService.getUddiServiceKey()+"'." );
+                                }
 
                                 try {
                                     client.deleteTModel( businessService.getUddiPolicyTModelKey() );

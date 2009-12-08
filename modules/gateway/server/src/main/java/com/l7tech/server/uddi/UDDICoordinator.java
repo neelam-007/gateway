@@ -503,20 +503,36 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                     origService.getUddiServiceKey() ), null );
         }
 
+        final Map<Long,WsPolicyUDDIEvent> wsPolicyEventMap = new HashMap<Long,WsPolicyUDDIEvent>(); // one event per registry
+
         // Delete stale entries
         final Set<Triple<Long,Long,String>> registryServiceKeys = registryServiceMap.keySet();
         for ( UDDIBusinessServiceStatus serviceStatus : status ) {
             Triple<Long,Long,String> key = new Triple<Long,Long,String>( serviceStatus.getUddiRegistryOid(), serviceStatus.getPublishedServiceOid(), serviceStatus.getUddiServiceKey() );
             if ( !registryServiceKeys.contains(key) ) {
-                logger.info( "Deleting business service status for " + key + "." );
-                uddiBusinessServiceStatusManager.delete( serviceStatus );
+                if ( serviceStatus.getUddiMetricsReferenceStatus() == UDDIBusinessServiceStatus.Status.NONE &&
+                     serviceStatus.getUddiPolicyStatus() == UDDIBusinessServiceStatus.Status.NONE ) {
+                    logger.info( "Deleting business service status for " + key + "." );
+                    uddiBusinessServiceStatusManager.delete( serviceStatus );
+                } else {
+                    registryServiceMap.put( key, serviceStatus );
+                    updateUDDIBusinessServiceStatus(
+                            registryServiceMap,
+                            wsPolicyEventMap,
+                            serviceStatus.getPublishedServiceOid(),
+                            serviceStatus.getUddiRegistryOid(),
+                            serviceStatus.getUddiServiceKey(),
+                            serviceStatus.getUddiServiceName(),
+                            false,
+                            false,
+                            null );
+                }
             } else {
                 registryServiceMap.put( key, serviceStatus );
             }
         }
 
         // Update / create service status
-        Map<Long,WsPolicyUDDIEvent> wsPolicyEventMap = new HashMap<Long,WsPolicyUDDIEvent>(); // one event per registry
         for ( UDDIProxiedServiceInfo proxiedServiceInfo : proxiedServices ) {
             if ( proxiedServiceInfo.getProxiedServices() != null ) {
                 final long publishedServiceOid = proxiedServiceInfo.getPublishedServiceOid();
