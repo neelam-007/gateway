@@ -195,7 +195,9 @@ public class WsspWriter {
             buildSymmetricBinding(wssp, algorithmSuite, isWss11, l7Assertions);
         } else if (isAsymmetricBinding(l7Assertions)) {
             buildAsymmetricBinding(wssp, algorithmSuite, isWss11);
-        } else if (isTransportBinding(l7Assertions)) {
+        }
+
+        if (isTransportBinding(l7Assertions)) {
             buildTransportBinding(wssp, algorithmSuite, isWss11, l7Assertions);
         }
 
@@ -430,8 +432,8 @@ public class WsspWriter {
             }
         }
 
-        if(sslCertIdentity && usesWss)
-            throw new PolicyAssertionException(null, "Cannot use WSS and TLS with client cert.");
+//        if(sslCertIdentity && usesWss)
+//            throw new PolicyAssertionException(null, "Cannot use WSS and TLS with client cert.");
     }
 
     private boolean isSymmetricBinding(Collection<Assertion> assertions) {
