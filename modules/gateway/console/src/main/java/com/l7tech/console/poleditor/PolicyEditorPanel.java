@@ -140,6 +140,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         boolean hasWriteAccess();
     }
 
+    /**
+     * Post Bondo (5.2) enableUddi should only be false when were in untrusted Applet mode
+     * @param enableUddi if true, then the 'Import from UDDI' button in the policy window will be shown
+     */
     public PolicyEditorPanel(PolicyEditorSubject subject, PolicyTree pt, boolean validateOnOpen, boolean enableUddi) {
         if (subject == null || pt == null) {
             throw new IllegalArgumentException();
@@ -591,7 +595,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     private PolicyEditToolBar getToolBar() {
         if (policyEditorToolbar != null) return policyEditorToolbar;
-        policyEditorToolbar = new PolicyEditToolBar();
+        policyEditorToolbar = new PolicyEditToolBar(enableUddi);
         policyEditorToolbar.setFloatable(false);
         policyEditorToolbar.setBorder(null);
         return policyEditorToolbar;
@@ -603,9 +607,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         private JButton buttonSaveAndActivate;
         private JButton buttonSaveOnly;
         private JButton buttonValidate;
+        private final boolean enableUddi;
 
-        public PolicyEditToolBar() {
+        public PolicyEditToolBar(boolean enableUddi) {
             super();
+            this.enableUddi = enableUddi;
             this.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
             initComponents();
         }
@@ -655,7 +661,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             add(new JButton(getExportAction()));
             add(new JButton(getImportAction()));
 
-            if (!TopComponents.getInstance().isApplet()) {
+            if (enableUddi) {
                 JButton buttonUDDIImport = new JButton(getUDDIImportAction());
                 this.add(buttonUDDIImport);
             }

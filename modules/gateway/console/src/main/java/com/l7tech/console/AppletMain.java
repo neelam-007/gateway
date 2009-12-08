@@ -243,6 +243,7 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     private SsmApplication getApplication() {
+        //todo add comment why this lazy initialization of application is required
         if (application != null) return application;
         application = (SsmApplication)getApplicationContext().getBean("ssmApplication", SsmApplication.class);
         return application;
@@ -453,6 +454,8 @@ public class AppletMain extends JApplet implements SheetHolder {
         }
         catch(SecurityException se) {
             logger.warning("Could not install AWT exception handler.");
+            getApplication();//this method has the side affect of setting the application instance
+            application.setTrusted(false);                        
         }
     }
 }

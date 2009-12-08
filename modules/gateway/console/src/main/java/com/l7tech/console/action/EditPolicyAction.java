@@ -191,7 +191,7 @@ public class EditPolicyAction extends NodeAction {
                     }
                 }
             };
-            final PolicyEditorPanel pep = new PolicyEditorPanel(subject, policyTree, validate, !TopComponents.getInstance().isApplet());
+            final PolicyEditorPanel pep = new PolicyEditorPanel(subject, policyTree, validate, TopComponents.getInstance().isTrusted());
             wpanel.setComponent(pep);
             wpanel.addWorkspaceContainerListener(pep);
             TopComponents.getInstance().firePolicyEdit(pep);
