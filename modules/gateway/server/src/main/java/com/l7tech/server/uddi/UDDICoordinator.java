@@ -836,7 +836,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                                         coordinator.handleEvent( event );
                                         //RuntimeExceptions are caught by Spring and cause a rollback
                                     } catch (UDDITaskFactory.UDDITaskException e) {
-                                        logger.log( Level.WARNING, "Error processing UDDI event", e );
+                                        logger.log( Level.WARNING, "Error processing UDDI event", ExceptionUtils.getDebugException(e) );
                                         transactionStatus.setRollbackOnly();
                                         if(e != null && (e instanceof UDDITaskFactory.UDDIHandledTaskException)){
                                             uddiTaskException[0] = (UDDITaskFactory.UDDIHandledTaskException) e;
