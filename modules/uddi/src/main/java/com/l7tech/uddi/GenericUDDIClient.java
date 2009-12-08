@@ -2060,6 +2060,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 getSubscriptionResults.setAuthInfo( getAuthToken() );
                 getSubscriptionResults.setSubscriptionKey( subscriptionKey );
                 getSubscriptionResults.setCoveragePeriod( period );
+                logger.log(Level.FINE, "Polling registry for subscription updates for key: " + subscriptionKey + " for time period " + period.getStartPoint()+" to " + period.getEndPoint());
 
                 String chunkToken = null;
                 boolean moreResults = true;
