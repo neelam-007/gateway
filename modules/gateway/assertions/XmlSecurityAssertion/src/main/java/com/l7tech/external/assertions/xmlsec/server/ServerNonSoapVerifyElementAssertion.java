@@ -166,7 +166,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(null) {
             @Override
             public MessageDigest getDigestMethod(String s) throws NoSuchAlgorithmException, NoSuchProviderException {
-                if (lastSeenDigestMethod[0] != null && !lastSeenDigestMethod.equals(s)) {
+                if (lastSeenDigestMethod[0] != null && !lastSeenDigestMethod[0].equals(s)) {
                     sawMoreThanOneDigestMethod[0] = true;
                 }
                 lastSeenDigestMethod[0] = s;
