@@ -176,7 +176,7 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit( SystemMessages.UDDI_WSPOLICY_PUBLISH_FAILED, e, "Database error when publishing ws-policy for registry #"+registryOid+".");
             } catch (UDDIException ue) {
-                context.logAndAudit( SystemMessages.UDDI_WSPOLICY_PUBLISH_FAILED, ue, ExceptionUtils.getMessage(ue));
+                context.logAndAudit(SystemMessages.UDDI_WSPOLICY_PUBLISH_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
         }
         

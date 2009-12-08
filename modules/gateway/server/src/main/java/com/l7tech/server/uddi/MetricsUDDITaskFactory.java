@@ -182,7 +182,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_FAILED, e, "Database error when publishing metrics for registry #"+registryOid+".");
             } catch (UDDIException ue) {
-                context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_FAILED, ue, ExceptionUtils.getMessage(ue));
+                context.logAndAudit(SystemMessages.UDDI_METRICS_PUBLISH_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
         }
 
@@ -232,7 +232,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                       description,
                                       references );
             } catch ( UDDIException ue ) {
-                context.logAndAudit( SystemMessages.UDDI_METRICS_PUBLISH_TMODEL_ERROR, ue, serviceName, ExceptionUtils.getMessage( ue ) );
+                context.logAndAudit(SystemMessages.UDDI_METRICS_PUBLISH_TMODEL_ERROR, ExceptionUtils.getDebugException(ue), serviceName, ExceptionUtils.getMessage(ue));
             }
 
             return null;
@@ -324,7 +324,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                             metricsTModelKey  );
                     published = true;
                 } catch ( UDDIException ue ) {
-                    logger.log( Level.WARNING, "Error publishing metrics TModel reference to UDDI '"+ ExceptionUtils.getMessage( ue )+"'.", ue );
+                    logger.log( Level.WARNING, "Error publishing metrics TModel reference to UDDI '"+ ExceptionUtils.getMessage( ue )+"'.", ExceptionUtils.getDebugException(ue) );
                 }
             }
 
@@ -415,7 +415,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit( SystemMessages.UDDI_METRICS_CLEANUP_FAILED, e, "Database error when removing metrics for registry #"+registryOid+".");
             } catch (UDDIException ue) {
-                context.logAndAudit( SystemMessages.UDDI_METRICS_CLEANUP_FAILED, ue, ExceptionUtils.getMessage(ue));
+                context.logAndAudit(SystemMessages.UDDI_METRICS_CLEANUP_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
         }
     }

@@ -82,7 +82,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             status.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
                             uddiPublishStatusManager.update(status);
                         } catch (ObjectModelException e) {
-                            logger.log(Level.WARNING, "Could not update status for UDDIProxiedServiceInfo id#(" + uddiProxiedServiceInfo.getOid()+")");
+                            logger.log(Level.WARNING, "Could not update status for UDDIProxiedServiceInfo id#(" + uddiProxiedServiceInfo.getOid()+").", e);
                         }
                         return null;
                     }
@@ -376,7 +376,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             serviceKeys, serviceWasOverwritten, registrySpecificMetaData, allEndpointPairs);
                 } catch (UDDIException e) {
                     PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
-                    context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
+                    context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, ExceptionUtils.getDebugException(e), ExceptionUtils.getMessage(e));
                     return;
                 } finally {
                     ResourceUtils.closeQuietly( businessServicePublisher );
@@ -591,7 +591,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 } catch (UDDIException e) {
                     PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
-                    context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
+                    context.logAndAudit(SystemMessages.UDDI_PUBLISH_SERVICE_FAILED, ExceptionUtils.getDebugException(e), ExceptionUtils.getMessage(e));
                     return;
                 } finally {
                     ResourceUtils.closeQuietly( businessServicePublisher );
@@ -808,7 +808,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             }
                             logger.log(Level.FINE, "Successfully deleted published Gateway WSDL from UDDI Registry");
                         } catch (UDDIException e) {
-                            context.logAndAudit(SystemMessages.UDDI_REMOVE_SERVICE_FAILED, e, ExceptionUtils.getMessage(e));
+                            context.logAndAudit(SystemMessages.UDDI_REMOVE_SERVICE_FAILED, ExceptionUtils.getDebugException(e), ExceptionUtils.getMessage(e));
                             PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                             return;
                         } finally {

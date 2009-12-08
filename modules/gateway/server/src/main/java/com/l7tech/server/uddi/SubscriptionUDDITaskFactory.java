@@ -188,7 +188,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                             } catch ( UDDIInvalidKeyException ue ) {
                                 logger.log( Level.WARNING, "Unable to delete subscription '"+uddiRegistrySubscription.getSubscriptionKey()+"' for registry "+describe(uddiRegistry)+", key is invalid (could be expired)." );
                             } catch ( UDDIException ue ) {
-                                logger.log( Level.WARNING, "Unable to delete subscription '"+uddiRegistrySubscription.getSubscriptionKey()+"' for registry "+describe(uddiRegistry)+".", ue );
+                                logger.log( Level.WARNING, "Unable to delete subscription '"+uddiRegistrySubscription.getSubscriptionKey()+"' for registry "+describe(uddiRegistry)+".", ExceptionUtils.getDebugException(ue) );
                             }
                         }
 
@@ -227,11 +227,11 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 factory.uddiRegistrySubscriptionManager.update( uddiRegistrySubscription );
                             }
                         } catch ( Exception e ) {
-                            logger.log( Level.WARNING, "Error persisting uddi subscription for registry "+describe(uddiRegistry)+".", e );
+                            logger.log( Level.WARNING, "Error persisting uddi subscription for registry "+describe(uddiRegistry)+". Cause: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
                             try {
                                 uddiClient.deleteSubscription( subscriptionKey );
                             } catch ( UDDIException ue ) {
-                                logger.log( Level.WARNING, "Unable to delete subscription '"+subscriptionKey+"' for registry "+describe(uddiRegistry)+".", ue );
+                                logger.log( Level.WARNING, "Unable to delete subscription '"+subscriptionKey+"' for registry "+describe(uddiRegistry)+". Cause: " + ExceptionUtils.getMessage(ue), ExceptionUtils.getDebugException(ue) );
                             }
                             throw new UDDIException( "Error persisting subscription for registry "+describe(uddiRegistry)+"." );
                         }
@@ -246,7 +246,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_SUBSCRIBE_FAILED, e, "Database error when polling subscription for registry #"+registryOid+".");
             } catch (UDDIException ue) {
-                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_SUBSCRIBE_FAILED, ue, ExceptionUtils.getMessage(ue));
+                context.logAndAudit(SystemMessages.UDDI_SUBSCRIPTION_SUBSCRIBE_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
         }
     }
@@ -297,7 +297,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_UNSUBSCRIBE_FAILED, e, "Database error when polling subscription for registry #"+registryOid+".");
             } catch (UDDIException ue) {
-                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_UNSUBSCRIBE_FAILED, ue, ExceptionUtils.getMessage(ue));
+                context.logAndAudit(SystemMessages.UDDI_SUBSCRIPTION_UNSUBSCRIBE_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
         }
     }
@@ -407,7 +407,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, e, "Database error when polling subscription for registry #"+registryOid+".");
             } catch (UDDIException ue) {
-                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, ue, ExceptionUtils.getMessage(ue));
+                context.logAndAudit(SystemMessages.UDDI_SUBSCRIPTION_POLL_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
         }
     }
@@ -477,7 +477,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             } catch (ObjectModelException e) {
                 context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_NOTIFICATION_FAILED, e, "Database error when processing subscription for "+subscriptionKey+".");
             } catch (UDDIException ue) {
-                context.logAndAudit( SystemMessages.UDDI_SUBSCRIPTION_NOTIFICATION_FAILED, ue, ExceptionUtils.getMessage(ue));
+                context.logAndAudit(SystemMessages.UDDI_SUBSCRIPTION_NOTIFICATION_FAILED, ExceptionUtils.getDebugException(ue), ExceptionUtils.getMessage(ue));
             }
         }
 
@@ -588,7 +588,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 UDDIOperationalInfo operationalInfo = uddiClient.getOperationalInfo(serviceKey);
                                 uddiModifiedTime = operationalInfo.getModifiedIncludingChildrenTime();
                             } catch (UDDIException e) {
-                                context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
+                                context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, ExceptionUtils.getDebugException(e),
                                         "Could not get operation information for serviceKey: " + serviceKey);
                                 throw new UDDITaskException("Cannot find Operational Information for serviceKey: "
                                         + serviceKey + " from UDDIRegistry #(" + uddiRegistry.getOid() + ")");
@@ -626,7 +626,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     bindingImplInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
                                             serviceControl.getUddiServiceKey(), serviceControl.getWsdlPortName(), serviceControl.getWsdlPortBinding(), serviceControl.getWsdlPortBindingNamespace());
                                 } catch (UDDIException e) {
-                                    context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
+                                    context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, ExceptionUtils.getDebugException(e),
                                             "Could not find a UDDI bindingTemplate that implements wsdl:binding "
                                                     + serviceControl.getWsdlPortBinding() + " for serviceKey: " + serviceControl.getUddiServiceKey());
                                 }
@@ -696,7 +696,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                         final String msg = "WSDL URL obtained from UDDI is not a valid URL (" +
                                                 bindingImplInfo.getImplementingWsdlUrl() + ") for serviceKey: " +
                                                 serviceControl.getUddiServiceKey()+" from registry " + describe(uddiRegistry)+".";
-                                        context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, e,
+                                        context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, ExceptionUtils.getDebugException(e),
                                                 msg);
                                         throw new UDDITaskException(msg);
                                     }
@@ -828,9 +828,11 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 logger.log(Level.WARNING, "Deleting UDDIServiceControl as the original service in UDDI can no longer be monitored");
                                 factory.uddiServiceControlManager.delete(serviceControl.getOid());
                             } catch (DeleteException e) {
-                                e.printStackTrace();
+                                context.logAndAudit( SystemMessages.DATABASE_ERROR, e,
+                                        "Database error cleaning up Gateway record of original service.");
                             } catch (FindException e) {
-                                e.printStackTrace();
+                                context.logAndAudit( SystemMessages.DATABASE_ERROR, e,
+                                        "Database error cleaning up Gateway record of original service.");
                             }
                         }
                     };
