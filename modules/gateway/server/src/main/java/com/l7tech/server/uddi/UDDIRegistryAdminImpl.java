@@ -192,25 +192,26 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         if(uddiPublishStatus == null)
             throw new FindException("Cannot find UDDIPublishStatus for UDDIProxiedServiceInfo with id#(" + proxiedServiceInfo.getOid() + ")");
 
-        if (uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.CANNOT_DELETE ||
-                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.CANNOT_PUBLISH ||
-                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED ||
-                uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED ) {
+        final UDDIPublishStatus.PublishStatus status = uddiPublishStatus.getPublishStatus();
+        if (status == UDDIPublishStatus.PublishStatus.CANNOT_DELETE ||
+                status == UDDIPublishStatus.PublishStatus.CANNOT_PUBLISH ||
+                status == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED ||
+                status == UDDIPublishStatus.PublishStatus.DELETE_FAILED ) {
 
             //if we cannot delete or we have already tried, allow the user to stop any more attempts
-            //this may cause queued tasks problems, but they will just fail
-            if (uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED) {
-                logger.log(Level.WARNING, "Stopping attempt to delete from UDDI. Data may be orphaned in UDDI");
+            if(status == UDDIPublishStatus.PublishStatus.DELETE_FAILED || status == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED){
+                final boolean isDeleting = status == UDDIPublishStatus.PublishStatus.DELETE_FAILED;
+                logger.log(Level.WARNING, "Stopping attempt to " + ((isDeleting) ? "delete from" : "publish to") + " UDDI. Data may be orphaned in UDDI");
             }
             uddiProxiedServiceInfoManager.delete(proxiedServiceInfo);
-        } else if (uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED) {
+        } else if (status == UDDIPublishStatus.PublishStatus.PUBLISHED) {
             uddiPublishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.DELETE);
             //This triggers an entity invalidation event which the UDDICoordinator picks up
             uddiPublishStatusManager.update(uddiPublishStatus);
             logger.log(Level.INFO, "Set status to delete for published UDDI data");
-        }else if(uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH){
+        }else if(status == UDDIPublishStatus.PublishStatus.PUBLISH){
             logger.log(Level.WARNING, "Cannot delete Gateway WSDL from UDDI while it is being published");
-        }else if(uddiPublishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE){
+        }else if(status == UDDIPublishStatus.PublishStatus.DELETE){
             logger.log(Level.WARNING, "UDDI data is currently set to delete. Please wait for delete to complete");
         }
     }
