@@ -6,6 +6,7 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.server.identity.ldap.LdapUtils;
 
 import javax.swing.*;
@@ -150,7 +151,11 @@ public class LDAPTool extends JFrame {
                     values = attribute.getAll();
                     int index = 0;
                     while ( values.hasMore() ) {
-                        resultList.add( new Pair( attribute.getID() + "[" + (index++) + "]", values.next()) );
+                        Object value = values.next();
+                        if ( value instanceof byte[] ) {
+                            value = HexUtils.encodeBase64( (byte[]) value );                           
+                        }
+                        resultList.add( new Pair( attribute.getID() + "[" + (index++) + "]", value ) );
                     }
                 } finally {
                     ResourceUtils.closeQuietly( values );
