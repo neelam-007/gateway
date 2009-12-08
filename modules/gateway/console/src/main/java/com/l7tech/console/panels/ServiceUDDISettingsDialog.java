@@ -371,15 +371,15 @@ public class ServiceUDDISettingsDialog extends JDialog {
         UDDIProxiedServiceInfo.PublishType publishType = uddiProxyServiceInfo == null ? null : uddiProxyServiceInfo.getPublishType();
         final boolean uddiControl = uddiServiceControl != null && !uddiServiceControl.isUnderUddiControl();
 
-        publishProxiedWsdlRadioButton.setEnabled(publishType != PROXY);
-        enableDisablePublishGatewayWsdlControls(publishProxiedWsdlRadioButton.isSelected() && publishType != PROXY);
+        publishProxiedWsdlRadioButton.setEnabled(publishType == null);
+        enableDisablePublishGatewayWsdlControls(publishProxiedWsdlRadioButton.isSelected() && publishType == null);
         updateWhenGatewayWSDLCheckBox.setEnabled(publishProxiedWsdlRadioButton.isSelected());
 
-        publishGatewayEndpointAsRadioButton.setEnabled(uddiControl && publishType != ENDPOINT);
-        enableDisablePublishEndpointControls(publishGatewayEndpointAsRadioButton.isSelected() && publishType != ENDPOINT);
+        publishGatewayEndpointAsRadioButton.setEnabled(uddiControl && publishType == null);
+        enableDisablePublishEndpointControls(publishGatewayEndpointAsRadioButton.isSelected() && publishType == null);
 
-        overwriteExistingBusinessServiceWithRadioButton.setEnabled(uddiControl && publishType != OVERWRITE);
-        enableDisablePublishOverwriteControls(overwriteExistingBusinessServiceWithRadioButton.isSelected() && publishType != OVERWRITE);
+        overwriteExistingBusinessServiceWithRadioButton.setEnabled(uddiControl && publishType == null);
+        enableDisablePublishOverwriteControls(overwriteExistingBusinessServiceWithRadioButton.isSelected() && publishType == null);
         updateWhenGatewayWSDLCheckBoxOverwrite.setEnabled(overwriteExistingBusinessServiceWithRadioButton.isSelected());
     }
 
