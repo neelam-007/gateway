@@ -826,6 +826,12 @@ public class ServicePropertiesDialog extends JDialog {
                             "because an existing service is already using the URI " + subject.getRoutingUri(),
                     "Service already exists",
                     JOptionPane.ERROR_MESSAGE);
+        } catch(StaleUpdateException e){
+            JOptionPane.showMessageDialog(this,
+                    "Unable to save the service '" + subject.getName() + "'\n" +
+                            "Service has been updated since this dialog was opened. Please close and try again.",
+                    "Service out of date",
+                    JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             String msg = "Error while changing service properties";
             logger.log(Level.INFO, msg, e);

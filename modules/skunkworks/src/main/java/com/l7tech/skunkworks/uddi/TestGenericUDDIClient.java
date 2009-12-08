@@ -123,7 +123,7 @@ public class TestGenericUDDIClient {
 
 //        foundTemplate.getAccessPoint().setValue("http://thehostwedontwanttorouteto.com:1610/SpaceOrderofBattle2.asmx");
 //        foundTemplate.getAccessPoint().setValue("http://hugh:8081/axis/services/PlayerStats/11");
-        foundTemplate.getAccessPoint().setValue("http://hugh/ACMEWarehouseWS/4/Service.asmx");
+        foundTemplate.getAccessPoint().setValue("http://hugh/ACMEWarehouseWS/11/Service.asmx");
         genericUDDIClient.publishBusinessService(businessService);
         //genericUDDIClient.publishBindingTemplate(foundTemplate);
     }
