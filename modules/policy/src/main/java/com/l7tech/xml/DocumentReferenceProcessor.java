@@ -100,7 +100,14 @@ public class DocumentReferenceProcessor {
             try {
                 URI baseURI = new URI(referenceUrl);
                 for ( String reference : newReferences ) {
-                    referencedUrlQueue.add( baseURI.resolve(new URI(reference)).toString() );
+                    URI uri = baseURI.resolve(new URI(reference));
+                    String uriStr = uri.toString();
+
+                    if (referenceUrl.startsWith("file:////")) { // This is for accessing a Network file.
+                        uriStr = uriStr.replaceFirst("file:/", "file:////");
+                    }
+                    
+                    referencedUrlQueue.add(uriStr);
                 }
             } catch (URISyntaxException use) {
                 throw new CausedIOException("Unable to resolve reference URI for base '"+referenceUrl+"'.", use);
