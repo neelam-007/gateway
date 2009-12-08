@@ -74,12 +74,26 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             final UDDIRegistry original = uddiRegistryManager.findByPrimaryKey(uddiRegistry.getOid());
             if(original == null) throw new FindException("Cannot find UDDIRegistry with id#(" + uddiRegistry.getOid()+")");
 
-            if(original.isSubscribeForNotifications() != uddiRegistry.isSubscribeForNotifications()){
+            final boolean monitoringReenabled = !original.isMonitoringEnabled() && uddiRegistry.isMonitoringEnabled();
+
+            final boolean methodChanged = original.isSubscribeForNotifications() != uddiRegistry.isSubscribeForNotifications();
+
+            final String updateCtx = (monitoringReenabled)
+                    ? "Monitoring of UDDI Registry has been reenabled."
+                    : "Method of monitoring has changed.";
+
+            final boolean registryReenabled = !original.isEnabled() && uddiRegistry.isEnabled();
+
+            if (methodChanged || monitoringReenabled || registryReenabled) {
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                     @Override
                     public void afterCompletion(int status) {
                         if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                            logger.log(Level.FINE, "Method of monitoring has changed. Firing events for each published service monitoring UDDI Registry with id#(" + uddiRegistry.getOid()+")");
+                            if(registryReenabled){
+                                logger.log(Level.FINE, "UDDI Registry has been reenabled. Updating each published service monitoring UDDI Registry with id#(" + uddiRegistry.getOid() + ")");                            
+                            }else {
+                                logger.log(Level.FINE, updateCtx + " Updating each published service monitoring UDDI Registry with id#(" + uddiRegistry.getOid() + ")");
+                            }
                             uddiCoordinator.notifyEvent(new UpdateAllMonitoredServicesUDDIEvent(uddiRegistry.getOid()));
                         }
                     }
