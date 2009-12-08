@@ -2,6 +2,7 @@ package com.l7tech.server.uddi;
 
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIClient;
+import com.l7tech.uddi.UDDIInvalidKeyException;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.audit.SystemMessages;
@@ -388,8 +389,17 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                                 final String serviceKey = businessService.getUddiServiceKey();
                                 final String tModelKey = businessService.getUddiMetricsTModelKey();
 
-                                client.removeKeyedReference( serviceKey, referenceKey, null, tModelKey );
-                                client.deleteTModel( tModelKey );
+                                try {
+                                    client.removeKeyedReference( serviceKey, referenceKey, null, tModelKey );
+                                } catch ( UDDIInvalidKeyException uike) {
+                                    logger.fine( "Service not found when removing metrics reference '"+serviceKey+"'." );
+                                }
+
+                                try {
+                                    client.deleteTModel( tModelKey );
+                                } catch ( UDDIInvalidKeyException uike) {
+                                    logger.fine( "Metrics TModel not found for delete '"+tModelKey+"'." );
+                                }
 
                                 businessService.setUddiMetricsReferenceStatus( UDDIBusinessServiceStatus.Status.NONE );
                                 businessService.setUddiMetricsTModelKey( null );
