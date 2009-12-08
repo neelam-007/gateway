@@ -1592,7 +1592,8 @@
         <constructor-arg index="1" ref="ssgKeyStoreManager"/>
         <constructor-arg index="2" ref="trustManager"/>
         <constructor-arg index="3" ref="hostnameVerifier"/>
-        <constructor-arg index="4">
+        <constructor-arg index="4" ref="uddiTemplateManager"/>
+        <constructor-arg index="5">
             <bean class="org.springframework.beans.factory.config.PropertiesFactoryBean"
                   depends-on="systemProperties">
                 <property name="ignoreResourceNotFound" value="true"/>

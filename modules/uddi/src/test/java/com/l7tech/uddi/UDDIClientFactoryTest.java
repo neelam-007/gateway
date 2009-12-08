@@ -18,7 +18,8 @@ public class UDDIClientFactoryTest {
                 "username",
                 "password",
                 PolicyAttachmentVersion.v1_2,
-                null );
+                null,
+                true );
         assertNotNull("Client not null", client);
     }
     @Test
@@ -30,6 +31,7 @@ public class UDDIClientFactoryTest {
                 "http://127.0.0.1/uddi/security",
                 "username",
                 "password",
+                true,
                 null
         );
 

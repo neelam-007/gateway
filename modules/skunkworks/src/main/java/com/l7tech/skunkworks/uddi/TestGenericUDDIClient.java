@@ -358,7 +358,9 @@ public class TestGenericUDDIClient {
                         "http://rsbcentos.l7tech.com:8080/juddiv3/services/security",
                         "root",
                         "root",
-                        PolicyAttachmentVersion.v1_2/*not important here*/, null){};
+                        PolicyAttachmentVersion.v1_2/*not important here*/,
+                        null,
+                        true){};
 
 
         uddiClient.authenticate();
@@ -483,7 +485,9 @@ public class TestGenericUDDIClient {
                         "http://systinet.l7tech.com:8080/uddi/security",
                         "admin",
                         "7layer",
-                        PolicyAttachmentVersion.v1_2/*not important here*/, null){};
+                        PolicyAttachmentVersion.v1_2/*not important here*/,
+                        null,
+                        true){};
 
 //        return new GenericUDDIClient("http://centrasiteuddi:53307/UddiRegistry/inquiry",
 //                        "http://centrasiteuddi:53307/UddiRegistry/publish",

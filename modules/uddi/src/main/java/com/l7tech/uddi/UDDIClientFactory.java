@@ -18,6 +18,12 @@ import com.l7tech.util.SyspropUtil;
  * system property <code>com.l7tech.common.uddi.defaultVersion</code>. See
  * {@link PolicyAttachmentVersion} for valid values</p>
  *
+ * <p>WARNING: With some UDDI registries (such as ActiveSOA, CentraSite 3.1.5)
+ * there is a single session per user account. Closing the session will affect
+ * all sessions for that user. This can lead to an error which appears to be
+ * caused by incorrect credentials, based on the error code returned from
+ * UDDI being the same as when invalid credentials are supplied.</p>
+ *
  * @author Steve Jones
  */
 public class UDDIClientFactory {
@@ -48,7 +54,8 @@ public class UDDIClientFactory {
                 config.getLogin(),
                 config.getPassword(),
                 null,
-                config.getTlsConfig());
+                config.getTlsConfig(),
+                config.isCloseSession() );
     }
 
     /**
@@ -60,6 +67,7 @@ public class UDDIClientFactory {
      * @param login The login to use (may be null)
      * @param password The password to use (may be null, required if a login is specified)
      * @param attachmentVersion The policy attachment version to use (if null the default version is used)
+     * @param closeSession Should the session be closed when closing the client (see warning above)
      * @return The UDDIClient
      */
     public UDDIClient newUDDIClient(final String inquiryUrl,
@@ -69,7 +77,8 @@ public class UDDIClientFactory {
                                     final String login,
                                     final String password,
                                     final PolicyAttachmentVersion attachmentVersion,
-                                    final UDDIClientTLSConfig tlsConfig ) {
+                                    final UDDIClientTLSConfig tlsConfig,
+                                    final boolean closeSession ) {
         UDDIClient client;
 
         PolicyAttachmentVersion policyAttachmentVersion = attachmentVersion == null ?
@@ -80,7 +89,7 @@ public class UDDIClientFactory {
             Class genericUddiClass = Class.forName(clientClass);
             Constructor constructor = genericUddiClass.getDeclaredConstructor(
                     String.class, String.class, String.class, String.class, String.class, String.class,
-                    PolicyAttachmentVersion.class, UDDIClientTLSConfig.class);
+                    PolicyAttachmentVersion.class, UDDIClientTLSConfig.class, Boolean.TYPE);
             client = (UDDIClient) constructor.newInstance(
                     inquiryUrl,
                     publishUrl,
@@ -89,7 +98,8 @@ public class UDDIClientFactory {
                     login,
                     password,
                     policyAttachmentVersion,
-                    tlsConfig);
+                    tlsConfig,
+                    closeSession );
         } catch (Exception e) {
             throw new RuntimeException("Generic UDDI client error.", e);
         }

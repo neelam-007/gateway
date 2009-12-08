@@ -4,6 +4,7 @@
     <publicationUrl>publish</publicationUrl>
     <securityPolicyUrl>publish</securityPolicyUrl>
     <subscriptionUrl>publish</subscriptionUrl>
+    <closeSession>false</closeSession>
     <serviceMetricsKeyedReference>
         <key>uddi:centrasite.com:management:metrics:reference</key>
         <name>Metrics</name>

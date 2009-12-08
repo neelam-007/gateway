@@ -59,11 +59,13 @@ public class UDDIHelper implements SsgConnectorActivationListener {
                        final SsgKeyStoreManager ssgKeyStoreManager,
                        final TrustManager trustManager,
                        final HostnameVerifier hostnameVerifier,
+                       final UDDITemplateManager uddiTemplateManager,
                        final Properties properties ) {
         this.serverConfig = serverConfig;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
         this.trustManager = trustManager;
         this.hostnameVerifier = hostnameVerifier;
+        this.uddiTemplateManager = uddiTemplateManager;
 
         String rowsMax = properties.getProperty(PROP_RESULT_ROWS_MAX, "100");     // default 100 rows max
         int resultRowsMax = Integer.parseInt(rowsMax);
@@ -310,6 +312,13 @@ public class UDDIHelper implements SsgConnectorActivationListener {
      * @return The UDDIClientConfig
      */
     public UDDIClientConfig newUDDIClientConfig( final UDDIRegistry uddiRegistry ) {
+        boolean closeSession = true;
+
+        UDDITemplate template = uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
+        if ( template != null ) {
+            closeSession = template.isCloseSession();
+        }
+
         return new UDDIClientConfig(
                 uddiRegistry.getInquiryUrl(),
                 uddiRegistry.getPublishUrl(),
@@ -317,6 +326,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
                 uddiRegistry.getSecurityUrl(),
                 uddiRegistry.getRegistryAccountUserName(),
                 uddiRegistry.getRegistryAccountPassword(),
+                closeSession,
                 buildTLSConfig(uddiRegistry) );
     }
 
@@ -383,6 +393,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
     private final SsgKeyStoreManager ssgKeyStoreManager;
     private final TrustManager trustManager;
     private final HostnameVerifier hostnameVerifier;
+    private final UDDITemplateManager uddiTemplateManager;
     private final int defaultResultRowsMax;
     private final int defaultResultBatchSize;
     private final Map<Long,String> activeConnectorProtocols = new HashMap<Long,String>();

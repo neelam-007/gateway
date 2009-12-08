@@ -16,6 +16,7 @@ public class UDDIClientConfig {
                              final String securityUrl,
                              final String login,
                              final String password,
+                             final boolean closeSession,
                              final UDDIClientTLSConfig tlsConfig ) {
         this.inquiryUrl = inquiryUrl;
         this.publishUrl = publishUrl;
@@ -23,6 +24,7 @@ public class UDDIClientConfig {
         this.securityUrl = securityUrl;
         this.login = login;
         this.password = password;
+        this.closeSession = closeSession;
         this.tlsConfig = tlsConfig;
     }
 
@@ -50,6 +52,10 @@ public class UDDIClientConfig {
         return password;
     }
 
+    public boolean isCloseSession() {
+        return closeSession;
+    }
+
     public UDDIClientTLSConfig getTlsConfig() {
         return tlsConfig;
     }
@@ -62,5 +68,6 @@ public class UDDIClientConfig {
     private final String securityUrl;
     private final String login;
     private final String password;
+    private final boolean closeSession;
     private final UDDIClientTLSConfig tlsConfig;
 }

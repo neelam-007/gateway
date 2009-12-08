@@ -62,6 +62,15 @@ public class UDDITemplate {
     }
 
     @XmlElement
+    public boolean isCloseSession() {
+        return closeSession;
+    }
+
+    public void setCloseSession( final boolean closeSession ) {
+        this.closeSession = closeSession;
+    }
+
+    @XmlElement
     public KeyedReferenceTemplate getServiceMetricsKeyedReference() {
         return serviceMetricsKeyedReference;
     }
@@ -191,6 +200,7 @@ public class UDDITemplate {
     private String publicationUrl;
     private String securityPolicyUrl;
     private String subscriptionUrl;
+    private boolean closeSession = true;
     private KeyedReferenceTemplate serviceMetricsKeyedReference;
     private String metricsTModelName;
     private String metricsTModelDescription;

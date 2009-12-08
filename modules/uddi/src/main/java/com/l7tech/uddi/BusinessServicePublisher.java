@@ -832,7 +832,7 @@ public class BusinessServicePublisher implements Closeable {
         if(!(uddiClient instanceof JaxWsUDDIClient)){
             uddiClient = new GenericUDDIClient(uddiCfg.getInquiryUrl(), uddiCfg.getPublishUrl(), uddiCfg.getSubscriptionUrl(),
                     uddiCfg.getSecurityUrl(), uddiCfg.getLogin(), uddiCfg.getPassword(),
-                    UDDIClientFactory.getDefaultPolicyAttachmentVersion(), uddiCfg.getTlsConfig());
+                    UDDIClientFactory.getDefaultPolicyAttachmentVersion(), uddiCfg.getTlsConfig(), uddiCfg.isCloseSession());
         }
 
         return uddiClient;

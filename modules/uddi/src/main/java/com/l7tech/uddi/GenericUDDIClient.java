@@ -2119,29 +2119,25 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     /**
-     * WARNING: On actviesoa at least, it is not possible to have nested authentication keys for the same user, and
-     * to discard a nested key, without affecting keys granted for the same crentials previously.
-     * This will lead to error which appear to be caused by incorrect credentials, based on the error code returned
-     * from activesoa being the same as when invalid credentials are supplied.
+     * 
      */
     @Override
     public void close() {
-        //todo Uncomment when registry type is configured to decide whether we should explicitly close sessions or not
-//        if (authenticated()) {
-//            try {
-//                UDDISecurityPortType securityPort = getSecurityPort();
-//                DiscardAuthToken discardAuthToken = new DiscardAuthToken();
-//                discardAuthToken.setAuthInfo(getAuthToken());
-//                securityPort.discardAuthToken(discardAuthToken);
-//                authToken = null;
-//            } catch (DispositionReportFaultMessage drfm) {
-//                logger.log(Level.INFO, "Error logging out.", buildFaultException("Error logging out", drfm));
-//            } catch (RuntimeException e) {
-//                logger.log(Level.INFO, "Error logging out.", e);
-//            } catch (UDDIException e) {
-//                logger.log(Level.INFO, "Error logging out.", e);
-//            }
-//        }
+        if ( isAuthenticated() && isCloseSession()) {
+            try {
+                UDDISecurityPortType securityPort = getSecurityPort();
+                DiscardAuthToken discardAuthToken = new DiscardAuthToken();
+                discardAuthToken.setAuthInfo(getAuthToken());
+                securityPort.discardAuthToken(discardAuthToken);
+                authToken = null;
+            } catch (DispositionReportFaultMessage drfm) {
+                logger.log(Level.INFO, "Error logging out.", buildFaultException("Error logging out", drfm));
+            } catch (RuntimeException e) {
+                logger.log(Level.INFO, "Error logging out.", e);
+            } catch (UDDIException e) {
+                logger.log(Level.INFO, "Error logging out.", e);
+            }
+        }
     }
 
     //- PROTECTED
@@ -2155,6 +2151,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
      * @param login the username (may be null)
      * @param password the password (may be null if login is null)
      * @param policyAttachmentVersion The version of policy attachment to use.
+     * @param closeSession True to close the UDDI session on <code>close()</code>
      */
     protected GenericUDDIClient(final String inquiryUrl,
                                 final String publishUrl,
@@ -2163,7 +2160,8 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                                 final String login,
                                 final String password,
                                 final PolicyAttachmentVersion policyAttachmentVersion,
-                                final UDDIClientTLSConfig tlsConfig ) {
+                                final UDDIClientTLSConfig tlsConfig,
+                                final boolean closeSession) {
         if ( inquiryUrl == null ) throw new IllegalArgumentException("inquiryUrl must not be null");
         if ( login != null && password == null ) throw new IllegalArgumentException("password must not be null");
         if ( policyAttachmentVersion == null ) throw new IllegalArgumentException("policyAttachmentVersion must not be null");
@@ -2180,6 +2178,8 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
         // TLS
         this.tlsConfig = tlsConfig;
+
+        this.closeSession = closeSession;
 
         // keys for ws-policy versions
         this.tModelKeyPolicyType = policyAttachmentVersion.getTModelKeyPolicyTypes();
@@ -2358,6 +2358,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     private final String login;
     private final String password;
     private final UDDIClientTLSConfig tlsConfig;
+    private final boolean closeSession;
     private final String tModelKeyPolicyType;
     private final String tModelKeyLocalPolicyReference;
     private final String tModelKeyRemotePolicyReference;
@@ -2414,8 +2415,12 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         return authToken;
     }
 
-    private boolean authenticated() {
+    private boolean isAuthenticated() {
         return authToken != null;
+    }
+
+    private boolean isCloseSession() {
+        return closeSession;
     }
 
     private String coalesce(String ... args) {
