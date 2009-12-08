@@ -64,7 +64,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                               "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies",
                               "com.l7tech.server.upgrade.Upgrade465To50UpgradeKeystores",
                               "com.l7tech.server.upgrade.Upgrade51To52CanonicalizeDNs",
-                              "com.l7tech.server.upgrade.Upgrade51To52AddClusterProperties");
+                              "com.l7tech.server.upgrade.Upgrade51To52AddClusterProperties",
+                              "com.l7tech.server.upgrade.Upgrade51To52UpdateRoles");
             p(Starting.class, "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions");
             p(Started.class,  "com.l7tech.server.upgrade.Upgrade35To36AddRoles",
                               "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions",
