@@ -330,7 +330,9 @@ public class BusinessServicePublisher implements Closeable {
             throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
         } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
             throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
-        } catch (WsdlToUDDIModelConverter.NonSoapBindingFoundException e) {
+        } catch (WsdlToUDDIModelConverter.NonSoapWsdlPortException e) {
+            throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
+        } catch (WsdlToUDDIModelConverter.NonHttpBindingException e) {
             throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
         }
 

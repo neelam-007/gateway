@@ -4,14 +4,14 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.util.Pair;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.wsdl.Service;
 import javax.wsdl.Port;
 import javax.wsdl.Binding;
 import javax.wsdl.PortType;
 import javax.wsdl.extensions.ExtensibilityElement;
-import javax.wsdl.extensions.soap.SOAPAddress;
-import javax.wsdl.extensions.soap12.SOAP12Address;
+import javax.wsdl.extensions.soap12.SOAP12Binding;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -54,6 +54,7 @@ public class WsdlToUDDIModelConverter {
     private Map<String, String> serviceNameToWsdlServiceNameMap;
     private List<Pair<BusinessService, Map<String, TModel>>> servicesAndDependentTModels;
     public static final String USE_TYPE_END_POINT = "endPoint";
+    private static final String HTTP_SCHEMAS_SOAP_HTTP = "http://schemas.xmlsoap.org/soap/http";
 
     /**
      * When we convert a Published Service's WSDL into a Wsdl object, it does not complain about missing references
@@ -68,10 +69,19 @@ public class WsdlToUDDIModelConverter {
     }
 
     /**
-     * If we find a non soap binding for a wsdl:port this exception is thrown so that the wsdl:port is ignored
+     * If a wsdl:port does not contain either a soap:address or a soap12:address then this exception is thrown so that the wsdl:port is ignored
      */
-    public static class NonSoapBindingFoundException extends Exception{
-        public NonSoapBindingFoundException(String message) {
+    public static class NonSoapWsdlPortException extends Exception{
+        public NonSoapWsdlPortException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * If a wsdl:port implements a non http binding, then this exception is thrown so that the wsdl:port is ignored
+     */
+    public static class NonHttpBindingException extends Exception{
+        public NonHttpBindingException(String message) {
             super(message);
         }
     }
@@ -144,7 +154,7 @@ public class WsdlToUDDIModelConverter {
         }
 
         if (servicesAndDependentTModels.isEmpty()) {
-            final String msg = "The wsdl does not contain any valid wsdl:service definitions. Cannot convert to UDDI model";
+            final String msg = "The wsdl does not contain any valid / supported wsdl:service definitions. Cannot convert to UDDI model";
             logger.log(Level.INFO, msg);
             throw new MissingWsdlReferenceException(msg);
         }
@@ -186,13 +196,15 @@ public class WsdlToUDDIModelConverter {
             } catch (MissingWsdlReferenceException e) {
                 //already logged, we ignore the bindingTemplate as it is invalid
                 logger.log(Level.INFO, "Ignored bindingTemplate as the wsdl:port contains invalid references");
-            } catch (NonSoapBindingFoundException e) {
-                logger.log(Level.INFO, "Ignored bindingTemplate as the wsdl:port does not implement a soap binding");
+            } catch (NonSoapWsdlPortException e) {
+                logger.log(Level.INFO, "Ignored bindingTemplate as the wsdl:port does not implement a soap binding. (" + e.getMessage() + ")");
+            } catch (NonHttpBindingException e) {
+                logger.log(Level.INFO, "Ignored bindingTemplate as the wsdl:port does not implement a http binding. (" + e.getMessage() + ")");
             }
         }
 
         if(bindingTemplates.getBindingTemplate().isEmpty()){
-            final String msg = "Cannot create BusinessService as the wsdl:service does not reference any valid wsdl bindings";
+            final String msg = "Cannot create BusinessService as the wsdl:service does not reference any valid / supported WSDL bindings";
             logger.log(Level.INFO, msg);
             throw new MissingWsdlReferenceException(msg);
         }
@@ -238,19 +250,43 @@ public class WsdlToUDDIModelConverter {
     List<BindingTemplate> createUddiBindingTemplate(final Map<String, TModel> serviceToTModels,
                                                     final Port wsdlPort,
                                                     final Collection<Pair<String, String>> allEndpointPairs)
-            throws MissingWsdlReferenceException, NonSoapBindingFoundException {
+            throws MissingWsdlReferenceException, NonSoapWsdlPortException, NonHttpBindingException {
 
         List<ExtensibilityElement> elements = wsdlPort.getExtensibilityElements();
 
         boolean soapFound = false;
-        for (ExtensibilityElement ee : elements) {
-            if (ee instanceof SOAPAddress || ee instanceof SOAP12Address) {
-                soapFound = true;
-                break;
+        if(elements != null){
+            for (ExtensibilityElement ee : elements) {
+                if (ee instanceof javax.wsdl.extensions.soap.SOAPAddress || ee instanceof javax.wsdl.extensions.soap12.SOAP12Address) {
+                    soapFound = true;
+                    break;
+                }
             }
         }
+
+        boolean isHttpBinding = false;
+        final List<ExtensibilityElement> bindingExtElements = wsdlPort.getBinding().getExtensibilityElements();
+        if(bindingExtElements != null){
+            for(ExtensibilityElement ee: bindingExtElements) {
+                String endPointUri = null;
+                if (ee instanceof javax.wsdl.extensions.soap.SOAPBinding) {
+                    javax.wsdl.extensions.soap.SOAPBinding soapBinding = (javax.wsdl.extensions.soap.SOAPBinding) ee;
+                    endPointUri = soapBinding.getTransportURI();
+                }else if(ee instanceof javax.wsdl.extensions.soap12.SOAP12Binding){
+                    SOAP12Binding soapBinding = (SOAP12Binding) ee;
+                    endPointUri = soapBinding.getTransportURI();
+                }
+                if(endPointUri != null && endPointUri.equalsIgnoreCase(HTTP_SCHEMAS_SOAP_HTTP)){
+                    isHttpBinding = true;
+                }
+            }
+        }
+
         //We will only convert wsdl:ports which implement a soap biding
-        if (!soapFound) throw new NonSoapBindingFoundException("No soap:address found in wsdl");
+        if (!soapFound) throw new NonSoapWsdlPortException("No soap:address or soap12:address found in WSDL");
+
+        if(!isHttpBinding)
+            throw new NonHttpBindingException("wsdl:port does not implement a binding which has '" + HTTP_SCHEMAS_SOAP_HTTP + "' as it's transport URI");
 
         List<BindingTemplate> allTemplates = new ArrayList<BindingTemplate>();
         for(Pair<String, String> anEndpointPair: allEndpointPairs){

@@ -674,8 +674,9 @@ public class UDDIUtilities {
      * @throws PortNotFoundException if the wsdl:port implementation cannot be found
      * @throws WsdlToUDDIModelConverter.MissingWsdlReferenceException
      *                               if the Wsdl does not have a complete graph to wsdl:portType
-     * @throws WsdlToUDDIModelConverter.NonSoapBindingFoundException
+     * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.NonSoapWsdlPortException
      *                               if no soap:bindings are found in the Wsdl (nothing to do)
+     * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.NonHttpBindingException
      */
     static Pair<List<BindingTemplate>, Map<String, TModel>> createBindingTemplateFromWsdl(
             final Wsdl wsdl,
@@ -683,7 +684,10 @@ public class UDDIUtilities {
             final String wsdlPortBinding,
             final String wsdlPortBindingNamespace,
             final Collection<Pair<String, String>> allEndpointPairs)
-            throws PortNotFoundException, WsdlToUDDIModelConverter.MissingWsdlReferenceException, WsdlToUDDIModelConverter.NonSoapBindingFoundException {
+            throws PortNotFoundException,
+            WsdlToUDDIModelConverter.MissingWsdlReferenceException,
+            WsdlToUDDIModelConverter.NonSoapWsdlPortException,
+            WsdlToUDDIModelConverter.NonHttpBindingException {
 
         Port foundPort = null;
         Port candidatePort = null;

@@ -301,6 +301,23 @@ public class WsdlTUDDIModelConverterTest {
         Assert.assertEquals("Incorrect number of BusinessServices found", 1, serviceToDependentModels.size());
     }
 
+    /**
+     * Tests that a WSDL with no http bindings causes an exception to be thrown
+     * @throws Exception
+     */
+//    @BugNumber(7930)
+    @Test (expected = WsdlToUDDIModelConverter.MissingWsdlReferenceException.class)
+    public void testNoHttpBindingsThrow() throws Exception{
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader( "com/l7tech/uddi/Warehouse_NonHttpBindings.wsdl" ));
+
+        final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
+        final String gatewayURL = "http://localhost:8080/3828382";
+        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+        WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key");
+        wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair), "Layer7", Long.toString(serviceOid));
+    }
 
     /**
      * Confirms that the tModel created confirms to
