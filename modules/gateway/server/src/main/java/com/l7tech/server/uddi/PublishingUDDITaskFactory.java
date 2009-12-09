@@ -894,10 +894,11 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
         if (numPreviousRetries >= maxFailures) {
             uddiPublishStatus.setPublishStatus(failedStatus);
         } else {
-            final int failCount = uddiPublishStatus.getFailCount() + 1;
-            uddiPublishStatus.setFailCount(failCount);
             uddiPublishStatus.setPublishStatus(retryOkStatus);
         }
+        final int failCount = uddiPublishStatus.getFailCount() + 1;
+        uddiPublishStatus.setFailCount(failCount);
+        
         statusManager.update(uddiPublishStatus);
     }
     
