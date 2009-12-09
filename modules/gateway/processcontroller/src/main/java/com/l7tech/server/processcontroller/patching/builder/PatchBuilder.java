@@ -7,6 +7,7 @@ import com.l7tech.server.processcontroller.patching.PatchPackage;
 import com.l7tech.common.io.JarSignerParams;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ResourceUtils;
 
 import java.util.*;
 import java.io.*;
@@ -505,10 +506,12 @@ public class PatchBuilder {
                 throw new IllegalArgumentException("Invalid RPM list: " + rpmOrList);
 
             File rpmList = new File(rpmOrList);
+            FileInputStream ris = null;
             if (rpmList.exists()) {
                 try {
                     List<String> result = new ArrayList<String>();
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(rpmList)));
+                    ris = new FileInputStream(rpmList);
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(ris));
                     String line;
                     while ( (line = reader.readLine()) != null) {
                         result.add(line);
@@ -516,6 +519,8 @@ public class PatchBuilder {
                     return result;
                 } catch (IOException e) {
                     throw new RuntimeException("Error readin rpm file list: " + rpmOrList); 
+                } finally {
+                    ResourceUtils.closeQuietly(ris);
                 }
             } else {
                 return new ArrayList<String>() {{ add(rpmOrList); }};

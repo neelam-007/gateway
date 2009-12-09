@@ -2,6 +2,7 @@ package com.l7tech.server.processcontroller.patching.builder;
 
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.server.util.PropertiesDecryptor;
 import com.l7tech.server.processcontroller.patching.PatchException;
 import com.l7tech.common.io.ProcResult;
@@ -27,9 +28,16 @@ public class DbUpdatePatchTask implements PatchTask {
 
         File masterPasswordFile = new File(MessageFormat.format(MASTER_PASSWORD_FORMAT, nodeName));
         Properties nodeProperties =  new Properties();
-        nodeProperties.load(new FileInputStream(MessageFormat.format(NODE_PROPERTIES_FORMAT, nodeName)));
-        new PropertiesDecryptor(new MasterPasswordManager(new DefaultMasterPasswordFinder(masterPasswordFile))).decryptEncryptedPasswords(nodeProperties);
 
+        FileInputStream npis = null;
+        try {
+            npis = new FileInputStream(MessageFormat.format(NODE_PROPERTIES_FORMAT, nodeName));
+            nodeProperties.load(npis);
+        } finally {
+            ResourceUtils.closeQuietly(npis);
+        }
+        new PropertiesDecryptor(new MasterPasswordManager(new DefaultMasterPasswordFinder(masterPasswordFile))).decryptEncryptedPasswords(nodeProperties);
+        
         StringBuilder commandLine = new StringBuilder();
         commandLine.append("/usr/bin/mysql");
         commandLine.append(" -h ").append(nodeProperties.get("node.db.config.main.host"));
@@ -50,6 +58,7 @@ public class DbUpdatePatchTask implements PatchTask {
         return new String[] {
             "com.l7tech.util.FileUtils",
             "com.l7tech.util.FileUtils$Saver",
+            "com.l7tech.util.ResourceUtils",
             "com.l7tech.common.io.ProcUtils",
             "com.l7tech.common.io.ProcUtils$1",
             "com.l7tech.common.io.ProcUtils$ByteArrayHolder",
