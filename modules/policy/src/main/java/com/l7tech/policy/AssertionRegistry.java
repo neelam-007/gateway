@@ -67,9 +67,6 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         for (Assertion assertion : AllAssertions.SERIALIZABLE_EVERYTHING)
             registerAssertion(assertion.getClass());
 
-        // TODO do not commit this
-        registerAssertion(AuditRecordToXmlAssertion.class);
-
         onApplicationContextSet();
     }
 
