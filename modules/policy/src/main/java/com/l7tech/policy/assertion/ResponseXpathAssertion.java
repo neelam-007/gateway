@@ -81,27 +81,29 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion implements Uses
         return used.toArray(new String[used.size()]);
     }
 
-    private final static String baseName = "Evaluate Response XPath";
-
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ResponseXpathAssertion>(){
         @Override
         public String getAssertionName( final ResponseXpathAssertion assertion, final boolean decorate) {
-            if(!decorate) return baseName;
-            
-            StringBuffer sb = new StringBuffer(baseName);
+            final StringBuilder sb = new StringBuilder();
             final String variableName = assertion.getXmlMsgSrc();
-            if(variableName != null){
-                sb.append(" from variable ");
+
+            if (variableName == null) {
+                sb.append("Response");
+            } else {
                 sb.append(Syntax.SYNTAX_PREFIX);
                 sb.append(variableName);
                 sb.append(Syntax.SYNTAX_SUFFIX);
             }
-            sb.append(" against ");
-            if (assertion.getXpathExpression() == null) {
-                sb.append("[XPath expression not set]");
-            } else {
-                sb.append(assertion.getXpathExpression().getExpression());
+            sb.append(" must match XPath ");
+
+            if (decorate) {
+                if (assertion.getXpathExpression() == null) {
+                    sb.append("[XPath expression not set]");
+                } else {
+                    sb.append(assertion.getXpathExpression().getExpression());
+                }
             }
+
             return sb.toString();
         }
     };
@@ -112,7 +114,7 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion implements Uses
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String []{"xml"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
-        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.SHORT_NAME, "Evaluate Response XPath");
         meta.put(AssertionMetadata.DESCRIPTION, "The response must match a specified XPath pattern.");
 
         meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/Properties16.gif");
