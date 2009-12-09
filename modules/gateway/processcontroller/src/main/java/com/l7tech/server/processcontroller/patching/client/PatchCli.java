@@ -150,6 +150,9 @@ public class PatchCli {
             @Override
             void extractActionArguments(List<String> args) {
                 this.argument = extractOneStringActionArgument(args);
+                File patchFile = new File(getArgument());
+                if (! patchFile.exists() || ! patchFile.isFile())
+                    throw new IllegalArgumentException("Invalid patch file: " + getArgument());
             }
             @Override
             public Collection<PatchStatus> call(PatchServiceApi api) throws PatchException, IOException {
