@@ -349,9 +349,14 @@ public class ServicePropertiesDialog extends JDialog {
                     final UDDIProxiedServiceInfo serviceInfo =
                             Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(uddiServiceControl.getPublishedServiceOid());
                     if(serviceInfo == null || serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY){
-                        Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
-                        uddiServiceControl = null;
-                    } else{
+                        int selection = JOptionPane.showConfirmDialog(ServicePropertiesDialog.this, "The association to the original UDDI BusinessService will be lost.", "Remove BusinessService Association", JOptionPane.WARNING_MESSAGE);
+                        if (selection == 0) {
+                            Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
+                            uddiServiceControl = null;
+                        } else {
+                            return;
+                        }
+                    } else {
                         String errorMsg = "";
                         if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE){
                             errorMsg = "BusinessService in UDDI has been overwritten. Please remove before deleting";
