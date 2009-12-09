@@ -43,6 +43,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -200,7 +202,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     public Set<String> getGlobalPoliciesByType( final PolicyType type ) {
         ensureCacheValid();
 
-        final Set<String> guids = new HashSet<String>();
+        Set<String> guids = policyTypeToGuidsMap.get(type);
+        if (guids != null) {
+            return guids;
+        }
+
+        guids = new HashSet<String>();
         final Lock read = lock.readLock();
         read.lock();
         try {
@@ -212,6 +219,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         } finally {
             read.unlock();
         }
+
+        policyTypeToGuidsMap.putIfAbsent(type, guids);
 
         return guids;
     }
@@ -227,6 +236,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final Lock write = lock.writeLock();
         write.lock();
         try {
+            policyTypeToGuidsMap.clear();
             guidToPolicyMap.put( policy.getGuid(), policy );
             updateInternal( policy );
         } finally {
@@ -407,6 +417,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             }
             policyCache.clear();
             guidToOidMap.clear();
+            policyTypeToGuidsMap.clear();
 
             // rebuild
             for( Policy policy : policyManager.findAll() ) {
@@ -627,6 +638,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     private final Set<Long> policiesThatAreUnlicensed = new HashSet<Long>();
     private final Map<Long, PolicyCacheEntry> policyCache = new HashMap<Long, PolicyCacheEntry>(); // policy cache entries must be closed on removal
     private final Map<String, Long> guidToOidMap = new HashMap<String, Long>();
+    private final ConcurrentMap<PolicyType, Set<String>> policyTypeToGuidsMap = new ConcurrentHashMap<PolicyType, Set<String>>();
     private final Map<String, RegisteredPolicy> guidToPolicyMap = new HashMap<String,RegisteredPolicy>();
 
     private void notifyUpdate( final Policy policy ) {
@@ -760,6 +772,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final Lock write = lock.writeLock();
         write.lock();
         try {
+            policyTypeToGuidsMap.clear();
+
             final Map<Long, Policy> usingPolicies = new HashMap<Long,Policy>();
             findAllUsages( policy.getOid(), usingPolicies );
 
@@ -793,6 +807,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final Lock write = lock.writeLock();
         write.lock();
         try {
+            policyTypeToGuidsMap.clear();
+
             PolicyCacheEntry pce = cacheGet( oid );
             if ( pce == null ) {
                 removed = null;
@@ -1042,6 +1058,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final Lock write = lock.writeLock();
         write.lock();
         try {
+            policyTypeToGuidsMap.clear();
             cacheIsInvalid = true;
         } finally {
             write.unlock();
@@ -1180,6 +1197,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final Lock write = lock.writeLock();
         write.lock();
         try {
+            policyTypeToGuidsMap.clear();
             markDirty( policyIds );
             for ( Long oid : policyIds ) {
                 PolicyCacheEntry pce = cacheGet(oid);
