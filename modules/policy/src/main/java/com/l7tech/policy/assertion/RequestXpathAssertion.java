@@ -40,18 +40,16 @@ public class RequestXpathAssertion extends SimpleXpathAssertion {
         return DEFAULT_VAR_PREFIX;
     }
 
-    private final static String baseName = "Evaluate Request XPath";
-
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RequestXpathAssertion>(){
         @Override
         public String getAssertionName( final RequestXpathAssertion assertion, final boolean decorate) {
-            if(!decorate) return baseName;
-
-            StringBuffer sb = new StringBuffer(baseName + " against ");
-            if (assertion.getXpathExpression() == null) {
-                sb.append("[XPath expression not set]");
-            } else {
-                sb.append(assertion.getXpathExpression().getExpression());
+            StringBuilder sb = new StringBuilder("Request must match XPath ");
+            if (decorate) {
+                if (assertion.getXpathExpression() == null) {
+                    sb.append("[XPath expression not set]");
+                } else {
+                    sb.append(assertion.getXpathExpression().getExpression());
+                }
             }
             return sb.toString();
         }
@@ -63,7 +61,7 @@ public class RequestXpathAssertion extends SimpleXpathAssertion {
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String []{"xml"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
-        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.SHORT_NAME, "Evaluate Request XPath");
         meta.put(AssertionMetadata.DESCRIPTION, "The request must match a specified XPath pattern.");
 
         meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/Properties16.gif");
