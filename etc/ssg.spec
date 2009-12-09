@@ -34,6 +34,7 @@ rm -fr %{buildroot}
 # Main tree, owned by root
 %defattr(0644,root,root,0755)
 %dir /opt/SecureSpan/Gateway
+%dir /opt/SecureSpan/Controller
 
 # Group writable config files
 %defattr(0640,layer7,gateway,0750)
@@ -101,7 +102,6 @@ rm -fr %{buildroot}
 
 # Gateway process controller
 %defattr(0640,layer7,layer7,0755)
-%dir /opt/SecureSpan/Controller
 %dir /opt/SecureSpan/Controller/var
 
 %defattr(0444,layer7,layer7,0755)
