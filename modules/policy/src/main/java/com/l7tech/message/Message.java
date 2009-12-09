@@ -35,7 +35,7 @@ public final class Message {
      * enable this to enable XmlKnob.getOriginalDocument().
      * This is off by default since only certain messages need this.
      */
-    private boolean enableOriginalDocument = SyspropUtil.getBoolean(PROPERTY_ENABLE_ORIGINAL_DOCUMENT, false);
+    private boolean enableOriginalDocument = SyspropUtil.getBooleanCached(PROPERTY_ENABLE_ORIGINAL_DOCUMENT, false);
 
     private MessageFacet rootFacet;
 

@@ -8,6 +8,9 @@ package com.l7tech.util;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,6 +19,18 @@ import java.util.logging.Logger;
  */
 public class SyspropUtil {
     private static final Logger logger = Logger.getLogger(SyspropUtil.class.getName());
+
+    private static class CacheHolder {
+        private static final ConcurrentMap<String, String> propertyCache = new ConcurrentHashMap<String, String>();
+        static {
+            Background.scheduleRepeated(new TimerTask() {
+                @Override
+                public void run() {
+                    propertyCache.clear();
+                }
+            }, 19543, 19543);
+        }
+    }
 
     public static Integer getInteger(String name) {
         try {
@@ -31,7 +46,7 @@ public class SyspropUtil {
             return Integer.getInteger(name, value);
         } catch (AccessControlException e) {
             logger.fine("Unable to access system property " + name + "; using default value of " + value);
-            return new Integer(value);
+            return value;
         }
     }
 
@@ -39,12 +54,24 @@ public class SyspropUtil {
         return getBoolean(name, false);
     }
 
+    public static boolean getBooleanCached(String name) {
+        return getBooleanCached(name, false);
+    }
+
+    public static boolean getBooleanCached(String name, boolean dflt) {
+        return toBoolean(name, dflt, getPropertyCached(name));
+    }
+
     public static boolean getBoolean(String name, boolean dflt) {
+        return toBoolean(name, dflt, getProperty(name));
+    }
+
+    private static boolean toBoolean(String name, boolean dflt, String property) {
         try {
             if (dflt)
-                return !"false".equalsIgnoreCase(getProperty(name));
+                return !"false".equalsIgnoreCase(property);
             else
-                return "true".equalsIgnoreCase(getProperty(name));
+                return "true".equalsIgnoreCase(property);
         } catch (AccessControlException e) {
             logger.fine("Unable to access system property " + name + "; using default value of " + dflt);
             return dflt;
@@ -64,25 +91,41 @@ public class SyspropUtil {
         return getString(name, null);
     }
 
+    public static String getPropertyCached(String name) {
+        String value = CacheHolder.propertyCache.get(name);
+        if (value != null)
+            return value;
+        value = getProperty(name);
+        CacheHolder.propertyCache.put(name, value);
+        return value;
+    }
+
     public static Long getLong(String name, long dflt) {
         try {
              return Long.getLong(name, dflt);
         } catch (AccessControlException e) {
             logger.fine("Unable to access system property " + name + "; using default value of " + dflt);
-            return new Long(dflt);
+            return dflt;
         }
     }
 
     public static Double getDouble(String name, double dflt) {
+        return toDouble(name, dflt, getProperty(name));
+    }
+
+    public static Double getDoubleCached(String name, double dflt) {
+        return toDouble(name, dflt, getPropertyCached(name));
+    }
+
+    private static Double toDouble(String name, double dflt, String value) {
         try {
-            String s = System.getProperty(name);
-            return s != null && s.length() > 0 ? Double.parseDouble(s) : new Double(dflt);
+            return value != null && value.length() > 0 ? Double.parseDouble(value) : dflt;
         } catch (NumberFormatException e) {
             logger.log(Level.WARNING, "Invalid system property " + name + " (using default value of " + dflt + "): " + ExceptionUtils.getMessage(e));
-            return new Double(dflt);
+            return dflt;
         } catch (AccessControlException e) {
             logger.fine("Unable to access system property " + name + ": using default value of " + dflt);
-            return new Double(dflt);
+            return dflt;
         }
     }
 
@@ -95,6 +138,7 @@ public class SyspropUtil {
     public static void setProperty(final String name, final String value) {
         //noinspection unchecked
         AccessController.doPrivileged(new PrivilegedAction() {
+            @Override
             public Object run() {
                 try {
                     System.setProperty(name, value);
