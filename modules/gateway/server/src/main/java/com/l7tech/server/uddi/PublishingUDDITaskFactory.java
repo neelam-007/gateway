@@ -457,7 +457,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     final Collection<UDDIClient.UDDIKeyedReference> returnColl = new ArrayList<UDDIClient.UDDIKeyedReference>();
 
                     //download the tmodel key for active soa
-                    final String virtualKey = uddiFactory.config.getProperty("uddi.activesoa.virtual.service.tmodelkey", "uddi:9de0173b-5117-11de-8cf9-da0192ff3739");
+                    final String virtualKey = uddiFactory.config.getProperty("uddi.centrasite.activesoa.virtual.service.tmodelkey", "uddi:9de0173b-5117-11de-8cf9-da0192ff3739");
 
                     try {
                         uddiClient.getOperationalInfo( virtualKey );
