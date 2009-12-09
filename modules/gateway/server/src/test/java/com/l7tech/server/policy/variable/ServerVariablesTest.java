@@ -31,8 +31,10 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
-import org.junit.*;
-import static org.junit.Assert.*;
+import com.l7tech.util.SyspropUtil;
+import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
@@ -354,7 +356,7 @@ public class ServerVariablesTest {
     @BugNumber(5336)
     @Test
     public void testOriginalRequest() throws Exception {
-        System.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "true");
+        SyspropUtil.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "true");
         Message req = new Message(XmlUtil.stringAsDocument(REQUEST_BODY));
         PolicyEnforcementContext c = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         addTextNode(c.getRequest(), "reqfoo");
@@ -515,7 +517,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testMessageAuditRecordFields() throws Exception {
-        System.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "false");
+        SyspropUtil.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "false");
         final AuditSinkPolicyEnforcementContext c = sinkcontext();
         expandAndCheck(c, "${audit.mappingValuesOid}", "49585");
         expandAndCheck(c, "${audit.operationName}", "listProducts");
@@ -537,7 +539,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testMessageAuditRecordFields_with_OrigRequest() throws Exception {
-        System.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "true");
+        SyspropUtil.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "true");
         final AuditSinkPolicyEnforcementContext c = sinkcontext();
         addTextNode(c.getOriginalRequest(), "reqfoo");
         addTextNode(c.getOriginalResponse(), "respfoo");

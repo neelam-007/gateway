@@ -101,6 +101,10 @@ public class SyspropUtil {
         return value;
     }
 
+    public static void clearCache() {
+        CacheHolder.propertyCache.clear();
+    }
+
     public static Long getLong(String name, long dflt) {
         try {
              return Long.getLong(name, dflt);
@@ -143,6 +147,7 @@ public class SyspropUtil {
             public Object run() {
                 try {
                     System.setProperty(name, value);
+                    clearCache();
                 } catch (AccessControlException e) {
                     logger.warning("Unable to set system property " + name);
                 }
