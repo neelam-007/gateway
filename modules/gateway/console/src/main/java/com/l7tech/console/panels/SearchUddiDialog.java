@@ -410,12 +410,24 @@ public class SearchUddiDialog extends JDialog {
                 } catch (InvocationTargetException e2) {
                     String message = ExceptionUtils.getMessage(e2);
                     logger.log(Level.WARNING, message, ExceptionUtils.getDebugException(e2));
-                    JTextField text = new JTextField(message);
-                    text.setHorizontalAlignment(SwingConstants.CENTER);
-                    JScrollPane pane = new JScrollPane(text);
-                    pane.setPreferredSize(new Dimension(250, 45));
-                    pane.setMaximumSize(new Dimension(350, 50));
-                    JOptionPane.showMessageDialog(SearchUddiDialog.this, pane, "Error Searching UDDI Registry", JOptionPane.ERROR_MESSAGE);
+                    int messageLengthLimit = 60;
+                    Object messageObject;
+                    if (message.length() < messageLengthLimit) {
+                        messageObject = message;
+                    } else {
+                        JTextArea text = new JTextArea(message);
+                        text.setColumns(Math.min(message.length(), messageLengthLimit));
+                        text.setRows(Math.min(4, (message.length() + 1) / messageLengthLimit) + 1);
+                        text.setMargin(new Insets(2,5,2,5));
+                        text.setLineWrap(true);
+                        text.setEditable(false);
+                        messageObject = new JScrollPane(text);
+                    }
+
+                    JOptionPane pane = new JOptionPane(messageObject, JOptionPane.ERROR_MESSAGE);
+                    JDialog dialog = pane.createDialog(SearchUddiDialog.this, "Error Searching UDDI Registry");
+                    dialog.setResizable(true);
+                    dialog.setVisible(true);
                 }
             }
         });
