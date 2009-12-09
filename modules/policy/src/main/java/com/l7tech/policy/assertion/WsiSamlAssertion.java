@@ -73,7 +73,7 @@ public class WsiSamlAssertion extends Assertion {
         this.failOnNonCompliantResponse = failOnNonCompliantResponse;
     }
 
-    private final static String baseName = "Enforce SAML Compliance";
+    private final static String baseName = "Enforce WS-I SAML Compliance";
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<WsiSamlAssertion>(){
         @Override
         public String getAssertionName( final WsiSamlAssertion assertion, final boolean decorate) {
