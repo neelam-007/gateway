@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
+import static com.l7tech.gateway.common.uddi.UDDIPublishStatus.PublishStatus.*;
 import static com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo.PublishType.*;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -543,9 +544,14 @@ public class ServiceUDDISettingsDialog extends JDialog {
                     showErrorMessage("Cannot Update UDDI", "UDDI Registry is not currently enabled", null, false);
                     return false;
                 }
-                if(publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH){
-                    showErrorMessage("Cannot Update UDDI", "Publishing to UDDI in progress. Please close dialog and try again in a few minutes", null, false);
-                    return false;
+
+                switch (publishStatus.getPublishStatus()) {
+                    case PUBLISH:
+                        showErrorMessage("Cannot Update UDDI", "Publishing to UDDI in progress. Please close dialog and try again in a few minutes", null, false);
+                        return false;
+                    case PUBLISH_FAILED:
+                        DialogDisplayer.showMessageDialog(this, "Previous UDDI publishing attempts have failed; data may be orphaned in UDDI.", "UDDI Publish Errors", JOptionPane.WARNING_MESSAGE, null);
+                        break;
                 }
 
                 UDDIProxiedServiceInfo.PublishType publishType = uddiProxyServiceInfo.getPublishType();
