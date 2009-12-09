@@ -878,22 +878,9 @@ public class BusinessServicePublisher implements Closeable {
                     break;
                 }
 
-                boolean protocolIsSoap = false;
-                boolean transportIsHttp = false;
-                for(KeyedReference kf: categoryBag.getKeyedReference()){
-                    if(kf.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_CATEGORIZATION_PROTOCOL)) {
-                        if (kf.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.SOAP_PROTOCOL_V3) ||
-                                kf.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.SOAP_PROTOCOL_V2) ||
-                                        kf.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.SOAP_1_2_V3)) {
-                            protocolIsSoap = true;
-                        }
-                    }else if(kf.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_CATEGORIZATION_TRANSPORT)){
-                        if(kf.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.HTTP_TRANSPORT_V3) ||
-                                kf.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.HTTP_TRANSPORT_V2)){
-                            transportIsHttp= true;
-                        }
-                    }
-                }
+                boolean protocolIsSoap = UDDIUtilities.isSoapBinding(tModel);
+                boolean transportIsHttp = UDDIUtilities.isHttpBinding(tModel);
+
                 if(protocolIsSoap && transportIsHttp){
                     bindingKeysToDelete.add(bindingTemplate.getBindingKey());
                 }

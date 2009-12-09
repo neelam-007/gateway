@@ -845,6 +845,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     continue;
                 }
 
+                if(!UDDIUtilities.isSoapBinding(bindingTModel) || !UDDIUtilities.isHttpBinding(bindingTModel)){
+                    logger.log(Level.FINE, "Not including binding in results as it is not a soap and http binding. binding tModelKey: " + bindingTModel.getTModelKey());
+                    continue;
+                }
+
                 if (portTypeTModel == null) {
                     logger.log(Level.FINE,
                             "Not including binding in results as we could not find the a wsdl:portType tModel reference from the bindingTemplate with bindingKey: "

@@ -336,6 +336,91 @@ public class UDDIUtilitiesTest {
         Assert.assertNotNull("A wsdl:port implementing the requested binding should be found", bindingInfo);
     }
 
+    /**
+     * Tests UDDIUtilities.isHttpBinding
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testBindingIsHttp() throws Exception{
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        Assert.assertTrue("tModel is a http binding tModel", UDDIUtilities.isHttpBinding(bindingTModel));
+    }
+
+    /**
+     * Tests UDDIUtilities.isHttpBinding V2
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testBindingIsHttp_V2() throws Exception{
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModelBinding_V2.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        Assert.assertTrue("tModel is a http binding tModel", UDDIUtilities.isHttpBinding(bindingTModel));
+    }
+
+    /**
+     * Tests UDDIUtilities.isSoapBinding
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testBindingIsSoap() throws Exception{
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        Assert.assertTrue("tModel is a soap binding tModel", UDDIUtilities.isSoapBinding(bindingTModel));
+    }
+
+    /**
+     * Tests UDDIUtilities.isSoapBinding V2
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testBindingIsSoap_V2() throws Exception{
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModelBinding_V2.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        Assert.assertTrue("tModel is a soap binding tModel", UDDIUtilities.isSoapBinding(bindingTModel));
+    }
+
+    /**
+     * Tests UDDIUtilities.isSoapBinding - invalid binding tModel
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testBindingIsSoap_InvalidBinding() throws Exception{
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/InvalidBinding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        Assert.assertFalse("tModel is an invalid binding soap binding tModel", UDDIUtilities.isSoapBinding(bindingTModel));
+    }
+
+    /**
+     * Tests UDDIUtilities.isSoapBinding - invalid argument
+     *
+     * @throws Exception
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testBindingIsSoap_WrongType() throws Exception {
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_portType.xml");
+
+        final TModel nonBindingTModel = JAXB.unmarshal(stream, TModel.class);
+        UDDIUtilities.isSoapBinding(nonBindingTModel);
+    }
+
+    /**
+     * Tests UDDIUtilities.isSoapBinding - invalid argument
+     *
+     * @throws Exception
+     */
+    @Test(expected = NullPointerException.class)
+    public void testBindingIsSoap_NullPointer() throws Exception {
+        UDDIUtilities.isSoapBinding(null);
+    }
+
+
+
     private static void initializeLogging() {
         final LogManager logManager = LogManager.getLogManager();
 

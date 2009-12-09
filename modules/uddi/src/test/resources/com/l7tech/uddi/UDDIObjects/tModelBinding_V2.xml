@@ -15,6 +15,6 @@
         <ns4:keyedReference keyValue="wsdlSpec" tModelKey="uddi:uddi.org:categorization:types"/>
         <ns4:keyedReference keyValue="http://warehouse.acme.com/ws" keyName="binding namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
         <ns4:keyedReference keyValue="uuid:aa254698-93de-3870-8df3-a5c075d64a0e" keyName="SOAP protocol" tModelKey="uddi:uddi.org:wsdl:categorization:protocol"/>
-        <ns4:keyedReference keyValue="uddi:uddi.org:transport:http" keyName="HTTP transport" tModelKey="uddi:uddi.org:wsdl:categorization:transport"/>
+        <ns4:keyedReference keyValue="uuid:68DE9E80-AD09-469D-8A37-088422BFBC36" keyName="HTTP transport" tModelKey="uddi:uddi.org:wsdl:categorization:transport"/>
     </ns4:categoryBag>
 </TModel>

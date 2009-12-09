@@ -98,6 +98,8 @@ public interface UDDIClient extends Closeable {
      * <p/>
      * Only valid bindingTemplates will be contained in the results. Non valid bindingTemplates are omitted
      *
+     * Only soap bindings are returned
+     *
      * @param serviceKey   String serviceKey of the BusinessService to list wsdl:port info for
      * @param getFirstOnly if true, the first found valid wsdl:port will be returned. Useful when only a WSDL URL is required
      * @return The collection of WsdlPortInfo. All properties are guaranteed to be non null. Can be empty.

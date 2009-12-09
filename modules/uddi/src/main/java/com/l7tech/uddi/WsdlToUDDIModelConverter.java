@@ -30,22 +30,23 @@ import java.util.logging.Level;
 
 public class WsdlToUDDIModelConverter {
     private static Logger logger = Logger.getLogger(WsdlToUDDIModelConverter.class.getName());
-    protected static final String LANAGUAGE = "en-US";
-    protected static final String UDDI_WSDL_CATEGORIZATION_PROTOCOL = "uddi:uddi.org:wsdl:categorization:protocol";
-    protected static final String SOAP_1_2_V3 = "uuid:soap12";
-    protected static final String SOAP_PROTOCOL_V3 = "uddi:uddi.org:protocol:soap"; //v2 = uuid:aa254698-93de-3870-8df3-a5c075d64a0e
-    protected static final String SOAP_PROTOCOL_V2 = "uuid:aa254698-93de-3870-8df3-a5c075d64a0e";
-    protected static final String HTTP_TRANSPORT_V3 = "uddi:uddi.org:transport:http"; //v2 = uuid:68DE9E80-AD09-469D-8A37-088422BFBC36
-    protected static final String HTTP_TRANSPORT_V2 = "uuid:68DE9E80-AD09-469D-8A37-088422BFBC36";
-    protected static final String WSDL_INTERFACE = "wsdlInterface";
+
     public static final String UDDI_WSDL_TYPES = "uddi:uddi.org:wsdl:types";
     public static final String UDDI_XML_NAMESPACE = "uddi:uddi.org:xml:namespace";
+
+    protected static final String LANAGUAGE = "en-US";
+    protected static final String UDDI_WSDL_CATEGORIZATION_PROTOCOL = "uddi:uddi.org:wsdl:categorization:protocol";
+    protected static final String SOAP_1_2_V3 = "uuid:soap12";//we know about this odd soap identifier as we came across it during testing
+    protected static final String SOAP_PROTOCOL_V3 = "uddi:uddi.org:protocol:soap";
+    protected static final String SOAP_PROTOCOL_V2 = "UUID:AA254698-93DE-3870-8DF3-A5C075D64A0E";
+    protected static final String HTTP_TRANSPORT_V3 = "uddi:uddi.org:transport:http";
+    protected static final String HTTP_TRANSPORT_V2 = "uuid:68DE9E80-AD09-469D-8A37-088422BFBC36";
+    protected static final String WSDL_INTERFACE = "wsdlInterface";
     protected static final String UDDI_WSDL_PORTTYPEREFERENCE = "uddi:uddi.org:wsdl:porttypereference";
     protected static final String UDDI_CATEGORIZATION_TYPES = "uddi:uddi.org:categorization:types";
     protected static final String UDDI_WSDL_CATEGORIZATION_TRANSPORT = "uddi:uddi.org:wsdl:categorization:transport";
     protected static final String UDDI_XML_LOCALNAME = "uddi:uddi.org:xml:localname";
     protected static final String WSDL_BINDING_INSTANCE_DESCRIPTION = "the wsdl:binding that this wsdl:port implements";
-    
     protected static final String PORT_TMODEL_IDENTIFIER = "$Layer7$_PortType_Identifier";
     protected static final String BINDING_TMODEL_IDENTIFIER = "$Layer7$_Binding_Identifier";
 

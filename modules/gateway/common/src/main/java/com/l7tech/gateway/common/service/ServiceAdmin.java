@@ -173,6 +173,8 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      *
      * Valid bindingTemplates is defined according to the technical note on using a WSDL in UDDI
      *
+     * Only soap bindings are retrieved
+     *
      * @param registryOid long oid of the UDDIRegistry to search
      * @param serviceKey String serviceKey of the BusinessService to retrieve wsdl:port infomration for
      * @param getFirstOnly if true, the first value result will be returned. Useful when only a WSDL URL is required.

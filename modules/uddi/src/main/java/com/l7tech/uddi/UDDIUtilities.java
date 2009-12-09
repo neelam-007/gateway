@@ -777,6 +777,54 @@ public class UDDIUtilities {
 
     }
 
+    static boolean isSoapBinding(final TModel tModel){
+        if(tModel == null) throw new NullPointerException("tModel cannot be null");
+        
+        final TMODEL_TYPE tModelType = UDDIUtilities.getTModelType(tModel, true);
+        if(tModelType != TMODEL_TYPE.WSDL_BINDING)
+            throw new IllegalArgumentException("tModel does not represent a wsdl:binding. Cannot determine if it is a soap binding or not. tModelKey: " + tModel.getTModelKey());
+
+        final CategoryBag categoryBag = tModel.getCategoryBag();
+        if(categoryBag == null){
+            logger.log(Level.FINE, "tModel does not contain a categoryBag, cannot determine if it is a soap binding or not. tModelKey: " + tModel.getTModelKey());
+            return false;
+        }
+
+        for(KeyedReference kr: categoryBag.getKeyedReference()){
+            if(kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_CATEGORIZATION_PROTOCOL) &&
+                    (kr.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.SOAP_PROTOCOL_V2 ) ||
+                     kr.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.SOAP_PROTOCOL_V3) ||
+                     kr.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.SOAP_1_2_V3))){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean isHttpBinding(final TModel tModel){
+        if(tModel == null) throw new NullPointerException("tModel cannot be null");
+
+        final TMODEL_TYPE tModelType = UDDIUtilities.getTModelType(tModel, true);
+        if(tModelType != TMODEL_TYPE.WSDL_BINDING)
+            throw new IllegalArgumentException("tModel does not represent a wsdl:binding. Cannot determine if it is a http binding or not. tModelKey: " + tModel.getTModelKey());
+
+        final CategoryBag categoryBag = tModel.getCategoryBag();
+        if(categoryBag == null){
+            logger.log(Level.FINE, "tModel does not contain a categoryBag, cannot determine if it is a http binding or not. tModelKey: " + tModel.getTModelKey());
+            return false;
+        }
+
+        for(KeyedReference kr: categoryBag.getKeyedReference()){
+            if(kr.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_CATEGORIZATION_TRANSPORT)){
+                if(kr.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.HTTP_TRANSPORT_V3) ||
+                        kr.getKeyValue().equalsIgnoreCase(WsdlToUDDIModelConverter.HTTP_TRANSPORT_V2)){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     //- PRIVATE
 
     private static String getNameSpace(final CategoryBag categoryBag) {
