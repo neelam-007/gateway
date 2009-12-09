@@ -1,9 +1,11 @@
 package com.l7tech.policy.assertion;
 
+import java.io.Serializable;
+
 /**
  * Support class for PrivateKeyable.
  */
-public class PrivateKeyableSupport implements PrivateKeyable {
+public class PrivateKeyableSupport implements PrivateKeyable, Serializable {
 
     //- PUBLIC
 
