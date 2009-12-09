@@ -117,7 +117,7 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<AddWssSecurityToken>(){
         @Override
         public String getAssertionName( final AddWssSecurityToken assertion, final boolean decorate) {
-            return (decorate) ? AssertionUtils.decorateName(assertion, baseName) : baseName;
+            return (decorate) ? AssertionUtils.decorateName(assertion, baseName) + " (" + assertion.getTokenType().getName() + ")" : baseName;
         }
     };
 
