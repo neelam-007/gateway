@@ -96,7 +96,8 @@ public class SyspropUtil {
         if (value != null)
             return value;
         value = getProperty(name);
-        CacheHolder.propertyCache.put(name, value);
+        if (name != null && value != null)
+            CacheHolder.propertyCache.put(name, value);
         return value;
     }
 
