@@ -7,6 +7,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.dao.DataAccessException;
 
 import javax.sql.DataSource;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -105,6 +106,13 @@ public class ClusterMaster {
                 }
             } catch ( TransactionException te ) {
                 logger.log( Level.FINE, "Transaction commit failed '"+ExceptionUtils.getMessage(te)+"'.", ExceptionUtils.getDebugException(te));
+            } catch ( DataAccessException use ) {
+                SQLException se = ExceptionUtils.getCauseIfCausedBy( use, SQLException.class );
+                if ( se != null && se.getErrorCode() == 1317 ) { // Error: 1317 SQLSTATE: 70100  (ER_QUERY_INTERRUPTED), can occur on shutdown
+                    logger.log( Level.FINE, "Interrupted '"+ExceptionUtils.getMessage(se)+"'.", ExceptionUtils.getDebugException(se) );
+                } else {
+                    logger.log( Level.WARNING, "Error processing master status.", use );
+                }
             }
 
             if ( wasMaster != isMaster.get() ) {
