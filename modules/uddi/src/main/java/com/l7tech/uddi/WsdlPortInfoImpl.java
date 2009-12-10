@@ -34,7 +34,7 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     }
 
     public WsdlPortInfoImpl(String name, String wsdlUrl) {
-        this.wsdlPortName = name;
+        this.businessServiceName = name;
         this.wsdlUrl = wsdlUrl;
     }
 
