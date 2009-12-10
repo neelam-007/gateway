@@ -33,7 +33,12 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     public WsdlPortInfoImpl() {
     }
 
-    public WsdlPortInfoImpl(String name, String wsdlUrl) {
+    /**
+     * Only used to flag to the SSM that the search results yielded too many results
+     * @param name String name of the Business Service - simply used for sorting WsdlPortInfoImpl's
+     * @param wsdlUrl String flag URI checked in the SSM to determine if search results were truncated or not
+     */
+    private WsdlPortInfoImpl(String name, String wsdlUrl) {
         this.businessServiceName = name;
         this.wsdlUrl = wsdlUrl;
     }
