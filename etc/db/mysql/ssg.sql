@@ -429,8 +429,8 @@ CREATE TABLE trusted_cert (
   PRIMARY KEY (objectid),
   UNIQUE i_thumb (thumbprint_sha1),
   INDEX i_ski (ski),
-  INDEX i_subject_dn (subject_dn),
-  INDEX i_issuer_dn (issuer_dn),
+  INDEX i_subject_dn (subject_dn(255)),
+  INDEX i_issuer_dn (issuer_dn(255)),
   FOREIGN KEY (revocation_policy_oid) REFERENCES revocation_check_policy (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
