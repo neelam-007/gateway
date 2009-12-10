@@ -898,13 +898,14 @@ public class ServiceUDDISettingsDialog extends JDialog {
             final Collection<UDDIServiceControl> controls =
                     Registry.getDefault().getUDDIRegistryAdmin().getAllServiceControlsForRegistry(uddiServiceControl.getUddiRegistryOid());
 
+            int numOfAffectedControls = 0;
             for(UDDIServiceControl control: controls){
                 if(control.getUddiServiceKey().equalsIgnoreCase(uddiServiceControl.getUddiServiceKey())){
-                    return true;
+                    numOfAffectedControls++;
                 }
             }
 
-            return false;
+            return numOfAffectedControls > 1;
 
         } catch (FindException e) {
             throw new RuntimeException("Cannot check if other published services have the same original service from UDDI", e);
