@@ -86,9 +86,8 @@ public interface UDDIClient extends Closeable {
      * @param offset        The offset into the search results (use when paging)
      * @param maxRows       The maximum number of rows to return (can be used for paging)
      * @param getWsdlInfo   boolean. If true then WSDL info will be returned. Option for when the UDDI performance is very poor.
-     * @return The collection of WsdlPortInfo. Only the businessServiceName, businessServiceKey and businessEntityKey
-     *         properties are guaranteed to be non null. If getWsdlInfo is true, then the wsdlUrl property will be non null.
-     *         Null if the Thread was interrupted
+     * @return The collection of WsdlPortInfo. Only the businessServiceName is guaranteed to be non null and contain non empty strings.
+     *         If getWsdlInfo is true, then the wsdlUrl property will be non null. Null if the Thread was interrupted
      * @throws UDDIException if an error occurs
      */
     Collection<WsdlPortInfo> listServiceWsdls(String serviceName, boolean caseSensitive, int offset, int maxRows, boolean getWsdlInfo) throws UDDIException;

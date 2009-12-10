@@ -44,18 +44,23 @@ public class WsdlPortInfoImpl implements WsdlPortInfo, Serializable {
     }
 
     /**
-     * Validate that all require information was found
+     * Validate that all require properties were set with value values
      * @return null if no errors, otherwise a String explaining the problem
      */
     public String validate(){
-
-        if(!checkStringValue(wsdlUrl)) return "WSDL URL was not set";
-//        if(!checkStringValue(wsdlPortName)) return "wsdl:port name from bindingTemplate instance parameter not set";
-//        if(!checkStringValue(wsdlPortBinding)) return "wsdl:binding referenced from wsdl:port not set";
-        if(!checkStringValue(businessServiceKey)) return "serviceKey not set";
-//        if(!checkStringValue(businessEntityKey)) return "businessKey not set";
-//        if(!checkStringValue(wsdlServiceName)) return "wsdl:service name not set";
-        if(!checkStringValue(accessPointURL)) return "accessPointURL name not set";
+        if(!checkStringValue(businessEntityKey)) return "businessKey property was not set";
+        if(!checkStringValue(businessEntityName)) return "businessEntityName property was not set";
+        if(!checkStringValue(businessServiceKey)) return "businessServiceKey property was not set";
+        if(!checkStringValue(businessServiceName)) return "businessServiceName property was not set";
+        if(!checkStringValue(wsdlServiceName)) return "wsdlServiceName property was not set";
+        if(!checkStringValue(wsdlPortName)) return "wsdlPortName property was not set";
+        if(!checkStringValue(wsdlPortBinding)) return "wsdlPortBinding property was not set";
+        //ok for binding namespace to be null
+        if(wsdlPortBindingNamespace != null){
+            if(!checkStringValue(wsdlPortBindingNamespace)) return "wsdlPortBindingNamespace property was not set, when it contained a non null value";            
+        }
+        if(!checkStringValue(accessPointURL)) return "accessPointURL property was not set";
+        if(!checkStringValue(wsdlUrl)) return "wsdlUrl property was not set";
         return null;
     }
 

@@ -477,7 +477,7 @@ public class SearchUddiDialog extends JDialog {
         Vector<WsdlPortInfo> urlList = new Vector<WsdlPortInfo>();
         for (int i = 0; i < serviceResult.length; i++) {
             final WsdlPortInfo wi = (serviceResult)[i];
-            if (WsdlPortInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(wi.getWsdlUrl())) {
+            if (WsdlPortInfo.MAXED_OUT_UDDI_RESULTS_URL.equals(wi.getWsdlUrl())) {//note wi.getWsdlUrl can be null
                 // Flag value indicating that search results were truncated
                 searchTruncated = true;
             } else {
