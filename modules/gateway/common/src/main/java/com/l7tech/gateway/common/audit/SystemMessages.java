@@ -119,7 +119,7 @@ public class SystemMessages extends Messages {
     public static final M UDDI_METRICS_CLEANUP_FAILED           = m(2277, Level.WARNING, "Error removing metrics ''{0}''.");
     public static final M UDDI_PUBLISH_UNEXPECTED_ERROR         = m(2278, Level.WARNING, "Unexpected error while publishing ''{0}''.");
     public static final M UDDI_PUBLISH_ENDPOINT_ROLLBACK_FAILED = m(2279, Level.WARNING, "Error rolling back publishing endpoint ''{0}'' ''{1}''.");
-    public static final M UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING  = m(2280, Level.WARNING, "Could not delete binding templates from Service with serviceKey ''{0}''.");
+    public static final M UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING  = m(2280, Level.WARNING, "Could not delete binding templates from Service with serviceKey ''{0}''. {1}");
     public static final M UDDI_PUBLISH_REMOVE_ENDPOINT_FAILED   = m(2281, Level.WARNING, "Error removing endpoint ''{0}''.");
     public static final M UDDI_PUBLISH_SERVICE_FAILED           = m(2282, Level.WARNING, "Error publishing service ''{0}''.");
     public static final M UDDI_PUBLISH_SERVICE_ROLLBACK_FAILED  = m(2283, Level.WARNING, "Error rolling back publishing service ''{0}''.");

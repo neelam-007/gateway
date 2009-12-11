@@ -696,7 +696,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 } catch (UDDIException e) {
                     context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
                             ExceptionUtils.getDebugException(e),
-                            serviceControl.getUddiServiceKey());
+                            serviceControl.getUddiServiceKey(), ExceptionUtils.getMessage(e));
                     PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                     return;
                 } finally {
@@ -838,7 +838,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         } catch (UDDIException e) {
                             context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
                                     ExceptionUtils.getDebugException(e),
-                                    serviceControl.getUddiServiceKey());
+                                    serviceControl.getUddiServiceKey(), ExceptionUtils.getMessage(e));
                             PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
                             return;
                         }  finally {

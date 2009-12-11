@@ -356,6 +356,8 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         getServiceDetail.setAuthInfo(getAuthToken());
         getServiceDetail.getServiceKey().add(owningServiceKey);
         final ServiceDetail serviceDetail;
+        final String msg = "Exception getting BusinessService with key: " + owningServiceKey+" " +
+                "to check if any bindingTemplate elements remain.";
         try {
             serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);
             if(serviceDetail.getBusinessService().isEmpty()){
@@ -363,10 +365,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 return;
             }
         } catch (DispositionReportFaultMessage drfm) {
-            final String msg = getExceptionMessage("Exception getting BusinessService with key: " + owningServiceKey+" " +
-                    "to check if any bindingTemplate elements remain.", drfm);
-            logger.log(Level.WARNING, msg);
-            return;
+            throw buildFaultException(msg, drfm);
+        } catch (RuntimeException e){
+            throw buildErrorException("Error getting binding details", e);
         }
 
         final BusinessService owningService = serviceDetail.getBusinessService().get(0);
@@ -394,10 +395,13 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         try {
             final ServiceDetail serviceDetail1 = getPublishPort().saveService(saveService);
             serviceDetail1.getBusinessService().get(0);
-        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
-            logger.log(Level.WARNING, "Found no BusinessService for serviceKey: " + owningServiceKey);
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Could not save UDDI Business Service following deleting bindingTemplates with serviceKey: " + owningService.getServiceKey(), drfm);
+        } catch (RuntimeException e){
+            throw buildErrorException("Could not save UDDI Business Service following deleting bindingTemplates with serviceKey: " + owningService.getServiceKey(), e);
         }
 
+        logger.log(Level.FINE, "bindingTemplates deleted");
         if (!tModelKeysToDelete.isEmpty()) deleteTModel(tModelKeysToDelete);
     }
 
@@ -442,6 +446,8 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             }else{
                 throw ex;
             }
+        } catch (RuntimeException e){
+            throw buildErrorException("Problem looking up UDDI Business Service with serviceKey: " + serviceKey, e);
         }
     }
 
