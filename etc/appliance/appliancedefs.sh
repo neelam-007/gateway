@@ -36,7 +36,7 @@ SSG_JAVA_HOME="/opt/SecureSpan/JDK"
 
 # Setting larger permsize for java 1.6
 NODE_OPTS="-Xmx${java_ram}k -Xss256k -XX:+UseParallelOldGC"
-[ "${jvmarch}" == "x86_64 ] && NODE_OPTS="$NODE_OPTS -XX:+UseCompressedOops"
+[ "${jvmarch}" == "x86_64" ] && NODE_OPTS="$NODE_OPTS -XX:+UseCompressedOops"
 
 export SSG_JAVA_HOME
 export NODE_OPTS
