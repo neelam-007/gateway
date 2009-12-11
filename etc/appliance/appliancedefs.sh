@@ -2,7 +2,8 @@
 # Defines SSG_JAVA_HOME, etc
 
 # Set to 1 if using 32-bit jvm, to avoid trying to allocate more than 2gb of ram for the jvm
-using32bitjvm=1
+usebigmemory=1
+jvmarch=x86_64
 
 ulimit -s 2048
 
@@ -24,7 +25,7 @@ system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
 multiplier="2/3"
 #
 let java_ram="$system_ram*$multiplier"
-if [ $using32bitjvm -ne 0 -a `expr $java_ram \> 2074412` == 1 ]; then
+if [ $usebigmemory -ne 0 -a `expr $java_ram \> 2074412` == 1 ]; then
 	# we have more ram than java can use
 	# FIXME: when we start running 64 bit JVM
 	java_ram=2074412;
@@ -34,7 +35,8 @@ fi
 SSG_JAVA_HOME="/opt/SecureSpan/JDK"
 
 # Setting larger permsize for java 1.6
-NODE_OPTS="-Xmx${java_ram}k -Xss256k -XX:+UseCompressedOops -XX:+UseParallelOldGC"
+NODE_OPTS="-Xmx${java_ram}k -Xss256k -XX:+UseParallelOldGC"
+[ "${jvmarch}" == "x86_64 ] && NODE_OPTS="$NODE_OPTS -XX:+UseCompressedOops"
 
 export SSG_JAVA_HOME
 export NODE_OPTS

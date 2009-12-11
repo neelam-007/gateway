@@ -51,6 +51,7 @@ mv %{buildroot}/jdk %{buildroot}/opt/SecureSpan/JDK
 #set innodb data file values for i386 / VM builds
 sed -i -e "s/^\(innodb_data_file_path=ibdata\):[^:]*:/\1:100M:/" %{buildroot}/etc/my.cnf.ssg
 sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf.ssg
+sed -i -e "s/^\(jvmarch=\).*$/\1i386/" %{buildroot}/opt/SecureSpan/Gateway/runtime/etc/profile.d/appliancedefs.sh
 %endif
 
 %files
