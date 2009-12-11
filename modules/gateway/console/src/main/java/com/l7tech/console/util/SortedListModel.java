@@ -52,20 +52,14 @@ public class SortedListModel<E> extends AbstractListModel {
     public E getElementAt(int index) {
         E element = null;
 
-        boolean found = false;
         int iterIndex = 0;
         for ( Iterator<E> i = model.iterator(); i.hasNext(); iterIndex++ ) {
             E item = i.next();
 
             if ( index == iterIndex ) {
                 element = item;
-                found = true;
                 break;
             }
-        }
-
-        if ( !found ) {
-            throw new IndexOutOfBoundsException("Index out of bounds: " + index);
         }
 
         return element;
