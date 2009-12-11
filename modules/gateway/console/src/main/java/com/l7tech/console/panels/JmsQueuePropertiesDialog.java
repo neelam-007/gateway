@@ -642,7 +642,17 @@ public class JmsQueuePropertiesDialog extends JDialog {
             queueExtraPropertiesPanel = null;
             queueExtraPropertiesOuterPanel.removeAll();
         }
-        pack();
+
+        JRootPane rootpane = contentPane.getRootPane();
+        Container rootparent = rootpane.getParent();
+        if (rootparent instanceof JInternalFrame) {
+            JInternalFrame jif = (JInternalFrame)rootparent;
+            Dimension newSize = contentPane.getPreferredSize();
+            Dimension fullSize = new Dimension(10 + (int)newSize.getWidth(), 32 + (int)newSize.getHeight());
+            jif.setSize(fullSize);
+        } else {
+            pack();
+        }
     }
 
     /**
