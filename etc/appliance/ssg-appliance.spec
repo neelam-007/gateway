@@ -16,8 +16,9 @@ Prefix: /opt/SecureSpan/Appliance
 # Prevents rpm build from erroring and halting
 #%undefine       __check_files
 
-# Need this to build RHEL5 rpm from Fedora 11
+# Need these to build RHEL5 rpm from Fedora 11 / 12
 %define _binary_filedigest_algorithm md5
+%define _binary_payload w9.bzdio
 
 %description
 SecureSpan Gateway Appliance Add-On Package
