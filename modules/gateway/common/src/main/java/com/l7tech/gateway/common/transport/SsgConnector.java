@@ -432,7 +432,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a read-only expanded Set of enabled endpoints.  Never null.
      */
-    private Set<Endpoint> endpointSet() {
+    public Set<Endpoint> endpointSet() {
         if (endpointSet == null) {
             String endpointList = getEndpoints();
             Set<Endpoint> es = endpointList == null ? EnumSet.noneOf(Endpoint.class) : Endpoint.parseCommaList(endpointList);

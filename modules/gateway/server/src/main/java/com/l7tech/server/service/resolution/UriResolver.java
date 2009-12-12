@@ -78,7 +78,7 @@ public class UriResolver extends ServiceResolver<String> {
                 // this ensures that further calls to narrowList will not yield empty service sets and
                 // that the best fit will chosen from a set of potentially valid ones only
                 if (isInSubset(serviceSubset, uriToServiceMap.get(key))) {
-                    if (((Pattern) key.pattern).matcher(requestValue).matches()) {
+                    if (key.globalWildcard || ((Pattern) key.pattern).matcher(requestValue).matches()) {
                         if (key.pathPattern) encounteredPathPattern = true;
                         else encounteredExtensionPattern = true;
                         matchingRegexKeys.add(key);
@@ -295,10 +295,12 @@ public class UriResolver extends ServiceResolver<String> {
                 String tmp = Pattern.quote(uri).replace("*", "\\E.*\\Q");
                 pattern = Pattern.compile(tmp);
                 this.hasWildcards = true;
+                this.globalWildcard = "/*".equals(uri);
             } else {
                 // no wildcard case
                 this.pattern = uri;
                 this.hasWildcards = false;
+                this.globalWildcard = false;
                 this.pathPattern = true;
             }
         }
@@ -308,6 +310,7 @@ public class UriResolver extends ServiceResolver<String> {
         final String uri;
         final Object pattern;
         final boolean hasWildcards;
+        final boolean globalWildcard;
         final boolean pathPattern; // as opposed to a filetype pattern
 
         public boolean equals(Object o) {

@@ -6,6 +6,8 @@
 
 package com.l7tech.server.transport.http;
 
+import com.l7tech.gateway.common.transport.SsgConnector;
+
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.EnumSet;
 import java.util.logging.Logger;
 
 /**
@@ -61,6 +64,17 @@ public class HttpNamespaceFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse)sresponse;
 
         String uri = request.getRequestURI();
+
+        // If nothing is enabled on the current connector except MESSAGE_INPUT, forward directly to router servlet.
+        SsgConnector connector = HttpTransportModule.getConnector(request);
+        if (connector != null) {
+            Set<SsgConnector.Endpoint> endpointSet = connector.endpointSet();
+            if (endpointSet.equals(EnumSet.of(SsgConnector.Endpoint.MESSAGE_INPUT))) {
+                RequestDispatcher rd = config.getServletContext().getNamedDispatcher(routerServlet);
+                rd.forward(request, response);
+                return;
+            }
+        }
 
         boolean isRouter = routers.contains(uri);
         if ( !isRouter ) {
