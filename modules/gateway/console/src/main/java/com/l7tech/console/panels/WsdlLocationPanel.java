@@ -382,11 +382,18 @@ public class WsdlLocationPanel extends JPanel {
                 if ("http".equals(urlProto) ||
                     "https".equals(urlProto) ||
                     "file".equals(urlProto)) {
+                    // Check if the file path is a valid URI, since the file path will be used to create a File object in the method fileWSDLLocator.
+                    if ("file".equals(urlProto)) new File(new URI(urlStr));
+                    
                     urlOk = requiredProtocol == null || requiredProtocol.equals(urlProto);
                 }
             }
         } catch (MalformedURLException e) {
             //invalid url
+        } catch (URISyntaxException e) {
+            //invalid uri
+        } catch (IllegalArgumentException e) {
+            // invalid file uri
         }
 
         return urlOk;
@@ -412,6 +419,7 @@ public class WsdlLocationPanel extends JPanel {
     }
 
     /**
+     * Check if the file exists or not.
      * The precondition of the method is that filePath is an absolution file path if filePath refers a file.
      */
     private boolean isFileOk(String filePath) {
