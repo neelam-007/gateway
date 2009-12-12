@@ -107,7 +107,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
             return scanRequestBodyAsWwwForm(message);
         } else if (contentType.matches("multipart", "form-data")) {
             return scanBodyAsMultipartFormData(message, messageDesc);
-        } else if (contentType.matches("text", "xml")) {
+        } else if (message.isXml()) {
             return scanBodyAsXml(message, messageDesc);
         } else {
             return scanBodyAsText(message, messageDesc, contentType.getEncoding());
@@ -226,7 +226,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                 return AssertionStatus.FALSIFIED;
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
-                    new String[]{where, "text/xml"}, e);
+                    new String[]{where, "XML"}, e);
             return getBadMessageStatus();
         }
 
