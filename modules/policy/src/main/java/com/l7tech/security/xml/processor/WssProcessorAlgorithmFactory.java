@@ -31,6 +31,20 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     private static final boolean USE_IBM_EXC_C11R = Boolean.getBoolean("com.l7tech.common.security.xml.c14n.useIbmExcC11r");
     private static final String PROP_PERMITTED_DIGEST_ALGS = "com.l7tech.security.xml.dsig.permittedDigestAlgorithms";
 
+    private static final Map<String, Collection<String>> digestAliases = new HashMap<String, Collection<String>>() {{
+        put("SHA", Arrays.asList("SHA", "SHA-1", "SHA1"));
+        put("SHA1", Arrays.asList("SHA", "SHA-1", "SHA1"));
+        put("SHA-1", Arrays.asList("SHA", "SHA-1", "SHA1"));
+        put("SHA224", Arrays.asList("SHA224", "SHA224"));
+        put("SHA-224", Arrays.asList("SHA-224", "SHA224"));
+        put("SHA256", Arrays.asList("SHA256", "SHA256"));
+        put("SHA-256", Arrays.asList("SHA-256", "SHA256"));
+        put("SHA384", Arrays.asList("SHA384", "SHA384"));
+        put("SHA-384", Arrays.asList("SHA-384", "SHA384"));
+        put("SHA512", Arrays.asList("SHA512", "SHA512"));
+        put("SHA-512", Arrays.asList("SHA-512", "SHA512"));                
+    }};
+    
     private final Map<Node, Node> strToTarget;
     private boolean sawEnvelopedTransform = false;
 
@@ -54,6 +68,11 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         String enabledDigestStr = SyspropUtil.getString(PROP_PERMITTED_DIGEST_ALGS, "SHA,SHA-1,SHA-256,SHA-384,SHA-512");
         String[] enabledDigests = enabledDigestStr == null ? new String[0] : enabledDigestStr.toUpperCase().split(",");
         enabledDigestSet = new HashSet<String>(Arrays.asList(enabledDigests));
+        for (String digest : enabledDigests) {
+            Collection<String> aliases = digestAliases.get(digest);
+            if (aliases != null)
+                enabledDigestSet.addAll(aliases);
+        }
     }
 
     public Canonicalizer getCanonicalizer(String string) {
