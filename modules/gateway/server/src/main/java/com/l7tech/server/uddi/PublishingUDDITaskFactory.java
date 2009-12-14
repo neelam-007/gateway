@@ -671,7 +671,10 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     return;
                 }
 
-                logger.log(Level.INFO, "Deleting gateway endpoints from BusinessService with serviceKey #(" + serviceControl.getUddiServiceKey() + " in UDDI Registry id #(" + uddiRegistry.getOid() + ")");
+                logger.log(Level.INFO, "Deleting gateway endpoints from BusinessService with serviceKey " +
+                        "#(" + serviceControl.getUddiServiceKey() + ") " +
+                        "for published service #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ") " +
+                        "in UDDI Registry id #(" + uddiRegistry.getOid() + ")");
 
                 final PublishedService publishedService =
                         factory.serviceCache.getCachedService(uddiProxiedServiceInfo.getPublishedServiceOid());
