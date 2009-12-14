@@ -477,7 +477,7 @@ public class UDDIUtilities {
             if (anEndpointPair.left == null || anEndpointPair.left.trim().isEmpty())
                 throw new IllegalArgumentException("The value of any pair's left value must not be null or empty");
             if (anEndpointPair.right == null || anEndpointPair.right.trim().isEmpty())
-                throw new IllegalArgumentException("The value of any pair's left value must not be null or empty");
+                throw new IllegalArgumentException("The value of any pair's right value must not be null or empty");
 
             if(gatewayUrls.contains(anEndpointPair.left)) throw new IllegalArgumentException("All external gateway URLs must be unique");
             gatewayUrls.add(anEndpointPair.left);
