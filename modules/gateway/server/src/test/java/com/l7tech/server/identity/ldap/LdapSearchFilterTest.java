@@ -22,6 +22,10 @@ public class LdapSearchFilterTest {
             filter.end();
             Assert.assertTrue( "Empty and filter", filter.isEmpty() );
         }
+        {
+            LdapSearchFilter filter = new LdapSearchFilter();
+            Assert.assertTrue( "Empty filter", filter.isEmpty() );
+        }
     }
 
     @Test

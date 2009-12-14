@@ -333,7 +333,7 @@ class LdapCertificateCache implements Lifecycle {
                     searchFilter.attrPresent( attr );
                 }
                 if (multiple) searchFilter.end();
-                filter = searchFilter.buildFilter();
+                filter = searchFilter.isEmpty() ? null : searchFilter.buildFilter();
             } else if ( config.getUserCertificateUseType() == LdapIdentityProviderConfig.UserCertificateUseType.INDEX_CUSTOM ) {
                 filter = config.getUserCertificateIndexSearchFilter();
             }
