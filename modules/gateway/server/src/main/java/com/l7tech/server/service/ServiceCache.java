@@ -517,7 +517,7 @@ public class ServiceCache
                 return null;
             } else {
                 // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
-                XmlKnob xk = (XmlKnob) req.getKnob(XmlKnob.class);
+                XmlKnob xk = req.getKnob(XmlKnob.class);
                 if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
                 Result services = soapOperationResolver.resolve(req, serviceSet);
                 if (services.getMatches().isEmpty()) {
@@ -1075,7 +1075,9 @@ public class ServiceCache
                     TarariLoader.compile();
                     for (Long key : deletions) {
                         PublishedService serviceToDelete = services.get(key);
-                        removeNoLock(serviceToDelete);
+                        if ( serviceToDelete != null ) {
+                            removeNoLock(serviceToDelete);
+                        }
                     }
                     updateCatchAll();
                 } finally {

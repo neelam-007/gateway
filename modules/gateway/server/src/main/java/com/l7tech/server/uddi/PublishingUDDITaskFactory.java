@@ -892,17 +892,19 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                                                 final UDDIPublishStatus.PublishStatus failedStatus)
             throws UpdateException, FindException {
         final UDDIPublishStatus uddiPublishStatus = statusManager.findByPrimaryKey(uddiPublishStatusOid);
-        final int maxFailures = taskContext.getMaxRetryAttempts();
-        final int numPreviousRetries = uddiPublishStatus.getFailCount();
-        if (numPreviousRetries >= maxFailures) {
-            uddiPublishStatus.setPublishStatus(failedStatus);
-        } else {
-            uddiPublishStatus.setPublishStatus(retryOkStatus);
+        if ( uddiPublishStatus != null ) {
+            final int maxFailures = taskContext.getMaxRetryAttempts();
+            final int numPreviousRetries = uddiPublishStatus.getFailCount();
+            if (numPreviousRetries >= maxFailures) {
+                uddiPublishStatus.setPublishStatus(failedStatus);
+            } else {
+                uddiPublishStatus.setPublishStatus(retryOkStatus);
+            }
+            final int failCount = uddiPublishStatus.getFailCount() + 1;
+            uddiPublishStatus.setFailCount(failCount);
+
+            statusManager.update(uddiPublishStatus);            
         }
-        final int failCount = uddiPublishStatus.getFailCount() + 1;
-        uddiPublishStatus.setFailCount(failCount);
-        
-        statusManager.update(uddiPublishStatus);
     }
     
     private static void handleUddiPublishFailure(final long uddiPublishStatusOid,
