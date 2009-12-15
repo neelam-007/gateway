@@ -48,6 +48,8 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -73,7 +75,7 @@ public class ServiceCache
 
     // the cache data itself
     private final Map<Long, PublishedService> services = new HashMap<Long, PublishedService>();
-    private final Map<Long, ServiceStatistics> serviceStatistics = new HashMap<Long, ServiceStatistics>();
+    private final ConcurrentMap<Long, ServiceStatistics> serviceStatistics = new ConcurrentHashMap<Long, ServiceStatistics>();
     private final Map<Long, String> servicesThatAreThrowing = new HashMap<Long, String>();
     private final Set<Long> servicesThatAreDisabled = new HashSet<Long>();
 
@@ -788,7 +790,7 @@ public class ServiceCache
     }
 
     /**
-     * Caller must hold a lock protecting {@link #services} and {@link #serviceStatistics}.
+     * Caller must hold a lock protecting {@link #services}
      */
     private void removeNoLock(PublishedService service) {
         final Long key = service.getOid();
@@ -903,50 +905,28 @@ public class ServiceCache
     }
 
     /**
-     * get all current service stats
+     * get all current per-node service stats.
+     * @return a snapshot of the service statistics.
      */
     public Collection<ServiceStatistics> getAllServiceStatistics() {
-        rwlock.readLock().lock();
-        try {
-            Collection<ServiceStatistics> output = new ArrayList<ServiceStatistics>();
-            output.addAll(serviceStatistics.values());
-            return output;
-        } finally {
-            rwlock.readLock().unlock();
-        }
+        return new ArrayList<ServiceStatistics>(serviceStatistics.values());
     }
 
     /**
-     * get statistics for cached service.
+     * get per-node statistics for cached service.
      * those stats are lazyly created
+     * @param serviceOid service whose stats to fetch.  required
+     * @return stats for this service, possibly just-created
      */
     public ServiceStatistics getServiceStatistics(long serviceOid) {
-        ServiceStatistics stats;
-        Lock read = null;
-        Lock write = null;
-        try {
-            read = rwlock.readLock();
-            read.lock();
-            stats = serviceStatistics.get(serviceOid);
-            if (stats == null) {
-                // Upgrade read lock to write lock
-                read.unlock();
-                read = null;
-                stats = new ServiceStatistics(serviceOid);
-                write = rwlock.writeLock();
-                write.lock();
-                serviceStatistics.put(serviceOid, stats);
-                write.unlock();
-                write = null;
-            } else {
-                read.unlock();
-                read = null;
-            }
-            return stats;
-        } finally {
-            if (read != null) read.unlock();
-            if (write != null) write.unlock();
+        ServiceStatistics stats = serviceStatistics.get(serviceOid);
+        if (stats == null) {
+            stats = new ServiceStatistics(serviceOid);
+            ServiceStatistics oldStats = serviceStatistics.putIfAbsent(serviceOid, stats);
+            if (oldStats != null)
+                return oldStats;
         }
+        return stats;
     }
 
     /**
