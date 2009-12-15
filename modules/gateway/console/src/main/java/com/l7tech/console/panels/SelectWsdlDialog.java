@@ -13,9 +13,6 @@ import com.l7tech.gui.util.Utilities;
 
 /**
  * Dialog for selection of a WSDL from a URL (UDDI) or File.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class SelectWsdlDialog extends JDialog {
 
@@ -68,9 +65,6 @@ public class SelectWsdlDialog extends JDialog {
     /**
      * Get the location from which the Wsdl was loaded.
      *
-     * <p>Note that this should NOT be used as the base URI for the WSDL unless
-     * it is an http (or https) url.</p>
-     *
      * @return The Wsdl URL.
      */
     public String getWsdlUrl() {
@@ -88,9 +82,6 @@ public class SelectWsdlDialog extends JDialog {
 
     /**
      * Get the URI from which the Wsdl at the index was loaded.
-     *
-     * <p>Note that this should NOT be used as the base URI for the WSDL unless
-     * it is an http (or https) url.</p>
      *
      * @return The Wsdl URI.
      */
