@@ -50,7 +50,7 @@ public class LDAPTool extends JFrame {
     }
 
     public LDAPTool() {
-        super( "LDAP Tool v0.1" );
+        super( "LDAP Tool v0.2" );
         initComponents();
         initServer();
     }
@@ -78,6 +78,12 @@ public class LDAPTool extends JFrame {
         fetchTable.getTableHeader().setReorderingAllowed( false );
         fetchTable.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
         Utilities.setRowSorter( fetchTable, fetchTableModel );
+        Utilities.setDoubleClickAction( searchResultsTable, new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                configFetch();
+            }
+        }, searchResultsTable, "double-click" );
 
         searchButton.addActionListener( new ActionListener(){
             @Override
@@ -99,9 +105,17 @@ public class LDAPTool extends JFrame {
 //        baseDN.setText("OU=QA Test Users,DC=qaWin2003,DC=com");
 //        bindDN.setText("browse");
 
-        server.setText("10.7.41.11");
-        baseDN.setText("dc=perftest,dc=com ");
-        bindDN.setText("cn=Manager,dc=perftest,dc=com ");
+//        server.setText("10.7.41.11");
+//        baseDN.setText("dc=perftest,dc=com ");
+//        bindDN.setText("cn=Manager,dc=perftest,dc=com");
+
+//        server.setText("jsam71-release.l7tech.com:1389");
+//        baseDN.setText("dc=l7tech,dc=com");
+//        bindDN.setText("cn=amldapuser,ou=DSAME Users,dc=l7tech,dc=com");
+
+        server.setText("worf.l7tech.com");
+        baseDN.setText("dc=l7tech,dc=com");
+        bindDN.setText("cn=Manager,dc=l7tech,dc=com");
     }
 
     private void doSearch() {
@@ -111,8 +125,9 @@ public class LDAPTool extends JFrame {
             context = getLdapContext();
 
             final SearchControls controls = new SearchControls();
-            controls.setCountLimit( 100 );
+            controls.setCountLimit( 500 );
             controls.setReturningAttributes( new String[]{ "objectclass" } );
+            controls.setSearchScope( SearchControls.SUBTREE_SCOPE );
 
             results = context.search( baseDN.getText(), searchFilter.getText(), controls );
 
@@ -131,6 +146,15 @@ public class LDAPTool extends JFrame {
         } finally {
             ResourceUtils.closeQuietly( results );
             ResourceUtils.closeQuietly( context );
+        }
+    }
+
+    private void configFetch() {
+        int tableRow = searchResultsTable.getSelectedRow();
+        int modelRow = searchResultsTable.convertRowIndexToModel( tableRow );
+        String dn = (String) searchResultsTableModel.getValueAt( modelRow, 0 );
+        if ( dn != null ) {
+            fetchDN.setText( dn );
         }
     }
 
@@ -173,7 +197,7 @@ public class LDAPTool extends JFrame {
     private DirContext getLdapContext() throws NamingException {
         return LdapUtils.getLdapContext(
                 "ldap://" + server.getText(),
-                bindDN.getText(),
+                bindDN.getText().isEmpty() ? null : bindDN.getText(),
                 new String(bindPassword.getPassword()),
                 30000,
                 60000);
