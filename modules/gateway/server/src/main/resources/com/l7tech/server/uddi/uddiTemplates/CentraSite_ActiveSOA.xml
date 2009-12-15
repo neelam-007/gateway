@@ -13,7 +13,7 @@
     <metricsTModelDescription>Metrics for {0}</metricsTModelDescription>
     <metricsKeyedReferences>
         <metricsKeyedReference>
-            <key>uddi:474e1904-69ad-9a6b-11c2-fc8e41c64350</key>
+            <key>uddi:centrasite.com:management:metrics:types</key>
             <name>Metrics</name>
             <value>Metrics</value>
         </metricsKeyedReference>
