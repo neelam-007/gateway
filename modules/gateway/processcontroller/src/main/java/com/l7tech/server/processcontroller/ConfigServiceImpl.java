@@ -91,7 +91,7 @@ public class ConfigServiceImpl implements ConfigService {
         if (!hostPropsFile.exists())
             throw new IllegalStateException("Couldn't find " + hostPropsFile.getAbsolutePath());
 
-        final FileInputStream is;
+        FileInputStream is = null;
         final Properties hostProps;
         try {
             is = new FileInputStream(hostPropsFile);
@@ -99,6 +99,8 @@ public class ConfigServiceImpl implements ConfigService {
             hostProps.load(is);
         } catch (IOException e) {
             throw new RuntimeException("Couldn't load " + hostPropsFile.getAbsolutePath(), e);
+        } finally {
+            ResourceUtils.closeQuietly( is );
         }
 
         PCHostConfig hostConfig = new PCHostConfig();
