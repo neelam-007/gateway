@@ -31,14 +31,17 @@ public final class AttributeQueryGenerator extends AbstractSamlp2MessageGenerato
         super(variablesMap, auditor);
     }
 
+    @Override
     public JAXBElement<AttributeQueryType> createJAXBElement(AttributeQueryType samlpMsg) {
         return samlpFactory.createAttributeQuery(samlpMsg);
     }
 
+    @Override
     protected AttributeQueryType createMessageInstance() {
         return samlpFactory.createAttributeQueryType();
     }
 
+    @Override
     protected void buildSpecificMessageParts() {
 
         // build subject
@@ -54,7 +57,7 @@ public final class AttributeQueryGenerator extends AbstractSamlp2MessageGenerato
 
         SamlAttributeStatement as = assertion.getAttributeStatement();
         if (as != null) {
-            AttributeType newAttr = null;
+            AttributeType newAttr;
             for (SamlAttributeStatement.Attribute attr : as.getAttributes()) {
 
                 newAttr = samlFactory.createAttributeType();
@@ -74,26 +77,21 @@ public final class AttributeQueryGenerator extends AbstractSamlp2MessageGenerato
                 }
                 // AttributeValue is optional
                 if (attr.isRepeatIfMulti()) {
-                    Object valueObj = getVariableValues(attr.getValue());
-                    if (valueObj instanceof Object[]) {
-                        for (Object val : (Object[]) valueObj) {
+                    Object[] valueObj = getVariableValues(attr.getValue());
+                    if (valueObj != null) {
+                        for (Object val : valueObj) {
                             if (val == null) continue;
                             if (val instanceof Message)
                                 newAttr.getAttributeValue().add(parseMessageVariable((Message) val));
                             else
                                 newAttr.getAttributeValue().add(val);
                         }
-                    } else if (valueObj instanceof Message) {
-                            newAttr.getAttributeValue().add(parseMessageVariable((Message) valueObj));
                     } else {
                         newAttr.getAttributeValue().add(valueObj);
                     }
                 } else if (attr.getValue() != null && !attr.getValue().isEmpty()) {
-                    Object val = getVariableValue(attr.getValue());
-                    if (val instanceof Message)
-                        newAttr.getAttributeValue().add(parseMessageVariable((Message) val));
-                    else
-                        newAttr.getAttributeValue().add(val);
+                    String val = getVariableValue(attr.getValue());
+                    newAttr.getAttributeValue().add(val);
                 }
 
                 result.add(newAttr);
