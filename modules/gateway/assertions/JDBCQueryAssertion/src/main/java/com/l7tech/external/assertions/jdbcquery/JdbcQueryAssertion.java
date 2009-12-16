@@ -149,7 +149,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
 
         // Add to palette folder(s)
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"accessControl"});
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/CreateIdentityProvider16x16.gif");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/PerformJdbcQuery16x16.gif");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
@@ -165,7 +165,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
                 else return AssertionUtils.decorateName(assertion, ASSERTION_SHORT_NAME + " - " + queryName);
             }
         });
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/CreateIdentityProvider16x16.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/PerformJdbcQuery16x16.gif");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.jdbcquery.console.JdbcQueryAssertionPropertiesDialog");
         meta.put(PROPERTIES_ACTION_NAME, "JDBC Query Properties");
 

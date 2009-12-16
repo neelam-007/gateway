@@ -27,7 +27,7 @@ public class ManageJdbcConnectionsAction extends SecureAction {
 
     @Override
     protected String iconResource() {
-        return "com/l7tech/console/resources/CreateIdentityProvider16x16.gif";
+        return "com/l7tech/console/resources/PerformJdbcQuery16x16.gif";
     }
 
     @Override
