@@ -8,6 +8,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.DialogFactoryShower;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -31,19 +32,21 @@ public class CancelableOperationDialog extends JDialog {
 
     public static CancelableOperationDialog newCancelableOperationDialog(Component component, String title, String message) {
         Window window = SwingUtilities.getWindowAncestor(component);
-        return new CancelableOperationDialog(window, title, message);
+        return new CancelableOperationDialog(window, title, message, null);
     }
 
     public CancelableOperationDialog(Window owner, String title, String message, JProgressBar progressBar) {
         super(owner, title, CancelableOperationDialog.DEFAULT_MODALITY_TYPE);
-        messageLabel.setText(message);
+        this.messageLabel.setText(message);
         this.progressBar = progressBar;
+        if ( owner==null ) {
+            ImageIcon imageIcon = new ImageIcon( ImageCache.getInstance().getIcon("com/l7tech/console/resources/layer7_logo_small_32x32.png"));
+            setIconImage(imageIcon.getImage());
+        }
     }
 
     public CancelableOperationDialog(Window parent, String title, String message) {
-        super(parent, title, CancelableOperationDialog.DEFAULT_MODALITY_TYPE);
-        messageLabel.setText(message);
-        this.progressBar = null;
+        this( parent, title, message, null );
     }
 
     private void doInit() {
