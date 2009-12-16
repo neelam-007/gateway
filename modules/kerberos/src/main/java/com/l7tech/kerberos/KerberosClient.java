@@ -524,7 +524,7 @@ public class KerberosClient {
     /**
      * Kerberos credentials cache
      */
-    protected static KerberosTicketRepository ticketCache;
+    protected static final KerberosTicketRepository ticketCache;
 
     protected final Subject kerberosSubject;
     protected CallbackHandler callbackHandler;

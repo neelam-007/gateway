@@ -9,7 +9,7 @@ import java.util.*;
  * Base class for non-SOAP immediate-mode XML dsig/xenc transformation assertions.
  */
 public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion implements MessageTargetable {
-    public static String META_PROP_VERB = "NonSoapSecurityAssertion.verb";
+    public static final String META_PROP_VERB = "NonSoapSecurityAssertion.verb";
     private MessageTargetableSupport messageTargetableSupport;
 
     protected NonSoapSecurityAssertionBase(TargetMessageType defaultTargetMessageType) {

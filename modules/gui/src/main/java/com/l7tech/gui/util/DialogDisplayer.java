@@ -26,7 +26,7 @@ public class DialogDisplayer {
     private static boolean forceNative = SyspropUtil.getBoolean(PROPERTY_FORCE_NATIVE_DIALOG_DISPLAY);
 
     public static final String PROPERTY_TRANSLUCENT_SHEETS = "com.l7tech.common.gui.util.DialogDisplayer.translucent";
-    public static boolean translucentSheets = SyspropUtil.getBoolean(PROPERTY_TRANSLUCENT_SHEETS);
+    public static final boolean translucentSheets = SyspropUtil.getBoolean(PROPERTY_TRANSLUCENT_SHEETS);
 
     /** Look-aside map to find sheet holders associated with applet container frames. */
     private static final Map defaultSheetHolderMap = new HashMap();

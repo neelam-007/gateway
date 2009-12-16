@@ -18,7 +18,7 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
     protected List<String> explanations;
 
     protected String insertTab = "\t";
-    protected static String eol = System.getProperty("line.separator");
+    protected static final String eol = System.getProperty("line.separator");
 
     protected BaseConfigurationBean() {
     }
