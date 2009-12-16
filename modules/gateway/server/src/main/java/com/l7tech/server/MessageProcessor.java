@@ -191,15 +191,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
     }
 
-    private String getIncomingURL(PolicyEnforcementContext context) {
-        HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
-        if (hrk == null) {
-            logger.warning("cannot generate incoming URL");
-            return "";
-        }
-        return hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
-    }
-
     private AssertionStatus reallyProcessMessage(final PolicyEnforcementContext context)
         throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException
     {
@@ -224,61 +215,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             return AssertionStatus.SERVER_ERROR;
         } finally {
             ResourceUtils.closeQuietly(mc);
-        }
-    }
-
-    private void processRequestHttpHeaders(PolicyEnforcementContext context) throws MethodNotAllowedException, PolicyVersionException {
-        HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
-        PublishedService service = context.getService();
-        assert service != null;
-
-        // Check the request method
-        final HttpMethod requestMethod = httpRequestKnob.getMethod();
-        if (requestMethod != null && !service.isMethodAllowed(requestMethod)) {
-            String[] auditArgs = new String[] { requestMethod.name(), service.getName() };
-            Object[] faultArgs = new Object[] { requestMethod.name() };
-            auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, auditArgs);
-            throw new MethodNotAllowedException(
-                    MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED_FAULT.getMessage(), faultArgs));
-        }
-
-        // initialize cache
-        if(httpRequestKnob instanceof HttpServletRequestKnob) {
-            String cacheId = service.getOid() + "." + service.getVersion();
-            PolicyContextCache cache = new HttpSessionPolicyContextCache(((HttpServletRequestKnob)httpRequestKnob).getHttpServletRequest(), cacheId);
-            context.setCache(cache);
-        }
-        // check if requestor provided a version number for published service
-        String requestorVersion = httpRequestKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
-        if (requestorVersion != null && requestorVersion.length() > 0) {
-            // format is policyId|policyVersion (seperated with char '|')
-            boolean wrongPolicyVersion = false;
-            int indexofbar = requestorVersion.indexOf('|');
-            if (indexofbar < 0) {
-                auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_WRONG_FORMAT);
-                wrongPolicyVersion = true;
-            } else {
-                try {
-                    String expectedPolicyVersion = policyCache.getUniquePolicyVersionIdentifer( service.getPolicy().getOid() );
-                    long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
-                    String reqPolicyVersion = requestorVersion.substring(indexofbar + 1);
-                    if ( reqPolicyId != service.getOid() ||
-                         !reqPolicyVersion.equals( expectedPolicyVersion )) {
-                        auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, requestorVersion, String.valueOf(service.getOid()), expectedPolicyVersion);
-                        wrongPolicyVersion = true;
-                    }
-                } catch (NumberFormatException e) {
-                    wrongPolicyVersion = true;
-                    auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_WRONG_FORMAT, null, e);
-                }
-            }
-            if (wrongPolicyVersion) {
-                context.setRequestPolicyViolated();
-                context.setRequestClaimingWrongPolicyVersion();
-                throw new PolicyVersionException();
-            }
-        } else {
-            auditor.logAndAudit(MessageProcessingMessages.POLICY_ID_NOT_PROVIDED);
         }
     }
 
@@ -435,72 +371,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
     }
 
-    /*
-     * Process post service policies and audit errors.
-     *
-     * <p>Post service policy execution does not affect the overall policy processing
-     * status.</p>
-     */
-    private void processPostServicePolicies( final PolicyEnforcementContext context,
-                                             final PolicyType policyType,
-                                             final AuditDetailMessage notificationMessage,
-                                             final AuditDetailMessage errorMessage ) {
-        final Set<String> guids = policyCache.getGlobalPoliciesByType( policyType );        
-        if ( !guids.isEmpty() ) {
-            auditor.logAndAudit( notificationMessage );
-
-            for ( String guid : guids ) {
-                try {
-                    processServicePolicy( policyCache, context, guid );
-                } catch (IOException e) {
-                    auditor.logAndAudit(errorMessage, new String[]{ExceptionUtils.getMessage( e )}, ExceptionUtils.getDebugException(e));
-                } catch (PolicyAssertionException e) {
-                    auditor.logAndAudit(errorMessage, new String[]{ExceptionUtils.getMessage( e )}, e);
-                }
-            }
-        }
-    }
-
-    private AssertionStatus processServicePolicy( final PolicyCache policyCache,
-                                                  final PolicyEnforcementContext context,
-                                                  final String guid ) throws PolicyAssertionException, IOException {
-        AssertionStatus result;
-
-        ServerPolicyHandle handle = null;
-        PolicyEnforcementContext pec = null;
-        try {
-            handle = policyCache.getServerPolicy( guid );
-            if ( handle != null ) {
-                pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( context );
-                result = handle.checkRequest( pec );
-            } else {
-                result = AssertionStatus.NONE;
-            }
-        } finally {
-            ResourceUtils.closeQuietly( pec );
-            ResourceUtils.closeQuietly( handle );
-        }
-
-        return result;
-    }
-
     public void registerTrafficMonitorCallback(TrafficMonitor tm) {
         if (!trafficMonitors.contains(tm)) {
             trafficMonitors.add(tm);
         }
-    }
-
-    @SuppressWarnings({ "deprecation" })
-    private AssertionStatus doDeferredAssertions(PolicyEnforcementContext context)
-      throws PolicyAssertionException, IOException
-    {
-        AssertionStatus status = AssertionStatus.NONE;
-        for (ServerAssertion serverAssertion : context.getDeferredAssertions()) {
-            status = serverAssertion.checkRequest(context);
-            if (status != AssertionStatus.NONE)
-                return status;
-        }
-        return status;
     }
 
     private String getOperationName( PolicyEnforcementContext context ) {
@@ -667,6 +541,61 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             return AssertionStatus.NONE;
         }
 
+        private void processRequestHttpHeaders(PolicyEnforcementContext context) throws MethodNotAllowedException, PolicyVersionException {
+            HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
+            PublishedService service = context.getService();
+            assert service != null;
+
+            // Check the request method
+            final HttpMethod requestMethod = httpRequestKnob.getMethod();
+            if (requestMethod != null && !service.isMethodAllowed(requestMethod)) {
+                String[] auditArgs = new String[] { requestMethod.name(), service.getName() };
+                Object[] faultArgs = new Object[] { requestMethod.name() };
+                auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, auditArgs);
+                throw new MethodNotAllowedException(
+                        MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED_FAULT.getMessage(), faultArgs));
+            }
+
+            // initialize cache
+            if(httpRequestKnob instanceof HttpServletRequestKnob) {
+                String cacheId = service.getOid() + "." + service.getVersion();
+                PolicyContextCache cache = new HttpSessionPolicyContextCache(((HttpServletRequestKnob)httpRequestKnob).getHttpServletRequest(), cacheId);
+                context.setCache(cache);
+            }
+            // check if requestor provided a version number for published service
+            String requestorVersion = httpRequestKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+            if (requestorVersion != null && requestorVersion.length() > 0) {
+                // format is policyId|policyVersion (seperated with char '|')
+                boolean wrongPolicyVersion = false;
+                int indexofbar = requestorVersion.indexOf('|');
+                if (indexofbar < 0) {
+                    auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_WRONG_FORMAT);
+                    wrongPolicyVersion = true;
+                } else {
+                    try {
+                        String expectedPolicyVersion = policyCache.getUniquePolicyVersionIdentifer( service.getPolicy().getOid() );
+                        long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
+                        String reqPolicyVersion = requestorVersion.substring(indexofbar + 1);
+                        if ( reqPolicyId != service.getOid() ||
+                             !reqPolicyVersion.equals( expectedPolicyVersion )) {
+                            auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, requestorVersion, String.valueOf(service.getOid()), expectedPolicyVersion);
+                            wrongPolicyVersion = true;
+                        }
+                    } catch (NumberFormatException e) {
+                        wrongPolicyVersion = true;
+                        auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_WRONG_FORMAT, null, e);
+                    }
+                }
+                if (wrongPolicyVersion) {
+                    context.setRequestPolicyViolated();
+                    context.setRequestClaimingWrongPolicyVersion();
+                    throw new PolicyVersionException();
+                }
+            } else {
+                auditor.logAndAudit(MessageProcessingMessages.POLICY_ID_NOT_PROVIDED);
+            }
+        }
+
         @Override
         public boolean notifyPreParseServices( final Message message,
                                                final Set<ServiceCache.ServiceMetadata> serviceMetadataSet ) {
@@ -810,6 +739,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     MessageProcessingMessages.ERROR_PRE_SERVICE );
         }
 
+        private String getIncomingURL(PolicyEnforcementContext context) {
+            HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
+            if (hrk == null) {
+                logger.warning("cannot generate incoming URL");
+                return "";
+            }
+            return hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
+        }
+
         private boolean checkForUnexpectedMultipartRequest() throws PublishedService.ServiceException {
             // Check request data
             if (context.getRequest().getMimeKnob().isMultipart() &&
@@ -909,6 +847,55 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             return success;
         }
 
+        /*
+         * Process post service policies and audit errors.
+         *
+         * <p>Post service policy execution does not affect the overall policy processing
+         * status.</p>
+         */
+        private void processPostServicePolicies( final PolicyEnforcementContext context,
+                                                 final PolicyType policyType,
+                                                 final AuditDetailMessage notificationMessage,
+                                                 final AuditDetailMessage errorMessage ) {
+            final Set<String> guids = policyCache.getGlobalPoliciesByType( policyType );
+            if ( !guids.isEmpty() ) {
+                auditor.logAndAudit( notificationMessage );
+
+                for ( String guid : guids ) {
+                    try {
+                        processServicePolicy( policyCache, context, guid );
+                    } catch (IOException e) {
+                        auditor.logAndAudit(errorMessage, new String[]{ExceptionUtils.getMessage( e )}, ExceptionUtils.getDebugException(e));
+                    } catch (PolicyAssertionException e) {
+                        auditor.logAndAudit(errorMessage, new String[]{ExceptionUtils.getMessage( e )}, e);
+                    }
+                }
+            }
+        }
+
+        private AssertionStatus processServicePolicy( final PolicyCache policyCache,
+                                                      final PolicyEnforcementContext context,
+                                                      final String guid ) throws PolicyAssertionException, IOException {
+            AssertionStatus result;
+
+            ServerPolicyHandle handle = null;
+            PolicyEnforcementContext pec = null;
+            try {
+                handle = policyCache.getServerPolicy( guid );
+                if ( handle != null ) {
+                    pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( context );
+                    result = handle.checkRequest( pec );
+                } else {
+                    result = AssertionStatus.NONE;
+                }
+            } finally {
+                ResourceUtils.closeQuietly( pec );
+                ResourceUtils.closeQuietly( handle );
+            }
+
+            return result;
+        }
+
         public void lookupServerPolicy() throws ServiceResolutionException {
             serverPolicy = serviceCache.getServerPolicy(context.getService().getOid());
             if (serverPolicy == null)
@@ -944,6 +931,19 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             } catch (NoSuchPartException e) {
                 throw new RuntimeException(e); // The first part should always be available
             }
+        }
+
+        @SuppressWarnings({ "deprecation" })
+        private AssertionStatus doDeferredAssertions(PolicyEnforcementContext context)
+          throws PolicyAssertionException, IOException
+        {
+            AssertionStatus status = AssertionStatus.NONE;
+            for (ServerAssertion serverAssertion : context.getDeferredAssertions()) {
+                status = serverAssertion.checkRequest(context);
+                if (status != AssertionStatus.NONE)
+                    return status;
+            }
+            return status;
         }
 
         private void doResponseSecurityProcessing(AssertionStatus status) throws IOException, SAXException, PolicyAssertionException {
