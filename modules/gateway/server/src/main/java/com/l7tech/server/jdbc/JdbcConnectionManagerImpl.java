@@ -38,6 +38,13 @@ public class JdbcConnectionManagerImpl
         return UniqueType.NAME;
     }
 
+    /**
+     * Retrieve a JDBC Connection entity from the database by using a connection name.
+     *
+     * @param connectionName: the name of a JDBC connection
+     * @return a JDBC Connection entity with the name, "connectionName".
+     * @throws FindException: thrown when errors finding the JDBC Connection entity.
+     */
     @Override
     public JdbcConnection getJdbcConnection(String connectionName) throws FindException {
         return findByUniqueName(connectionName);

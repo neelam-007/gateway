@@ -22,6 +22,8 @@ import java.sql.SQLException;
 import java.beans.PropertyVetoException;
 
 /**
+ * An implementation manages JDBC connection pooling and data sources (i.e., pools).
+ * 
  * @author ghuang
  */
 public class JdbcConnectionPoolManager extends LifecycleBean {
@@ -47,6 +49,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
     protected void init() {
         auditor = new Auditor(this, getApplicationContext(), logger);
 
+        // This timer is created for future use.  Currently its schedule is empty.
         timer.schedule(new TimerTask(){
             public void run() {
                 // TBD: probably there are somethings to update here.
@@ -58,6 +61,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
     protected void doStart() throws LifecycleException {
         logger.info("Starting JDBC Connections Pooling.");
 
+        // Step 1: initialize JNDI Context
         try {
             initJndiContext();
         } catch (NamingException e) {
@@ -65,6 +69,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             return;
         }
 
+        // Step 2: Get all JDBC Connection entities (each contains JDBC connection configuration.)
         Collection<JdbcConnection> allJdbcConns;
         try {
             allJdbcConns = jdbcConnectionManager.findAll();
@@ -73,28 +78,48 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             return;
         }
 
+        // Step 3: Create/update a pool per a JDBC Connection entity.
         for (JdbcConnection connection: allJdbcConns) {
             try {
-                updateConnectionPool(connection, false); // All known exceptions have been handled in the method updateConnectionPool.
+                // All known exceptions have been handled in the method updateConnectionPool.
+                updateConnectionPool(connection, false); // "false" means this method called is not for testing.
             } catch (Throwable e) {
+                // Log and audit all other unknown and unexpected exceptions
                 auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), e.getClass().getSimpleName() + " occurs");
             }
         }
     }
 
+    /**
+     * Get a data source by using a JDBC connection name.
+     *
+     * @param jdbcConnName: a JDBC Connection name associated with the data source.
+     * @return a DataSource object.
+     * @throws NamingException: thrown when errors retrieving the data source.
+     */
     public DataSource getDataSource(String jdbcConnName) throws NamingException {
         return (DataSource) context.lookup(jdbcConnName);
     }
 
-    // create and update
+    /**
+     * Create or update a data source to hold a pool of connections.  This method is shared by two processes, starting
+     * Connection Pooling and testing JDBC connections.  If it is for the latter, then set a boolean flag isForTesting
+     * to be true.
+     *
+     * @param connection: a JDBC Connection entity containing connection properties.
+     * @param isForTesting: a flag indicating if this method is for testing JDBC connection or not.
+     * @return a pair of information, a data source object and an error message.  The returned data source object could
+     *         be null, which means the JDBC Connection is disabled or some errors occur during the method call.  If the
+     *         returned error message is null, this implies no errors occur during the method call.
+     */
     public Pair<ComboPooledDataSource, String> updateConnectionPool(JdbcConnection connection, boolean isForTesting) {
-        // Check if the JDBC connection is disabled or not
+        // Check if the JDBC connection is disabled or not.  This checking will be ignored if this method is called for testing JDBC connection.
         if (!connection.isEnabled() && !isForTesting) {
             auditor.logAndAudit(AssertionMessages.JDBC_CONNECTION_DISABLED, connection.getName());
             return new Pair<ComboPooledDataSource, String>(null, null);
         }
 
-        // Check if a data source with such connection has been existing.
+        // Check if a data source associated with such connection name already exists or not.
         DataSource ds;
         try {
             ds = (DataSource)context.lookup(connection.getName());
@@ -106,6 +131,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             return new Pair<ComboPooledDataSource, String>(null, errMsg);
         }
 
+        // Update the data source if this is not for testing.
         if (ds != null && !isForTesting) {
             if (ds instanceof ComboPooledDataSource) {
                 // update the data source
@@ -156,12 +182,21 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         return new Pair<ComboPooledDataSource, String>(cpds, null);
     }
 
+    /**
+     * Test a JDBC Connection entity.
+     *
+     * @param connection: the JDBC Connection to be tested.
+     * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
+     */
     public String testJdbcConnection(JdbcConnection connection) {
         Pair<ComboPooledDataSource, String> results;
+
+        // By calling the method updateConnectionPool, test if all properties of a JDBC Connection are valid or not.
         try {
             // All known exceptions have been handled in the method updateConnectionPool.
-            results = updateConnectionPool(connection, true);
+            results = updateConnectionPool(connection, true);  // "true" means this method called is for testing.
         } catch (Throwable e) {
+            // Report all other unknown and unexpected exceptions
             return e.getClass().getSimpleName() + " occurs";
         }
 
@@ -187,9 +222,15 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
             cpds.close();
         }
 
+        // Returning null means no errors.
         return null;
     }
 
+    /**
+     * Delete a connection pool associated with a JDBC Connection entity.
+     *
+     * @param connection: a JDBC Connection entity.
+     */
     public void deleteConnectionPool(JdbcConnection connection) {
         ComboPooledDataSource cpds;
         try {
@@ -211,6 +252,13 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         }
     }
 
+    /**
+     * Configure a data source by using the properties defined in a JDBC Connection entity.
+     *
+     * @param cpds: a ComboPooledDataSource object to be configured.
+     * @param connection: a JDBC Connection entity containing all connection properties.
+     * @throws InvalidPropertyException: thrown when invalid properties are used.
+     */
     private void setDataSourceByJdbcConnection(ComboPooledDataSource cpds, JdbcConnection connection) throws InvalidPropertyException {
         // Set basic configuration
         try {
@@ -252,6 +300,11 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         if (! props.isEmpty()) cpds.setProperties(props);
     }
 
+    /**
+     * Initialize the JNDI Context for starting C3P0 connection pooling.
+     *
+     * @throws NamingException: thrown when errors naming.
+     */
     private void initJndiContext() throws NamingException {
         Hashtable<String, String> table = new Hashtable<String, String>();
         table.put(Context.INITIAL_CONTEXT_FACTORY,"org.apache.naming.java.javaURLContextFactory");

@@ -12,6 +12,8 @@ import java.util.logging.Logger;
 import com.l7tech.util.ExceptionUtils;
 
 /**
+ * An implementation of the interface performing a JDBC query by using a JDBC connection from a connection pool. 
+ *
  * @author ghuang
  */
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})

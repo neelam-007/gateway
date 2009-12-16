@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 /**
+ * The implementation of the interface JdbcAdmin to manage JDBC Connection Entities, JDBC Connection Pooling, and JDBC Querying.
+ *
  * @author ghuang
  */
 public class JdbcAdminImpl implements JdbcAdmin {
@@ -30,11 +32,24 @@ public class JdbcAdminImpl implements JdbcAdmin {
         this.serverConfig = serverConfig;
     }
 
+    /**
+     * Retrieve a JDBC Connection entity from the database by using a connection name.
+     *
+     * @param connectionName: the name of a JDBC connection
+     * @return a JDBC Connection entity with the name, "connectionName".
+     * @throws FindException: thrown when errors finding the JDBC Connection entity.
+     */
     @Override
     public JdbcConnection getJdbcConnection(String connectionName) throws FindException {
         return jdbcConnectionManager.getJdbcConnection(connectionName);
     }
 
+    /**
+     * Retrieve all JDBC Connection entities from the database.
+     *
+     * @return a list of JDBC Connection entities
+     * @throws FindException: thrown when errors finding JDBC Connection entities.
+     */
     @Override
     public List<JdbcConnection> getAllJdbcConnections() throws FindException {
         List<JdbcConnection> connections = new ArrayList<JdbcConnection>();
@@ -42,6 +57,12 @@ public class JdbcAdminImpl implements JdbcAdmin {
         return connections;
     }
 
+    /**
+     * Get the names of all JDBC Connection entities.
+     *
+     * @return a list of the names of all JDBC Connection entities.
+     * @throws FindException: thrown when errors finding JDBC Connection entities.
+     */
     @Override
     public List<String> getAllJdbcConnectionNames() throws FindException {
         List<JdbcConnection> connList = getAllJdbcConnections();
@@ -52,28 +73,60 @@ public class JdbcAdminImpl implements JdbcAdmin {
         return nameList;
     }
 
+    /**
+     * Save a JDBC Connection entity into the database.
+     *
+     * @param connection: the JDBC Connection entity to be saved.
+     * @return a long, the saved entity object id.
+     * @throws UpdateException: thrown when errors saving the JDBC Connection entity.
+     */
     @Override
     public long saveJdbcConnection(JdbcConnection connection) throws UpdateException {
         jdbcConnectionManager.update(connection);
         return connection.getOid();
     }
 
+    /**
+     * Delete a JDBC Connection entity from the database.
+     *
+     * @param connection: the JDBC Connection entity to be deleted.
+     * @throws DeleteException: thrown when errors deleting the JDBC Connection entity.
+     */
     @Override
     public void deleteJdbcConnection(JdbcConnection connection) throws DeleteException {
         jdbcConnectionManager.delete(connection);
     }
 
+    /**
+     * Test a JDBC Connection entity.
+     *
+     * @param connection: the JDBC Connection to be tested.
+     * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
+     */
     @Override
     public String testJdbcConnection(JdbcConnection connection) {
         return jdbcConnectionPoolManager.testJdbcConnection(connection);
     }
 
+    /**
+     * Test a JDBC query and see if it is a valid SQL statement.
+     *
+     * @param connectionName: the name of a JDBC Connection entity.
+     * @param query: a SQL query statement.
+     * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
+     */
     @Override
     public String testJdbcQuery(String connectionName, String query) {
         Object result = jdbcQueryingManager.performJdbcQuery(connectionName, query, 1, null);
         return (result instanceof String)? (String)result : null;
     }
 
+    /**
+     * Get a property, default driver class list from the global cluster properties.  if failed to get its value,
+     * then use the original driver class list defined in this interface.
+     *
+     * @return a list of driver classes.
+     */
     @Override
     public List<String> getPropertyDefaultDriverClassList() {
         List<String> driverClassList = new ArrayList<String>();
@@ -91,6 +144,12 @@ public class JdbcAdminImpl implements JdbcAdmin {
         return driverClassList;
     }
 
+    /**
+     * Get a property, default maximum number of records returned by a query from the global cluser properties.  If failed
+     * to get its value, then use the original maximum number of records returned by a query defined in this interface.
+     *
+     * @return an integer, the default maximum number of records returned by a query
+     */
     @Override
     public int getPropertyDefaultMaxRecords() {
         try {
@@ -101,6 +160,12 @@ public class JdbcAdminImpl implements JdbcAdmin {
         }
     }
 
+    /**
+     * Get a property, default minimum pool size.  If failed to get its value, then use the original minimum pool size
+     * defined in this interface.
+     *
+     * @return an integer, the default minimum pool size.
+     */
     @Override
     public int getPropertyDefaultMinPoolSize() {
         try {
@@ -111,6 +176,12 @@ public class JdbcAdminImpl implements JdbcAdmin {
         }
     }
 
+    /**
+     * Get a property, default maximum pool size.  If failed to get its value, then use the original maximum pool size
+     * defined in this interface.
+     *
+     * @return an integer, the default maximum pool size.
+     */
     @Override
     public int getPropertyDefaultMaxPoolSize() {
         try {
