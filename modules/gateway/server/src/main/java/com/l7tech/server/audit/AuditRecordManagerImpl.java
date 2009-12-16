@@ -172,11 +172,12 @@ public class AuditRecordManagerImpl
     public long getMinOid(long lowerLimit) throws SQLException {
         final Session session = getSession();
         PreparedStatement stmt = null;
+        ResultSet rs = null;
         try {
             final Connection conn = session.connection();
             stmt = conn.prepareStatement(SQL_GET_MIN_OID);
             stmt.setLong(1, lowerLimit);
-            ResultSet rs = stmt.executeQuery();
+            rs = stmt.executeQuery();
             if (rs.next()) {
                 String min = rs.getString(1);
                 if (min == null || "null".equalsIgnoreCase(min)) {
@@ -186,6 +187,7 @@ public class AuditRecordManagerImpl
                 }
             }
         } finally {
+            ResourceUtils.closeQuietly(rs);
             ResourceUtils.closeQuietly(stmt);
             releaseSession(session);
         }
@@ -218,10 +220,11 @@ public class AuditRecordManagerImpl
     public long getMaxTableSpace() throws FindException {
         final Session session = getSession();
         PreparedStatement statement = null;
+        ResultSet rs = null;
         try {
             final Connection conn = session.connection();
             statement = conn.prepareStatement(SQL_INNODB_DATA);
-            ResultSet rs = statement.executeQuery();
+            rs = statement.executeQuery();
 
             if (rs != null && rs.next()) {
                 String innodbData = rs.getString("value");
@@ -252,6 +255,7 @@ public class AuditRecordManagerImpl
         } catch (NumberFormatException ne) {
             throw new FindException("Error retrieving max space allocated for the innodb tablespace.", ne);
         } finally {
+            ResourceUtils.closeQuietly(rs);
             ResourceUtils.closeQuietly(statement);
             releaseSession(session);
         }
@@ -271,10 +275,11 @@ public class AuditRecordManagerImpl
     public long getCurrentUsage() throws FindException {
         final Session session = getSession();
         PreparedStatement statement = null;
+        ResultSet rs = null;
         try {
             final Connection conn = session.connection();
             statement = conn.prepareStatement(SQL_CURRENT_USAGE);
-            ResultSet rs = statement.executeQuery();
+            rs = statement.executeQuery();
             if (rs != null) {
                 long data_length = 0L;
                 long index_length = 0L;
@@ -289,6 +294,7 @@ public class AuditRecordManagerImpl
         } catch (SQLException e) {
             throw new FindException("Error retrieving max space allocated for the innodb tablespace.", e);
         } finally {
+            ResourceUtils.closeQuietly(rs);
             ResourceUtils.closeQuietly(statement);
             releaseSession(session);
         }
