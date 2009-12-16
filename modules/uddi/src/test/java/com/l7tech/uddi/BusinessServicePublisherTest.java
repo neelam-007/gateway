@@ -430,7 +430,7 @@ public class BusinessServicePublisherTest {
 //        GenericUDDIClient uddiClient = new GenericUDDIClient(inquiry, publish, subscription, security, "administrator", "7layer", PolicyAttachmentVersion.v1_2);
 //        UDDIClientConfig uddiClientConfig = new UDDIClientConfig(inquiry, publish, subscription, security, "administrator", "7layer");
 
-//        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient, uddiClientConfig);
+//        UDDIBusinessServiceDownloader serviceDownloader = new UDDIBusinessServiceDownloader(uddiClient, uddiClientConfig);
 //        Set<String> serviceKeys = new HashSet<String>();
 //        serviceKeys.add("uddi:8617fae0-c987-11de-8486-efda8c54fa31");
 //        Pair<List<BusinessService>, Map<String, TModel>> modelFromUddi = serviceDownloader.getBusinessServiceModels(serviceKeys);

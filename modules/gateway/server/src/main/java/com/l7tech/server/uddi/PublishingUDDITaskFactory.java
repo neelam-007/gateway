@@ -799,10 +799,10 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             final Set<UDDIProxiedService> proxiedServices = uddiProxiedServiceInfo.getProxiedServices();
                             for (UDDIProxiedService proxiedService : proxiedServices) {
                                 try {
-                                    uddiClient.deleteBusinessServicesByKey(proxiedService.getUddiServiceKey());
+                                    uddiClient.deleteBusinessServiceByKey(proxiedService.getUddiServiceKey());
                                 } catch (UDDIException e) {
                                     if (e instanceof UDDIInvalidKeyException) {
-                                        logger.log(Level.FINE, "Invalid serviceKey found #(" + proxiedService.getUddiServiceKey() + "). Cannot delete from from UDDI Registry");
+                                        logger.log(Level.FINE, "Invalid serviceKey found #(" + proxiedService.getUddiServiceKey() + "). Cannot delete from UDDI Registry");
                                         //move onto the next
                                     } else {
                                         throw e;

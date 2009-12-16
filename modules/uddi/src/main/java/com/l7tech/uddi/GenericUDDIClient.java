@@ -60,6 +60,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             throw buildErrorException("Error publishing binding template", e);
         }
     }
+
     /**
      *
      */
@@ -85,49 +86,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     @Override
     public boolean publishTModel(TModel tModelToPublish) throws UDDIException {
         if(tModelToPublish == null) throw new NullPointerException("tModelToPublish cannot be null");
-//        if(searchFirst){
-//            TModelList tModelList = findMatchingTModels(tModelToPublish, false);
-//            TModelInfos tModelInfos = tModelList.getTModelInfos();
-//            if(tModelInfos != null && !tModelInfos.getTModelInfo().isEmpty()){
-//                List<TModelInfo> allTModelInfos = tModelInfos.getTModelInfo();
-//
-//                //tModels published by the gateway will only have a single OverviewDoc with use type wsdlInterface
-//                String tModelToPublishWsdlUrl = null;
-//                for(OverviewDoc overviewDoc: tModelToPublish.getOverviewDoc()){
-//                    OverviewURL overviewURL = overviewDoc.getOverviewURL();
-//                    if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
-//                    tModelToPublishWsdlUrl = overviewURL.getValue();
-//                }
-//                if(tModelToPublishWsdlUrl == null) throw new IllegalStateException("tModel to publish does not have an OverviewURL of type 'wsdlInterface'");
-//
-//                List<TModel> matchingTModels = new ArrayList<TModel>();
-//                for(TModelInfo tModelInfo: allTModelInfos){
-//                    TModel foundModel = getTModel(tModelInfo.getTModelKey());
-//                    if(foundModel == null) continue;
-//                    //compare overviewDocs and overviewUrls
-//                    boolean foundMatchingOverviewUrl = false;
-//                    for(OverviewDoc overviewDoc: foundModel.getOverviewDoc()){
-//                        OverviewURL overviewURL = overviewDoc.getOverviewURL();
-//                        if(!overviewURL.getUseType().equals("wsdlInterface")) continue;
-//                        if(!overviewURL.getValue().equalsIgnoreCase(tModelToPublishWsdlUrl)) continue;
-//                        foundMatchingOverviewUrl = true;
-//                    }
-//                    if(foundMatchingOverviewUrl) matchingTModels.add(foundModel);
-//                }
-//
-//                if(!matchingTModels.isEmpty()){
-//                    if(matchingTModels.size() != 1)
-//                        logger.log(Level.FINE, "Found " + matchingTModels.size()+" matching TModels. The first will be used");
-//
-//                    tModelToPublish.setTModelKey(allTModelInfos.get(0).getTModelKey());
-//                    logger.log(Level.FINE, "Found matching tModel in UDDI Registry. Not publishing supplied tModel");
-//                    return false;
-//                }
-//                //fall through to publish below
-//            }
-//        }
-        //TModel does not exist yet in registry. Publish it
 
+        if(tModelToPublish.getTModelKey() != null){
+            throw new IllegalArgumentException("Only new tModels can be published. tModel already has a non null key of: " + tModelToPublish.getTModelKey());
+        }
+        
         UDDIPublicationPortType uddiPublicationPortType = getPublishPort();
         SaveTModel saveTModel = new SaveTModel();
         saveTModel.setAuthInfo(getAuthToken());
@@ -455,7 +418,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public List<BusinessService> getBusinessServices(final Set<String> serviceKeys, boolean allowInvalidKeys) throws UDDIException {
         if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
         if(serviceKeys.isEmpty()){
-            logger.log(Level.FINE, "serviceKeys is empty. No BusinessServices will be downloaded.");
+            logger.log(Level.FINE, "serviceKeys is empty. No BusinessServices need to be downloaded.");
             return Collections.emptyList();
         }
 
@@ -510,65 +473,58 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
-    public void deleteUDDIBusinessServices(Collection<UDDIBusinessService> businessServices) throws UDDIException {
-        if(businessServices == null) throw new NullPointerException("businessServices cannot be null or empty");
-        if(businessServices.isEmpty()){
-            logger.log(Level.FINE, "businessServices is empty. No BusinessServices are required to be deleted");
-            return;
-        }
-
-        Set<String> serviceKeys = new HashSet<String>();
-        for(UDDIBusinessService businessService: businessServices){
-            serviceKeys.add(businessService.getServiceKey());
-        }
-        deleteBusinessServicesByKey(serviceKeys);
-    }
-
-    @Override
-    public void deleteBusinessServicesByKey(String serviceKey) throws UDDIException {
-        final Set<String> keys = new HashSet<String>();
-        keys.add(serviceKey);
-        deleteBusinessServicesByKey(keys);
-    }
-
-    @Override
-    public void deleteBusinessServicesByKey(Collection<String> serviceKeys) throws UDDIException {
-        if(serviceKeys == null) throw new NullPointerException("serviceKeys cannot be null or empty");
-        if(serviceKeys.isEmpty()){
-            logger.log(Level.FINE, "serviceKeys is empty. No BusinessServices are required to be deleted");
-            return;
-        }
-
-        Set<String> tModelsToDelete = new HashSet<String>();
-        for(String serviceKey: serviceKeys){
-            tModelsToDelete.addAll(deleteBusinessService(serviceKey));
-        }
-
-        for(String tModelKey: tModelsToDelete){
-            deleteTModel(tModelKey);
-        }
-    }
-
-    @Override
-    public Set<String> deleteBusinessService(String serviceKey) throws UDDIException {
+    public void deleteBusinessServiceByKey(String serviceKey) throws UDDIException {
         if(serviceKey == null || serviceKey.trim().isEmpty()) throw new IllegalArgumentException("serviceKey cannot be null or empty");
-        //We need to delete any tModels it references
-        //find the service
-        final BusinessService businessService = getBusinessService(serviceKey);
-        BindingTemplates bindingTemplates = businessService.getBindingTemplates();
 
-        Set<String> tModelsToDelete = new HashSet<String>();
+        final Set<String> tModelsToDelete = new HashSet<String>();
+        try {
+            tModelsToDelete.addAll(getReferencedTModels(serviceKey));
+        } catch (UDDIException e) {
+            logger.log(Level.WARNING, "Could not find referenced tModels for Business Service with serviceKey: " + serviceKey + ", due to: " + ExceptionUtils.getMessage(e));
+        }
+        
+        UDDIException serviceException = null;
+        UDDIException tModelException = null;
+        try {
+            deleteBusinessService(serviceKey);
+        } catch (UDDIException e) {
+            serviceException = e;
+        }
+
+        for (String tModelKey : tModelsToDelete) {
+            try {
+                deleteTModel(tModelKey);
+            } catch (UDDIException e1) {
+                logger.log(Level.WARNING, "Could not delete tModel with tModelKey: " + tModelKey + " " +
+                        "referenced from BusinessService with serviceKey: " + serviceKey + ", due to: " + ExceptionUtils.getMessage(e1));
+                tModelException = e1;
+            }
+        }
+
+        if(serviceException != null) throw serviceException;
+        if(tModelException != null) throw tModelException;
+    }
+
+    private Set<String> getReferencedTModels(final String serviceKey) throws UDDIException {
+        final BusinessService businessService = getBusinessService(serviceKey);
+        final BindingTemplates bindingTemplates = businessService.getBindingTemplates();
+
+        final Set<String> referencedTModels = new HashSet<String>();
 
         for(BindingTemplate bindingTemplate: bindingTemplates.getBindingTemplate()){
 
             //the binding template references both the wsdl:portType and wsdl:binding tModels
             TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
             for(TModelInstanceInfo tModelInstanceInfo: tModelInstanceDetails.getTModelInstanceInfo()){
-                tModelsToDelete.add(tModelInstanceInfo.getTModelKey());
+                referencedTModels.add(tModelInstanceInfo.getTModelKey());
             }
         }
 
-        //Now delete the service
+        return referencedTModels;
+    }
+
+    private void deleteBusinessService(String serviceKey) throws UDDIException {
+        if(serviceKey == null || serviceKey.trim().isEmpty()) throw new IllegalArgumentException("serviceKey cannot be null or empty");
         try {
             final DeleteService deleteService = new DeleteService();
             deleteService.setAuthInfo(getAuthToken());
@@ -576,15 +532,13 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             
             final UDDIPublicationPortType publicationPortType = getPublishPort();
             publicationPortType.deleteService(deleteService);
-            logger.log(Level.FINE, "Deleted service with key: " + businessService.getServiceKey());
+            logger.log(Level.FINE, "Deleted service with key: " + serviceKey);
 
         } catch (DispositionReportFaultMessage drfm) {
-            throw buildFaultException("Error deleting business service '"+serviceKey+"'", drfm);
+            throw buildFaultException("Error deleting business service '" + serviceKey + "'", drfm);
         } catch (RuntimeException e) {
-            throw buildErrorException("Error deleting business service '"+serviceKey+"'", e);
+            throw buildErrorException("Error deleting business service '" + serviceKey + "'", e);
         }
-
-        return tModelsToDelete;
     }
 
     /**

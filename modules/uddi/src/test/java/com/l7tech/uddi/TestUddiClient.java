@@ -44,7 +44,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
-    public void deleteBusinessServicesByKey(String serviceKey) throws UDDIException {
+    public void deleteBusinessServiceByKey(String serviceKey) throws UDDIException {
 
     }
 
@@ -104,11 +104,6 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
-    public void deleteUDDIBusinessServices(Collection<UDDIBusinessService> businessServices) throws UDDIException {
-
-    }
-
-    @Override
     public String getBusinessEntityName(String businessKey) throws UDDIException {
         return null;
     }
@@ -148,16 +143,6 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
 
     @Override
     public void deleteBindingTemplate(String bindingKey) throws UDDIException {
-
-    }
-
-    @Override
-    public Set<String> deleteBusinessService(String serviceKey) throws UDDIException {
-        return null;
-    }
-
-    @Override
-    public void deleteBusinessServicesByKey(Collection<String> serviceKeys) throws UDDIException {
 
     }
 

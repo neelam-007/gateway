@@ -17,7 +17,7 @@ import java.io.InputStreamReader;
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  * @author darmstrong
  */
-public class UDDIProxiedServiceDownloaderTest {
+public class UDDIBusinessServiceDownloaderTest {
 
 
     /**
@@ -49,7 +49,7 @@ public class UDDIProxiedServiceDownloaderTest {
         }
         TestUddiClient uddiClient = new TestUddiClient(allServices);
 
-        UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient, uddiClient);
+        UDDIBusinessServiceDownloader serviceDownloader = new UDDIBusinessServiceDownloader(uddiClient);
         Set<String> serviceKeys = new HashSet<String>();
         for(BusinessService bs: allServices){
             serviceKeys.add(bs.getServiceKey());

@@ -185,7 +185,6 @@ public interface UDDIClient extends Closeable {
     /**
      * Delete a TModel from the UDDI Registry.
      *
-     * //todo this is inefficient - should allow a collection of tModels which only requires a single Business Service search
      * @param tModelKey String tModelKey of the TModel to delete
      * @throws UDDIException if any problem during the find or the attempt to delete
      */
@@ -219,43 +218,18 @@ public interface UDDIClient extends Closeable {
     void deleteBindingTemplateFromSingleService(final Set<String> bindingKeys) throws UDDIException;
 
     /**
-     * Delete a BusinessService from the UDDI Registry.
-     * Any dependent tModels representing wsdl:portType and wsdl:binding are not deleted. This should be done after
-     * the call to deletedBusinessService. Some UDDI Registries will throw an exception when
-     * an attempt is made to delete a tModel which has been previously deleted (CentraSite Gov v7)
-     *
-     * @param serviceKey String serviceKey of the service to delete
-     * @throws UDDIException if any problem during the attempt to delete
-     * @return Set<String> contaning the tModelKeys of all referenced tModels
-     */
-    Set<String> deleteBusinessService(final String serviceKey) throws UDDIException;
-
-
-    /**
-     * Delete all supplied UDDIBusinessServices and safely delete all referenced tModels
-     *
-     * Calls deleteBusinessService(BusinessService) for each BusinessService in the collection, following that the
-     * Set<String> of tModelKeys are deleted.
-     *
-     * @param businessServices Collection<UDDIBusinessService> all BusinessServices to delete. Required.
-     * @throws UDDIException any problems searching / deleting
-     **/
-    void deleteUDDIBusinessServices(final Collection<UDDIBusinessService> businessServices) throws UDDIException;
-
-    /**
-     * Same contract as deleteBusinessServices
-     *
-     * @param serviceKeys Collection<String> serviceKeys of BusinessServices to delete. Required.
-     * @throws UDDIException any problems searching / deleting
-     */
-    void deleteBusinessServicesByKey(final Collection<String> serviceKeys) throws UDDIException;
-
-    /**
      * Delete a single BusinessService from UDDI and all of it's referenced tModels
-     * @param serviceKey
-     * @throws UDDIException
+     * <p/>
+     * This does a best effort delete of the business service and all its tmodels. First each referenced tModel is
+     * retrieved, then the BusinessService is deleted. Regardless of success, each tModel is independently deleted.
+     *
+     * @param serviceKey String serviceKey of the BusinessService to delete
+     * @throws UDDIException if there was any problems deleting the BusinessService or any tModels. Although each delete
+     * is independently attempted, this exception will be thrown firstly if there was a problem deleting the business service
+     * and secondly if there was any problem deleting any referenced tModel. The last exception which occured for deleting
+     * tModels is the exception which will be thrown
      */
-    void deleteBusinessServicesByKey(final String serviceKey) throws UDDIException;
+    void deleteBusinessServiceByKey(final String serviceKey) throws UDDIException;
 
     /**
      * Find all BusinessServices with the supplied keys

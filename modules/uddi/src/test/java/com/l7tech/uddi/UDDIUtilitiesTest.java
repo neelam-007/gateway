@@ -65,7 +65,6 @@ public class UDDIUtilitiesTest {
                     Assert.assertEquals("Incorrect tModel type found", WSDL_BINDING, type);
                 }
             }
-
         }
     }
 
@@ -78,7 +77,7 @@ public class UDDIUtilitiesTest {
     public void testUpdateBindingTModelReferences() throws UDDIException {
         //first update all wsdl:portType tModels
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, 23424323L, getUDDIClient());
-        servicePublisher.publishDependentTModels(referencedModels, WSDL_PORT_TYPE);
+        servicePublisher.publishDependentTModels(referencedModels, WSDL_PORT_TYPE, Collections.<Pair<String, BusinessService>>emptySet());
 
         final ArrayList<TModel> models = new ArrayList<TModel>();
         models.addAll(referencedModels.values());
@@ -125,13 +124,13 @@ public class UDDIUtilitiesTest {
     public void testUpdateBusinessServiceReferences() throws UDDIException {
         //setup
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, 23424323L, getUDDIClient());
-        servicePublisher.publishDependentTModels(referencedModels, WSDL_PORT_TYPE);
+        servicePublisher.publishDependentTModels(referencedModels, WSDL_PORT_TYPE, Collections.<Pair<String, BusinessService>>emptySet());
 
         final ArrayList<TModel> models = new ArrayList<TModel>();
         models.addAll(referencedModels.values());
         UDDIUtilities.updateBindingTModelReferences(models, referencedModels);
 
-        servicePublisher.publishDependentTModels(referencedModels, WSDL_BINDING);
+        servicePublisher.publishDependentTModels(referencedModels, WSDL_BINDING, Collections.<Pair<String, BusinessService>>emptySet());
         //finish setup
 
         UDDIUtilities.updateBusinessServiceReferences(singleService, referencedModels);
@@ -453,7 +452,7 @@ public class UDDIUtilitiesTest {
 //    final String security = "http://10.7.2.200:53307/UddiRegistry/security";
 //    GenericUDDIClient uddiClient = new GenericUDDIClient(inquiry, publish, subscription, security, "administrator", "7layer", PolicyAttachmentVersion.v1_2, null);
 //
-//    UDDIProxiedServiceDownloader serviceDownloader = new UDDIProxiedServiceDownloader(uddiClient);
+//    UDDIBusinessServiceDownloader serviceDownloader = new UDDIBusinessServiceDownloader(uddiClient);
 //    Set<String> serviceKeys = new HashSet<String>();
 //    serviceKeys.add("uddi:9c7d0e97-d88c-11de-bd69-c3cafb478058");
 //    final List<Pair<BusinessService, Map<String, TModel>>> businessServiceModels = serviceDownloader.getBusinessServiceModels(serviceKeys);

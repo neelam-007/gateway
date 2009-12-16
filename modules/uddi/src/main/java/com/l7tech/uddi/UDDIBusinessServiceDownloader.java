@@ -13,15 +13,10 @@ import java.util.*;
  *
  * @author darmstrong
  */
-class UDDIProxiedServiceDownloader {
-    //TODO rename to be UDDIBusinessServiceDownloade, as that's what it does
-
-    private final UDDIClient uddiClient;
+class UDDIBusinessServiceDownloader {
     private final JaxWsUDDIClient jaxWsUDDIClient;
 
-    UDDIProxiedServiceDownloader( final UDDIClient uddiClient,
-                                  final JaxWsUDDIClient jaxClient ) {
-        this.uddiClient = uddiClient;
+    UDDIBusinessServiceDownloader( final JaxWsUDDIClient jaxClient) {
         this.jaxWsUDDIClient = jaxClient;
     }
 
@@ -45,7 +40,7 @@ class UDDIProxiedServiceDownloader {
             //process all bus services and collect references
 
             //each bindingTemplate contains all the information we need, we don't need to dig deeper
-            //e.g. don't need to obtain the wsdl:binding tModel as it references the wsdl:port tModel, as the
+            //e.g. don't need to obtain the wsdl:binding or the wsdl:port tModel, as the
             //bindingTemplate references both of them
             BindingTemplates bindingTemplates = businessService.getBindingTemplates();
             if(bindingTemplates != null){

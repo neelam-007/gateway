@@ -51,7 +51,13 @@ public class WsdlToUDDIModelConverter {
     protected static final String BINDING_TMODEL_IDENTIFIER = "$Layer7$_Binding_Identifier";
 
     private final Wsdl wsdl;
-    private Map<String, String> serviceNameToWsdlServiceNameMap;
+
+    /**
+     * it's ok if keys are not unique and a key gets overwritten. This will only happen when two wsdl:service have the same
+     * name which results in a BusinessService with the same name. This is ok, the only purpose of this map is
+     * to be able to retrieve the wsdl:service local name, so it doesn't matter if two busines services share the same key 
+     */
+    private Map<String, String> serviceNameToWsdlServiceNameMap = new HashMap<String, String>();;
     private List<Pair<BusinessService, Map<String, TModel>>> servicesAndDependentTModels;
     public static final String USE_TYPE_END_POINT = "endPoint";
     private static final String HTTP_SCHEMAS_SOAP_HTTP = "http://schemas.xmlsoap.org/soap/http";
@@ -101,6 +107,14 @@ public class WsdlToUDDIModelConverter {
         this.businessKey = businessKey;
     }
 
+    /**
+     * Get the Map of String BusinessService name to the wsdl:service localname which generated the BusinessService name.
+     * Note: it is ok if two BusinessService's have the same name from a single WSDL. Anywhere those BusinessServices
+     * are used, their unique namespace must be taken into consideration.
+     *
+     * @return Map String BusinessService name to wsdl:service localname. Never null. Can be empty if the model has yet
+     *         to be converted
+     */
     public Map<String, String> getServiceNameToWsdlServiceNameMap() {
         return serviceNameToWsdlServiceNameMap;
     }
@@ -137,7 +151,7 @@ public class WsdlToUDDIModelConverter {
 
         UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
 
-        serviceNameToWsdlServiceNameMap = new HashMap<String, String>();
+        serviceNameToWsdlServiceNameMap.clear();
         servicesAndDependentTModels = new ArrayList<Pair<BusinessService, Map<String, TModel>>>();
 
         Collection<Service> services = wsdl.getServices();
@@ -283,7 +297,7 @@ public class WsdlToUDDIModelConverter {
         }
 
         //We will only convert wsdl:ports which implement a soap biding
-        if (!soapFound) throw new NonSoapWsdlPortException("No soap:address or soap12:address found in WSDL");
+        if (!soapFound) throw new NonSoapWsdlPortException("No soap:address or soap12:address found in wsdl:port");
 
         if(!isHttpBinding)
             throw new NonHttpBindingException("wsdl:port does not implement a binding which has '" + HTTP_SCHEMAS_SOAP_HTTP + "' as it's transport URI");

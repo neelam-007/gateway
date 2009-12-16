@@ -52,11 +52,12 @@ interface JaxWsUDDIClient {
     public void publishBindingTemplate(final BindingTemplate bindingTemplate) throws UDDIException;
 
     /**
-     * Publish a tModel
+     * Publish a tModel. The tModel MUST NOT have been published before to UDDI. This is not a publish / update method.
+     * This method is ONLY for publishing for the first time.
      *
-     * @param tModelToPublish TModel to publish
-     * @return true if the TModel was published, false otherwise. Always true when searchFirst is false.
-     * @throws UDDIException
+     * @param tModelToPublish TModel to publish. It's tModelKey property must be null.
+     * @return true if the TModel was published, false otherwise.
+     * @throws UDDIException any problems publishing to UDDI
      */
     boolean publishTModel(final TModel tModelToPublish) throws UDDIException;
 

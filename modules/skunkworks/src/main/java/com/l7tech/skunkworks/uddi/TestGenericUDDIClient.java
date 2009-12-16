@@ -59,7 +59,7 @@ public class TestGenericUDDIClient {
 
         for(String key: serviceKeys){
             System.out.println("Deleting service: " + key);
-            uddiClient.deleteBusinessService(key);
+            uddiClient.deleteBusinessServiceByKey(key);
         }
     }
 
@@ -100,16 +100,16 @@ public class TestGenericUDDIClient {
     @Test
     public void testDeleteProxiedBusinessService() throws UDDIException {
         final String serviceKey = "uddi:9259c9d0-cfe2-11de-a2bb-8068e9b1817d";
-        uddiClient.deleteBusinessService(serviceKey);
+        uddiClient.deleteBusinessServiceByKey(serviceKey);
     }
 
     @Test
     public void updateBindingTemplateToCauseNotification() throws UDDIException{
-        String bindingKey = "uddi:dd307f80-e12b-11de-a41a-25a7e540a3f8";
+        String bindingKey = "uddi:54999220-e5b7-11de-a429-25a7e540a3f8";
 //        String bindingKey = "uddi:5582b874-e35e-11de-93c3-dc2d2b7e3068";
         GenericUDDIClient genericUDDIClient = (GenericUDDIClient) uddiClient;
 
-        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:dd303160-e12b-11de-a41a-25a7e540a3f8");
+        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:54994400-e5b7-11de-a429-25a7e540a3f8");
 //        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:1c83799c-e35e-11de-93c3-9366805f4bbc");
         BindingTemplate foundTemplate = null;
         for(BindingTemplate bt: businessService.getBindingTemplates().getBindingTemplate()){
@@ -123,7 +123,8 @@ public class TestGenericUDDIClient {
 
 //        foundTemplate.getAccessPoint().setValue("http://thehostwedontwanttorouteto.com:1610/SpaceOrderofBattle2.asmx");
 //        foundTemplate.getAccessPoint().setValue("http://hugh:8081/axis/services/PlayerStats/11");
-        foundTemplate.getAccessPoint().setValue("http://hugh/ACMEWarehouseWS/11/Service.asmx");
+//        foundTemplate.getAccessPoint().setValue("http://hugh/ACMEWarehouseWS/12/Service.asmx");
+        foundTemplate.getAccessPoint().setValue("http://www50.brinkster.com/vbfacileinpt/np2.asmx");
         genericUDDIClient.publishBusinessService(businessService);
         //genericUDDIClient.publishBindingTemplate(foundTemplate);
     }
@@ -332,11 +333,7 @@ public class TestGenericUDDIClient {
 
     @Test
     public void testGenericBusinessServiceDelete() throws UDDIException {
-        Set<String> tModelsToDelete = new HashSet<String>();
-        tModelsToDelete.addAll(uddiClient.deleteBusinessService("uddi:03c6fc80-c02c-11de-8342-cc4d177a16de"));
-        for(String tModelKey: tModelsToDelete){
-            uddiClient.deleteTModel(tModelKey);
-        }
+        uddiClient.deleteBusinessServiceByKey("uddi:03c6fc80-c02c-11de-8342-cc4d177a16de");
     }
 
     @Test
