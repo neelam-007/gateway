@@ -24,6 +24,8 @@ import java.util.logging.Logger;
 import java.text.MessageFormat;
 
 /**
+ * GUI for managing JDBC Connection entities (Add, Edit, or Remove)
+ *
  * @author ghuang
  */
 public class JdbcConnectionManagerWindow extends JDialog {
@@ -40,7 +42,7 @@ public class JdbcConnectionManagerWindow extends JDialog {
 
     private java.util.List<JdbcConnection> connectionList = new ArrayList<JdbcConnection>();
     private AbstractTableModel connectionTableModel;
-    private PermissionFlags flags; // todo: check flags usage in SsgConnectorManagerWindow Line 341
+    private PermissionFlags flags;
 
     public JdbcConnectionManagerWindow(Frame owner) {
         super(owner, resources.getString("dialog.title.manage.jdbc.connections"));
@@ -95,6 +97,9 @@ public class JdbcConnectionManagerWindow extends JDialog {
         enableOrDisableButtons();
     }
 
+    /**
+     * Reload ConnectionList from the database and resort it as well.
+     */
     private void loadJdbcConnectionList() {
         JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin != null) {
@@ -108,10 +113,13 @@ public class JdbcConnectionManagerWindow extends JDialog {
     }
 
     private void initJdbcConnectionTable() {
+        // Refresh connection list
         loadJdbcConnectionList();
 
+        // Initialize the table model
         connectionTableModel = new JdbcConnectionTableModel();
 
+        // Initialize the table
         connectionTable.setModel(connectionTableModel);
         connectionTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         connectionTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -143,15 +151,15 @@ public class JdbcConnectionManagerWindow extends JDialog {
         public String getColumnName(int col) {
             switch (col) {
                 case 0:
-                    return resources.getString("column.label.enabled");
+                    return resources.getString("column.label.enabled");          // Column: Enabled
                 case 1:
-                    return resources.getString("column.label.connection.name");
+                    return resources.getString("column.label.connection.name");  // Column: Connection Name
                 case 2:
-                    return resources.getString("column.label.driver.class");
+                    return resources.getString("column.label.driver.class");     // Column: Driver Class
                 case 3:
-                    return resources.getString("column.label.jdbc.url");
+                    return resources.getString("column.label.jdbc.url");         // Column: JDBC URL
                 case 4:
-                    return resources.getString("column.label.user.name");
+                    return resources.getString("column.label.user.name");        // Column: User Name
                 default:
                     throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
             }
@@ -289,7 +297,7 @@ public class JdbcConnectionManagerWindow extends JDialog {
         boolean removeEnabled = selectedRow >= 0;
 
         addButton.setEnabled(flags.canCreateSome() && addEnabled);
-        editButton.setEnabled(editEnabled);
+        editButton.setEnabled(editEnabled);  // Not using flags.canUpdateSome(), since we still allow users to view the properties.
         removeButton.setEnabled(flags.canDeleteSome() && removeEnabled);
     }
 }

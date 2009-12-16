@@ -29,6 +29,8 @@ import java.text.MessageFormat;
 import java.io.IOException;
 
 /**
+ * GUI for creating or editing properties of a JDBC Connection entity.
+ *
  * @author ghuang
  */
 public class JdbcConnectionPropertiesDialog extends JDialog {
@@ -180,7 +182,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         connection.setDriverClass(((String) driverClassComboBox.getSelectedItem()).trim());
         connection.setJdbcUrl(jdbcUrlTextField.getText().trim());
         connection.setUserName(usernameTextField.getText().trim());
-        connection.setPassword(passwordField.getText());
+        connection.setPassword(new String(passwordField.getPassword()));
         connection.setMinPoolSize((Integer) minPoolSizeSpinner.getValue());
         connection.setMaxPoolSize((Integer) maxPoolSizeSpinner.getValue());
         connection.setEnabled(!disableConnectionCheckBox.isSelected());
@@ -238,7 +240,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             isNonEmptyRequiredTextField((String) driverClassComboBox.getEditor().getItem()) &&
             isNonEmptyRequiredTextField(jdbcUrlTextField.getText()) &&
             isNonEmptyRequiredTextField(usernameTextField.getText()) &&
-            isNonEmptyRequiredTextField(passwordField.getText());
+            isNonEmptyRequiredTextField(new String(passwordField.getPassword()));
         
         okButton.setEnabled(enabled);
         testButton.setEnabled(enabled);
@@ -433,6 +435,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) return;
 
+        // Assign data to a tested JDBC connection
         JdbcConnection connForTest = new JdbcConnection();
         viewToModel(connForTest);
 
