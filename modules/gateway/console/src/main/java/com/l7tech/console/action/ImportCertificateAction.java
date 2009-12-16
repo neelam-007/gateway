@@ -5,6 +5,7 @@ import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.util.ResourceUtils;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -40,6 +41,7 @@ public class ImportCertificateAction extends SecureAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Import certificate";
     }
@@ -47,6 +49,7 @@ public class ImportCertificateAction extends SecureAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "Import the Gateway Certificate";
     }
@@ -54,6 +57,7 @@ public class ImportCertificateAction extends SecureAction {
     /**
      * subclasses override this method specifying the resource name
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/ssl.gif";
     }
@@ -64,8 +68,10 @@ public class ImportCertificateAction extends SecureAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser fc) {
                 doImport(fc);
             }
@@ -74,6 +80,7 @@ public class ImportCertificateAction extends SecureAction {
 
     private void doImport(final JFileChooser fc) {
         FileFilter filter = new FileFilter() {
+            @Override
             public boolean accept(File f) {
                 if (f.isDirectory())
                     return true;
@@ -85,6 +92,7 @@ public class ImportCertificateAction extends SecureAction {
                 return ext.equalsIgnoreCase(".cer");
             }
 
+            @Override
             public String getDescription() {
                 return "Certificate files (*.cer)";
             }
@@ -141,9 +149,16 @@ public class ImportCertificateAction extends SecureAction {
     private void importSsgCertificate(File selectedFile)
       throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
 
-        FileInputStream certfis = new FileInputStream(selectedFile);
-        CertificateFactory cf = CertUtils.getFactory();
-        Collection c = cf.generateCertificates(certfis);
+        Collection c;
+        FileInputStream certfis = null;
+        try {
+            certfis = new FileInputStream(selectedFile);
+            CertificateFactory cf = CertUtils.getFactory();
+            c = cf.generateCertificates(certfis);
+        } finally {
+            ResourceUtils.closeQuietly( certfis );
+        }
+        
         Iterator i = c.iterator();
         if (i.hasNext()) {
             Certificate cert = (Certificate)i.next();

@@ -171,11 +171,12 @@ public class FtpUtils {
 
         if(saveFile.exists()) saveFile.delete();
         saveFile.createNewFile();
-        FileOutputStream fos = new FileOutputStream(saveFile);
+        FileOutputStream fos = null;
 
         final Ftp ftp = FtpUtils.newFtpClient(config);
 
         try{
+            fos = new FileOutputStream(saveFile);
             ftp.connect();
             ftp.download(fos, fileToDownload);
         } finally{
