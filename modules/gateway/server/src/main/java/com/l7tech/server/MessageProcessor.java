@@ -70,6 +70,7 @@ import org.xml.sax.SAXException;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
+import java.io.Closeable;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -107,9 +108,16 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      * All arguments are required
      *
      * @param sc             the service cache
+     * @param pc             the policy cache
      * @param wssd           the Wss Decorator
+     * @param securityTokenResolver the security token resolver to use
      * @param licenseManager the SSG's Licence Manager
      * @param metricsServices the SSG's ServiceMetricsManager
+     * @param auditContext    audit context for message processing
+     * @param serverConfig    serverConfig provider
+     * @param trafficLogger   traffic logger
+     * @param soapFaultManager  soap fault manager
+     * @param messageProcessingEventChannel   channel on which to publish the message processed event (for auditing)
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public MessageProcessor(ServiceCache sc,
@@ -172,8 +180,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
-        throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException {
-        return reallyProcessMessage(context);
+        throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException
+    {
+        AssertionStatus status = AssertionStatus.UNDEFINED;
+        try {
+            status = reallyProcessMessage(context);
+            return status;
+        } finally {
+            doRequestPostProcessing(context, status);
+        }
     }
 
     private String getIncomingURL(PolicyEnforcementContext context) {
@@ -186,7 +201,88 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private AssertionStatus reallyProcessMessage(final PolicyEnforcementContext context)
-        throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException {
+        throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException
+    {
+        doRequestPreChecks(context);
+
+        final MessageProcessingContext mc = new MessageProcessingContext(context);
+
+        try {
+            return mc.processRequest();
+
+        } catch (PublishedService.ServiceException se) {
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(se)}, se);
+            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
+            return AssertionStatus.SERVER_ERROR;
+        } catch (ServiceResolutionException sre) {
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(sre)}, ExceptionUtils.getDebugException(sre));
+            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
+            return AssertionStatus.SERVER_ERROR;
+        } catch (SAXException e) {
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(e)}, e);
+            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
+            return AssertionStatus.SERVER_ERROR;
+        } finally {
+            ResourceUtils.closeQuietly(mc);
+        }
+    }
+
+    private void processRequestHttpHeaders(PolicyEnforcementContext context) throws MethodNotAllowedException, PolicyVersionException {
+        HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
+        PublishedService service = context.getService();
+        assert service != null;
+
+        // Check the request method
+        final HttpMethod requestMethod = httpRequestKnob.getMethod();
+        if (requestMethod != null && !service.isMethodAllowed(requestMethod)) {
+            String[] auditArgs = new String[] { requestMethod.name(), service.getName() };
+            Object[] faultArgs = new Object[] { requestMethod.name() };
+            auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, auditArgs);
+            throw new MethodNotAllowedException(
+                    MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED_FAULT.getMessage(), faultArgs));
+        }
+
+        // initialize cache
+        if(httpRequestKnob instanceof HttpServletRequestKnob) {
+            String cacheId = service.getOid() + "." + service.getVersion();
+            PolicyContextCache cache = new HttpSessionPolicyContextCache(((HttpServletRequestKnob)httpRequestKnob).getHttpServletRequest(), cacheId);
+            context.setCache(cache);
+        }
+        // check if requestor provided a version number for published service
+        String requestorVersion = httpRequestKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+        if (requestorVersion != null && requestorVersion.length() > 0) {
+            // format is policyId|policyVersion (seperated with char '|')
+            boolean wrongPolicyVersion = false;
+            int indexofbar = requestorVersion.indexOf('|');
+            if (indexofbar < 0) {
+                auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_WRONG_FORMAT);
+                wrongPolicyVersion = true;
+            } else {
+                try {
+                    String expectedPolicyVersion = policyCache.getUniquePolicyVersionIdentifer( service.getPolicy().getOid() );
+                    long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
+                    String reqPolicyVersion = requestorVersion.substring(indexofbar + 1);
+                    if ( reqPolicyId != service.getOid() ||
+                         !reqPolicyVersion.equals( expectedPolicyVersion )) {
+                        auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, requestorVersion, String.valueOf(service.getOid()), expectedPolicyVersion);
+                        wrongPolicyVersion = true;
+                    }
+                } catch (NumberFormatException e) {
+                    wrongPolicyVersion = true;
+                    auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_WRONG_FORMAT, null, e);
+                }
+            }
+            if (wrongPolicyVersion) {
+                context.setRequestPolicyViolated();
+                context.setRequestClaimingWrongPolicyVersion();
+                throw new PolicyVersionException();
+            }
+        } else {
+            auditor.logAndAudit(MessageProcessingMessages.POLICY_ID_NOT_PROVIDED);
+        }
+    }
+
+    private void doRequestPreChecks(PolicyEnforcementContext context) throws LicenseException, MessageProcessingSuspendedException {
         context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
         // License check hook
         licenseManager.requireFeature(GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR);
@@ -195,409 +291,151 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (SuspendStatus.INSTANCE.isSuspended()) {
             throw new MessageProcessingSuspendedException(SuspendStatus.INSTANCE.getReason());
         }
+    }
 
-        final Message request = context.getRequest();
-        final Message response = context.getResponse();
-        final ProcessorResult[] wssOutput = { null };
-        AssertionStatus status = AssertionStatus.UNDEFINED;
-        long serviceOid = -1;
-        ServiceStatistics stats = null;
-        boolean attemptedRequest = false;
+    private void doRequestPostProcessing(PolicyEnforcementContext context, AssertionStatus status) {
+        context.setEndTime();
 
-        // WSS-Processing Step
-        ServerPolicyHandle serverPolicy = null;
+        // Check auditing hints, position here since our "success" may be a back end service fault
+        if(isAuditHintingEnabled()) {
+            if(!context.isAuditSaveRequest() || !context.isAuditSaveResponse()) {
+                Set auditingHints = auditContext.getHints();
+                if(auditingHints.contains(HINT_SAVE_REQUEST)) context.setAuditSaveRequest(true);
+                if(auditingHints.contains(HINT_SAVE_RESPONSE)) context.setAuditSaveResponse(true);
+            }
+        }
+
+        status = adjustAndAuditAssertionStatus(context, status);
+
+        // ensure result is set
+        if (context.getPolicyResult() == null) context.setPolicyResult(status);
+
+        updateServiceStatisticsAndMetrics(context, status);
+        notifyTrafficMonitors(context, status);
+
+        publishMessageProcessedEvent(context, status);
+
+        // this may or may not log traffic based on server properties (by default, not)
+        trafficLogger.log(context);
+    }
+
+    private void publishMessageProcessedEvent(PolicyEnforcementContext context, AssertionStatus status) {
         try {
-            final AssertionStatus[] securityProcessingAssertionStatus = { null };
-            final IOException[] securityProcessingIOException = { null };
-            final boolean[] securityProcessingEvaluatedFlag = { false };
-            final SecurityProcessingResolutionListener securityProcessingResolutionListener =
-                    new SecurityProcessingResolutionListener(policyCache, context, wssOutput, securityProcessingAssertionStatus, securityProcessingIOException, securityProcessingEvaluatedFlag);
-
-            // Policy Verification Step
-            PublishedService service = serviceCache.resolve(context.getRequest(), securityProcessingResolutionListener);
-            if (service == null) {
-                if (securityProcessingIOException[0] != null) {
-                    throw securityProcessingIOException[0]; 
-                } else if (securityProcessingAssertionStatus[0] != null) {
-                    status = securityProcessingAssertionStatus[0];
-                    return securityProcessingAssertionStatus[0];
-                } else {
-                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
-                    status = AssertionStatus.SERVICE_NOT_FOUND;
-                    return AssertionStatus.SERVICE_NOT_FOUND;
-                }
-            }
-
-            if (service.isDisabled()) {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_DISABLED);
-                status = AssertionStatus.SERVICE_NOT_FOUND;
-                return AssertionStatus.SERVICE_NOT_FOUND;
-            }
-
-            auditor.logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, service.getName(), String.valueOf(service.getOid()));
-            context.setService(service);
-
-            // skip the http request header version checking if it is not a Http request
-            if (context.getRequest().isHttpRequest()) {
-                HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
-
-                // Check the request method
-                final HttpMethod requestMethod = httpRequestKnob.getMethod();
-                if (requestMethod != null && !service.isMethodAllowed(requestMethod)) {
-                    String[] auditArgs = new String[] { requestMethod.name(), service.getName() };
-                    Object[] faultArgs = new Object[] { requestMethod.name() };
-                    auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, auditArgs);
-                    throw new MethodNotAllowedException(
-                            MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED_FAULT.getMessage(), faultArgs));
-                }
-
-                // initialize cache
-                if(httpRequestKnob instanceof HttpServletRequestKnob) {
-                    String cacheId = service.getOid() + "." + service.getVersion();
-                    PolicyContextCache cache = new HttpSessionPolicyContextCache(((HttpServletRequestKnob)httpRequestKnob).getHttpServletRequest(), cacheId);
-                    context.setCache(cache);
-                }
-                // check if requestor provided a version number for published service
-                String requestorVersion = httpRequestKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
-                if (requestorVersion != null && requestorVersion.length() > 0) {
-                    // format is policyId|policyVersion (seperated with char '|')
-                    boolean wrongPolicyVersion = false;
-                    int indexofbar = requestorVersion.indexOf('|');
-                    if (indexofbar < 0) {
-                        auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_WRONG_FORMAT);
-                        wrongPolicyVersion = true;
-                    } else {
-                        try {
-                            String expectedPolicyVersion = policyCache.getUniquePolicyVersionIdentifer( service.getPolicy().getOid() );
-                            long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
-                            String reqPolicyVersion = requestorVersion.substring(indexofbar + 1);
-                            if ( reqPolicyId != service.getOid() ||
-                                 !reqPolicyVersion.equals( expectedPolicyVersion )) {
-                                auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, requestorVersion, String.valueOf(service.getOid()), expectedPolicyVersion);
-                                wrongPolicyVersion = true;
-                            }
-                        } catch (NumberFormatException e) {
-                            wrongPolicyVersion = true;
-                            auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_WRONG_FORMAT, null, e);
-                        }
-                    }
-                    if (wrongPolicyVersion) {
-                        context.setRequestPolicyViolated();
-                        context.setRequestClaimingWrongPolicyVersion();
-                        throw new PolicyVersionException();
-                    }
-                } else {
-                    auditor.logAndAudit(MessageProcessingMessages.POLICY_ID_NOT_PROVIDED);
-                }
-            }
-
-            // Get the server policy
-            serverPolicy = serviceCache.getServerPolicy(service.getOid());
-            if (serverPolicy == null) {
-                throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid");
-            }
-
-            // Check request data
-            if (context.getRequest().getMimeKnob().isMultipart() &&
-                !(service.isMultipart() || serverPolicy.getPolicyMetadata().isMultipart())) {
-                auditor.logAndAudit(MessageProcessingMessages.MULTIPART_NOT_ALLOWED);
-                status = AssertionStatus.BAD_REQUEST;
-                return AssertionStatus.BAD_REQUEST;
-            }
-
-            // Ensure security processing is run if enabled
-            if ( !securityProcessingEvaluatedFlag[0] &&
-                 (service.isWssProcessingEnabled())) {
-                PolicyMetadata policyMetadata = serverPolicy.getPolicyMetadata();
-                Set<ServiceCache.ServiceMetadata> metadatas = Collections.singleton( new ServiceCache.ServiceMetadata(policyMetadata, true) );
-                if (!securityProcessingResolutionListener.notifyPreParseServices( request, metadatas ) ) {
-                    if ( securityProcessingIOException[0] != null ) {
-                        throw securityProcessingIOException[0];
-                    } else {
-                        status = securityProcessingAssertionStatus[0];
-                        return securityProcessingAssertionStatus[0];
-                    }
-                }
-
-                // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
-                XmlKnob xk = request.getKnob(XmlKnob.class);
-                if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
-            }
-
-            // Ensure pre-service policies are run
-            if ( !securityProcessingEvaluatedFlag[0] ) {
-                boolean success = securityProcessingResolutionListener.processPreServicePolicies(
-                    PolicyType.PRE_SECURITY_FRAGMENT,
-                    MessageProcessingMessages.RUNNING_PRE_SECURITY_POLICY,
-                    MessageProcessingMessages.ERROR_PRE_SECURITY );
-
-                if ( success ) {
-                    success = securityProcessingResolutionListener.processPreServicePolicies(
-                        PolicyType.PRE_SERVICE_FRAGMENT,
-                        MessageProcessingMessages.RUNNING_PRE_SERVICE_POLICY,
-                        MessageProcessingMessages.ERROR_PRE_SERVICE );
-                }
-
-                if (!success) {
-                    if ( securityProcessingIOException[0] != null ) {
-                        throw securityProcessingIOException[0];
-                    } else {
-                        status = securityProcessingAssertionStatus[0];
-                        return securityProcessingAssertionStatus[0];
-                    }
-                }
-            }
-
-            // Run the policy
-            auditor.logAndAudit(MessageProcessingMessages.RUNNING_POLICY);
-            stats = serviceCache.getServiceStatistics(service.getOid());
-            attemptedRequest = true;
-            serviceOid = service.getOid();
-
-            context.setPolicyExecutionAttempted(true);
-            status = serverPolicy.checkRequest(context);
-            
-            // fail early if there are any (I/O) errors reading the response
-            MimeKnob mk;
-            try {
-                // attempts to read and stash the whole response
-                mk = response.getKnob(MimeKnob.class);
-                if (mk != null) mk.getFirstPart().getActualContentLength();
-            } catch (IOException e) {
-                // create fault to be sent
-                String fault = soapFaultManager.constructExceptionFault(e, context);
-
-                // there's no response message; substitute with the fault, so that the actual response that will be sent is audited
-                response.initialize(
-                    (context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) ?
-                    ContentTypeHeader.SOAP_1_2_DEFAULT : ContentTypeHeader.XML_DEFAULT, 
-                    fault.getBytes());
-
-                auditor.logAndAudit(MessageProcessingMessages.RESPONSE_IO_ERROR, e.getMessage());
-
-                // pass the exception up to the SOAP servlet
-                throw new MessageResponseIOException(fault, e);
-            } catch (NoSuchPartException e) {
-                throw new RuntimeException(e); // The first part should always be available
-            }
-
-            // Execute deferred actions for request, then response
-            if (status == AssertionStatus.NONE) {
-                status = AssertionStatus.UNDEFINED;
-                status = doDeferredAssertions(context);
-            }
-
-            context.setPolicyResult(status);
-
-            // Run post service global policies
-            processPostServicePolicies( context,
-                    PolicyType.POST_SERVICE_FRAGMENT,
-                    MessageProcessingMessages.RUNNING_POST_SERVICE_POLICY,
-                    MessageProcessingMessages.ERROR_POST_SERVICE );
-
-            // add signature confirmations
-            WSSecurityProcessorUtils.addSignatureConfirmations(response, auditor);
-
-            // Run response through WssDecorator if indicated
-            if (status == AssertionStatus.NONE &&
-                  response.isXml() &&
-                  response.getSecurityKnob().getDecorationRequirements().length > 0 &&
-                  response.isSoap())
-            {
-                try {
-                    DecorationRequirements[] allrequirements = response.getSecurityKnob().getDecorationRequirements();
-                    SecurityKnob reqSec = request.getSecurityKnob();
-
-                    try {
-                        if (request.isSoap()) {
-                            final String messageId = SoapUtil.getL7aMessageId(request.getXmlKnob().getDocumentReadOnly());
-                            if (messageId != null) {
-                                SoapUtil.setL7aRelatesTo(response.getXmlKnob().getDocumentWritable(), messageId);
-                            }
-                        }
-                    } catch(IOException e) {
-                        logger.log(Level.WARNING, "Unable to extract message ID from request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    } catch(SAXException e) {
-                        logger.log(Level.WARNING, "Unable to extract message ID from request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    }
-
-                    // if the request was processed on the noactor sec header instead of the l7 sec actor, then
-                    // the response's decoration requirements should map this (if applicable)
-                    if (reqSec.getProcessorResult() != null &&
-                        reqSec.getProcessorResult().getProcessedActor() != null ) {
-                        String actorUri = reqSec.getProcessorResult().getProcessedActor()==SecurityActor.NOACTOR ?
-                                null :
-                                reqSec.getProcessorResult().getProcessedActorUri();
-
-                        // go find the l7 decoreq and adjust the actor
-                        for (DecorationRequirements requirement : allrequirements) {
-                            if (SoapConstants.L7_SOAP_ACTOR.equals(requirement.getSecurityHeaderActor())) {
-                                requirement.setSecurityHeaderActor( actorUri );
-                            }
-                        }
-                    }
-
-                    // do the actual decoration
-                    for (final DecorationRequirements responseDecoReq : allrequirements) {
-                        if (responseDecoReq != null && wssOutput[0] != null) {
-                            if (wssOutput[0].getSecurityNS() != null)
-                                responseDecoReq.getNamespaceFactory().setWsseNs(wssOutput[0].getSecurityNS());
-                            if (wssOutput[0].getWSUNS() != null)
-                                responseDecoReq.getNamespaceFactory().setWsuNs(wssOutput[0].getWSUNS());
-                            if (wssOutput[0].isDerivedKeySeen())
-                                responseDecoReq.setUseDerivedKeys(true);
-                        }
-                        wssDecorator.decorateMessage(response, responseDecoReq);
-                    }
-                } catch (Exception e) {
-                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_RESPONSE, ExceptionUtils.getMessage(e));                    
-                    throw new PolicyAssertionException(null, "Failed to apply WSS decoration to response", e);
-                }
-            }
-
-            // Run post WS-Security decoration global service policies
-            processPostServicePolicies( context,
-                    PolicyType.POST_SECURITY_FRAGMENT,
-                    MessageProcessingMessages.RUNNING_POST_SECURITY_POLICY,
-                    MessageProcessingMessages.ERROR_POST_SECURITY );
-
-            return status;
-
-        } catch (PublishedService.ServiceException se) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(se)}, se);
-            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
-            status = AssertionStatus.SERVER_ERROR;
-            return AssertionStatus.SERVER_ERROR;
-        } catch (ServiceResolutionException sre) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(sre)}, ExceptionUtils.getDebugException(sre));
-            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
-            status = AssertionStatus.SERVER_ERROR;
-            return AssertionStatus.SERVER_ERROR;
-        } catch (SAXException e) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(e)}, e);
-            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
-            status = AssertionStatus.SERVER_ERROR;
-            return AssertionStatus.SERVER_ERROR;
-        } finally {
-            context.setEndTime();
-            RoutingStatus rstat = context.getRoutingStatus();
-
-            if (serverPolicy != null) serverPolicy.close();
-
-            // Check auditing hints, position here since our "success" may be a back end service fault
-            if(isAuditHintingEnabled()) {
-                if(!context.isAuditSaveRequest() || !context.isAuditSaveResponse()) {
-                    Set auditingHints = auditContext.getHints();
-                    if(auditingHints.contains(HINT_SAVE_REQUEST)) context.setAuditSaveRequest(true);
-                    if(auditingHints.contains(HINT_SAVE_RESPONSE)) context.setAuditSaveResponse(true);
-                }
-            }
-
-            if (status == AssertionStatus.NONE) {
-                // Policy execution concluded successfully
-                if (rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE) {
-                    /* We include NONE because it's valid (albeit silly)
-                    for a policy to contain no RoutingAssertion */
-                    auditor.logAndAudit(MessageProcessingMessages.COMPLETION_STATUS, String.valueOf(status.getNumeric()), status.getMessage());
-                } else {
-                    // This can only happen when a post-routing assertion fails
-                    auditor.logAndAudit(MessageProcessingMessages.SERVER_ERROR);
-                    status = AssertionStatus.SERVER_ERROR;
-                }
-            } else {
-                // Policy execution was not successful
-
-                // Add audit details
-                if (rstat == RoutingStatus.ATTEMPTED) {
-                    // Most likely the failure was in the routing assertion
-                    auditor.logAndAudit(MessageProcessingMessages.ROUTING_FAILED, String.valueOf(status.getNumeric()), status.getMessage());
-                    status = AssertionStatus.FAILED;
-                } else {
-                    // Bump up the audit level to that of the highest AssertionStatus level
-                    if(isAuditAssertionStatusEnabled()) {
-                        Set<AssertionStatus> statusSet = context.getSeenAssertionStatus();
-                        Level highestLevel = getHighestAssertionStatusLevel(statusSet);
-                        if(highestLevel.intValue() > context.getAuditLevel().intValue())
-                            context.setAuditLevel(highestLevel);
-                    }
-
-                    // Most likely the failure was in some other assertion
-                    String serviceName = "";
-                    if (context != null && context.getService() != null) {
-                        serviceName = context.getService().getName() + " [" + context.getService().getOid() + "]";
-                    }
-                    auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, serviceName, String.valueOf(status.getNumeric()), status.getMessage());
-                }
-            }
-
-            // ensure result is set
-            if (context.getPolicyResult() == null) context.setPolicyResult(status);
-
-            boolean authorizedRequest = false;
-            boolean completedRequest = false;
-            if (status == AssertionStatus.NONE) {
-                // Policy execution concluded successfully.
-                authorizedRequest = true;
-                // Considered success (i.e., completed); unless we have routing
-                // assertion and the routed response has HTTP error status: then
-                // it's a routing failure.
-                if (rstat == RoutingStatus.NONE) {
-                    completedRequest = true;
-                } else if (rstat == RoutingStatus.ROUTED) {
-                    if (!request.isHttpRequest() || response.getHttpResponseKnob().getStatus() < HttpConstants.STATUS_ERROR_RANGE_START) {
-                        completedRequest = true;
-                    }
-                }
-            } else {
-                // Policy execution was not successful.
-                // Considered policy violation (i.e., not authorized); unless we
-                // have routing assertion and it failed or the routed response
-                // has HTTP error status: then it's a routing failure.
-                if (rstat == RoutingStatus.ATTEMPTED ||
-                    (rstat == RoutingStatus.ROUTED && (request.isHttpRequest() && response.getHttpResponseKnob().getStatus() >= HttpConstants.STATUS_ERROR_RANGE_START))) {
-                    authorizedRequest = true;
-                }
-            }
-
-            if (stats != null) {
-                if (attemptedRequest) {
-                    stats.attemptedRequest();
-                    if (authorizedRequest) {
-                        stats.authorizedRequest();
-                        if (completedRequest) {
-                            stats.completedRequest();
-                        }
-                    }
-                }
-            }
-
-            if (attemptedRequest && serviceMetricsServices.isEnabled()) {
-                final int frontTime = (int)(context.getEndTime() - context.getStartTime());
-                final int backTime = (int)(context.getRoutingTotalTime());
-
-                serviceMetricsServices.addRequest(
-                        serviceOid, 
-                        getOperationName(context),
-                        context.getDefaultAuthenticationContext().getLastAuthenticatedUser(),
-                        context.getMappings(),
-                        authorizedRequest, completedRequest, frontTime, backTime);
-            }
-
-            for (TrafficMonitor tm : trafficMonitors) {
-                tm.recordTransactionStatus(context, status, context.getEndTime() - context.getStartTime());
-            }
-
-            try {
-                messageProcessingEventChannel.publishEvent(new MessageProcessed(context, status, this));
-            } catch (Throwable t) {
-                auditor.logAndAudit(MessageProcessingMessages.EVENT_MANAGER_EXCEPTION, null, t);
-            }
-            // this may or may not log traffic based on server properties (by default, not)
-            trafficLogger.log(context);
+            messageProcessingEventChannel.publishEvent(new MessageProcessed(context, status, this));
+        } catch (Throwable t) {
+            auditor.logAndAudit(MessageProcessingMessages.EVENT_MANAGER_EXCEPTION, null, t);
         }
     }
 
-    /**
+    private void notifyTrafficMonitors(PolicyEnforcementContext context, AssertionStatus status) {
+        for (TrafficMonitor tm : trafficMonitors) {
+            tm.recordTransactionStatus(context, status, context.getEndTime() - context.getStartTime());
+        }
+    }
+
+    private AssertionStatus adjustAndAuditAssertionStatus(PolicyEnforcementContext context, AssertionStatus status) {
+        RoutingStatus rstat = context.getRoutingStatus();
+        if (status == AssertionStatus.NONE) {
+            // Policy execution concluded successfully
+            if (rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE) {
+                /* We include NONE because it's valid (albeit silly)
+                for a policy to contain no RoutingAssertion */
+                auditor.logAndAudit(MessageProcessingMessages.COMPLETION_STATUS, String.valueOf(status.getNumeric()), status.getMessage());
+            } else {
+                // This can only happen when a post-routing assertion fails
+                auditor.logAndAudit(MessageProcessingMessages.SERVER_ERROR);
+                status = AssertionStatus.SERVER_ERROR;
+            }
+        } else {
+            // Policy execution was not successful
+
+            // Add audit details
+            if (rstat == RoutingStatus.ATTEMPTED) {
+                // Most likely the failure was in the routing assertion
+                auditor.logAndAudit(MessageProcessingMessages.ROUTING_FAILED, String.valueOf(status.getNumeric()), status.getMessage());
+                status = AssertionStatus.FAILED;
+            } else {
+                // Bump up the audit level to that of the highest AssertionStatus level
+                if(isAuditAssertionStatusEnabled()) {
+                    Set<AssertionStatus> statusSet = context.getSeenAssertionStatus();
+                    Level highestLevel = getHighestAssertionStatusLevel(statusSet);
+                    if(highestLevel.intValue() > context.getAuditLevel().intValue())
+                        context.setAuditLevel(highestLevel);
+                }
+
+                // Most likely the failure was in some other assertion
+                String serviceName = "";
+                if (context.getService() != null) {
+                    serviceName = context.getService().getName() + " [" + context.getService().getOid() + "]";
+                }
+                auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, serviceName, String.valueOf(status.getNumeric()), status.getMessage());
+            }
+        }
+        return status;
+    }
+
+    private void updateServiceStatisticsAndMetrics(PolicyEnforcementContext context, AssertionStatus status) {
+        boolean authorizedRequest = false;
+        boolean completedRequest = false;
+        RoutingStatus rstat = context.getRoutingStatus();
+        if (status == AssertionStatus.NONE) {
+            // Policy execution concluded successfully.
+            authorizedRequest = true;
+            // Considered success (i.e., completed); unless we have routing
+            // assertion and the routed response has HTTP error status: then
+            // it's a routing failure.
+            if (rstat == RoutingStatus.NONE) {
+                completedRequest = true;
+            } else if (rstat == RoutingStatus.ROUTED) {
+                if (!context.getRequest().isHttpRequest() || context.getResponse().getHttpResponseKnob().getStatus() < HttpConstants.STATUS_ERROR_RANGE_START) {
+                    completedRequest = true;
+                }
+            }
+        } else {
+            // Policy execution was not successful.
+            // Considered policy violation (i.e., not authorized); unless we
+            // have routing assertion and it failed or the routed response
+            // has HTTP error status: then it's a routing failure.
+            if (rstat == RoutingStatus.ATTEMPTED ||
+                (rstat == RoutingStatus.ROUTED && (context.getRequest().isHttpRequest() && context.getResponse().getHttpResponseKnob().getStatus() >= HttpConstants.STATUS_ERROR_RANGE_START))) {
+                authorizedRequest = true;
+            }
+        }
+
+        updateServiceStatistics(context, authorizedRequest, completedRequest);
+        updateServiceMetrics(context, authorizedRequest, completedRequest);
+    }
+
+    private void updateServiceMetrics(PolicyEnforcementContext context, boolean authorizedRequest, boolean completedRequest) {
+        if (context.isPolicyExecutionAttempted() && serviceMetricsServices.isEnabled()) {
+            final int frontTime = (int)(context.getEndTime() - context.getStartTime());
+            final int backTime = (int)(context.getRoutingTotalTime());
+            long serviceOid = context.getService() == null ? -1 : context.getService().getOid();
+
+            serviceMetricsServices.addRequest(
+                    serviceOid,
+                    getOperationName(context),
+                    context.getDefaultAuthenticationContext().getLastAuthenticatedUser(),
+                    context.getMappings(),
+                    authorizedRequest, completedRequest, frontTime, backTime);
+        }
+    }
+
+    private void updateServiceStatistics(PolicyEnforcementContext context, boolean authorizedRequest, boolean completedRequest) {
+        PublishedService service = context.getService();
+        if (service != null && context.isPolicyExecutionAttempted()) {
+            ServiceStatistics stats = serviceCache.getServiceStatistics(service.getOid());
+            stats.attemptedRequest();
+            if (authorizedRequest) {
+                stats.authorizedRequest();
+                if (completedRequest) {
+                    stats.completedRequest();
+                }
+            }
+        }
+    }
+
+    /*
      * Process post service policies and audit errors.
      *
      * <p>Post service policy execution does not affect the overall policy processing
@@ -723,32 +561,116 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         return statusEnabled;
     }
 
-    private final class SecurityProcessingResolutionListener implements ServiceCache.ResolutionListener {
-        private final PolicyCache policyCache;
+    private final class MessageProcessingContext implements ServiceCache.ResolutionListener, Closeable {
         private final PolicyEnforcementContext context;
-        private final ProcessorResult[] wssOutputHolder;
-        private final AssertionStatus[] assertionStatusHolder;
-        private final IOException[] ioExceptionHolder;
-        private final boolean[] securityProcessingEvaluatedFlag;
+        ProcessorResult wssOutput;
+        boolean securityProcessingEvaluatedFlag;
+        AssertionStatus securityProcessingAssertionStatus;
+        IOException securityProcessingIOException;
+        ServerPolicyHandle serverPolicy = null; // Needs to be closed
 
-        private SecurityProcessingResolutionListener(final PolicyCache policyCache,
-                                                     final PolicyEnforcementContext context,
-                                                     final ProcessorResult[] wssOutput,
-                                                     final AssertionStatus[] assertionStatus,
-                                                     final IOException[] ioException,
-                                                     final boolean[] securityProcessingEvaluatedFlag ) {
-            this.policyCache = policyCache;
+        /**
+         * Create a message processing context.
+         * This message processing context must be closed in order to release the server policy handle (should
+         * processing make it as far as resolving the server policy).
+         *
+         * @param context policy enforcement context we will be processing.  We make use of it but do not take ownership;
+         *                caller must still take responsibility for closing the PEC even after this MPC is closed.
+         */
+        private MessageProcessingContext(final PolicyEnforcementContext context) {
             this.context = context;
-            this.wssOutputHolder = wssOutput;
-            this.assertionStatusHolder = assertionStatus;
-            this.ioExceptionHolder = ioException;
-            this.securityProcessingEvaluatedFlag = securityProcessingEvaluatedFlag;
+        }
+
+        private AssertionStatus processRequest() 
+                throws ServiceResolutionException, IOException, MethodNotAllowedException, PolicyVersionException, PublishedService.ServiceException, PolicyAssertionException, SAXException
+        {
+            // Policy Verification Step
+            AssertionStatus serviceResolutionStatus = resolveService();
+            if (serviceResolutionStatus != AssertionStatus.NONE)
+                return serviceResolutionStatus;
+
+            if (context.getRequest().isHttpRequest())
+                processRequestHttpHeaders(context);
+
+            // Get the server policy
+            lookupServerPolicy();
+
+            if (checkForUnexpectedMultipartRequest())
+                return AssertionStatus.BAD_REQUEST;
+
+            if (ensureSecurityProcessingIfEnabledForService())
+                return securityProcessingAssertionStatus;
+
+            if (processPreServicePolicies())
+                return securityProcessingAssertionStatus;
+
+            // Run the policy
+            auditor.logAndAudit(MessageProcessingMessages.RUNNING_POLICY);
+
+            context.setPolicyExecutionAttempted(true);
+            AssertionStatus status = serverPolicy.checkRequest(context);
+
+            // fail early if there are any (I/O) errors reading the response
+            readAndStashEntireResponse();
+
+            // Execute deferred actions for request, then response
+            if (status == AssertionStatus.NONE) {
+                status = doDeferredAssertions(context);
+            }
+
+            context.setPolicyResult(status);
+
+            // Run post service global policies
+            processPostServicePolicies( context,
+                    PolicyType.POST_SERVICE_FRAGMENT,
+                    MessageProcessingMessages.RUNNING_POST_SERVICE_POLICY,
+                    MessageProcessingMessages.ERROR_POST_SERVICE );
+
+            doResponseSecurityProcessing(status);
+
+            // Run post WS-Security decoration global service policies
+            processPostServicePolicies( context,
+                    PolicyType.POST_SECURITY_FRAGMENT,
+                    MessageProcessingMessages.RUNNING_POST_SECURITY_POLICY,
+                    MessageProcessingMessages.ERROR_POST_SECURITY );
+
+            return status;
+        }
+
+        /**
+         * Resolve the published service and set it in the PolicyEnforcementContext.
+         *
+         * @return an assertion status.  Never null.
+         * @throws ServiceResolutionException if thrown by service cache
+         * @throws IOException if WSS processing is attempted during resolution, and it throws IOException
+         */
+        AssertionStatus resolveService() throws ServiceResolutionException, IOException {
+            PublishedService service = serviceCache.resolve(context.getRequest(), this);
+            if (service == null) {
+                if (securityProcessingIOException != null) {
+                    throw securityProcessingIOException;
+                } else if (securityProcessingAssertionStatus != null) {
+                    return securityProcessingAssertionStatus;
+                } else {
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
+                    return AssertionStatus.SERVICE_NOT_FOUND;
+                }
+            }
+
+            if (service.isDisabled()) {
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_DISABLED);
+                return AssertionStatus.SERVICE_NOT_FOUND;
+            }
+
+            auditor.logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, service.getName(), String.valueOf(service.getOid()));
+            context.setService(service);
+            return AssertionStatus.NONE;
         }
 
         @Override
         public boolean notifyPreParseServices( final Message message,
                                                final Set<ServiceCache.ServiceMetadata> serviceMetadataSet ) {
-            securityProcessingEvaluatedFlag[0] = true;
+            securityProcessingEvaluatedFlag = true;
 
             boolean isSoap = false;
             boolean hasSecurity = false;
@@ -780,20 +702,20 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             } catch (SAXException e) {
                 auditor.logAndAudit(MessageProcessingMessages.INVALID_REQUEST_WITH_DETAIL, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                 context.setMalformedRequest();
-                assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                 return false;
             } catch (MessageNotSoapException e) {
                 auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, ExceptionUtils.getDebugException(e));
             } catch (NoSuchPartException e) {
                 auditor.logAndAudit(MessageProcessingMessages.INVALID_REQUEST_WITH_DETAIL, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
-                assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                 return false;
             } catch (InvalidDocumentFormatException e) {
                 auditor.logAndAudit(MessageProcessingMessages.INVALID_REQUEST_WITH_DETAIL, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
-                assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                 return false;
             } catch (IOException ioe) {
-                ioExceptionHolder[0] = ioe;
+                securityProcessingIOException = ioe;
                 return false;
             }
 
@@ -808,11 +730,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 try {
                     final Message request = context.getRequest();
                     final SecurityKnob reqSec = request.getSecurityKnob();
-                    wssOutputHolder[0] = trogdor.undecorateMessage(request,
+                    wssOutput = trogdor.undecorateMessage(request,
                                                           null,
                                                           SecureConversationContextManager.getInstance(),
                                                           securityTokenResolver);
-                    reqSec.setProcessorResult(wssOutputHolder[0]);
+                    reqSec.setProcessorResult(wssOutput);
                 } catch (MessageNotSoapException e) {
                     auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);
                     // this shouldn't be possible now
@@ -826,43 +748,43 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
                     cfault.setFaultTemplate(SoapFaultUtils.badKeyInfoFault(context.getService() != null ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN, getIncomingURL(context)));
                     context.setFaultlevel(cfault);
-                    assertionStatusHolder[0] = AssertionStatus.FAILED;
+                    securityProcessingAssertionStatus = AssertionStatus.FAILED;
                     return false;
                 } catch (ProcessorValidationException pve){
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING_INFO,
                             new String[]{ExceptionUtils.getMessage( pve )},
                             ExceptionUtils.getDebugException( pve ));
-                    assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                    securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                     return false;
                 } catch (ProcessorException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                    assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
+                    securityProcessingAssertionStatus = AssertionStatus.SERVER_ERROR;
                     return false;
                 } catch (InvalidDocumentSignatureException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_SIGNATURE,
                             new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                     context.setAuditLevel(Level.WARNING);
-                    assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                    securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                     return false;
                 } catch (InvalidDocumentFormatException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                     context.setAuditLevel(Level.WARNING);
-                    assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                    securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                     return false;
                 } catch (KeyUsageException e) {
                     auditor.logAndAudit(MessageProcessingMessages.CERT_KEY_USAGE, e.getActivityName());
                     context.setAuditLevel(Level.WARNING);
-                    assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
+                    securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                     return false;
                 } catch (GeneralSecurityException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                     context.setAuditLevel(Level.WARNING);
-                    assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
+                    securityProcessingAssertionStatus = AssertionStatus.SERVER_ERROR;
                     return false;
                 } catch (SAXException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_RETRIEVE_XML, null, e);
                     context.setAuditLevel(Level.WARNING);
-                    assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
+                    securityProcessingAssertionStatus = AssertionStatus.SERVER_ERROR;
                     return false;
                 } catch (BadSecurityContextException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING_INFO, ExceptionUtils.getMessage(e));
@@ -872,10 +794,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     SoapVersion version = context.getService() != null ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN;
                     cfault.setFaultTemplate( SoapFaultUtils.badContextTokenFault(version, getIncomingURL(context)) );
                     context.setFaultlevel(cfault);
-                    assertionStatusHolder[0] = AssertionStatus.FAILED;
+                    securityProcessingAssertionStatus = AssertionStatus.FAILED;
                     return false;
                 } catch (IOException ioe) {
-                    ioExceptionHolder[0] = ioe;
+                    securityProcessingIOException = ioe;
                     return false;
                 }
                 auditor.logAndAudit(MessageProcessingMessages.WSS_PROCESSING_COMPLETE);
@@ -888,7 +810,64 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     MessageProcessingMessages.ERROR_PRE_SERVICE );
         }
 
-        /**
+        private boolean checkForUnexpectedMultipartRequest() throws PublishedService.ServiceException {
+            // Check request data
+            if (context.getRequest().getMimeKnob().isMultipart() &&
+                !(context.getService().isMultipart() || serverPolicy.getPolicyMetadata().isMultipart())) {
+                auditor.logAndAudit(MessageProcessingMessages.MULTIPART_NOT_ALLOWED);
+                return true;
+            }
+            return false;
+        }
+
+        private boolean ensureSecurityProcessingIfEnabledForService() throws IOException {
+            // Ensure security processing is run if enabled
+            if ( !securityProcessingEvaluatedFlag &&
+                 (context.getService().isWssProcessingEnabled())) {
+                PolicyMetadata policyMetadata = serverPolicy.getPolicyMetadata();
+                Set<ServiceCache.ServiceMetadata> metadatas = Collections.singleton( new ServiceCache.ServiceMetadata(policyMetadata, true) );
+                if (!notifyPreParseServices( context.getRequest(), metadatas ) ) {
+                    if ( securityProcessingIOException != null ) {
+                        throw securityProcessingIOException;
+                    } else {
+                        return true;
+                    }
+                }
+
+                // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
+                XmlKnob xk = context.getRequest().getKnob(XmlKnob.class);
+                if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
+            }
+            return false;
+        }
+
+        private boolean processPreServicePolicies() throws IOException {
+            // Ensure pre-service policies are run
+            if ( !securityProcessingEvaluatedFlag ) {
+                boolean success = processPreServicePolicies(
+                    PolicyType.PRE_SECURITY_FRAGMENT,
+                    MessageProcessingMessages.RUNNING_PRE_SECURITY_POLICY,
+                    MessageProcessingMessages.ERROR_PRE_SECURITY );
+
+                if ( success ) {
+                    success = processPreServicePolicies(
+                        PolicyType.PRE_SERVICE_FRAGMENT,
+                        MessageProcessingMessages.RUNNING_PRE_SERVICE_POLICY,
+                        MessageProcessingMessages.ERROR_PRE_SERVICE );
+                }
+
+                if (!success) {
+                    if ( securityProcessingIOException != null ) {
+                        throw securityProcessingIOException;
+                    } else {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /*
          * Process pre service policies and audit errors.
          *
          * <p>Pre service policy execution affects the overall policy processing
@@ -911,23 +890,129 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     try {
                         AssertionStatus status = processServicePolicy( policyCache, context, guid );
                         if ( status != AssertionStatus.NONE ) {
-                            assertionStatusHolder[0] = status;
+                            securityProcessingAssertionStatus = status;
                             success = false;
                             break;
                         }
                     } catch (IOException ioe) {
-                        ioExceptionHolder[0] = ioe;
+                        securityProcessingIOException = ioe;
                         success = false;
                     } catch (PolicyAssertionException e) {
                         auditor.logAndAudit(error, new String[]{ExceptionUtils.getMessage( e )}, e);
                         context.setAuditLevel( Level.WARNING);
-                        assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
+                        securityProcessingAssertionStatus = AssertionStatus.SERVER_ERROR;
                         success = false;
                     }
                 }
             }
 
             return success;
+        }
+
+        public void lookupServerPolicy() throws ServiceResolutionException {
+            serverPolicy = serviceCache.getServerPolicy(context.getService().getOid());
+            if (serverPolicy == null)
+                throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid");
+        }
+
+        @Override
+        public void close() throws IOException {
+            ResourceUtils.closeQuietly(serverPolicy);
+            serverPolicy = null;
+        }
+
+        private void readAndStashEntireResponse() throws IOException {
+            MimeKnob mk;
+            try {
+                // attempts to read and stash the whole response
+                mk = context.getResponse().getKnob(MimeKnob.class);
+                if (mk != null) mk.getFirstPart().getActualContentLength();
+            } catch (IOException e) {
+                // create fault to be sent
+                String fault = soapFaultManager.constructExceptionFault(e, context);
+
+                // there's no response message; substitute with the fault, so that the actual response that will be sent is audited
+                context.getResponse().initialize(
+                    (context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) ?
+                    ContentTypeHeader.SOAP_1_2_DEFAULT : ContentTypeHeader.XML_DEFAULT,
+                    fault.getBytes());
+
+                auditor.logAndAudit(MessageProcessingMessages.RESPONSE_IO_ERROR, e.getMessage());
+
+                // pass the exception up to the SOAP servlet
+                throw new MessageResponseIOException(fault, e);
+            } catch (NoSuchPartException e) {
+                throw new RuntimeException(e); // The first part should always be available
+            }
+        }
+
+        private void doResponseSecurityProcessing(AssertionStatus status) throws IOException, SAXException, PolicyAssertionException {
+            // add signature confirmations
+            WSSecurityProcessorUtils.addSignatureConfirmations(context.getResponse(), auditor);
+
+            // Run response through WssDecorator if indicated
+            if (status == AssertionStatus.NONE &&
+                  context.getResponse().isXml() &&
+                  context.getResponse().getSecurityKnob().getDecorationRequirements().length > 0 &&
+                  context.getResponse().isSoap())
+            {
+                try {
+                    DecorationRequirements[] allrequirements = context.getResponse().getSecurityKnob().getDecorationRequirements();
+                    SecurityKnob reqSec = context.getRequest().getSecurityKnob();
+
+                    addL7aRelatesTo();
+                    adjustSecurityActor(allrequirements, reqSec);
+
+                    // do the actual decoration
+                    for (final DecorationRequirements responseDecoReq : allrequirements) {
+                        if (responseDecoReq != null && wssOutput != null) {
+                            if (wssOutput.getSecurityNS() != null)
+                                responseDecoReq.getNamespaceFactory().setWsseNs(wssOutput.getSecurityNS());
+                            if (wssOutput.getWSUNS() != null)
+                                responseDecoReq.getNamespaceFactory().setWsuNs(wssOutput.getWSUNS());
+                            if (wssOutput.isDerivedKeySeen())
+                                responseDecoReq.setUseDerivedKeys(true);
+                        }
+                        wssDecorator.decorateMessage(context.getResponse(), responseDecoReq);
+                    }
+                } catch (Exception e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_RESPONSE, ExceptionUtils.getMessage(e));
+                    throw new PolicyAssertionException(null, "Failed to apply WSS decoration to response", e);
+                }
+            }
+        }
+
+        private void adjustSecurityActor(DecorationRequirements[] allrequirements, SecurityKnob reqSec) {
+            // if the request was processed on the noactor sec header instead of the l7 sec actor, then
+            // the response's decoration requirements should map this (if applicable)
+            if (reqSec.getProcessorResult() != null &&
+                reqSec.getProcessorResult().getProcessedActor() != null ) {
+                String actorUri = reqSec.getProcessorResult().getProcessedActor()== SecurityActor.NOACTOR ?
+                        null :
+                        reqSec.getProcessorResult().getProcessedActorUri();
+
+                // go find the l7 decoreq and adjust the actor
+                for (DecorationRequirements requirement : allrequirements) {
+                    if (SoapConstants.L7_SOAP_ACTOR.equals(requirement.getSecurityHeaderActor())) {
+                        requirement.setSecurityHeaderActor( actorUri );
+                    }
+                }
+            }
+        }
+
+        private void addL7aRelatesTo() throws InvalidDocumentFormatException {
+            try {
+                if (context.getRequest().isSoap()) {
+                    final String messageId = SoapUtil.getL7aMessageId(context.getRequest().getXmlKnob().getDocumentReadOnly());
+                    if (messageId != null) {
+                        SoapUtil.setL7aRelatesTo(context.getResponse().getXmlKnob().getDocumentWritable(), messageId);
+                    }
+                }
+            } catch(IOException e) {
+                logger.log(Level.WARNING, "Unable to extract message ID from request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            } catch(SAXException e) {
+                logger.log(Level.WARNING, "Unable to extract message ID from request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
         }
     }
 
