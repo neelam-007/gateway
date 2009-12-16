@@ -13,6 +13,7 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.message.Message;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.xml.ElementCursor;
 
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
@@ -23,6 +24,14 @@ import java.util.Collection;
  * 
  */
 public class XOPUtilsTest {
+
+    @Test
+    public void testXOPContentType() throws Exception {
+        assertFalse("text/xml not XOP", XOPUtils.isXop( ContentTypeHeader.parseValue( "text/xml" )));
+        assertFalse("multipart/related not XOP (no type)", XOPUtils.isXop( ContentTypeHeader.parseValue( "multipart/related; boundary=MB" )));
+        assertFalse("multipart/related not XOP", XOPUtils.isXop( ContentTypeHeader.parseValue( "multipart/related; boundary=MB; type=application/soap+xml" )));
+        assertTrue("multipart/related XOP", XOPUtils.isXop( ContentTypeHeader.parseValue( "multipart/related; boundary=MB; type=application/xop+xml" )));
+    }
 
     @Test
     public void testXOPRoundTrip() throws Exception {
@@ -49,6 +58,7 @@ public class XOPUtilsTest {
         System.out.println( XmlUtil.nodeToFormattedString( message.getXmlKnob().getDocumentReadOnly() ));
         assertEquals( "Incorrect Content-Type", "text/xml", message.getMimeKnob().getOuterContentType().getMainValue() );
         assertFalse( "Contains XOP namespace", XmlUtil.nodeToFormattedString( message.getXmlKnob().getDocumentReadOnly() ).contains( XOPUtils.NS_XOP ) );
+        message.close();
     }
 
     @Test
@@ -70,6 +80,7 @@ public class XOPUtilsTest {
         assertEquals( "Incorrect Content-Type start-info", "text/xml", message.getMimeKnob().getOuterContentType().getParam("start-info") );
         assertEquals( "Incorrect Part Content-Type", "application/xop+xml", message.getMimeKnob().getFirstPart().getContentType().getMainValue() );
         assertEquals( "Incorrect Part Content-Id", "mainpart", message.getMimeKnob().getFirstPart().getContentId(true) );
+        message.close();
     }
 
     @Test(expected=XOPUtils.XOPException.class)
@@ -82,6 +93,7 @@ public class XOPUtilsTest {
                 new ByteArrayInputStream(HexUtils.decodeBase64( mtom )));
 
         XOPUtils.reconstitute( message, false, 1, smf );
+        message.close();
     }
 
     @Test
@@ -103,6 +115,7 @@ public class XOPUtilsTest {
         assertEquals( "Incorrect Content-Type start-info", "application/soap+xml", message.getMimeKnob().getOuterContentType().getParam("start-info") );
         assertEquals( "Incorrect Part Content-Type", "application/xop+xml", message.getMimeKnob().getFirstPart().getContentType().getMainValue() );
         assertEquals( "Incorrect Part Content-Id", "http://tempuri.org/0", message.getMimeKnob().getFirstPart().getContentId(true) );
+        message.close();
     }
 
     @Test
@@ -124,6 +137,7 @@ public class XOPUtilsTest {
         assertEquals( "Incorrect Content-Type start-info", "text/xml", message.getMimeKnob().getOuterContentType().getParam("start-info") );
         assertEquals( "Incorrect Part Content-Type", "application/xop+xml", message.getMimeKnob().getFirstPart().getContentType().getMainValue() );
         assertEquals( "Incorrect Part Content-Id", "rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com", message.getMimeKnob().getFirstPart().getContentId(true) );
+        message.close();
     }
 
     @Test
@@ -145,6 +159,7 @@ public class XOPUtilsTest {
         assertEquals( "Incorrect Content-Type start-info", "application/soap+xml", message.getMimeKnob().getOuterContentType().getParam("start-info") );
         assertEquals( "Incorrect Part Content-Type", "application/xop+xml", message.getMimeKnob().getFirstPart().getContentType().getMainValue() );
         assertEquals( "Incorrect Part Content-Id", "rootpart*7c154c5b-966a-4aa1-bbea-dcc0565e798b@example.jaxws.sun.com", message.getMimeKnob().getFirstPart().getContentId(true) );
+        message.close();
     }
 
     @Test(expected=XOPUtils.XOPException.class)
@@ -157,6 +172,7 @@ public class XOPUtilsTest {
                 new ByteArrayInputStream(jaxwsBodyInvalid.getBytes()));
 
         XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
+        message.close();
     }
 
     @Test(expected=XOPUtils.XOPException.class)
@@ -169,6 +185,7 @@ public class XOPUtilsTest {
                 new ByteArrayInputStream(jaxwsBodyInvalid.getBytes()));
 
         XOPUtils.validate( message );
+        message.close();
     }
 
     @Test
@@ -224,6 +241,27 @@ public class XOPUtilsTest {
     public void testGetXMLMimeContentType() throws Exception {
         assertEquals( "content-type", "image/png", XOPUtils.getXMLMimeContentType( XmlUtil.parse( "<m:photo xmlmime:contentType=\"image/png\" xmlns:m=\"http://example.org/stuff\" xmlns:xmlmime=\"http://www.w3.org/2004/11/xmlmime\" xmlns:xop=\"http://www.w3.org/2004/08/xop/include\"><xop:Include href=\"cid:http://example.org/me.png\"/></m:photo>" ).getDocumentElement() ) );
         assertEquals( "content-type", "image/gif", XOPUtils.getXMLMimeContentType( XmlUtil.parse( "<m:photo xmlmime:contentType=\"image/gif\" xmlns:m=\"http://example.org/stuff\" xmlns:xmlmime=\"http://www.w3.org/2005/05/xmlmime\" xmlns:xop=\"http://www.w3.org/2004/08/xop/include\"><xop:Include href=\"cid:http://example.org/me.png\"/></m:photo>" ).getDocumentElement() ) );
+    }
+
+    @Test
+    public void testGetSize() throws Exception {
+        StashManagerFactory smf = buildStashManagerFactory();
+        Message message = new Message();
+        message.initialize(
+                smf.createStashManager(),
+                ContentTypeHeader.parseValue(jaxwsContentType),
+                new ByteArrayInputStream(jaxwsBody.getBytes()));
+
+        ElementCursor cursor = message.getXmlKnob().getElementCursor();
+        cursor.moveToDocumentElement();
+        cursor.moveToFirstChildElement(); // body
+        cursor.moveToFirstChildElement(); // echoFile
+        cursor.moveToFirstChildElement(); // arg0
+        cursor.moveToFirstChildElement(); // data
+
+        assertEquals( "size", 252, XOPUtils.getSize( message, cursor ));
+
+        message.close();
     }
 
     @Test

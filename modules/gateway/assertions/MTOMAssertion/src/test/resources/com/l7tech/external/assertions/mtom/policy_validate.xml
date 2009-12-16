@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MTOM validate assertion with customized properties
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:MTOMValidateAssertion>
+            <L7p:OtherTargetMessageVariable stringValue="var"/>
+            <L7p:RequireEncoded booleanValue="false"/>
+            <L7p:Target target="OTHER"/>
+        </L7p:MTOMValidateAssertion>
+    </wsp:All>
+</wsp:Policy>

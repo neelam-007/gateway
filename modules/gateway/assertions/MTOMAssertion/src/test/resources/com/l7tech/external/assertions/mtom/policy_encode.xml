@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MTOM encode assertion with customized properties
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:MTOMEncodeAssertion>
+            <L7p:AlwaysEncode booleanValue="false"/>
+            <L7p:FailIfNotFound booleanValue="true"/>
+            <L7p:OptimizationThreshold intValue="1024"/>
+            <L7p:OutputTarget MessageTarget="included">
+                <L7p:OtherTargetMessageVariable stringValue="var"/>
+                <L7p:Target target="OTHER"/>
+            </L7p:OutputTarget>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:MTOMEncodeAssertion>
+    </wsp:All>
+</wsp:Policy>

@@ -20,6 +20,7 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.MockConfig;
 import com.l7tech.external.assertions.mtom.MtomDecodeAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
 
 /**
  * 
@@ -34,6 +35,24 @@ public class ServerMtomDecodeAssertionTest {
                 "Content-Transfer-Encoding: binary\r\n" +
                 "\r\n" +
                 "<?xml version=\"1.0\" ?><S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Body><ns2:echoFile xmlns:ns2=\"http://www.layer7tech.com/services/jaxws/echoservice\"><arg0><data><xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:5b217328-8151-452a-8aa7-03dace49949d@example.jaxws.sun.com\"></xop:Include></data><name>payload.txt</name></arg0></ns2:echoFile></S:Body></S:Envelope>\r\n" +
+                "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
+                "Content-Id: <5b217328-8151-452a-8aa7-03dace49949d@example.jaxws.sun.com>\r\n" +
+                "Content-Type: text/plain\r\n" +
+                "Content-Transfer-Encoding: binary\r\n" +
+                "\r\n" +
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\n" +
+                "\r\n" +
+                "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a--";
+    private static final String securedMessage =
+                "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
+                "Content-Id: <rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\r\n" +
+                "Content-Type: application/xop+xml;charset=utf-8;type=\"text/xml\"\r\n" +
+                "Content-Transfer-Encoding: binary\r\n" +
+                "\r\n" +
+                "<?xml version=\"1.0\" ?><S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Header><wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" S:actor=\"secure_span\" S:mustUnderstand=\"1\"/></S:Header><S:Body><ns2:echoFile xmlns:ns2=\"http://www.layer7tech.com/services/jaxws/echoservice\"><arg0><data><xop:Include xmlns:xop=\"http://www.w3.org/2004/08/xop/include\" href=\"cid:5b217328-8151-452a-8aa7-03dace49949d@example.jaxws.sun.com\"></xop:Include></data><name>payload.txt</name></arg0></ns2:echoFile></S:Body></S:Envelope>\r\n" +
                 "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
                 "Content-Id: <5b217328-8151-452a-8aa7-03dace49949d@example.jaxws.sun.com>\r\n" +
                 "Content-Type: text/plain\r\n" +
@@ -78,9 +97,90 @@ public class ServerMtomDecodeAssertionTest {
 
             final String output = XmlUtil.nodeToString( context.getRequest().getXmlKnob().getDocumentReadOnly() );
             assertFalse( "Message raw", message.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
-            assertTrue( "Message encoded", output.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+            assertTrue( "Message decoded", output.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
             assertTrue( "SOAP type", mess.getMimeKnob().getOuterContentType().getType().equalsIgnoreCase("text"));
             assertTrue( "SOAP subtype", mess.getMimeKnob().getOuterContentType().getSubtype().equalsIgnoreCase("xml"));
+        } finally {
+            ResourceUtils.closeQuietly( context );
+        }
+    }
+
+    @Test
+    public void testDecodeIfSecured() throws Exception {
+        final MtomDecodeAssertion mda = new MtomDecodeAssertion();
+        mda.setProcessSecuredOnly( true );
+        mda.setRemovePackaging( true );
+        mda.setRequireEncoded( true );
+
+        final ServerMtomDecodeAssertion smda = buildServerAssertion( mda );
+
+        {
+            PolicyEnforcementContext context = null;
+            try {
+                Message mess = new Message(
+                        new ByteArrayStashManager(),
+                        ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
+                        new ByteArrayInputStream( message.getBytes() ));
+                context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
+                AssertionStatus status = smda.checkRequest( context );
+                assertEquals( "status ok", AssertionStatus.NONE, status );
+
+                final String output = XmlUtil.nodeToString( context.getRequest().getXmlKnob().getDocumentReadOnly() );
+                assertFalse( "Message raw", message.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+                assertFalse( "Message decoded", output.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+                assertFalse( "SOAP type", mess.getMimeKnob().getOuterContentType().getType().equalsIgnoreCase("text"));
+                assertFalse( "SOAP subtype", mess.getMimeKnob().getOuterContentType().getSubtype().equalsIgnoreCase("xml"));
+            } finally {
+                ResourceUtils.closeQuietly( context );
+            }
+        }
+
+        PolicyEnforcementContext context = null;
+        try {
+            Message mess = new Message(
+                    new ByteArrayStashManager(),
+                    ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
+                    new ByteArrayInputStream( securedMessage.getBytes() ));
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
+            AssertionStatus status = smda.checkRequest( context );
+            assertEquals( "status ok", AssertionStatus.NONE, status );
+
+            final String output = XmlUtil.nodeToString( context.getRequest().getXmlKnob().getDocumentReadOnly() );
+            assertFalse( "Message raw", securedMessage.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+            assertTrue( "Message decoded", output.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+            assertTrue( "SOAP type", mess.getMimeKnob().getOuterContentType().getType().equalsIgnoreCase("text"));
+            assertTrue( "SOAP subtype", mess.getMimeKnob().getOuterContentType().getSubtype().equalsIgnoreCase("xml"));
+        } finally {
+            ResourceUtils.closeQuietly( context );
+        }
+    }
+
+    @Test
+    public void testDecodeToCustomTarget() throws Exception {
+        final MtomDecodeAssertion mda = new MtomDecodeAssertion();
+        mda.setProcessSecuredOnly( false );
+        mda.setRemovePackaging( true );
+        mda.setRequireEncoded( true );
+        mda.setOutputTarget( new MessageTargetableSupport("output") );
+
+        final ServerMtomDecodeAssertion smda = buildServerAssertion( mda );
+
+        PolicyEnforcementContext context = null;
+        try {
+            Message mess = new Message(
+                    new ByteArrayStashManager(),
+                    ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
+                    new ByteArrayInputStream( message.getBytes() ));
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
+            AssertionStatus status = smda.checkRequest( context );
+            assertEquals( "status ok", AssertionStatus.NONE, status );
+
+            final Message outputMessage = context.getTargetMessage(new MessageTargetableSupport("output"));
+            final String output = XmlUtil.nodeToString( outputMessage.getXmlKnob().getDocumentReadOnly() );
+            assertFalse( "Message raw", message.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+            assertTrue( "Message decoded", output.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+            assertTrue( "SOAP type", outputMessage.getMimeKnob().getOuterContentType().getType().equalsIgnoreCase("text"));
+            assertTrue( "SOAP subtype", outputMessage.getMimeKnob().getOuterContentType().getSubtype().equalsIgnoreCase("xml"));
         } finally {
             ResourceUtils.closeQuietly( context );
         }
@@ -141,7 +241,7 @@ public class ServerMtomDecodeAssertionTest {
 
             final String output = XmlUtil.nodeToString( context.getRequest().getXmlKnob().getDocumentReadOnly() );
             assertFalse( "Message raw", message.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
-            assertTrue( "Message encoded", output.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+            assertTrue( "Message decoded", output.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
             assertTrue( "Multipart type", mess.getMimeKnob().getOuterContentType().getType().equalsIgnoreCase("multipart"));
             assertTrue( "Multipart subtype", mess.getMimeKnob().getOuterContentType().getSubtype().equalsIgnoreCase("related"));
         } finally {

@@ -198,7 +198,7 @@ public class XOPUtils {
                 MimeKnob mimeKnob = message.getMimeKnob();
                 try {
                     PartInfo partInfo = mimeKnob.getPartByContentId( toContentId(href) );
-                    size = partInfo.getContentLength();
+                    size = partInfo.getActualContentLength();
                 } catch ( NoSuchPartException e ) {
                     throw new XOPException( "Mime part not found for Content-ID URL '"+href+"'", e );
                 }

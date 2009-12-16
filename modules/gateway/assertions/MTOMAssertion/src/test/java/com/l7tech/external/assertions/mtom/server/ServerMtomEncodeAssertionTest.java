@@ -16,6 +16,7 @@ import com.l7tech.message.Message;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
 
 import java.util.logging.Logger;
 import java.util.HashMap;
@@ -61,6 +62,36 @@ public class ServerMtomEncodeAssertionTest {
             assertEquals( "status ok", AssertionStatus.NONE, status );
 
             final String output = XmlUtil.nodeToString( context.getRequest().getXmlKnob().getDocumentReadOnly() );
+            assertTrue( "Message raw", message.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+            assertFalse( "Message encoded", output.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+        } finally {
+            ResourceUtils.closeQuietly( context );
+        }
+    }
+
+    @Test
+    public void testEncodeToCustomTarget() throws Exception {
+        final MtomEncodeAssertion mea = new MtomEncodeAssertion();
+        mea.setAlwaysEncode( true );
+        mea.setFailIfNotFound( true );
+        mea.setOptimizationThreshold( 0 );
+        mea.setXpathExpressions( new XpathExpression[]{
+                new XpathExpression( "/s12:Envelope/s12:Body/tns:echoFile/arg0/data", new HashMap<String,String>(){{
+                    put("s12","http://www.w3.org/2003/05/soap-envelope");
+                    put("tns","http://www.layer7tech.com/services/jaxws/echoservice");
+                }} )
+        } );
+        mea.setOutputTarget( new MessageTargetableSupport("output") );
+
+        final ServerMtomEncodeAssertion smea = buildServerAssertion( mea );
+        final Document requestDoc = XmlUtil.parse( message );
+        PolicyEnforcementContext context = null;
+        try {
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc), null );
+            AssertionStatus status = smea.checkRequest( context );
+            assertEquals( "status ok", AssertionStatus.NONE, status );
+
+            final String output = XmlUtil.nodeToString( context.getTargetMessage( new MessageTargetableSupport("output") ).getXmlKnob().getDocumentReadOnly() );
             assertTrue( "Message raw", message.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
             assertFalse( "Message encoded", output.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
         } finally {
