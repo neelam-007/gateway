@@ -1,11 +1,14 @@
 package com.l7tech.config.client.beans;
 
 import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.util.ResourceUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -68,10 +71,14 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
             }
         }
 
+        OutputStream out = null;
         try {
-            properties.store( new FileOutputStream(propertiesFile), "Configuration Properties" );
+            out = new FileOutputStream(propertiesFile);
+            properties.store( out, "Configuration Properties" );
         } catch (IOException ioe) {
             throw new ConfigurationException("Unable to load configuration from file '"+propertiesFile.getAbsolutePath()+"'.", ioe);
+        } finally {
+            ResourceUtils.closeQuietly( out );
         }
     }
 
@@ -154,11 +161,15 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
     protected Properties loadPropertiesFromFile() throws ConfigurationException {
         Properties properties = new Properties();
 
+        InputStream in = null;
         if ( propertiesFile.isFile() ) {
             try {
-                properties.load( new FileInputStream(propertiesFile) );
-            }catch (IOException ioe) {
+                in = new FileInputStream(propertiesFile);
+                properties.load( in );
+            } catch (IOException ioe) {
                 throw new ConfigurationException("Unable to load configuration from file '"+propertiesFile.getAbsolutePath()+"'.", ioe);
+            } finally {
+                ResourceUtils.closeQuietly( in );
             }
         }
 
