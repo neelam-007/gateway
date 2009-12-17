@@ -358,7 +358,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
 
                 final UDDIClient uddiClient = factory.uddiHelper.newUDDIClient(uddiRegistry);
                 final UDDIRegistrySpecificMetaData registrySpecificMetaData =
-                        PublishingUDDITaskFactory.getRegistrySpecificMetaData(uddiRegistry, serviceControl, factory, uddiClient);
+                        PublishingUDDITaskFactory.getRegistrySpecificMetaData(uddiRegistry, serviceControl, uddiProxiedServiceInfo, factory, uddiClient);
 
                 final Collection<Pair<String, String>> allEndpointPairs =
                         factory.uddiHelper.getAllExternalEndpointAndWsdlUrls(publishedService.getOid());
@@ -436,15 +436,17 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
      * 
      * @param uddiRegistry
      * @param serviceControl
-     * @param uddiFactory
-     * @param uddiClient DO NOT CLOSE IT
-     * @return UDDIRegistrySpecificMetaData, not null if there are registry specific meta data requirements, null otherwise
+     * @param uddiProxiedServiceInfo
+     *@param uddiFactory
+     * @param uddiClient DO NOT CLOSE IT   @return UDDIRegistrySpecificMetaData, not null if there are registry specific meta data requirements, null otherwise
      */
     private static UDDIRegistrySpecificMetaData getRegistrySpecificMetaData(final UDDIRegistry uddiRegistry,
                                                                             final UDDIServiceControl serviceControl,
+                                                                            final UDDIProxiedServiceInfo uddiProxiedServiceInfo,
                                                                             final PublishingUDDITaskFactory uddiFactory,
                                                                             final UDDIClient uddiClient) {
         final boolean isActiveSOAVirtualService = serviceControl != null &&
+                uddiProxiedServiceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY &&
                 uddiRegistry.getUddiRegistryType().equals(UDDIRegistry.UDDIRegistryType.CENTRASITE_ACTIVE_SOA.toString()) &&
                 serviceControl.getUddiRegistryOid() == uddiRegistry.getOid();
         //we know here whether the UDDIRegistry is Active SOA or not
